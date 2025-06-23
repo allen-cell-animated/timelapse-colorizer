@@ -84,8 +84,9 @@ function getCanvasPixelCoordsFromId(id: number | null, params: AnnotationParams)
   if (!centroid) {
     return null;
   }
-  const centroidVector = new Vector3(...centroid);
-  return centroidVector.applyMatrix4(params.centroidToCanvasMatrix);
+  const centroidPos = new Vector3(...centroid);
+  const canvasPos = centroidPos.clone().applyMatrix4(params.centroidToCanvasMatrix);
+  return canvasPos;
 }
 
 function getMarkerScale(params: AnnotationParams, style: AnnotationStyle): number {

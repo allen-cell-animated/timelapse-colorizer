@@ -99,6 +99,8 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     this.currentFrame = -1;
 
     this.onLoadFrameCallback = () => {};
+
+    this.getScreenSpaceMatrix = this.getScreenSpaceMatrix.bind(this);
   }
 
   private initLights(): void {
@@ -434,15 +436,20 @@ export class ColorizeCanvas3D implements IRenderCanvas {
   public getScreenSpaceMatrix(): Matrix4 {
     if (!this.volume) {
       // Return an identity matrix if the volume is not loaded
+      console.log("Volume not loaded");
       return new Matrix4();
     }
 
     // 1. Normalize from volume voxel coordinates to world space. Also,
     //    translate so that the center of the volume is at (0, 0, 0).
-    const volumeScale = new Vector3(1, 1, 1)
+    const volumeScale = new Vector3(1, -1, 1)
       .multiply(this.volume.physicalPixelSize)
       .divideScalar(this.volume.physicalScale);
-    const normalizeVoxelToWorld = new Matrix4().compose(new Vector3(-0.5, -0.5, -0.5), new Quaternion(), volumeScale);
+    const normalizeVoxelToWorld = new Matrix4().compose(
+      this.volume.normPhysicalSize.clone().multiplyScalar(-0.5), // Translate to center
+      new Quaternion(0, 0, 0, 1),
+      volumeScale.multiply(new Vector3(1, -1, 1))
+    );
 
     // 2. Get the view projection matrix, which transforms from world space to
     //    screen space in the [-1, 1] range.
@@ -451,9 +458,9 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     // 3. Scale the [-1, 1] range to canvas pixels, and move the origin to the
     //    top left corner of the canvas.
     const viewProjectionToScreen = new Matrix4().compose(
-      new Vector3(0.5 * this.canvasResolution.x, -0.5 * this.canvasResolution.y, 0), // Scale to screen
-      new Quaternion(), // No rotation
-      new Vector3(0.5 * this.canvasResolution.x, 0.5 * this.canvasResolution.y, 1) // Translate origin
+      new Vector3(0.5 * this.canvasResolution.x, 0.5 * this.canvasResolution.y, 0), // Translate origin
+      new Quaternion(0, 0, 0, 1),
+      new Vector3(0.5 * this.canvasResolution.x, -0.5 * this.canvasResolution.y, 0.5) // Scale to screen
     );
 
     return viewProjectionToScreen.multiply(viewProjectionMatrix).multiply(normalizeVoxelToWorld);
