@@ -291,7 +291,9 @@ export function parseDrawSettings(
 
 export function parseTrackPathMode(mode: string | null): TrackPathColorMode | undefined {
   const modeInt = parseInt(mode || "-1", 10);
-  return mode && modeInt in TrackPathColorMode ? (modeInt as TrackPathColorMode) : undefined;
+  const isTrackPathColorMode =
+    modeInt === TrackPathColorMode.USE_CUSTOM_COLOR || modeInt === TrackPathColorMode.USE_OUTLINE_COLOR;
+  return mode && isTrackPathColorMode ? (modeInt as TrackPathColorMode) : undefined;
 }
 
 export function encodeBoolean(value: boolean): string {
