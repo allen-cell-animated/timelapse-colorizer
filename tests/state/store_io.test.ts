@@ -12,6 +12,7 @@ import {
   PlotRangeType,
   TabType,
   ThresholdType,
+  TrackPathColorMode,
   VECTOR_KEY_MOTION_DELTA,
   VectorTooltipMode,
 } from "../../src/colorizer";
@@ -82,6 +83,9 @@ const EXAMPLE_STORE: ViewerStoreSerializableState = {
   outOfRangeDrawSettings: { mode: DrawMode.HIDE, color: new Color("#ff0000") } as DrawSettings,
   outlierDrawSettings: { mode: DrawMode.USE_COLOR, color: new Color("#00ff00") } as DrawSettings,
   outlineColor: new Color("#0000ff"),
+  trackPathColor: new Color("#ff0000"),
+  trackPathWidthPx: 1.5,
+  trackPathColorMode: TrackPathColorMode.USE_CUSTOM_COLOR,
   vectorVisible: true,
   vectorKey: VECTOR_KEY_MOTION_DELTA,
   vectorMotionTimeIntervals: 11,
@@ -119,6 +123,9 @@ const EXAMPLE_STORE_EXPECTED_PARAMS: Required<Omit<SerializedStoreData, UrlParam
   "outlier-color": "00ff00",
   "outlier-mode": DrawMode.USE_COLOR.toString(),
   "outline-color": "0000ff",
+  "path-color": "ff0000",
+  "path-width": "1.500",
+  "path-mode": TrackPathColorMode.USE_CUSTOM_COLOR.toString(),
   vc: "1",
   "vc-key": VECTOR_KEY_MOTION_DELTA,
   "vc-color": "ff00ff",
@@ -135,7 +142,7 @@ const EXAMPLE_STORE_EXPECTED_QUERY_STRING =
   "collection=https%3A%2F%2Fsome-url.com%2Fcollection.json&dataset=some-dataset" +
   "&feature=feature1&track=0&bg-key=backdrop2&t=2&color=matplotlib-inferno%21&keep-range=1&range=21.433%2C89.400" +
   "&palette-key=matplotlib_paired&filters=f1%3Am%3A0%3A0%2Cf2%3Aum%3ANaN%3ANaN%2Cf3%3Akm%3A0%3A1%2Cf4%3Amm%3A0.501%3A1000.485%2Cf5%3A%3Afff%2Cf6%3A%3A11" +
-  "&path=1&scalebar=1&timestamp=0&filter-color=ff0000&filter-mode=0&outlier-color=00ff00&outlier-mode=1&outline-color=0000ff" +
+  "&path=1&path-color=ff0000&path-width=1.500&path-mode=1&scalebar=1&timestamp=0&filter-color=ff0000&filter-mode=0&outlier-color=00ff00&outlier-mode=1&outline-color=0000ff" +
   "&tab=filters&scatter-x=feature3&scatter-y=feature2&scatter-range=all" +
   "&bg=1&bg-brightness=75&bg-sat=50&fg-alpha=25" +
   "&vc=1&vc-key=_motion_&vc-color=ff00ff&vc-scale=5&vc-tooltip=c&vc-time-int=11";

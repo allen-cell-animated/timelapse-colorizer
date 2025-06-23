@@ -91,7 +91,7 @@ export type FrameLoadResult = {
   backdropError: boolean;
 };
 
-export enum CanvasType {
+export const enum CanvasType {
   CANVAS_2D = "2D",
   CANVAS_3D = "3D",
 }
@@ -128,7 +128,7 @@ export type CanvasScaleInfo = Canvas3DScaleInfo | Canvas2DScaleInfo;
 // MUST be synchronized with the DRAW_MODE_* constants in `colorize_RGBA8U.frag`!
 // CHANGING THESE VALUES CAN POTENTIALLY BREAK URLs. See `url_utils.parseDrawSettings` for parsing logic.
 /** Draw options for object types. */
-export enum DrawMode {
+export const enum DrawMode {
   /** Hide this object type. */
   HIDE = 0,
   /** Use a solid color for this object type. */
@@ -139,10 +139,17 @@ export const isDrawMode = (mode: number): mode is DrawMode => {
   return mode === DrawMode.HIDE || mode === DrawMode.USE_COLOR;
 };
 
+export const enum TrackPathColorMode {
+  USE_OUTLINE_COLOR = 0,
+  USE_CUSTOM_COLOR = 1,
+  // May add additional modes in the future, such as using a gradient color or
+  // coloring by feature value.
+}
+
 // Similar to `FeatureType`, but indicates that thresholds are lossy when it comes
 // to numeric data. Numeric thresholds do not track if their source feature is integer
 // (FeatureType.DISCRETE) or a float (FeatureType.CONTINUOUS).
-export enum ThresholdType {
+export const enum ThresholdType {
   NUMERIC = "numeric",
   CATEGORICAL = "categorical",
 }

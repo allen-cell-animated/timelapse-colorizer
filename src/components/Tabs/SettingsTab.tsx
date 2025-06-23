@@ -1,16 +1,18 @@
 import { Color as AntdColor } from "@rc-component/color-picker";
 import { Checkbox, ColorPicker } from "antd";
+import { PresetsItem } from "antd/es/color-picker/interface";
 import React, { ReactElement, useMemo } from "react";
 import { Color, ColorRepresentation } from "three";
 
 import { OUTLINE_COLOR_DEFAULT } from "../../colorizer/constants";
-import { DrawMode } from "../../colorizer/types";
+import { DrawMode, TrackPathColorMode } from "../../colorizer/types";
 import { FlexColumn } from "../../styles/utils";
+import { SelectItem } from "../Dropdowns/types";
 import { DEFAULT_OUTLINE_COLOR_PRESETS } from "./Settings/constants";
 
 import { useViewerStateStore } from "../../state/ViewerState";
 import CustomCollapse from "../CustomCollapse";
-import DrawModeDropdown from "../Dropdowns/DrawModeDropdown";
+import DropdownWithColorPicker from "../Dropdowns/DropdownWithColorPicker";
 import SelectionDropdown from "../Dropdowns/SelectionDropdown";
 import LabeledSlider from "../LabeledSlider";
 import { SettingsContainer, SettingsItem } from "../SettingsContainer";
@@ -20,6 +22,34 @@ const NO_BACKDROP = {
   value: "",
   label: "(None)",
 };
+
+const DRAW_MODE_ITEMS: SelectItem[] = [
+  { value: DrawMode.HIDE.toString(), label: "Hide" },
+  { value: DrawMode.USE_COLOR.toString(), label: "Custom" },
+];
+
+const DRAW_MODE_COLOR_PRESETS: PresetsItem[] = [
+  {
+    label: "Presets",
+    colors: [
+      "#ffffff",
+      "#f0f0f0",
+      "#dddddd",
+      "#c0c0c0",
+      "#9d9d9d",
+      "#808080",
+      "#525252",
+      "#393939",
+      "#191919",
+      "#000000",
+    ],
+  },
+];
+
+const TRACK_MODE_ITEMS: SelectItem[] = [
+  { value: TrackPathColorMode.USE_OUTLINE_COLOR.toString(), label: "Outline" },
+  { value: TrackPathColorMode.USE_CUSTOM_COLOR.toString(), label: "Custom" },
+];
 
 export const SETTINGS_INDENT_PX = 24;
 const SETTINGS_GAP_PX = 8;
@@ -47,9 +77,15 @@ export default function SettingsTab(): ReactElement {
   const setShowScaleBar = useViewerStateStore((state) => state.setShowScaleBar);
   const setShowTimestamp = useViewerStateStore((state) => state.setShowTimestamp);
   const setShowTrackPath = useViewerStateStore((state) => state.setShowTrackPath);
+  const setTrackPathColor = useViewerStateStore((state) => state.setTrackPathColor);
+  const setTrackPathColorMode = useViewerStateStore((state) => state.setTrackPathColorMode);
+  const setTrackPathWidthPx = useViewerStateStore((state) => state.setTrackPathWidthPx);
   const showScaleBar = useViewerStateStore((state) => state.showScaleBar);
   const showTimestamp = useViewerStateStore((state) => state.showTimestamp);
   const showTrackPath = useViewerStateStore((state) => state.showTrackPath);
+  const trackPathColor = useViewerStateStore((state) => state.trackPathColor);
+  const trackPathColorMode = useViewerStateStore((state) => state.trackPathColorMode);
+  const trackPathWidthPx = useViewerStateStore((state) => state.trackPathWidthPx);
 
   let backdropOptions = useMemo(
     () =>
@@ -155,35 +191,85 @@ export default function SettingsTab(): ReactElement {
             </div>
           </SettingsItem>
           <SettingsItem label="Filtered object color">
-            <DrawModeDropdown
+            <DropdownWithColorPicker
               htmlLabelId="filtered-object-color-label"
-              selected={outOfRangeDrawSettings.mode}
+              selected={outOfRangeDrawSettings.mode.toString()}
               color={outOfRangeDrawSettings.color}
-              onChange={(mode: DrawMode, color: Color) => {
-                setOutOfRangeDrawSettings({ mode, color });
+              onValueChange={(mode: string) => {
+                setOutOfRangeDrawSettings({ ...outOfRangeDrawSettings, mode: Number.parseInt(mode, 10) as DrawMode });
               }}
+              onColorChange={(color: Color) => {
+                setOutOfRangeDrawSettings({ ...outOfRangeDrawSettings, color });
+              }}
+              showColorPicker={outOfRangeDrawSettings.mode === DrawMode.USE_COLOR}
+              items={DRAW_MODE_ITEMS}
+              presets={DRAW_MODE_COLOR_PRESETS}
             />
           </SettingsItem>
           <SettingsItem label="Outlier object color" id="outlier-object-color-label">
-            <DrawModeDropdown
+            <DropdownWithColorPicker
               htmlLabelId="outlier-object-color-label"
-              selected={outlierDrawSettings.mode}
+              selected={outlierDrawSettings.mode.toString()}
               color={outlierDrawSettings.color}
-              onChange={(mode: DrawMode, color: Color) => {
-                setOutlierDrawSettings({ mode, color });
+              onValueChange={(mode: string) => {
+                setOutlierDrawSettings({ ...outlierDrawSettings, mode: Number.parseInt(mode, 10) as DrawMode });
               }}
+              onColorChange={(color: Color) => {
+                setOutlierDrawSettings({ ...outlierDrawSettings, color });
+              }}
+              showColorPicker={outlierDrawSettings.mode === DrawMode.USE_COLOR}
+              items={DRAW_MODE_ITEMS}
+              presets={DRAW_MODE_COLOR_PRESETS}
             />
           </SettingsItem>
 
-          <SettingsItem label={"Show track path"}>
+          <SettingsItem
+            label={"Show track path"}
+            labelStyle={{ height: "min-content" }}
+            id="track-path-label"
+            style={{ marginTop: "10px" }}
+          >
             <Checkbox
               type="checkbox"
               checked={showTrackPath}
               onChange={(event) => {
                 setShowTrackPath(event.target.checked);
               }}
-            />
+            ></Checkbox>
           </SettingsItem>
+          {showTrackPath && (
+            <>
+              <SettingsItem label="Track path color" id="track-path-color-label">
+                <DropdownWithColorPicker
+                  selected={trackPathColorMode.toString()}
+                  items={TRACK_MODE_ITEMS}
+                  htmlLabelId={"track-path-color-label"}
+                  onValueChange={(value) => setTrackPathColorMode(Number.parseInt(value, 10) as TrackPathColorMode)}
+                  onColorChange={setTrackPathColor}
+                  color={trackPathColor}
+                  presets={DEFAULT_OUTLINE_COLOR_PRESETS}
+                  showColorPicker={trackPathColorMode === TrackPathColorMode.USE_CUSTOM_COLOR}
+                />
+              </SettingsItem>
+              <SettingsItem label="Track path width" style={{ marginBottom: "15px" }}>
+                <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
+                  <LabeledSlider
+                    type="value"
+                    minSliderBound={1}
+                    maxSliderBound={5}
+                    minInputBound={0}
+                    maxInputBound={100}
+                    precision={1}
+                    value={trackPathWidthPx}
+                    onChange={setTrackPathWidthPx}
+                    marks={[1.5]}
+                    step={0.1}
+                    numberFormatter={(value?: number) => `${value?.toFixed(1)}`}
+                  />
+                </div>
+              </SettingsItem>
+            </>
+          )}
           <SettingsItem label="Show scale bar">
             <Checkbox
               type="checkbox"
