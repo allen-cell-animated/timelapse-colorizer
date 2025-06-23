@@ -1,7 +1,6 @@
 import AicsLogoSVGAsset from "./AICS-logo.svg?react";
 import AicsLogoAndNameSVGAsset from "./AICS-logo-and-name.svg?react";
 import DropdownSVGAsset from "./dropdown-arrow.svg?react";
-import ExportIconSVGAsset from "./icon-export.svg?react";
 import ImagesIconSVGAsset from "./icon-images.svg?react";
 import ImagesSlashIconSVGAsset from "./icon-images-slash.svg?react";
 import SwitchIconSVGAsset from "./icon-switch-arrows.svg?react";
@@ -22,6 +21,5 @@ export const ImagesSlashIconSVG = ImagesSlashIconSVGAsset;
 export const TagIconSVG = TagIconSVGAsset;
 export const TagSlashIconSVG = TagSlashIconSVGAsset;
 export const TagAddIconSVG = TagAddIconSVGAsset;
-export const ExportIconSVG = ExportIconSVGAsset;
 export const SpinBoxHandleDownSVG = SpinBoxHandleDownSVGAsset;
 export const SpinBoxHandleUpSVG = SpinBoxHandleUpSVGAsset;
