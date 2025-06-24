@@ -1,12 +1,14 @@
 import Plotly, { PlotlyHTMLElement } from "plotly.js-dist-min";
 import React, { ReactElement, useEffect, useRef, useState } from "react";
 
-import { Dataset, Track } from "../../colorizer";
+import { Dataset, TabType, Track } from "../../colorizer";
 import { useViewerStateStore } from "../../state";
 
 const CONFIG: Partial<Plotly.Config> = {
   responsive: true,
   frameMargins: 0,
+  // Fixes a bug where the plotly logo changes SVG logo colors in the header
+  displaylogo: false,
 };
 
 const LAYOUT: Partial<Plotly.Layout> = {
@@ -41,7 +43,7 @@ class Plot3d {
     this.plot = this.plot.bind(this);
   }
 
-  plot(_time: number): void {
+  plot(currTime: number): void {
     const traces: Plotly.Data[] = [];
 
     // TRACE 1: Arrow plot
@@ -50,69 +52,67 @@ class Plot3d {
       traces.push(this.coneTrace);
     }
 
-    //
-    // Plotly has a bug where the hoverinfo="skip" attribute still causes 3D surfaces
-    // to block hover events on other traces.
-    // Here's a few unresolved community issues:
-    // https://community.plotly.com/t/completely-excluding-a-trace-from-hover-info-snapping/35854/17
-    // https://community.plotly.com/t/hover-info-of-scatter-points-through-3d-mesh/39973/6
-    // const surfaceTrace: Plotly.Data = {
-    //   z: EXAMPLE_DATA,
-    //   type: "surface",
-    //   opacity: 0.7,
-    //   name: "surface",
-    //   hoverinfo: "skip",
-    // };
-    // traces.push(surfaceTrace);
-    // const xyPoints = EXAMPLE_XY_POINTS[(this.track?.trackId ?? 0) % EXAMPLE_XY_POINTS.length];
-    // const xyzPoints = xyPoints.map((point) => [point[0], point[1], EXAMPLE_DATA[point[1]][point[0]]]);
+    // TRACE 2: Track path
 
-    // Move a scatterplot point along the surface of the 3D plot based on the current track's lifespan.
-    // This is currently just PoC and is not linked to real data.
-    // if (this.track) {
-    //   const trackDuration = this.track.endTime() - this.track.startTime();
-    //   // As a hack, store the time in the customdata field of the line plot.
-    //   const scatterPlotTrace: Plotly.Data = {
-    //     x: xyzPoints.map((point) => point[0]),
-    //     y: xyzPoints.map((point) => point[1]),
-    //     z: xyzPoints.map((point) => point[2]),
-    //     // TODO: use customdata to store time?
-    //     customdata: xyzPoints.map(
-    //       (_, i) => this.track!.startTime() + Math.floor((trackDuration / (xyzPoints.length - 1)) * i)
-    //     ),
-    //     mode: "lines",
-    //     type: "scatter3d",
-    //     opacity: 1,
-    //     line: {
-    //       width: 8,
-    //       color: "rgb(80, 80, 80)",
-    //     },
-    //     showlegend: false,
-    //   };
-    //   traces.push(scatterPlotTrace);
+    if (
+      this.track &&
+      this.track.ids.length > 0 &&
+      this.dataset &&
+      this.xAxisFeatureKey &&
+      this.yAxisFeatureKey &&
+      this.zAxisFeatureKey
+    ) {
+      const endTime = Math.min(currTime, this.track.endTime());
+      // TODO: Show gaps/discontinuities in the track path?
+      const ids: number[] = [];
+      let lastValidId = this.track.ids[0];
+      for (let t = this.track.startTime(); t <= endTime; t++) {
+        const id = this.track.getIdAtTime(t);
+        if (id !== null) {
+          ids.push(id);
+          lastValidId = id;
+        } else {
+          ids.push(lastValidId); // Use the last valid ID to fill gaps
+        }
+      }
 
-    //   // Indices of the two closest points
-    //   const trackProgress = clamp((time - this.track.startTime()) / trackDuration, 0, 1);
-    //   const idx0 = Math.floor(trackProgress * (xyzPoints.length - 1));
-    //   const idx1 = Math.ceil(trackProgress * (xyzPoints.length - 1));
-    //   const idxLerp = trackProgress * (xyzPoints.length - 1) - idx0;
+      const xData = this.dataset.getFeatureData(this.xAxisFeatureKey)?.data ?? [];
+      const yData = this.dataset.getFeatureData(this.yAxisFeatureKey)?.data ?? [];
+      const zData = this.dataset.getFeatureData(this.zAxisFeatureKey)?.data ?? [];
+      if (xData.length > 0 && yData.length > 0 && zData.length > 0) {
+        const scatterPlotTrace: Plotly.Data = {
+          x: ids.map((id) => xData[id]),
+          y: ids.map((id) => yData[id]),
+          z: ids.map((id) => zData[id]),
+          // TODO: use customdata to store time?,
+          mode: "lines",
+          type: "scatter3d",
+          opacity: 1,
+          line: {
+            width: 4,
+            color: "rgb(80, 80, 80)",
+          },
+          showlegend: false,
+        };
+        traces.push(scatterPlotTrace);
 
-    //   // Create point using lerp value
-    //   const currentPointTrace: Plotly.Data = {
-    //     x: [lerp(xyzPoints[idx0][0], xyzPoints[idx1][0], idxLerp)],
-    //     y: [lerp(xyzPoints[idx0][1], xyzPoints[idx1][1], idxLerp)],
-    //     z: [lerp(xyzPoints[idx0][2], xyzPoints[idx1][2], idxLerp)],
-    //     mode: "markers",
-    //     type: "scatter3d",
-    //     marker: {
-    //       size: 6,
-    //       color: "rgb(255, 0, 0)",
-    //     },
-    //     showlegend: false,
-    //     customdata: [time],
-    //   };
-    //   traces.push(currentPointTrace);
-    // }
+        // Add a point for the current time
+        const currentPointTrace: Plotly.Data = {
+          x: [xData[lastValidId]],
+          y: [yData[lastValidId]],
+          z: [zData[lastValidId]],
+          mode: "markers",
+          type: "scatter3d",
+          marker: {
+            size: 3,
+            color: "rgb(255, 0, 0)",
+          },
+          showlegend: false,
+          customdata: [currTime],
+        };
+        traces.push(currentPointTrace);
+      }
+    }
 
     Plotly.react(this.parentRef, traces, LAYOUT, CONFIG);
   }
@@ -137,6 +137,10 @@ export default function Plot3dTab(): ReactElement {
   const currentFrame = useViewerStateStore((state) => state.currentFrame);
   const setFrame = useViewerStateStore((state) => state.setFrame);
 
+  const isPlotTabVisible = useViewerStateStore((state) => state.openTab === TabType.PLOT_3D);
+
+  const flowFieldSubsampleRate = 4;
+
   useEffect(() => {
     if (dataset && dataset?.flowFieldFeatures.size >= 3) {
       const flowFieldKeys = Array.from(dataset.flowFieldFeatures.keys());
@@ -154,6 +158,7 @@ export default function Plot3dTab(): ReactElement {
       const xFlowFieldData = dataset.getFlowFieldFeatureData(xAxisFeatureKey);
       const yFlowFieldData = dataset.getFlowFieldFeatureData(yAxisFeatureKey);
       const zFlowFieldData = dataset.getFlowFieldFeatureData(zAxisFeatureKey);
+
       const dims = dataset.flowFieldDims;
       if (!xFlowFieldData || !yFlowFieldData || !zFlowFieldData || !dims) {
         return null;
@@ -165,25 +170,32 @@ export default function Plot3dTab(): ReactElement {
       const xCoords: number[] = [];
       const yCoords: number[] = [];
       const zCoords: number[] = [];
-      for (let i = 0; i < dims.x; i++) {
-        for (let j = 0; j < dims.y; j++) {
-          for (let k = 0; k < dims.z; k++) {
+      const xData: number[] = [];
+      const yData: number[] = [];
+      const zData: number[] = [];
+
+      for (let i = 0; i < dims.x; i += flowFieldSubsampleRate) {
+        for (let j = 0; j < dims.y; j += flowFieldSubsampleRate) {
+          for (let k = 0; k < dims.z; k += flowFieldSubsampleRate) {
             xCoords.push(xSteps[i]);
             yCoords.push(ySteps[j]);
             zCoords.push(zSteps[k]);
+            const dataIndex = i * dims.y * dims.z + j * dims.z + k;
+            xData.push(xFlowFieldData.data[dataIndex]);
+            yData.push(yFlowFieldData.data[dataIndex]);
+            zData.push(zFlowFieldData.data[dataIndex]);
           }
         }
       }
-      console.log("yay");
 
       return {
         type: "cone",
         x: xCoords,
         y: yCoords,
         z: zCoords,
-        u: xFlowFieldData.data,
-        v: yFlowFieldData.data,
-        w: zFlowFieldData.data,
+        u: xData,
+        v: yData,
+        w: zData,
         showscale: false,
         sizemode: "scaled",
         sizeref: 2,
@@ -198,7 +210,7 @@ export default function Plot3dTab(): ReactElement {
   }, []);
 
   useEffect(() => {
-    if (plot3dRef.current) {
+    if (plot3dRef.current && isPlotTabVisible) {
       plot3dRef.current.dataset = dataset;
       plot3dRef.current.track = track;
       plot3dRef.current.xAxisFeatureKey = xAxisFeatureKey;
@@ -207,7 +219,7 @@ export default function Plot3dTab(): ReactElement {
       plot3dRef.current.coneTrace = coneTrace as Plotly.Data | null;
       plot3dRef.current.plot(currentFrame);
     }
-  }, [dataset, track, currentFrame, coneTrace]);
+  }, [dataset, track, currentFrame, coneTrace, isPlotTabVisible]);
 
   useEffect(() => {
     const onClickPlot = (eventData: Plotly.PlotMouseEvent): void => {
