@@ -10,7 +10,7 @@ export const OUT_OF_RANGE_COLOR_DEFAULT = 0xdddddd;
 
 export const VECTOR_KEY_MOTION_DELTA = "_motion_";
 
-export const INITIAL_TRACK_PATH_BUFFER_SIZE = 1020; // Divisible by 6
+export const INITIAL_TRACK_PATH_BUFFER_SIZE = 6; // Must be divisible by 6
 
 export const getDefaultVectorConfig = (): VectorConfig => ({
   visible: false,
