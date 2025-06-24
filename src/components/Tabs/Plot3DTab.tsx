@@ -1,5 +1,5 @@
 import Plotly, { PlotlyHTMLElement } from "plotly.js-dist-min";
-import React, { ReactElement, useEffect, useMemo, useRef, useState } from "react";
+import React, { ReactElement, useEffect, useRef, useState } from "react";
 
 import { Dataset, Track } from "../../colorizer";
 import { useViewerStateStore } from "../../state";
@@ -41,7 +41,7 @@ class Plot3d {
     this.plot = this.plot.bind(this);
   }
 
-  plot(time: number): void {
+  plot(_time: number): void {
     const traces: Plotly.Data[] = [];
 
     // TRACE 1: Arrow plot
@@ -130,6 +130,7 @@ export default function Plot3dTab(): ReactElement {
   const [xAxisFeatureKey, setXAxisFeatureKey] = useState<string | null>(null);
   const [yAxisFeatureKey, setYAxisFeatureKey] = useState<string | null>(null);
   const [zAxisFeatureKey, setZAxisFeatureKey] = useState<string | null>(null);
+  const [coneTrace, setConeTrace] = useState<Plotly.Data | null>(null);
 
   const dataset = useViewerStateStore((state) => state.dataset);
   const track = useViewerStateStore((state) => state.track);
@@ -145,45 +146,51 @@ export default function Plot3dTab(): ReactElement {
     }
   }, [dataset]);
 
-  const coneTrace = useMemo(() => {
-    if (!dataset || !xAxisFeatureKey || !yAxisFeatureKey || !zAxisFeatureKey) {
-      return null;
-    }
-    const xFlowFieldData = dataset.getFlowFieldFeatureData(xAxisFeatureKey);
-    const yFlowFieldData = dataset.getFlowFieldFeatureData(yAxisFeatureKey);
-    const zFlowFieldData = dataset.getFlowFieldFeatureData(zAxisFeatureKey);
-    const dims = dataset.flowFieldDims;
-    if (!xFlowFieldData || !yFlowFieldData || !zFlowFieldData || !dims) {
-      return null;
-    }
-    // Get XYZ coordinates as a flattened array
-    const xSteps = makeSteps(xFlowFieldData.min, xFlowFieldData.max, dims.x);
-    const ySteps = makeSteps(yFlowFieldData.min, yFlowFieldData.max, dims.y);
-    const zSteps = makeSteps(zFlowFieldData.min, zFlowFieldData.max, dims.z);
-    const xCoords: number[] = [];
-    const yCoords: number[] = [];
-    const zCoords: number[] = [];
-    for (let i = 0; i < dims.x; i++) {
-      for (let j = 0; j < dims.y; j++) {
-        for (let k = 0; k < dims.z; k++) {
-          xCoords.push(xSteps[i]);
-          yCoords.push(ySteps[j]);
-          zCoords.push(zSteps[k]);
+  useEffect(() => {
+    const makeConeTrace = (): Plotly.Data | null => {
+      if (!dataset || !xAxisFeatureKey || !yAxisFeatureKey || !zAxisFeatureKey) {
+        return null;
+      }
+      const xFlowFieldData = dataset.getFlowFieldFeatureData(xAxisFeatureKey);
+      const yFlowFieldData = dataset.getFlowFieldFeatureData(yAxisFeatureKey);
+      const zFlowFieldData = dataset.getFlowFieldFeatureData(zAxisFeatureKey);
+      const dims = dataset.flowFieldDims;
+      if (!xFlowFieldData || !yFlowFieldData || !zFlowFieldData || !dims) {
+        return null;
+      }
+      // Get XYZ coordinates as a flattened array
+      const xSteps = makeSteps(xFlowFieldData.min, xFlowFieldData.max, dims.x);
+      const ySteps = makeSteps(yFlowFieldData.min, yFlowFieldData.max, dims.y);
+      const zSteps = makeSteps(zFlowFieldData.min, zFlowFieldData.max, dims.z);
+      const xCoords: number[] = [];
+      const yCoords: number[] = [];
+      const zCoords: number[] = [];
+      for (let i = 0; i < dims.x; i++) {
+        for (let j = 0; j < dims.y; j++) {
+          for (let k = 0; k < dims.z; k++) {
+            xCoords.push(xSteps[i]);
+            yCoords.push(ySteps[j]);
+            zCoords.push(zSteps[k]);
+          }
         }
       }
-    }
-    console.log("yay");
+      console.log("yay");
 
-    return {
-      type: "cone",
-      x: xCoords,
-      y: yCoords,
-      z: zCoords,
-      u: xFlowFieldData.data,
-      v: yFlowFieldData.data,
-      w: zFlowFieldData.data,
-      showscale: false,
+      return {
+        type: "cone",
+        x: xCoords,
+        y: yCoords,
+        z: zCoords,
+        u: xFlowFieldData.data,
+        v: yFlowFieldData.data,
+        w: zFlowFieldData.data,
+        showscale: false,
+        sizemode: "scaled",
+        sizeref: 2,
+      } as Plotly.Data;
     };
+    const newConeTrace = makeConeTrace();
+    setConeTrace(newConeTrace);
   }, [dataset, xAxisFeatureKey, yAxisFeatureKey, zAxisFeatureKey]);
 
   useEffect(() => {
@@ -200,7 +207,7 @@ export default function Plot3dTab(): ReactElement {
       plot3dRef.current.coneTrace = coneTrace as Plotly.Data | null;
       plot3dRef.current.plot(currentFrame);
     }
-  }, [dataset, track, currentFrame]);
+  }, [dataset, track, currentFrame, coneTrace]);
 
   useEffect(() => {
     const onClickPlot = (eventData: Plotly.PlotMouseEvent): void => {
