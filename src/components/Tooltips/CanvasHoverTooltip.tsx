@@ -123,7 +123,7 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
     <p key="feature_value">
       {featureName ?? "Feature"}: <span style={{ whiteSpace: "nowrap" }}>{hoveredFeatureValue}</span>
     </p>,
-    <DebugText key="object_id">Pixel value: {lastHoveredId.segId}</DebugText>,
+    <DebugText key="object_id">Label ID: {lastHoveredId.segId}</DebugText>,
   ];
 
   if (vectorTooltipText) {
@@ -189,7 +189,7 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
     if (lastHoveredId.globalId !== undefined) {
       const isHoveredIdLabeled = props.annotationState.data.isLabelOnId(currentLabelIdx, lastHoveredId.globalId);
       const isLabelBoolean = currentLabelData.options.type === LabelType.BOOLEAN;
-      const verb = isHoveredIdLabeled ? (isLabelBoolean ? "unlabel" : "edit") : "label";
+      const verb = isHoveredIdLabeled ? (isLabelBoolean ? "clear" : "edit") : "annotate";
       if (props.annotationState.selectionMode === AnnotationSelectionMode.TRACK) {
         annotationLabel = (
           <FlexRow>

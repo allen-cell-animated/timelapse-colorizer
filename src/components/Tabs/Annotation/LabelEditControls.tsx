@@ -1,10 +1,11 @@
-import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
+import { CloseCircleFilled, DeleteOutlined, EditOutlined } from "@ant-design/icons";
 import { Popconfirm, Popover, Radio, Tooltip } from "antd";
 import React, { PropsWithChildren, ReactElement, useContext, useEffect, useRef, useState } from "react";
 
 import { TagAddIconSVG } from "../../../assets";
 import { AnnotationSelectionMode } from "../../../colorizer";
 import { StyledRadioGroup } from "../../../styles/components";
+import { formatQuantityString } from "../../../utils/formatting";
 
 import { DEFAULT_ANNOTATION_LABEL_COLORS, LabelData, LabelOptions } from "../../../colorizer/AnnotationData";
 import { AppThemeContext } from "../../AppStyle";
@@ -79,19 +80,14 @@ export default function LabelEditControls(props: PropsWithChildren<LabelEditCont
   };
 
   const onClickDeleteButton = (): void => {
-    if (props.selectedLabel.ids.size > 0) {
-      // Ask for confirmation only if there are selected objects.
-      setShowDeletePopup(true);
-    } else {
-      deleteLabel();
-    }
+    setShowDeletePopup(!showDeletePopup);
   };
 
   /**
    * Popovers can report when a user has clicked off of them.
    * This creates a handler that will close the popover when the user clicks outside of it.
    */
-  const hideOnOpenChange = (setOpen: (open: boolean) => void) => {
+  const createOpenChangeHandler = (setOpen: (open: boolean) => void) => {
     return (open: boolean) => {
       if (!open) setOpen(false);
     };
@@ -106,80 +102,6 @@ export default function LabelEditControls(props: PropsWithChildren<LabelEditCont
 
   return (
     <>
-      <Popover
-        title={<p style={{ fontSize: theme.font.size.label }}>Create label</p>}
-        trigger={["click"]}
-        placement="bottom"
-        content={
-          <CreateLabelForm
-            initialLabelOptions={props.defaultLabelOptions}
-            onConfirm={props.onCreateNewLabel}
-            onCancel={() => setShowCreatePopover(false)}
-            confirmText="Create"
-          />
-        }
-        open={showCreatePopover}
-        onOpenChange={hideOnOpenChange(setShowCreatePopover)}
-        getPopupContainer={() => createPopoverContainerRef.current!}
-        destroyTooltipOnHide={true}
-      >
-        <div ref={createPopoverContainerRef}>
-          <Tooltip title="Create new label" placement="top">
-            <IconButton onClick={onClickCreateButton} type="primary">
-              <TagAddIconSVG />
-            </IconButton>
-          </Tooltip>
-        </div>
-      </Popover>
-      {props.children}
-      <Popover
-        title={<p style={{ fontSize: theme.font.size.label }}>Edit label</p>}
-        trigger={["click"]}
-        placement="bottom"
-        content={
-          <CreateLabelForm
-            initialLabelOptions={props.selectedLabel.options}
-            onConfirm={onClickEditSave}
-            onCancel={onClickEditCancel}
-            // Sync label color with color picker. If operation is cancelled,
-            // the color will be reset to the original label color.
-            onColorChanged={(color) => {
-              props.setLabelOptions({ color });
-            }}
-            confirmText="Save"
-            allowTypeSelection={false}
-          />
-        }
-        open={showEditPopover}
-        onOpenChange={hideOnOpenChange(setShowEditPopover)}
-        getPopupContainer={() => editPopoverContainerRef.current!}
-        destroyTooltipOnHide={true}
-      >
-        <div ref={editPopoverContainerRef}>
-          <Tooltip title="Edit label" placement="top">
-            <IconButton onClick={onClickEditButton} type={showEditPopover ? "primary" : "outlined"}>
-              <EditOutlined />
-            </IconButton>
-          </Tooltip>
-        </div>
-      </Popover>
-      <Popconfirm
-        title={`Delete label with ${props.selectedLabel.ids.size} object(s)?`}
-        description={"This cannot be undone."}
-        open={showDeletePopup}
-        onOpenChange={hideOnOpenChange(setShowDeletePopup)}
-        onConfirm={deleteLabel}
-        onCancel={() => setShowDeletePopup(false)}
-        placement="bottom"
-        getPopupContainer={() => editPopoverContainerRef.current!}
-      >
-        <Tooltip title="Delete label" placement="top">
-          <IconButton type="outlined" onClick={onClickDeleteButton}>
-            <DeleteOutlined />
-          </IconButton>
-        </Tooltip>
-      </Popconfirm>
-
       <label style={{ display: "flex", flexDirection: "row", gap: "6px", marginLeft: "8px" }}>
         <span style={{ fontSize: theme.font.size.label, width: "max-content" }}>Select by </span>
         <StyledRadioGroup
@@ -204,11 +126,92 @@ export default function LabelEditControls(props: PropsWithChildren<LabelEditCont
           >
             <Radio.Button value={AnnotationSelectionMode.RANGE}>Range</Radio.Button>
           </Tooltip>
-          <Tooltip trigger={["hover", "focus"]} title="Selects entire track" placement="top">
+          <TooltipWithSubtitle
+            trigger={["hover", "focus"]}
+            title="Selects entire track"
+            subtitle="(Hold Shift to select a range)"
+            placement="top"
+          >
             <Radio.Button value={AnnotationSelectionMode.TRACK}>Track</Radio.Button>
-          </Tooltip>
+          </TooltipWithSubtitle>
         </StyledRadioGroup>
       </label>
+      <Popover
+        title={<p style={{ fontSize: theme.font.size.label }}>Create label</p>}
+        trigger={["click"]}
+        placement="bottom"
+        content={
+          <CreateLabelForm
+            initialLabelOptions={props.defaultLabelOptions}
+            onConfirm={props.onCreateNewLabel}
+            onCancel={() => setShowCreatePopover(false)}
+            confirmText="Create"
+          />
+        }
+        open={showCreatePopover}
+        onOpenChange={createOpenChangeHandler(setShowCreatePopover)}
+        getPopupContainer={() => createPopoverContainerRef.current!}
+        destroyTooltipOnHide={true}
+      >
+        <div ref={createPopoverContainerRef}>
+          <Tooltip title="Create new annotation" placement="top">
+            <IconButton onClick={onClickCreateButton} type={showCreatePopover ? "primary" : "outlined"}>
+              <TagAddIconSVG />
+            </IconButton>
+          </Tooltip>
+        </div>
+      </Popover>
+      {props.children}
+      <Popover
+        title={<p style={{ fontSize: theme.font.size.label }}>Edit annotation</p>}
+        trigger={["click"]}
+        placement="bottom"
+        content={
+          <CreateLabelForm
+            initialLabelOptions={props.selectedLabel.options}
+            onConfirm={onClickEditSave}
+            onCancel={onClickEditCancel}
+            // Sync label color with color picker. If operation is cancelled,
+            // the color will be reset to the original label color.
+            onColorChanged={(color) => {
+              props.setLabelOptions({ color });
+            }}
+            confirmText="Save"
+            allowTypeSelection={false}
+          />
+        }
+        open={showEditPopover}
+        onOpenChange={createOpenChangeHandler(setShowEditPopover)}
+        getPopupContainer={() => editPopoverContainerRef.current!}
+        destroyTooltipOnHide={true}
+      >
+        <div ref={editPopoverContainerRef}>
+          <Tooltip title="Edit annotation" placement="top">
+            <IconButton onClick={onClickEditButton} type={showEditPopover ? "primary" : "outlined"}>
+              <EditOutlined />
+            </IconButton>
+          </Tooltip>
+        </div>
+      </Popover>
+      <Popconfirm
+        title={`Delete annotation with ${formatQuantityString(props.selectedLabel.ids.size, "object", "objects")}?`}
+        description={"This cannot be undone."}
+        open={showDeletePopup}
+        onOpenChange={createOpenChangeHandler(setShowDeletePopup)}
+        okButtonProps={{ danger: true }}
+        okText="Delete"
+        icon={<CloseCircleFilled style={{ color: theme.color.text.error }} />}
+        onConfirm={deleteLabel}
+        onCancel={() => setShowDeletePopup(false)}
+        placement="bottom"
+        getPopupContainer={() => editPopoverContainerRef.current!}
+      >
+        <Tooltip title="Delete annotation" placement="top">
+          <IconButton type="outlined" onClick={onClickDeleteButton}>
+            <DeleteOutlined />
+          </IconButton>
+        </Tooltip>
+      </Popconfirm>
     </>
   );
 }

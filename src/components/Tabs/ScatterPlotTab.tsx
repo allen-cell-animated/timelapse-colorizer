@@ -15,18 +15,17 @@ import {
   DataArray,
   drawCrosshair,
   getBucketIndex,
-  getFeatureOrTimeNameWithUnits,
   getHoverTemplate,
   isHistogramEvent,
   makeEmptyTraceData,
   makeLineTrace,
   scaleColorOpacityByMarkerCount,
-  SCATTERPLOT_TIME_FEATURE,
   splitTraceData,
   subsampleColorRamp,
   TraceData,
 } from "./scatter_plot_data_utils";
 
+import { TIME_FEATURE_KEY } from "../../colorizer/Dataset";
 import { useViewerStateStore } from "../../state/ViewerState";
 import { AppThemeContext } from "../AppStyle";
 import SelectionDropdown from "../Dropdowns/SelectionDropdown";
@@ -233,9 +232,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     if (featureKey === null || dataset === null) {
       return undefined;
     }
-    if (featureKey === SCATTERPLOT_TIME_FEATURE.value) {
-      return dataset.times || undefined;
-    }
     return dataset.getFeatureData(featureKey)?.data;
   };
 
@@ -271,8 +267,9 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     xData: DataArray,
     yData: DataArray,
     objectIds: number[],
+    segIds: number[],
     trackIds: number[]
-  ): { xData: DataArray; yData: DataArray; objectIds: number[]; trackIds: number[] } => {
+  ): { xData: DataArray; yData: DataArray; objectIds: number[]; segIds: number[]; trackIds: number[] } => {
     // Boolean array, true if both x and y are not NaN/infinity
     const isFiniteLut = Array.from(Array(xData.length)).map(
       (_, i) => Number.isFinite(xData[i]) && Number.isFinite(yData[i])
@@ -282,6 +279,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       xData: xData.filter((_, i) => isFiniteLut[i]),
       yData: yData.filter((_, i) => isFiniteLut[i]),
       objectIds: objectIds.filter((_, i) => isFiniteLut[i]),
+      segIds: segIds.filter((_, i) => isFiniteLut[i]),
       trackIds: trackIds.filter((_, i) => isFiniteLut[i]),
     };
   };
@@ -307,21 +305,28 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         xData: DataArray;
         yData: DataArray;
         objectIds: number[];
+        segIds: number[];
         trackIds: number[];
       } => {
+    if (!dataset || !rawXData || !rawYData) {
+      return undefined;
+    }
+
     let xData: DataArray = [];
     let yData: DataArray = [];
     let objectIds: number[] = [];
+    let segIds: number[] = [];
     let trackIds: number[] = [];
 
     if (range === PlotRangeType.CURRENT_FRAME) {
       // Filter data to only show the current frame.
-      if (!dataset?.times) {
+      if (!dataset.times) {
         return undefined;
       }
       for (let i = 0; i < dataset.times.length; i++) {
         if (dataset.times[i] === currentFrame) {
           objectIds.push(i);
+          segIds.push(dataset.getSegmentationId(i));
           trackIds.push(dataset.getTrackId(i));
           xData.push(rawXData[i]);
           yData.push(rawYData[i]);
@@ -330,7 +335,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     } else if (range === PlotRangeType.CURRENT_TRACK) {
       // Filter data to only show the current track.
       if (!selectedTrack) {
-        return { xData: [], yData: [], objectIds: [], trackIds: [] };
+        return { xData: [], yData: [], objectIds: [], segIds: [], trackIds: [] };
       }
       for (let i = 0; i < selectedTrack.ids.length; i++) {
         const id = selectedTrack.ids[i];
@@ -338,17 +343,19 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         yData.push(rawYData[id]);
       }
       objectIds = Array.from(selectedTrack.ids);
+      segIds = objectIds.map(dataset.getSegmentationId);
       trackIds = Array(selectedTrack.ids.length).fill(selectedTrack.trackId);
     } else {
       // All time
       objectIds = [...rawXData.keys()];
+      segIds = objectIds.map(dataset.getSegmentationId);
       trackIds = Array.from(dataset!.trackIds || []);
       // Copying the reference is faster than `Array.from()`.
       xData = rawXData;
       yData = rawYData;
     }
     // TODO: Consider moving this or making it conditional if it causes performance issues.
-    return sanitizeNumericDataArrays(xData, yData, objectIds, trackIds);
+    return sanitizeNumericDataArrays(xData, yData, objectIds, segIds, trackIds);
   };
 
   /**
@@ -384,12 +391,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
     let min = dataset?.getFeatureData(featureKey)?.min || 0;
     let max = dataset?.getFeatureData(featureKey)?.max || 0;
-
-    // Special case for time feature, which isn't in the dataset
-    if (featureKey === SCATTERPLOT_TIME_FEATURE.value) {
-      min = 0;
-      max = dataset?.numberOfFrames || 0;
-    }
 
     if (dataset && dataset.isFeatureCategorical(featureKey)) {
       // Add extra padding for categories so they're nicely centered
@@ -443,6 +444,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     );
   };
 
+  // TODO: Move to `scatter_plot_data_utils.ts`
   /**
    * Applies coloring to point traces in a scatterplot. Does this by splitting the data into multiple traces each with a solid
    * color, which is much faster than using Plotly's native color ramping. Also enforces a maximum number of points
@@ -461,6 +463,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     xData: DataArray,
     yData: DataArray,
     objectIds: number[],
+    segIds: number[],
     trackIds: number[],
     markerConfig: Partial<PlotMarker> & { outliers?: Partial<PlotMarker>; outOfRange?: Partial<PlotMarker> } = {},
     overrideColor?: Color,
@@ -552,6 +555,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       bucket.x.push(xData[i]);
       bucket.y.push(yData[i]);
       bucket.objectIds.push(objectIds[i]);
+      bucket.segIds.push(segIds[i]);
       bucket.trackIds.push(trackIds[i]);
     }
 
@@ -591,11 +595,16 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         return acc;
       }, [])
       .map((bucket) => {
+        // Custom data is shown in the hover tooltip.
+        // Formatted as [trackId, segId][]
+        const stackedCustomData = bucket.trackIds.map((trackId, index) => {
+          return [trackId.toString(), bucket.segIds[index].toString()];
+        });
         return {
           x: bucket.x,
           y: bucket.y,
           ids: bucket.objectIds.map((id) => id.toString()),
-          customdata: bucket.trackIds,
+          customdata: stackedCustomData,
           name: "",
           type: "scattergl",
           mode: "markers",
@@ -651,7 +660,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       clearPlotAndStopRender();
       return;
     }
-    const { xData, yData, objectIds, trackIds } = result;
+    const { xData, yData, segIds, objectIds, trackIds } = result;
 
     let markerBaseColor = undefined;
     if (rangeType === PlotRangeType.ALL_TIME && selectedTrack) {
@@ -659,14 +668,14 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       markerBaseColor = new Color("#dddddd");
     }
 
-    const isUsingTime =
-      xAxisFeatureKey === SCATTERPLOT_TIME_FEATURE.value || yAxisFeatureKey === SCATTERPLOT_TIME_FEATURE.value;
+    const isUsingTime = xAxisFeatureKey === TIME_FEATURE_KEY || yAxisFeatureKey === TIME_FEATURE_KEY;
 
     // Configure traces
     const traces = colorizeScatterplotPoints(
       xData,
       yData,
       objectIds,
+      segIds,
       trackIds,
       {},
       markerBaseColor,
@@ -701,7 +710,9 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     if (trackData && rangeType !== PlotRangeType.CURRENT_FRAME) {
       // Render an extra trace for lines connecting the points in the current track when time is a feature.
       if (isUsingTime) {
-        traces.push(makeLineTrace(trackData.xData, trackData.yData, trackData.objectIds, trackData.trackIds));
+        traces.push(
+          makeLineTrace(trackData.xData, trackData.yData, trackData.objectIds, trackData.segIds, trackData.trackIds)
+        );
       }
       // Render track points
       const outOfRangeOutlineColor = outOfRangeDrawSettings.color.clone().multiplyScalar(0.8);
@@ -709,6 +720,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         trackData.xData,
         trackData.yData,
         trackData.objectIds,
+        trackData.segIds,
         trackData.trackIds,
         {
           outOfRange: {
@@ -730,6 +742,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
             [rawXData[currentObjectId]],
             [rawYData[currentObjectId]],
             [currentObjectId],
+            [dataset.getSegmentationId(currentObjectId)],
             [selectedTrack.trackId],
             { size: 4 }
           )
@@ -747,11 +760,11 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       yHistogram
     );
 
-    scatterPlotXAxis.title = getFeatureOrTimeNameWithUnits(xAxisFeatureKey, dataset);
+    scatterPlotXAxis.title = dataset.getFeatureNameWithUnits(xAxisFeatureKey);
     // Due to limited space in the Y-axis, hide categorical feature names.
     scatterPlotYAxis.title = dataset.isFeatureCategorical(yAxisFeatureKey)
       ? ""
-      : getFeatureOrTimeNameWithUnits(yAxisFeatureKey, dataset);
+      : dataset.getFeatureNameWithUnits(yAxisFeatureKey);
 
     // Add extra margin for categorical feature labels on the Y axis.
     const leftMarginPx = Math.max(60, estimateTextWidthPxForCategories(yAxisFeatureKey));
@@ -825,11 +838,9 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
   const menuItems = useMemo((): SelectItem[] => {
     const featureKeys = dataset ? dataset.featureKeys : [];
-    const menuItems: SelectItem[] = featureKeys.map((key: string) => {
+    return featureKeys.map((key: string) => {
       return { value: key, label: dataset?.getFeatureNameWithUnits(key) ?? key };
     });
-    menuItems.push(SCATTERPLOT_TIME_FEATURE);
-    return menuItems;
   }, [dataset]);
 
   const makeControlBar = (menuItems: SelectItem[]): ReactElement => {

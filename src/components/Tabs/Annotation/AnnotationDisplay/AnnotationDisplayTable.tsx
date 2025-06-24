@@ -3,19 +3,21 @@ import { Table, TableProps } from "antd";
 import React, { memo, ReactElement, useContext, useMemo } from "react";
 import styled from "styled-components";
 
-import { TagIconSVG } from "../../../assets";
-import { Dataset } from "../../../colorizer";
-import { FlexColumnAlignCenter, VisuallyHidden } from "../../../styles/utils";
+import { TagIconSVG } from "../../../../assets";
+import { Dataset } from "../../../../colorizer";
+import { FlexColumnAlignCenter, VisuallyHidden } from "../../../../styles/utils";
 
-import { AppThemeContext } from "../../AppStyle";
-import IconButton from "../../IconButton";
+import { AppThemeContext } from "../../../AppStyle";
+import IconButton from "../../../IconButton";
 
 const SELECTED_ROW_CLASSNAME = "selected-row";
 
 export type TableDataType = {
   key: string;
   id: number;
+  segId: number;
   track: number;
+  value: string;
   time: number;
 };
 
@@ -53,6 +55,7 @@ type AnnotationTableProps = {
   onClickDeleteObject: (record: TableDataType) => void;
   dataset: Dataset | null;
   ids: number[];
+  idToValue?: Map<number, string>;
   height?: number | string;
   hideTrackColumn?: boolean;
   selectedId?: number;
@@ -69,36 +72,36 @@ const defaultProps = {
  * interactions.
  */
 const AnnotationDisplayTable = memo(function AnnotationDisplayTable(inputProps: AnnotationTableProps): ReactElement {
-  const props: Required<AnnotationTableProps> = { ...defaultProps, ...inputProps };
+  const props = { ...defaultProps, ...inputProps };
   const theme = useContext(AppThemeContext);
 
   const tableColumns: TableProps<TableDataType>["columns"] = [
     {
-      title: "Object ID",
-      dataIndex: "id",
-      key: "id",
-      width: "30%",
-      sorter: (a, b) => a.id - b.id,
+      title: "Label ID",
+      dataIndex: "segId",
+      key: "segId",
+      width: "20%",
+      sorter: (a, b) => a.segId - b.segId,
     },
     {
       title: "Track ID",
       dataIndex: "track",
       key: "track",
-      width: "30%",
+      width: "20%",
       sorter: (a, b) => a.track - b.track,
     },
     {
       title: "Time",
       dataIndex: "time",
       key: "time",
-      width: "30%",
+      width: "20%",
       sorter: (a, b) => a.time - b.time,
     },
     // Column that contains a remove button for the ID.
     {
       title: "",
       key: "action",
-      width: "10%",
+      width: "5%",
       render: (_, record) => (
         <div style={{ display: "flex", justifyContent: "right" }}>
           <IconButton
@@ -122,6 +125,16 @@ const AnnotationDisplayTable = memo(function AnnotationDisplayTable(inputProps: 
     },
   ];
 
+  if (props.idToValue) {
+    tableColumns.splice(3, 0, {
+      title: "Value",
+      dataIndex: "value",
+      key: "value",
+      width: "40%",
+      sorter: (a, b) => a.value.localeCompare(b.value),
+    });
+  }
+
   if (props.hideTrackColumn) {
     tableColumns.splice(1, 1);
   }
@@ -130,13 +143,15 @@ const AnnotationDisplayTable = memo(function AnnotationDisplayTable(inputProps: 
     const dataset = props.dataset;
     if (dataset) {
       return props.ids.map((id) => {
+        const segId = dataset.getSegmentationId(id);
         const track = dataset.getTrackId(id);
         const time = dataset.getTime(id);
-        return { key: id.toString(), id, track, time };
+        const value = props.idToValue?.get(id) ?? "";
+        return { key: id.toString(), id, segId, track, time, value };
       });
     }
     return [];
-  }, [props.ids, props.dataset]);
+  }, [props.ids, props.dataset, props.idToValue]);
 
   return (
     <StyledAntTable

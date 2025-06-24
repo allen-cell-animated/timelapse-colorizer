@@ -3,12 +3,17 @@ import { Color } from "three";
 
 import { removeUndefinedProperties } from "../state/utils/data_validation";
 import { DEFAULT_CATEGORICAL_PALETTE_KEY, KNOWN_CATEGORICAL_PALETTES } from "./colors/categorical_palettes";
+import { cloneLabel, getLabelTypeFromParsedCsv } from "./utils/data_utils";
 
 import Dataset from "./Dataset";
 
-const CSV_COL_ID = "ID";
-const CSV_COL_TIME = "Frame";
-const CSV_COL_TRACK = "Track";
+export const CSV_COL_ID = "ID";
+// Column constants for segmentation ID, time, and track are used to validate
+// data when parsing CSV files and check for mismatches with the current
+// dataset.
+export const CSV_COL_SEG_ID = "Label";
+export const CSV_COL_TIME = "Frame";
+export const CSV_COL_TRACK = "Track";
 
 export const BOOLEAN_VALUE_TRUE = "true";
 export const BOOLEAN_VALUE_FALSE = "false";
@@ -17,10 +22,21 @@ export const DEFAULT_ANNOTATION_LABEL_COLORS = KNOWN_CATEGORICAL_PALETTES.get(
   DEFAULT_CATEGORICAL_PALETTE_KEY
 )!.colorStops;
 
+/** Gets a default color for a label based on the index. */
+function getDefaultColor(index: number): Color {
+  return new Color(DEFAULT_ANNOTATION_LABEL_COLORS[index % DEFAULT_ANNOTATION_LABEL_COLORS.length]);
+}
+
 export enum LabelType {
   BOOLEAN = "boolean",
   INTEGER = "integer",
   CUSTOM = "custom",
+}
+
+export enum AnnotationMergeMode {
+  APPEND = "append",
+  MERGE = "merge",
+  OVERWRITE = "overwrite",
 }
 
 export type LabelOptions = {
@@ -41,6 +57,40 @@ export type LabelData = {
 
   // TODO: Store recently used values? Save values even if all IDs with them
   // have been removed?
+};
+
+export type AnnotationParseResult = {
+  annotationData: AnnotationData;
+  /**
+   * The number of annotated objects that had times/frame numbers that did not
+   * match those of the dataset. If > 0, this likely indicates that annotations
+   * for a different dataset were imported.
+   */
+  mismatchedTimes: number;
+  /**
+   * The number of annotated objects that had times/frame numbers that did not
+   * match those of the dataset. If > 0, this likely indicates that annotations
+   * for a different dataset were imported.
+   */
+  mismatchedTracks: number;
+  /**
+   * The number of annotated objects that had labels that did not match
+   * those of the dataset. If > 0, this likely indicates that annotations
+   * for a different dataset were imported, or that the dataset was modified.
+   */
+  mismatchedLabels: number;
+  /**
+   * Rows that could not be parsed due to invalid (non-numeric) IDs, tracks, or
+   * times. These rows will be skipped.
+   */
+  unparseableRows: number;
+  /**
+   * The number of rows with IDs that were not found in the dataset and were
+   * skipped. If > 0, this likely indicates that annotations for a different
+   * dataset were imported, or that the dataset was modified.
+   */
+  invalidIds: number;
+  totalRows: number;
 };
 
 export interface IAnnotationDataGetters {
@@ -274,10 +324,8 @@ export class AnnotationData implements IAnnotationData {
   }
 
   getNextDefaultLabelSettings(): LabelOptions {
-    const color = new Color(
-      DEFAULT_ANNOTATION_LABEL_COLORS[this.numLabelsCreated % DEFAULT_ANNOTATION_LABEL_COLORS.length]
-    );
-    const name = `Label ${this.numLabelsCreated + 1}`;
+    const color = getDefaultColor(this.numLabelsCreated);
+    const name = `Annotation ${this.numLabelsCreated + 1}`;
     return { type: LabelType.BOOLEAN, name, color, autoIncrement: true };
   }
 
@@ -307,6 +355,11 @@ export class AnnotationData implements IAnnotationData {
 
   // Setters
 
+  // TODO: There's a bug where, when the dataset is changed, the
+  // timeToLabelIdMap is not updated and onscreen rendering will look incorrect.
+  // It's also possible that annotations should be cleared in that case though,
+  // since the annotations will not match the dataset anymore.
+  // Maybe make this public? TBD
   private markIdMapAsDirty(): void {
     this.timeToLabelIdMap = null;
   }
@@ -328,7 +381,7 @@ export class AnnotationData implements IAnnotationData {
 
   private validateIndex(idx: number): void {
     if (idx < 0 || idx >= this.labelData.length) {
-      throw new Error(`Invalid label index: ${idx}`);
+      throw new Error(`Invalid annotation index: ${idx}`);
     }
   }
 
@@ -417,9 +470,187 @@ export class AnnotationData implements IAnnotationData {
     this.markIdMapAsDirty();
   }
 
+  static fromCsv(dataset: Dataset, csvString: string): AnnotationParseResult {
+    const annotationData = new AnnotationData();
+    let mismatchedTimes = 0,
+      mismatchedTracks = 0,
+      mismatchedLabels = 0,
+      unparseableRows = 0,
+      invalidIds = 0;
+
+    const result = Papa.parse(csvString, { header: true, skipEmptyLines: true, comments: "#" });
+    if (result.errors.length > 0) {
+      throw new Error(`Error parsing CSV: ${result.errors.map((e) => e.message).join(", ")}`);
+    }
+    const data = result.data as Record<string, string>[];
+    const headers = result.meta.fields as string[];
+
+    // Check for required ID column.
+    if (headers.indexOf(CSV_COL_ID) === -1) {
+      throw new Error(`CSV does not contain expected ID column with the header '${CSV_COL_ID}'.`);
+    }
+    // Remove the metadata columns
+    const labelNames = headers.filter(
+      (header) =>
+        header !== CSV_COL_ID && header !== CSV_COL_TRACK && header !== CSV_COL_TIME && header !== CSV_COL_SEG_ID
+    );
+    const labelNameToType = getLabelTypeFromParsedCsv(headers, data);
+
+    // Create each of the labels from a header in the CSV.
+    for (let i = 0; i < labelNames.length; i++) {
+      const name = labelNames[i].trim();
+      const type = labelNameToType.get(name)!;
+      annotationData.createNewLabel({
+        name,
+        type,
+      });
+    }
+
+    for (const row of data) {
+      const id = parseInt(row[CSV_COL_ID], 10);
+      const track = parseInt(row[CSV_COL_TRACK], 10);
+      const time = parseInt(row[CSV_COL_TIME], 10);
+      // Seg ID is optional/can be NaN because it was added as a column after
+      // annotation export was first introduced.
+      const segId = parseInt(row[CSV_COL_SEG_ID], 10);
+
+      if (isNaN(id) || isNaN(track) || isNaN(time)) {
+        unparseableRows++;
+        continue;
+      }
+      if (id < 0 || dataset.numObjects <= id) {
+        invalidIds++;
+        continue;
+      }
+      if (dataset.times?.[id] !== time) {
+        mismatchedTimes++;
+      }
+      if (dataset.trackIds?.[id] !== track) {
+        mismatchedTracks++;
+      }
+      if (!Number.isNaN(segId) && dataset.segIds?.[id] !== segId) {
+        mismatchedLabels++;
+      }
+      // Push row data to the labels.
+      for (let labelIdx = 0; labelIdx < labelNames.length; labelIdx++) {
+        const labelData = annotationData.labelData[labelIdx];
+        const isBoolean = labelData.options.type === LabelType.BOOLEAN;
+        const name = labelNames[labelIdx];
+        let value = row[name]?.trim();
+        // Ignore invalid values (and omit boolean false values)
+        if (value === undefined || value === "" || (isBoolean && value.toLowerCase() === BOOLEAN_VALUE_FALSE)) {
+          continue;
+        }
+        if (isBoolean) {
+          value = BOOLEAN_VALUE_TRUE;
+        }
+        annotationData.setLabelValueOnId(labelIdx, id, value);
+      }
+    }
+    return {
+      annotationData,
+      mismatchedTimes,
+      mismatchedTracks,
+      mismatchedLabels,
+      unparseableRows,
+      invalidIds,
+      totalRows: data.length,
+    };
+  }
+  /**
+   * Returns the index of a label with the matching name and type.
+   * Returns -1 if no such label exists.
+   */
+  private findMatchingLabelIdx(name: string, type: LabelType): number {
+    for (let i = 0; i < this.labelData.length; i++) {
+      const labelData = this.labelData[i];
+      if (labelData.options.name === name && labelData.options.type === type) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  /**
+   * Merges two annotation data objects and returns a new, resulting object,
+   * based on the merge mode. Data is deep-copied, so the original objects are
+   * not modified.
+   * @param annotationData1 The first annotation data object.
+   * @param annotationData2 The second annotation data object.
+   * @param mergeMode The merge mode to use. Can be one of:
+   * - `AnnotationMergeMode.APPEND`: Appends the labels from the second
+   *    annotation data object to the first one.
+   * - `AnnotationMergeMode.MERGE`: Merges label data for labels that match name
+   *   and type. If a label exists in both objects, the IDs are merged, with the
+   *   second object taking precedence for the values. Labels that do not match
+   *   are appended.
+   * - `AnnotationMergeMode.OVERWRITE`: Returns a copy of the second annotation
+   *   data object.
+   * @param reassignColors If true, reassigns colors on labels appended from the
+   *   second annotation data object to the default for that index. Defaults to
+   *   true.
+   * @returns A new annotation data object with the merged label data.
+   */
+  static merge(
+    annotationData1: AnnotationData,
+    annotationData2: AnnotationData,
+    mergeMode: AnnotationMergeMode,
+    reassignColors: boolean = true
+  ): AnnotationData {
+    const mergedAnnotationData = new AnnotationData();
+
+    if (mergeMode === AnnotationMergeMode.OVERWRITE) {
+      mergedAnnotationData.labelData = [...annotationData2.labelData.map(cloneLabel)];
+      mergedAnnotationData.numLabelsCreated = annotationData2.numLabelsCreated;
+      if (reassignColors) {
+        for (let i = 0; i < mergedAnnotationData.labelData.length; i++) {
+          mergedAnnotationData.labelData[i].options.color = getDefaultColor(i);
+        }
+      }
+    } else if (mergeMode === AnnotationMergeMode.APPEND) {
+      mergedAnnotationData.labelData = [
+        ...annotationData1.labelData.map(cloneLabel),
+        ...annotationData2.labelData.map(cloneLabel),
+      ];
+      if (reassignColors) {
+        for (let i = annotationData1.labelData.length; i < mergedAnnotationData.labelData.length; i++) {
+          mergedAnnotationData.labelData[i].options.color = getDefaultColor(i);
+        }
+      }
+      mergedAnnotationData.numLabelsCreated = annotationData1.numLabelsCreated + annotationData2.numLabelsCreated;
+    } else {
+      // Merge
+      mergedAnnotationData.labelData = [...annotationData1.labelData.map(cloneLabel)];
+      mergedAnnotationData.numLabelsCreated = annotationData1.numLabelsCreated;
+      // For each label in the second annotation data object, check if it
+      // exists in the first. If so, merge the IDs and overwrite the values.
+      for (const labelData2 of annotationData2.labelData) {
+        const labelIdx = mergedAnnotationData.findMatchingLabelIdx(labelData2.options.name, labelData2.options.type);
+        if (labelIdx !== -1) {
+          // There's an existing label that matches on name + type. Merge the
+          // IDs and overwrite the values.
+          const labelData = mergedAnnotationData.labelData[labelIdx];
+          labelData.ids = new Set([...labelData.ids, ...labelData2.ids]);
+          for (const [value, ids] of labelData2.valueToIds.entries()) {
+            mergedAnnotationData.setLabelValueOnIds(labelIdx, Array.from(ids), value);
+          }
+        } else {
+          // No match, so append as a new label.
+          const newLabelData = cloneLabel(labelData2);
+          if (reassignColors) {
+            newLabelData.options.color = getDefaultColor(mergedAnnotationData.numLabelsCreated);
+          }
+          mergedAnnotationData.labelData.push(newLabelData);
+          mergedAnnotationData.numLabelsCreated++;
+        }
+      }
+    }
+    return mergedAnnotationData;
+  }
+
   toCsv(dataset: Dataset, delimiter: string = ","): string {
     const idsToLabels = this.getIdsToLabels();
-    const headerRow = [CSV_COL_ID, CSV_COL_TRACK, CSV_COL_TIME];
+    const headerRow = [CSV_COL_ID, CSV_COL_SEG_ID, CSV_COL_TRACK, CSV_COL_TIME];
 
     headerRow.push(...this.labelData.map((label) => label.options.name.trim()));
 
@@ -429,10 +660,11 @@ export class AnnotationData implements IAnnotationData {
     // O(N), which makes this for loop O(N^3)). Consider caching the lookup (ID
     // -> value) if the CSV export step is slow.
     for (const [id, labels] of idsToLabels) {
+      const segId = dataset.getSegmentationId(id);
       const track = dataset.getTrackId(id);
       const time = dataset.getTime(id);
 
-      const row: (string | number)[] = [id, track, time];
+      const row: (string | number)[] = [id, segId, track, time];
       for (let labelIdx = 0; labelIdx < this.labelData.length; labelIdx++) {
         if (labels.includes(labelIdx)) {
           row.push(this.getValueFromId(labelIdx, id) ?? "");

@@ -2,8 +2,8 @@ import {
   CaretRightOutlined,
   CheckCircleOutlined,
   EllipsisOutlined,
-  LinkOutlined,
   PauseOutlined,
+  ShareAltOutlined,
   StepBackwardFilled,
   StepForwardFilled,
 } from "@ant-design/icons";
@@ -30,7 +30,6 @@ import { thresholdMatchFinder } from "./colorizer/utils/data_utils";
 import { useAnnotations, useConstructor, useDebounce, useRecentCollections } from "./colorizer/utils/react_utils";
 import { showFailedUrlParseAlert } from "./components/Banner/alert_templates";
 import { SelectItem } from "./components/Dropdowns/types";
-import { SCATTERPLOT_TIME_FEATURE } from "./components/Tabs/scatter_plot_data_utils";
 import { DEFAULT_PLAYBACK_FPS, INTERNAL_BUILD } from "./constants";
 import { getDifferingProperties } from "./state/utils/data_validation";
 import {
@@ -46,7 +45,7 @@ import { loadInitialCollectionAndDataset } from "./utils/dataset_load_utils";
 
 import CanvasOverlay from "./colorizer/CanvasOverlay";
 import Collection from "./colorizer/Collection";
-import { FeatureType } from "./colorizer/Dataset";
+import { FeatureType, TIME_FEATURE_KEY } from "./colorizer/Dataset";
 import { renderCanvasStateParamsSelector } from "./colorizer/IRenderCanvas";
 import UrlArrayLoader from "./colorizer/loaders/UrlArrayLoader";
 import { getSharedWorkerPool } from "./colorizer/workers/SharedWorkerPool";
@@ -96,7 +95,7 @@ function Viewer(): ReactElement {
 
   const [, startTransition] = React.useTransition();
 
-  const canv: CanvasOverlay = useConstructor(() => {
+  const canv = useConstructor((): CanvasOverlay => {
     const stateDeps = renderCanvasStateParamsSelector(useViewerStateStore.getState());
     const canvas = new CanvasOverlay(stateDeps);
     canvas.domElement.className = styles.colorizeCanvas;
@@ -107,11 +106,11 @@ function Viewer(): ReactElement {
     });
     useViewerStateStore.getState().setFrameLoadCallback(async (frame: number) => await canvas.setFrame(frame));
     return canvas;
-  });
+  }).current;
 
   // Shared worker pool for background operations (e.g. loading data)
   const workerPool = getSharedWorkerPool();
-  const arrayLoader = useConstructor(() => new UrlArrayLoader(workerPool));
+  const arrayLoader = useConstructor(() => new UrlArrayLoader(workerPool)).current;
 
   // TODO: Refactor dataset dropdowns, color ramp controls, and time controls into separate
   // components to greatly reduce the state required for this component.
@@ -248,7 +247,7 @@ function Viewer(): ReactElement {
             useViewerStateStore.getState().scatterXAxis === null &&
             useViewerStateStore.getState().scatterYAxis === null
           ) {
-            setScatterXAxis(SCATTERPLOT_TIME_FEATURE.value);
+            setScatterXAxis(TIME_FEATURE_KEY);
             setScatterYAxis(featureKey);
           }
         }
@@ -729,8 +728,8 @@ function Viewer(): ReactElement {
               setIsRecording={setIsRecording}
             />
             <TextButton onClick={openCopyNotification}>
-              <LinkOutlined />
-              <p>Copy URL</p>
+              <ShareAltOutlined />
+              <p>Share</p>
             </TextButton>
           </FlexRowAlignCenter>
           <HelpDropdown />

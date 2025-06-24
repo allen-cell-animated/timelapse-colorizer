@@ -1,11 +1,11 @@
-import React, { EventHandler, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { EventHandler, MutableRefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import { useLocalStorage } from "usehooks-ts";
 
 import { AnnotationSelectionMode } from "../types";
 import { useShortcutKey } from "./hooks";
 
-import { AnnotationData, IAnnotationDataGetters, IAnnotationDataSetters, LabelType } from "../AnnotationData";
+import { AnnotationData, AnnotationMergeMode, IAnnotationDataGetters, IAnnotationDataSetters, LabelType } from "../AnnotationData";
 import Dataset from "../Dataset";
 
 // TODO: Move this to a folder outside of `colorizer`.
@@ -52,24 +52,34 @@ export function useDebounce<T>(value: T, delayMs?: number): T {
 }
 
 /**
- * Returns a reference to a constructed value that will not be re-computed between renders.
+ * Returns a reference to a constructed value that will not be re-computed
+ * between renders.
  *
- * Functionally, this is a wrapper around useRef and allows it to be used in a type-safe way.
- * See https://react.dev/reference/react/useRef for more details.
+ * Functionally, this is a wrapper around useRef and guarantees the current
+ * value is non-null. See https://react.dev/reference/react/useRef for more
+ * details.
  *
- * @param constructor A callback used to assign the value. This will only be called once.
- * @returns The value as returned by the constructor.
+ * @param constructor A callback used to assign the value. This will only be
+ * called once.
+ * @returns A MutableRefObject wrapping the value as returned by the
+ * constructor.
  * @example
  * ```
- * const value = useConstructor(() => {return new ValueConstructor()});
+ * // For most use-cases, add `.current` to get the value:
+ * const value = useConstructor(() => {return new ValueConstructor()}).current;
+ *
+ * // You can also modify the value directly if needed:
+ * const otherValueRef = useConstructor(() => {return new ValueConstructor()});
+ * ...
+ * otherValueRef.current = newValue;
  * ```
  */
-export function useConstructor<T>(constructor: () => T): T {
-  const value = useRef<T | null>(null);
-  if (value.current === null) {
-    value.current = constructor();
+export function useConstructor<T>(constructor: () => T): MutableRefObject<T> {
+  const ref = useRef<T | null>(null);
+  if (ref.current === null) {
+    ref.current = constructor();
   }
-  return value.current;
+  return ref as MutableRefObject<T>;
 }
 
 /** Returns a shallow copy of an object, excluding all entries where the value is undefined. */
@@ -142,7 +152,7 @@ export const ScrollShadowContainer = styled.div`
 export function useScrollShadow(shadowColor: string = "#00000030"): {
   scrollShadowStyle: React.CSSProperties;
   onScrollHandler: EventHandler<any>;
-  scrollRef: React.RefObject<HTMLDivElement>;
+  scrollRef: React.MutableRefObject<HTMLDivElement | null>;
 } {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -150,7 +160,10 @@ export function useScrollShadow(shadowColor: string = "#00000030"): {
   const [scrollHeight, setScrollHeight] = useState(0);
   const [clientHeight, setClientHeight] = useState(0);
 
-  const updateScrollInfo = (div: HTMLDivElement): void => {
+  const updateScrollInfo = (div: HTMLDivElement | null): void => {
+    if (!div) {
+      return;
+    }
     setScrollTop(div.scrollTop);
     setScrollHeight(div.scrollHeight);
     setClientHeight(div.clientHeight);
@@ -163,7 +176,7 @@ export function useScrollShadow(shadowColor: string = "#00000030"): {
           updateScrollInfo(scrollRef.current);
         }
       })
-  );
+  ).current;
 
   const onScrollHandler: EventHandler<any> = (event) => {
     updateScrollInfo(event.target);
@@ -184,7 +197,7 @@ export function useScrollShadow(shadowColor: string = "#00000030"): {
       };
     }
     return;
-  }, []);
+  }, [scrollRef.current, mutationObserver]);
 
   function getBoxShadow(): string {
     const scrolledToBottom = clientHeight === scrollHeight - scrollTop;
@@ -261,13 +274,24 @@ export type AnnotationState = {
   setIsAnnotationModeEnabled: (enabled: boolean) => void;
   visible: boolean;
   setVisibility: (visible: boolean) => void;
+  /** 
+   * Current selection mode. This is typically the `baseSelectionMode`, but it
+   * may be temporarily overridden by user hotkeys.
+   */
   selectionMode: AnnotationSelectionMode;
-  setSelectionMode: (mode: AnnotationSelectionMode) => void;
+  /** User-selected selection mode. */
+  baseSelectionMode: AnnotationSelectionMode;
+  setBaseSelectionMode: (mode: AnnotationSelectionMode) => void;
   /** 
    * The ID of the last clicked object. `null` if the user clicked on the
    * background. 
    */
   lastClickedId: number | null;
+  /** 
+   * The ID of the last object that can serve as the start of a range selection.
+   * `null` if there is no range start selected.
+   */
+  rangeStartId: number | null;
   /** 
    * The range of values that should currently be editable. Value is non-null
    * when a user interacts with an annotation in order to edit it.
@@ -275,6 +299,7 @@ export type AnnotationState = {
   activeEditRange: number[] | null;
   clearActiveEditRange: () => void;
   nextDefaultLabelValue: string | null;
+  importData: (annotationData: AnnotationData, mode: AnnotationMergeMode) => void;
   /**
    * For a given ID, returns the range of IDs that would be selected if the ID
    * is clicked with range selection mode turned on.
@@ -298,7 +323,8 @@ export type AnnotationState = {
 // attempting to synchronize updates between the annotation data and the UI,
 // which can be handled by zustand.
 export const useAnnotations = (): AnnotationState => {
-  const annotationData = useConstructor(() => new AnnotationData());
+  const annotationDataRef = useConstructor(() => {return new AnnotationData();});
+  const annotationData = annotationDataRef.current;
 
   const [currentLabelIdx, _setCurrentLabelIdx] = useState<number | null>(null);
   const [isAnnotationEnabled, _setIsAnnotationEnabled] = useState<boolean>(false);
@@ -310,6 +336,7 @@ export const useAnnotations = (): AnnotationState => {
   const isReuseValueHotkeyPressed = useShortcutKey("Control");
 
   const [lastClickedId, setLastClickedId] = useState<number | null>(null);
+  const [rangeStartId, setRangeStartId] = useState<number | null>(null);
   /**
    * The last range of IDs that were edited, used for range-related operations.
    * If a user clicks on an object again that is one of the endpoints of this
@@ -338,7 +365,7 @@ export const useAnnotations = (): AnnotationState => {
       // Clear the range-related data when switching, since otherwise
       // it can be confusing to have a previously interacted-with object
       // become part of a selected range.
-      setLastClickedId(null);
+      setRangeStartId(null);
       setLastEditedRange(null);
     }
     setBaseSelectionMode(newMode);
@@ -350,6 +377,9 @@ export const useAnnotations = (): AnnotationState => {
   // Annotation mode can only be enabled if there is at least one label, so create
   // one if necessary.
   const setIsAnnotationEnabled = (enabled: boolean): void => {
+    if (enabled === isAnnotationEnabled) {
+      return;
+    }
     if (enabled) {
       _setVisibility(true);
       if (annotationData.getLabels().length === 0) {
@@ -359,6 +389,7 @@ export const useAnnotations = (): AnnotationState => {
       }
     }
     setLastClickedId(null);
+    setRangeStartId(null);
     setLastEditedRange(null);
     setActiveEditRange(null);
     _setIsAnnotationEnabled(enabled);
@@ -428,17 +459,17 @@ export const useAnnotations = (): AnnotationState => {
       }
       // Otherwise, check if both IDs are in the same track. If so,
       // return a list of the IDs between the two of them.
-      if (dataset && lastClickedId !== null) {
-        const trackOfLastClickedId = dataset.getTrackId(lastClickedId);
+      if (dataset && rangeStartId !== null) {
+        const trackOfRangeStartId = dataset.getTrackId(rangeStartId);
         const trackOfCurrentId = dataset.getTrackId(id);
-        if (trackOfLastClickedId === trackOfCurrentId) {
-          return getIdsInRange(dataset, lastClickedId, id);
+        if (trackOfRangeStartId === trackOfCurrentId) {
+          return getIdsInRange(dataset, rangeStartId, id);
         }
       }
       // IDs are not in the same track.
       return null;
     },
-    [lastEditedRange, lastClickedId]
+    [lastEditedRange, rangeStartId]
   );
 
   const nextDefaultLabelValue = useMemo(() => {
@@ -454,6 +485,7 @@ export const useAnnotations = (): AnnotationState => {
         if (isAnnotationEnabled) {
           setLastClickedId(id);
         }
+        setRangeStartId(null);
         setLastEditedRange(null);
         setActiveEditRange(null);
         return;
@@ -496,6 +528,11 @@ export const useAnnotations = (): AnnotationState => {
         default:
           toggleRange([id]);
       }
+      if (idRange !== null ) {
+        setRangeStartId(null);
+      } else {
+        setRangeStartId(id);
+      }
       setLastClickedId(id);
       setDataUpdateCounter((value) => value + 1);
     },
@@ -508,6 +545,23 @@ export const useAnnotations = (): AnnotationState => {
     setLastEditedRange(null);
     setLastClickedId(null);
     setIsAnnotationEnabled(false);
+  };
+
+  const importData = (newData: AnnotationData, mode: AnnotationMergeMode): void => {
+    const mergedData = AnnotationData.merge(annotationData, newData, mode);
+    annotationDataRef.current = mergedData;
+    if (mergedData.getLabels().length > 0) {
+      // Update selected label index to make sure it's still valid
+      if (currentLabelIdx === null) {
+        setCurrentLabelIdx(0);   
+      } else if (currentLabelIdx >= mergedData.getLabels().length) {
+        setCurrentLabelIdx(mergedData.getLabels().length - 1);
+      }
+    } else {
+      // Disable annotations if there are no labels
+      setIsAnnotationEnabled(false);
+      setCurrentLabelIdx(null);
+    }
   };
 
   const data = useMemo(
@@ -535,11 +589,13 @@ export const useAnnotations = (): AnnotationState => {
     visible,
     setVisibility,
     selectionMode,
-    setSelectionMode,
+    baseSelectionMode,
+    setBaseSelectionMode: setSelectionMode,
     data,
     handleAnnotationClick,
     nextDefaultLabelValue,
     lastClickedId,
+    rangeStartId,
     activeEditRange,
     clearActiveEditRange: () => setActiveEditRange(null),
     getSelectRangeFromId,
@@ -550,5 +606,6 @@ export const useAnnotations = (): AnnotationState => {
     setLabelValueOnIds: wrapFunctionInUpdate(annotationData.setLabelValueOnIds),
     removeLabelOnIds: wrapFunctionInUpdate(annotationData.removeLabelOnIds),
     clear: wrapFunctionInUpdate(clear),
+    importData: wrapFunctionInUpdate(importData),
   };
 };
