@@ -105,6 +105,16 @@ type ManifestFileV1_1_0 = Spread<
       /** Total number of frames in the time-series volume. */
       totalFrames: number;
     };
+
+    plot3d?: {
+      dims: number[];
+      flowFieldFeatures: {
+        key: string;
+        data: string;
+        min: number;
+        max: number;
+      }[];
+    };
   }
 >;
 
