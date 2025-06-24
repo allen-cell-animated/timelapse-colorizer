@@ -1,3 +1,5 @@
+import { Color } from "three";
+
 import { MAX_FEATURE_CATEGORIES } from "../../constants";
 import { ColorRampData } from "../colors/color_ramps";
 import {
@@ -11,8 +13,10 @@ import {
 import { packDataTexture } from "./texture_utils";
 
 import { BOOLEAN_VALUE_FALSE, BOOLEAN_VALUE_TRUE, LabelData, LabelType } from "../AnnotationData";
-import ColorRamp from "../ColorRamp";
+import ColorRamp, { ColorRampType } from "../ColorRamp";
 import Dataset, { FeatureType } from "../Dataset";
+import { RenderCanvasStateParams } from "../IRenderCanvas";
+import Track from "../Track";
 
 /** Returns whether the two arrays are deeply equal, where arr1[i] === arr2[i] for all i. */
 export function arrayElementsAreEqual<T>(arr1: T[], arr2: T[]): boolean {
@@ -396,4 +400,137 @@ export function cloneLabel(label: LabelData): LabelData {
     valueToIds: new Map(label.valueToIds),
     idToValue: new Map(label.idToValue),
   };
+}
+
+/**
+ * Computes the onscreen color for a given object ID based on feature data and
+ * other parameters.
+ * @param id The object ID to get the color for.
+ * @param params Parameters containing the dataset, feature key, color ramp, and
+ * other settings. These can be pulled directly from viewer state.
+ * @returns The color for the given object ID, using the rules in the main
+ * viewport shader.
+ */
+export function computeColorFromId(id: number, params: RenderCanvasStateParams): Color {
+  const {
+    dataset,
+    featureKey,
+    colorRamp,
+    colorRampRange,
+    categoricalPaletteRamp,
+    outOfRangeDrawSettings,
+    inRangeLUT,
+    outlierDrawSettings,
+  } = params;
+  if (dataset === null || featureKey === null || !dataset.hasFeatureKey(featureKey)) {
+    // No feature data, return default color
+    return outlierDrawSettings.color.clone();
+  }
+  const featureValue = dataset.getFeatureData(featureKey)!.data[id];
+  if (inRangeLUT[id] === 0) {
+    return outOfRangeDrawSettings.color.clone();
+  } else if (dataset.outliers?.[id] === 1 || !Number.isFinite(featureValue)) {
+    return outlierDrawSettings.color.clone();
+  } else if (dataset.isFeatureCategorical(featureKey)) {
+    // Categorical feature, use categorical palette
+    const t = (featureValue % MAX_FEATURE_CATEGORIES) / (MAX_FEATURE_CATEGORIES - 1);
+    return categoricalPaletteRamp.sample(t);
+  } else if (colorRamp.type === ColorRampType.CATEGORICAL) {
+    const t = (featureValue % colorRamp.colorStops.length) / (colorRamp.colorStops.length - 1);
+    return colorRamp.sample(t);
+  } else {
+    // Numeric feature, use color ramp
+    const t = (featureValue - colorRampRange[0]) / (colorRampRange[1] - colorRampRange[0]);
+    return colorRamp.sample(t);
+  }
+}
+
+/**
+ * Returns a Float32Array of RGB (vertex) colors for the given object IDs. Colors
+ * are determined by the feature data, color ramp, and other parameters, and
+ * will match what is used in the main viewport shader.
+ * @param ids An array of object IDs to compute colors for.
+ * @param params Rendering parameters.
+ * @return A Float32Array of RGB color components, in a [0, 1] range. For each
+ * object ID at index `i` in `ids`, the RGB color will be given by:
+ * ```
+ * R: colors[i * 3 + 0]
+ * G: colors[i * 3 + 1]
+ * B: colors[i * 3 + 2]
+ * ```
+ */
+export function computeVertexColorsFromIds(ids: number[], params: RenderCanvasStateParams): Float32Array {
+  // Especially for discontinuous lines, IDs may be repeated. Cache results to
+  // avoid repeat computation.
+  const idToColor = new Map<number, [number, number, number]>();
+  const vertexColors = new Float32Array(ids.length * 3);
+  for (let i = 0; i < ids.length; i++) {
+    const id = ids[i];
+    if (idToColor.has(id)) {
+      vertexColors.set(idToColor.get(id)!, i * 3);
+    } else {
+      const color = computeColorFromId(id, params);
+      const rgb = [color.r, color.g, color.b] as [number, number, number];
+      idToColor.set(id, rgb);
+      vertexColors.set(rgb, i * 3);
+    }
+  }
+  return vertexColors;
+}
+
+/**
+ * Calculates 3D coordinates for points in a track's path, to be rendered as a
+ * 3D polyline (see Three.js `Line2`). Also returns the object IDs for each
+ * vertex, which can be used to color the points based on feature data.
+ * @returns An object with two properties:
+ * - `ids`: An array of object IDs corresponding to each point in the path.
+ * - `points`: A Float32Array of 3D centroids for each point in the track's
+ *   path. Coordinates are given in terms of the centroid data (typically as
+ *   pixels/voxels in the frame). The length will be `3 * ids.length`.
+ */
+export function computeTrackLinePointsAndIds(dataset: Dataset, track: Track): { ids: number[]; points: Float32Array } {
+  if (track.centroids.length === 0) {
+    return { ids: [], points: new Float32Array(0) };
+  }
+  const points = new Float32Array(track.duration() * 3);
+  const ids = [];
+
+  // Tracks may be missing objects for some timepoints, so use the last known
+  // good value as a fallback
+  // TODO: This currently makes continuous lines, even if the track has gaps.
+  // Add an option to visualize discontinuities. (This will also require use
+  // of `LineSegments2` instead of `Line2`.)
+  let lastTrackIndex = 0;
+  for (let i = 0; i < track.duration(); i++) {
+    const absTime = i + track.startTime();
+
+    let trackIndex = track.times.findIndex((t) => t === absTime);
+    if (trackIndex === -1) {
+      // Track has no object for this time, use fallback
+      trackIndex = lastTrackIndex;
+    } else {
+      lastTrackIndex = trackIndex;
+    }
+
+    const centroid = dataset.getCentroid(track.ids[trackIndex])!;
+    points.set(centroid, i * 3);
+    ids.push(track.ids[trackIndex]);
+  }
+  return { ids, points };
+}
+
+/**
+ * Normalizes 3D centroids to 2D canvas space in-place, where the X and Y coordinates are
+ * in the range [-1, 1] and the Z coordinate is always zero.
+ */
+export function normalizePointsTo2dCanvasSpace(points: Float32Array, dataset: Dataset): Float32Array {
+  // TODO: This normalization step may be unnecessary if we do it during the
+  // line scaling step.
+  for (let i = 0; i < points.length; i += 3) {
+    points[i + 0] = (points[i + 0] / dataset.frameResolution.x) * 2.0 - 1.0;
+    points[i + 1] = -((points[i + 1] / dataset.frameResolution.y) * 2.0 - 1.0);
+    // Z coordinate is always zero for 2D canvas space
+    points[i + 2] = 0;
+  }
+  return points;
 }

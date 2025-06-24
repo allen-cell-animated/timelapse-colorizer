@@ -142,8 +142,7 @@ export const isDrawMode = (mode: number): mode is DrawMode => {
 export const enum TrackPathColorMode {
   USE_OUTLINE_COLOR = 0,
   USE_CUSTOM_COLOR = 1,
-  // May add additional modes in the future, such as using a gradient color or
-  // coloring by feature value.
+  USE_FEATURE_COLOR = 2,
 }
 
 // Similar to `FeatureType`, but indicates that thresholds are lossy when it comes
