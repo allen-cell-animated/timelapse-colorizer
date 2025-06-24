@@ -295,7 +295,7 @@ export function decodeHexAlphaColor(value: string | null): { color: Color; alpha
     // Double up the last digit for 4-digit hex colors.
     const alphaHex = isShortenedHex ? value.slice(-1).repeat(2) : value.slice(-2);
     const color = new Color(colorHex);
-    const alpha = isShortenedHex ? parseInt(alphaHex, 16) / 255 : parseInt(alphaHex, 16) / 255;
+    const alpha = parseInt(alphaHex, 16) / 255;
     return { color, alpha };
   } else if (isHexColor(value)) {
     // If it's a regular hex color (3 or 6 digits), return it with alpha 1
