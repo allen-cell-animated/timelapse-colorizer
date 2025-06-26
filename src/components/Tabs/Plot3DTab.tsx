@@ -3,6 +3,7 @@ import React, { ReactElement, useEffect, useRef, useState } from "react";
 
 import { Dataset, TabType, Track } from "../../colorizer";
 import { useViewerStateStore } from "../../state";
+import { FlexColumn } from "../../styles/utils";
 
 const CONFIG: Partial<Plotly.Config> = {
   responsive: true,
@@ -20,6 +21,9 @@ const LAYOUT: Partial<Plotly.Layout> = {
     t: 15,
   },
 };
+
+const SCROLL_PLAYBACK_TIMEOUT_MS = 100;
+const RESUME_PLAYBACK_TIMEOUT_MS = 1000;
 
 // type Plot3DTabProps = {};
 
@@ -53,7 +57,6 @@ class Plot3d {
     }
 
     // TRACE 2: Track path
-
     if (
       this.track &&
       this.track.ids.length > 0 &&
@@ -132,14 +135,55 @@ export default function Plot3dTab(): ReactElement {
   const [zAxisFeatureKey, setZAxisFeatureKey] = useState<string | null>(null);
   const [coneTrace, setConeTrace] = useState<Plotly.Data | null>(null);
 
+  const [isPlaybackTempPaused, setIsPlaybackTempPaused] = useState(false);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const resumePlaybackTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // The number of user interactions (left, middle, or right mouse down) that
+  // are currently occurring. When 0, no user interaction is occurring.
+  const [numActiveUserInteractions, setNumActiveUserInteractions] = useState(0);
+
+  const [coneSize, setConeSize] = useState(1);
+  // const [coneColorRamp, setConeColorRamp] = useState();
+
   const dataset = useViewerStateStore((state) => state.dataset);
   const track = useViewerStateStore((state) => state.track);
   const currentFrame = useViewerStateStore((state) => state.currentFrame);
-  const setFrame = useViewerStateStore((state) => state.setFrame);
+  const timeControls = useViewerStateStore((state) => state.timeControls);
+  // const outlineColor = useViewerStateStore((state) => state.outlineColor);
 
   const isPlotTabVisible = useViewerStateStore((state) => state.openTab === TabType.PLOT_3D);
 
-  const flowFieldSubsampleRate = 4;
+  const flowFieldSubsampleRate = 6;
+
+  useEffect(() => {
+    if (timeControls.isPlaying()) {
+      setNumActiveUserInteractions(0);
+    }
+  }, [timeControls.isPlaying()]);
+
+  useEffect(() => {
+    if (numActiveUserInteractions >= 1) {
+      if (timeControls.isPlaying()) {
+        timeControls.pause();
+        setIsPlaybackTempPaused(true);
+      }
+      // Stop any existing timeouts to resume playback
+      if (resumePlaybackTimeoutRef.current) {
+        clearTimeout(resumePlaybackTimeoutRef.current);
+        resumePlaybackTimeoutRef.current = null;
+      }
+    } else if (numActiveUserInteractions === 0 && isPlaybackTempPaused) {
+      // Start timeout to resume playback if one doesn't already exist
+      if (!resumePlaybackTimeoutRef.current) {
+        resumePlaybackTimeoutRef.current = setTimeout(() => {
+          timeControls.play();
+          setIsPlaybackTempPaused(false);
+          resumePlaybackTimeoutRef.current = null;
+        }, RESUME_PLAYBACK_TIMEOUT_MS);
+      }
+    }
+  }, [numActiveUserInteractions, isPlaybackTempPaused]);
 
   useEffect(() => {
     if (dataset && dataset?.flowFieldFeatures.size >= 3) {
@@ -150,6 +194,7 @@ export default function Plot3dTab(): ReactElement {
     }
   }, [dataset]);
 
+  // Build cone trace when dataset or axis keys change
   useEffect(() => {
     const makeConeTrace = (): Plotly.Data | null => {
       if (!dataset || !xAxisFeatureKey || !yAxisFeatureKey || !zAxisFeatureKey) {
@@ -198,7 +243,8 @@ export default function Plot3dTab(): ReactElement {
         w: zData,
         showscale: false,
         sizemode: "scaled",
-        sizeref: 2,
+        sizeref: coneSize,
+        hoverinfo: "none",
       } as Plotly.Data;
     };
     const newConeTrace = makeConeTrace();
@@ -222,20 +268,48 @@ export default function Plot3dTab(): ReactElement {
   }, [dataset, track, currentFrame, coneTrace, isPlotTabVisible]);
 
   useEffect(() => {
-    const onClickPlot = (eventData: Plotly.PlotMouseEvent): void => {
-      if (eventData.points.length === 0) {
-        return;
+    const onMouseDown = (): void => {
+      setNumActiveUserInteractions((prev) => prev + 1);
+    };
+    const onMouseUp = (): void => {
+      setNumActiveUserInteractions((prev) => Math.max(prev - 1, 0));
+    };
+    const onScroll = (): void => {
+      // If the user is scrolling, treat it as an interaction
+      if (!scrollTimeoutRef.current) {
+        setNumActiveUserInteractions((prev) => prev + 1);
+        scrollTimeoutRef.current = setTimeout(() => {
+          setNumActiveUserInteractions((prev) => Math.max(prev - 1, 0));
+          scrollTimeoutRef.current = null;
+        }, SCROLL_PLAYBACK_TIMEOUT_MS);
+      } else {
+        // Extend timer
+        clearTimeout(scrollTimeoutRef.current);
+        scrollTimeoutRef.current = setTimeout(() => {
+          setNumActiveUserInteractions((prev) => Math.max(prev - 1, 0));
+          scrollTimeoutRef.current = null;
+        }, SCROLL_PLAYBACK_TIMEOUT_MS);
       }
-      setFrame((eventData.points[0].customdata as number) ?? currentFrame);
     };
 
     const plotDiv = plotContainerRef.current as PlotlyHTMLElement | null;
-    plotDiv?.on("plotly_click", onClickPlot);
+    plotDiv?.addEventListener("mousedown", onMouseDown);
+    plotDiv?.addEventListener("mouseup", onMouseUp);
+    plotDiv?.addEventListener("wheel", onScroll);
     return () => {
       const plotDiv = plotContainerRef.current as PlotlyHTMLElement | null;
-      plotDiv?.removeAllListeners("plotly_click");
+      plotDiv?.removeEventListener("mousedown", onMouseDown);
+      plotDiv?.removeEventListener("mouseup", onMouseUp);
+      plotDiv?.removeEventListener("wheel", onScroll);
     };
-  }, [setFrame]);
+  }, []);
 
-  return <div ref={plotContainerRef} style={{ width: "auto", height: "auto", zIndex: "0" }}></div>;
+  return (
+    <FlexColumn>
+      Mouse interactions: {numActiveUserInteractions}
+      <br />
+      timeout: {resumePlaybackTimeoutRef.current ? resumePlaybackTimeoutRef.current.toString() : "null"}
+      <div ref={plotContainerRef} style={{ width: "auto", height: "auto", zIndex: "0" }}></div>
+    </FlexColumn>
+  );
 }
