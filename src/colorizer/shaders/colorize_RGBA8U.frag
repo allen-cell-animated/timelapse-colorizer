@@ -59,7 +59,6 @@ uniform uint outOfRangeDrawMode;
 
 uniform int highlightedId;
 
-uniform bool hideOutOfRange;
 uniform bool useRepeatingCategoricalColors;
 
 in vec2 vUv;

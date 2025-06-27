@@ -46,6 +46,7 @@ import {
   computeTrackLinePointsAndIds,
   computeVertexColorsFromIds,
   getGlobalIdFromSegId,
+  getLineUpdateFlags,
   hasPropertyChanged,
   normalizePointsTo2dCanvasSpace,
 } from "./utils/data_utils";
@@ -548,47 +549,20 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     }
 
     // Update track path data
-    const doesLineGeometryNeedUpdate = hasPropertyChanged(params, prevParams, [
-      "dataset",
-      "track",
-      "showTrackPathBreaks",
-    ]);
-    const doesLineVertexColorNeedUpdate =
-      params.trackPathColorMode === TrackPathColorMode.USE_FEATURE_COLOR &&
-      hasPropertyChanged(params, prevParams, [
-        "dataset",
-        "track",
-        "trackPathColorMode",
-        "showTrackPathBreaks",
-        "featureKey",
-        "colorRamp",
-        "colorRampRange",
-        "categoricalPaletteRamp",
-        "inRangeLUT",
-        "outOfRangeDrawSettings",
-        "outlierDrawSettings",
-        "showTrackPath",
-      ]);
-    const doesLineMaterialNeedUpdate =
-      doesLineVertexColorNeedUpdate ||
-      hasPropertyChanged(params, prevParams, [
-        "trackPathColorMode",
-        "trackPathColor",
-        "outlineColor",
-        "trackPathWidthPx",
-      ]);
-    if (doesLineGeometryNeedUpdate || doesLineVertexColorNeedUpdate) {
-      if (doesLineGeometryNeedUpdate && params.dataset && params.track) {
+    const { geometryNeedsUpdate, vertexColorNeedsUpdate, materialNeedsUpdate } = getLineUpdateFlags(prevParams, params);
+
+    if (geometryNeedsUpdate || vertexColorNeedsUpdate) {
+      if (geometryNeedsUpdate && params.dataset && params.track) {
         const { ids, points } = computeTrackLinePointsAndIds(params.dataset, params.track, params.showTrackPathBreaks);
         this.lineIds = ids;
         this.linePoints = normalizePointsTo2dCanvasSpace(points, params.dataset);
       }
-      if (doesLineVertexColorNeedUpdate) {
+      if (vertexColorNeedsUpdate) {
         this.lineColors = computeVertexColorsFromIds(this.lineIds, this.params);
       }
       this.updateLineGeometry(this.linePoints, this.lineColors);
     }
-    if (doesLineMaterialNeedUpdate) {
+    if (materialNeedsUpdate) {
       this.updateLineMaterial();
     }
 
