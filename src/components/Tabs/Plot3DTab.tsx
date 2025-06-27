@@ -1,10 +1,20 @@
 import Plotly, { PlotlyHTMLElement } from "plotly.js-dist-min";
 import React, { ReactElement, useEffect, useRef, useState } from "react";
 
-import { Dataset, TabType, Track } from "../../colorizer";
+import {
+  Dataset,
+  DEFAULT_CATEGORICAL_PALETTE_KEY,
+  DEFAULT_COLOR_RAMP_KEY,
+  DISPLAY_CATEGORICAL_PALETTE_KEYS,
+  DISPLAY_LINEAR_RAMP_KEYS,
+  KNOWN_COLOR_RAMPS,
+  TabType,
+  Track,
+} from "../../colorizer";
 import { useViewerStateStore } from "../../state";
 import { FlexColumn, FlexRow, FlexRowAlignCenter } from "../../styles/utils";
 
+import ColorRampSelection from "../Dropdowns/ColorRampDropdown";
 import LabeledSlider from "../LabeledSlider";
 
 const CONFIG: Partial<Plotly.Config> = {
@@ -26,8 +36,6 @@ const LAYOUT: Partial<Plotly.Layout> = {
 
 const SCROLL_PLAYBACK_TIMEOUT_MS = 100;
 const RESUME_PLAYBACK_TIMEOUT_MS = 1000;
-
-// type Plot3DTabProps = {};
 
 class Plot3d {
   public parentRef: HTMLElement;
@@ -52,11 +60,6 @@ class Plot3d {
   plot(currTime: number): void {
     const traces: Plotly.Data[] = [];
 
-    // TRACE 1: Arrow plot
-    if (this.coneTrace) {
-      traces.push(this.coneTrace);
-    }
-
     // TRACE 2: Track path
     if (
       this.track &&
@@ -69,16 +72,27 @@ class Plot3d {
       const endTime = Math.min(currTime, this.track.endTime());
       // TODO: Show gaps/discontinuities in the track path?
       const ids: number[] = [];
+      const times: number[] = [];
       let lastValidId = this.track.ids[0];
+      let lastValidTime = this.track.startTime();
       for (let t = this.track.startTime(); t <= endTime; t++) {
         const id = this.track.getIdAtTime(t);
         if (id !== null) {
           ids.push(id);
+          times.push(t);
+          lastValidTime = t;
           lastValidId = id;
         } else {
           ids.push(lastValidId); // Use the last valid ID to fill gaps
+          times.push(lastValidTime);
         }
       }
+
+      const hoverTemplate =
+        `${this.dataset?.getFeatureNameWithUnits(this.xAxisFeatureKey) ?? ""}: %{x}<br>` +
+        `${this.dataset?.getFeatureNameWithUnits(this.yAxisFeatureKey) ?? ""}: %{y}<br>` +
+        `${this.dataset?.getFeatureNameWithUnits(this.zAxisFeatureKey) ?? ""}: %{z}<br>` +
+        `Time: %{customdata}`;
 
       const xData = this.dataset.getFeatureData(this.xAxisFeatureKey)?.data ?? [];
       const yData = this.dataset.getFeatureData(this.yAxisFeatureKey)?.data ?? [];
@@ -89,6 +103,7 @@ class Plot3d {
           y: ids.map((id) => yData[id]),
           z: ids.map((id) => zData[id]),
           // TODO: use customdata to store time?,
+          customdata: times,
           mode: "lines",
           type: "scatter3d",
           opacity: 1,
@@ -97,24 +112,34 @@ class Plot3d {
             color: "rgb(80, 80, 80)",
           },
           showlegend: false,
+          hovertemplate: hoverTemplate,
         };
         traces.push(scatterPlotTrace);
 
         // Add a point for the current time
-        const currentPointTrace: Plotly.Data = {
-          x: [xData[lastValidId]],
-          y: [yData[lastValidId]],
-          z: [zData[lastValidId]],
-          mode: "markers",
-          type: "scatter3d",
-          marker: {
-            size: 3,
-            color: "rgb(255, 0, 0)",
-          },
-          showlegend: false,
-          customdata: [currTime],
-        };
-        traces.push(currentPointTrace);
+        const currId = this.track.getIdAtTime(currTime);
+        if (currId !== -1) {
+          const currentPointTrace: Plotly.Data = {
+            x: [xData[lastValidId]],
+            y: [yData[lastValidId]],
+            z: [zData[lastValidId]],
+            customdata: [currTime],
+            mode: "markers",
+            type: "scatter3d",
+            marker: {
+              size: 3,
+              color: "rgb(255, 0, 0)",
+            },
+            showlegend: false,
+            hovertemplate: hoverTemplate,
+          };
+          traces.push(currentPointTrace);
+        }
+      }
+
+      // TRACE 1: Arrow plot
+      if (this.coneTrace) {
+        traces.push(this.coneTrace);
       }
     }
 
@@ -175,14 +200,16 @@ export default function Plot3dTab(): ReactElement {
   const [numActiveUserInteractions, setNumActiveUserInteractions] = useState(0);
 
   const [coneSize, setConeSize] = useState(1);
-  const [coneColorRamp, setConeColorRamp] = useState();
+  const [coneColorRampKey, setConeColorRampKey] = useState<string>("matplotlib-turbo");
+  const [coneColorRampReversed, setConeColorRampReversed] = useState(false);
   const [flowFieldSubsampleRate, setFlowFieldSubsampleRate] = useState(6);
 
   const dataset = useViewerStateStore((state) => state.dataset);
   const track = useViewerStateStore((state) => state.track);
   const currentFrame = useViewerStateStore((state) => state.currentFrame);
   const timeControls = useViewerStateStore((state) => state.timeControls);
-  // const outlineColor = useViewerStateStore((state) => state.outlineColor);
+
+  const coneColorRamp = KNOWN_COLOR_RAMPS.get(coneColorRampKey) ?? KNOWN_COLOR_RAMPS.get(DEFAULT_COLOR_RAMP_KEY)!;
 
   const isPlotTabVisible = useViewerStateStore((state) => state.openTab === TabType.PLOT_3D);
 
@@ -274,12 +301,22 @@ export default function Plot3dTab(): ReactElement {
         showscale: false,
         sizemode: "scaled",
         sizeref: coneSize,
+        colorscale: coneColorRamp.colorRamp.getPlotlyColorScale(coneColorRampReversed),
         hoverinfo: "none",
       } as Plotly.Data;
     };
     const newConeTrace = makeConeTrace();
     setConeTrace(newConeTrace);
-  }, [dataset, xAxisFeatureKey, yAxisFeatureKey, zAxisFeatureKey, flowFieldSubsampleRate, coneSize]);
+  }, [
+    dataset,
+    xAxisFeatureKey,
+    yAxisFeatureKey,
+    zAxisFeatureKey,
+    flowFieldSubsampleRate,
+    coneSize,
+    coneColorRampKey,
+    coneColorRampReversed,
+  ]);
 
   useEffect(() => {
     plot3dRef.current = new Plot3d(plotContainerRef.current!);
@@ -336,6 +373,23 @@ export default function Plot3dTab(): ReactElement {
 
   return (
     <FlexColumn style={{ height: "100%" }}>
+      <FlexRow>
+        <FlexRow>
+          <ColorRampSelection
+            selectedRamp={coneColorRampKey}
+            onChangeRamp={function (colorRampKey: string, reversed: boolean): void {
+              setConeColorRampKey(colorRampKey);
+              setConeColorRampReversed(reversed);
+            }}
+            reversed={coneColorRampReversed}
+            colorRampsToDisplay={DISPLAY_LINEAR_RAMP_KEYS}
+            selectedPaletteKey={DEFAULT_CATEGORICAL_PALETTE_KEY}
+            onChangePalette={() => {}}
+            numCategories={0}
+            categoricalPalettesToDisplay={DISPLAY_CATEGORICAL_PALETTE_KEYS}
+          />
+        </FlexRow>
+      </FlexRow>
       <FlexRowAlignCenter $gap={5}>
         <p>Cone size</p>
         <LabeledSlider
