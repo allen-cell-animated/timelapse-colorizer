@@ -2,6 +2,13 @@ import { GLASBEY_DARK_COLORS, GLASBEY_DEFAULT_COLORS, GLASBEY_LIGHT_COLORS } fro
 
 import ColorRamp, { ColorRampType } from "../ColorRamp";
 
+const enum RampType {
+  LINEAR,
+  DIVERGING,
+  CYCLICAL,
+  CATEGORICAL,
+}
+
 // TODO: Could add additional tags for filtering, etc. to each color ramp!
 export type RawColorData = {
   /** Internal key name, to be stored in the URL. CHANGING THIS WILL BREAK COMPATIBILITY. */
@@ -15,6 +22,7 @@ export type RawColorData = {
    * of colors are needed to distinguish between many different values.
    */
   categorical?: boolean;
+  type: RampType;
 };
 
 export type ColorRampData = RawColorData & {
@@ -33,31 +41,37 @@ const rawColorRampData: RawColorData[] = [
     // color space for interpolation. This could potentially be fixed by manually calculating the
     // interpolated colors in the color ramp.
     colorStops: ["#00ffff", "#20e0ff", "#40c0ff", "#60a0ff", "#8080ff", "#a060ff", "#c040ff", "#e020ff", "#ff00ff"],
+    type: RampType.LINEAR,
   },
   {
     key: "matplotlib-viridis",
     name: "Matplotlib - Viridis",
     colorStops: ["#440154", "#3a528b", "#20908c", "#5ec961", "#fde724"],
+    type: RampType.LINEAR,
   },
   {
     key: "matplotlib-plasma",
     name: "Matplotlib - Plasma",
     colorStops: ["#0c0786", "#5c00a5", "#9b179e", "#cb4777", "#ec7853", "#fdb32e", "#eff821"],
+    type: RampType.LINEAR,
   },
   {
     key: "matplotlib-inferno",
     name: "Matplotlib - Inferno",
     colorStops: ["#000003", "#410967", "#932567", "#dc5039", "#fba40a", "#fcfea4"],
+    type: RampType.LINEAR,
   },
   {
     key: "matplotlib-magma",
     name: "Matplotlib - Magma",
     colorStops: ["#000003", "#3b0f6f", "#8c2980", "#dd4968", "#fd9f6c", "#fbfcbf"],
+    type: RampType.LINEAR,
   },
   {
     key: "seaborn-mako",
     name: "Seaborn - Mako",
     colorStops: ["#0b0305", "#382a54", "#395d9b", "#3496a9", "#5fceac", "#def4e4"],
+    type: RampType.LINEAR,
   },
   {
     key: "matplotlib-turbo",
@@ -85,38 +99,50 @@ const rawColorRampData: RawColorData[] = [
       "#a01101",
       "#7a0402",
     ],
+    type: RampType.LINEAR,
   },
 
-  { key: "esri-red_5", name: "ESRI - Red 5", colorStops: ["#fee5d9", "#fcae91", "#fb6a4a", "#de2d26", "#a50f15"] },
+  {
+    key: "esri-red_5",
+    name: "ESRI - Red 5",
+    colorStops: ["#fee5d9", "#fcae91", "#fb6a4a", "#de2d26", "#a50f15"],
+    type: RampType.LINEAR,
+  },
   {
     key: "esri-orange_5",
     name: "ESRI - Orange 5",
     colorStops: ["#dfe1e6", "#bbbfc9", "#b39e93", "#c4703e", "#8c4a23"],
+    type: RampType.LINEAR,
   },
   {
     key: "esri-yellow_2",
     name: "ESRI - Yellow 2",
     colorStops: ["#ffc800", "#e7a300", "#b78300", "#886200", "#584100"],
+    type: RampType.LINEAR,
   },
   {
     key: "esri-green_4",
     name: "ESRI - Green 4",
     colorStops: ["#ffffcc", "#c2e699", "#78c679", "#31a354", "#006837"],
+    type: RampType.LINEAR,
   },
   {
     key: "esri-blue_14",
     name: "ESRI - Blue 14",
     colorStops: ["#ffec99", "#ccbe6a", "#799a96", "#3d6da2", "#3a4d6b"],
+    type: RampType.LINEAR,
   },
   {
     key: "esri-purple_4",
     name: "ESRI - Purple 4",
     colorStops: ["#edf8fb", "#b3cde3", "#8c96c6", "#8856a7", "#810f7c"],
+    type: RampType.LINEAR,
   },
   {
     key: "esri-mentone_beach",
     name: "ESRI - Mentone Beach",
     colorStops: ["#48385f", "#995375", "#db4a5b", "#fc9a59", "#fee086"],
+    type: RampType.LINEAR,
   },
   {
     key: "esri-retro_flow",
@@ -133,6 +159,7 @@ const rawColorRampData: RawColorData[] = [
       "#443dbf",
       "#007fd9",
     ],
+    type: RampType.LINEAR,
   },
   {
     key: "esri-heatmap_4",
@@ -152,54 +179,64 @@ const rawColorRampData: RawColorData[] = [
       "#2b1ca7",
       "#0022c8",
     ],
+    type: RampType.LINEAR,
   },
   {
     key: "esri-blue_red_9",
     name: "ESRI - Blue Red 9",
     colorStops: ["#2c7bb6", "#abd9e9", "#ffffbf", "#fdae61", "#d7191c"],
+    type: RampType.DIVERGING,
   },
   {
     key: "esri-blue_red_8",
     name: "ESRI - Blue Red 8",
     colorStops: ["#0571b0", "#92c5de", "#f7f7f7", "#f4a582", "#ca0020"],
+    type: RampType.DIVERGING,
   },
   {
     key: "esri-red_green_9",
     name: "ESRI - Red Green 9",
     colorStops: ["#d7191c", "#fdae61", "#ffffbf", "#a6d96a", "#1a9641"],
+    type: RampType.DIVERGING,
   },
   {
     key: "esri-purple_red_2",
     name: "ESRI - Purple Red 2",
     colorStops: ["#570959", "#ab84a0", "#fffee6", "#d2987f", "#a53217"],
+    type: RampType.DIVERGING,
   },
   {
     key: "esri-green_brown_1",
     name: "ESRI - Green Brown 1",
     colorStops: ["#018571", "#80cdc1", "#f5f5f5", "#dfc27d", "#a6611a"],
+    type: RampType.DIVERGING,
   },
   {
     key: "matplotlib-purple_orange",
     name: "Matplotlib - Purple Orange",
     colorStops: ["#2d004b", "#998fbf", "#f7f6f5", "#ed9b39", "#7f3b08"],
+    type: RampType.DIVERGING,
   },
   {
     key: "seaborn-cubehelix_blue",
     name: "Seaborn - Cubehelix Blue",
     // seaborn.cubehelix_palette(start=0.2, rot=-0.3, as_cmap=True, reverse=True)
     colorStops: ["#27203f", "#48507e", "#6585ab", "#8cb8c9", "#c2e2e2"],
+    type: RampType.LINEAR,
   },
   {
     key: "seaborn-cubehelix_purple",
     name: "Seaborn - Cubehelix Purple",
     // seaborn.cubehelix_palette(as_cmap=True, reverse=True)
     colorStops: ["#2c1e3d", "#6d3f71", "#aa678f", "#d499a7", "#edd1cb"],
+    type: RampType.LINEAR,
   },
   {
     key: "seaborn-cubehelix_green",
     name: "Seaborn - Cubehelix Green",
     // seaborn.cubehelix_palette(start=2.3, rot=-0.3, as_cmap=True, reverse=True)
     colorStops: ["#0f3221", "#31673d", "#64945a", "#a0ba84", "#d9ddbf"],
+    type: RampType.LINEAR,
   },
   {
     key: "fabio_crameri-romao",
@@ -225,6 +262,7 @@ const rawColorRampData: RawColorData[] = [
       "#7E3943",
       "#733957",
     ],
+    type: RampType.CYCLICAL,
   },
   {
     key: "fabio_crameri-viko",
@@ -248,6 +286,7 @@ const rawColorRampData: RawColorData[] = [
       "#5B152C",
       "#50193C",
     ],
+    type: RampType.CYCLICAL,
   },
   {
     key: "fabio_crameri-broco",
@@ -271,6 +310,7 @@ const rawColorRampData: RawColorData[] = [
       "#3C352B",
       "#372F37",
     ],
+    type: RampType.CYCLICAL,
   },
   {
     // TODO: Add an additional description field to describe how the categorical
@@ -279,18 +319,21 @@ const rawColorRampData: RawColorData[] = [
     name: "Colorcet - Glasbey (Repeating)",
     categorical: true,
     colorStops: GLASBEY_DEFAULT_COLORS,
+    type: RampType.CATEGORICAL,
   },
   {
     key: "colorcet-glasbey_light",
     name: "Colorcet - Glasbey Light (Repeating)",
     categorical: true,
     colorStops: GLASBEY_LIGHT_COLORS,
+    type: RampType.CATEGORICAL,
   },
   {
     key: "colorcet-glasbey_dark",
     name: "Colorcet - Glasbey Dark (Repeating)",
     categorical: true,
     colorStops: GLASBEY_DARK_COLORS,
+    type: RampType.CATEGORICAL,
   },
 ];
 
@@ -336,3 +379,7 @@ export const DISPLAY_COLOR_RAMP_KEYS = [
   "colorcet-glasbey_dark",
 ];
 export const DEFAULT_COLOR_RAMP_KEY = Array.from(colorRampMap.keys())[0];
+
+export const DISPLAY_LINEAR_RAMP_KEYS = colorRampData
+  .filter((ramp) => ramp.type === RampType.LINEAR && DISPLAY_COLOR_RAMP_KEYS.includes(ramp.key))
+  .map((ramp) => ramp.key);

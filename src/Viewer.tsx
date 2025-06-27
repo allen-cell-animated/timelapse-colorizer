@@ -70,6 +70,7 @@ import {
   AnnotationTab,
   CorrelationPlotTab,
   FeatureThresholdsTab,
+  Plot3dTab,
   PlotTab,
   ScatterPlotTab,
   SettingsTab,
@@ -662,6 +663,16 @@ function Viewer(): ReactElement {
       children: (
         <div className={styles.tabContent}>
           <AnnotationTab annotationState={annotationState} hoveredId={currentHoveredId?.globalId ?? null} />
+        </div>
+      ),
+    },
+    {
+      label: "3D Plot",
+      key: TabType.PLOT_3D,
+      visible: INTERNAL_BUILD,
+      children: (
+        <div className={styles.tabContent}>
+          <Plot3dTab></Plot3dTab>
         </div>
       ),
     },

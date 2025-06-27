@@ -8,6 +8,9 @@ import {
   ColorRamp,
   ColorRampData,
   ColorRampType,
+  DEFAULT_CATEGORICAL_PALETTE_KEY,
+  DISPLAY_CATEGORICAL_PALETTE_KEYS,
+  DISPLAY_COLOR_RAMP_KEYS,
   KNOWN_CATEGORICAL_PALETTES,
   KNOWN_COLOR_RAMPS,
   PaletteData,
@@ -121,11 +124,11 @@ type ColorRampSelectionProps = {
    */
   knownColorRamps?: Map<string, ColorRampData>;
 
-  selectedPalette: Color[];
-  selectedPaletteKey: string | null;
-  onChangePalette: (newPalette: Color[]) => void;
-  numCategories: number;
-  categoricalPalettesToDisplay: string[];
+  selectedPalette?: Color[];
+  selectedPaletteKey?: string | null;
+  onChangePalette?: (newPalette: Color[]) => void;
+  numCategories?: number;
+  categoricalPalettesToDisplay?: string[];
   knownCategoricalPalettes?: Map<string, PaletteData>;
 
   /** If true, shows the categorical palettes and selected palette instead of
@@ -133,6 +136,7 @@ type ColorRampSelectionProps = {
   useCategoricalPalettes?: boolean;
   disabled?: boolean;
   reversed?: boolean;
+  label?: string;
 };
 
 const defaultProps: Partial<ColorRampSelectionProps> = {
@@ -140,6 +144,13 @@ const defaultProps: Partial<ColorRampSelectionProps> = {
   disabled: false,
   useCategoricalPalettes: false,
   knownCategoricalPalettes: KNOWN_CATEGORICAL_PALETTES,
+  colorRampsToDisplay: DISPLAY_COLOR_RAMP_KEYS,
+  categoricalPalettesToDisplay: DISPLAY_CATEGORICAL_PALETTE_KEYS,
+  onChangePalette: () => {},
+  selectedPalette: KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_KEY)!.colors,
+  selectedPaletteKey: DEFAULT_CATEGORICAL_PALETTE_KEY,
+  numCategories: 10,
+  label: "Color map",
 };
 
 export default function ColorRampSelection(inputProps: ColorRampSelectionProps): ReactElement {
@@ -242,7 +253,7 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
         <SelectionDropdown
           disabled={props.disabled}
           items={props.useCategoricalPalettes ? paletteItems : rampItems}
-          label="Color map"
+          label={props.label}
           selected={props.useCategoricalPalettes ? selectedPaletteItem : selectedRampItem}
           onChange={props.useCategoricalPalettes ? onChangePalette : onChangeRamp}
           width={`${DROPDOWN_WIDTH_PX}px`}

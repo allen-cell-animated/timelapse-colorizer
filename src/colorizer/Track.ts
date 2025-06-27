@@ -64,6 +64,10 @@ export default class Track {
     return this.times[0];
   }
 
+  endTime(): number {
+    return this.times[this.times.length - 1];
+  }
+
   getMissingTimes(): number[] {
     const missingTimes = [];
     const startTime = this.startTime();
