@@ -3,7 +3,9 @@ import React, { ReactElement, useEffect, useRef, useState } from "react";
 
 import { Dataset, TabType, Track } from "../../colorizer";
 import { useViewerStateStore } from "../../state";
-import { FlexColumn } from "../../styles/utils";
+import { FlexColumn, FlexRow, FlexRowAlignCenter } from "../../styles/utils";
+
+import LabeledSlider from "../LabeledSlider";
 
 const CONFIG: Partial<Plotly.Config> = {
   responsive: true,
@@ -51,7 +53,6 @@ class Plot3d {
     const traces: Plotly.Data[] = [];
 
     // TRACE 1: Arrow plot
-    // Draw an optional arrow plot to visualize the flow field, if all
     if (this.coneTrace) {
       traces.push(this.coneTrace);
     }
@@ -117,7 +118,37 @@ class Plot3d {
       }
     }
 
-    Plotly.react(this.parentRef, traces, LAYOUT, CONFIG);
+    const makeAxisLayout = (featureKey: string | null): Partial<Plotly.Axis> => {
+      if (!featureKey || !this.dataset) {
+        return { zeroline: false };
+      }
+      const featureData = this.dataset.getFeatureData(featureKey);
+      if (!featureData) {
+        return { title: "" };
+      }
+      let range: [number, number] = [featureData.min, featureData.max];
+      const flowData = this.dataset.getFlowFieldFeatureData(featureKey);
+      if (flowData) {
+        // For flow field features, use the min and max of the data
+        range = [flowData.min, flowData.max];
+      }
+      return {
+        title: this.dataset.getFeatureNameWithUnits(featureKey) ?? "",
+        range,
+        zeroline: false,
+      };
+    };
+
+    const layout: Partial<Plotly.Layout> = {
+      ...LAYOUT,
+      scene: {
+        xaxis: makeAxisLayout(this.xAxisFeatureKey),
+        yaxis: makeAxisLayout(this.yAxisFeatureKey),
+        zaxis: makeAxisLayout(this.zAxisFeatureKey),
+      },
+    };
+
+    Plotly.react(this.parentRef, traces, layout, CONFIG);
   }
 }
 
@@ -144,7 +175,8 @@ export default function Plot3dTab(): ReactElement {
   const [numActiveUserInteractions, setNumActiveUserInteractions] = useState(0);
 
   const [coneSize, setConeSize] = useState(1);
-  // const [coneColorRamp, setConeColorRamp] = useState();
+  const [coneColorRamp, setConeColorRamp] = useState();
+  const [flowFieldSubsampleRate, setFlowFieldSubsampleRate] = useState(6);
 
   const dataset = useViewerStateStore((state) => state.dataset);
   const track = useViewerStateStore((state) => state.track);
@@ -153,8 +185,6 @@ export default function Plot3dTab(): ReactElement {
   // const outlineColor = useViewerStateStore((state) => state.outlineColor);
 
   const isPlotTabVisible = useViewerStateStore((state) => state.openTab === TabType.PLOT_3D);
-
-  const flowFieldSubsampleRate = 6;
 
   useEffect(() => {
     if (timeControls.isPlaying()) {
@@ -249,7 +279,7 @@ export default function Plot3dTab(): ReactElement {
     };
     const newConeTrace = makeConeTrace();
     setConeTrace(newConeTrace);
-  }, [dataset, xAxisFeatureKey, yAxisFeatureKey, zAxisFeatureKey]);
+  }, [dataset, xAxisFeatureKey, yAxisFeatureKey, zAxisFeatureKey, flowFieldSubsampleRate, coneSize]);
 
   useEffect(() => {
     plot3dRef.current = new Plot3d(plotContainerRef.current!);
@@ -305,11 +335,34 @@ export default function Plot3dTab(): ReactElement {
   }, []);
 
   return (
-    <FlexColumn>
-      Mouse interactions: {numActiveUserInteractions}
-      <br />
-      timeout: {resumePlaybackTimeoutRef.current ? resumePlaybackTimeoutRef.current.toString() : "null"}
-      <div ref={plotContainerRef} style={{ width: "auto", height: "auto", zIndex: "0" }}></div>
+    <FlexColumn style={{ height: "100%" }}>
+      <FlexRowAlignCenter $gap={5}>
+        <p>Cone size</p>
+        <LabeledSlider
+          type="value"
+          value={coneSize}
+          onChange={setConeSize}
+          minInputBound={0}
+          minSliderBound={0}
+          maxInputBound={10}
+          maxSliderBound={2.5}
+          marks={[1]}
+        ></LabeledSlider>
+      </FlexRowAlignCenter>
+      <FlexRowAlignCenter $gap={5}>
+        <p>Flow field subsampling</p>
+        <LabeledSlider
+          type="value"
+          value={flowFieldSubsampleRate}
+          onChange={setFlowFieldSubsampleRate}
+          minInputBound={1}
+          minSliderBound={1}
+          maxInputBound={20}
+          maxSliderBound={10}
+          step={1}
+        ></LabeledSlider>
+      </FlexRowAlignCenter>
+      <div ref={plotContainerRef} style={{ width: "auto", height: "100%", zIndex: "0" }}></div>
     </FlexColumn>
   );
 }
