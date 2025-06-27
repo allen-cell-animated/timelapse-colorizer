@@ -90,7 +90,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
 
     // TODO: Allow users to control opacity of the overlay line
     this.lineOverlayObject.setOpacity(0.25);
-    this.lineOverlayObject.setOverlay(true);
+    this.lineOverlayObject.setRenderAsOverlay(true);
 
     this.tempCanvas = document.createElement("canvas");
     this.tempCanvas.style.width = "10px";
