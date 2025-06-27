@@ -9,6 +9,7 @@ import {
   isThresholdCategorical,
   isThresholdNumeric,
   ThresholdType,
+  TrackPathColorMode,
 } from "../types";
 import { packDataTexture } from "./texture_utils";
 
@@ -559,4 +560,45 @@ export function normalizePointsTo2dCanvasSpace(points: Float32Array, dataset: Da
     points[i + 2] = 0;
   }
   return points;
+}
+
+const LINE_GEOMETRY_DEPS: (keyof RenderCanvasStateParams)[] = ["dataset", "track", "showTrackPathBreaks"];
+const LINE_VERTEX_COLOR_DEPS: (keyof RenderCanvasStateParams)[] = [
+  ...LINE_GEOMETRY_DEPS,
+  "trackPathColorMode",
+  "featureKey",
+  "colorRamp",
+  "colorRampRange",
+  "categoricalPaletteRamp",
+  "inRangeLUT",
+  "outOfRangeDrawSettings",
+  "outlierDrawSettings",
+  "showTrackPath",
+];
+const LINE_MATERIAL_DEPS: (keyof RenderCanvasStateParams)[] = [
+  "trackPathColorMode",
+  "trackPathColor",
+  "outlineColor",
+  "trackPathWidthPx",
+];
+
+export function getLineUpdateFlags(
+  prevParams: RenderCanvasStateParams | null,
+  params: RenderCanvasStateParams
+): {
+  geometryNeedsUpdate: boolean;
+  vertexColorNeedsUpdate: boolean;
+  materialNeedsUpdate: boolean;
+} {
+  const geometryNeedsUpdate = hasPropertyChanged(prevParams, params, LINE_GEOMETRY_DEPS);
+  const vertexColorNeedsUpdate =
+    params.trackPathColorMode === TrackPathColorMode.USE_FEATURE_COLOR &&
+    hasPropertyChanged(prevParams, params, LINE_VERTEX_COLOR_DEPS);
+  const materialNeedsUpdate = vertexColorNeedsUpdate || hasPropertyChanged(prevParams, params, LINE_MATERIAL_DEPS);
+
+  return {
+    geometryNeedsUpdate,
+    vertexColorNeedsUpdate,
+    materialNeedsUpdate,
+  };
 }

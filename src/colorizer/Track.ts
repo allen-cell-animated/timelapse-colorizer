@@ -36,6 +36,10 @@ export default class Track {
     }
   }
 
+  /**
+   * Returns the ID of the object in the track at time `t`, if it exists. If the
+   * track does not have an object at time `t`, returns -1.
+   */
   getIdAtTime(t: number): number {
     // assume that times passed in would be an exact match.
     const index = this.times.findIndex((time) => time === t);

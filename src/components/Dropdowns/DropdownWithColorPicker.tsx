@@ -15,11 +15,12 @@ type DropdownWithColorPickerProps = {
   /** HTML ID that the selection dropdown is labelled by. */
   htmlLabelId: string;
   onValueChange: (mode: string) => void;
-  onColorChange: (color: ThreeColor) => void;
   color: ThreeColor;
   disabled?: boolean;
   showColorPicker?: boolean;
   presets?: PresetsItem[];
+  alpha?: number;
+  onColorChange: (color: ThreeColor, alpha: number) => void;
 };
 
 const defaultProps: Partial<DropdownWithColorPickerProps> = {
@@ -41,6 +42,15 @@ export default function DropdownWithColorPicker(propsInput: DropdownWithColorPic
 
   const colorPickerRef = useRef<HTMLParagraphElement>(null);
 
+  const showAlpha = props.alpha !== undefined;
+  let colorHexString = props.color.getHexString();
+  if (showAlpha && props.alpha !== undefined) {
+    colorHexString += Math.round(props.alpha * 255)
+      .toString(16)
+      .padStart(2, "0");
+  }
+  const propColor = new AntdColor(colorHexString);
+
   return (
     <HorizontalDiv ref={colorPickerRef}>
       <SelectionDropdown
@@ -60,12 +70,14 @@ export default function DropdownWithColorPicker(propsInput: DropdownWithColorPic
           opacity: props.showColorPicker ? "1" : "0",
         }}
         size="small"
-        disabledAlpha={true}
-        defaultValue={new AntdColor(props.color.getHexString())}
-        color={new AntdColor(props.color.getHexString())}
+        disabledAlpha={!showAlpha}
+        defaultValue={propColor}
+        color={propColor}
         presets={props.presets}
         // onChange returns a different color type, so must convert from hex
-        onChange={(_color, hex) => props.onColorChange(new ThreeColor(hex as ColorRepresentation))}
+        onChange={(color, hex) =>
+          props.onColorChange(new ThreeColor(hex.slice(0, 7) as ColorRepresentation), color.toRgb().a)
+        }
         disabled={props.disabled}
       />
     </HorizontalDiv>

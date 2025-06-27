@@ -1,7 +1,7 @@
 {
   "name": "timelapse-colorizer",
   "private": true,
-  "version": "1.5.3",
+  "version": "1.5.5",
   "type": "module",
   "scripts": {
     "start": "vite",
@@ -51,7 +51,7 @@
     "vitest-canvas-mock": "^0.3.3"
   },
   "dependencies": {
-    "@aics/vole-core": "^3.15.0",
+    "@aics/vole-core": "^3.15.3",
     "@ant-design/icons": "^5.2.5",
     "@fortawesome/fontawesome-svg-core": "^6.5.1",
     "@fortawesome/free-solid-svg-icons": "^6.5.1",
