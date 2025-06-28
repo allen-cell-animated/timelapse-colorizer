@@ -1,10 +1,10 @@
 import workerpool from "workerpool";
 import Transfer from "workerpool/types/transfer";
 
-import { FeatureDataType } from "../types";
+import { FeatureDataType, FeatureThreshold } from "../types";
 import { computeCorrelations } from "../utils/correlation";
 import { LoadedData, loadFromJsonUrl, loadFromParquetUrl } from "../utils/data_load_utils";
-import { calculateMotionDeltas, constructAllTracksFromData } from "../utils/math_utils";
+import { calculateInRangeLUT, calculateMotionDeltas, constructAllTracksFromData } from "../utils/math_utils";
 import { arrayToDataTextureInfo } from "../utils/texture_utils";
 
 async function loadUrlData(url: string, type: FeatureDataType): Promise<Transfer> {
@@ -41,8 +41,18 @@ async function getMotionDeltas(
   return new workerpool.Transfer(motionDeltas, [motionDeltas.buffer]);
 }
 
+async function getInRangeLUT(
+  numObjects: number,
+  thresholds: FeatureThreshold[],
+  featureData: Float32Array[]
+): Promise<Transfer> {
+  const inRangeIds = calculateInRangeLUT(numObjects, thresholds, featureData);
+  return new workerpool.Transfer(inRangeIds, [inRangeIds.buffer]);
+}
+
 workerpool.worker({
   loadUrlData,
   getMotionDeltas,
   getCorrelations,
+  getInRangeLUT,
 });
