@@ -1,5 +1,7 @@
-import { Vector2 } from "three";
+import { Matrix4, Vector2, Vector3 } from "three";
+import { clamp, lerp } from "three/src/math/MathUtils";
 
+import { PixelIdInfo } from "../../types";
 import { BaseRenderParams, defaultFontStyle, EMPTY_RENDER_INFO, FontStyle, RenderInfo } from "../types";
 
 import { LabelData, LabelType } from "../../AnnotationData";
@@ -10,8 +12,11 @@ export type AnnotationParams = BaseRenderParams & {
   timeToLabelIds: Map<number, Record<number, number[]>>;
   selectedLabelIdx: number | null;
   rangeStartId: number | null;
+  getIdAtPixel: ((x: number, y: number) => PixelIdInfo | null) | null;
+  depthToScale: (depth: number) => { scale: number; clipOpacity: number };
 
   frameToCanvasCoordinates: Vector2;
+  centroidToCanvasMatrix: Matrix4;
   frame: number;
   panOffset: Vector2;
 };
@@ -33,6 +38,9 @@ export type AnnotationStyle = FontStyle & {
   textPaddingTopPx: number;
   textPaddingBottomPx: number;
   maxTextCharacters: number;
+  /** Opacity of markers for objects that are obscured by other objects. */
+  maxClipOpacity: number;
+  minClipOpacity: number;
 };
 
 export const defaultAnnotationStyle: AnnotationStyle = {
@@ -49,33 +57,35 @@ export const defaultAnnotationStyle: AnnotationStyle = {
   textPaddingTopPx: 2,
   textPaddingBottomPx: 2,
   maxTextCharacters: 20,
+  maxClipOpacity: 0.5,
+  minClipOpacity: 0.25,
 };
 
-/** Transforms a 2D frame pixel coordinate into a 2D canvas pixel coordinate,
- * accounting for panning and zooming. For both, (0,0) is the top left corner.
- */
-function framePixelCoordsToCanvasPixelCoords(pos: Vector2, params: AnnotationParams): Vector2 {
-  // Position is in pixel coordinates of the frame. Transform to relative frame coordinates,
-  // then to relative canvas coordinates, and finally into canvas pixel coordinates.
-  const frameResolution = params.dataset?.frameResolution;
-  if (!frameResolution) {
-    return new Vector2(0, 0);
-  }
-  pos = pos.clone();
-  pos.divide(frameResolution); // to relative frame coordinates
-  pos.sub(new Vector2(0.5, 0.5)); // Center (0,0) at center of frame
-  pos.add(params.panOffset.clone().multiply(new Vector2(1, -1))); // apply panning offset
-  pos.multiply(params.frameToCanvasCoordinates); // to relative canvas coordinates
-  pos.multiply(params.canvasSize); // to canvas pixel coordinates
-  pos.add(params.canvasSize.clone().multiplyScalar(0.5)); // Move origin to top left corner
-  return pos;
-}
+// /** Transforms a 2D frame pixel coordinate into a 2D canvas pixel coordinate,
+//  * accounting for panning and zooming. For both, (0,0) is the top left corner.
+//  */
+// function framePixelCoordsToCanvasPixelCoords(pos: Vector2, params: AnnotationParams): Vector2 {
+//   // Position is in pixel coordinates of the frame. Transform to relative frame coordinates,
+//   // then to relative canvas coordinates, and finally into canvas pixel coordinates.
+//   const frameResolution = params.dataset?.frameResolution;
+//   if (!frameResolution) {
+//     return new Vector2(0, 0);
+//   }
+//   pos = pos.clone();
+//   pos.divide(frameResolution); // to relative frame coordinates
+//   pos.sub(new Vector2(0.5, 0.5)); // Center (0,0) at center of frame
+//   pos.add(params.panOffset.clone().multiply(new Vector2(1, -1))); // apply panning offset
+//   pos.multiply(params.frameToCanvasCoordinates); // to relative canvas coordinates
+//   pos.multiply(params.canvasSize); // to canvas pixel coordinates
+//   pos.add(params.canvasSize.clone().multiplyScalar(0.5)); // Move origin to top left corner
+//   return pos;
+// }
 
 /**
  * For a given object ID, returns its centroid in canvas pixel coordinates if
  * it's visible in the current frame. Otherwise, returns null.
  */
-function getCanvasPixelCoordsFromId(id: number | null, params: AnnotationParams): Vector2 | null {
+function getCanvasPixelCoordsFromId(id: number | null, params: AnnotationParams): Vector3 | null {
   if (id === null || params.dataset === null || params.dataset.getTime(id) !== params.frame) {
     return null;
   }
@@ -83,11 +93,13 @@ function getCanvasPixelCoordsFromId(id: number | null, params: AnnotationParams)
   if (!centroid) {
     return null;
   }
-  return framePixelCoordsToCanvasPixelCoords(new Vector2(centroid[0], centroid[1]), params);
+  const centroidPos = new Vector3(...centroid);
+  const canvasPos = centroidPos.clone().applyMatrix4(params.centroidToCanvasMatrix);
+  return canvasPos;
 }
 
-function getMarkerScale(params: AnnotationParams, style: AnnotationStyle): number {
-  const zoomScale = Math.max(params.frameToCanvasCoordinates.x, params.frameToCanvasCoordinates.y);
+function getMarkerScale(zoomScale: number, style: AnnotationStyle): number {
+  // const zoomScale = Math.max(params.frameToCanvasCoordinates.x, params.frameToCanvasCoordinates.y);
   const dampenedZoomScale = zoomScale * style.scaleWithZoomPct + (1 - style.scaleWithZoomPct);
   return dampenedZoomScale;
 }
@@ -98,16 +110,20 @@ function drawRangeStartId(
   params: AnnotationParams,
   style: AnnotationStyle
 ): void {
-  const pos = getCanvasPixelCoordsFromId(params.rangeStartId, params);
-  if (pos === null) {
+  const pos3d = getCanvasPixelCoordsFromId(params.rangeStartId, params);
+  if (pos3d === null) {
     return;
   }
+  const pos = new Vector2(pos3d.x, pos3d.y);
   pos.add(origin);
+
   ctx.strokeStyle = style.borderColor;
-  const zoomScale = getMarkerScale(params, style);
+  // TODO: get marker scale from pos3d Z distance.
+  const zoomScale = getMarkerScale(pos3d.z, style);
   ctx.setLineDash([3, 2]);
   ctx.beginPath();
-  ctx.arc(pos.x, pos.y, style.booleanMarkerRadiusPx * zoomScale, 0, 2 * Math.PI);
+  const radius = Math.max(style.booleanMarkerRadiusPx * zoomScale, 0);
+  ctx.arc(pos.x, pos.y, radius, 0, 2 * Math.PI);
   ctx.closePath();
   ctx.stroke();
   ctx.setLineDash([]);
@@ -135,17 +151,30 @@ function drawAnnotationMarker(
   labelIdx: number[]
 ): void {
   const labelData = params.labelData[labelIdx[0]];
-  const pos = getCanvasPixelCoordsFromId(id, params);
-  if (pos === null) {
+  const pos3d = getCanvasPixelCoordsFromId(id, params);
+  if (pos3d === null) {
     return;
   }
+  const pos = new Vector2(pos3d.x, pos3d.y);
+  const { scale, clipOpacity } = params.depthToScale(pos3d.z);
+
+  if (params.getIdAtPixel !== null) {
+    const pixelIdInfo = params.getIdAtPixel(pos.x, pos.y);
+    const isObscured = pixelIdInfo !== null && pixelIdInfo.globalId !== id;
+    // If the range start ID is visible, set the opacity based on whether it's
+    // obscured by other objects.
+    ctx.globalAlpha = isObscured ? clipOpacity : 1;
+  } else {
+    ctx.globalAlpha = 1;
+  }
+
   pos.add(origin);
   ctx.strokeStyle = style.borderColor;
 
   // Scale markers by the zoom level.
   const isBooleanLabel = labelData.options.type === LabelType.BOOLEAN;
-  const dampenedZoomScale = getMarkerScale(params, style);
-  const scaledBooleanMarkerRadiusPx = style.booleanMarkerRadiusPx * dampenedZoomScale;
+  const dampenedZoomScale = getMarkerScale(scale, style);
+  const scaledBooleanMarkerRadiusPx = Math.max(0, style.booleanMarkerRadiusPx * dampenedZoomScale);
 
   // Draw an additional secondary marker behind the main one if there are multiple labels.
   if (labelIdx.length > 1) {

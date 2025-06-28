@@ -13,7 +13,8 @@ import {
   VolumeLoaderContext,
   WorkerLoader,
 } from "@aics/vole-core";
-import { Color, Vector2, Vector3 } from "three";
+import { Color, Matrix4, Quaternion, Vector2, Vector3 } from "three";
+import { clamp, inverseLerp, lerp } from "three/src/math/MathUtils";
 
 import { MAX_FEATURE_CATEGORIES } from "../constants";
 import {
@@ -99,6 +100,9 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     this.currentFrame = -1;
 
     this.onLoadFrameCallback = () => {};
+
+    this.getScreenSpaceMatrix = this.getScreenSpaceMatrix.bind(this);
+    this.getIdAtPixel = this.getIdAtPixel.bind(this);
   }
 
   private initLights(): void {
@@ -377,6 +381,10 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     this.onLoadFrameCallback = callback;
   }
 
+  public setOnRenderCallback(callback: (() => void) | null): void {
+    this.view3d.setOnRenderCallback(callback);
+  }
+
   private syncTrackPathLine(): void {
     // Show nothing if track doesn't exist
     if (!this.params || !this.params.track || !this.params.showTrackPath) {
@@ -429,5 +437,76 @@ export class ColorizeCanvas3D implements IRenderCanvas {
       return { segId, globalId };
     }
     return null;
+  }
+
+  public getScreenSpaceMatrix(): Matrix4 {
+    if (!this.volume) {
+      // Return an identity matrix if the volume is not loaded
+      console.log("Volume not loaded");
+      return new Matrix4();
+    }
+
+    // 1. Normalize from volume voxel coordinates to world space. Also,
+    //    translate so that the center of the volume is at (0, 0, 0).
+    const volumeScale = new Vector3(1, -1, 1)
+      .multiply(this.volume.physicalPixelSize)
+      .divideScalar(this.volume.physicalScale);
+    const normalizeVoxelToWorld = new Matrix4().compose(
+      this.volume.normPhysicalSize.clone().multiplyScalar(-0.5), // Translate to center
+      new Quaternion(0, 0, 0, 1),
+      volumeScale.multiply(new Vector3(1, -1, 1))
+    );
+
+    // 2. Get the view projection matrix, which transforms from world space to
+    //    screen space in the [-1, 1] range.
+    const viewProjectionMatrix = this.view3d.getViewProjectionMatrix();
+
+    // 3. Scale the [-1, 1] range to canvas pixels, and move the origin to the
+    //    top left corner of the canvas. Normalize the Z axis to the [0, 1] range.
+    const viewProjectionToScreen = new Matrix4().compose(
+      new Vector3(0.5 * this.canvasResolution.x, 0.5 * this.canvasResolution.y, 0.5), // Translate origin
+      new Quaternion(0, 0, 0, 1),
+      new Vector3(0.5 * this.canvasResolution.x, -0.5 * this.canvasResolution.y, 0.5) // Scale to screen
+    );
+
+    return viewProjectionToScreen.multiply(viewProjectionMatrix).multiply(normalizeVoxelToWorld);
+  }
+
+  public getDepthToScaleFn(screenSpaceMatrix: Matrix4): (depth: number) => { scale: number; clipOpacity: number } {
+    if (!this.volume) {
+      return () => ({ scale: 1, clipOpacity: 1 });
+    }
+    // Determine min and max Z depth of the volume in screen space, using the
+    // corners.
+    const xCoords = [0, this.volume.imageInfo.originalSize.x - 1];
+    const yCoords = [0, this.volume.imageInfo.originalSize.y - 1];
+    const zCoords = [0, this.volume.imageInfo.originalSize.z - 1];
+
+    let minZ = Infinity;
+    let maxZ = -Infinity;
+
+    for (let i = 0; i < xCoords.length; i++) {
+      for (let j = 0; j < yCoords.length; j++) {
+        for (let k = 0; k < zCoords.length; k++) {
+          const point = new Vector3(xCoords[i], yCoords[j], zCoords[k]);
+          point.applyMatrix4(screenSpaceMatrix);
+          const z = point.z;
+          minZ = Math.min(minZ, z);
+          maxZ = Math.max(maxZ, z);
+        }
+      }
+    }
+    minZ = Math.max(minZ, 0.01);
+    maxZ = Math.max(maxZ, 0.01);
+
+    return (depth: number): { scale: number; clipOpacity: number } => {
+      let depthT = clamp(inverseLerp(minZ, maxZ, depth), 0, 1);
+      return {
+        // Scale by distance from camera PLUS a small offset using `depthT`
+        // based on how close it is to the camera within the volume.
+        scale: depth * -60 + 59,
+        clipOpacity: lerp(0.8, 0.1, depthT),
+      };
+    };
   }
 }
