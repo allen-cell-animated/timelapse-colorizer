@@ -14,6 +14,7 @@ import {
   WorkerLoader,
 } from "@aics/vole-core";
 import { Color, Matrix4, Quaternion, Vector2, Vector3 } from "three";
+import { clamp, inverseLerp, lerp } from "three/src/math/MathUtils";
 
 import { MAX_FEATURE_CATEGORIES } from "../constants";
 import {
@@ -468,12 +469,44 @@ export class ColorizeCanvas3D implements IRenderCanvas {
       new Vector3(0.5 * this.canvasResolution.x, -0.5 * this.canvasResolution.y, 0.5) // Scale to screen
     );
 
-    // 4. Invert Z axis
-    const setZToZoom = new Matrix4().makeTranslation(new Vector3(0, 0, 59));
-    setZToZoom.multiply(
-      new Matrix4().makeScale(1, 1, -60) // Higher Z-values should be smaller
-    );
+    return viewProjectionToScreen.multiply(viewProjectionMatrix).multiply(normalizeVoxelToWorld);
+  }
 
-    return setZToZoom.multiply(viewProjectionToScreen).multiply(viewProjectionMatrix).multiply(normalizeVoxelToWorld);
+  public getDepthToScaleFn(screenSpaceMatrix: Matrix4): (depth: number) => { scale: number; clipOpacity: number } {
+    if (!this.volume) {
+      return () => ({ scale: 1, clipOpacity: 1 });
+    }
+    // Determine min and max Z depth of the volume in screen space, using the
+    // corners.
+    const xCoords = [0, this.volume.imageInfo.originalSize.x - 1];
+    const yCoords = [0, this.volume.imageInfo.originalSize.y - 1];
+    const zCoords = [0, this.volume.imageInfo.originalSize.z - 1];
+
+    let minZ = Infinity;
+    let maxZ = -Infinity;
+
+    for (let i = 0; i < xCoords.length; i++) {
+      for (let j = 0; j < yCoords.length; j++) {
+        for (let k = 0; k < zCoords.length; k++) {
+          const point = new Vector3(xCoords[i], yCoords[j], zCoords[k]);
+          point.applyMatrix4(screenSpaceMatrix);
+          const z = point.z;
+          minZ = Math.min(minZ, z);
+          maxZ = Math.max(maxZ, z);
+        }
+      }
+    }
+    minZ = Math.max(minZ, 0.01);
+    maxZ = Math.max(maxZ, 0.01);
+
+    return (depth: number): { scale: number; clipOpacity: number } => {
+      let depthT = clamp(inverseLerp(minZ, maxZ, depth), 0, 1);
+      return {
+        // Scale by distance from camera PLUS a small offset using `depthT`
+        // based on how close it is to the camera within the volume.
+        scale: depth * -60 + 59,
+        clipOpacity: lerp(0.8, 0.1, depthT),
+      };
+    };
   }
 }

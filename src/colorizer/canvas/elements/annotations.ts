@@ -13,6 +13,7 @@ export type AnnotationParams = BaseRenderParams & {
   selectedLabelIdx: number | null;
   rangeStartId: number | null;
   getIdAtPixel: ((x: number, y: number) => PixelIdInfo | null) | null;
+  depthToScale: (depth: number) => { scale: number; clipOpacity: number };
 
   frameToCanvasCoordinates: Vector2;
   centroidToCanvasMatrix: Matrix4;
@@ -155,14 +156,14 @@ function drawAnnotationMarker(
     return;
   }
   const pos = new Vector2(pos3d.x, pos3d.y);
+  const { scale, clipOpacity } = params.depthToScale(pos3d.z);
 
   if (params.getIdAtPixel !== null) {
     const pixelIdInfo = params.getIdAtPixel(pos.x, pos.y);
     const isObscured = pixelIdInfo !== null && pixelIdInfo.globalId !== id;
     // If the range start ID is visible, set the opacity based on whether it's
     // obscured by other objects.
-    const t = clamp(1 - pos3d.z * 0.1, 0, 1);
-    ctx.globalAlpha = isObscured ? lerp(style.minClipOpacity, style.maxClipOpacity, t) : 1;
+    ctx.globalAlpha = isObscured ? clipOpacity : 1;
   } else {
     ctx.globalAlpha = 1;
   }
@@ -172,7 +173,7 @@ function drawAnnotationMarker(
 
   // Scale markers by the zoom level.
   const isBooleanLabel = labelData.options.type === LabelType.BOOLEAN;
-  const dampenedZoomScale = getMarkerScale(pos3d.z, style);
+  const dampenedZoomScale = getMarkerScale(scale, style);
   const scaledBooleanMarkerRadiusPx = Math.max(0, style.booleanMarkerRadiusPx * dampenedZoomScale);
 
   // Draw an additional secondary marker behind the main one if there are multiple labels.

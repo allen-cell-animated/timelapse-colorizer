@@ -135,4 +135,6 @@ export interface IRenderCanvas {
    * top left corner of the canvas.
    */
   getScreenSpaceMatrix(): Matrix4;
+
+  getDepthToScaleFn(screenSpaceMatrix: Matrix4): (depth: number) => { scale: number; clipOpacity: number };
 }

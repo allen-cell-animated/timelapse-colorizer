@@ -181,6 +181,10 @@ export default class CanvasOverlay implements IRenderCanvas {
     this.onRenderCallback = callback;
   }
 
+  getDepthToScaleFn(screenSpaceMatrix: Matrix4): (depth: number) => { scale: number; clipOpacity: number } {
+    throw new Error("Method not implemented.");
+  }
+
   // Wrapped ColorizeCanvas functions ///////
 
   public get resolution(): Vector2 {
@@ -377,6 +381,8 @@ export default class CanvasOverlay implements IRenderCanvas {
 
   private getAnnotationRenderer(): RenderInfo {
     const scaleInfo = this.innerCanvas.scaleInfo;
+    const screenSpaceMatrix = this.innerCanvas.getScreenSpaceMatrix();
+    const depthToScaleFn = this.innerCanvas.getDepthToScaleFn(screenSpaceMatrix);
     const params: AnnotationParams = {
       ...this.getBaseRendererParams(),
       visible: this.isAnnotationVisible,
@@ -388,7 +394,8 @@ export default class CanvasOverlay implements IRenderCanvas {
       // onscreen position.
       frameToCanvasCoordinates:
         scaleInfo.type === CanvasType.CANVAS_2D ? scaleInfo.frameToCanvasCoordinates : new Vector2(1, 1),
-      centroidToCanvasMatrix: this.innerCanvas.getScreenSpaceMatrix(),
+      centroidToCanvasMatrix: screenSpaceMatrix,
+      depthToScale: depthToScaleFn,
       frame: this.currentFrame,
       panOffset: this.panOffset,
       // Do not provide lookup for 2D canvas

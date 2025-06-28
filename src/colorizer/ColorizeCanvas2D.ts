@@ -820,4 +820,13 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     const globalId = getGlobalIdFromSegId(dataset.frameToGlobalIdLookup, this.currentFrame, segId);
     return { segId, globalId };
   }
+
+  public getDepthToScaleFn(_screenSpaceMatrix: Matrix4): (depth: number) => { scale: number; clipOpacity: number } {
+    return () => {
+      return {
+        scale: this.zoomMultiplier,
+        clipOpacity: 1.0,
+      };
+    };
+  }
 }
