@@ -151,7 +151,6 @@ function drawAnnotationMarker(
 ): void {
   const labelData = params.labelData[labelIdx[0]];
   const pos3d = getCanvasPixelCoordsFromId(id, params);
-  console.log("Drawing annotation for ID", id, "at", pos3d);
   if (pos3d === null) {
     return;
   }

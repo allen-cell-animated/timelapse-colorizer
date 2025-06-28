@@ -199,6 +199,7 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
   private pendingFrame: number;
 
   private onFrameLoadCallback: (result: FrameLoadResult) => void;
+  private onRenderCallback: (() => void) | null;
 
   constructor() {
     this.geometry = new PlaneGeometry(2, 2);
@@ -286,6 +287,7 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     this.panOffset = new Vector2(0, 0);
 
     this.onFrameLoadCallback = () => {};
+    this.onRenderCallback = null;
 
     this.render = this.render.bind(this);
     this.updateScaling = this.updateScaling.bind(this);
@@ -498,6 +500,10 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
 
   public setOnFrameLoadCallback(callback: (result: FrameLoadResult) => void): void {
     this.onFrameLoadCallback = callback;
+  }
+
+  public setOnRenderCallback(callback: null | (() => void)): void {
+    this.onRenderCallback = callback;
   }
 
   public async setParams(params: RenderCanvasStateParams): Promise<void> {
@@ -779,6 +785,7 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     this.syncTrackPathLine();
 
     this.renderer.render(this.scene, this.camera);
+    this.onRenderCallback?.();
   }
 
   public dispose(): void {

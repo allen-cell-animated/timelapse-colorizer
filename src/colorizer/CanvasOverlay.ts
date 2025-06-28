@@ -93,6 +93,8 @@ export default class CanvasOverlay implements IRenderCanvas {
   public isTimestampVisible: boolean;
   public isAnnotationVisible: boolean;
 
+  private onRenderCallback: null | (() => void);
+
   constructor(
     params: RenderCanvasStateParams,
     styles?: {
@@ -134,6 +136,7 @@ export default class CanvasOverlay implements IRenderCanvas {
     this.canvasContainerDiv.appendChild(this.canvasElement);
 
     this.onFrameLoadCallback = () => {};
+    this.onRenderCallback = null;
 
     this.params = params;
     this.currentFrame = -1;
@@ -170,6 +173,12 @@ export default class CanvasOverlay implements IRenderCanvas {
     this.ctx = canvasContext;
 
     this.getExportDimensions = this.getExportDimensions.bind(this);
+    this.onInnerCanvasRender = this.onInnerCanvasRender.bind(this);
+    this.render = this.render.bind(this);
+  }
+
+  setOnRenderCallback(callback: null | (() => void)): void {
+    this.onRenderCallback = callback;
   }
 
   // Wrapped ColorizeCanvas functions ///////
@@ -255,16 +264,16 @@ export default class CanvasOverlay implements IRenderCanvas {
     if (this.innerCanvas instanceof ColorizeCanvas2D) {
       this.zoomMultiplier = zoom;
       this.innerCanvas.setZoom(zoom);
+      this.render();
     }
-    this.render();
   }
 
   public setPan(x: number, y: number): void {
     if (this.innerCanvas instanceof ColorizeCanvas2D) {
       this.panOffset.set(x, y);
       this.innerCanvas.setPan(x, y);
+      this.render();
     }
-    this.render();
   }
 
   /**
@@ -331,6 +340,7 @@ export default class CanvasOverlay implements IRenderCanvas {
     this.innerCanvasContainerDiv.appendChild(this.innerCanvas.domElement);
     this.innerCanvas.setResolution(this.innerCanvasSize.x, this.innerCanvasSize.y);
     this.innerCanvas.setOnFrameLoadCallback(this.onFrameLoadCallback);
+    this.innerCanvas.setOnRenderCallback(this.onInnerCanvasRender);
     await this.innerCanvas.setParams(this.params);
     await this.innerCanvas.setFrame(this.currentFrame);
     if (this.innerCanvas instanceof ColorizeCanvas2D) {
@@ -473,7 +483,10 @@ export default class CanvasOverlay implements IRenderCanvas {
     this.ctx.imageSmoothingEnabled = false;
 
     if (doesInnerCanvasNeedRender || this.isExporting) {
+      // Disable the inner canvas render callback while we are synchronously rendering it.
+      this.innerCanvas.setOnRenderCallback(null);
       this.innerCanvas.render(this.isExporting);
+      setTimeout(() => this.innerCanvas.setOnRenderCallback(this.onInnerCanvasRender), 10);
     }
     if (this.isExporting && this.innerCanvas.canvas.width !== 0 && this.innerCanvas.canvas.height !== 0) {
       // In export mode only, draw the inner canvas inside of the overlay
@@ -487,8 +500,19 @@ export default class CanvasOverlay implements IRenderCanvas {
     this.ctx.scale(devicePixelRatio, devicePixelRatio);
 
     headerRenderer.render(new Vector2(0, 0));
-    this.getAnnotationRenderer().render(new Vector2(0, this.headerSize.y));
+    if (this.isAnnotationVisible) {
+      this.getAnnotationRenderer().render(new Vector2(0, this.headerSize.y));
+    }
     footerRenderer.render(new Vector2(0, this.innerCanvasSize.y + this.headerSize.y));
+
+    this.onRenderCallback?.();
+  }
+
+  /** Called when the inner canvas renders asynchronously. */
+  private onInnerCanvasRender(): void {
+    if (this.isAnnotationVisible) {
+      this.render(false);
+    }
   }
 
   /**
