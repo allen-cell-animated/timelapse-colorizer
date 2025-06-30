@@ -1,5 +1,4 @@
 import { Matrix4, Vector2, Vector3 } from "three";
-import { clamp, lerp } from "three/src/math/MathUtils";
 
 import { PixelIdInfo } from "../../types";
 import { BaseRenderParams, defaultFontStyle, EMPTY_RENDER_INFO, FontStyle, RenderInfo } from "../types";
@@ -61,6 +60,33 @@ export const defaultAnnotationStyle: AnnotationStyle = {
   minClipOpacity: 0.25,
 };
 
+type MarkerData = {
+  pos3d: Vector3;
+  id: number;
+  labelIdx: number[];
+};
+
+function makeMarkerSorter(selectedLabelIdx: number | null): (a: MarkerData, b: MarkerData) => number {
+  return (a: MarkerData, b: MarkerData): number => {
+    // Sort by whether the object has the currently selected label
+    if (selectedLabelIdx !== null) {
+      const aSelected = a.labelIdx[0] === selectedLabelIdx;
+      const bSelected = b.labelIdx[0] === selectedLabelIdx;
+      if (aSelected && !bSelected) {
+        return -1; // a comes first
+      } else if (!aSelected && bSelected) {
+        return 1; // b comes first
+      }
+    }
+    // If both have equal label priority, sort by Z depth.
+    const zDiff = a.pos3d.z - b.pos3d.z;
+    if (zDiff !== 0) {
+      return zDiff;
+    }
+    return 0; // both are equal
+  };
+}
+
 // /** Transforms a 2D frame pixel coordinate into a 2D canvas pixel coordinate,
 //  * accounting for panning and zooming. For both, (0,0) is the top left corner.
 //  */
@@ -85,8 +111,8 @@ export const defaultAnnotationStyle: AnnotationStyle = {
  * For a given object ID, returns its centroid in canvas pixel coordinates if
  * it's visible in the current frame. Otherwise, returns null.
  */
-function getCanvasPixelCoordsFromId(id: number | null, params: AnnotationParams): Vector3 | null {
-  if (id === null || params.dataset === null || params.dataset.getTime(id) !== params.frame) {
+function getCanvasPixelCoordsFromId(id: number, params: AnnotationParams): Vector3 | null {
+  if (params.dataset === null || params.dataset.getTime(id) !== params.frame) {
     return null;
   }
   const centroid = params.dataset.getCentroid(id);
@@ -110,6 +136,9 @@ function drawRangeStartId(
   params: AnnotationParams,
   style: AnnotationStyle
 ): void {
+  if (params.rangeStartId === null) {
+    return;
+  }
   const pos3d = getCanvasPixelCoordsFromId(params.rangeStartId, params);
   if (pos3d === null) {
     return;
@@ -119,7 +148,8 @@ function drawRangeStartId(
 
   ctx.strokeStyle = style.borderColor;
   // TODO: get marker scale from pos3d Z distance.
-  const zoomScale = getMarkerScale(pos3d.z, style);
+  const { scale } = params.depthToScale(pos3d.z);
+  const zoomScale = getMarkerScale(scale, style);
   ctx.setLineDash([3, 2]);
   ctx.beginPath();
   const radius = Math.max(style.booleanMarkerRadiusPx * zoomScale, 0);
@@ -147,14 +177,11 @@ function drawAnnotationMarker(
   ctx: CanvasRenderingContext2D,
   params: AnnotationParams,
   style: AnnotationStyle,
-  id: number,
-  labelIdx: number[]
+  info: MarkerData
 ): void {
+  const { id, labelIdx, pos3d } = info;
+
   const labelData = params.labelData[labelIdx[0]];
-  const pos3d = getCanvasPixelCoordsFromId(id, params);
-  if (pos3d === null) {
-    return;
-  }
   const pos = new Vector2(pos3d.x, pos3d.y);
   const { scale, clipOpacity } = params.depthToScale(pos3d.z);
 
@@ -252,7 +279,7 @@ export function getAnnotationRenderer(
   params: AnnotationParams,
   style: AnnotationStyle
 ): RenderInfo {
-  if (!params.visible) {
+  if (!params.visible || !params.dataset) {
     return EMPTY_RENDER_INFO;
   }
 
@@ -280,10 +307,23 @@ export function getAnnotationRenderer(
         }
       }
 
+      // Map to marker params and sort by Z depth + selected label
+      const markerData: MarkerData[] = [];
+      for (const [id, labelIdxs] of idsToLabels) {
+        const pos3d = getCanvasPixelCoordsFromId(id, params);
+        if (pos3d !== null) {
+          markerData.push({ pos3d, id, labelIdx: labelIdxs });
+        }
+      }
+
+      markerData.sort(makeMarkerSorter(params.selectedLabelIdx)).reverse();
+
       drawRangeStartId(origin, ctx, params, style);
 
-      for (const [id, labelIdxs] of idsToLabels) {
-        drawAnnotationMarker(origin, ctx, params, style, id, labelIdxs);
+      // Draw each marker in reverse order so the highest priority labels are drawn last
+      for (let i = markerData.length - 1; i >= 0; i--) {
+        const info = markerData[i];
+        drawAnnotationMarker(origin, ctx, params, style, info);
       }
     },
   };
