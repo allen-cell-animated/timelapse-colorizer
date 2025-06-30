@@ -13,11 +13,8 @@ export type AnnotationParams = BaseRenderParams & {
   rangeStartId: number | null;
   getIdAtPixel: ((x: number, y: number) => PixelIdInfo | null) | null;
   depthToScale: (depth: number) => { scale: number; clipOpacity: number };
-
-  frameToCanvasCoordinates: Vector2;
   centroidToCanvasMatrix: Matrix4;
   frame: number;
-  panOffset: Vector2;
 };
 
 export type AnnotationStyle = FontStyle & {
@@ -37,9 +34,6 @@ export type AnnotationStyle = FontStyle & {
   textPaddingTopPx: number;
   textPaddingBottomPx: number;
   maxTextCharacters: number;
-  /** Opacity of markers for objects that are obscured by other objects. */
-  maxClipOpacity: number;
-  minClipOpacity: number;
 };
 
 export const defaultAnnotationStyle: AnnotationStyle = {
@@ -56,8 +50,6 @@ export const defaultAnnotationStyle: AnnotationStyle = {
   textPaddingTopPx: 2,
   textPaddingBottomPx: 2,
   maxTextCharacters: 20,
-  maxClipOpacity: 0.5,
-  minClipOpacity: 0.25,
 };
 
 type MarkerData = {
@@ -66,6 +58,10 @@ type MarkerData = {
   labelIdx: number[];
 };
 
+/**
+ * Sorts marker data so that markers with the currently selected label are at
+ * the start of the list, and then are sorted by Z depth in ascending order.
+ */
 function makeMarkerSorter(selectedLabelIdx: number | null): (a: MarkerData, b: MarkerData) => number {
   return (a: MarkerData, b: MarkerData): number => {
     // Sort by whether the object has the currently selected label
@@ -80,10 +76,7 @@ function makeMarkerSorter(selectedLabelIdx: number | null): (a: MarkerData, b: M
     }
     // If both have equal label priority, sort by Z depth.
     const zDiff = a.pos3d.z - b.pos3d.z;
-    if (zDiff !== 0) {
-      return zDiff;
-    }
-    return 0; // both are equal
+    return zDiff;
   };
 }
 
@@ -105,8 +98,7 @@ function getCanvasPixelCoordsFromId(id: number, params: AnnotationParams): Vecto
 }
 
 function dampenScaleValue(rawScale: number, style: AnnotationStyle): number {
-  const dampenedScale = rawScale * style.scaleWithZoomPct + (1 - style.scaleWithZoomPct);
-  return dampenedScale;
+  return rawScale * style.scaleWithZoomPct + (1 - style.scaleWithZoomPct);
 }
 
 function drawRangeStartId(
@@ -126,7 +118,6 @@ function drawRangeStartId(
   pos.add(origin);
 
   ctx.strokeStyle = style.borderColor;
-  // TODO: get marker scale from pos3d Z distance.
   const { scale } = params.depthToScale(pos3d.z);
   const zoomScale = dampenScaleValue(scale, style);
   ctx.setLineDash([3, 2]);
@@ -164,11 +155,14 @@ function drawAnnotationMarker(
   const pos = new Vector2(pos3d.x, pos3d.y);
   const { scale, clipOpacity } = params.depthToScale(pos3d.z);
 
+  // TODO: getIdAtPixel is very expensive and can cause performance issues when
+  // annotations are being updated without the view moving (like when a user is
+  // editing a value or is adding annotations). Turn annotation rendering into a
+  // class and cache the getIdAtPixel result for the current frame, invalidating
+  // it whenever the transform matrix or current frame changes.
   if (params.getIdAtPixel !== null) {
     const pixelIdInfo = params.getIdAtPixel(pos.x, pos.y);
     const isObscured = pixelIdInfo !== null && pixelIdInfo.globalId !== id;
-    // If the range start ID is visible, set the opacity based on whether it's
-    // obscured by other objects.
     ctx.globalAlpha = isObscured ? clipOpacity : 1;
   } else {
     ctx.globalAlpha = 1;
@@ -294,8 +288,7 @@ export function getAnnotationRenderer(
           markerData.push({ pos3d, id, labelIdx: labelIdxs });
         }
       }
-
-      markerData.sort(makeMarkerSorter(params.selectedLabelIdx)).reverse();
+      markerData.sort(makeMarkerSorter(params.selectedLabelIdx));
 
       drawRangeStartId(origin, ctx, params, style);
 

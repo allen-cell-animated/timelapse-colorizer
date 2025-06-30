@@ -213,6 +213,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     }
     const prevParams = this.params;
     this.params = params;
+    let needsRender = false;
 
     // Update color ramp
     if (
@@ -235,6 +236,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
         for (let i = 0; i < this.volume.numChannels; i++) {
           this.configureColorizeFeature(this.volume, i);
         }
+        needsRender = true;
       }
     }
 
@@ -249,6 +251,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
         this.initializingVolumePromise.then(() => {
           this.setFrame(params.pendingFrame);
         });
+        needsRender = true;
       }
     }
 
@@ -265,12 +268,16 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
         this.lineColors = computeVertexColorsFromIds(this.lineIds, this.params);
       }
       this.updateLineGeometry(this.linePoints, this.lineColors);
+      needsRender = true;
     }
     if (materialNeedsUpdate) {
       this.updateLineMaterial();
+      needsRender = true;
     }
 
-    this.render(false);
+    if (needsRender) {
+      this.render(false);
+    }
 
     // Eventually volume change is handled here?
     return Promise.resolve();

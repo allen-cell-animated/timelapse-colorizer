@@ -93,8 +93,6 @@ export default class CanvasOverlay implements IRenderCanvas {
   public isTimestampVisible: boolean;
   public isAnnotationVisible: boolean;
 
-  private onRenderCallback: null | (() => void);
-
   constructor(
     params: RenderCanvasStateParams,
     styles?: {
@@ -136,7 +134,6 @@ export default class CanvasOverlay implements IRenderCanvas {
     this.canvasContainerDiv.appendChild(this.canvasElement);
 
     this.onFrameLoadCallback = () => {};
-    this.onRenderCallback = null;
 
     this.params = params;
     this.currentFrame = -1;
@@ -367,7 +364,6 @@ export default class CanvasOverlay implements IRenderCanvas {
   }
 
   private getAnnotationRenderer(): RenderInfo {
-    const scaleInfo = this.innerCanvas.scaleInfo;
     const screenSpaceMatrix = this.innerCanvas.getScreenSpaceMatrix();
     const depthToScaleFn = this.innerCanvas.getDepthToScaleFn(screenSpaceMatrix);
     const params: AnnotationParams = {
@@ -377,15 +373,11 @@ export default class CanvasOverlay implements IRenderCanvas {
       timeToLabelIds: this.timeToLabelIds,
       selectedLabelIdx: this.selectedLabelIdx,
       rangeStartId: this.rangeStartId,
-      // TODO: Make this into a matrix transformation from 3D centroid to 2D
-      // onscreen position.
-      frameToCanvasCoordinates:
-        scaleInfo.type === CanvasType.CANVAS_2D ? scaleInfo.frameToCanvasCoordinates : new Vector2(1, 1),
       centroidToCanvasMatrix: screenSpaceMatrix,
       depthToScale: depthToScaleFn,
       frame: this.currentFrame,
-      panOffset: this.panOffset,
-      // Do not provide lookup for 2D canvas
+      // Do not provide lookup for 2D canvas since it doesn't need to deal with
+      // annotations getting obscured by other objects.
       getIdAtPixel: this.innerCanvasType === CanvasType.CANVAS_3D ? this.innerCanvas.getIdAtPixel : null,
     };
     return getAnnotationRenderer(this.ctx, params, this.annotationStyle);
@@ -477,9 +469,12 @@ export default class CanvasOverlay implements IRenderCanvas {
     this.ctx.imageSmoothingEnabled = false;
 
     if (doesInnerCanvasNeedRender || this.isExporting) {
-      // Disable the inner canvas render callback while we are synchronously rendering it.
+      // Temporarily disable the render callback to avoid re-rendering the outer
+      // canvas.
       this.innerCanvas.setOnRenderCallback(null);
       this.innerCanvas.render(this.isExporting);
+      // Reenable after a delay because the inner canvas may be rendering
+      // asynchronously on an animation frame
       setTimeout(() => this.innerCanvas.setOnRenderCallback(this.onInnerCanvasRender), 10);
     }
     if (this.isExporting && this.innerCanvas.canvas.width !== 0 && this.innerCanvas.canvas.height !== 0) {
@@ -498,8 +493,6 @@ export default class CanvasOverlay implements IRenderCanvas {
       this.getAnnotationRenderer().render(new Vector2(0, this.headerSize.y));
     }
     footerRenderer.render(new Vector2(0, this.innerCanvasSize.y + this.headerSize.y));
-
-    this.onRenderCallback?.();
   }
 
   /** Called when the inner canvas renders asynchronously. */
