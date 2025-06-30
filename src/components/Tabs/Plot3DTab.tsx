@@ -60,7 +60,7 @@ class Plot3d {
   plot(currTime: number): void {
     const traces: Plotly.Data[] = [];
 
-    // TRACE 2: Track path
+    // TRACE 1: Track path
     if (
       this.track &&
       this.track.ids.length > 0 &&
@@ -136,11 +136,11 @@ class Plot3d {
           traces.push(currentPointTrace);
         }
       }
+    }
 
-      // TRACE 1: Arrow plot
-      if (this.coneTrace) {
-        traces.push(this.coneTrace);
-      }
+    // TRACE 2: Arrow plot
+    if (this.coneTrace) {
+      traces.push(this.coneTrace);
     }
 
     const makeAxisLayout = (featureKey: string | null): Partial<Plotly.Axis> => {
@@ -154,8 +154,10 @@ class Plot3d {
       let range: [number, number] = [featureData.min, featureData.max];
       const flowData = this.dataset.getFlowFieldFeatureData(featureKey);
       if (flowData) {
-        // For flow field features, use the min and max of the data
-        range = [flowData.min, flowData.max];
+        // For flow field features, use the min and max of the data. Adjust min
+        //  + max slightly to prevent a bug where cones at the plot edges have
+        //  visual artifacts
+        range = [flowData.min - Math.abs(flowData.min) * 0.01, flowData.max + Math.abs(flowData.max) * 0.01];
       }
       return {
         title: this.dataset.getFeatureNameWithUnits(featureKey) ?? "",
