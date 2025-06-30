@@ -1,4 +1,4 @@
-import { Matrix4, Vector2 } from "three";
+import { Vector2 } from "three";
 
 import {
   defaultFooterStyle,
@@ -32,10 +32,10 @@ import { LabelData } from "./AnnotationData";
 import ColorizeCanvas2D from "./ColorizeCanvas2D";
 import { ColorizeCanvas3D } from "./ColorizeCanvas3D";
 import Dataset from "./Dataset";
-import { IRenderCanvas, RenderCanvasStateParams } from "./IRenderCanvas";
+import { IInnerRenderCanvas, IRenderCanvas, RenderCanvasStateParams } from "./IRenderCanvas";
 
 /**
- * Wraps an IRenderCanvas class, overlaying and compositing additional dynamic
+ * Wraps an IInnerRenderCanvas class, overlaying and compositing additional dynamic
  * elements (like a scale bar, timestamp, etc.) on top of the base canvas.
  *
  * During export mode, the overlay canvas will render the inner canvas directly
@@ -52,7 +52,7 @@ export default class CanvasOverlay implements IRenderCanvas {
   // Initialization of inner 3D canvas is deferred until needed.
   private innerCanvas3d: ColorizeCanvas3D | null;
 
-  private innerCanvas: IRenderCanvas;
+  private innerCanvas: IInnerRenderCanvas;
   private innerCanvasType: CanvasType;
   private ctx: CanvasRenderingContext2D;
 
@@ -177,14 +177,6 @@ export default class CanvasOverlay implements IRenderCanvas {
     this.render = this.render.bind(this);
   }
 
-  setOnRenderCallback(callback: null | (() => void)): void {
-    this.onRenderCallback = callback;
-  }
-
-  getDepthToScaleFn(screenSpaceMatrix: Matrix4): (depth: number) => { scale: number; clipOpacity: number } {
-    throw new Error("Method not implemented.");
-  }
-
   // Wrapped ColorizeCanvas functions ///////
 
   public get resolution(): Vector2 {
@@ -224,11 +216,6 @@ export default class CanvasOverlay implements IRenderCanvas {
   public getIdAtPixel(x: number, y: number): PixelIdInfo | null {
     const headerHeight = this.headerSize.y;
     return this.innerCanvas.getIdAtPixel(x, y - headerHeight);
-  }
-
-  // TODO: Should this be part of IRenderCanvas at all?
-  public getScreenSpaceMatrix(): Matrix4 {
-    return this.innerCanvas.getScreenSpaceMatrix();
   }
 
   // Getters/Setters ////////////////////////////////
@@ -336,7 +323,7 @@ export default class CanvasOverlay implements IRenderCanvas {
     this.render(false);
   }
 
-  public async setCanvas(canvas: IRenderCanvas): Promise<void> {
+  public async setCanvas(canvas: IInnerRenderCanvas): Promise<void> {
     // Remove previous inner canvas from DOM.
     this.innerCanvasContainerDiv.removeChild(this.innerCanvas.domElement);
 

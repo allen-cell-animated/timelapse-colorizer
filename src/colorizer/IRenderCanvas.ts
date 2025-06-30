@@ -105,12 +105,6 @@ export interface IRenderCanvas {
    */
   setOnFrameLoadCallback(callback: (result: FrameLoadResult) => void): void;
 
-  /**
-   * Sets a callback function that will be called whenever the canvas is
-   * rendered.
-   */
-  setOnRenderCallback(callback: null | (() => void)): void;
-
   render(synchronous?: boolean): void;
 
   /**
@@ -128,6 +122,14 @@ export interface IRenderCanvas {
    * - If there is no segmentation present, returns `null`.
    */
   getIdAtPixel(x: number, y: number): PixelIdInfo | null;
+}
+
+export interface IInnerRenderCanvas extends IRenderCanvas {
+  /**
+   * Sets a callback function that will be called whenever the canvas is
+   * rendered.
+   */
+  setOnRenderCallback(callback: null | (() => void)): void;
 
   /**
    * Returns a Matrix4 that projects from a 3D coordinate (in frame
@@ -136,5 +138,11 @@ export interface IRenderCanvas {
    */
   getScreenSpaceMatrix(): Matrix4;
 
+  /**
+   * Returns a function that converts a depth value for some object to the
+   * opacity (when covered) and scale of an annotation marker that should be
+   * rendered over it.
+   * @param screenSpaceMatrix The screen space matrix that projects from 3D coordinates to
+   */
   getDepthToScaleFn(screenSpaceMatrix: Matrix4): (depth: number) => { scale: number; clipOpacity: number };
 }

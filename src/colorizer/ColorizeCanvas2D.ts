@@ -55,7 +55,7 @@ import { packDataTexture } from "./utils/texture_utils";
 
 import ColorRamp, { ColorRampType } from "./ColorRamp";
 import Dataset from "./Dataset";
-import { IRenderCanvas, RenderCanvasStateParams } from "./IRenderCanvas";
+import { IInnerRenderCanvas, RenderCanvasStateParams } from "./IRenderCanvas";
 import VectorField from "./VectorField";
 
 import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
@@ -147,7 +147,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
   };
 };
 
-export default class ColorizeCanvas2D implements IRenderCanvas {
+export default class ColorizeCanvas2D implements IInnerRenderCanvas {
   private geometry: PlaneGeometry;
   private material: ShaderMaterial;
   private pickMaterial: ShaderMaterial;

@@ -36,14 +36,14 @@ import {
 import { packDataTexture } from "./utils/texture_utils";
 
 import { ColorRampType } from "./ColorRamp";
-import { IRenderCanvas, RenderCanvasStateParams } from "./IRenderCanvas";
+import { IInnerRenderCanvas, RenderCanvasStateParams } from "./IRenderCanvas";
 
 const CACHE_MAX_SIZE = 1_000_000_000;
 const CONCURRENCY_LIMIT = 8;
 const PREFETCH_CONCURRENCY_LIMIT = 3;
 const loaderContext = new VolumeLoaderContext(CACHE_MAX_SIZE, CONCURRENCY_LIMIT, PREFETCH_CONCURRENCY_LIMIT);
 
-export class ColorizeCanvas3D implements IRenderCanvas {
+export class ColorizeCanvas3D implements IInnerRenderCanvas {
   // private viewContainer: HTMLElement;
   private view3d: View3d;
   private onLoadFrameCallback: (result: FrameLoadResult) => void;
