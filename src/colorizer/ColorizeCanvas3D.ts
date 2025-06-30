@@ -507,7 +507,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     maxZ = Math.max(maxZ, 0.01);
 
     return (depth: number): { scale: number; clipOpacity: number } => {
-      let depthT = clamp(inverseLerp(minZ, maxZ, depth), 0, 1);
+      const depthT = clamp(inverseLerp(minZ, maxZ, depth), 0, 1);
       return {
         // Scale by distance from camera PLUS a small offset using `depthT`
         // based on how close it is to the camera within the volume.

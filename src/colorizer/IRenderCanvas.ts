@@ -133,8 +133,11 @@ export interface IInnerRenderCanvas extends IRenderCanvas {
 
   /**
    * Returns a Matrix4 that projects from a 3D coordinate (in frame
-   * pixels/volume voxels) to a 2D canvas pixel coordinate, where (0,0) is the
-   * top left corner of the canvas.
+   * pixels/volume voxels) to a 2D canvas pixel coordinate + depth value, where
+   * (X=0, Y=0) is the top left corner of the canvas.
+   *
+   * The Z coordinate is used to store the depth in a [0, 1] range, where 0 is
+   * the closest to the camera and 1 is the farthest from the camera.
    */
   getScreenSpaceMatrix(): Matrix4;
 
