@@ -93,8 +93,7 @@ function getCanvasPixelCoordsFromId(id: number, params: AnnotationParams): Vecto
     return null;
   }
   const centroidPos = new Vector3(...centroid);
-  const canvasPos = centroidPos.clone().applyMatrix4(params.centroidToCanvasMatrix);
-  return canvasPos;
+  return centroidPos.applyMatrix4(params.centroidToCanvasMatrix);
 }
 
 function dampenScaleValue(rawScale: number, style: AnnotationStyle): number {
