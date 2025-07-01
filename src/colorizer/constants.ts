@@ -7,10 +7,12 @@ export const CANVAS_BACKGROUND_COLOR_DEFAULT = 0xf7f7f7;
 export const OUTLINE_COLOR_DEFAULT = 0xff00ff;
 export const OUTLIER_COLOR_DEFAULT = 0xc0c0c0;
 export const OUT_OF_RANGE_COLOR_DEFAULT = 0xdddddd;
+export const EDGE_COLOR_DEFAULT = 0x000000;
+export const EDGE_COLOR_ALPHA_DEFAULT = 64 / 255; // ~25%
 
 export const VECTOR_KEY_MOTION_DELTA = "_motion_";
 
-export const INITIAL_TRACK_PATH_BUFFER_SIZE = 1020; // Divisible by 6
+export const INITIAL_TRACK_PATH_BUFFER_SIZE = 6; // Must be divisible by 6
 
 export const getDefaultVectorConfig = (): VectorConfig => ({
   visible: false,

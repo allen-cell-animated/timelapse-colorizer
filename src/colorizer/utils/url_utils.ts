@@ -3,7 +3,7 @@
 import { Color } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "../../constants";
-import { HexColorString, isThresholdCategorical, TrackPathColorMode } from "../types";
+import { DrawMode, HexColorString, isThresholdCategorical, TrackPathColorMode } from "../types";
 import {
   DrawSettings,
   FeatureThreshold,
@@ -41,6 +41,8 @@ export enum UrlParam {
   FILTERED_MODE = "filter-mode",
   FILTERED_COLOR = "filter-color",
   OUTLINE_COLOR = "outline-color",
+  EDGE_COLOR = "edge-color",
+  EDGE_MODE = "edge",
   SHOW_PATH = "path",
   PATH_COLOR = "path-color",
   PATH_WIDTH = "path-width",
@@ -251,14 +253,56 @@ export function encodeMaybeColor(value: Color | undefined): string | undefined {
   return value ? encodeColor(value) : undefined;
 }
 
+export function encodeColorWithAlpha(value: Color, alpha: number): string {
+  return `${value.getHexString()}${Math.round(alpha * 255)
+    .toString(16)
+    .padStart(2, "0")}`;
+}
+
+export function encodeMaybeColorWithAlpha(value: Color | undefined, alpha: number | undefined): string | undefined {
+  if (value === undefined || alpha === undefined) {
+    return undefined;
+  }
+  return encodeColorWithAlpha(value, alpha);
+}
+
 export function isHexColor(value: string | null): value is HexColorString {
   const hexRegex = /^#([0-9a-f]{3}){1,2}$/;
   return value !== null && hexRegex.test(value);
 }
 
+export function isHexAlphaColor(value: string | null): value is HexColorString {
+  const hexAlphaRegex = /^#([0-9a-f]{4}){1,2}$/;
+  return value !== null && hexAlphaRegex.test(value);
+}
+
 export function decodeHexColor(value: string | null): Color | undefined {
   value = value?.startsWith("#") ? value : "#" + value;
   return isHexColor(value) ? new Color(value) : undefined;
+}
+
+export function decodeHexAlphaColor(value: string | null): { color: Color; alpha: number } | undefined {
+  if (value === null) {
+    return undefined;
+  }
+  // Ensure the value starts with a hash
+  value = value.startsWith("#") ? value : "#" + value;
+
+  if (isHexAlphaColor(value)) {
+    const isShortenedHex = value.length === 5; // #RGBA vs #RRGGBBAA
+    // Extract the color and alpha components
+    const colorHex = isShortenedHex ? value.slice(0, -1) : value.slice(0, -2);
+    // Double up the last digit for 4-digit hex colors.
+    const alphaHex = isShortenedHex ? value.slice(-1).repeat(2) : value.slice(-2);
+    const color = new Color(colorHex);
+    const alpha = parseInt(alphaHex, 16) / 255;
+    return { color, alpha };
+  } else if (isHexColor(value)) {
+    // If it's a regular hex color (3 or 6 digits), return it with alpha 1
+    return { color: new Color(value), alpha: 1 };
+  } else {
+    return undefined;
+  }
 }
 
 export function encodeNumber(value: number): string {
@@ -277,6 +321,11 @@ export function decodeInt(value: string | null): number | undefined {
   return value === null ? undefined : parseInt(value, 10);
 }
 
+export function parseDrawMode(mode: string | null): DrawMode | undefined {
+  const modeInt = parseInt(mode || "-1", 10);
+  return mode && isDrawMode(modeInt) ? modeInt : undefined;
+}
+
 export function parseDrawSettings(
   color: string | null,
   mode: string | null,
@@ -292,7 +341,9 @@ export function parseDrawSettings(
 
 export function parseTrackPathMode(mode: string | null): TrackPathColorMode | undefined {
   const modeInt = parseInt(mode || "-1", 10);
-  return mode && modeInt in TrackPathColorMode ? (modeInt as TrackPathColorMode) : undefined;
+  const isTrackPathColorMode =
+    modeInt === TrackPathColorMode.USE_CUSTOM_COLOR || modeInt === TrackPathColorMode.USE_OUTLINE_COLOR;
+  return mode && isTrackPathColorMode ? (modeInt as TrackPathColorMode) : undefined;
 }
 
 export function encodeBoolean(value: boolean): string {

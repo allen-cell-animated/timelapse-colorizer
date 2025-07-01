@@ -551,11 +551,13 @@ export function computeTrackLinePointsAndIds(
  * in the range [-1, 1] and the Z coordinate is always zero.
  */
 export function normalizePointsTo2dCanvasSpace(points: Float32Array, dataset: Dataset): Float32Array {
-  for (let i = 0; i < points.length / 3; i++) {
-    points[3 * i + 0] = (points[3 * i + 0] / dataset.frameResolution.x) * 2.0 - 1.0;
-    points[3 * i + 1] = -((points[3 * i + 1] / dataset.frameResolution.y) * 2.0 - 1.0);
+  // TODO: This normalization step may be unnecessary if we do it during the
+  // line scaling step.
+  for (let i = 0; i < points.length; i += 3) {
+    points[i + 0] = (points[i + 0] / dataset.frameResolution.x) * 2.0 - 1.0;
+    points[i + 1] = -((points[i + 1] / dataset.frameResolution.y) * 2.0 - 1.0);
     // Z coordinate is always zero for 2D canvas space
-    points[3 * i + 2] = 0;
+    points[i + 2] = 0;
   }
   return points;
 }

@@ -28,6 +28,8 @@ import { MAX_FEATURE_CATEGORIES } from "../constants";
 import { get2DCanvasScaling } from "./canvas/utils";
 import {
   CANVAS_BACKGROUND_COLOR_DEFAULT,
+  EDGE_COLOR_ALPHA_DEFAULT,
+  EDGE_COLOR_DEFAULT,
   FRAME_BACKGROUND_COLOR_DEFAULT,
   INITIAL_TRACK_PATH_BUFFER_SIZE,
   OUT_OF_RANGE_COLOR_DEFAULT,
@@ -95,6 +97,8 @@ type ColorizeUniformTypes = {
   outlierColor: Color;
   outOfRangeColor: Color;
   outlineColor: Color;
+  edgeColor: Color;
+  edgeColorAlpha: number;
   highlightedId: number;
   hideOutOfRange: boolean;
   outlierDrawMode: number;
@@ -138,6 +142,8 @@ const getDefaultUniforms = (): ColorizeUniforms => {
     hideOutOfRange: new Uniform(false),
     backgroundColor: new Uniform(new Color(FRAME_BACKGROUND_COLOR_DEFAULT)),
     outlineColor: new Uniform(new Color(OUTLINE_COLOR_DEFAULT)),
+    edgeColor: new Uniform(new Color(EDGE_COLOR_DEFAULT)),
+    edgeColorAlpha: new Uniform(EDGE_COLOR_ALPHA_DEFAULT),
     canvasBackgroundColor: new Uniform(new Color(CANVAS_BACKGROUND_COLOR_DEFAULT)),
     outlierColor: new Uniform(new Color(OUTLIER_COLOR_DEFAULT)),
     outOfRangeColor: new Uniform(new Color(OUT_OF_RANGE_COLOR_DEFAULT)),
@@ -541,6 +547,15 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     }
     if (hasPropertyChanged(params, prevParams, ["outlineColor"])) {
       this.setUniform("outlineColor", params.outlineColor.clone().convertLinearToSRGB());
+    }
+    if (hasPropertyChanged(params, prevParams, ["edgeColor", "edgeColorAlpha", "edgeMode"])) {
+      if (params.edgeMode === DrawMode.HIDE) {
+        this.setUniform("edgeColor", new Color(0, 0, 0));
+        this.setUniform("edgeColorAlpha", 0);
+      } else {
+        this.setUniform("edgeColor", params.edgeColor.clone().convertLinearToSRGB());
+        this.setUniform("edgeColorAlpha", clamp(params.edgeColorAlpha, 0, 1));
+      }
     }
 
     // Update track path data
