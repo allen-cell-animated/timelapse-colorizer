@@ -276,6 +276,8 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     }
 
     if (needsRender) {
+      // TODO: Change the render function to take an enum instead of a boolean
+      // for readability
       this.render(false);
     }
 
@@ -449,19 +451,18 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
   public getScreenSpaceMatrix(): Matrix4 {
     if (!this.volume) {
       // Return an identity matrix if the volume is not loaded
-      console.log("Volume not loaded");
       return new Matrix4();
     }
 
     // 1. Normalize from volume voxel coordinates to world space. Also,
     //    translate so that the center of the volume is at (0, 0, 0).
-    const volumeScale = new Vector3(1, -1, 1)
+    const volumeScale = new Vector3(1, 1, 1)
       .multiply(this.volume.physicalPixelSize)
       .divideScalar(this.volume.physicalScale);
     const normalizeVoxelToWorld = new Matrix4().compose(
       this.volume.normPhysicalSize.clone().multiplyScalar(-0.5), // Translate to center
       new Quaternion(0, 0, 0, 1),
-      volumeScale.multiply(new Vector3(1, -1, 1))
+      volumeScale
     );
 
     // 2. Get the view projection matrix, which transforms from world space to
@@ -491,15 +492,13 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
 
     let minZ = Infinity;
     let maxZ = -Infinity;
-
     for (let i = 0; i < xCoords.length; i++) {
       for (let j = 0; j < yCoords.length; j++) {
         for (let k = 0; k < zCoords.length; k++) {
           const point = new Vector3(xCoords[i], yCoords[j], zCoords[k]);
           point.applyMatrix4(screenSpaceMatrix);
-          const z = point.z;
-          minZ = Math.min(minZ, z);
-          maxZ = Math.max(maxZ, z);
+          minZ = Math.min(minZ, point.z);
+          maxZ = Math.max(maxZ, point.z);
         }
       }
     }
@@ -509,9 +508,9 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     return (depth: number): { scale: number; clipOpacity: number } => {
       const depthT = clamp(inverseLerp(minZ, maxZ, depth), 0, 1);
       return {
-        // Scale by distance from camera PLUS a small offset using `depthT`
-        // based on how close it is to the camera within the volume.
-        scale: depth * -60 + 59,
+        // Scale by distance from camera
+        scale: (depth - 1) * -60 - 1,
+        // Make objects more transparent if they are further away
         clipOpacity: lerp(0.8, 0.1, depthT),
       };
     };
