@@ -151,7 +151,9 @@ export interface IInnerRenderCanvas extends IRenderCanvas {
    * Returns a function that converts a depth value for some object to the
    * opacity (when covered) and scale of an annotation marker that should be
    * rendered over it.
-   * @param screenSpaceMatrix The screen space matrix that projects from 3D coordinates to
+   * @param screenSpaceMatrix The screen space matrix that projects from 3D
+   * coordinates to 2D canvas pixel coordinates and depth. See
+   * `getScreenSpaceMatrix()`.
    */
   getDepthToScaleFn(screenSpaceMatrix: Matrix4): (depth: number) => { scale: number; clipOpacity: number };
 }
