@@ -160,22 +160,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     });
   }, []);
 
-  // TODO: Move management of the zoom/pan into the canvas class itself (or a
-  // helper). CanvasWrapper should have a way to zoom in/out and reset the view,
-  // but otherwise doesn't need to track the zoom/pan state.
-
-  // /**
-  //  * Canvas zoom level, stored as its inverse. This makes it so linear changes in zoom level
-  //  * (by +/-0.25) affect the zoom level more when zoomed in than zoomed out.
-  //  */
-  // const canvasZoomInverse = useRef(1.0);
-  // /**
-  //  * The offset of the frame in the canvas, in normalized frame coordinates. [0, 0] means the
-  //  * frame will be centered, while [-0.5, -0.5] means the top right corner of the frame will be
-  //  * centered in the canvas view.
-  //  * X and Y are clamped to a range of [-0.5, 0.5] to prevent the frame from being panned out of view.
-  //  */
-  // const canvasPanOffset = useRef(new Vector2(0, 0));
   const isMouseLeftDown = useRef(false);
   const isMouseMiddleDown = useRef(false);
   const isMouseRightDown = useRef(false);
@@ -371,51 +355,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     },
     [canv, dataset, props.onClickId, setTrack, clearTrack, updateCanvasCursor]
   );
-
-  /** Change zoom by some delta factor. */
-  // const handleZoom = useCallback(
-  //   (zoomDelta: number): void => {
-  //     canvasZoomInverse.current += zoomDelta;
-  //     canvasZoomInverse.current = clamp(canvasZoomInverse.current, MIN_INVERSE_ZOOM, MAX_INVERSE_ZOOM);
-  //     canv.setZoom(1 / canvasZoomInverse.current);
-  //   },
-  //   [canv]
-  // );
-
-  /** Zoom with respect to the pointer; keeps the mouse in the same position relative to the underlying
-   *  frame by panning as the zoom changes.
-   */
-  // const handleZoomToMouse = useCallback(
-  //   (event: WheelEvent, zoomDelta: number): void => {
-  //     const canvasSizePx = getCanvasSizePx();
-  //     const startingFrameSizePx = getFrameSizeInScreenPx();
-  //     const canvasOffsetPx = new Vector2(event.offsetX, event.offsetY);
-
-  //     const currentMousePosition = mathUtils.convertCanvasOffsetPxToFrameCoords(
-  //       canvasSizePx,
-  //       startingFrameSizePx,
-  //       canvasOffsetPx,
-  //       canvasPanOffset.current
-  //     );
-
-  //     handleZoom(zoomDelta);
-
-  //     const newFrameSizePx = getFrameSizeInScreenPx();
-  //     const newMousePosition = mathUtils.convertCanvasOffsetPxToFrameCoords(
-  //       canvasSizePx,
-  //       newFrameSizePx,
-  //       canvasOffsetPx,
-  //       canvasPanOffset.current
-  //     );
-  //     const mousePositionDelta = newMousePosition.clone().sub(currentMousePosition);
-
-  //     canvasPanOffset.current.x = clamp(canvasPanOffset.current.x + mousePositionDelta.x, -0.5, 0.5);
-  //     canvasPanOffset.current.y = clamp(canvasPanOffset.current.y + mousePositionDelta.y, -0.5, 0.5);
-
-  //     canv.setPan(canvasPanOffset.current.x, canvasPanOffset.current.y);
-  //   },
-  //   [handleZoom, getCanvasSizePx, getFrameSizeInScreenPx]
-  // );
 
   // Mouse event handlers
 
@@ -664,10 +603,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         <Tooltip title={"Reset view"} placement="right" trigger={["hover", "focus"]}>
           <IconButton
             onClick={() => {
-              // canvasZoomInverse.current = 1.0;
-              // canvasPanOffset.current = new Vector2(0, 0);
-              // canv.setZoom(1.0);
-              // canv.setPan(0, 0);
               canv.resetView();
             }}
             type="link"

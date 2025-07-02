@@ -356,7 +356,7 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
    * Expects x and y in a range of [-0.5, 0.5], where [0, 0] means the frame will be centered
    * and [-0.5, -0.5] means the top right corner of the frame will be centered in the canvas view.
    */
-  private setPanOffset(newOffset: Vector2): void {
+  private setPan(newOffset: Vector2): void {
     this.panOffset = newOffset.clone();
     this.setUniform("panOffset", this.panOffset);
 
@@ -380,7 +380,7 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     // Clamp panning
     newPanOffset.x = clamp(newPanOffset.x, MIN_PAN_OFFSET, MAX_PAN_OFFSET);
     newPanOffset.y = clamp(newPanOffset.y, MIN_PAN_OFFSET, MAX_PAN_OFFSET);
-    this.setPanOffset(newPanOffset);
+    this.setPan(newPanOffset);
   }
 
   handleDragEvent(dx: number, dy: number): boolean {
@@ -419,7 +419,7 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
       this.panOffset
     );
     const newOffset = newMousePosition.clone().sub(currentMousePosition).add(this.panOffset);
-    this.setPanOffset(newOffset);
+    this.setPan(newOffset);
 
     return true;
   }
@@ -439,7 +439,7 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
   }
 
   resetView(): boolean {
-    this.setPanOffset(new Vector2(0, 0));
+    this.setPan(new Vector2(0, 0));
     this.setZoom(1.0);
     return true;
   }
