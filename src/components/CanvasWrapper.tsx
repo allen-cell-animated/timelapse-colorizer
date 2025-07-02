@@ -430,14 +430,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const onMouseWheel = useCallback((event: WheelEvent): void => {
     if (event.metaKey || event.ctrlKey) {
       event.preventDefault();
-      if (Math.abs(event.deltaY) > 25) {
-        // Using mouse wheel (probably). There's no surefire way to detect this, but mice usually
-        // scroll in much larger increments.
-        canv.handleScrollEvent(event.offsetX, event.offsetY, event.deltaY * 0.001);
-      } else {
-        // Track pad zoom
-        canv.handleScrollEvent(event.offsetX, event.offsetY, event.deltaY * 0.005);
-      }
+      canv.handleScrollEvent(event.offsetX, event.offsetY, event.deltaY);
     }
   }, []);
 

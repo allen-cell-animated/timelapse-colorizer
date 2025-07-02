@@ -105,6 +105,7 @@ export interface IRenderCanvas {
    * - A `FrameLoadResult` object if the frame was loaded and rendered.
    */
   setFrame: (requestedFrame: number) => Promise<FrameLoadResult | null>;
+
   /**
    * Sets a callback function that will be called whenever any frame is loaded.
    */
@@ -128,15 +129,40 @@ export interface IRenderCanvas {
    */
   getIdAtPixel(x: number, y: number): PixelIdInfo | null;
 
-  // Handle user interaction
+  //// Handlers for user interaction /////
 
-  handleDragEvent(x: number, y: number): boolean;
+  /**
+   * Handler called during mouse drag events.
+   * @param dx Change in mouse X position in pixels.
+   * @param dy Change in mouse Y position in pixels.
+   * @return `true` if the canvas re-rendered in response to the event.
+   */
+  handleDragEvent(dx: number, dy: number): boolean;
 
-  handleScrollEvent(offsetX: number, offsetY: number, scrollDelta: number): boolean;
+  /**
+   * Handles a mouse wheel scroll event.
+   * @param mouseOffsetX Mouse X position in pixels relative to the canvas.
+   * @param mouseOffsetY Mouse Y position in pixels relative to the canvas.
+   * @param scrollDelta `event.deltaY` value from the scroll event. Larger
+   * values (>= 25) may indicate track pad interactions.
+   * @return `true` if the canvas re-rendered in response to the event.
+   */
+  handleScrollEvent(mouseOffsetX: number, mouseOffsetY: number, scrollDelta: number): boolean;
 
+  /**
+   * Handler called when the user clicks a zoom-in button or other action.
+   * @returns `true` if the canvas re-rendered in response to the event.
+   */
   handleZoomIn(): boolean;
 
+  /**
+   * Handler called when the user clicks a zoom-out button or other action.
+   * @returns `true` if the canvas re-rendered in response to the event.
+   */
   handleZoomOut(): boolean;
 
+  /** Resets the camera view to the default.
+   * @return `true` if the canvas re-rendered in response to the event.
+   */
   resetView(): boolean;
 }

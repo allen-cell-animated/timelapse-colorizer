@@ -67,6 +67,8 @@ const MIN_PAN_OFFSET = -0.5;
 const MAX_PAN_OFFSET = 0.5;
 const MAX_INVERSE_ZOOM = 2; // 0.5x zoom
 const MIN_INVERSE_ZOOM = 0.1; // 10x zoom
+const MOUSE_SCROLL_ZOOM_FACTOR = 0.001;
+const TRACK_PAD_SCROLL_ZOOM_FACTOR = 0.005;
 
 type ColorizeUniformTypes = {
   /** Scales from canvas coordinates to frame coordinates. */
@@ -407,7 +409,10 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
       this.panOffset
     );
 
-    this.handleZoom(scrollDelta);
+    // If scroll delta > 25, it's (most likely) a mouse scroll.
+    const isMouseScroll = Math.abs(scrollDelta) > 25;
+    const scaleFactor = isMouseScroll ? MOUSE_SCROLL_ZOOM_FACTOR : TRACK_PAD_SCROLL_ZOOM_FACTOR;
+    this.handleZoom(scrollDelta * scaleFactor);
 
     // Add some offset after zooming to keep the mouse in the same position
     // relative to the frame.

@@ -60,9 +60,6 @@ export default class CanvasOverlay implements IRenderCanvas {
   private params: RenderCanvasStateParams;
   private onFrameLoadCallback: (result: FrameLoadResult) => void;
 
-  // private zoomMultiplier: number;
-  // private panOffset: Vector2;
-
   private labelData: LabelData[];
   private timeToLabelIds: Map<number, Record<number, number[]>>;
   private selectedLabelIdx: number | null;
@@ -137,8 +134,6 @@ export default class CanvasOverlay implements IRenderCanvas {
 
     this.params = params;
     this.currentFrame = -1;
-    // this.zoomMultiplier = 1;
-    // this.panOffset = new Vector2();
 
     this.labelData = [];
     this.timeToLabelIds = new Map();
@@ -248,8 +243,8 @@ export default class CanvasOverlay implements IRenderCanvas {
   }
 
   /**
-   * Pass-through handler for the result of canvas event handlers. If the result
-   * of the event handler is true, the canvas will be re-render itself.
+   * Pass-through for the result of inner canvas event handlers. If the result
+   * of the event handler is true, this canvas will re-render itself.
    */
   private handleRenderableAction(shouldRender: boolean): boolean {
     if (shouldRender) {
@@ -342,12 +337,9 @@ export default class CanvasOverlay implements IRenderCanvas {
     this.innerCanvasContainerDiv.appendChild(this.innerCanvas.domElement);
     this.innerCanvas.setResolution(this.innerCanvasSize.x, this.innerCanvasSize.y);
     this.innerCanvas.setOnFrameLoadCallback(this.onFrameLoadCallback);
+    this.innerCanvas.resetView();
     await this.innerCanvas.setParams(this.params);
     await this.innerCanvas.setFrame(this.currentFrame);
-    // if (this.innerCanvas instanceof ColorizeCanvas2D) {
-    //   this.innerCanvas.setZoom(this.zoomMultiplier);
-    //   this.innerCanvas.setPan(this.panOffset.x, this.panOffset.y);
-    // }
     this.render(false);
   }
 
