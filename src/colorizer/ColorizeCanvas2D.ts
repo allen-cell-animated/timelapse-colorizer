@@ -353,6 +353,15 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     return getFrameSizeInScreenPx(canvasSizePx, frameResolution, this.zoomMultiplier);
   }
 
+  private setZoom(zoom: number): void {
+    this.zoomMultiplier = zoom;
+    if (this.params?.dataset) {
+      this.updateScaling(this.params.dataset.frameResolution, this.canvasResolution);
+    }
+    this.updateLineMaterial();
+    this.render();
+  }
+
   /**
    * Sets the panned offset of the frame in the canvas, in normalized frame coordinates.
    * Expects x and y in a range of [-0.5, 0.5], where [0, 0] means the frame will be centered
@@ -423,7 +432,7 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
       canvasOffsetPx,
       this.panOffset
     );
-    const newOffset = newMousePosition.clone().sub(currentMousePosition).add(this.panOffset);
+    const newOffset = this.panOffset.clone().add(newMousePosition.sub(currentMousePosition));
     this.setPan(newOffset);
 
     return true;
@@ -449,20 +458,11 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     return true;
   }
 
-  private setZoom(zoom: number): void {
-    this.zoomMultiplier = zoom;
-    if (this.params?.dataset) {
-      this.updateScaling(this.params.dataset.frameResolution, this.canvasResolution);
-    }
-    this.updateLineMaterial();
-    this.render();
-  }
-
   private updateScaling(frameResolution: Vector2 | null, canvasResolution: Vector2 | null): void {
     if (!frameResolution || !canvasResolution) {
       return;
     }
-    this.savedScaleInfo = get2DCanvasScaling(frameResolution, canvasResolution, this.zoomMultiplier);
+    this.savedScaleInfo = get2DCanvasScaling(frameResolution, canvasResolution, this.zoomMultiplier, this.panOffset);
     const { frameToCanvasCoordinates, canvasToFrameCoordinates } = this.savedScaleInfo;
 
     this.setUniform("canvasSizePx", canvasResolution);

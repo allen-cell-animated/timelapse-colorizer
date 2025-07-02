@@ -123,13 +123,11 @@ export class ColorizeCanvas3D implements IRenderCanvas {
   }
 
   handleZoomIn(): boolean {
-    // TODO: Implement zoom in functionality
     this.scaleCameraPosition(0.75);
     return true;
   }
 
   handleZoomOut(): boolean {
-    // TODO: Implement zoom out functionality
     this.scaleCameraPosition(1 / 0.75);
     return true;
   }
