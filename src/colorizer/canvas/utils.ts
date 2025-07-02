@@ -84,7 +84,8 @@ export function renderCanvasText(
 export function get2DCanvasScaling(
   frameResolution: Vector2,
   canvasResolution: Vector2,
-  zoomMultiplier: number
+  zoomMultiplier: number,
+  offset: Vector2
 ): Canvas2DScaleInfo {
   // Both the frame and the canvas have coordinates in a range of [0, 1] in the
   // x and y axis. However, the canvas may have a different aspect ratio than
@@ -123,6 +124,7 @@ export function get2DCanvasScaling(
     frameSizeInCanvasCoordinates,
     canvasToFrameCoordinates,
     frameToCanvasCoordinates,
+    panOffset: offset,
   };
 }
 

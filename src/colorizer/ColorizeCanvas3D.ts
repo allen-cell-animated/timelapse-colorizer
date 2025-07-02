@@ -101,6 +101,42 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     this.onLoadFrameCallback = () => {};
   }
 
+  // Camera/mouse event handlers
+
+  handleDragEvent(_x: number, _y: number): boolean {
+    return false;
+  }
+
+  handleScrollEvent(_offsetX: number, _offsetY: number, _scrollDelta: number): boolean {
+    return false;
+  }
+
+  private scaleCameraPosition(scale: number): void {
+    const cameraState = this.view3d.getCameraState();
+    const position = new Vector3(...cameraState.position);
+    const target = new Vector3(...cameraState.target);
+    const positionDelta = position.clone().sub(target);
+    const newPosition = target.add(positionDelta.multiplyScalar(scale));
+    this.view3d.setCameraState({
+      position: newPosition.toArray(),
+    });
+  }
+
+  handleZoomIn(): boolean {
+    this.scaleCameraPosition(0.75);
+    return true;
+  }
+
+  handleZoomOut(): boolean {
+    this.scaleCameraPosition(1 / 0.75);
+    return true;
+  }
+
+  resetView(): boolean {
+    this.view3d.resetCamera();
+    return true;
+  }
+
   private initLights(): void {
     const lights = [new Light(SKY_LIGHT), new Light(AREA_LIGHT)];
     lights[0].mColorTop = new Vector3(0.3, 0.3, 0.3);
