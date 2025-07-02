@@ -127,4 +127,16 @@ export interface IRenderCanvas {
    * - If there is no segmentation present, returns `null`.
    */
   getIdAtPixel(x: number, y: number): PixelIdInfo | null;
+
+  // Handle user interaction
+
+  handleDragEvent(x: number, y: number): boolean;
+
+  handleScrollEvent(offsetX: number, offsetY: number, scrollDelta: number): boolean;
+
+  handleZoomIn(): boolean;
+
+  handleZoomOut(): boolean;
+
+  resetView(): boolean;
 }

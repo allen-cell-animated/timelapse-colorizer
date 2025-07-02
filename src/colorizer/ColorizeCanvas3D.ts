@@ -101,6 +101,27 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     this.onLoadFrameCallback = () => {};
   }
 
+  // Has its own camera control handler
+  handleDragEvent(_x: number, _y: number): boolean {
+    return false;
+  }
+  handleScrollEvent(_offsetX: number, _offsetY: number, _scrollDelta: number): boolean {
+    return false;
+  }
+
+  handleZoomIn(): boolean {
+    // TODO: Implement zoom in functionality
+    return true;
+  }
+  handleZoomOut(): boolean {
+    // TODO: Implement zoom out functionality
+    return true;
+  }
+  resetView(): boolean {
+    this.view3d.resetCamera();
+    return true;
+  }
+
   private initLights(): void {
     const lights = [new Light(SKY_LIGHT), new Light(AREA_LIGHT)];
     lights[0].mColorTop = new Vector3(0.3, 0.3, 0.3);
@@ -133,11 +154,6 @@ export class ColorizeCanvas3D implements IRenderCanvas {
   setResolution(width: number, height: number): void {
     this.view3d.resize(null, width, height);
     this.canvasResolution.set(width, height);
-  }
-
-  public resetCamera(): void {
-    console.log("Resetting camera");
-    this.view3d.resetCamera();
   }
 
   private configureColorizeFeature(volume: Volume, channelIndex: number): void {
