@@ -105,6 +105,7 @@ export interface IRenderCanvas {
    * - A `FrameLoadResult` object if the frame was loaded and rendered.
    */
   setFrame: (requestedFrame: number) => Promise<FrameLoadResult | null>;
+
   /**
    * Sets a callback function that will be called whenever any frame is loaded.
    */
