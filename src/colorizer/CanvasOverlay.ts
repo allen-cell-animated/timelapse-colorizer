@@ -32,7 +32,8 @@ import { LabelData } from "./AnnotationData";
 import ColorizeCanvas2D from "./ColorizeCanvas2D";
 import { ColorizeCanvas3D } from "./ColorizeCanvas3D";
 import Dataset from "./Dataset";
-import { IInnerRenderCanvas, IRenderCanvas, RenderCanvasStateParams } from "./IRenderCanvas";
+import { IInnerRenderCanvas } from "./IInnerRenderCanvas";
+import { IRenderCanvas, RenderCanvasStateParams } from "./IRenderCanvas";
 
 /**
  * Wraps an IInnerRenderCanvas class, overlaying and compositing additional dynamic

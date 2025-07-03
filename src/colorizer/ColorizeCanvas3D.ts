@@ -13,7 +13,7 @@ import {
   VolumeLoaderContext,
   WorkerLoader,
 } from "@aics/vole-core";
-import { Color, Matrix4, Quaternion, Vector2, Vector3 } from "three";
+import { Box3, Color, Matrix4, Quaternion, Vector2, Vector3 } from "three";
 import { clamp, inverseLerp, lerp } from "three/src/math/MathUtils";
 
 import { MAX_FEATURE_CATEGORIES } from "../constants";
@@ -36,7 +36,8 @@ import {
 import { packDataTexture } from "./utils/texture_utils";
 
 import { ColorRampType } from "./ColorRamp";
-import { IInnerRenderCanvas, RenderCanvasStateParams } from "./IRenderCanvas";
+import { IInnerRenderCanvas } from "./IInnerRenderCanvas";
+import { RenderCanvasStateParams } from "./IRenderCanvas";
 
 const CACHE_MAX_SIZE = 1_000_000_000;
 const CONCURRENCY_LIMIT = 8;
@@ -486,24 +487,10 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     }
     // Determine min and max Z depth of the volume in screen space, using the
     // corners.
-    const xCoords = [0, this.volume.imageInfo.originalSize.x - 1];
-    const yCoords = [0, this.volume.imageInfo.originalSize.y - 1];
-    const zCoords = [0, this.volume.imageInfo.originalSize.z - 1];
-
-    let minZ = Infinity;
-    let maxZ = -Infinity;
-    for (let i = 0; i < xCoords.length; i++) {
-      for (let j = 0; j < yCoords.length; j++) {
-        for (let k = 0; k < zCoords.length; k++) {
-          const point = new Vector3(xCoords[i], yCoords[j], zCoords[k]);
-          point.applyMatrix4(screenSpaceMatrix);
-          minZ = Math.min(minZ, point.z);
-          maxZ = Math.max(maxZ, point.z);
-        }
-      }
-    }
-    minZ = Math.max(minZ, 0.01);
-    maxZ = Math.max(maxZ, 0.01);
+    const box3d = new Box3(new Vector3(0, 0, 0), this.volume.imageInfo.originalSize.clone().subScalar(1));
+    box3d.applyMatrix4(screenSpaceMatrix);
+    const minZ = Math.max(0.01, Math.min(box3d.min.z, box3d.max.z));
+    const maxZ = Math.min(1, Math.max(box3d.min.z, box3d.max.z));
 
     return (depth: number): { scale: number; clipOpacity: number } => {
       const depthT = clamp(inverseLerp(minZ, maxZ, depth), 0, 1);

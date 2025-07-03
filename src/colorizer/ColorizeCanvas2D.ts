@@ -57,7 +57,8 @@ import { packDataTexture } from "./utils/texture_utils";
 
 import ColorRamp, { ColorRampType } from "./ColorRamp";
 import Dataset from "./Dataset";
-import { IInnerRenderCanvas, RenderCanvasStateParams } from "./IRenderCanvas";
+import { IInnerRenderCanvas } from "./IInnerRenderCanvas";
+import { RenderCanvasStateParams } from "./IRenderCanvas";
 import VectorField from "./VectorField";
 
 import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
