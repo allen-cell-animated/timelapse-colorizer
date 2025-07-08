@@ -370,9 +370,9 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
       }
       await this.view3d.setTime(this.volume, requestedFrame);
 
-      this.render(true);
       this.currentFrame = requestedFrame;
       this.pendingFrame = -1;
+      this.render(true);
       const result: FrameLoadResult = {
         frame: requestedFrame,
         frameError: false,
