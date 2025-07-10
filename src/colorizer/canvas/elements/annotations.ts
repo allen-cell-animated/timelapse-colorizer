@@ -1,5 +1,6 @@
-import { Vector2 } from "three";
+import { Matrix4, Vector2, Vector3 } from "three";
 
+import { PixelIdInfo } from "../../types";
 import { BaseRenderParams, defaultFontStyle, EMPTY_RENDER_INFO, FontStyle, RenderInfo } from "../types";
 
 import { LabelData, LabelType } from "../../AnnotationData";
@@ -10,10 +11,10 @@ export type AnnotationParams = BaseRenderParams & {
   timeToLabelIds: Map<number, Record<number, number[]>>;
   selectedLabelIdx: number | null;
   rangeStartId: number | null;
-
-  frameToCanvasCoordinates: Vector2;
+  getIdAtPixel: ((x: number, y: number) => PixelIdInfo | null) | null;
+  depthToScale: (depth: number) => { scale: number; clipOpacity: number };
+  centroidToCanvasMatrix: Matrix4;
   frame: number;
-  panOffset: Vector2;
 };
 
 export type AnnotationStyle = FontStyle & {
@@ -51,45 +52,52 @@ export const defaultAnnotationStyle: AnnotationStyle = {
   maxTextCharacters: 20,
 };
 
-/** Transforms a 2D frame pixel coordinate into a 2D canvas pixel coordinate,
- * accounting for panning and zooming. For both, (0,0) is the top left corner.
+type MarkerData = {
+  pos3d: Vector3;
+  id: number;
+  labelIdx: number[];
+};
+
+/**
+ * Sorts marker data so that markers with the currently selected label are at
+ * the start of the list, and then are sorted by Z depth in ascending order.
  */
-function framePixelCoordsToCanvasPixelCoords(pos: Vector2, params: AnnotationParams): Vector2 {
-  // Position is in pixel coordinates of the frame. Transform to relative frame coordinates,
-  // then to relative canvas coordinates, and finally into canvas pixel coordinates.
-  const frameResolution = params.dataset?.frameResolution;
-  if (!frameResolution) {
-    return new Vector2(0, 0);
-  }
-  pos = pos.clone();
-  pos.divide(frameResolution); // to relative frame coordinates
-  pos.sub(new Vector2(0.5, 0.5)); // Center (0,0) at center of frame
-  pos.add(params.panOffset.clone().multiply(new Vector2(1, -1))); // apply panning offset
-  pos.multiply(params.frameToCanvasCoordinates); // to relative canvas coordinates
-  pos.multiply(params.canvasSize); // to canvas pixel coordinates
-  pos.add(params.canvasSize.clone().multiplyScalar(0.5)); // Move origin to top left corner
-  return pos;
+function makeMarkerSorter(selectedLabelIdx: number | null): (a: MarkerData, b: MarkerData) => number {
+  return (a: MarkerData, b: MarkerData): number => {
+    // Sort by whether the object has the currently selected label
+    if (selectedLabelIdx !== null) {
+      const aSelected = a.labelIdx[0] === selectedLabelIdx;
+      const bSelected = b.labelIdx[0] === selectedLabelIdx;
+      if (aSelected && !bSelected) {
+        return -1; // a comes first
+      } else if (!aSelected && bSelected) {
+        return 1; // b comes first
+      }
+    }
+    // If both have equal label priority, sort by Z depth.
+    const zDiff = a.pos3d.z - b.pos3d.z;
+    return zDiff;
+  };
 }
 
 /**
  * For a given object ID, returns its centroid in canvas pixel coordinates if
  * it's visible in the current frame. Otherwise, returns null.
  */
-function getCanvasPixelCoordsFromId(id: number | null, params: AnnotationParams): Vector2 | null {
-  if (id === null || params.dataset === null || params.dataset.getTime(id) !== params.frame) {
+function getCanvasPixelCoordsFromId(id: number, params: AnnotationParams): Vector3 | null {
+  if (params.dataset === null || params.dataset.getTime(id) !== params.frame) {
     return null;
   }
   const centroid = params.dataset.getCentroid(id);
   if (!centroid) {
     return null;
   }
-  return framePixelCoordsToCanvasPixelCoords(new Vector2(centroid[0], centroid[1]), params);
+  const centroidPos = new Vector3(...centroid);
+  return centroidPos.applyMatrix4(params.centroidToCanvasMatrix);
 }
 
-function getMarkerScale(params: AnnotationParams, style: AnnotationStyle): number {
-  const zoomScale = Math.max(params.frameToCanvasCoordinates.x, params.frameToCanvasCoordinates.y);
-  const dampenedZoomScale = zoomScale * style.scaleWithZoomPct + (1 - style.scaleWithZoomPct);
-  return dampenedZoomScale;
+function dampenScaleValue(rawScale: number, style: AnnotationStyle): number {
+  return rawScale * style.scaleWithZoomPct + (1 - style.scaleWithZoomPct);
 }
 
 function drawRangeStartId(
@@ -98,16 +106,23 @@ function drawRangeStartId(
   params: AnnotationParams,
   style: AnnotationStyle
 ): void {
-  const pos = getCanvasPixelCoordsFromId(params.rangeStartId, params);
-  if (pos === null) {
+  if (params.rangeStartId === null) {
     return;
   }
+  const pos3d = getCanvasPixelCoordsFromId(params.rangeStartId, params);
+  if (pos3d === null) {
+    return;
+  }
+  const pos = new Vector2(pos3d.x, pos3d.y);
   pos.add(origin);
+
   ctx.strokeStyle = style.borderColor;
-  const zoomScale = getMarkerScale(params, style);
+  const { scale } = params.depthToScale(pos3d.z);
+  const zoomScale = dampenScaleValue(scale, style);
   ctx.setLineDash([3, 2]);
   ctx.beginPath();
-  ctx.arc(pos.x, pos.y, style.booleanMarkerRadiusPx * zoomScale, 0, 2 * Math.PI);
+  const radius = Math.max(style.booleanMarkerRadiusPx * zoomScale, 0);
+  ctx.arc(pos.x, pos.y, radius, 0, 2 * Math.PI);
   ctx.closePath();
   ctx.stroke();
   ctx.setLineDash([]);
@@ -131,21 +146,34 @@ function drawAnnotationMarker(
   ctx: CanvasRenderingContext2D,
   params: AnnotationParams,
   style: AnnotationStyle,
-  id: number,
-  labelIdx: number[]
+  info: MarkerData
 ): void {
+  const { id, labelIdx, pos3d } = info;
+
   const labelData = params.labelData[labelIdx[0]];
-  const pos = getCanvasPixelCoordsFromId(id, params);
-  if (pos === null) {
-    return;
+  const pos = new Vector2(pos3d.x, pos3d.y);
+  const { scale, clipOpacity } = params.depthToScale(pos3d.z);
+
+  // TODO: getIdAtPixel is very expensive and can cause performance issues when
+  // annotations are being updated without the view moving (like when a user is
+  // editing a value or is adding annotations). Turn annotation rendering into a
+  // class and cache the getIdAtPixel result for the current frame, invalidating
+  // it whenever the transform matrix or current frame changes.
+  if (params.getIdAtPixel !== null) {
+    const pixelIdInfo = params.getIdAtPixel(pos.x, pos.y);
+    const isObscured = pixelIdInfo !== null && pixelIdInfo.globalId !== id;
+    ctx.globalAlpha = isObscured ? clipOpacity : 1;
+  } else {
+    ctx.globalAlpha = 1;
   }
+
   pos.add(origin);
   ctx.strokeStyle = style.borderColor;
 
   // Scale markers by the zoom level.
   const isBooleanLabel = labelData.options.type === LabelType.BOOLEAN;
-  const dampenedZoomScale = getMarkerScale(params, style);
-  const scaledBooleanMarkerRadiusPx = style.booleanMarkerRadiusPx * dampenedZoomScale;
+  const dampenedZoomScale = dampenScaleValue(scale, style);
+  const scaledBooleanMarkerRadiusPx = Math.max(0, style.booleanMarkerRadiusPx * dampenedZoomScale);
 
   // Draw an additional secondary marker behind the main one if there are multiple labels.
   if (labelIdx.length > 1) {
@@ -223,7 +251,7 @@ export function getAnnotationRenderer(
   params: AnnotationParams,
   style: AnnotationStyle
 ): RenderInfo {
-  if (!params.visible) {
+  if (!params.visible || !params.dataset) {
     return EMPTY_RENDER_INFO;
   }
 
@@ -251,10 +279,22 @@ export function getAnnotationRenderer(
         }
       }
 
+      // Map to marker params and sort by Z depth + selected label
+      const markerData: MarkerData[] = [];
+      for (const [id, labelIdxs] of idsToLabels) {
+        const pos3d = getCanvasPixelCoordsFromId(id, params);
+        if (pos3d !== null) {
+          markerData.push({ pos3d, id, labelIdx: labelIdxs });
+        }
+      }
+      markerData.sort(makeMarkerSorter(params.selectedLabelIdx));
+
       drawRangeStartId(origin, ctx, params, style);
 
-      for (const [id, labelIdxs] of idsToLabels) {
-        drawAnnotationMarker(origin, ctx, params, style, id, labelIdxs);
+      // Draw each marker in reverse order so the highest priority labels are drawn last
+      for (let i = markerData.length - 1; i >= 0; i--) {
+        const info = markerData[i];
+        drawAnnotationMarker(origin, ctx, params, style, info);
       }
     },
   };

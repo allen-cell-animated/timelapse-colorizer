@@ -32,10 +32,11 @@ import { LabelData } from "./AnnotationData";
 import ColorizeCanvas2D from "./ColorizeCanvas2D";
 import { ColorizeCanvas3D } from "./ColorizeCanvas3D";
 import Dataset from "./Dataset";
+import { IInnerRenderCanvas } from "./IInnerRenderCanvas";
 import { IRenderCanvas, RenderCanvasStateParams } from "./IRenderCanvas";
 
 /**
- * Wraps an IRenderCanvas class, overlaying and compositing additional dynamic
+ * Wraps an IInnerRenderCanvas class, overlaying and compositing additional dynamic
  * elements (like a scale bar, timestamp, etc.) on top of the base canvas.
  *
  * During export mode, the overlay canvas will render the inner canvas directly
@@ -52,7 +53,7 @@ export default class CanvasOverlay implements IRenderCanvas {
   // Initialization of inner 3D canvas is deferred until needed.
   private innerCanvas3d: ColorizeCanvas3D | null;
 
-  private innerCanvas: IRenderCanvas;
+  private innerCanvas: IInnerRenderCanvas;
   private innerCanvasType: CanvasType;
   private ctx: CanvasRenderingContext2D;
 
@@ -170,6 +171,8 @@ export default class CanvasOverlay implements IRenderCanvas {
     this.ctx = canvasContext;
 
     this.getExportDimensions = this.getExportDimensions.bind(this);
+    this.onInnerCanvasRender = this.onInnerCanvasRender.bind(this);
+    this.render = this.render.bind(this);
   }
 
   // Wrapped ColorizeCanvas functions ///////
@@ -252,16 +255,16 @@ export default class CanvasOverlay implements IRenderCanvas {
     if (this.innerCanvas instanceof ColorizeCanvas2D) {
       this.zoomMultiplier = zoom;
       this.innerCanvas.setZoom(zoom);
+      this.render();
     }
-    this.render();
   }
 
   public setPan(x: number, y: number): void {
     if (this.innerCanvas instanceof ColorizeCanvas2D) {
       this.panOffset.set(x, y);
       this.innerCanvas.setPan(x, y);
+      this.render();
     }
-    this.render();
   }
 
   /**
@@ -312,6 +315,7 @@ export default class CanvasOverlay implements IRenderCanvas {
     }
 
     if (!hasAlreadyUpdatedCanvasParams) {
+      this.disableCanvasSyncUntilNextRender();
       await this.innerCanvas.setParams(params);
     }
 
@@ -320,7 +324,7 @@ export default class CanvasOverlay implements IRenderCanvas {
     this.render(false);
   }
 
-  public async setCanvas(canvas: IRenderCanvas): Promise<void> {
+  public async setCanvas(canvas: IInnerRenderCanvas): Promise<void> {
     // Remove previous inner canvas from DOM.
     this.innerCanvasContainerDiv.removeChild(this.innerCanvas.domElement);
 
@@ -328,6 +332,7 @@ export default class CanvasOverlay implements IRenderCanvas {
     this.innerCanvasContainerDiv.appendChild(this.innerCanvas.domElement);
     this.innerCanvas.setResolution(this.innerCanvasSize.x, this.innerCanvasSize.y);
     this.innerCanvas.setOnFrameLoadCallback(this.onFrameLoadCallback);
+    this.innerCanvas.setOnRenderCallback(this.onInnerCanvasRender);
     await this.innerCanvas.setParams(this.params);
     await this.innerCanvas.setFrame(this.currentFrame);
     if (this.innerCanvas instanceof ColorizeCanvas2D) {
@@ -363,7 +368,8 @@ export default class CanvasOverlay implements IRenderCanvas {
   }
 
   private getAnnotationRenderer(): RenderInfo {
-    const scaleInfo = this.innerCanvas.scaleInfo;
+    const screenSpaceMatrix = this.innerCanvas.getScreenSpaceMatrix();
+    const depthToScaleFn = this.innerCanvas.getDepthToScaleFn(screenSpaceMatrix);
     const params: AnnotationParams = {
       ...this.getBaseRendererParams(),
       visible: this.isAnnotationVisible,
@@ -371,12 +377,12 @@ export default class CanvasOverlay implements IRenderCanvas {
       timeToLabelIds: this.timeToLabelIds,
       selectedLabelIdx: this.selectedLabelIdx,
       rangeStartId: this.rangeStartId,
-      // TODO: Make this into a matrix transformation from 3D centroid to 2D
-      // onscreen position.
-      frameToCanvasCoordinates:
-        scaleInfo.type === CanvasType.CANVAS_2D ? scaleInfo.frameToCanvasCoordinates : new Vector2(1, 1),
+      centroidToCanvasMatrix: screenSpaceMatrix,
+      depthToScale: depthToScaleFn,
       frame: this.currentFrame,
-      panOffset: this.panOffset,
+      // Do not provide lookup for 2D canvas since it doesn't need to deal with
+      // annotations getting obscured by other objects.
+      getIdAtPixel: this.innerCanvasType === CanvasType.CANVAS_3D ? this.innerCanvas.getIdAtPixel : null,
     };
     return getAnnotationRenderer(this.ctx, params, this.annotationStyle);
   }
@@ -467,6 +473,7 @@ export default class CanvasOverlay implements IRenderCanvas {
     this.ctx.imageSmoothingEnabled = false;
 
     if (doesInnerCanvasNeedRender || this.isExporting) {
+      this.disableCanvasSyncUntilNextRender();
       this.innerCanvas.render(this.isExporting);
     }
     if (this.isExporting && this.innerCanvas.canvas.width !== 0 && this.innerCanvas.canvas.height !== 0) {
@@ -481,8 +488,31 @@ export default class CanvasOverlay implements IRenderCanvas {
     this.ctx.scale(devicePixelRatio, devicePixelRatio);
 
     headerRenderer.render(new Vector2(0, 0));
-    this.getAnnotationRenderer().render(new Vector2(0, this.headerSize.y));
+    if (this.isAnnotationVisible) {
+      this.getAnnotationRenderer().render(new Vector2(0, this.headerSize.y));
+    }
     footerRenderer.render(new Vector2(0, this.innerCanvasSize.y + this.headerSize.y));
+  }
+
+  /** Called when the inner canvas renders asynchronously. */
+  private onInnerCanvasRender(): void {
+    if (this.isAnnotationVisible) {
+      this.render(false);
+    }
+  }
+
+  /**
+   * Temporarily disables the sync behavior, where the outer canvas re-renders
+   * with the inner canvas's asynchronous renders. Sync behavior is reenabled
+   * after the next inner canvas render.
+   *
+   * Call this method when the inner canvas is about to be rendered on-demand by
+   * this outer canvas to prevent unnecessary re-renders.
+   */
+  private disableCanvasSyncUntilNextRender(): void {
+    this.innerCanvas.setOnRenderCallback(() => {
+      this.innerCanvas.setOnRenderCallback(this.onInnerCanvasRender);
+    });
   }
 
   /**
