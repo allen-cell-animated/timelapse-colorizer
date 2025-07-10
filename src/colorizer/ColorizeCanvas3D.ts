@@ -208,15 +208,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     }
   }
 
-  public setParams(params: RenderCanvasStateParams): Promise<void> {
-    if (this.params === params) {
-      return Promise.resolve();
-    }
-    const prevParams = this.params;
-    this.params = params;
-    let needsRender = false;
-
-    // Update color ramp
+  private handleColorRampUpdate(prevParams: RenderCanvasStateParams | null, params: RenderCanvasStateParams): boolean {
     if (
       hasPropertyChanged(params, prevParams, [
         "colorRamp",
@@ -228,8 +220,6 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
         "outOfRangeDrawSettings",
         "outlierDrawSettings",
         "outlineColor",
-        "outlierDrawSettings",
-        "outOfRangeDrawSettings",
       ])
     ) {
       if (this.volume) {
@@ -237,10 +227,13 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
         for (let i = 0; i < this.volume.numChannels; i++) {
           this.configureColorizeFeature(this.volume, i);
         }
-        needsRender = true;
+        return true;
       }
     }
+    return false;
+  }
 
+  private handleDatasetUpdate(prevParams: RenderCanvasStateParams | null, params: RenderCanvasStateParams): boolean {
     if (hasPropertyChanged(params, prevParams, ["dataset"])) {
       if (params.dataset !== null && params.dataset.has3dFrames() && params.dataset.frames3d) {
         if (this.volume) {
@@ -252,12 +245,15 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
         this.initializingVolumePromise.then(() => {
           this.setFrame(params.pendingFrame);
         });
-        needsRender = true;
+        return true;
       }
     }
+    return false;
+  }
 
-    // Update track path data
+  private handleLineUpdate(prevParams: RenderCanvasStateParams | null, params: RenderCanvasStateParams): boolean {
     const { geometryNeedsUpdate, vertexColorNeedsUpdate, materialNeedsUpdate } = getLineUpdateFlags(prevParams, params);
+    let needsRender = false;
 
     if (geometryNeedsUpdate || vertexColorNeedsUpdate) {
       if (geometryNeedsUpdate && params.dataset && params.track) {
@@ -266,7 +262,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
         this.linePoints = points;
       }
       if (vertexColorNeedsUpdate) {
-        this.lineColors = computeVertexColorsFromIds(this.lineIds, this.params);
+        this.lineColors = computeVertexColorsFromIds(this.lineIds, params);
       }
       this.updateLineGeometry(this.linePoints, this.lineColors);
       needsRender = true;
@@ -275,6 +271,20 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
       this.updateLineMaterial();
       needsRender = true;
     }
+    return needsRender;
+  }
+
+  public setParams(params: RenderCanvasStateParams): Promise<void> {
+    if (this.params === params) {
+      return Promise.resolve();
+    }
+    const prevParams = this.params;
+    this.params = params;
+
+    const didColorRampUpdate = this.handleColorRampUpdate(prevParams, params);
+    const didDatasetUpdate = this.handleDatasetUpdate(prevParams, params);
+    const didLineUpdate = this.handleLineUpdate(prevParams, params);
+    const needsRender = didColorRampUpdate || didDatasetUpdate || didLineUpdate;
 
     if (needsRender) {
       // TODO: Change the render function to take an enum instead of a boolean
