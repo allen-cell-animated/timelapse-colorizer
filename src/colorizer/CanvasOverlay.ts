@@ -315,6 +315,7 @@ export default class CanvasOverlay implements IRenderCanvas {
     }
 
     if (!hasAlreadyUpdatedCanvasParams) {
+      this.disableCanvasSyncUntilNextRender();
       await this.innerCanvas.setParams(params);
     }
 
@@ -472,13 +473,8 @@ export default class CanvasOverlay implements IRenderCanvas {
     this.ctx.imageSmoothingEnabled = false;
 
     if (doesInnerCanvasNeedRender || this.isExporting) {
-      // Temporarily disable the render callback to avoid re-rendering the outer
-      // canvas.
-      this.innerCanvas.setOnRenderCallback(null);
+      this.disableCanvasSyncUntilNextRender();
       this.innerCanvas.render(this.isExporting);
-      // Reenable after a delay because the inner canvas may be rendering
-      // asynchronously on an animation frame
-      setTimeout(() => this.innerCanvas.setOnRenderCallback(this.onInnerCanvasRender), 10);
     }
     if (this.isExporting && this.innerCanvas.canvas.width !== 0 && this.innerCanvas.canvas.height !== 0) {
       // In export mode only, draw the inner canvas inside of the overlay
@@ -503,6 +499,20 @@ export default class CanvasOverlay implements IRenderCanvas {
     if (this.isAnnotationVisible) {
       this.render(false);
     }
+  }
+
+  /**
+   * Temporarily disables the sync behavior, where the outer canvas re-renders
+   * with the inner canvas's asynchronous renders. Sync behavior is reenabled
+   * after the next inner canvas render.
+   *
+   * Call this method when the inner canvas is about to be rendered on-demand by
+   * this outer canvas to prevent unnecessary re-renders.
+   */
+  private disableCanvasSyncUntilNextRender(): void {
+    this.innerCanvas.setOnRenderCallback(() => {
+      this.innerCanvas.setOnRenderCallback(this.onInnerCanvasRender);
+    });
   }
 
   /**
