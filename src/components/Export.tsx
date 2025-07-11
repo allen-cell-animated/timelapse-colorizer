@@ -1,4 +1,4 @@
-import { CameraOutlined, CheckCircleOutlined } from "@ant-design/icons";
+import { CameraOutlined, CheckCircleOutlined, LockOutlined, UnlockOutlined } from "@ant-design/icons";
 import {
   App,
   Button,
@@ -16,16 +16,20 @@ import React, { ReactElement, useCallback, useContext, useEffect, useRef, useSta
 import styled from "styled-components";
 import { clamp } from "three/src/math/MathUtils";
 
+import { toEven } from "../colorizer/canvas/utils";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "../colorizer/utils/analytics";
+import { DEFAULT_EXPORT_DIMENSIONS } from "../constants";
 import { useViewerStateStore } from "../state";
 import { StyledRadioGroup } from "../styles/components";
-import { FlexColumn, FlexColumnAlignCenter, FlexRow } from "../styles/utils";
+import { FlexColumn, FlexColumnAlignCenter, FlexRow, FlexRowAlignCenter } from "../styles/utils";
 
+import { IRenderCanvas } from "../colorizer/IRenderCanvas";
 import CanvasRecorder, { RecordingOptions } from "../colorizer/recorders/CanvasRecorder";
 import ImageSequenceRecorder from "../colorizer/recorders/ImageSequenceRecorder";
 import Mp4VideoRecorder, { VideoBitrate } from "../colorizer/recorders/Mp4VideoRecorder";
 import { AppThemeContext } from "./AppStyle";
 import TextButton from "./Buttons/TextButton";
+import IconButton from "./IconButton";
 import StyledModal, { useStyledModal } from "./Modals/StyledModal";
 import { SettingsContainer, SettingsItem } from "./SettingsContainer";
 import SpinBox from "./SpinBox";
@@ -34,7 +38,7 @@ type ExportButtonProps = {
   totalFrames: number;
   setFrame: (frame: number) => Promise<void>;
   getCanvasExportDimensions: () => [number, number];
-  getCanvas: () => HTMLCanvasElement;
+  getCanvas: () => IRenderCanvas;
   /** Callback, called whenever the button is clicked. Can be used to stop playback. */
   onClick: () => void;
   currentFrame: number;
@@ -140,6 +144,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
   const setShowHeaderDuringExport = useViewerStateStore((state) => state.setShowHeaderDuringExport);
   const showLegendDuringExport = useViewerStateStore((state) => state.showLegendDuringExport);
   const setShowLegendDuringExport = useViewerStateStore((state) => state.setShowLegendDuringExport);
+  const dataset = useViewerStateStore((state) => state.dataset);
 
   const originalFrameRef = useRef(props.currentFrame);
   const [isModalOpen, _setIsModalOpen] = useState(false);
@@ -159,6 +164,9 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
   const [frameIncrement, setFrameIncrement] = useState(1);
   const [fps, setFps] = useState(12);
   const [videoBitsPerSecond, setVideoBitsPerSecond] = useState(VideoBitrate.MEDIUM);
+
+  const [videoDimensions, setVideoDimensions] = useState(DEFAULT_EXPORT_DIMENSIONS);
+  const [aspectRatio, setAspectRatio] = useState<number | null>(null);
 
   const [percentComplete, setPercentComplete] = useState(0);
 
@@ -296,6 +304,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
 
     // Copy configuration to options object
     // Note that different codecs will be selected by the browser based on the canvas dimensions.
+    props.getCanvas().setResolution(videoDimensions[0], videoDimensions[1]);
     const canvasDims = props.getCanvasExportDimensions();
     const recordingOptions: Partial<RecordingOptions> = {
       min: min,
@@ -334,14 +343,54 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
     // Initialize different recorders based on the provided options.
     switch (recordingMode) {
       case RecordingMode.VIDEO_MP4:
-        recorder.current = new Mp4VideoRecorder(props.setFrame, props.getCanvas, recordingOptions);
+        recorder.current = new Mp4VideoRecorder(props.setFrame, () => props.getCanvas().canvas, recordingOptions);
         break;
       case RecordingMode.IMAGE_SEQUENCE:
       default:
-        recorder.current = new ImageSequenceRecorder(props.setFrame, props.getCanvas, recordingOptions);
+        recorder.current = new ImageSequenceRecorder(props.setFrame, () => props.getCanvas().canvas, recordingOptions);
         break;
     }
     recorder.current.start();
+  };
+
+  const handleUseImageDimensions = (): void => {
+    if (!dataset) {
+      return;
+    }
+    setVideoDimensions(dataset.frameResolution.toArray());
+    if (aspectRatio) {
+      setAspectRatio(dataset.frameResolution.x / dataset.frameResolution.y);
+    }
+  };
+
+  const handleUseViewportDimensions = (): void => {
+    const canvas = props.getCanvas();
+    setVideoDimensions(canvas.resolution.toArray());
+    if (aspectRatio) {
+      setAspectRatio(canvas.resolution.x / canvas.resolution.y);
+    }
+  };
+
+  const handleSetWidth = (width: number | null): void => {
+    if (width === null) {
+      return;
+    }
+    if (aspectRatio) {
+      setVideoDimensions([toEven(width), toEven(width / aspectRatio)]);
+    } else {
+      setVideoDimensions([toEven(width), toEven(videoDimensions[1])]);
+    }
+  };
+
+  const handleSetHeight = (height: number | null): void => {
+    if (height === null) {
+      return;
+    }
+    if (aspectRatio) {
+      setVideoDimensions([toEven(height * aspectRatio), toEven(height)]);
+    } else {
+      setVideoDimensions([toEven(videoDimensions[0]), toEven(height)]);
+    }
   };
 
   //////////////// RENDERING ////////////////
@@ -397,9 +446,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
     // (475 MB predicted vs. 70 MB actual)
     // TODO: Is there a way to concretely determine this?
     const compressionRatioBitsPerPixel = 3.5; // Actual value 2.7-3.0, overshooting to be safe
-    // Use current canvas dimensions as an approximation (instead of the export dimensions)
-    const canvas = props.getCanvas();
-    const maxVideoBitsResolution = canvas.width * canvas.height * totalFrames * compressionRatioBitsPerPixel;
+    const maxVideoBitsResolution = videoDimensions[0] * videoDimensions[1] * totalFrames * compressionRatioBitsPerPixel;
 
     const sizeInMb = Math.min(maxVideoBitsResolution, maxVideoBitsDuration) / 8_000_000; // bits to MB
 
@@ -627,6 +674,52 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
                   Reset
                 </Button>
               </FlexRow>
+            </SettingsItem>
+            <SettingsItem label="Dimensions" labelStyle={{ marginTop: "3px", height: "min-content" }}>
+              <FlexColumn style={{ alignItems: "flex-start" }} $gap={6}>
+                <FlexColumn>
+                  <FlexRowAlignCenter $gap={4}>
+                    <InputNumber
+                      value={videoDimensions[0]}
+                      onChange={handleSetWidth}
+                      changeOnBlur={true}
+                      controls={false}
+                      style={{ width: "70px" }}
+                    />
+                    <span style={{ padding: "0 4px" }}>×</span>
+                    <InputNumber
+                      value={videoDimensions[1]}
+                      onChange={handleSetHeight}
+                      changeOnBlur={true}
+                      controls={false}
+                      style={{ width: "70px" }}
+                    />
+                    <IconButton
+                      type={aspectRatio ? "primary" : "link"}
+                      sizePx={26}
+                      onClick={() => setAspectRatio(aspectRatio ? null : videoDimensions[0] / videoDimensions[1])}
+                    >
+                      {aspectRatio ? <LockOutlined /> : <UnlockOutlined />}
+                    </IconButton>
+                  </FlexRowAlignCenter>
+                  <p
+                    style={{
+                      color: theme.color.text.hint,
+                      margin: 0,
+                      padding: 0,
+                      fontSize: theme.font.size.content,
+                    }}
+                  >
+                    Even numbers only
+                  </p>
+                </FlexColumn>
+                <FlexRow $gap={6}>
+                  <Button onClick={handleUseViewportDimensions}>Use viewport</Button>
+                  <Button disabled={!dataset || dataset.has3dFrames()} onClick={handleUseImageDimensions}>
+                    Use image
+                  </Button>
+                </FlexRow>
+              </FlexColumn>
             </SettingsItem>
             <SettingsItem label={"Show feature legend"}>
               <Checkbox

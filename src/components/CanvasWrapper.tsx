@@ -9,6 +9,7 @@ import { ImagesIconSVG, ImagesSlashIconSVG, NoImageSVG, TagIconSVG, TagSlashIcon
 import { AnnotationSelectionMode, LoadTroubleshooting, PixelIdInfo, TabType } from "../colorizer/types";
 import * as mathUtils from "../colorizer/utils/math_utils";
 import { AnnotationState } from "../colorizer/utils/react_utils";
+import { CANVAS_ASPECT_RATIO } from "../constants";
 import { FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter, VisuallyHidden } from "../styles/utils";
 
 import { LabelData, LabelType } from "../colorizer/AnnotationData";
@@ -23,7 +24,6 @@ import LoadingSpinner from "./LoadingSpinner";
 import AnnotationInputPopover from "./Tabs/Annotation/AnnotationInputPopover";
 import { TooltipWithSubtitle } from "./Tooltips/TooltipWithSubtitle";
 
-const ASPECT_RATIO = 14.6 / 10;
 /* Minimum distance in either X or Y that mouse should move
  * before mouse event is considered a drag
  */
@@ -285,14 +285,18 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     const widthPx = Math.min(
       containerRef.current?.clientWidth ?? props.maxWidthPx,
       props.maxWidthPx,
-      props.maxHeightPx * ASPECT_RATIO
+      props.maxHeightPx * CANVAS_ASPECT_RATIO
     );
-    return new Vector2(Math.floor(widthPx), Math.floor(widthPx / ASPECT_RATIO));
+    return new Vector2(Math.floor(widthPx), Math.floor(widthPx / CANVAS_ASPECT_RATIO));
   }, [props.maxHeightPx, props.maxWidthPx]);
 
   // Respond to window resizing
   useEffect(() => {
     const updateCanvasDimensions = (): void => {
+      if (props.isRecording) {
+        // Do not resize during recordings.
+        return;
+      }
       const canvasSizePx = getCanvasSizePx();
       canv.setResolution(canvasSizePx.x, canvasSizePx.y);
     };
@@ -306,7 +310,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     return () => {
       window.removeEventListener("resize", handleResize);
     };
-  }, [canv, getCanvasSizePx]);
+  }, [canv, getCanvasSizePx, props.isRecording]);
 
   // CANVAS ACTIONS /////////////////////////////////////////////////
 
