@@ -12,7 +12,7 @@ import {
   Space,
   Tooltip,
 } from "antd";
-import React, { ReactElement, useCallback, useContext, useEffect, useRef, useState } from "react";
+import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import { clamp } from "three/src/math/MathUtils";
 
@@ -159,14 +159,19 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
   const [rangeMode, setRangeMode] = useState(RangeMode.ALL);
   const [customMin, setCustomMin] = useState(0);
   const [customMax, setCustomMax] = useState(props.totalFrames - 1);
-  const [imagePrefix, setImagePrefix] = useState(props.defaultImagePrefix);
+
+  const [videoDimensions, setVideoDimensions] = useState(DEFAULT_EXPORT_DIMENSIONS);
+  const [aspectRatio, setAspectRatio] = useState<number | null>(null);
+
+  const defaultImagePrefix = useMemo(() => {
+    return `${props.defaultImagePrefix}-${videoDimensions[0]}x${videoDimensions[1]}`;
+  }, [videoDimensions]);
+
+  const [imagePrefix, setImagePrefix] = useState(defaultImagePrefix);
   const [useDefaultImagePrefix, setUseDefaultImagePrefix] = useState(true);
   const [frameIncrement, setFrameIncrement] = useState(1);
   const [fps, setFps] = useState(12);
   const [videoBitsPerSecond, setVideoBitsPerSecond] = useState(VideoBitrate.MEDIUM);
-
-  const [videoDimensions, setVideoDimensions] = useState(DEFAULT_EXPORT_DIMENSIONS);
-  const [aspectRatio, setAspectRatio] = useState<number | null>(null);
 
   const [percentComplete, setPercentComplete] = useState(0);
 
@@ -204,9 +209,9 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
     if (useDefaultImagePrefix) {
       if (recordingMode === RecordingMode.IMAGE_SEQUENCE) {
         // Add separator between prefix and frame number
-        return props.defaultImagePrefix + "-";
+        return defaultImagePrefix + "-";
       } else {
-        return props.defaultImagePrefix;
+        return defaultImagePrefix;
       }
     } else {
       return imagePrefix;
@@ -675,9 +680,19 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
                 </Button>
               </FlexRow>
             </SettingsItem>
-            <SettingsItem label="Dimensions" labelStyle={{ marginTop: "3px", height: "min-content" }}>
-              <FlexColumn style={{ alignItems: "flex-start" }} $gap={6}>
+            <SettingsItem label="Dimensions" labelStyle={{ marginTop: "2px", height: "min-content" }}>
+              <FlexColumn style={{ alignItems: "flex-start", paddingBottom: "4px" }} $gap={6}>
                 <FlexColumn>
+                  <p
+                    style={{
+                      color: theme.color.text.hint,
+                      marginBottom: 0,
+                      paddingBottom: 0,
+                      fontSize: theme.font.size.content,
+                    }}
+                  >
+                    Will be rounded to the nearest even number
+                  </p>
                   <FlexRowAlignCenter $gap={4}>
                     <InputNumber
                       value={videoDimensions[0]}
@@ -702,16 +717,6 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
                       {aspectRatio ? <LockOutlined /> : <UnlockOutlined />}
                     </IconButton>
                   </FlexRowAlignCenter>
-                  <p
-                    style={{
-                      color: theme.color.text.hint,
-                      margin: 0,
-                      padding: 0,
-                      fontSize: theme.font.size.content,
-                    }}
-                  >
-                    Even numbers only
-                  </p>
                 </FlexColumn>
                 <FlexRow $gap={6}>
                   <Button onClick={handleUseViewportDimensions}>Use viewport</Button>
