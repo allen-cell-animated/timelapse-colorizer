@@ -1,5 +1,4 @@
 import { ColorPicker, Tooltip } from "antd";
-import { Color as AntColor } from "antd/es/color-picker/color";
 import React, { ReactElement, useMemo } from "react";
 import styled from "styled-components";
 import { Color, ColorRepresentation } from "three";
@@ -58,7 +57,7 @@ export default function CategoricalColorPicker(inputProps: CategoricalColorPicke
     for (let i = 0; i < props.categories.length; i++) {
       const color = categoricalPalette[i];
       const label = props.categories[i];
-      const onChange = (_value: AntColor, hex: string): void => {
+      const onChange = (_value: any, hex: string): void => {
         const newPalette = [...categoricalPalette];
         newPalette[i] = new Color(hex as ColorRepresentation);
         setCategoricalPalette(newPalette);
