@@ -1,9 +1,9 @@
-import { Color as AntdColor } from "@rc-component/color-picker";
 import { Button, Checkbox, ColorPicker, ConfigProvider, Input, InputRef, Radio } from "antd";
 import React, { ReactElement, useContext, useEffect, useRef, useState } from "react";
 import { Color, ColorRepresentation } from "three";
 
 import { FlexColumn, FlexRow } from "../../../styles/utils";
+import { threeToAntColor } from "../../../utils/color_utils";
 
 import { CSV_COL_ID, CSV_COL_TIME, CSV_COL_TRACK, LabelOptions, LabelType } from "../../../colorizer/AnnotationData";
 import { AppThemeContext, Z_INDEX_POPOVER } from "../../AppStyle";
@@ -51,6 +51,7 @@ export default function CreateLabelForm(inputProps: CreateLabelFormProps): React
     props.onColorPickerOpenChange?.(open);
   };
   const colorPickerOpen = props.colorPickerOpen ?? colorPickerOpenState;
+  const colorPickerContainerRef = useRef<HTMLDivElement>(null);
 
   const [labelType, setLabelType] = useState<LabelType>(props.initialLabelOptions.type);
   const [autoIncrement, setAutoIncrement] = useState(props.initialLabelOptions.autoIncrement);
@@ -112,15 +113,16 @@ export default function CreateLabelForm(inputProps: CreateLabelFormProps): React
            * if it's in a modal or other element with a higher zIndex.
            */}
           <ConfigProvider theme={{ components: { Popover: { zIndexPopup: props.zIndex } } }}>
-            <div>
+            <div ref={colorPickerContainerRef}>
               <ColorPicker
                 size="small"
-                value={new AntdColor(color.getHexString())}
+                value={threeToAntColor(color)}
                 onChange={onColorPickerChange}
                 disabledAlpha={true}
                 presets={DEFAULT_LABEL_COLOR_PRESETS}
                 onOpenChange={onColorPickerOpenChange}
                 open={colorPickerOpen}
+                getPopupContainer={() => colorPickerContainerRef.current || document.body}
               />
             </div>
           </ConfigProvider>
