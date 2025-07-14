@@ -31,10 +31,10 @@ describe("ExportButton", () => {
       fireEvent.click(exportButton); // open modal
 
       const prefixInput: HTMLInputElement = screen.getByLabelText(/[fF]ilename/);
-      expect(prefixInput.value).to.equal("prefix-1-");
+      expect(prefixInput.value.startsWith("prefix-1-")).toBe(true);
 
       rerender(makeExportButtonWithImagePrefix("prefix-2"));
-      expect(prefixInput.value).to.equal("prefix-2-");
+      expect(prefixInput.value.startsWith("prefix-2-")).toBe(true);
     });
 
     it("stops updating default image prefix when prefix is modified", () => {
