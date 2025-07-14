@@ -21,7 +21,7 @@ import { AnalyticsEvent, triggerAnalyticsEvent } from "../colorizer/utils/analyt
 import { DEFAULT_EXPORT_DIMENSIONS } from "../constants";
 import { useViewerStateStore } from "../state";
 import { StyledRadioGroup } from "../styles/components";
-import { FlexColumn, FlexColumnAlignCenter, FlexRow, FlexRowAlignCenter } from "../styles/utils";
+import { FlexColumn, FlexColumnAlignCenter, FlexRow, FlexRowAlignCenter, VisuallyHidden } from "../styles/utils";
 
 import { IRenderCanvas } from "../colorizer/IRenderCanvas";
 import CanvasRecorder, { RecordingOptions } from "../colorizer/recorders/CanvasRecorder";
@@ -49,6 +49,8 @@ type ExportButtonProps = {
 };
 
 const FRAME_RANGE_RADIO_LABEL_ID = "export-modal-frame-range-label";
+const FRAME_DIMENSION_WIDTH_INPUT_ID = "export-modal-dimensions-width";
+const FRAME_DIMENSION_HEIGHT_INPUT_ID = "export-modal-dimensions-height";
 
 const defaultProps: Partial<ExportButtonProps> = {
   setIsRecording: () => {},
@@ -113,6 +115,18 @@ const VideoQualityRadioGroup = styled(StyledRadioGroup)`
   }
 `;
 
+const HintText = styled.p`
+  color: var(--color-text-hint);
+  padding: 0;
+  margin: 0;
+`;
+
+const StyledInputNumber = styled(InputNumber)`
+  .ant-input-number-group-addon {
+    padding: 0 6px;
+  }
+`;
+
 /**
  * A single Export button that opens up an export modal when clicked. Manages starting and stopping
  * an image sequence recording, resetting state when complete.
@@ -161,13 +175,13 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
   const [customMin, setCustomMin] = useState(0);
   const [customMax, setCustomMax] = useState(props.totalFrames - 1);
 
-  const [videoDimensionsInput, setVideoDimensionsInput] = useState(DEFAULT_EXPORT_DIMENSIONS);
-  const [aspectRatio, setAspectRatio] = useState<number | null>(videoDimensionsInput[0] / videoDimensionsInput[1]);
-  const videoDimensions = useMemo(() => videoDimensionsInput.map(toEven), [videoDimensionsInput]);
+  const [dimensionsInput, setDimensionsInput] = useState(DEFAULT_EXPORT_DIMENSIONS);
+  const [aspectRatio, setAspectRatio] = useState<number | null>(dimensionsInput[0] / dimensionsInput[1]);
+  const dimensions = useMemo(() => dimensionsInput.map(toEven), [dimensionsInput]);
 
   const defaultImagePrefix = useMemo(() => {
-    return `${props.defaultImagePrefix}-${videoDimensions[0]}x${videoDimensions[1]}`;
-  }, [videoDimensions, props.defaultImagePrefix]);
+    return `${props.defaultImagePrefix}-${dimensions[0]}x${dimensions[1]}`;
+  }, [dimensions, props.defaultImagePrefix]);
 
   const [imagePrefix, setImagePrefix] = useState(defaultImagePrefix);
   const [useDefaultImagePrefix, setUseDefaultImagePrefix] = useState(true);
@@ -311,7 +325,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
 
     // Copy configuration to options object
     // Note that different codecs will be selected by the browser based on the canvas dimensions.
-    props.getCanvas().setResolution(videoDimensions[0], videoDimensions[1]);
+    props.getCanvas().setResolution(dimensions[0], dimensions[1]);
     const canvasDims = props.getCanvasExportDimensions();
     const recordingOptions: Partial<RecordingOptions> = {
       min: min,
@@ -364,7 +378,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
     if (!dataset) {
       return;
     }
-    setVideoDimensionsInput(dataset.frameResolution.toArray());
+    setDimensionsInput(dataset.frameResolution.toArray());
     if (aspectRatio) {
       setAspectRatio(dataset.frameResolution.x / dataset.frameResolution.y);
     }
@@ -372,7 +386,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
 
   const handleUseViewportDimensions = (): void => {
     const canvas = props.getCanvas();
-    setVideoDimensionsInput(canvas.resolution.toArray());
+    setDimensionsInput(canvas.resolution.toArray());
     if (aspectRatio) {
       setAspectRatio(canvas.resolution.x / canvas.resolution.y);
     }
@@ -381,9 +395,9 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
   const handleSetWidth = (width: number | null): void => {
     if (width !== null) {
       if (aspectRatio !== null) {
-        setVideoDimensionsInput([width, toEven(width / aspectRatio)]);
+        setDimensionsInput([width, toEven(width / aspectRatio)]);
       } else {
-        setVideoDimensionsInput([width, videoDimensionsInput[1]]);
+        setDimensionsInput([width, dimensionsInput[1]]);
       }
     }
   };
@@ -391,9 +405,9 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
   const handleSetHeight = (height: number | null): void => {
     if (height !== null) {
       if (aspectRatio !== null) {
-        setVideoDimensionsInput([toEven(height * aspectRatio), height]);
+        setDimensionsInput([toEven(height * aspectRatio), Math.round(height)]);
       } else {
-        setVideoDimensionsInput([videoDimensionsInput[0], height]);
+        setDimensionsInput([dimensionsInput[0], Math.round(height)]);
       }
     }
   };
@@ -451,7 +465,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
     // (475 MB predicted vs. 70 MB actual)
     // TODO: Is there a way to concretely determine this?
     const compressionRatioBitsPerPixel = 3.5; // Actual value 2.7-3.0, overshooting to be safe
-    const maxVideoBitsResolution = videoDimensions[0] * videoDimensions[1] * totalFrames * compressionRatioBitsPerPixel;
+    const maxVideoBitsResolution = dimensions[0] * dimensions[1] * totalFrames * compressionRatioBitsPerPixel;
 
     const sizeInMb = Math.min(maxVideoBitsResolution, maxVideoBitsDuration) / 8_000_000; // bits to MB
 
@@ -532,7 +546,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
         maskClosable={!isRecording}
         footer={modalFooter}
       >
-        <FlexColumn $gap={20} style={{ marginTop: "15px" }} ref={exportModalRef}>
+        <FlexColumn $gap={10} style={{ marginTop: "15px" }} ref={exportModalRef}>
           {/* Recording type (image/video) radio */}
           <FlexColumnAlignCenter>
             <ExportModeRadioGroup
@@ -633,6 +647,79 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
               </Space>
             </MaxWidthRadioGroup>
           </Card>
+          <Card size="small" title={"Dimensions"}>
+            <SettingsContainer indentPx={0} gapPx={6}>
+              <SettingsItem label="Frame dimensions" labelStyle={{ marginTop: "2px", height: "min-content" }}>
+                <FlexColumn style={{ alignItems: "flex-start", paddingBottom: "8px" }} $gap={6}>
+                  <FlexRow $gap={6}>
+                    <Button onClick={handleUseViewportDimensions}>Use viewport</Button>
+                    <Button disabled={!dataset || dataset.has3dFrames()} onClick={handleUseImageDimensions}>
+                      Use image
+                    </Button>
+                  </FlexRow>
+                  <FlexColumn>
+                    <FlexRowAlignCenter $gap={4}>
+                      <StyledInputNumber
+                        id={FRAME_DIMENSION_WIDTH_INPUT_ID}
+                        addonBefore={
+                          <HintText>
+                            w<VisuallyHidden>idth</VisuallyHidden>
+                          </HintText>
+                        }
+                        value={dimensionsInput[0]}
+                        onChange={handleSetWidth}
+                        controls={false}
+                        style={{ width: "90px" }}
+                      />
+                      <span style={{ padding: "0 4px" }}>×</span>
+                      <StyledInputNumber
+                        id={FRAME_DIMENSION_HEIGHT_INPUT_ID}
+                        addonBefore={
+                          <HintText>
+                            h<VisuallyHidden>eight</VisuallyHidden>
+                          </HintText>
+                        }
+                        value={dimensionsInput[1]}
+                        onChange={handleSetHeight}
+                        controls={false}
+                        style={{ width: "90px" }}
+                      />
+                      <Tooltip
+                        title={aspectRatio ? "Unlock aspect ratio" : "Lock aspect ratio"}
+                        trigger={["hover", "focus"]}
+                        getPopupContainer={() => exportModalRef.current || document.body}
+                      >
+                        <IconButton
+                          type={aspectRatio ? "primary" : "link"}
+                          sizePx={26}
+                          onClick={() => setAspectRatio(aspectRatio ? null : dimensionsInput[0] / dimensionsInput[1])}
+                        >
+                          {aspectRatio ? <LockOutlined /> : <UnlockOutlined />}
+                        </IconButton>
+                      </Tooltip>
+                    </FlexRowAlignCenter>
+                  </FlexColumn>
+                </FlexColumn>
+              </SettingsItem>
+              <SettingsItem label={"Show feature legend"}>
+                <Checkbox
+                  checked={showLegendDuringExport}
+                  onChange={(e) => setShowLegendDuringExport(e.target.checked)}
+                />
+              </SettingsItem>
+              <SettingsItem label="Show dataset name">
+                <div>
+                  <Checkbox
+                    checked={showHeaderDuringExport}
+                    onChange={(e) => setShowHeaderDuringExport(e.target.checked)}
+                  />
+                </div>
+              </SettingsItem>
+              <SettingsItem label="Final dimensions">
+                <HintText>{`${dimensions[0]} x ${dimensions[1]}`}</HintText>
+              </SettingsItem>
+            </SettingsContainer>
+          </Card>
 
           <SettingsContainer gapPx={6}>
             {recordingMode === RecordingMode.VIDEO_MP4 && (
@@ -642,58 +729,6 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
                     <SpinBox value={fps} onChange={setFps} min={1} max={120} disabled={isRecording} width="175px" />
                     <p style={{ color: theme.color.text.hint }}>({getDurationLabel()})</p>
                   </FlexRow>
-                </SettingsItem>
-                <SettingsItem label="Dimensions" labelStyle={{ marginTop: "2px", height: "min-content" }}>
-                  <FlexColumn style={{ alignItems: "flex-start", paddingBottom: "8px" }} $gap={6}>
-                    <FlexColumn>
-                      <p
-                        style={{
-                          color: theme.color.text.hint,
-                          marginBottom: 0,
-                          paddingBottom: "4px",
-                          fontSize: theme.font.size.content,
-                        }}
-                      >
-                        Frame dimensions, not including name/legend. Will be rounded to the nearest even number.
-                      </p>
-                      <FlexRowAlignCenter $gap={4}>
-                        <InputNumber
-                          value={videoDimensionsInput[0]}
-                          onChange={handleSetWidth}
-                          controls={false}
-                          style={{ width: "70px" }}
-                        />
-                        <span style={{ padding: "0 4px" }}>×</span>
-                        <InputNumber
-                          value={videoDimensionsInput[1]}
-                          onChange={handleSetHeight}
-                          controls={false}
-                          style={{ width: "70px" }}
-                        />
-                        <Tooltip
-                          title={aspectRatio ? "Unlock aspect ratio" : "Lock aspect ratio"}
-                          trigger={["hover", "focus"]}
-                          getPopupContainer={() => exportModalRef.current || document.body}
-                        >
-                          <IconButton
-                            type={aspectRatio ? "primary" : "link"}
-                            sizePx={26}
-                            onClick={() =>
-                              setAspectRatio(aspectRatio ? null : videoDimensionsInput[0] / videoDimensionsInput[1])
-                            }
-                          >
-                            {aspectRatio ? <LockOutlined /> : <UnlockOutlined />}
-                          </IconButton>
-                        </Tooltip>
-                      </FlexRowAlignCenter>
-                    </FlexColumn>
-                    <FlexRow $gap={6}>
-                      <Button onClick={handleUseViewportDimensions}>Use viewport</Button>
-                      <Button disabled={!dataset || dataset.has3dFrames()} onClick={handleUseImageDimensions}>
-                        Use image
-                      </Button>
-                    </FlexRow>
-                  </FlexColumn>
                 </SettingsItem>
                 <SettingsItem label="Video quality">
                   <FlexRow $gap={6}>
@@ -731,20 +766,6 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
                   Reset
                 </Button>
               </FlexRow>
-            </SettingsItem>
-            <SettingsItem label={"Show feature legend"}>
-              <Checkbox
-                checked={showLegendDuringExport}
-                onChange={(e) => setShowLegendDuringExport(e.target.checked)}
-              />
-            </SettingsItem>
-            <SettingsItem label="Show dataset name">
-              <div>
-                <Checkbox
-                  checked={showHeaderDuringExport}
-                  onChange={(e) => setShowHeaderDuringExport(e.target.checked)}
-                />
-              </div>
             </SettingsItem>
           </SettingsContainer>
 
