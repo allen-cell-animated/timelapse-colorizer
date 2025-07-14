@@ -1,6 +1,6 @@
 import { FolderOpenOutlined, UploadOutlined } from "@ant-design/icons";
 import { Button, Dropdown, Input, InputRef, MenuProps, Space } from "antd";
-import { MenuItemType } from "antd/es/menu/hooks/useItems";
+import { MenuItemType } from "antd/es/menu/interface";
 import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { useClickAnyWhere } from "usehooks-ts";
