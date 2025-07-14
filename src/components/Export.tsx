@@ -697,7 +697,6 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
                     <InputNumber
                       value={videoDimensionsInput[0]}
                       onChange={handleSetWidth}
-                      changeOnBlur={true}
                       controls={false}
                       style={{ width: "70px" }}
                     />
@@ -705,7 +704,6 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
                     <InputNumber
                       value={videoDimensionsInput[1]}
                       onChange={handleSetHeight}
-                      changeOnBlur={true}
                       controls={false}
                       style={{ width: "70px" }}
                     />
