@@ -643,6 +643,58 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
                     <p style={{ color: theme.color.text.hint }}>({getDurationLabel()})</p>
                   </FlexRow>
                 </SettingsItem>
+                <SettingsItem label="Dimensions" labelStyle={{ marginTop: "2px", height: "min-content" }}>
+                  <FlexColumn style={{ alignItems: "flex-start", paddingBottom: "8px" }} $gap={6}>
+                    <FlexColumn>
+                      <p
+                        style={{
+                          color: theme.color.text.hint,
+                          marginBottom: 0,
+                          paddingBottom: "4px",
+                          fontSize: theme.font.size.content,
+                        }}
+                      >
+                        Frame dimensions, not including name/legend. Will be rounded to the nearest even number.
+                      </p>
+                      <FlexRowAlignCenter $gap={4}>
+                        <InputNumber
+                          value={videoDimensionsInput[0]}
+                          onChange={handleSetWidth}
+                          controls={false}
+                          style={{ width: "70px" }}
+                        />
+                        <span style={{ padding: "0 4px" }}>×</span>
+                        <InputNumber
+                          value={videoDimensionsInput[1]}
+                          onChange={handleSetHeight}
+                          controls={false}
+                          style={{ width: "70px" }}
+                        />
+                        <Tooltip
+                          title={aspectRatio ? "Unlock aspect ratio" : "Lock aspect ratio"}
+                          trigger={["hover", "focus"]}
+                          getPopupContainer={() => exportModalRef.current || document.body}
+                        >
+                          <IconButton
+                            type={aspectRatio ? "primary" : "link"}
+                            sizePx={26}
+                            onClick={() =>
+                              setAspectRatio(aspectRatio ? null : videoDimensionsInput[0] / videoDimensionsInput[1])
+                            }
+                          >
+                            {aspectRatio ? <LockOutlined /> : <UnlockOutlined />}
+                          </IconButton>
+                        </Tooltip>
+                      </FlexRowAlignCenter>
+                    </FlexColumn>
+                    <FlexRow $gap={6}>
+                      <Button onClick={handleUseViewportDimensions}>Use viewport</Button>
+                      <Button disabled={!dataset || dataset.has3dFrames()} onClick={handleUseImageDimensions}>
+                        Use image
+                      </Button>
+                    </FlexRow>
+                  </FlexColumn>
+                </SettingsItem>
                 <SettingsItem label="Video quality">
                   <FlexRow $gap={6}>
                     <VideoQualityRadioGroup
@@ -679,58 +731,6 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
                   Reset
                 </Button>
               </FlexRow>
-            </SettingsItem>
-            <SettingsItem label="Dimensions" labelStyle={{ marginTop: "2px", height: "min-content" }}>
-              <FlexColumn style={{ alignItems: "flex-start", paddingBottom: "4px" }} $gap={6}>
-                <FlexColumn>
-                  <p
-                    style={{
-                      color: theme.color.text.hint,
-                      marginBottom: 0,
-                      paddingBottom: 0,
-                      fontSize: theme.font.size.content,
-                    }}
-                  >
-                    Will be rounded to the nearest even number
-                  </p>
-                  <FlexRowAlignCenter $gap={4}>
-                    <InputNumber
-                      value={videoDimensionsInput[0]}
-                      onChange={handleSetWidth}
-                      controls={false}
-                      style={{ width: "70px" }}
-                    />
-                    <span style={{ padding: "0 4px" }}>×</span>
-                    <InputNumber
-                      value={videoDimensionsInput[1]}
-                      onChange={handleSetHeight}
-                      controls={false}
-                      style={{ width: "70px" }}
-                    />
-                    <Tooltip
-                      title={aspectRatio ? "Unlock aspect ratio" : "Lock aspect ratio"}
-                      trigger={["hover", "focus"]}
-                      getPopupContainer={() => exportModalRef.current || document.body}
-                    >
-                      <IconButton
-                        type={aspectRatio ? "primary" : "link"}
-                        sizePx={26}
-                        onClick={() =>
-                          setAspectRatio(aspectRatio ? null : videoDimensionsInput[0] / videoDimensionsInput[1])
-                        }
-                      >
-                        {aspectRatio ? <LockOutlined /> : <UnlockOutlined />}
-                      </IconButton>
-                    </Tooltip>
-                  </FlexRowAlignCenter>
-                </FlexColumn>
-                <FlexRow $gap={6}>
-                  <Button onClick={handleUseViewportDimensions}>Use viewport</Button>
-                  <Button disabled={!dataset || dataset.has3dFrames()} onClick={handleUseImageDimensions}>
-                    Use image
-                  </Button>
-                </FlexRow>
-              </FlexColumn>
             </SettingsItem>
             <SettingsItem label={"Show feature legend"}>
               <Checkbox
