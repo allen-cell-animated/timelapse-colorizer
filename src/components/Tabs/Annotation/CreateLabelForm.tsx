@@ -1,4 +1,4 @@
-import { Button, Checkbox, ConfigProvider, Input, InputRef, Radio } from "antd";
+import { Button, Checkbox, Input, InputRef, Radio } from "antd";
 import React, { ReactElement, useContext, useEffect, useRef, useState } from "react";
 import { Color, ColorRepresentation } from "three";
 
@@ -11,6 +11,13 @@ import { AppThemeContext, Z_INDEX_POPOVER } from "../../AppStyle";
 import WrappedColorPicker from "../../Inputs/WrappedColorPicker";
 import { SettingsContainer, SettingsItem } from "../../SettingsContainer";
 import { TooltipWithSubtitle } from "../../Tooltips/TooltipWithSubtitle";
+
+const enum HtmlIDs {
+  NAME_INPUT = "create-label-name-input",
+  COLOR_PICKER = "create-label-color-picker",
+  LABEL_TYPE_RADIO_GROUP = "create-label-type-radio-group",
+  AUTO_INCREMENT_CHECKBOX = "create-label-auto-increment-checkbox",
+}
 
 type CreateLabelFormProps = {
   initialLabelOptions: LabelOptions;
@@ -52,9 +59,9 @@ export default function CreateLabelForm(inputProps: CreateLabelFormProps): React
     props.onColorPickerOpenChange?.(open);
   };
   const colorPickerOpen = props.colorPickerOpen ?? colorPickerOpenState;
-  const colorPickerContainerRef = useRef<HTMLDivElement>(null);
 
   const [labelType, setLabelType] = useState<LabelType>(props.initialLabelOptions.type);
+  const autoIncrementContainerRef = useRef<HTMLDivElement>(null);
   const [autoIncrement, setAutoIncrement] = useState(props.initialLabelOptions.autoIncrement);
   const [color, setColor] = useState(props.initialLabelOptions.color);
   const [nameInput, setNameInput] = useState(props.initialLabelOptions.name);
@@ -99,8 +106,9 @@ export default function CreateLabelForm(inputProps: CreateLabelFormProps): React
   return (
     <FlexColumn style={{ width: "300px" }} $gap={10}>
       <SettingsContainer gapPx={8}>
-        <SettingsItem label="Name" labelStyle={{ margin: "2px 0 auto 0" }}>
+        <SettingsItem label="Name" labelStyle={{ margin: "2px 0 auto 0" }} htmlFor={HtmlIDs.NAME_INPUT}>
           <Input
+            id={HtmlIDs.NAME_INPUT}
             value={nameInput}
             onChange={(e) => setNameInput(e.target.value)}
             onPressEnter={confirm}
@@ -108,29 +116,22 @@ export default function CreateLabelForm(inputProps: CreateLabelFormProps): React
           ></Input>
           {nameInputError && <p style={{ color: theme.color.text.error }}>{nameInputError}</p>}
         </SettingsItem>
-        <SettingsItem label="Color">
-          {/* TODO: This is a fix for a bug where the ColorPicker's popover cannot have its
-           * containing element set. This means that we have to manually set the zIndex
-           * if it's in a modal or other element with a higher zIndex.
-           */}
-          <ConfigProvider theme={{ components: { Popover: { zIndexPopup: props.zIndex } } }}>
-            <div ref={colorPickerContainerRef}>
-              <WrappedColorPicker
-                size="small"
-                value={threeToAntColor(color)}
-                onChange={onColorPickerChange}
-                disabledAlpha={true}
-                presets={DEFAULT_LABEL_COLOR_PRESETS}
-                onOpenChange={onColorPickerOpenChange}
-                open={colorPickerOpen}
-                getPopupContainer={() => colorPickerContainerRef.current || document.body}
-              />
-            </div>
-          </ConfigProvider>
+        <SettingsItem label="Color" htmlFor={HtmlIDs.COLOR_PICKER}>
+          <WrappedColorPicker
+            id={HtmlIDs.COLOR_PICKER}
+            size="small"
+            value={threeToAntColor(color)}
+            onChange={onColorPickerChange}
+            disabledAlpha={true}
+            presets={DEFAULT_LABEL_COLOR_PRESETS}
+            onOpenChange={onColorPickerOpenChange}
+            open={colorPickerOpen}
+          />
         </SettingsItem>
-        <SettingsItem label="Type" labelStyle={{ marginBottom: "auto" }}>
+        <SettingsItem label="Type" labelStyle={{ marginBottom: "auto" }} htmlFor={HtmlIDs.LABEL_TYPE_RADIO_GROUP}>
           {props.allowTypeSelection ? (
             <Radio.Group
+              id={HtmlIDs.LABEL_TYPE_RADIO_GROUP}
               value={labelType}
               onChange={(e) => setLabelType(e.target.value)}
               style={{ width: "100%", position: "relative" }}
@@ -145,15 +146,17 @@ export default function CreateLabelForm(inputProps: CreateLabelFormProps): React
           )}
         </SettingsItem>
         {labelType === LabelType.INTEGER && (
-          <SettingsItem label="">
+          <SettingsItem>
             <TooltipWithSubtitle
               trigger={["hover", "focus"]}
               title="Increments the value on each click"
               subtitle="Hold Ctrl to reuse last value"
               placement="right"
+              getPopupContainer={() => autoIncrementContainerRef.current ?? document.body}
             >
-              <div>
+              <div ref={autoIncrementContainerRef} style={{ width: "fit-content" }}>
                 <Checkbox
+                  id={HtmlIDs.AUTO_INCREMENT_CHECKBOX}
                   checked={autoIncrement}
                   onChange={(e) => {
                     setAutoIncrement(e.target.checked);

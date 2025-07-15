@@ -1,6 +1,8 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { PropsWithChildren, ReactElement } from "react";
 import styled, { css } from "styled-components";
+
+const SETTINGS_LABEL_CLASS = "settings-label";
 
 type SettingsItemProps = {
   /** A string or ReactElement label. Strings will be displayed as `p`. Defaults to empty string ("").*/
@@ -17,7 +19,6 @@ type SettingsItemProps = {
 };
 
 const defaultSettingsItemProps = {
-  label: "",
   labelStyle: {},
 };
 
@@ -34,13 +35,27 @@ export function SettingsItem(inputProps: PropsWithChildren<Partial<SettingsItemP
     props.children = <div>{props.children}</div>;
   }
 
-  const formattedLabel = props.labelFormatter ? props.labelFormatter(props.label) : props.label;
+  useEffect(() => {
+    if (props.label && typeof props.label === "string" && !props.htmlFor) {
+      console.warn(
+        "SettingsItem: Please set the 'htmlFor' attribute to support screen readers in setting '" + props.label + "'."
+      );
+    }
+  }, [props.label, props.htmlFor]);
+
+  let labelElement = <div className={SETTINGS_LABEL_CLASS}></div>;
+  if (props.label) {
+    const formattedLabel = props.labelFormatter ? props.labelFormatter(props.label) : props.label;
+    labelElement = (
+      <label style={props.labelStyle} id={props.id} htmlFor={props.htmlFor} className={SETTINGS_LABEL_CLASS}>
+        {formattedLabel}
+      </label>
+    );
+  }
 
   return (
     <div style={props.style}>
-      <label style={props.labelStyle} id={props.id} htmlFor={props.htmlFor}>
-        {formattedLabel}
-      </label>
+      {labelElement}
       {props.children}
     </div>
   );
@@ -73,7 +88,7 @@ const SettingsDivContainer = styled.div<{ $labelWidth?: string; $gapPx?: number;
     `;
   }}
 
-  & > div:has(label) {
+  & > div:has(.${SETTINGS_LABEL_CLASS}) {
     grid-column: 1 / 3; // Labels span both columns
     display: grid;
     grid-template-columns: subgrid;
@@ -84,14 +99,14 @@ const SettingsDivContainer = styled.div<{ $labelWidth?: string; $gapPx?: number;
       `;
     }}
 
-    & > label:first-of-type {
+    & > ${"." + SETTINGS_LABEL_CLASS}:first-of-type {
       display: grid;
       grid-column: 1;
       align-items: center;
       text-align: right;
     }
 
-    & > :not(label:first-of-type) {
+    & > :not(${"." + SETTINGS_LABEL_CLASS}:first-of-type) {
       grid-column: 2;
       // Lines up the bottom of the input with the bottom of the label,
       // where the colon separator is.

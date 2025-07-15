@@ -11,8 +11,7 @@ import SelectionDropdown from "./SelectionDropdown";
 type DropdownWithColorPickerProps = {
   selected: string;
   items: { value: string; label: string }[];
-  /** HTML ID that the selection dropdown is labelled by. */
-  htmlLabelId: string;
+  id?: string;
   onValueChange: (mode: string) => void;
   color: ThreeColor;
   disabled?: boolean;
@@ -53,7 +52,7 @@ export default function DropdownWithColorPicker(propsInput: DropdownWithColorPic
     <HorizontalDiv ref={colorPickerRef}>
       <SelectionDropdown
         label={null}
-        htmlLabelId={props.htmlLabelId}
+        id={props.id}
         selected={props.selected.toString()}
         items={props.items}
         showSelectedItemTooltip={false}

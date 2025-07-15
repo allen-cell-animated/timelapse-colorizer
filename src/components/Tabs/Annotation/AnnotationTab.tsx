@@ -23,7 +23,8 @@ import AnnotationModeButton from "./AnnotationModeButton";
 import CreateLabelForm from "./CreateLabelForm";
 import LabelEditControls from "./LabelEditControls";
 
-const LABEL_DROPDOWN_LABEL_ID = "label-dropdown-label";
+const ANNOTATION_KEY_SELECT_ID = "annotation-key-select";
+
 const enum AnnotationViewType {
   TABLE,
   LIST,
@@ -162,17 +163,19 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   const valueToIds = isMultiValueLabel ? selectedLabel.valueToIds : undefined;
 
   const labelSelectionDropdown = (
-    <>
-      <VisuallyHidden id={LABEL_DROPDOWN_LABEL_ID}>Current label</VisuallyHidden>
+    <FlexRow>
+      <label htmlFor={ANNOTATION_KEY_SELECT_ID}>
+        <VisuallyHidden>Current label</VisuallyHidden>
+      </label>
       <SelectionDropdown
+        id={ANNOTATION_KEY_SELECT_ID}
         selected={(currentLabelIdx ?? -1).toString()}
         items={selectLabelOptions}
         onChange={onSelectLabelIdx}
         disabled={currentLabelIdx === null}
         showSelectedItemTooltip={false}
-        htmlLabelId={LABEL_DROPDOWN_LABEL_ID}
       ></SelectionDropdown>
-    </>
+    </FlexRow>
   );
 
   return (
