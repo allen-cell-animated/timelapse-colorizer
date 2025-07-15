@@ -7,6 +7,8 @@ type SettingsItemProps = {
   label?: string | ReactElement;
   /** HTML ID applied to the `label` element, if `label` is a string. */
   id?: string;
+  /** HTML `for` attribute applied to the `label` element, if `label` is a string. */
+  htmlFor?: string;
   /** A formatting function that will be applied to the label. If defined, overrides `labelFormatter`
    * of the parent `SettingsContainer`. */
   labelFormatter?: (label: string | ReactElement) => string | ReactElement;
@@ -35,12 +37,12 @@ export function SettingsItem(inputProps: PropsWithChildren<Partial<SettingsItemP
   const formattedLabel = props.labelFormatter ? props.labelFormatter(props.label) : props.label;
 
   return (
-    <label style={props.style}>
-      <span style={props.labelStyle} id={props.id}>
+    <div style={props.style}>
+      <label style={props.labelStyle} id={props.id} htmlFor={props.htmlFor}>
         {formattedLabel}
-      </span>
+      </label>
       {props.children}
-    </label>
+    </div>
   );
 }
 
@@ -49,10 +51,10 @@ export function SettingsItem(inputProps: PropsWithChildren<Partial<SettingsItemP
  *
  * For all children matching the following pattern:
  * ```
- * <label>
- *   <span>Some Label Text</span>
+ * <div>
+ *   <label>Some Label Text</label>
  *   <... any element ...>
- * </label>
+ * </div>
  * ```
  * aligns the label text and the element in grid columns.
  */
@@ -71,7 +73,7 @@ const SettingsDivContainer = styled.div<{ $labelWidth?: string; $gapPx?: number;
     `;
   }}
 
-  & > label {
+  & > div:has(label) {
     grid-column: 1 / 3; // Labels span both columns
     display: grid;
     grid-template-columns: subgrid;
@@ -81,20 +83,20 @@ const SettingsDivContainer = styled.div<{ $labelWidth?: string; $gapPx?: number;
         gap: ${props.$gapPx ? props.$gapPx : 6}px;
       `;
     }}
-  }
 
-  & > label > span:first-of-type {
-    display: grid;
-    grid-column: 1;
-    align-items: center;
-    text-align: right;
-  }
+    & > label:first-of-type {
+      display: grid;
+      grid-column: 1;
+      align-items: center;
+      text-align: right;
+    }
 
-  & > label > :not(span:first-of-type) {
-    grid-column: 2;
-    // Lines up the bottom of the input with the bottom of the label,
-    // where the colon separator is.
-    align-items: end;
+    & > :not(label:first-of-type) {
+      grid-column: 2;
+      // Lines up the bottom of the input with the bottom of the label,
+      // where the colon separator is.
+      align-items: end;
+    }
   }
 `;
 

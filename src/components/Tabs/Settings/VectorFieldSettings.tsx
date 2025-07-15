@@ -1,4 +1,4 @@
-import { Card, Checkbox, ColorPicker, Radio } from "antd";
+import { Card, Checkbox, Radio } from "antd";
 import React, { ReactElement, useMemo } from "react";
 import { Color, ColorRepresentation } from "three";
 
@@ -18,6 +18,13 @@ const VECTOR_OPTION_MOTION = {
   value: VECTOR_KEY_MOTION_DELTA,
   label: "Avg. movement delta (auto-calculated)",
 };
+
+const ID_SHOW_VECTOR_ARROWS_CHECKBOX = "show-vector-arrows-checkbox";
+const ID_VECTOR_KEY_SELECT = "vector-key-select";
+const ID_VECTOR_SCALE_FACTOR_SLIDER = "vector-scale-factor-slider";
+const ID_VECTOR_COLOR_PICKER = "vector-color-picker";
+const ID_VECTOR_MOTION_TIME_INTERVALS_SLIDER = "vector-motion-time-intervals-slider";
+const ID_VECTOR_TOOLTIP_MODE_RADIO = "vector-tooltip-mode-radio";
 
 export default function VectorFieldSettings(): ReactElement {
   const dataset = useViewerStateStore((state) => state.dataset);
@@ -40,10 +47,11 @@ export default function VectorFieldSettings(): ReactElement {
 
   return (
     <>
-      <SettingsItem label={"Show vector arrows"}>
+      <SettingsItem label={"Show vector arrows"} htmlFor={ID_SHOW_VECTOR_ARROWS_CHECKBOX}>
         <div>
           {/* TODO: Replace with a top-level checkbox for Vector arrows when Collapse menus are removed */}
           <Checkbox
+            id={ID_SHOW_VECTOR_ARROWS_CHECKBOX}
             checked={vectorVisible}
             onChange={(e) => setVectorVisible(e.target.checked)}
             disabled={dataset === null}
@@ -51,8 +59,13 @@ export default function VectorFieldSettings(): ReactElement {
         </div>
       </SettingsItem>
 
-      <SettingsItem label="Vector" labelStyle={{ height: "min-content", paddingTop: "2px" }}>
+      <SettingsItem
+        label="Vector"
+        labelStyle={{ height: "min-content", paddingTop: "2px" }}
+        htmlFor={ID_VECTOR_KEY_SELECT}
+      >
         <SelectionDropdown
+          id={ID_VECTOR_KEY_SELECT}
           disabled={!vectorOptionsEnabled}
           selected={vectorKey}
           items={vectorOptions}
@@ -61,9 +74,10 @@ export default function VectorFieldSettings(): ReactElement {
         {vectorKey === VECTOR_KEY_MOTION_DELTA && vectorOptionsEnabled && (
           <Card style={{ position: "relative", width: "fit-content", marginTop: "10px" }} size="small">
             <SettingsContainer>
-              <SettingsItem label="Average over # time intervals">
+              <SettingsItem label="Average over # time intervals" htmlFor={ID_VECTOR_MOTION_TIME_INTERVALS_SLIDER}>
                 <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
                   <LabeledSlider
+                    id={ID_VECTOR_MOTION_TIME_INTERVALS_SLIDER}
                     type="value"
                     disabled={!vectorOptionsEnabled}
                     step={1}
@@ -87,9 +101,10 @@ export default function VectorFieldSettings(): ReactElement {
        * all deltas.
        * See examples in https://github.com/react-component/slider/issues/393.
        */}
-      <SettingsItem label={"Scale factor"}>
+      <SettingsItem label={"Scale factor"} htmlFor={ID_VECTOR_SCALE_FACTOR_SLIDER}>
         <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
           <LabeledSlider
+            id={ID_VECTOR_SCALE_FACTOR_SLIDER}
             disabled={!vectorOptionsEnabled}
             type="value"
             minSliderBound={0}
@@ -115,9 +130,14 @@ export default function VectorFieldSettings(): ReactElement {
           presets={DEFAULT_OUTLINE_COLOR_PRESETS}
         ></WrappedColorPicker>
       </SettingsItem>
-      <SettingsItem label="Show vector in tooltip as" labelStyle={{ height: "fit-content" }}>
+      <SettingsItem
+        label="Show vector in tooltip as"
+        labelStyle={{ height: "fit-content" }}
+        htmlFor={ID_VECTOR_TOOLTIP_MODE_RADIO}
+      >
         <div style={{ width: "fit-content" }}>
           <Radio.Group
+            id={ID_VECTOR_TOOLTIP_MODE_RADIO}
             value={vectorTooltipMode}
             onChange={(e) => setVectorTooltipMode(e.target.value)}
             disabled={!vectorOptionsEnabled}
