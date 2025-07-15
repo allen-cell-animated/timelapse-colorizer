@@ -14,7 +14,7 @@ import { useViewerStateStore } from "../../state/ViewerState";
 import CustomCollapse from "../CustomCollapse";
 import DropdownWithColorPicker from "../Dropdowns/DropdownWithColorPicker";
 import SelectionDropdown from "../Dropdowns/SelectionDropdown";
-import LabeledSlider from "../LabeledSlider";
+import LabeledSlider from "../Inputs/LabeledSlider";
 import { SettingsContainer, SettingsItem } from "../SettingsContainer";
 import VectorFieldSettings from "./Settings/VectorFieldSettings";
 

@@ -4,10 +4,11 @@ import React, { ReactElement, ReactEventHandler, ReactNode, useRef } from "react
 import styled, { css } from "styled-components";
 import { clamp } from "three/src/math/MathUtils";
 
-import { formatNumber, setMaxDecimalPrecision } from "../colorizer/utils/math_utils";
-import { excludeUndefinedValues } from "../colorizer/utils/react_utils";
+import { formatNumber, setMaxDecimalPrecision } from "../../colorizer/utils/math_utils";
+import { excludeUndefinedValues } from "../../colorizer/utils/react_utils";
 
 type BaseLabeledSliderProps = {
+  id?: string;
   type: "range" | "value";
   disabled?: boolean;
 
@@ -273,9 +274,9 @@ export default function LabeledSlider(inputProps: LabeledSliderProps): ReactElem
       {
         // Conditionally render either min or value input
         props.type === "value" ? (
-          <InputNumber {...sharedInputNumberProps} {...valueInputNumberProps} />
+          <InputNumber {...sharedInputNumberProps} {...valueInputNumberProps} id={props.id} />
         ) : (
-          <InputNumber {...sharedInputNumberProps} {...minInputNumberProps} />
+          <InputNumber {...sharedInputNumberProps} {...minInputNumberProps} id={props.id} />
         )
       }
       <SliderContainer>
@@ -283,7 +284,9 @@ export default function LabeledSlider(inputProps: LabeledSliderProps): ReactElem
         <SliderLabel $disabled={props.disabled}>{minSliderLabel}</SliderLabel>
         <SliderLabel $disabled={props.disabled}>{maxSliderLabel}</SliderLabel>
       </SliderContainer>
-      {props.type === "range" && <InputNumber {...sharedInputNumberProps} {...maxInputNumberProps} />}
+      {props.type === "range" && (
+        <InputNumber {...sharedInputNumberProps} {...maxInputNumberProps} id={props.id + "-max"} />
+      )}
     </ComponentContainer>
   );
 }
