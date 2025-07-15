@@ -9,7 +9,8 @@ import { DEFAULT_OUTLINE_COLOR_PRESETS } from "./constants";
 
 import { useViewerStateStore } from "../../../state/ViewerState";
 import SelectionDropdown from "../../Dropdowns/SelectionDropdown";
-import LabeledSlider from "../../LabeledSlider";
+import LabeledSlider from "../../Inputs/LabeledSlider";
+import WrappedColorPicker from "../../Inputs/WrappedColorPicker";
 import { SettingsContainer, SettingsItem } from "../../SettingsContainer";
 import { MAX_SLIDER_WIDTH } from "../SettingsTab";
 
@@ -101,19 +102,18 @@ export default function VectorFieldSettings(): ReactElement {
           />
         </div>
       </SettingsItem>
-      <SettingsItem label="Arrow color">
-        <div>
-          <ColorPicker
-            disabled={!vectorOptionsEnabled}
-            disabledAlpha={true}
-            size="small"
-            value={threeToAntColor(vectorColor)}
-            onChange={(_color, hex) => {
-              setVectorColor(new Color(hex as ColorRepresentation));
-            }}
-            presets={DEFAULT_OUTLINE_COLOR_PRESETS}
-          ></ColorPicker>
-        </div>
+      <SettingsItem label="Arrow color" htmlFor={ID_VECTOR_COLOR_PICKER}>
+        <WrappedColorPicker
+          id={ID_VECTOR_COLOR_PICKER}
+          disabled={!vectorOptionsEnabled}
+          disabledAlpha={true}
+          size="small"
+          value={threeToAntColor(vectorColor)}
+          onChange={(_color, hex) => {
+            setVectorColor(new Color(hex as ColorRepresentation));
+          }}
+          presets={DEFAULT_OUTLINE_COLOR_PRESETS}
+        ></WrappedColorPicker>
       </SettingsItem>
       <SettingsItem label="Show vector in tooltip as" labelStyle={{ height: "fit-content" }}>
         <div style={{ width: "fit-content" }}>

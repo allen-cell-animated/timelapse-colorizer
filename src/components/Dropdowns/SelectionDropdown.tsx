@@ -21,6 +21,7 @@ type SelectionDropdownProps = {
    * Ignored if `label` is provided.
    */
   htmlLabelId?: string;
+  id?: string;
   /** The value of the item that is currently selected. */
   selected: string | SelectItem | undefined;
   /** An array of SelectItems that describes the item properties (`{value,
@@ -196,13 +197,14 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
   );
 
   // Create an ID for the HTML label element if one is provided.
-  const id = props.label ? `dropdown-label-${props.label.toLowerCase().replaceAll(" ", "_")}` : undefined;
+  const labelId = props.label ? `dropdown-label-${props.label.toLowerCase().replaceAll(" ", "_")}` : undefined;
 
   return (
     <FlexRowAlignCenter $gap={6}>
-      {props.label && <h3 id={id ?? props.htmlLabelId}>{props.label}</h3>}
+      {props.label && <h3 id={labelId}>{props.label}</h3>}
       <StyledSelect
-        aria-labelledby={id}
+        aria-labelledby={labelId}
+        inputId={props.id}
         classNamePrefix="react-select"
         isMulti={false}
         placeholder=""

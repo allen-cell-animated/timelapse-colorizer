@@ -89,9 +89,10 @@ const theme = {
       backgroundDisabled: palette.gray10,
       outline: palette.theme,
       outlineActive: palette.themeDark,
+      innerOutline: palette.gray30,
       hover: palette.themeLight,
       active: palette.themeDark,
-      focusShadow: "rgba(137, 98, 211, 0.06)",
+      focusShadow: "#efe9f7",
       success: {
         background: palette.success,
         hover: palette.successMediumDark,

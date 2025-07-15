@@ -1,15 +1,16 @@
-import { Button, Checkbox, ColorPicker, ConfigProvider, Input, InputRef, Radio } from "antd";
+import { Button, Checkbox, ConfigProvider, Input, InputRef, Radio } from "antd";
 import React, { ReactElement, useContext, useEffect, useRef, useState } from "react";
 import { Color, ColorRepresentation } from "three";
 
 import { FlexColumn, FlexRow } from "../../../styles/utils";
 import { threeToAntColor } from "../../../utils/color_utils";
+import { DEFAULT_LABEL_COLOR_PRESETS } from "../../../utils/color_utils";
 
 import { CSV_COL_ID, CSV_COL_TIME, CSV_COL_TRACK, LabelOptions, LabelType } from "../../../colorizer/AnnotationData";
 import { AppThemeContext, Z_INDEX_POPOVER } from "../../AppStyle";
+import WrappedColorPicker from "../../Inputs/WrappedColorPicker";
 import { SettingsContainer, SettingsItem } from "../../SettingsContainer";
 import { TooltipWithSubtitle } from "../../Tooltips/TooltipWithSubtitle";
-import { DEFAULT_LABEL_COLOR_PRESETS } from "./LabelEditControls";
 
 type CreateLabelFormProps = {
   initialLabelOptions: LabelOptions;
@@ -114,7 +115,7 @@ export default function CreateLabelForm(inputProps: CreateLabelFormProps): React
            */}
           <ConfigProvider theme={{ components: { Popover: { zIndexPopup: props.zIndex } } }}>
             <div ref={colorPickerContainerRef}>
-              <ColorPicker
+              <WrappedColorPicker
                 size="small"
                 value={threeToAntColor(color)}
                 onChange={onColorPickerChange}

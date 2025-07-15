@@ -1,0 +1,116 @@
+import { Button, ColorPicker, ColorPickerProps } from "antd";
+import React, { ReactElement, useContext, useMemo, useRef, useState } from "react";
+import styled from "styled-components";
+
+import { antToThreeColor } from "../../utils/color_utils";
+
+import { AppTheme, AppThemeContext } from "../AppStyle";
+
+type WrappedColorPickerProps = ColorPickerProps & {
+  id?: string;
+  /**
+   * If true, uses the global default container (`document.body`) for the color
+   * picker popup instead of an inline container. Useful for components that are
+   * rendered in smaller containers that might overflow the screen edges.
+   */
+  disablePopupContainer?: boolean;
+};
+
+const StyledColorPickerTrigger = styled(Button)<{ $theme: AppTheme; $open: boolean }>`
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  padding: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &&& {
+    border: 1px solid ${(props) => (props.$open ? props.$theme.color.button.active : props.$theme.color.layout.borders)};
+    outline: ${(props) => (props.$open ? `2px solid ${props.$theme.color.button.focusShadow}` : "none")};
+    background: transparent;
+
+    &:hover,
+    &:active {
+      background: transparent;
+    }
+
+    &:focus {
+      outline: 2px solid ${(props) => props.$theme.color.button.focusShadow};
+      outline-offset: 0;
+    }
+
+    &:disabled {
+      border-color: ${(props) => props.$theme.color.layout.borders};
+      background: ${(props) => props.$theme.color.button.backgroundDisabled};
+    }
+  }
+`;
+
+// Reimplements the color block in the ColorPicker trigger since it's not
+// exported by Ant.
+const ColorPickerBlock = styled.div<{ $theme: AppTheme }>`
+  // Grid pattern
+  width: 14px;
+  height: 14px;
+  background-image: conic-gradient(
+    rgba(0, 0, 0, 0.06) 0 25%,
+    transparent 0 50%,
+    rgba(0, 0, 0, 0.06) 0 75%,
+    transparent 0
+  );
+  background-size: 50% 50%;
+  border-radius: 2px;
+
+  & > div {
+    width: 100%;
+    height: 100%;
+    border-radius: 2px;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+    box-sizing: border-box;
+  }
+`;
+
+/**
+ * Wraps the Ant Design ColorPicker component.
+ *
+ * This fixes several accessibility issues, including:
+ * - Popup was placed in a separate part of DOM (direct child of
+ *   `document.body`)
+ * - Base ColorPicker was not accessible via keyboard navigation (used a
+ *   non-focusable `div` as trigger)
+ * - `id` could not be set on the ColorPicker trigger for labeling
+ */
+export default function WrappedColorPicker(props: WrappedColorPickerProps): ReactElement {
+  const colorPickerContainerRef = useRef<HTMLDivElement>(null);
+  const theme = useContext(AppThemeContext);
+  const [isOpen, setIsOpen] = useState(false);
+
+  const colorCss = useMemo(() => {
+    const { value } = props;
+    if (!value) {
+      return "transparent";
+    }
+    const { color: threeColor, alpha } = antToThreeColor(value as string);
+    threeColor.convertLinearToSRGB();
+    return `rgb(${threeColor.r * 255}, ${threeColor.g * 255}, ${threeColor.b * 255}, ${alpha})`;
+  }, [props.value]);
+
+  return (
+    <div ref={colorPickerContainerRef}>
+      <ColorPicker
+        {...props}
+        getPopupContainer={
+          props.disablePopupContainer ? undefined : () => colorPickerContainerRef.current || document.body
+        }
+        onOpenChange={setIsOpen}
+      >
+        <StyledColorPickerTrigger type="default" id={props.id} disabled={props.disabled} $theme={theme} $open={isOpen}>
+          <ColorPickerBlock $theme={theme}>
+            <div style={{ backgroundColor: colorCss }} />
+          </ColorPickerBlock>
+        </StyledColorPickerTrigger>
+      </ColorPicker>
+    </div>
+  );
+}

@@ -1,11 +1,13 @@
-import { ColorPicker, Tooltip } from "antd";
+import { Tooltip } from "antd";
 import React, { ReactElement, useMemo } from "react";
 import styled from "styled-components";
 import { Color, ColorRepresentation } from "three";
 
 import { FlexRow, FlexRowAlignCenter } from "../styles/utils";
+import { DEFAULT_LABEL_COLOR_PRESETS } from "../utils/color_utils";
 
 import { useViewerStateStore } from "../state/ViewerState";
+import WrappedColorPicker from "./Inputs/WrappedColorPicker";
 
 type CategoricalColorPickerProps = {
   categories: string[];
@@ -66,7 +68,15 @@ export default function CategoricalColorPicker(inputProps: CategoricalColorPicke
       // Make the color picker component
       elements.push(
         <FlexRowAlignCenter key={i}>
-          <ColorPicker value={color.getHexString()} onChange={onChange} size={"small"} disabledAlpha={true} />
+          <WrappedColorPicker
+            value={color.getHexString()}
+            onChange={onChange}
+            size={"small"}
+            disabledAlpha={true}
+            presets={DEFAULT_LABEL_COLOR_PRESETS}
+            placement="bottom"
+            disablePopupContainer={true}
+          />
           <Tooltip title={label} placement="top">
             <span>{label}</span>
           </Tooltip>

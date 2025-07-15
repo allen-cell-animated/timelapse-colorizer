@@ -7,18 +7,11 @@ import { AnnotationSelectionMode } from "../../../colorizer";
 import { StyledRadioGroup } from "../../../styles/components";
 import { formatQuantityString } from "../../../utils/formatting";
 
-import { DEFAULT_ANNOTATION_LABEL_COLORS, LabelData, LabelOptions } from "../../../colorizer/AnnotationData";
+import { LabelData, LabelOptions } from "../../../colorizer/AnnotationData";
 import { AppThemeContext } from "../../AppStyle";
 import IconButton from "../../IconButton";
 import { TooltipWithSubtitle } from "../../Tooltips/TooltipWithSubtitle";
 import CreateLabelForm from "./CreateLabelForm";
-
-export const DEFAULT_LABEL_COLOR_PRESETS = [
-  {
-    label: "Presets",
-    colors: DEFAULT_ANNOTATION_LABEL_COLORS,
-  },
-];
 
 type LabelEditControlsProps = {
   onCreateNewLabel: (options: Partial<LabelOptions>) => void;

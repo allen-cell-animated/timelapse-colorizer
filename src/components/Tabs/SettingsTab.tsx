@@ -1,4 +1,4 @@
-import { Checkbox, ColorPicker, Switch, Tooltip } from "antd";
+import { Checkbox, Switch, Tooltip } from "antd";
 import { PresetsItem } from "antd/es/color-picker/interface";
 import React, { ReactElement, useMemo } from "react";
 import { Color, ColorRepresentation } from "three";
@@ -15,6 +15,7 @@ import CustomCollapse from "../CustomCollapse";
 import DropdownWithColorPicker from "../Dropdowns/DropdownWithColorPicker";
 import SelectionDropdown from "../Dropdowns/SelectionDropdown";
 import LabeledSlider from "../Inputs/LabeledSlider";
+import WrappedColorPicker from "../Inputs/WrappedColorPicker";
 import { SettingsContainer, SettingsItem } from "../SettingsContainer";
 import VectorFieldSettings from "./Settings/VectorFieldSettings";
 
@@ -194,17 +195,15 @@ export default function SettingsTab(): ReactElement {
         <SettingsContainer indentPx={SETTINGS_INDENT_PX} gapPx={SETTINGS_GAP_PX}>
           <SettingsItem label="Highlight">
             {/* NOTE: 'Highlight color' is 'outline' internally, and 'Outline color' is 'edge' for legacy reasons. */}
-            <div>
-              <ColorPicker
-                style={{ width: "min-content" }}
-                size="small"
-                disabledAlpha={true}
-                defaultValue={OUTLINE_COLOR_DEFAULT}
-                onChange={(_color, hex) => setOutlineColor(new Color(hex as ColorRepresentation))}
-                value={threeToAntColor(outlineColor)}
-                presets={DEFAULT_OUTLINE_COLOR_PRESETS}
-              />
-            </div>
+            <WrappedColorPicker
+              style={{ width: "min-content" }}
+              size="small"
+              disabledAlpha={true}
+              defaultValue={OUTLINE_COLOR_DEFAULT}
+              onChange={(_color, hex) => setOutlineColor(new Color(hex as ColorRepresentation))}
+              value={threeToAntColor(outlineColor)}
+              presets={DEFAULT_OUTLINE_COLOR_PRESETS}
+            />
           </SettingsItem>
           <SettingsItem label="Outline" id="edge-color-label">
             <DropdownWithColorPicker
