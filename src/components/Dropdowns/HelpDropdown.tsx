@@ -33,6 +33,10 @@ const StyledLink = styled.a`
 
 const StyledButton = styled(Button)`
   ${listButtonStyling}
+
+  & > span {
+    width: 100%;
+  }
 `;
 
 export default function HelpDropdown(): ReactElement {
