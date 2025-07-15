@@ -126,6 +126,15 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
     selectedOption = props.selected;
   }
 
+  useEffect(() => {
+    if (!props.label && !props.id) {
+      console.log(
+        "SelectionDropdown: No label or id provided for the dropdown, which means that the select component may not be labeled correctly for screen readers." +
+          " Consider either providing the `label` prop, or setting the `id` prop and passing it an HTML `label` via the `for` attribute."
+      );
+    }
+  }, []);
+
   // Set up fuse for fuzzy searching
   const fuse = useMemo(() => {
     return new Fuse(options, {
@@ -183,15 +192,7 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
     [props.showSelectedItemTooltip, props.controlTooltipPlacement]
   );
 
-  // Create an ID for the HTML label element if one is provided.;
-  useEffect(() => {
-    if (!props.label && !props.id) {
-      console.log(
-        "SelectionDropdown: No label or id provided for the dropdown, which means that the select component may not be labeled correctly for screen readers." +
-          " Consider either providing the `label` prop, or setting the `id` prop and passing it an HTML `label` via the `for` attribute."
-      );
-    }
-  }, []);
+  // Create an ID for the HTML label element if one is provided.
   const selectId = props.id ?? "selection-dropdown-" + props.label?.toLowerCase().replaceAll(" ", "_");
   const labelId = props.label ? selectId + "-label" : undefined;
 

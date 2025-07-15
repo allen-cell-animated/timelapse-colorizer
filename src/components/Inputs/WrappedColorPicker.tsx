@@ -8,14 +8,9 @@ import { AppTheme, AppThemeContext } from "../AppStyle";
 
 type WrappedColorPickerProps = ColorPickerProps & {
   id?: string;
-  /**
-   * If true, uses the global default container (`document.body`) for the color
-   * picker popup instead of an inline container. Useful for components that are
-   * rendered in smaller containers that might overflow the screen edges.
-   */
-  disablePopupContainer?: boolean;
 };
 
+// Square button trigger with an inset color block inside
 const StyledColorPickerTrigger = styled(Button)<{ $theme: AppTheme; $open: boolean }>`
   width: 28px;
   height: 28px;
@@ -36,8 +31,8 @@ const StyledColorPickerTrigger = styled(Button)<{ $theme: AppTheme; $open: boole
     }
 
     &:focus {
-      outline: 2px solid ${(props) => props.$theme.color.button.focusShadow};
-      outline-offset: 0;
+      outline: 3px solid ${(props) => props.$theme.color.button.focusShadow};
+      outline-offset: 1;
     }
 
     &:disabled {
@@ -47,12 +42,12 @@ const StyledColorPickerTrigger = styled(Button)<{ $theme: AppTheme; $open: boole
   }
 `;
 
-// Reimplements the color block in the ColorPicker trigger since it's not
-// exported by Ant.
+// Smaller block inside the trigger that shows the selected color,
+// including a transparent checkerboard pattern.
 const ColorPickerBlock = styled.div<{ $theme: AppTheme }>`
-  // Grid pattern
   width: 14px;
   height: 14px;
+  // Transparency checkerboard pattern
   background-image: conic-gradient(
     rgba(0, 0, 0, 0.06) 0 25%,
     transparent 0 50%,
@@ -62,6 +57,7 @@ const ColorPickerBlock = styled.div<{ $theme: AppTheme }>`
   background-size: 50% 50%;
   border-radius: 2px;
 
+  // Selected color
   & > div {
     width: 100%;
     height: 100%;
@@ -99,11 +95,12 @@ export default function WrappedColorPicker(props: WrappedColorPickerProps): Reac
   return (
     <div ref={colorPickerContainerRef}>
       <ColorPicker
+        getPopupContainer={() => colorPickerContainerRef.current || document.body}
         {...props}
-        getPopupContainer={
-          props.disablePopupContainer ? undefined : () => colorPickerContainerRef.current || document.body
-        }
-        onOpenChange={setIsOpen}
+        onOpenChange={(open) => {
+          setIsOpen(open);
+          props.onOpenChange?.(open);
+        }}
       >
         <StyledColorPickerTrigger type="default" id={props.id} disabled={props.disabled} $theme={theme} $open={isOpen}>
           <ColorPickerBlock $theme={theme}>

@@ -135,6 +135,7 @@ export default function LabelEditControls(props: PropsWithChildren<LabelEditCont
         placement="bottom"
         content={
           <CreateLabelForm
+            baseId="label-edit-controls-create-button"
             initialLabelOptions={props.defaultLabelOptions}
             onConfirm={props.onCreateNewLabel}
             onCancel={() => setShowCreatePopover(false)}
@@ -161,6 +162,7 @@ export default function LabelEditControls(props: PropsWithChildren<LabelEditCont
         placement="bottom"
         content={
           <CreateLabelForm
+            baseId="label-edit-controls-edit-button"
             initialLabelOptions={props.selectedLabel.options}
             onConfirm={onClickEditSave}
             onCancel={onClickEditCancel}

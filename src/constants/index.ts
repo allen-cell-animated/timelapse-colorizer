@@ -1,3 +1,5 @@
+import { DEFAULT_ANNOTATION_LABEL_COLORS } from "../colorizer/AnnotationData";
+
 export const DEFAULT_PLAYBACK_FPS = 10;
 export const MAX_FEATURE_CATEGORIES = 12;
 
@@ -15,5 +17,12 @@ export const BACKDROP_OBJECT_OPACITY_MIN = 0;
 export const BACKDROP_OBJECT_OPACITY_MAX = 100;
 export const BACKDROP_OBJECT_OPACITY_DEFAULT = 50;
 export const COLOR_RAMP_RANGE_DEFAULT: [number, number] = [0, 0];
+
+export const DEFAULT_LABEL_COLOR_PRESETS = [
+  {
+    label: "Presets",
+    colors: DEFAULT_ANNOTATION_LABEL_COLORS,
+  },
+];
 
 export * from "./url";

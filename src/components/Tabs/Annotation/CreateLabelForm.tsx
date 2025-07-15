@@ -4,22 +4,36 @@ import { Color, ColorRepresentation } from "three";
 
 import { FlexColumn, FlexRow } from "../../../styles/utils";
 import { threeToAntColor } from "../../../utils/color_utils";
-import { DEFAULT_LABEL_COLOR_PRESETS } from "../../../utils/color_utils";
 
-import { CSV_COL_ID, CSV_COL_TIME, CSV_COL_TRACK, LabelOptions, LabelType } from "../../../colorizer/AnnotationData";
+import {
+  CSV_COL_ID,
+  CSV_COL_TIME,
+  CSV_COL_TRACK,
+  DEFAULT_ANNOTATION_LABEL_COLORS,
+  LabelOptions,
+  LabelType,
+} from "../../../colorizer/AnnotationData";
 import { AppThemeContext, Z_INDEX_POPOVER } from "../../AppStyle";
 import WrappedColorPicker from "../../Inputs/WrappedColorPicker";
 import { SettingsContainer, SettingsItem } from "../../SettingsContainer";
 import { TooltipWithSubtitle } from "../../Tooltips/TooltipWithSubtitle";
 
-const enum HtmlIDs {
-  NAME_INPUT = "create-label-name-input",
-  COLOR_PICKER = "create-label-color-picker",
-  LABEL_TYPE_RADIO_GROUP = "create-label-type-radio-group",
-  AUTO_INCREMENT_CHECKBOX = "create-label-auto-increment-checkbox",
+const DEFAULT_LABEL_COLOR_PRESETS = [
+  {
+    label: "Presets",
+    colors: DEFAULT_ANNOTATION_LABEL_COLORS,
+  },
+];
+
+const enum HtmlIds {
+  NAME_INPUT = "-create-label-name-input",
+  COLOR_PICKER = "-create-label-color-picker",
+  LABEL_TYPE_RADIO_GROUP = "-create-label-type-radio-group",
+  AUTO_INCREMENT_CHECKBOX = "-create-label-auto-increment-checkbox",
 }
 
 type CreateLabelFormProps = {
+  baseId: string;
   initialLabelOptions: LabelOptions;
   onConfirm: (options: Partial<LabelOptions>) => void;
   onCancel: () => void;
@@ -52,6 +66,7 @@ const isMetadataColumnName = (name: string): boolean => {
 
 export default function CreateLabelForm(inputProps: CreateLabelFormProps): ReactElement {
   const props = { ...defaultProps, ...inputProps };
+  const { baseId } = props;
 
   const [colorPickerOpenState, setColorPickerOpenState] = useState(false);
   const onColorPickerOpenChange = (open: boolean): void => {
@@ -106,9 +121,9 @@ export default function CreateLabelForm(inputProps: CreateLabelFormProps): React
   return (
     <FlexColumn style={{ width: "300px" }} $gap={10}>
       <SettingsContainer gapPx={8}>
-        <SettingsItem label="Name" labelStyle={{ margin: "2px 0 auto 0" }} htmlFor={HtmlIDs.NAME_INPUT}>
+        <SettingsItem label="Name" labelStyle={{ margin: "2px 0 auto 0" }} htmlFor={baseId + HtmlIds.NAME_INPUT}>
           <Input
-            id={HtmlIDs.NAME_INPUT}
+            id={baseId + HtmlIds.NAME_INPUT}
             value={nameInput}
             onChange={(e) => setNameInput(e.target.value)}
             onPressEnter={confirm}
@@ -116,9 +131,9 @@ export default function CreateLabelForm(inputProps: CreateLabelFormProps): React
           ></Input>
           {nameInputError && <p style={{ color: theme.color.text.error }}>{nameInputError}</p>}
         </SettingsItem>
-        <SettingsItem label="Color" htmlFor={HtmlIDs.COLOR_PICKER}>
+        <SettingsItem label="Color" htmlFor={baseId + HtmlIds.COLOR_PICKER}>
           <WrappedColorPicker
-            id={HtmlIDs.COLOR_PICKER}
+            id={baseId + HtmlIds.COLOR_PICKER}
             size="small"
             value={threeToAntColor(color)}
             onChange={onColorPickerChange}
@@ -128,10 +143,14 @@ export default function CreateLabelForm(inputProps: CreateLabelFormProps): React
             open={colorPickerOpen}
           />
         </SettingsItem>
-        <SettingsItem label="Type" labelStyle={{ marginBottom: "auto" }} htmlFor={HtmlIDs.LABEL_TYPE_RADIO_GROUP}>
+        <SettingsItem
+          label="Type"
+          labelStyle={{ marginBottom: "auto" }}
+          htmlFor={baseId + HtmlIds.LABEL_TYPE_RADIO_GROUP}
+        >
           {props.allowTypeSelection ? (
             <Radio.Group
-              id={HtmlIDs.LABEL_TYPE_RADIO_GROUP}
+              id={baseId + HtmlIds.LABEL_TYPE_RADIO_GROUP}
               value={labelType}
               onChange={(e) => setLabelType(e.target.value)}
               style={{ width: "100%", position: "relative" }}
@@ -156,7 +175,7 @@ export default function CreateLabelForm(inputProps: CreateLabelFormProps): React
             >
               <div ref={autoIncrementContainerRef} style={{ width: "fit-content" }}>
                 <Checkbox
-                  id={HtmlIDs.AUTO_INCREMENT_CHECKBOX}
+                  id={baseId + HtmlIds.AUTO_INCREMENT_CHECKBOX}
                   checked={autoIncrement}
                   onChange={(e) => {
                     setAutoIncrement(e.target.checked);

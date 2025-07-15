@@ -2,13 +2,13 @@ import React, { useEffect } from "react";
 import { PropsWithChildren, ReactElement } from "react";
 import styled, { css } from "styled-components";
 
-const SETTINGS_LABEL_CLASS = "settings-label";
+const SETTINGS_ITEM_CLASS = "settings-item";
 
 type SettingsItemProps = {
   /** A string or ReactElement label. Strings will be displayed as `p`. Defaults to empty string ("").*/
   label?: string | ReactElement;
   /** HTML ID applied to the `label` element, if `label` is a string. */
-  id?: string;
+  labelId?: string;
   /** HTML `for` attribute applied to the `label` element, if `label` is a string. */
   htmlFor?: string;
   /** A formatting function that will be applied to the label. If defined, overrides `labelFormatter`
@@ -43,18 +43,18 @@ export function SettingsItem(inputProps: PropsWithChildren<Partial<SettingsItemP
     }
   }, [props.label, props.htmlFor]);
 
-  let labelElement = <div className={SETTINGS_LABEL_CLASS}></div>;
+  let labelElement = <div></div>;
   if (props.label) {
     const formattedLabel = props.labelFormatter ? props.labelFormatter(props.label) : props.label;
     labelElement = (
-      <label style={props.labelStyle} id={props.id} htmlFor={props.htmlFor} className={SETTINGS_LABEL_CLASS}>
+      <label style={props.labelStyle} id={props.labelId} htmlFor={props.htmlFor}>
         {formattedLabel}
       </label>
     );
   }
 
   return (
-    <div style={props.style}>
+    <div style={props.style} className={SETTINGS_ITEM_CLASS}>
       {labelElement}
       {props.children}
     </div>
@@ -66,8 +66,8 @@ export function SettingsItem(inputProps: PropsWithChildren<Partial<SettingsItemP
  *
  * For all children matching the following pattern:
  * ```
- * <div>
- *   <label>Some Label Text</label>
+ * <div className="settings-item">
+ *   <any>Some Label Text</any>
  *   <... any element ...>
  * </div>
  * ```
@@ -88,7 +88,7 @@ const SettingsDivContainer = styled.div<{ $labelWidth?: string; $gapPx?: number;
     `;
   }}
 
-  & > div:has(.${SETTINGS_LABEL_CLASS}) {
+  & > div.${SETTINGS_ITEM_CLASS} {
     grid-column: 1 / 3; // Labels span both columns
     display: grid;
     grid-template-columns: subgrid;
@@ -99,14 +99,14 @@ const SettingsDivContainer = styled.div<{ $labelWidth?: string; $gapPx?: number;
       `;
     }}
 
-    & > ${"." + SETTINGS_LABEL_CLASS}:first-of-type {
+    & > :first-child {
       display: grid;
       grid-column: 1;
       align-items: center;
       text-align: right;
     }
 
-    & > :not(${"." + SETTINGS_LABEL_CLASS}:first-of-type) {
+    & > :not(:first-child) {
       grid-column: 2;
       // Lines up the bottom of the input with the bottom of the label,
       // where the colon separator is.
@@ -142,11 +142,11 @@ const defaultSettingsContainerProps: Partial<SettingsContainerProps> = {
  * @example
  * ```
  * <SettingsContainer>
- *   <SettingsItem label="Name:">
- *     <input type="text" />
+ *   <SettingsItem label="Name:" htmlFor="name-input">
+ *     <input type="text" id="name-input"/>
  *   </SettingsItem>
- *   <SettingsItem label="Reset:">
- *     <button>Reset</button>
+ *   <SettingsItem label="Reset:" htmlFor="reset-button">
+ *     <button id="reset-button">Reset</button>
  *   </SettingsItem>
  *   <SettingsItem>  // no label
  *     <input type="checkbox" />

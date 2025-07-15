@@ -284,9 +284,7 @@ export default function LabeledSlider(inputProps: LabeledSliderProps): ReactElem
         <SliderLabel $disabled={props.disabled}>{minSliderLabel}</SliderLabel>
         <SliderLabel $disabled={props.disabled}>{maxSliderLabel}</SliderLabel>
       </SliderContainer>
-      {props.type === "range" && (
-        <InputNumber {...sharedInputNumberProps} {...maxInputNumberProps} id={props.id + "-max"} />
-      )}
+      {props.type === "range" && <InputNumber {...sharedInputNumberProps} {...maxInputNumberProps} />}
     </ComponentContainer>
   );
 }

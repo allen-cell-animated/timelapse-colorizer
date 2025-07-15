@@ -1,16 +1,7 @@
 import { ColorPickerProps, GetProp } from "antd";
 import { Color } from "three";
 
-import { DEFAULT_ANNOTATION_LABEL_COLORS } from "../colorizer/AnnotationData";
-
 export type AntColor = Extract<GetProp<ColorPickerProps, "value">, string | { cleared: any }>;
-
-export const DEFAULT_LABEL_COLOR_PRESETS = [
-  {
-    label: "Presets",
-    colors: DEFAULT_ANNOTATION_LABEL_COLORS,
-  },
-];
 
 export const threeToAntColor = (color: Color): AntColor => {
   return `#${color.getHexString()}`;

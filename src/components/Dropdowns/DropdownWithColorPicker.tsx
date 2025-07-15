@@ -17,6 +17,7 @@ type DropdownWithColorPickerProps = {
   disabled?: boolean;
   showColorPicker?: boolean;
   presets?: PresetsItem[];
+  /** Alpha value, in the [0, 1] range. */
   alpha?: number;
   onColorChange: (color: ThreeColor, alpha: number) => void;
 };
@@ -73,9 +74,9 @@ export default function DropdownWithColorPicker(propsInput: DropdownWithColorPic
         presets={props.presets}
         // onChange returns a different color type, so must convert from hex
         onChange={(color, _cssColor) => {
-          const rgb = color.toRgb();
           const hex = color.toHexString().slice(0, 7); // Remove alpha if present
-          props.onColorChange(new ThreeColor(hex), rgb.a);
+          const alpha = color.toRgb().a;
+          props.onColorChange(new ThreeColor(hex), alpha);
         }}
         disabled={props.disabled}
       />

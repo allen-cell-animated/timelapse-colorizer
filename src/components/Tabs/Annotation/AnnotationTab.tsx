@@ -209,6 +209,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
         >
           <div style={{ marginTop: "15px" }}>
             <CreateLabelForm
+              baseId="annotation-create-label-modal"
               initialLabelOptions={annotationData.getNextDefaultLabelSettings()}
               onConfirm={(options: Partial<LabelOptions>) => {
                 onCreateNewLabel(options);

@@ -1,10 +1,9 @@
 import { Tooltip } from "antd";
-import React, { ReactElement, useMemo } from "react";
+import React, { ReactElement, useMemo, useRef } from "react";
 import styled from "styled-components";
 import { Color, ColorRepresentation } from "three";
 
 import { FlexRow, FlexRowAlignCenter } from "../styles/utils";
-import { DEFAULT_LABEL_COLOR_PRESETS } from "../utils/color_utils";
 
 import { useViewerStateStore } from "../state/ViewerState";
 import WrappedColorPicker from "./Inputs/WrappedColorPicker";
@@ -40,7 +39,8 @@ const ColorPickerContainer = styled(FlexRow)<{
     height: fit-content;
   }
 
-  & > div > span {
+  & > div > label,
+  & > div > label > span {
     // Text label, hide overflow as ellipsis
     white-space: nowrap;
     overflow: hidden;
@@ -53,6 +53,7 @@ export default function CategoricalColorPicker(inputProps: CategoricalColorPicke
 
   const categoricalPalette = useViewerStateStore((state) => state.categoricalPalette);
   const setCategoricalPalette = useViewerStateStore((state) => state.setCategoricalPalette);
+  const colorPickerContainerRef = useRef<HTMLDivElement>(null);
 
   const colorPickers = useMemo(() => {
     const elements = [];
@@ -64,21 +65,25 @@ export default function CategoricalColorPicker(inputProps: CategoricalColorPicke
         newPalette[i] = new Color(hex as ColorRepresentation);
         setCategoricalPalette(newPalette);
       };
+      const colorPickerId = `categorical-color-picker-${i}`;
 
       // Make the color picker component
       elements.push(
         <FlexRowAlignCenter key={i}>
           <WrappedColorPicker
+            id={colorPickerId}
             value={color.getHexString()}
             onChange={onChange}
             size={"small"}
             disabledAlpha={true}
-            presets={DEFAULT_LABEL_COLOR_PRESETS}
-            placement="bottom"
-            disablePopupContainer={true}
+            // Necessary to prevent the color picker from going off the screen
+            // TODO: Fix this? This prevents tab navigation from working.
+            getPopupContainer={undefined}
           />
           <Tooltip title={label} placement="top">
-            <span>{label}</span>
+            <label htmlFor={colorPickerId}>
+              <span>{label}</span>
+            </label>
           </Tooltip>
         </FlexRowAlignCenter>
       );
@@ -87,7 +92,7 @@ export default function CategoricalColorPicker(inputProps: CategoricalColorPicke
   }, [props]);
 
   return (
-    <ColorPickerContainer $itemGap="8px" $maxItemsPerRow="6" $itemWidth="110px">
+    <ColorPickerContainer $itemGap="8px" $maxItemsPerRow="6" $itemWidth="110px" ref={colorPickerContainerRef}>
       {colorPickers}
     </ColorPickerContainer>
   );
