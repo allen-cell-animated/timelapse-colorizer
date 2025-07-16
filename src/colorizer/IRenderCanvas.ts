@@ -128,4 +128,41 @@ export interface IRenderCanvas {
    * - If there is no segmentation present, returns `null`.
    */
   getIdAtPixel(x: number, y: number): PixelIdInfo | null;
+
+  //// Handlers for user interaction /////
+
+  /**
+   * Handler called during mouse drag events.
+   * @param dx Change in mouse X position in pixels.
+   * @param dy Change in mouse Y position in pixels.
+   * @return `true` if the canvas re-rendered in response to the event.
+   */
+  handleDragEvent(dx: number, dy: number): boolean;
+
+  /**
+   * Handles a mouse wheel scroll event.
+   * @param mouseOffsetX Mouse X position in pixels relative to the canvas.
+   * @param mouseOffsetY Mouse Y position in pixels relative to the canvas.
+   * @param scrollDelta `event.deltaY` value from the scroll event. Larger
+   * values (>= 25) may indicate track pad interactions.
+   * @return `true` if the canvas re-rendered in response to the event.
+   */
+  handleScrollEvent(mouseOffsetX: number, mouseOffsetY: number, scrollDelta: number): boolean;
+
+  /**
+   * Handler called when the user clicks a zoom-in button or other action.
+   * @returns `true` if the canvas re-rendered in response to the event.
+   */
+  handleZoomIn(): boolean;
+
+  /**
+   * Handler called when the user clicks a zoom-out button or other action.
+   * @returns `true` if the canvas re-rendered in response to the event.
+   */
+  handleZoomOut(): boolean;
+
+  /** Resets the camera view to the default.
+   * @return `true` if the canvas re-rendered in response to the event.
+   */
+  resetView(): boolean;
 }
