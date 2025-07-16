@@ -2,9 +2,11 @@ import {
   Color,
   DataTexture,
   GLSL3,
+  Matrix4,
   Mesh,
   OrthographicCamera,
   PlaneGeometry,
+  Quaternion,
   RGBAFormat,
   RGBAIntegerFormat,
   Scene,
@@ -13,6 +15,7 @@ import {
   Uniform,
   UnsignedByteType,
   Vector2,
+  Vector3,
   WebGLRenderer,
   WebGLRenderTarget,
 } from "three";
@@ -55,7 +58,8 @@ import { packDataTexture } from "./utils/texture_utils";
 
 import ColorRamp, { ColorRampType } from "./ColorRamp";
 import Dataset from "./Dataset";
-import { IRenderCanvas, RenderCanvasStateParams } from "./IRenderCanvas";
+import { IInnerRenderCanvas } from "./IInnerRenderCanvas";
+import { RenderCanvasStateParams } from "./IRenderCanvas";
 import VectorField from "./VectorField";
 
 import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
@@ -157,7 +161,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
   };
 };
 
-export default class ColorizeCanvas2D implements IRenderCanvas {
+export default class ColorizeCanvas2D implements IInnerRenderCanvas {
   private geometry: PlaneGeometry;
   private material: ShaderMaterial;
   private pickMaterial: ShaderMaterial;
@@ -209,6 +213,7 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
   private pendingFrame: number;
 
   private onFrameLoadCallback: (result: FrameLoadResult) => void;
+  private onRenderCallback: (() => void) | null;
 
   constructor() {
     this.geometry = new PlaneGeometry(2, 2);
@@ -297,10 +302,12 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     this.panOffset = new Vector2(0, 0);
 
     this.onFrameLoadCallback = () => {};
+    this.onRenderCallback = null;
 
     this.render = this.render.bind(this);
     this.updateScaling = this.updateScaling.bind(this);
     this.setFrame = this.setFrame.bind(this);
+    this.getIdAtPixel = this.getIdAtPixel.bind(this);
   }
 
   private setUniform<U extends keyof ColorizeUniformTypes>(name: U, value: ColorizeUniformTypes[U]): void {
@@ -595,6 +602,10 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     this.onFrameLoadCallback = callback;
   }
 
+  public setOnRenderCallback(callback: null | (() => void)): void {
+    this.onRenderCallback = callback;
+  }
+
   public async setParams(params: RenderCanvasStateParams): Promise<void> {
     // TODO: What happens when `setParams` is called again while waiting for a Dataset to load?
     // May cause visual desync where the color ramp/feature data updates before frames load in fully
@@ -807,11 +818,40 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     return frameLoadResult;
   }
 
+  public getScreenSpaceMatrix(): Matrix4 {
+    if (!this.params || !this.params.dataset) {
+      return new Matrix4();
+    }
+    // 1. Go from centroid coordinates (in frame pixels) to normalized frame
+    //    coordinates, where (0,0) is the center of the frame and axes are in
+    //    the [-0.5, 0.5] range.
+    const frameResolution = this.params.dataset.frameResolution;
+    const framePixelsToNormFrameCoords = new Matrix4().compose(
+      new Vector3(-0.5, -0.5, 0), // Shift so (0,0) is the center of the frame
+      new Quaternion(), // No rotation
+      new Vector3(1 / frameResolution.x, 1 / frameResolution.y, 1) // Scale to normalized coordinates
+    );
+
+    // 2. Apply pan offset, flipping Y axis.
+    const panningOffset = new Matrix4().makeTranslation(this.panOffset.x, this.panOffset.y * -1, 0);
+
+    // 3. Scale back to onscreen canvas pixels, and move origin back to top left corner.
+    const frameToCanvasPxScale = this.scaleInfo.frameToCanvasCoordinates.clone().multiply(this.canvasResolution);
+    const normFrameCoordsToCanvasPixels = new Matrix4().compose(
+      new Vector3(...this.canvasResolution.clone().multiplyScalar(0.5).toArray(), 0), // Move origin to top left corner
+      new Quaternion(), // No rotation
+      new Vector3(frameToCanvasPxScale.x, frameToCanvasPxScale.y, 0) // Scale to canvas pixels, also Z=0
+    );
+
+    // Combine all transformations into a single matrix
+    return normFrameCoordsToCanvasPixels.multiply(panningOffset).multiply(framePixelsToNormFrameCoords);
+  }
+
   // RENDERING /////////////////////////////////////////////////////////////////////////////
 
   /**
-   * Updates the range of the track path line so that it shows up the path up to the current
-   * frame.
+   * Updates the range of the track path line so that it shows up the path up to
+   * the current frame.
    */
   private syncTrackPathLine(): void {
     // Show nothing if track doesn't exist or doesn't have centroid data
@@ -847,6 +887,7 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     this.syncTrackPathLine();
 
     this.renderer.render(this.scene, this.camera);
+    this.onRenderCallback?.();
   }
 
   public dispose(): void {
@@ -880,5 +921,14 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     }
     const globalId = getGlobalIdFromSegId(dataset.frameToGlobalIdLookup, this.currentFrame, segId);
     return { segId, globalId };
+  }
+
+  public getDepthToScaleFn(_screenSpaceMatrix: Matrix4): (depth: number) => { scale: number; clipOpacity: number } {
+    return () => {
+      return {
+        scale: this.zoomMultiplier,
+        clipOpacity: 1.0,
+      };
+    };
   }
 }

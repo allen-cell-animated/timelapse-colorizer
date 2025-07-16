@@ -13,7 +13,8 @@ import {
   VolumeLoaderContext,
   WorkerLoader,
 } from "@aics/vole-core";
-import { Color, Vector2, Vector3 } from "three";
+import { Box3, Color, Matrix4, Quaternion, Vector2, Vector3 } from "three";
+import { clamp, inverseLerp, lerp } from "three/src/math/MathUtils";
 
 import { MAX_FEATURE_CATEGORIES } from "../constants";
 import {
@@ -35,7 +36,8 @@ import {
 import { packDataTexture } from "./utils/texture_utils";
 
 import { ColorRampType } from "./ColorRamp";
-import { IRenderCanvas, RenderCanvasStateParams } from "./IRenderCanvas";
+import { IInnerRenderCanvas } from "./IInnerRenderCanvas";
+import { RenderCanvasStateParams } from "./IRenderCanvas";
 
 const CACHE_MAX_SIZE = 1_000_000_000;
 const CONCURRENCY_LIMIT = 8;
@@ -46,7 +48,7 @@ const ZOOM_OUT_MULTIPLIER = 1 / ZOOM_IN_MULTIPLIER;
 
 const loaderContext = new VolumeLoaderContext(CACHE_MAX_SIZE, CONCURRENCY_LIMIT, PREFETCH_CONCURRENCY_LIMIT);
 
-export class ColorizeCanvas3D implements IRenderCanvas {
+export class ColorizeCanvas3D implements IInnerRenderCanvas {
   // private viewContainer: HTMLElement;
   private view3d: View3d;
   private onLoadFrameCallback: (result: FrameLoadResult) => void;
@@ -103,6 +105,9 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     this.currentFrame = -1;
 
     this.onLoadFrameCallback = () => {};
+
+    this.getScreenSpaceMatrix = this.getScreenSpaceMatrix.bind(this);
+    this.getIdAtPixel = this.getIdAtPixel.bind(this);
   }
 
   // Camera/mouse event handlers
@@ -243,14 +248,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     }
   }
 
-  public setParams(params: RenderCanvasStateParams): Promise<void> {
-    if (this.params === params) {
-      return Promise.resolve();
-    }
-    const prevParams = this.params;
-    this.params = params;
-
-    // Update color ramp
+  private handleColorRampUpdate(prevParams: RenderCanvasStateParams | null, params: RenderCanvasStateParams): boolean {
     if (
       hasPropertyChanged(params, prevParams, [
         "colorRamp",
@@ -262,8 +260,6 @@ export class ColorizeCanvas3D implements IRenderCanvas {
         "outOfRangeDrawSettings",
         "outlierDrawSettings",
         "outlineColor",
-        "outlierDrawSettings",
-        "outOfRangeDrawSettings",
       ])
     ) {
       if (this.volume) {
@@ -271,9 +267,13 @@ export class ColorizeCanvas3D implements IRenderCanvas {
         for (let i = 0; i < this.volume.numChannels; i++) {
           this.configureColorizeFeature(this.volume, i);
         }
+        return true;
       }
     }
+    return false;
+  }
 
+  private handleDatasetUpdate(prevParams: RenderCanvasStateParams | null, params: RenderCanvasStateParams): boolean {
     if (hasPropertyChanged(params, prevParams, ["dataset"])) {
       if (params.dataset !== null && params.dataset.has3dFrames() && params.dataset.frames3d) {
         if (this.volume) {
@@ -285,11 +285,15 @@ export class ColorizeCanvas3D implements IRenderCanvas {
         this.initializingVolumePromise.then(() => {
           this.setFrame(params.pendingFrame);
         });
+        return true;
       }
     }
+    return false;
+  }
 
-    // Update track path data
+  private handleLineUpdate(prevParams: RenderCanvasStateParams | null, params: RenderCanvasStateParams): boolean {
     const { geometryNeedsUpdate, vertexColorNeedsUpdate, materialNeedsUpdate } = getLineUpdateFlags(prevParams, params);
+    let needsRender = false;
 
     if (geometryNeedsUpdate || vertexColorNeedsUpdate) {
       if (geometryNeedsUpdate && params.dataset && params.track) {
@@ -298,15 +302,35 @@ export class ColorizeCanvas3D implements IRenderCanvas {
         this.linePoints = points;
       }
       if (vertexColorNeedsUpdate) {
-        this.lineColors = computeVertexColorsFromIds(this.lineIds, this.params);
+        this.lineColors = computeVertexColorsFromIds(this.lineIds, params);
       }
       this.updateLineGeometry(this.linePoints, this.lineColors);
+      needsRender = true;
     }
     if (materialNeedsUpdate) {
       this.updateLineMaterial();
+      needsRender = true;
     }
+    return needsRender;
+  }
 
-    this.render(false);
+  public setParams(params: RenderCanvasStateParams): Promise<void> {
+    if (this.params === params) {
+      return Promise.resolve();
+    }
+    const prevParams = this.params;
+    this.params = params;
+
+    const didColorRampUpdate = this.handleColorRampUpdate(prevParams, params);
+    const didDatasetUpdate = this.handleDatasetUpdate(prevParams, params);
+    const didLineUpdate = this.handleLineUpdate(prevParams, params);
+    const needsRender = didColorRampUpdate || didDatasetUpdate || didLineUpdate;
+
+    if (needsRender) {
+      // TODO: Change the render function to take an enum instead of a boolean
+      // for readability
+      this.render(false);
+    }
 
     // Eventually volume change is handled here?
     return Promise.resolve();
@@ -396,9 +420,9 @@ export class ColorizeCanvas3D implements IRenderCanvas {
       }
       await this.view3d.setTime(this.volume, requestedFrame);
 
-      this.render(true);
       this.currentFrame = requestedFrame;
       this.pendingFrame = -1;
+      this.render(true);
       const result: FrameLoadResult = {
         frame: requestedFrame,
         frameError: false,
@@ -415,6 +439,10 @@ export class ColorizeCanvas3D implements IRenderCanvas {
 
   public setOnFrameLoadCallback(callback: (result: FrameLoadResult) => void): void {
     this.onLoadFrameCallback = callback;
+  }
+
+  public setOnRenderCallback(callback: (() => void) | null): void {
+    this.view3d.setOnRenderCallback(callback);
   }
 
   private syncTrackPathLine(): void {
@@ -469,5 +497,59 @@ export class ColorizeCanvas3D implements IRenderCanvas {
       return { segId, globalId };
     }
     return null;
+  }
+
+  public getScreenSpaceMatrix(): Matrix4 {
+    if (!this.volume) {
+      // Return an identity matrix if the volume is not loaded
+      return new Matrix4();
+    }
+
+    // 1. Normalize from volume voxel coordinates to world space. Also,
+    //    translate so that the center of the volume is at (0, 0, 0).
+    const volumeScale = new Vector3(1, 1, 1)
+      .multiply(this.volume.physicalPixelSize)
+      .divideScalar(this.volume.physicalScale);
+    const normalizeVoxelToWorld = new Matrix4().compose(
+      this.volume.normPhysicalSize.clone().multiplyScalar(-0.5), // Translate to center
+      new Quaternion(0, 0, 0, 1),
+      volumeScale
+    );
+
+    // 2. Get the view projection matrix, which transforms from world space to
+    //    screen space in the [-1, 1] range.
+    const viewProjectionMatrix = this.view3d.getViewProjectionMatrix();
+
+    // 3. Scale the [-1, 1] range to canvas pixels, and move the origin to the
+    //    top left corner of the canvas. Normalize the Z axis to the [0, 1] range.
+    const viewProjectionToScreen = new Matrix4().compose(
+      new Vector3(0.5 * this.canvasResolution.x, 0.5 * this.canvasResolution.y, 0.5), // Translate origin
+      new Quaternion(0, 0, 0, 1),
+      new Vector3(0.5 * this.canvasResolution.x, -0.5 * this.canvasResolution.y, 0.5) // Scale to screen
+    );
+
+    return viewProjectionToScreen.multiply(viewProjectionMatrix).multiply(normalizeVoxelToWorld);
+  }
+
+  public getDepthToScaleFn(screenSpaceMatrix: Matrix4): (depth: number) => { scale: number; clipOpacity: number } {
+    if (!this.volume) {
+      return () => ({ scale: 1, clipOpacity: 1 });
+    }
+    // Determine min and max Z depth of the volume in screen space, using the
+    // corners.
+    const box3d = new Box3(new Vector3(0, 0, 0), this.volume.imageInfo.originalSize.clone().subScalar(1));
+    box3d.applyMatrix4(screenSpaceMatrix);
+    const minZ = Math.max(0.01, Math.min(box3d.min.z, box3d.max.z));
+    const maxZ = Math.min(1, Math.max(box3d.min.z, box3d.max.z));
+
+    return (depth: number): { scale: number; clipOpacity: number } => {
+      const depthT = clamp(inverseLerp(minZ, maxZ, depth), 0, 1);
+      return {
+        // Scale by distance from camera
+        scale: (depth - 1) * -60 - 1,
+        // Make objects more transparent if they are further away
+        clipOpacity: lerp(0.8, 0.1, depthT),
+      };
+    };
   }
 }
