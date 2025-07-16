@@ -128,7 +128,7 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
 
   useEffect(() => {
     if (!props.label && !props.id) {
-      console.log(
+      console.warn(
         "SelectionDropdown: No label or id provided for the dropdown, which means that the select component may not be labeled correctly for screen readers." +
           " Consider either providing the `label` prop, or setting the `id` prop and passing it an HTML `label` via the `for` attribute."
       );

@@ -30,7 +30,7 @@ const StyledColorPickerTrigger = styled(Button)<{ $theme: AppTheme; $open: boole
       background: transparent;
     }
 
-    &:focus {
+    &:focus-visible {
       outline: 3px solid ${(props) => props.$theme.color.button.focusShadow};
       outline-offset: 1;
     }
@@ -78,9 +78,9 @@ const ColorPickerBlock = styled.div<{ $theme: AppTheme }>`
  * - `id` could not be set on the ColorPicker trigger for labeling
  */
 export default function WrappedColorPicker(props: WrappedColorPickerProps): ReactElement {
-  const colorPickerContainerRef = useRef<HTMLDivElement>(null);
   const theme = useContext(AppThemeContext);
   const [isOpen, setIsOpen] = useState(false);
+  const colorPickerContainerRef = useRef<HTMLDivElement>(null);
 
   const colorCss = useMemo(() => {
     const { value } = props;

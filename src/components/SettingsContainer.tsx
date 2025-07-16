@@ -5,11 +5,11 @@ import styled, { css } from "styled-components";
 const SETTINGS_ITEM_CLASS = "settings-item";
 
 type SettingsItemProps = {
-  /** A string or ReactElement label. Strings will be displayed as `p`. Defaults to empty string ("").*/
+  /** A string or ReactElement label, placed inside of a `label` tag.*/
   label?: string | ReactElement;
-  /** HTML ID applied to the `label` element, if `label` is a string. */
+  /** HTML ID applied to the `label` element.*/
   labelId?: string;
-  /** HTML `for` attribute applied to the `label` element, if `label` is a string. */
+  /** HTML `for` attribute applied to the `label` element. */
   htmlFor?: string;
   /** A formatting function that will be applied to the label. If defined, overrides `labelFormatter`
    * of the parent `SettingsContainer`. */
@@ -36,7 +36,7 @@ export function SettingsItem(inputProps: PropsWithChildren<Partial<SettingsItemP
   }
 
   useEffect(() => {
-    if (props.label && typeof props.label === "string" && !props.htmlFor) {
+    if (props.label && !props.htmlFor) {
       console.warn(
         "SettingsItem: Please set the 'htmlFor' attribute to support screen readers in setting '" + props.label + "'."
       );

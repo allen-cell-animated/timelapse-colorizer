@@ -1,5 +1,5 @@
 import { Tooltip } from "antd";
-import React, { ReactElement, useMemo, useRef } from "react";
+import React, { ReactElement, useMemo } from "react";
 import styled from "styled-components";
 import { Color, ColorRepresentation } from "three";
 
@@ -53,7 +53,6 @@ export default function CategoricalColorPicker(inputProps: CategoricalColorPicke
 
   const categoricalPalette = useViewerStateStore((state) => state.categoricalPalette);
   const setCategoricalPalette = useViewerStateStore((state) => state.setCategoricalPalette);
-  const colorPickerContainerRef = useRef<HTMLDivElement>(null);
 
   const colorPickers = useMemo(() => {
     const elements = [];
@@ -92,7 +91,7 @@ export default function CategoricalColorPicker(inputProps: CategoricalColorPicke
   }, [props]);
 
   return (
-    <ColorPickerContainer $itemGap="8px" $maxItemsPerRow="6" $itemWidth="110px" ref={colorPickerContainerRef}>
+    <ColorPickerContainer $itemGap="8px" $maxItemsPerRow="6" $itemWidth="110px">
       {colorPickers}
     </ColorPickerContainer>
   );

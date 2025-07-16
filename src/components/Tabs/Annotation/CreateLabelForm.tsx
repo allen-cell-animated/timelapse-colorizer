@@ -161,7 +161,9 @@ export default function CreateLabelForm(inputProps: CreateLabelFormProps): React
               <Radio value={LabelType.CUSTOM}>Custom</Radio>
             </Radio.Group>
           ) : (
-            <p style={{ margin: 0, color: theme.color.text.hint }}>{labelTypeToDisplayName[labelType]}</p>
+            <p style={{ margin: 0, color: theme.color.text.hint }} id={baseId + HtmlIds.LABEL_TYPE_RADIO_GROUP}>
+              {labelTypeToDisplayName[labelType]}
+            </p>
           )}
         </SettingsItem>
         {labelType === LabelType.INTEGER && (
