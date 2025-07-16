@@ -347,7 +347,7 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
   /**
    * Returns the full size of the frame in screen pixels, including offscreen pixels.
    */
-  private getFrameSizeInScreenPx(): Vector2 {
+  private getCurrentFrameSizePx(): Vector2 {
     const canvasSizePx = this.resolution;
     const frameResolution = this.params?.dataset?.frameResolution ?? canvasSizePx;
     return getFrameSizeInScreenPx(canvasSizePx, frameResolution, this.zoomMultiplier);
@@ -383,7 +383,7 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
   }
 
   private offsetPanByPixels(dx: number, dy: number): void {
-    const frameSizePx = this.getFrameSizeInScreenPx();
+    const frameSizePx = this.getCurrentFrameSizePx();
     // Normalize dx/dy (change in pixels) to frame coordinates
     const newPanOffset = this.panOffset.clone();
     newPanOffset.x += dx / frameSizePx.x;
@@ -409,7 +409,7 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     // Zoom with respect to the pointer; keeps the mouse in the same position relative to the underlying
     // frame by panning as the zoom changes.
     const canvasSizePx = this.canvasResolution;
-    const startingFrameSizePx = this.getFrameSizeInScreenPx();
+    const startingFrameSizePx = this.getCurrentFrameSizePx();
     const canvasOffsetPx = new Vector2(offsetX, offsetY);
     const currentMousePosition = convertCanvasOffsetPxToFrameCoords(
       canvasSizePx,
@@ -425,7 +425,7 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
 
     // Add some offset after zooming to keep the mouse in the same position
     // relative to the frame.
-    const newFrameSizePx = this.getFrameSizeInScreenPx();
+    const newFrameSizePx = this.getCurrentFrameSizePx();
     const newMousePosition = convertCanvasOffsetPxToFrameCoords(
       canvasSizePx,
       newFrameSizePx,

@@ -40,6 +40,10 @@ import { IRenderCanvas, RenderCanvasStateParams } from "./IRenderCanvas";
 const CACHE_MAX_SIZE = 1_000_000_000;
 const CONCURRENCY_LIMIT = 8;
 const PREFETCH_CONCURRENCY_LIMIT = 3;
+
+const ZOOM_IN_MULTIPLIER = 0.75;
+const ZOOM_OUT_MULTIPLIER = 1 / ZOOM_IN_MULTIPLIER;
+
 const loaderContext = new VolumeLoaderContext(CACHE_MAX_SIZE, CONCURRENCY_LIMIT, PREFETCH_CONCURRENCY_LIMIT);
 
 export class ColorizeCanvas3D implements IRenderCanvas {
@@ -123,12 +127,12 @@ export class ColorizeCanvas3D implements IRenderCanvas {
   }
 
   handleZoomIn(): boolean {
-    this.scaleCameraPosition(0.75);
+    this.scaleCameraPosition(ZOOM_IN_MULTIPLIER);
     return true;
   }
 
   handleZoomOut(): boolean {
-    this.scaleCameraPosition(1 / 0.75);
+    this.scaleCameraPosition(ZOOM_OUT_MULTIPLIER);
     return true;
   }
 
