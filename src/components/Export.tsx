@@ -197,16 +197,18 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
   const [aspectRatio, setAspectRatio] = useState<number | null>(dimensionsInput[0] / dimensionsInput[1]);
 
   // Note that viewport dimensions are calculated as the resolution of the
-  // canvas, which is upscaled by the device's pixel ratio. For example, a
-  // canvas with a 100x100 size in pixels on a device with a pixel ratio of 2
-  // will be rendering at a resolution of 200x200.
-  // On the UI, users are controlling the final resolution of the canvas, so we
-  // will divide by the pixel ratio so the canvas has the correct dimensions.
+  // canvas, which is upscaled by the device's pixel ratio. For example, an HTML
+  // canvas with a size of 100x100 on a device and a pixel ratio of 1.5 (e.g.
+  // 150% zoom) will be rendering at a resolution of 150x150. Users can control
+  // the final resolution of the canvas, so we will divide by the pixel ratio so
+  // the canvas has the correct dimensions.
 
   const pixelRatio = getPixelRatio();
   const exportOptions = useMemo<ExportOptions>(
     () => ({
       enforceEven: recordingMode === RecordingMode.VIDEO_MP4,
+      showHeader: showHeaderDuringExport,
+      showFooter: showLegendDuringExport,
     }),
     [recordingMode]
   );
@@ -224,12 +226,10 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
       .getCanvas()
       .getExportDimensions(
         new Vector2(innerFrameDimensions[0] / pixelRatio, innerFrameDimensions[1] / pixelRatio),
-        showHeaderDuringExport,
-        showLegendDuringExport,
         exportOptions
       )
       .toArray();
-  }, [showHeaderDuringExport, showLegendDuringExport, innerFrameDimensions, pixelRatio, exportOptions]);
+  }, [innerFrameDimensions, pixelRatio, exportOptions]);
 
   const defaultImagePrefix = useMemo(() => {
     return `${props.defaultImagePrefix}-${innerFrameDimensions[0]}x${innerFrameDimensions[1]}`;
@@ -398,9 +398,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
     canvas.setIsExporting(true);
     canvas.setResolution(...canvasScreenSizePx.toArray());
     canvas.setExportOptions(exportOptions);
-    const canvasDims = canvas
-      .getExportDimensions(canvasScreenSizePx, showHeaderDuringExport, showLegendDuringExport, exportOptions)
-      .toArray();
+    const canvasDims = canvas.getExportDimensions(canvasScreenSizePx, exportOptions).toArray();
 
     const recordingOptions: Partial<RecordingOptions> = {
       min: min,
@@ -437,24 +435,13 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
     };
 
     // Initialize different recorders based on the provided options.
-    const setFrameAndRender = async (frame: number): Promise<void> => {
-      // Unfortunately this will make the canvas render twice :(
-      await props.setFrame(frame);
-      canvas.render({
-        targetResolution: new Vector2(innerFrameDimensions[0], innerFrameDimensions[1]),
-      });
-    };
     switch (recordingMode) {
       case RecordingMode.VIDEO_MP4:
-        recorder.current = new Mp4VideoRecorder(setFrameAndRender, () => props.getCanvas().canvas, recordingOptions);
+        recorder.current = new Mp4VideoRecorder(props.setFrame, () => props.getCanvas().canvas, recordingOptions);
         break;
       case RecordingMode.IMAGE_SEQUENCE:
       default:
-        recorder.current = new ImageSequenceRecorder(
-          setFrameAndRender,
-          () => props.getCanvas().canvas,
-          recordingOptions
-        );
+        recorder.current = new ImageSequenceRecorder(props.setFrame, () => props.getCanvas().canvas, recordingOptions);
         break;
     }
     recorder.current.start();

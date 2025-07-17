@@ -137,8 +137,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const setBackdropVisible = useViewerStateStore((state) => state.setBackdropVisible);
   const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
   const setTrack = useViewerStateStore((state) => state.setTrack);
-  const showHeaderDuringExport = useViewerStateStore((state) => state.showHeaderDuringExport);
-  const showLegendDuringExport = useViewerStateStore((state) => state.showLegendDuringExport);
   const showScaleBar = useViewerStateStore((state) => state.showScaleBar);
   const showTimestamp = useViewerStateStore((state) => state.showTimestamp);
   const frameLoadResult = useViewerStateStore((state) => state.frameLoadResult);
@@ -231,10 +229,9 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   }, [showTimestamp]);
 
   useMemo(() => {
+    // TODO: This should be handled in state.
     canv.setIsExporting(props.isRecording);
-    canv.isHeaderVisibleOnExport = showHeaderDuringExport;
-    canv.isFooterVisibleOnExport = showLegendDuringExport;
-  }, [showLegendDuringExport, props.isRecording]);
+  }, [props.isRecording]);
 
   useMemo(() => {
     const annotationLabels = props.annotationState.data.getLabels();

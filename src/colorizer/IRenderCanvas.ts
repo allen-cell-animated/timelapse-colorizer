@@ -73,9 +73,6 @@ export const renderCanvasStateParamsSelector = (state: ViewerStoreState): Render
 export type RenderOptions = {
   /** If true, renders synchronously. */
   synchronous?: boolean;
-  /** Renders at the target resolution, ignoring the canvas' current size or the
-   * screen device pixel ratio. */
-  targetResolution?: Vector2;
 };
 
 /**

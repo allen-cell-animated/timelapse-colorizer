@@ -42,6 +42,13 @@ type OverlayRenderOptions = RenderOptions & {
 export type ExportOptions = {
   /** If true, enforces even pixel dimensions for the exported canvas. */
   enforceEven: boolean;
+  /** If true, shows the dataset name as a header in the exported canvas. */
+  showHeader: boolean;
+  /**
+   * If true, shows the legend in the footer (and the scale bar and timestamp
+   * if enabled) in the exported canvas.
+   */
+  showFooter: boolean;
 };
 
 /**
@@ -95,10 +102,6 @@ export default class CanvasOverlay implements IRenderCanvas {
    */
   private isExporting: boolean;
   private exportOptions: ExportOptions;
-  // TODO: Move these flags into export options instead of keeping them around
-  // as separate flags?
-  public isHeaderVisibleOnExport: boolean;
-  public isFooterVisibleOnExport: boolean;
   public isScaleBarVisible: boolean;
   public isTimestampVisible: boolean;
   public isAnnotationVisible: boolean;
@@ -165,9 +168,7 @@ export default class CanvasOverlay implements IRenderCanvas {
     this.footerSize = new Vector2(0, 0);
 
     this.isExporting = false;
-    this.exportOptions = { enforceEven: false };
-    this.isHeaderVisibleOnExport = true;
-    this.isFooterVisibleOnExport = true;
+    this.exportOptions = { enforceEven: false, showFooter: true, showHeader: true };
     this.isScaleBarVisible = true;
     this.isTimestampVisible = true;
     this.isAnnotationVisible = true;
@@ -464,8 +465,8 @@ export default class CanvasOverlay implements IRenderCanvas {
    */
   render(options?: OverlayRenderOptions): void {
     // Expand size by header + footer, if rendering:
-    const headerRenderer = this.getHeaderRenderer(this.isHeaderVisibleOnExport && this.isExporting);
-    const footerRenderer = this.getFooterRenderer(this.isFooterVisibleOnExport && this.isExporting);
+    const headerRenderer = this.getHeaderRenderer(this.exportOptions.showHeader && this.isExporting);
+    const footerRenderer = this.getFooterRenderer(this.exportOptions.showFooter && this.isExporting);
     this.headerSize = headerRenderer.sizePx;
     this.footerSize = footerRenderer.sizePx;
 
@@ -503,13 +504,7 @@ export default class CanvasOverlay implements IRenderCanvas {
       // shows the inner canvas behind it. This lets us export the contents of
       // both canvases as one image.
       this.ctx.fillStyle = "white";
-      this.ctx.drawImage(
-        this.innerCanvas.canvas,
-        0,
-        Math.round(this.headerSize.y * devicePixelRatio)
-        // this.innerCanvasSize.x,
-        // this.innerCanvasSize.y
-      );
+      this.ctx.drawImage(this.innerCanvas.canvas, 0, Math.round(this.headerSize.y * devicePixelRatio));
     }
 
     this.ctx.scale(devicePixelRatio, devicePixelRatio);
@@ -556,14 +551,9 @@ export default class CanvasOverlay implements IRenderCanvas {
    * Gets the screen-space pixel dimensions of the canvas (including the header and footer) when the
    * canvas is being exported.
    */
-  getExportDimensions(
-    baseResolution: Vector2,
-    useHeader: boolean,
-    useFooter: boolean,
-    exportOptions: ExportOptions
-  ): Vector2 {
-    const headerRenderer = this.getHeaderRenderer(useHeader, baseResolution);
-    const footerRenderer = this.getFooterRenderer(useFooter, baseResolution);
+  getExportDimensions(baseResolution: Vector2, exportOptions: ExportOptions): Vector2 {
+    const headerRenderer = this.getHeaderRenderer(exportOptions.showHeader, baseResolution);
+    const footerRenderer = this.getFooterRenderer(exportOptions.showFooter, baseResolution);
     this.headerSize = headerRenderer.sizePx;
     this.footerSize = footerRenderer.sizePx;
 
