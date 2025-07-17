@@ -117,6 +117,11 @@ export type Canvas2DScaleInfo = {
    * frame to the [0,1] space of the canvas, accounting for zoom.
    */
   frameToCanvasCoordinates: Vector2;
+
+  /**
+   * Panning offset,
+   */
+  panOffset: Vector2;
 };
 
 export type Canvas3DScaleInfo = {
