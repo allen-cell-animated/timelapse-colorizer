@@ -48,6 +48,16 @@ const StyledAntTable = styled(Table)`
       align-items: center;
     }
   }
+
+  .ant-table-body {
+    /** Fix bug where scrollbars would appear in empty table */
+    overflow: unset !important;
+  }
+
+  &&& .ant-table-tbody-virtual-scrollbar-horizontal {
+    /* Manually disable the horizontal scrollbar; it scrolls by 1 pixel only */
+    display: none;
+  }
 `;
 
 type AnnotationTableProps = {
@@ -101,7 +111,7 @@ const AnnotationDisplayTable = memo(function AnnotationDisplayTable(inputProps: 
     {
       title: "",
       key: "action",
-      width: "5%",
+      width: props.idToValue ? "5%" : "3%",
       render: (_, record) => (
         <div style={{ display: "flex", justifyContent: "right" }}>
           <IconButton
@@ -174,12 +184,15 @@ const AnnotationDisplayTable = memo(function AnnotationDisplayTable(inputProps: 
       }}
       locale={{
         emptyText: (
-          <FlexColumnAlignCenter style={{ margin: "16px 0 10px 0", color: theme.color.text.disabled }}>
+          <FlexColumnAlignCenter
+            style={{ margin: "16px 0 10px 0", color: theme.color.text.disabled, position: "relative" }}
+          >
             <TagIconSVG style={{ width: "24px", height: "24px", marginBottom: 0 }} />
             <p>No annotated IDs</p>
           </FlexColumnAlignCenter>
         ),
       }}
+      style={{ overflow: "unset" }}
     ></StyledAntTable>
   );
 });
