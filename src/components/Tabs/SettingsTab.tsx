@@ -1,4 +1,3 @@
-import { Color as AntdColor } from "@rc-component/color-picker";
 import { Checkbox, ColorPicker, Switch, Tooltip } from "antd";
 import { PresetsItem } from "antd/es/color-picker/interface";
 import React, { ReactElement, useMemo } from "react";
@@ -7,6 +6,7 @@ import { Color, ColorRepresentation } from "three";
 import { OUTLINE_COLOR_DEFAULT } from "../../colorizer/constants";
 import { DrawMode, TrackPathColorMode } from "../../colorizer/types";
 import { FlexColumn, VisuallyHidden } from "../../styles/utils";
+import { threeToAntColor } from "../../utils/color_utils";
 import { SelectItem } from "../Dropdowns/types";
 import { DEFAULT_OUTLINE_COLOR_PRESETS } from "./Settings/constants";
 
@@ -199,9 +199,9 @@ export default function SettingsTab(): ReactElement {
                 style={{ width: "min-content" }}
                 size="small"
                 disabledAlpha={true}
-                defaultValue={new AntdColor(OUTLINE_COLOR_DEFAULT)}
+                defaultValue={OUTLINE_COLOR_DEFAULT}
                 onChange={(_color, hex) => setOutlineColor(new Color(hex as ColorRepresentation))}
-                value={new AntdColor(outlineColor.getHexString())}
+                value={threeToAntColor(outlineColor)}
                 presets={DEFAULT_OUTLINE_COLOR_PRESETS}
               />
             </div>

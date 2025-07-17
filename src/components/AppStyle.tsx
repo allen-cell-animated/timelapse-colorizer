@@ -287,6 +287,11 @@ const CssContainer = styled.div`
     color: ${theme.color.button.outline};
   }
 
+  // Fix a bug where the color picker inner block was not centered
+  .ant-color-picker-trigger > .ant-color-picker-color-block {
+    margin: auto;
+  }
+
   font-family: var(--default-font);
   font-style: normal;
   font-weight: 400;

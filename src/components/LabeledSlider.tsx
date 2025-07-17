@@ -235,7 +235,7 @@ export default function LabeledSlider(inputProps: LabeledSliderProps): ReactElem
   const rangeSliderProps: SliderRangeProps = {
     range: { draggableTrack: true },
     value: props.type === "range" ? [props.min, props.max] : undefined,
-    onChange: (value: [number, number]) => handleRangeChange(value[0], value[1]),
+    onChange: (value: number[]) => handleRangeChange(value[0], value[1]),
   };
 
   // Numeric input field props

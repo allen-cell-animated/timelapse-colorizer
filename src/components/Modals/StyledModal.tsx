@@ -49,11 +49,11 @@ const wrapStaticModalFunction = (
 ): AntModalApiFunction => {
   return (props: ModalFuncProps) => {
     const newProps = addContainerToModalProps(modalContainerRef, props);
-    const { destroy, update } = modalFunction(newProps);
+    const { destroy, update, then } = modalFunction(newProps);
     const wrappedUpdate: typeof update = (props: ModalUpdateMethodProps) => {
       return update(addContainerToUpdateMethodProps(modalContainerRef, props));
     };
-    return { destroy, update: wrappedUpdate };
+    return { destroy, update: wrappedUpdate, then };
   };
 };
 

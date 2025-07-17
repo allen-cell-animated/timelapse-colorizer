@@ -1,10 +1,10 @@
-import { Color as AntdColor } from "@rc-component/color-picker";
 import { Card, Checkbox, ColorPicker, Radio } from "antd";
 import React, { ReactElement, useMemo } from "react";
 import { Color, ColorRepresentation } from "three";
 
 import { VECTOR_KEY_MOTION_DELTA } from "../../../colorizer/constants";
 import { VectorTooltipMode } from "../../../colorizer/types";
+import { threeToAntColor } from "../../../utils/color_utils";
 import { DEFAULT_OUTLINE_COLOR_PRESETS } from "./constants";
 
 import { useViewerStateStore } from "../../../state/ViewerState";
@@ -107,7 +107,7 @@ export default function VectorFieldSettings(): ReactElement {
             disabled={!vectorOptionsEnabled}
             disabledAlpha={true}
             size="small"
-            value={new AntdColor(vectorColor.getHexString())}
+            value={threeToAntColor(vectorColor)}
             onChange={(_color, hex) => {
               setVectorColor(new Color(hex as ColorRepresentation));
             }}
