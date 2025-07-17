@@ -19,10 +19,6 @@ export const BACKDROP_OBJECT_OPACITY_DEFAULT = 50;
 export const COLOR_RAMP_RANGE_DEFAULT: [number, number] = [0, 0];
 
 export const CANVAS_ASPECT_RATIO = 14.6 / 10;
-// Default width on 1920x1080 screen is 878px
-const defaultWidth = 878;
-const defaultHeight = Math.round(defaultWidth / CANVAS_ASPECT_RATIO / 2) * 2;
-export const DEFAULT_EXPORT_DIMENSIONS = [defaultWidth, defaultHeight];
 
 export const DEFAULT_LABEL_COLOR_PRESETS = [
   {

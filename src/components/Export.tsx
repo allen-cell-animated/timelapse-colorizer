@@ -19,7 +19,6 @@ import { clamp } from "three/src/math/MathUtils";
 
 import { toEven } from "../colorizer/canvas/utils";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "../colorizer/utils/analytics";
-import { DEFAULT_EXPORT_DIMENSIONS } from "../constants";
 import { useViewerStateStore } from "../state";
 import { StyledRadioGroup } from "../styles/components";
 import { FlexColumn, FlexColumnAlignCenter, FlexRow, FlexRowAlignCenter, VisuallyHidden } from "../styles/utils";
@@ -189,7 +188,8 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
   const [customMin, setCustomMin] = useState(0);
   const [customMax, setCustomMax] = useState(props.totalFrames - 1);
 
-  const [dimensionsInput, setDimensionsInput] = useState(DEFAULT_EXPORT_DIMENSIONS);
+  const [useCurrentViewportSize, setUseCurrentViewportSize] = useState(true);
+  const [dimensionsInput, setDimensionsInput] = useState([1, 1]);
   const [aspectRatio, setAspectRatio] = useState<number | null>(dimensionsInput[0] / dimensionsInput[1]);
 
   const innerFrameDimensions = useMemo(() => {
@@ -199,6 +199,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
     }
     return dimensionsInput.map(Math.round);
   }, [dimensionsInput, recordingMode]);
+
   const exportDimensions = useMemo(
     () =>
       props
@@ -222,6 +223,22 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
   const [videoBitsPerSecond, setVideoBitsPerSecond] = useState(VideoBitrate.MEDIUM);
 
   const [percentComplete, setPercentComplete] = useState(0);
+
+  useEffect(() => {
+    const onCanvasResize = () => {
+      if (useCurrentViewportSize) {
+        const canvas = props.getCanvas();
+        const resolution = canvas.resolution.toArray();
+        setDimensionsInput(resolution);
+        if (aspectRatio) {
+          setAspectRatio(resolution[0] / resolution[1]);
+        }
+      }
+    };
+    onCanvasResize();
+    window.addEventListener("resize", onCanvasResize);
+    return () => window.removeEventListener("resize", onCanvasResize);
+  }, [useCurrentViewportSize, aspectRatio, props.getCanvas().domElement]);
 
   // Override setRecordingMode when switching to video; users should not choose current frame only
   // (since exporting the current frame only as a video doesn't really make sense.)
@@ -453,6 +470,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
         setDimensionsInput([width, dimensionsInput[1]]);
       }
     }
+    setUseCurrentViewportSize(false);
   };
 
   const handleSetHeight = (height: number | null): void => {
@@ -463,6 +481,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
         setDimensionsInput([dimensionsInput[0], Math.round(height)]);
       }
     }
+    setUseCurrentViewportSize(false);
   };
 
   //////////////// RENDERING ////////////////
@@ -716,7 +735,10 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
                 <FlexColumn style={{ alignItems: "flex-start", paddingBottom: "8px" }} $gap={6}>
                   <FlexRow $gap={6}>
                     <Button
-                      onClick={() => onSetDimensions(viewportDimensions)}
+                      onClick={() => {
+                        onSetDimensions(viewportDimensions);
+                        setUseCurrentViewportSize(true);
+                      }}
                       type={isViewportDimensions ? "primary" : "default"}
                     >
                       Set to viewport
@@ -724,7 +746,10 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
                     <Button
                       disabled={imageDimensions === null}
                       type={isImageDimensions ? "primary" : "default"}
-                      onClick={() => imageDimensions && onSetDimensions(imageDimensions)}
+                      onClick={() => {
+                        imageDimensions && onSetDimensions(imageDimensions);
+                        setUseCurrentViewportSize(false);
+                      }}
                     >
                       Set to image
                     </Button>
