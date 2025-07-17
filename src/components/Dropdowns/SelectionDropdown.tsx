@@ -17,10 +17,7 @@ import StyledSelect from "./StyledSelect";
 type SelectionDropdownProps = {
   /** Text label to include with the dropdown. If null or undefined, hides the label. */
   label?: string | null;
-  /** ID of the HTML element used to label this dropdown, to be used with `aria-labelledby`.
-   * Ignored if `label` is provided.
-   */
-  htmlLabelId?: string;
+  id?: string;
   /** The value of the item that is currently selected. */
   selected: string | SelectItem | undefined;
   /** An array of SelectItems that describes the item properties (`{value,
@@ -129,11 +126,11 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
     selectedOption = props.selected;
   }
 
-  // Warn if no labelling component/ID is provided for the component.
   useEffect(() => {
-    if (!props.label && !props.htmlLabelId) {
+    if (!props.label && !props.id) {
       console.warn(
-        "SelectionDropdown: Please provide a string 'label' or the HTML ID of the label ('htmlLabelId') to support screen readers."
+        "SelectionDropdown: No label or id provided for the dropdown, which means that the select component may not be labeled correctly for screen readers." +
+          " Consider either providing the `label` prop, or setting the `id` prop and passing it an HTML `label` via the `for` attribute."
       );
     }
   }, []);
@@ -196,13 +193,19 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
   );
 
   // Create an ID for the HTML label element if one is provided.
-  const id = props.label ? `dropdown-label-${props.label.toLowerCase().replaceAll(" ", "_")}` : undefined;
+  const selectId = props.id ?? "selection-dropdown-" + props.label?.toLowerCase().replaceAll(" ", "_");
+  const labelId = props.label ? selectId + "-label" : undefined;
 
   return (
     <FlexRowAlignCenter $gap={6}>
-      {props.label && <h3 id={id ?? props.htmlLabelId}>{props.label}</h3>}
+      {props.label && (
+        <label htmlFor={selectId}>
+          <h3 id={labelId}>{props.label}</h3>
+        </label>
+      )}
       <StyledSelect
-        aria-labelledby={id}
+        aria-labelledby={labelId}
+        inputId={selectId}
         classNamePrefix="react-select"
         isMulti={false}
         placeholder=""

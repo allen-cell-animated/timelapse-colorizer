@@ -5,6 +5,7 @@ import { SpinBoxHandleDownSVG, SpinBoxHandleUpSVG } from "../assets";
 import styles from "./SpinBox.module.css";
 
 type SpinBoxProps = {
+  id?: string;
   min?: number;
   max?: number;
   value: number;
@@ -109,6 +110,7 @@ export default function SpinBox(propsInput: SpinBoxProps): ReactElement {
     >
       <input
         type="number"
+        id={props.id}
         min={props.min}
         max={props.max}
         value={inputValue}

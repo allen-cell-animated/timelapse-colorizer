@@ -89,9 +89,10 @@ const theme = {
       backgroundDisabled: palette.gray10,
       outline: palette.theme,
       outlineActive: palette.themeDark,
+      innerOutline: palette.gray30,
       hover: palette.themeLight,
       active: palette.themeDark,
-      focusShadow: "rgba(137, 98, 211, 0.06)",
+      focusShadow: palette.themeGray,
       success: {
         background: palette.success,
         hover: palette.successMediumDark,
@@ -204,6 +205,7 @@ const CssContainer = styled.div`
   --color-button-disabled: ${theme.color.button.backgroundDisabled};
   --color-button-outline: ${theme.color.button.outline};
   --color-button-outline-active: ${theme.color.button.outlineActive};
+  --color-button-focus-shadow: ${theme.color.button.focusShadow};
 
   --color-button-success-bg: ${theme.color.button.success.background};
   --color-button-success-hover: ${theme.color.button.success.hover};

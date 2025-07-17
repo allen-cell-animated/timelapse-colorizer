@@ -1,4 +1,4 @@
-import { ColorPicker, Tooltip } from "antd";
+import { Tooltip } from "antd";
 import React, { ReactElement, useMemo } from "react";
 import styled from "styled-components";
 import { Color, ColorRepresentation } from "three";
@@ -6,6 +6,7 @@ import { Color, ColorRepresentation } from "three";
 import { FlexRow, FlexRowAlignCenter } from "../styles/utils";
 
 import { useViewerStateStore } from "../state/ViewerState";
+import WrappedColorPicker from "./Inputs/WrappedColorPicker";
 
 type CategoricalColorPickerProps = {
   categories: string[];
@@ -38,7 +39,8 @@ const ColorPickerContainer = styled(FlexRow)<{
     height: fit-content;
   }
 
-  & > div > span {
+  & > div > label,
+  & > div > label > span {
     // Text label, hide overflow as ellipsis
     white-space: nowrap;
     overflow: hidden;
@@ -62,13 +64,25 @@ export default function CategoricalColorPicker(inputProps: CategoricalColorPicke
         newPalette[i] = new Color(hex as ColorRepresentation);
         setCategoricalPalette(newPalette);
       };
+      const colorPickerId = `categorical-color-picker-${i}`;
 
       // Make the color picker component
       elements.push(
         <FlexRowAlignCenter key={i}>
-          <ColorPicker value={color.getHexString()} onChange={onChange} size={"small"} disabledAlpha={true} />
+          <WrappedColorPicker
+            id={colorPickerId}
+            value={color.getHexString()}
+            onChange={onChange}
+            size={"small"}
+            disabledAlpha={true}
+            // Necessary to prevent the color picker from going off the screen
+            // TODO: Fix this? This prevents tab navigation from working.
+            getPopupContainer={undefined}
+          />
           <Tooltip title={label} placement="top">
-            <span>{label}</span>
+            <label htmlFor={colorPickerId}>
+              <span>{label}</span>
+            </label>
           </Tooltip>
         </FlexRowAlignCenter>
       );

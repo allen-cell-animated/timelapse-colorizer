@@ -61,7 +61,7 @@ import Export from "./components/Export";
 import GlossaryPanel from "./components/GlossaryPanel";
 import Header from "./components/Header";
 import IconButton from "./components/IconButton";
-import LabeledSlider from "./components/LabeledSlider";
+import LabeledSlider from "./components/Inputs/LabeledSlider";
 import LoadDatasetButton from "./components/LoadDatasetButton";
 import SmallScreenWarning from "./components/Modals/SmallScreenWarning";
 import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
