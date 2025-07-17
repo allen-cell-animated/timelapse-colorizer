@@ -23,8 +23,8 @@ import { useViewerStateStore } from "../state";
 import { StyledRadioGroup } from "../styles/components";
 import { FlexColumn, FlexColumnAlignCenter, FlexRow, FlexRowAlignCenter, VisuallyHidden } from "../styles/utils";
 
-import CanvasOverlay from "../colorizer/CanvasOverlay";
-import { RenderOptions } from "../colorizer/IRenderCanvas";
+import CanvasOverlay, { ExportOptions } from "../colorizer/CanvasOverlay";
+import { IRenderCanvas, RenderOptions } from "../colorizer/IRenderCanvas";
 import CanvasRecorder, { RecordingOptions } from "../colorizer/recorders/CanvasRecorder";
 import ImageSequenceRecorder from "../colorizer/recorders/ImageSequenceRecorder";
 import Mp4VideoRecorder, { VideoBitrate } from "../colorizer/recorders/Mp4VideoRecorder";
@@ -51,7 +51,6 @@ const enum ExportHtmlIds {
 type ExportButtonProps = {
   totalFrames: number;
   setFrame: (frame: number, options?: RenderOptions) => Promise<void>;
-  getCanvasExportDimensions: (baseResolution: Vector2, useHeader: boolean, useFooter: boolean) => Vector2;
   getCanvas: () => CanvasOverlay;
   /** Callback, called whenever the button is clicked. Can be used to stop playback. */
   onClick: () => void;
@@ -140,6 +139,11 @@ const StyledInputNumber = styled(InputNumber)`
   }
 `;
 
+const getCanvasInnerDimensions = (canvas: IRenderCanvas): Vector2 => {
+  const pixelRatio = getPixelRatio();
+  return canvas.resolution.clone().multiplyScalar(pixelRatio).round();
+};
+
 /**
  * A single Export button that opens up an export modal when clicked. Manages starting and stopping
  * an image sequence recording, resetting state when complete.
@@ -195,28 +199,37 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
   // Note that viewport dimensions are calculated as the resolution of the
   // canvas, which is upscaled by the device's pixel ratio. For example, a
   // canvas with a 100x100 size in pixels on a device with a pixel ratio of 2
-  // will be rendering at a resolution of 200x200. Export uses the inner
-  // resolution
+  // will be rendering at a resolution of 200x200.
+  // On the UI, users are controlling the final resolution of the canvas, so we
+  // will divide by the pixel ratio so the canvas has the correct dimensions.
+
   const pixelRatio = getPixelRatio();
+  const exportOptions = useMemo<ExportOptions>(
+    () => ({
+      enforceEven: recordingMode === RecordingMode.VIDEO_MP4,
+    }),
+    [recordingMode]
+  );
+
   const innerFrameDimensions = useMemo(() => {
     if (recordingMode === RecordingMode.VIDEO_MP4) {
       // Video codecs will sometimes require even dimensions. Round to even numbers when exporting.
       return dimensionsInput.map((value) => toEven(value));
     }
     return dimensionsInput.map((value) => Math.round(value));
-  }, [dimensionsInput, recordingMode, pixelRatio]);
+  }, [dimensionsInput, recordingMode]);
 
-  const exportDimensions = useMemo(
-    () =>
-      props
-        .getCanvasExportDimensions(
-          new Vector2(innerFrameDimensions[0], innerFrameDimensions[1]),
-          showHeaderDuringExport,
-          showLegendDuringExport
-        )
-        .toArray(),
-    [showHeaderDuringExport, showLegendDuringExport, innerFrameDimensions]
-  );
+  const exportDimensions = useMemo(() => {
+    return props
+      .getCanvas()
+      .getExportDimensions(
+        new Vector2(innerFrameDimensions[0] / pixelRatio, innerFrameDimensions[1] / pixelRatio),
+        showHeaderDuringExport,
+        showLegendDuringExport,
+        exportOptions
+      )
+      .toArray();
+  }, [showHeaderDuringExport, showLegendDuringExport, innerFrameDimensions, pixelRatio, exportOptions]);
 
   const defaultImagePrefix = useMemo(() => {
     return `${props.defaultImagePrefix}-${innerFrameDimensions[0]}x${innerFrameDimensions[1]}`;
@@ -234,7 +247,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
     const onCanvasResize = () => {
       if (useCurrentViewportSize) {
         const canvas = props.getCanvas();
-        const resolution = canvas.resolution.toArray();
+        const resolution = getCanvasInnerDimensions(canvas).toArray();
         setDimensionsInput(resolution);
         if (aspectRatio) {
           setAspectRatio(resolution[0] / resolution[1]);
@@ -381,10 +394,12 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
     // Copy configuration to options object
     // Note that different codecs will be selected by the browser based on the canvas dimensions.
     const canvas = props.getCanvas();
+    const canvasScreenSizePx = new Vector2(...innerFrameDimensions).multiplyScalar(1 / pixelRatio);
     canvas.setIsExporting(true);
-    canvas.setResolution(innerFrameDimensions[0], innerFrameDimensions[1]);
-    const canvasDims = props
-      .getCanvasExportDimensions(new Vector2(...innerFrameDimensions), showHeaderDuringExport, showLegendDuringExport)
+    canvas.setResolution(...canvasScreenSizePx.toArray());
+    canvas.setExportOptions(exportOptions);
+    const canvasDims = canvas
+      .getExportDimensions(canvasScreenSizePx, showHeaderDuringExport, showLegendDuringExport, exportOptions)
       .toArray();
 
     const recordingOptions: Partial<RecordingOptions> = {
@@ -454,7 +469,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
   const isImageDimensions =
     imageDimensions && imageDimensions[0] === dimensionsInput[0] && imageDimensions[1] === dimensionsInput[1];
 
-  const viewportDimensions = props.getCanvas().resolution.toArray();
+  const viewportDimensions = getCanvasInnerDimensions(props.getCanvas()).toArray();
   const isViewportDimensions =
     viewportDimensions[0] === dimensionsInput[0] && viewportDimensions[1] === dimensionsInput[1];
 
@@ -742,7 +757,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
                   <FlexRow $gap={6}>
                     <Button
                       onClick={() => {
-                        onSetDimensions(viewportDimensions);
+                        onSetDimensions(viewportDimensions as [number, number]);
                         setUseCurrentViewportSize(true);
                       }}
                       type={isViewportDimensions ? "primary" : "default"}
