@@ -14,6 +14,7 @@ import {
 } from "antd";
 import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
+import { Vector2 } from "three";
 import { clamp } from "three/src/math/MathUtils";
 
 import { toEven } from "../colorizer/canvas/utils";
@@ -23,7 +24,8 @@ import { useViewerStateStore } from "../state";
 import { StyledRadioGroup } from "../styles/components";
 import { FlexColumn, FlexColumnAlignCenter, FlexRow, FlexRowAlignCenter, VisuallyHidden } from "../styles/utils";
 
-import { IRenderCanvas } from "../colorizer/IRenderCanvas";
+import CanvasOverlay from "../colorizer/CanvasOverlay";
+import { RenderOptions } from "../colorizer/IRenderCanvas";
 import CanvasRecorder, { RecordingOptions } from "../colorizer/recorders/CanvasRecorder";
 import ImageSequenceRecorder from "../colorizer/recorders/ImageSequenceRecorder";
 import Mp4VideoRecorder, { VideoBitrate } from "../colorizer/recorders/Mp4VideoRecorder";
@@ -36,9 +38,9 @@ import SpinBox from "./SpinBox";
 
 type ExportButtonProps = {
   totalFrames: number;
-  setFrame: (frame: number) => Promise<void>;
-  getCanvasExportDimensions: () => [number, number];
-  getCanvas: () => IRenderCanvas;
+  setFrame: (frame: number, options?: RenderOptions) => Promise<void>;
+  getCanvasExportDimensions: (baseResolution: Vector2, useHeader: boolean, useFooter: boolean) => Vector2;
+  getCanvas: () => CanvasOverlay;
   /** Callback, called whenever the button is clicked. Can be used to stop playback. */
   onClick: () => void;
   currentFrame: number;
@@ -177,11 +179,29 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
 
   const [dimensionsInput, setDimensionsInput] = useState(DEFAULT_EXPORT_DIMENSIONS);
   const [aspectRatio, setAspectRatio] = useState<number | null>(dimensionsInput[0] / dimensionsInput[1]);
-  const dimensions = useMemo(() => dimensionsInput.map(toEven), [dimensionsInput]);
+
+  const innerFrameDimensions = useMemo(() => {
+    if (recordingMode === RecordingMode.VIDEO_MP4) {
+      // Video codecs will sometimes require even dimensions. Round to even numbers when exporting.
+      return dimensionsInput.map(toEven);
+    }
+    return dimensionsInput.map(Math.round);
+  }, [dimensionsInput, recordingMode]);
+  const exportDimensions = useMemo(
+    () =>
+      props
+        .getCanvasExportDimensions(
+          new Vector2(innerFrameDimensions[0], innerFrameDimensions[1]),
+          showHeaderDuringExport,
+          showLegendDuringExport
+        )
+        .toArray(),
+    [showHeaderDuringExport, showLegendDuringExport, innerFrameDimensions]
+  );
 
   const defaultImagePrefix = useMemo(() => {
-    return `${props.defaultImagePrefix}-${dimensions[0]}x${dimensions[1]}`;
-  }, [dimensions, props.defaultImagePrefix]);
+    return `${props.defaultImagePrefix}-${innerFrameDimensions[0]}x${innerFrameDimensions[1]}`;
+  }, [innerFrameDimensions, props.defaultImagePrefix]);
 
   const [imagePrefix, setImagePrefix] = useState(defaultImagePrefix);
   const [useDefaultImagePrefix, setUseDefaultImagePrefix] = useState(true);
@@ -325,8 +345,13 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
 
     // Copy configuration to options object
     // Note that different codecs will be selected by the browser based on the canvas dimensions.
-    props.getCanvas().setResolution(dimensions[0], dimensions[1]);
-    const canvasDims = props.getCanvasExportDimensions();
+    const canvas = props.getCanvas();
+    canvas.setIsExporting(true);
+    canvas.setResolution(innerFrameDimensions[0], innerFrameDimensions[1]);
+    const canvasDims = props
+      .getCanvasExportDimensions(new Vector2(...innerFrameDimensions), showHeaderDuringExport, showLegendDuringExport)
+      .toArray();
+
     const recordingOptions: Partial<RecordingOptions> = {
       min: min,
       max: max,
@@ -362,35 +387,51 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
     };
 
     // Initialize different recorders based on the provided options.
+    const setFrameAndRender = async (frame: number): Promise<void> => {
+      // Unfortunately this will make the canvas render twice :(
+      await props.setFrame(frame);
+      canvas.render({
+        targetResolution: new Vector2(innerFrameDimensions[0], innerFrameDimensions[1]),
+      });
+    };
     switch (recordingMode) {
       case RecordingMode.VIDEO_MP4:
-        recorder.current = new Mp4VideoRecorder(props.setFrame, () => props.getCanvas().canvas, recordingOptions);
+        recorder.current = new Mp4VideoRecorder(setFrameAndRender, () => props.getCanvas().canvas, recordingOptions);
         break;
       case RecordingMode.IMAGE_SEQUENCE:
       default:
-        recorder.current = new ImageSequenceRecorder(props.setFrame, () => props.getCanvas().canvas, recordingOptions);
+        recorder.current = new ImageSequenceRecorder(
+          setFrameAndRender,
+          () => props.getCanvas().canvas,
+          recordingOptions
+        );
         break;
     }
     recorder.current.start();
   };
 
-  const handleUseImageDimensions = (): void => {
-    if (!dataset) {
-      return;
+  const imageDimensions = useMemo(() => {
+    if (!dataset || dataset.has3dFrames()) {
+      return null;
     }
-    setDimensionsInput(dataset.frameResolution.toArray());
-    if (aspectRatio) {
-      setAspectRatio(dataset.frameResolution.x / dataset.frameResolution.y);
-    }
-  };
+    return dataset.frameResolution.toArray();
+  }, [dataset, dataset?.frameResolution.x, dataset?.frameResolution.y]);
+  const isImageDimensions =
+    imageDimensions && imageDimensions[0] === dimensionsInput[0] && imageDimensions[1] === dimensionsInput[1];
 
-  const handleUseViewportDimensions = (): void => {
-    const canvas = props.getCanvas();
-    setDimensionsInput(canvas.resolution.toArray());
-    if (aspectRatio) {
-      setAspectRatio(canvas.resolution.x / canvas.resolution.y);
-    }
-  };
+  const viewportDimensions = props.getCanvas().resolution.toArray();
+  const isViewportDimensions =
+    viewportDimensions[0] === dimensionsInput[0] && viewportDimensions[1] === dimensionsInput[1];
+
+  const onSetDimensions = useCallback(
+    (dimensions: [number, number]) => {
+      setDimensionsInput(dimensions);
+      if (aspectRatio) {
+        setAspectRatio(dimensions[0] / dimensions[1]);
+      }
+    },
+    [aspectRatio]
+  );
 
   const handleSetWidth = (width: number | null): void => {
     if (width !== null) {
@@ -465,7 +506,8 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
     // (475 MB predicted vs. 70 MB actual)
     // TODO: Is there a way to concretely determine this?
     const compressionRatioBitsPerPixel = 3.5; // Actual value 2.7-3.0, overshooting to be safe
-    const maxVideoBitsResolution = dimensions[0] * dimensions[1] * totalFrames * compressionRatioBitsPerPixel;
+    const maxVideoBitsResolution =
+      innerFrameDimensions[0] * innerFrameDimensions[1] * totalFrames * compressionRatioBitsPerPixel;
 
     const sizeInMb = Math.min(maxVideoBitsResolution, maxVideoBitsDuration) / 8_000_000; // bits to MB
 
@@ -652,9 +694,18 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
               <SettingsItem label="Frame dimensions" labelStyle={{ marginTop: "2px", height: "min-content" }}>
                 <FlexColumn style={{ alignItems: "flex-start", paddingBottom: "8px" }} $gap={6}>
                   <FlexRow $gap={6}>
-                    <Button onClick={handleUseViewportDimensions}>Use viewport</Button>
-                    <Button disabled={!dataset || dataset.has3dFrames()} onClick={handleUseImageDimensions}>
-                      Use image
+                    <Button
+                      onClick={() => onSetDimensions(viewportDimensions)}
+                      type={isViewportDimensions ? "primary" : "default"}
+                    >
+                      Set to viewport
+                    </Button>
+                    <Button
+                      disabled={imageDimensions === null}
+                      type={isImageDimensions ? "primary" : "default"}
+                      onClick={() => imageDimensions && onSetDimensions(imageDimensions)}
+                    >
+                      Set to image
                     </Button>
                   </FlexRow>
                   <FlexColumn>
@@ -663,7 +714,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
                         id={FRAME_DIMENSION_WIDTH_INPUT_ID}
                         addonBefore={
                           <HintText>
-                            w<VisuallyHidden>idth</VisuallyHidden>
+                            W<VisuallyHidden>idth</VisuallyHidden>
                           </HintText>
                         }
                         value={dimensionsInput[0]}
@@ -676,7 +727,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
                         id={FRAME_DIMENSION_HEIGHT_INPUT_ID}
                         addonBefore={
                           <HintText>
-                            h<VisuallyHidden>eight</VisuallyHidden>
+                            H<VisuallyHidden>eight</VisuallyHidden>
                           </HintText>
                         }
                         value={dimensionsInput[1]}
@@ -701,22 +752,24 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
                   </FlexColumn>
                 </FlexColumn>
               </SettingsItem>
-              <SettingsItem label={"Show feature legend"}>
-                <Checkbox
-                  checked={showLegendDuringExport}
-                  onChange={(e) => setShowLegendDuringExport(e.target.checked)}
-                />
-              </SettingsItem>
-              <SettingsItem label="Show dataset name">
-                <div>
+              <SettingsItem label="Dataset name">
+                <div style={{ width: "fit-content" }}>
                   <Checkbox
                     checked={showHeaderDuringExport}
                     onChange={(e) => setShowHeaderDuringExport(e.target.checked)}
                   />
                 </div>
               </SettingsItem>
+              <SettingsItem label={"Feature legend"}>
+                <div style={{ width: "fit-content" }}>
+                  <Checkbox
+                    checked={showLegendDuringExport}
+                    onChange={(e) => setShowLegendDuringExport(e.target.checked)}
+                  />
+                </div>
+              </SettingsItem>
               <SettingsItem label="Final dimensions">
-                <HintText>{`${dimensions[0]} x ${dimensions[1]}`}</HintText>
+                <HintText>{`${exportDimensions[0]} x ${exportDimensions[1]}`}</HintText>
               </SettingsItem>
             </SettingsContainer>
           </Card>

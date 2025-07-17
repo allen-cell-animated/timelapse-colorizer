@@ -37,7 +37,7 @@ import { packDataTexture } from "./utils/texture_utils";
 
 import { ColorRampType } from "./ColorRamp";
 import { IInnerRenderCanvas } from "./IInnerRenderCanvas";
-import { RenderCanvasStateParams } from "./IRenderCanvas";
+import { RenderCanvasStateParams, RenderOptions } from "./IRenderCanvas";
 
 const CACHE_MAX_SIZE = 1_000_000_000;
 const CONCURRENCY_LIMIT = 8;
@@ -329,7 +329,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     if (needsRender) {
       // TODO: Change the render function to take an enum instead of a boolean
       // for readability
-      this.render(false);
+      this.render({ synchronous: false });
     }
 
     // Eventually volume change is handled here?
@@ -422,7 +422,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
 
       this.currentFrame = requestedFrame;
       this.pendingFrame = -1;
-      this.render(true);
+      this.render({ synchronous: true });
       const result: FrameLoadResult = {
         frame: requestedFrame,
         frameError: false,
@@ -471,10 +471,10 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     this.view3d.setSelectedID(this.volume, this.params.dataset.frames3d?.segmentationChannel ?? 0, id);
   }
 
-  render(synchronous = false): void {
+  render(options?: RenderOptions): void {
     this.syncTrackPathLine();
     this.syncSelectedId();
-    this.view3d.redraw(synchronous);
+    this.view3d.redraw(options?.synchronous);
   }
 
   dispose(): void {

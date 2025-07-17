@@ -59,7 +59,7 @@ import { packDataTexture } from "./utils/texture_utils";
 import ColorRamp, { ColorRampType } from "./ColorRamp";
 import Dataset from "./Dataset";
 import { IInnerRenderCanvas } from "./IInnerRenderCanvas";
-import { RenderCanvasStateParams } from "./IRenderCanvas";
+import { RenderCanvasStateParams, RenderOptions } from "./IRenderCanvas";
 import VectorField from "./VectorField";
 
 import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
@@ -881,8 +881,12 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     this.setUniform("highlightedId", this.params?.track.getIdAtTime(this.currentFrame));
   }
 
-  public render(): void {
+  public render(options?: RenderOptions): void {
     this.checkPixelRatio();
+    if (options?.targetResolution) {
+      this.setResolution(options.targetResolution.x, options.targetResolution.y);
+      this.renderer.setPixelRatio(1);
+    }
     this.syncHighlightedId();
     this.syncTrackPathLine();
 
