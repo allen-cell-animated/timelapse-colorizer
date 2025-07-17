@@ -135,6 +135,9 @@ export default function VectorFieldSettings(): ReactElement {
           presets={DEFAULT_OUTLINE_COLOR_PRESETS}
         ></WrappedColorPicker>
       </SettingsItem>
+      {/* TODO: Use a fieldset + legend for Radio inputs?
+       * See https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/input/radio#defining_a_radio_group
+       */}
       <SettingsItem
         label="Show vector in tooltip as"
         labelStyle={{ height: "fit-content" }}
