@@ -42,6 +42,10 @@ import { RenderCanvasStateParams } from "./IRenderCanvas";
 const CACHE_MAX_SIZE = 1_000_000_000;
 const CONCURRENCY_LIMIT = 8;
 const PREFETCH_CONCURRENCY_LIMIT = 3;
+
+const ZOOM_IN_MULTIPLIER = 0.75;
+const ZOOM_OUT_MULTIPLIER = 1 / ZOOM_IN_MULTIPLIER;
+
 const loaderContext = new VolumeLoaderContext(CACHE_MAX_SIZE, CONCURRENCY_LIMIT, PREFETCH_CONCURRENCY_LIMIT);
 
 export class ColorizeCanvas3D implements IInnerRenderCanvas {
@@ -104,6 +108,42 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
 
     this.getScreenSpaceMatrix = this.getScreenSpaceMatrix.bind(this);
     this.getIdAtPixel = this.getIdAtPixel.bind(this);
+  }
+
+  // Camera/mouse event handlers
+
+  handleDragEvent(_x: number, _y: number): boolean {
+    return false;
+  }
+
+  handleScrollEvent(_offsetX: number, _offsetY: number, _scrollDelta: number): boolean {
+    return false;
+  }
+
+  private scaleCameraPosition(scale: number): void {
+    const cameraState = this.view3d.getCameraState();
+    const position = new Vector3(...cameraState.position);
+    const target = new Vector3(...cameraState.target);
+    const positionDelta = position.clone().sub(target);
+    const newPosition = target.add(positionDelta.multiplyScalar(scale));
+    this.view3d.setCameraState({
+      position: newPosition.toArray(),
+    });
+  }
+
+  handleZoomIn(): boolean {
+    this.scaleCameraPosition(ZOOM_IN_MULTIPLIER);
+    return true;
+  }
+
+  handleZoomOut(): boolean {
+    this.scaleCameraPosition(ZOOM_OUT_MULTIPLIER);
+    return true;
+  }
+
+  resetView(): boolean {
+    this.view3d.resetCamera();
+    return true;
   }
 
   private initLights(): void {

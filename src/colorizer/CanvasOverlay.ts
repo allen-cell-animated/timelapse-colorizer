@@ -61,9 +61,6 @@ export default class CanvasOverlay implements IRenderCanvas {
   private params: RenderCanvasStateParams;
   private onFrameLoadCallback: (result: FrameLoadResult) => void;
 
-  private zoomMultiplier: number;
-  private panOffset: Vector2;
-
   private labelData: LabelData[];
   private timeToLabelIds: Map<number, Record<number, number[]>>;
   private selectedLabelIdx: number | null;
@@ -138,8 +135,6 @@ export default class CanvasOverlay implements IRenderCanvas {
 
     this.params = params;
     this.currentFrame = -1;
-    this.zoomMultiplier = 1;
-    this.panOffset = new Vector2();
 
     this.labelData = [];
     this.timeToLabelIds = new Map();
@@ -250,21 +245,35 @@ export default class CanvasOverlay implements IRenderCanvas {
     this.render(false);
   }
 
-  public setZoom(zoom: number): void {
-    // TODO: Replace all these checks for specific instances with canvas type (2D/3D)
-    if (this.innerCanvas instanceof ColorizeCanvas2D) {
-      this.zoomMultiplier = zoom;
-      this.innerCanvas.setZoom(zoom);
-      this.render();
+  /**
+   * Pass-through for the result of inner canvas event handlers. If the result
+   * of the event handler is true, this canvas will re-render itself.
+   */
+  private handleRenderableAction(shouldRender: boolean): boolean {
+    if (shouldRender) {
+      this.render(false);
     }
+    return shouldRender;
   }
 
-  public setPan(x: number, y: number): void {
-    if (this.innerCanvas instanceof ColorizeCanvas2D) {
-      this.panOffset.set(x, y);
-      this.innerCanvas.setPan(x, y);
-      this.render();
-    }
+  public resetView(): boolean {
+    return this.handleRenderableAction(this.innerCanvas.resetView());
+  }
+
+  public handleZoomIn(): boolean {
+    return this.handleRenderableAction(this.innerCanvas.handleZoomIn());
+  }
+
+  handleDragEvent(x: number, y: number): boolean {
+    return this.handleRenderableAction(this.innerCanvas.handleDragEvent(x, y));
+  }
+
+  handleScrollEvent(offsetX: number, offsetY: number, scrollDelta: number): boolean {
+    return this.handleRenderableAction(this.innerCanvas.handleScrollEvent(offsetX, offsetY, scrollDelta));
+  }
+
+  handleZoomOut(): boolean {
+    return this.handleRenderableAction(this.innerCanvas.handleZoomOut());
   }
 
   /**
@@ -332,13 +341,10 @@ export default class CanvasOverlay implements IRenderCanvas {
     this.innerCanvasContainerDiv.appendChild(this.innerCanvas.domElement);
     this.innerCanvas.setResolution(this.innerCanvasSize.x, this.innerCanvasSize.y);
     this.innerCanvas.setOnFrameLoadCallback(this.onFrameLoadCallback);
+    this.innerCanvas.resetView();
     this.innerCanvas.setOnRenderCallback(this.onInnerCanvasRender);
     await this.innerCanvas.setParams(this.params);
     await this.innerCanvas.setFrame(this.currentFrame);
-    if (this.innerCanvas instanceof ColorizeCanvas2D) {
-      this.innerCanvas.setZoom(this.zoomMultiplier);
-      this.innerCanvas.setPan(this.panOffset.x, this.panOffset.y);
-    }
     this.render(false);
   }
 

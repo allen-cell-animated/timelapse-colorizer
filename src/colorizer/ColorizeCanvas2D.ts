@@ -53,6 +53,7 @@ import {
   hasPropertyChanged,
   normalizePointsTo2dCanvasSpace,
 } from "./utils/data_utils";
+import { convertCanvasOffsetPxToFrameCoords, getFrameSizeInScreenPx } from "./utils/math_utils";
 import { packDataTexture } from "./utils/texture_utils";
 
 import ColorRamp, { ColorRampType } from "./ColorRamp";
@@ -66,6 +67,12 @@ import vertexShader from "./shaders/colorize.vert";
 import fragmentShader from "./shaders/colorize_RGBA8U.frag";
 
 export const BACKGROUND_ID = -1;
+const MIN_PAN_OFFSET = -0.5;
+const MAX_PAN_OFFSET = 0.5;
+const MAX_INVERSE_ZOOM = 2; // 0.5x zoom
+const MIN_INVERSE_ZOOM = 0.1; // 10x zoom
+const MOUSE_SCROLL_ZOOM_FACTOR = 0.001;
+const TRACK_PAD_SCROLL_ZOOM_FACTOR = 0.005;
 
 type ColorizeUniformTypes = {
   /** Scales from canvas coordinates to frame coordinates. */
@@ -288,6 +295,7 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
       frameSizeInCanvasCoordinates: new Vector2(1, 1),
       canvasToFrameCoordinates: new Vector2(1, 1),
       frameToCanvasCoordinates: new Vector2(1, 1),
+      panOffset: new Vector2(0, 0),
     };
 
     this.zoomMultiplier = 1;
@@ -343,7 +351,16 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     }
   }
 
-  public setZoom(zoom: number): void {
+  /**
+   * Returns the full size of the frame in screen pixels, including offscreen pixels.
+   */
+  private getCurrentFrameSizePx(): Vector2 {
+    const canvasSizePx = this.resolution;
+    const frameResolution = this.params?.dataset?.frameResolution ?? canvasSizePx;
+    return getFrameSizeInScreenPx(canvasSizePx, frameResolution, this.zoomMultiplier);
+  }
+
+  private setZoom(zoom: number): void {
     this.zoomMultiplier = zoom;
     if (this.params?.dataset) {
       this.updateScaling(this.params.dataset.frameResolution, this.canvasResolution);
@@ -357,8 +374,8 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
    * Expects x and y in a range of [-0.5, 0.5], where [0, 0] means the frame will be centered
    * and [-0.5, -0.5] means the top right corner of the frame will be centered in the canvas view.
    */
-  public setPan(x: number, y: number): void {
-    this.panOffset = new Vector2(x, y);
+  private setPan(newOffset: Vector2): void {
+    this.panOffset = newOffset.clone();
     this.setUniform("panOffset", this.panOffset);
 
     // Adjust the line mesh position with scaling and panning
@@ -372,11 +389,87 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     this.render();
   }
 
+  private offsetPanByPixels(dx: number, dy: number): void {
+    const frameSizePx = this.getCurrentFrameSizePx();
+    // Normalize dx/dy (change in pixels) to frame coordinates
+    const newPanOffset = this.panOffset.clone();
+    newPanOffset.x += dx / frameSizePx.x;
+    newPanOffset.y += -dy / frameSizePx.y;
+    // Clamp panning
+    newPanOffset.x = clamp(newPanOffset.x, MIN_PAN_OFFSET, MAX_PAN_OFFSET);
+    newPanOffset.y = clamp(newPanOffset.y, MIN_PAN_OFFSET, MAX_PAN_OFFSET);
+    this.setPan(newPanOffset);
+  }
+
+  handleDragEvent(dx: number, dy: number): boolean {
+    this.offsetPanByPixels(dx, dy);
+    return true;
+  }
+
+  private handleZoom(inverseZoomDelta: number): void {
+    let newInverseZoom = 1 / this.zoomMultiplier + inverseZoomDelta;
+    newInverseZoom = clamp(newInverseZoom, MIN_INVERSE_ZOOM, MAX_INVERSE_ZOOM);
+    this.setZoom(1 / newInverseZoom);
+  }
+
+  handleScrollEvent(offsetX: number, offsetY: number, scrollDelta: number): boolean {
+    // Zoom with respect to the pointer; keeps the mouse in the same position relative to the underlying
+    // frame by panning as the zoom changes.
+    const canvasSizePx = this.canvasResolution;
+    const startingFrameSizePx = this.getCurrentFrameSizePx();
+    const canvasOffsetPx = new Vector2(offsetX, offsetY);
+    const currentMousePosition = convertCanvasOffsetPxToFrameCoords(
+      canvasSizePx,
+      startingFrameSizePx,
+      canvasOffsetPx,
+      this.panOffset
+    );
+
+    // If scroll delta > 25, it's (most likely) a mouse scroll.
+    const isMouseScroll = Math.abs(scrollDelta) > 25;
+    const scaleFactor = isMouseScroll ? MOUSE_SCROLL_ZOOM_FACTOR : TRACK_PAD_SCROLL_ZOOM_FACTOR;
+    this.handleZoom(scrollDelta * scaleFactor);
+
+    // Add some offset after zooming to keep the mouse in the same position
+    // relative to the frame.
+    const newFrameSizePx = this.getCurrentFrameSizePx();
+    const newMousePosition = convertCanvasOffsetPxToFrameCoords(
+      canvasSizePx,
+      newFrameSizePx,
+      canvasOffsetPx,
+      this.panOffset
+    );
+    const newOffset = this.panOffset.clone().add(newMousePosition.sub(currentMousePosition));
+    this.setPan(newOffset);
+
+    return true;
+  }
+
+  handleZoomIn(): boolean {
+    this.handleZoom(-0.25);
+    return true;
+  }
+
+  handleZoomOut(): boolean {
+    const inverseZoom = 1 / this.zoomMultiplier;
+    // Little hack because the minimum zoom level is 0.1x, but all the other zoom levels
+    // are in increments of 0.25x. This ensures zooming all the way in and back out will return
+    // the zoom to 1.0x.
+    this.handleZoom(inverseZoom === MIN_INVERSE_ZOOM ? 0.15 : 0.25);
+    return true;
+  }
+
+  resetView(): boolean {
+    this.setPan(new Vector2(0, 0));
+    this.setZoom(1.0);
+    return true;
+  }
+
   private updateScaling(frameResolution: Vector2 | null, canvasResolution: Vector2 | null): void {
     if (!frameResolution || !canvasResolution) {
       return;
     }
-    this.savedScaleInfo = get2DCanvasScaling(frameResolution, canvasResolution, this.zoomMultiplier);
+    this.savedScaleInfo = get2DCanvasScaling(frameResolution, canvasResolution, this.zoomMultiplier, this.panOffset);
     const { frameToCanvasCoordinates, canvasToFrameCoordinates } = this.savedScaleInfo;
 
     this.setUniform("canvasSizePx", canvasResolution);
