@@ -25,7 +25,7 @@ const DEFAULT_LABEL_COLOR_PRESETS = [
   },
 ];
 
-const enum HtmlIds {
+const enum CreateLabelFormHtmlIds {
   NAME_INPUT = "-create-label-name-input",
   COLOR_PICKER = "-create-label-color-picker",
   LABEL_TYPE_RADIO_GROUP = "-create-label-type-radio-group",
@@ -121,9 +121,13 @@ export default function CreateLabelForm(inputProps: CreateLabelFormProps): React
   return (
     <FlexColumn style={{ width: "300px" }} $gap={10}>
       <SettingsContainer gapPx={8}>
-        <SettingsItem label="Name" labelStyle={{ margin: "2px 0 auto 0" }} htmlFor={baseId + HtmlIds.NAME_INPUT}>
+        <SettingsItem
+          label="Name"
+          labelStyle={{ margin: "2px 0 auto 0" }}
+          htmlFor={baseId + CreateLabelFormHtmlIds.NAME_INPUT}
+        >
           <Input
-            id={baseId + HtmlIds.NAME_INPUT}
+            id={baseId + CreateLabelFormHtmlIds.NAME_INPUT}
             value={nameInput}
             onChange={(e) => setNameInput(e.target.value)}
             onPressEnter={confirm}
@@ -131,9 +135,9 @@ export default function CreateLabelForm(inputProps: CreateLabelFormProps): React
           ></Input>
           {nameInputError && <p style={{ color: theme.color.text.error }}>{nameInputError}</p>}
         </SettingsItem>
-        <SettingsItem label="Color" htmlFor={baseId + HtmlIds.COLOR_PICKER}>
+        <SettingsItem label="Color" htmlFor={baseId + CreateLabelFormHtmlIds.COLOR_PICKER}>
           <WrappedColorPicker
-            id={baseId + HtmlIds.COLOR_PICKER}
+            id={baseId + CreateLabelFormHtmlIds.COLOR_PICKER}
             size="small"
             value={threeToAntColor(color)}
             onChange={onColorPickerChange}
@@ -146,11 +150,11 @@ export default function CreateLabelForm(inputProps: CreateLabelFormProps): React
         <SettingsItem
           label="Type"
           labelStyle={{ marginBottom: "auto" }}
-          htmlFor={baseId + HtmlIds.LABEL_TYPE_RADIO_GROUP}
+          htmlFor={baseId + CreateLabelFormHtmlIds.LABEL_TYPE_RADIO_GROUP}
         >
           {props.allowTypeSelection ? (
             <Radio.Group
-              id={baseId + HtmlIds.LABEL_TYPE_RADIO_GROUP}
+              id={baseId + CreateLabelFormHtmlIds.LABEL_TYPE_RADIO_GROUP}
               value={labelType}
               onChange={(e) => setLabelType(e.target.value)}
               style={{ width: "100%", position: "relative" }}
@@ -161,7 +165,10 @@ export default function CreateLabelForm(inputProps: CreateLabelFormProps): React
               <Radio value={LabelType.CUSTOM}>Custom</Radio>
             </Radio.Group>
           ) : (
-            <p style={{ margin: 0, color: theme.color.text.hint }} id={baseId + HtmlIds.LABEL_TYPE_RADIO_GROUP}>
+            <p
+              style={{ margin: 0, color: theme.color.text.hint }}
+              id={baseId + CreateLabelFormHtmlIds.LABEL_TYPE_RADIO_GROUP}
+            >
               {labelTypeToDisplayName[labelType]}
             </p>
           )}
@@ -177,7 +184,7 @@ export default function CreateLabelForm(inputProps: CreateLabelFormProps): React
             >
               <div ref={autoIncrementContainerRef} style={{ width: "fit-content" }}>
                 <Checkbox
-                  id={baseId + HtmlIds.AUTO_INCREMENT_CHECKBOX}
+                  id={baseId + CreateLabelFormHtmlIds.AUTO_INCREMENT_CHECKBOX}
                   checked={autoIncrement}
                   onChange={(e) => {
                     setAutoIncrement(e.target.checked);

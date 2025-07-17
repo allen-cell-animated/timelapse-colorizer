@@ -19,7 +19,7 @@ const VECTOR_OPTION_MOTION = {
   label: "Avg. movement delta (auto-calculated)",
 };
 
-const enum HtmlIds {
+const enum VectorSettingsHtmlIds {
   SHOW_VECTOR_ARROWS_CHECKBOX = "show-vector-arrows-checkbox",
   VECTOR_KEY_SELECT = "vector-key-select",
   VECTOR_SCALE_FACTOR_SLIDER = "vector-scale-factor-slider",
@@ -49,11 +49,11 @@ export default function VectorFieldSettings(): ReactElement {
 
   return (
     <>
-      <SettingsItem label={"Show vector arrows"} htmlFor={HtmlIds.SHOW_VECTOR_ARROWS_CHECKBOX}>
+      <SettingsItem label={"Show vector arrows"} htmlFor={VectorSettingsHtmlIds.SHOW_VECTOR_ARROWS_CHECKBOX}>
         <div style={{ width: "fit-content" }}>
           {/* TODO: Replace with a top-level checkbox for Vector arrows when Collapse menus are removed */}
           <Checkbox
-            id={HtmlIds.SHOW_VECTOR_ARROWS_CHECKBOX}
+            id={VectorSettingsHtmlIds.SHOW_VECTOR_ARROWS_CHECKBOX}
             checked={vectorVisible}
             onChange={(e) => setVectorVisible(e.target.checked)}
             disabled={dataset === null}
@@ -64,10 +64,10 @@ export default function VectorFieldSettings(): ReactElement {
       <SettingsItem
         label="Vector"
         labelStyle={{ height: "min-content", paddingTop: "2px" }}
-        htmlFor={HtmlIds.VECTOR_KEY_SELECT}
+        htmlFor={VectorSettingsHtmlIds.VECTOR_KEY_SELECT}
       >
         <SelectionDropdown
-          id={HtmlIds.VECTOR_KEY_SELECT}
+          id={VectorSettingsHtmlIds.VECTOR_KEY_SELECT}
           disabled={!vectorOptionsEnabled}
           selected={vectorKey}
           items={vectorOptions}
@@ -76,10 +76,13 @@ export default function VectorFieldSettings(): ReactElement {
         {vectorKey === VECTOR_KEY_MOTION_DELTA && vectorOptionsEnabled && (
           <Card style={{ position: "relative", width: "fit-content", marginTop: "10px" }} size="small">
             <SettingsContainer>
-              <SettingsItem label="Average over # time intervals" htmlFor={HtmlIds.VECTOR_MOTION_TIME_INTERVALS_SLIDER}>
+              <SettingsItem
+                label="Average over # time intervals"
+                htmlFor={VectorSettingsHtmlIds.VECTOR_MOTION_TIME_INTERVALS_SLIDER}
+              >
                 <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
                   <LabeledSlider
-                    id={HtmlIds.VECTOR_MOTION_TIME_INTERVALS_SLIDER}
+                    id={VectorSettingsHtmlIds.VECTOR_MOTION_TIME_INTERVALS_SLIDER}
                     type="value"
                     disabled={!vectorOptionsEnabled}
                     step={1}
@@ -103,10 +106,10 @@ export default function VectorFieldSettings(): ReactElement {
        * all deltas.
        * See examples in https://github.com/react-component/slider/issues/393.
        */}
-      <SettingsItem label={"Scale factor"} htmlFor={HtmlIds.VECTOR_SCALE_FACTOR_SLIDER}>
+      <SettingsItem label={"Scale factor"} htmlFor={VectorSettingsHtmlIds.VECTOR_SCALE_FACTOR_SLIDER}>
         <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
           <LabeledSlider
-            id={HtmlIds.VECTOR_SCALE_FACTOR_SLIDER}
+            id={VectorSettingsHtmlIds.VECTOR_SCALE_FACTOR_SLIDER}
             disabled={!vectorOptionsEnabled}
             type="value"
             minSliderBound={0}
@@ -119,9 +122,9 @@ export default function VectorFieldSettings(): ReactElement {
           />
         </div>
       </SettingsItem>
-      <SettingsItem label="Arrow color" htmlFor={HtmlIds.VECTOR_COLOR_PICKER}>
+      <SettingsItem label="Arrow color" htmlFor={VectorSettingsHtmlIds.VECTOR_COLOR_PICKER}>
         <WrappedColorPicker
-          id={HtmlIds.VECTOR_COLOR_PICKER}
+          id={VectorSettingsHtmlIds.VECTOR_COLOR_PICKER}
           disabled={!vectorOptionsEnabled}
           disabledAlpha={true}
           size="small"
@@ -135,11 +138,11 @@ export default function VectorFieldSettings(): ReactElement {
       <SettingsItem
         label="Show vector in tooltip as"
         labelStyle={{ height: "fit-content" }}
-        htmlFor={HtmlIds.VECTOR_TOOLTIP_MODE_RADIO}
+        htmlFor={VectorSettingsHtmlIds.VECTOR_TOOLTIP_MODE_RADIO}
       >
         <div style={{ width: "fit-content" }}>
           <Radio.Group
-            id={HtmlIds.VECTOR_TOOLTIP_MODE_RADIO}
+            id={VectorSettingsHtmlIds.VECTOR_TOOLTIP_MODE_RADIO}
             value={vectorTooltipMode}
             onChange={(e) => setVectorTooltipMode(e.target.value)}
             disabled={!vectorOptionsEnabled}
