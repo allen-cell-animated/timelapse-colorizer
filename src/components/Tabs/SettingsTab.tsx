@@ -19,7 +19,7 @@ import WrappedColorPicker from "../Inputs/WrappedColorPicker";
 import { SettingsContainer, SettingsItem } from "../SettingsContainer";
 import VectorFieldSettings from "./Settings/VectorFieldSettings";
 
-const enum HtmlIds {
+const enum SettingsHtmlIds {
   SHOW_BACKDROPS_CHECKBOX = "show-backdrops-checkbox",
   BACKDROP_KEY_SELECT = "backdrop-key-select",
   BACKDROP_BRIGHTNESS_SLIDER = "backdrop-brightness-slider",
@@ -142,10 +142,10 @@ export default function SettingsTab(): ReactElement {
     <FlexColumn $gap={5}>
       <CustomCollapse label="Backdrop">
         <SettingsContainer indentPx={SETTINGS_INDENT_PX} gapPx={SETTINGS_GAP_PX}>
-          <SettingsItem label={"Show backdrops"} htmlFor={HtmlIds.SHOW_BACKDROPS_CHECKBOX}>
+          <SettingsItem label={"Show backdrops"} htmlFor={SettingsHtmlIds.SHOW_BACKDROPS_CHECKBOX}>
             <div style={{ width: "fit-content" }}>
               <Checkbox
-                id={HtmlIds.SHOW_BACKDROPS_CHECKBOX}
+                id={SettingsHtmlIds.SHOW_BACKDROPS_CHECKBOX}
                 type="checkbox"
                 disabled={isBackdropDisabled}
                 checked={backdropVisible}
@@ -153,19 +153,19 @@ export default function SettingsTab(): ReactElement {
               />
             </div>
           </SettingsItem>
-          <SettingsItem label="Backdrop" htmlFor={HtmlIds.BACKDROP_KEY_SELECT}>
+          <SettingsItem label="Backdrop" htmlFor={SettingsHtmlIds.BACKDROP_KEY_SELECT}>
             <SelectionDropdown
-              id={HtmlIds.BACKDROP_KEY_SELECT}
+              id={SettingsHtmlIds.BACKDROP_KEY_SELECT}
               selected={selectedBackdropKey}
               items={backdropOptions}
               onChange={(key) => dataset && setBackdropKey(key)}
               disabled={isBackdropOptionsDisabled}
             />
           </SettingsItem>
-          <SettingsItem label="Brightness" htmlFor={HtmlIds.BACKDROP_BRIGHTNESS_SLIDER}>
+          <SettingsItem label="Brightness" htmlFor={SettingsHtmlIds.BACKDROP_BRIGHTNESS_SLIDER}>
             <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
               <LabeledSlider
-                id={HtmlIds.BACKDROP_BRIGHTNESS_SLIDER}
+                id={SettingsHtmlIds.BACKDROP_BRIGHTNESS_SLIDER}
                 type="value"
                 minSliderBound={0}
                 maxSliderBound={200}
@@ -180,10 +180,10 @@ export default function SettingsTab(): ReactElement {
             </div>
           </SettingsItem>
 
-          <SettingsItem label="Saturation" htmlFor={HtmlIds.BACKDROP_SATURATION_SLIDER}>
+          <SettingsItem label="Saturation" htmlFor={SettingsHtmlIds.BACKDROP_SATURATION_SLIDER}>
             <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
               <LabeledSlider
-                id={HtmlIds.BACKDROP_SATURATION_SLIDER}
+                id={SettingsHtmlIds.BACKDROP_SATURATION_SLIDER}
                 type="value"
                 minSliderBound={0}
                 maxSliderBound={100}
@@ -197,10 +197,10 @@ export default function SettingsTab(): ReactElement {
               />
             </div>
           </SettingsItem>
-          <SettingsItem label="Object opacity" htmlFor={HtmlIds.OBJECT_OPACITY_SLIDER}>
+          <SettingsItem label="Object opacity" htmlFor={SettingsHtmlIds.OBJECT_OPACITY_SLIDER}>
             <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
               <LabeledSlider
-                id={HtmlIds.OBJECT_OPACITY_SLIDER}
+                id={SettingsHtmlIds.OBJECT_OPACITY_SLIDER}
                 type="value"
                 disabled={isBackdropOptionsDisabled}
                 minSliderBound={0}
@@ -219,10 +219,10 @@ export default function SettingsTab(): ReactElement {
 
       <CustomCollapse label="Objects">
         <SettingsContainer indentPx={SETTINGS_INDENT_PX} gapPx={SETTINGS_GAP_PX}>
-          <SettingsItem label="Highlight" htmlFor={HtmlIds.HIGHLIGHT_COLOR_PICKER}>
+          <SettingsItem label="Highlight" htmlFor={SettingsHtmlIds.HIGHLIGHT_COLOR_PICKER}>
             {/* NOTE: 'Highlight color' is 'outline' internally, and 'Outline color' is 'edge' for legacy reasons. */}
             <WrappedColorPicker
-              id={HtmlIds.HIGHLIGHT_COLOR_PICKER}
+              id={SettingsHtmlIds.HIGHLIGHT_COLOR_PICKER}
               style={{ width: "min-content" }}
               size="small"
               disabledAlpha={true}
@@ -232,9 +232,9 @@ export default function SettingsTab(): ReactElement {
               presets={DEFAULT_OUTLINE_COLOR_PRESETS}
             />
           </SettingsItem>
-          <SettingsItem label="Outline" htmlFor={HtmlIds.EDGE_COLOR_SELECT}>
+          <SettingsItem label="Outline" htmlFor={SettingsHtmlIds.EDGE_COLOR_SELECT}>
             <DropdownWithColorPicker
-              id={HtmlIds.EDGE_COLOR_SELECT}
+              id={SettingsHtmlIds.EDGE_COLOR_SELECT}
               selected={edgeMode.toString()}
               items={DRAW_MODE_ITEMS}
               onValueChange={(mode: string) => {
@@ -247,9 +247,9 @@ export default function SettingsTab(): ReactElement {
               presets={EDGE_COLOR_PRESETS}
             />
           </SettingsItem>
-          <SettingsItem label="Filtered objects" htmlFor={HtmlIds.OUT_OF_RANGE_OBJECT_COLOR_SELECT}>
+          <SettingsItem label="Filtered objects" htmlFor={SettingsHtmlIds.OUT_OF_RANGE_OBJECT_COLOR_SELECT}>
             <DropdownWithColorPicker
-              id={HtmlIds.OUT_OF_RANGE_OBJECT_COLOR_SELECT}
+              id={SettingsHtmlIds.OUT_OF_RANGE_OBJECT_COLOR_SELECT}
               selected={outOfRangeDrawSettings.mode.toString()}
               color={outOfRangeDrawSettings.color}
               onValueChange={(mode: string) => {
@@ -263,9 +263,9 @@ export default function SettingsTab(): ReactElement {
               presets={DRAW_MODE_COLOR_PRESETS}
             />
           </SettingsItem>
-          <SettingsItem label="Outliers" htmlFor={HtmlIds.OUTLIER_OBJECT_COLOR_SELECT}>
+          <SettingsItem label="Outliers" htmlFor={SettingsHtmlIds.OUTLIER_OBJECT_COLOR_SELECT}>
             <DropdownWithColorPicker
-              id={HtmlIds.OUTLIER_OBJECT_COLOR_SELECT}
+              id={SettingsHtmlIds.OUTLIER_OBJECT_COLOR_SELECT}
               selected={outlierDrawSettings.mode.toString()}
               color={outlierDrawSettings.color}
               onValueChange={(mode: string) => {
@@ -282,19 +282,23 @@ export default function SettingsTab(): ReactElement {
 
           <SettingsItem
             label={"Track path"}
-            htmlFor={HtmlIds.SHOW_TRACK_PATH_SWITCH}
+            htmlFor={SettingsHtmlIds.SHOW_TRACK_PATH_SWITCH}
             labelStyle={{ height: "min-content" }}
             style={{ marginTop: "15px" }}
           >
             <div>
-              <Switch id={HtmlIds.SHOW_TRACK_PATH_SWITCH} checked={showTrackPath} onChange={setShowTrackPath}></Switch>
+              <Switch
+                id={SettingsHtmlIds.SHOW_TRACK_PATH_SWITCH}
+                checked={showTrackPath}
+                onChange={setShowTrackPath}
+              ></Switch>
             </div>
           </SettingsItem>
           {showTrackPath && (
             <>
-              <SettingsItem label="Color" htmlFor={HtmlIds.TRACK_PATH_COLOR_SELECT}>
+              <SettingsItem label="Color" htmlFor={SettingsHtmlIds.TRACK_PATH_COLOR_SELECT}>
                 <DropdownWithColorPicker
-                  id={HtmlIds.TRACK_PATH_COLOR_SELECT}
+                  id={SettingsHtmlIds.TRACK_PATH_COLOR_SELECT}
                   selected={trackPathColorMode.toString()}
                   items={TRACK_MODE_ITEMS}
                   onValueChange={(value) => setTrackPathColorMode(Number.parseInt(value, 10) as TrackPathColorMode)}
@@ -304,10 +308,10 @@ export default function SettingsTab(): ReactElement {
                   showColorPicker={trackPathColorMode === TrackPathColorMode.USE_CUSTOM_COLOR}
                 />
               </SettingsItem>
-              <SettingsItem label="Width" htmlFor={HtmlIds.TRACK_PATH_WIDTH_SLIDER}>
+              <SettingsItem label="Width" htmlFor={SettingsHtmlIds.TRACK_PATH_WIDTH_SLIDER}>
                 <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
                   <LabeledSlider
-                    id={HtmlIds.TRACK_PATH_WIDTH_SLIDER}
+                    id={SettingsHtmlIds.TRACK_PATH_WIDTH_SLIDER}
                     type="value"
                     minSliderBound={1}
                     maxSliderBound={5}
@@ -324,7 +328,7 @@ export default function SettingsTab(): ReactElement {
               </SettingsItem>
               <SettingsItem
                 label={"Show breaks"}
-                htmlFor={HtmlIds.TRACK_PATH_SHOW_BREAKS_CHECKBOX}
+                htmlFor={SettingsHtmlIds.TRACK_PATH_SHOW_BREAKS_CHECKBOX}
                 labelStyle={{ height: "min-content" }}
                 style={{ marginBottom: "20px", marginTop: "-5px" }}
               >
@@ -332,7 +336,7 @@ export default function SettingsTab(): ReactElement {
                   <div style={{ width: "fit-content" }}>
                     <VisuallyHidden>Show breaks in the track path where the track is not continuous.</VisuallyHidden>
                     <Checkbox
-                      id={HtmlIds.TRACK_PATH_SHOW_BREAKS_CHECKBOX}
+                      id={SettingsHtmlIds.TRACK_PATH_SHOW_BREAKS_CHECKBOX}
                       type="checkbox"
                       checked={showTrackPathBreaks}
                       onChange={(event) => {
@@ -344,14 +348,14 @@ export default function SettingsTab(): ReactElement {
               </SettingsItem>
             </>
           )}
-          <SettingsItem label="Scale bar" htmlFor={HtmlIds.SCALE_BAR_SWITCH}>
+          <SettingsItem label="Scale bar" htmlFor={SettingsHtmlIds.SCALE_BAR_SWITCH}>
             <div>
-              <Switch id={HtmlIds.SCALE_BAR_SWITCH} checked={showScaleBar} onChange={setShowScaleBar} />
+              <Switch id={SettingsHtmlIds.SCALE_BAR_SWITCH} checked={showScaleBar} onChange={setShowScaleBar} />
             </div>
           </SettingsItem>
-          <SettingsItem label="Timestamp" htmlFor={HtmlIds.TIMESTAMP_SWITCH}>
+          <SettingsItem label="Timestamp" htmlFor={SettingsHtmlIds.TIMESTAMP_SWITCH}>
             <div>
-              <Switch id={HtmlIds.TIMESTAMP_SWITCH} checked={showTimestamp} onChange={setShowTimestamp} />
+              <Switch id={SettingsHtmlIds.TIMESTAMP_SWITCH} checked={showTimestamp} onChange={setShowTimestamp} />
             </div>
           </SettingsItem>
         </SettingsContainer>
