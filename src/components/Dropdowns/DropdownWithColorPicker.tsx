@@ -2,7 +2,7 @@ import { ColorPicker } from "antd";
 import { PresetsItem } from "antd/es/color-picker/interface";
 import React, { ReactElement, useRef } from "react";
 import styled from "styled-components";
-import { ColorRepresentation, Color as ThreeColor } from "three";
+import { Color as ThreeColor,ColorRepresentation } from "three";
 
 import { FlexRowAlignCenter } from "../../styles/utils";
 

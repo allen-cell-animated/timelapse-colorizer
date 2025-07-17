@@ -35,6 +35,9 @@ const StyledButton = styled(Button)`
   ${listButtonStyling}
 
   & > span {
+    /* Fixes a bug where the button contents would be centered instead of
+     * left-aligned.
+     */
     width: 100%;
   }
 `;

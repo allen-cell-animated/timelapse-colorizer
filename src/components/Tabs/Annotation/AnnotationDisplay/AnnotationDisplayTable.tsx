@@ -55,7 +55,9 @@ const StyledAntTable = styled(Table)`
   }
 
   &&& .ant-table-tbody-virtual-scrollbar-horizontal {
-    /* Manually disable the horizontal scrollbar; it scrolls by 1 pixel only */
+    /* Fix bug where a horizontal scrollbar would appear that scrolls by 1 pixel
+     * only
+    */
     display: none;
   }
 `;
@@ -184,9 +186,7 @@ const AnnotationDisplayTable = memo(function AnnotationDisplayTable(inputProps: 
       }}
       locale={{
         emptyText: (
-          <FlexColumnAlignCenter
-            style={{ margin: "16px 0 10px 0", color: theme.color.text.disabled, position: "relative" }}
-          >
+          <FlexColumnAlignCenter style={{ margin: "16px 0 10px 0", color: theme.color.text.disabled }}>
             <TagIconSVG style={{ width: "24px", height: "24px", marginBottom: 0 }} />
             <p>No annotated IDs</p>
           </FlexColumnAlignCenter>
