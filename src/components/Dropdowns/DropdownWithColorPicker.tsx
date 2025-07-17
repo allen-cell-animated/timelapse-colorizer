@@ -1,23 +1,23 @@
-import { ColorPicker } from "antd";
 import { PresetsItem } from "antd/es/color-picker/interface";
 import React, { ReactElement, useRef } from "react";
 import styled from "styled-components";
-import { ColorRepresentation, Color as ThreeColor } from "three";
+import { Color as ThreeColor } from "three";
 
 import { FlexRowAlignCenter } from "../../styles/utils";
 
+import WrappedColorPicker from "../Inputs/WrappedColorPicker";
 import SelectionDropdown from "./SelectionDropdown";
 
 type DropdownWithColorPickerProps = {
   selected: string;
   items: { value: string; label: string }[];
-  /** HTML ID that the selection dropdown is labelled by. */
-  htmlLabelId: string;
+  id?: string;
   onValueChange: (mode: string) => void;
   color: ThreeColor;
   disabled?: boolean;
   showColorPicker?: boolean;
   presets?: PresetsItem[];
+  /** Alpha value, in the [0, 1] range. */
   alpha?: number;
   onColorChange: (color: ThreeColor, alpha: number) => void;
 };
@@ -53,7 +53,7 @@ export default function DropdownWithColorPicker(propsInput: DropdownWithColorPic
     <HorizontalDiv ref={colorPickerRef}>
       <SelectionDropdown
         label={null}
-        htmlLabelId={props.htmlLabelId}
+        id={props.id}
         selected={props.selected.toString()}
         items={props.items}
         showSelectedItemTooltip={false}
@@ -61,7 +61,7 @@ export default function DropdownWithColorPicker(propsInput: DropdownWithColorPic
         disabled={props.disabled}
         width={"105px"}
       ></SelectionDropdown>
-      <ColorPicker
+      <WrappedColorPicker
         // Uses the default 1s transition animation
         style={{
           visibility: props.showColorPicker ? "visible" : "hidden",
@@ -73,9 +73,11 @@ export default function DropdownWithColorPicker(propsInput: DropdownWithColorPic
         value={colorHexString}
         presets={props.presets}
         // onChange returns a different color type, so must convert from hex
-        onChange={(color, hex) =>
-          props.onColorChange(new ThreeColor(hex.slice(0, 7) as ColorRepresentation), color.toRgb().a)
-        }
+        onChange={(color, _cssColor) => {
+          const hex = color.toHexString().slice(0, 7); // Remove alpha if present
+          const alpha = color.toRgb().a;
+          props.onColorChange(new ThreeColor(hex), alpha);
+        }}
         disabled={props.disabled}
       />
     </HorizontalDiv>

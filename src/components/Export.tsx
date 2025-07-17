@@ -36,6 +36,17 @@ import StyledModal, { useStyledModal } from "./Modals/StyledModal";
 import { SettingsContainer, SettingsItem } from "./SettingsContainer";
 import SpinBox from "./SpinBox";
 
+const enum HtmlIds {
+  FRAME_RANGE_RADIO = "export-modal-frame-range-radio",
+  FRAME_CUSTOM_RANGE_INPUT = "export-modal-frame-custom-range-input",
+  FRAME_CUSTOM_RANGE_FRAME_INCREMENT_INPUT = "export-modal-frame-custom-range-frame-increment-input",
+  FPS_INPUT = "export-modal-fps-input",
+  VIDEO_QUALITY_RADIO = "export-modal-video-quality-radio",
+  IMAGE_FILENAME_INPUT = "export-modal-image-filename-input",
+  SHOW_FEATURE_LEGEND_CHECKBOX = "export-modal-show-feature-legend-checkbox",
+  SHOW_DATASET_NAME_CHECKBOX = "export-modal-show-dataset-name-checkbox",
+}
+
 type ExportButtonProps = {
   totalFrames: number;
   setFrame: (frame: number, options?: RenderOptions) => Promise<void>;
@@ -645,9 +656,10 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
                 {rangeMode === RangeMode.CUSTOM ? (
                   // Render the custom range input in the radio list if selected
                   <SettingsContainer indentPx={28}>
-                    <SettingsItem label="Range">
+                    <SettingsItem label="Range" htmlFor={HtmlIds.FRAME_CUSTOM_RANGE_INPUT}>
                       <HorizontalDiv>
                         <InputNumber
+                          id={HtmlIds.FRAME_CUSTOM_RANGE_INPUT}
                           style={{ width: 60 }}
                           aria-label="min frame"
                           controls={false}
@@ -671,9 +683,10 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
                         <p>of {props.totalFrames - 1}</p>
                       </HorizontalDiv>
                     </SettingsItem>
-                    <SettingsItem label="Frame increment">
+                    <SettingsItem label="Frame increment" htmlFor={HtmlIds.FRAME_CUSTOM_RANGE_FRAME_INCREMENT_INPUT}>
                       <FlexRow $gap={6}>
                         <SpinBox
+                          id={HtmlIds.FRAME_CUSTOM_RANGE_FRAME_INCREMENT_INPUT}
                           value={frameIncrement}
                           onChange={setFrameIncrement}
                           min={1}
@@ -777,15 +790,24 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
           <SettingsContainer gapPx={6}>
             {recordingMode === RecordingMode.VIDEO_MP4 && (
               <>
-                <SettingsItem label="Frames per second">
+                <SettingsItem label="Frames per second" htmlFor={HtmlIds.FPS_INPUT}>
                   <FlexRow $gap={6}>
-                    <SpinBox value={fps} onChange={setFps} min={1} max={120} disabled={isRecording} width="175px" />
+                    <SpinBox
+                      id={HtmlIds.FPS_INPUT}
+                      value={fps}
+                      onChange={setFps}
+                      min={1}
+                      max={120}
+                      disabled={isRecording}
+                      width="175px"
+                    />
                     <p style={{ color: theme.color.text.hint }}>({getDurationLabel()})</p>
                   </FlexRow>
                 </SettingsItem>
-                <SettingsItem label="Video quality">
+                <SettingsItem label="Video quality" htmlFor={HtmlIds.VIDEO_QUALITY_RADIO}>
                   <FlexRow $gap={6}>
                     <VideoQualityRadioGroup
+                      id={HtmlIds.VIDEO_QUALITY_RADIO}
                       disabled={isRecording}
                       options={videoQualityOptions}
                       optionType="button"
@@ -798,9 +820,10 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
               </>
             )}
             {/* Filename prefix */}
-            <SettingsItem label={"Filename"}>
+            <SettingsItem label={"Filename"} htmlFor={HtmlIds.IMAGE_FILENAME_INPUT}>
               <FlexRow $gap={6}>
                 <Input
+                  id={HtmlIds.IMAGE_FILENAME_INPUT}
                   onChange={(event) => {
                     setImagePrefix(event.target.value);
                     setUseDefaultImagePrefix(false);

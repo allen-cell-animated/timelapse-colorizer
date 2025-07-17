@@ -1,3 +1,5 @@
+import { DEFAULT_ANNOTATION_LABEL_COLORS } from "../colorizer/AnnotationData";
+
 export const DEFAULT_PLAYBACK_FPS = 10;
 export const MAX_FEATURE_CATEGORIES = 12;
 
@@ -21,5 +23,12 @@ export const CANVAS_ASPECT_RATIO = 14.6 / 10;
 const defaultWidth = 878;
 const defaultHeight = Math.round(defaultWidth / CANVAS_ASPECT_RATIO / 2) * 2;
 export const DEFAULT_EXPORT_DIMENSIONS = [defaultWidth, defaultHeight];
+
+export const DEFAULT_LABEL_COLOR_PRESETS = [
+  {
+    label: "Presets",
+    colors: DEFAULT_ANNOTATION_LABEL_COLORS,
+  },
+];
 
 export * from "./url";

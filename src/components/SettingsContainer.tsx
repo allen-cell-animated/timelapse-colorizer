@@ -1,12 +1,16 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { PropsWithChildren, ReactElement } from "react";
 import styled, { css } from "styled-components";
 
+const SETTINGS_ITEM_CLASS = "settings-item";
+
 type SettingsItemProps = {
-  /** A string or ReactElement label. Strings will be displayed as `p`. Defaults to empty string ("").*/
+  /** A string or ReactElement label, placed inside of a `label` tag.*/
   label?: string | ReactElement;
-  /** HTML ID applied to the `label` element, if `label` is a string. */
-  id?: string;
+  /** HTML ID applied to the `label` element.*/
+  labelId?: string;
+  /** HTML `for` attribute applied to the `label` element. */
+  htmlFor?: string;
   /** A formatting function that will be applied to the label. If defined, overrides `labelFormatter`
    * of the parent `SettingsContainer`. */
   labelFormatter?: (label: string | ReactElement) => string | ReactElement;
@@ -15,7 +19,6 @@ type SettingsItemProps = {
 };
 
 const defaultSettingsItemProps = {
-  label: "",
   labelStyle: {},
 };
 
@@ -32,15 +35,29 @@ export function SettingsItem(inputProps: PropsWithChildren<Partial<SettingsItemP
     props.children = <div>{props.children}</div>;
   }
 
-  const formattedLabel = props.labelFormatter ? props.labelFormatter(props.label) : props.label;
+  useEffect(() => {
+    if (props.label && !props.htmlFor) {
+      console.warn(
+        "SettingsItem: Please set the 'htmlFor' attribute to support screen readers in setting '" + props.label + "'."
+      );
+    }
+  }, [props.label, props.htmlFor]);
+
+  let labelElement = <div></div>;
+  if (props.label) {
+    const formattedLabel = props.labelFormatter ? props.labelFormatter(props.label) : props.label;
+    labelElement = (
+      <label style={props.labelStyle} id={props.labelId} htmlFor={props.htmlFor}>
+        {formattedLabel}
+      </label>
+    );
+  }
 
   return (
-    <label style={props.style}>
-      <span style={props.labelStyle} id={props.id}>
-        {formattedLabel}
-      </span>
+    <div style={props.style} className={SETTINGS_ITEM_CLASS}>
+      {labelElement}
       {props.children}
-    </label>
+    </div>
   );
 }
 
@@ -49,10 +66,10 @@ export function SettingsItem(inputProps: PropsWithChildren<Partial<SettingsItemP
  *
  * For all children matching the following pattern:
  * ```
- * <label>
- *   <span>Some Label Text</span>
+ * <div className="settings-item">
+ *   <any>Some Label Text</any>
  *   <... any element ...>
- * </label>
+ * </div>
  * ```
  * aligns the label text and the element in grid columns.
  */
@@ -71,7 +88,7 @@ const SettingsDivContainer = styled.div<{ $labelWidth?: string; $gapPx?: number;
     `;
   }}
 
-  & > label {
+  & > div.${SETTINGS_ITEM_CLASS} {
     grid-column: 1 / 3; // Labels span both columns
     display: grid;
     grid-template-columns: subgrid;
@@ -81,20 +98,20 @@ const SettingsDivContainer = styled.div<{ $labelWidth?: string; $gapPx?: number;
         gap: ${props.$gapPx ? props.$gapPx : 6}px;
       `;
     }}
-  }
 
-  & > label > span:first-of-type {
-    display: grid;
-    grid-column: 1;
-    align-items: center;
-    text-align: right;
-  }
+    & > :first-child {
+      display: grid;
+      grid-column: 1;
+      align-items: center;
+      text-align: right;
+    }
 
-  & > label > :not(span:first-of-type) {
-    grid-column: 2;
-    // Lines up the bottom of the input with the bottom of the label,
-    // where the colon separator is.
-    align-items: end;
+    & > :not(:first-child) {
+      grid-column: 2;
+      // Lines up the bottom of the input with the bottom of the label,
+      // where the colon separator is.
+      align-items: end;
+    }
   }
 `;
 
@@ -125,11 +142,11 @@ const defaultSettingsContainerProps: Partial<SettingsContainerProps> = {
  * @example
  * ```
  * <SettingsContainer>
- *   <SettingsItem label="Name:">
- *     <input type="text" />
+ *   <SettingsItem label="Name:" htmlFor="name-input">
+ *     <input type="text" id="name-input"/>
  *   </SettingsItem>
- *   <SettingsItem label="Reset:">
- *     <button>Reset</button>
+ *   <SettingsItem label="Reset:" htmlFor="reset-button">
+ *     <button id="reset-button">Reset</button>
  *   </SettingsItem>
  *   <SettingsItem>  // no label
  *     <input type="checkbox" />
