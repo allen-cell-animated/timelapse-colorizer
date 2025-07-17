@@ -209,6 +209,12 @@ export default class CanvasOverlay implements IRenderCanvas {
     this.innerCanvasSize.x = width;
     this.innerCanvasSize.y = height;
     this.innerCanvas.setResolution(this.innerCanvasSize.x, this.innerCanvasSize.y);
+    // if (this.isExporting) {
+    //   const pixelRatio = getPixelRatio();
+    //   this.innerCanvas.setResolution(this.innerCanvasSize.x / pixelRatio, this.innerCanvasSize.y / pixelRatio);
+    // } else {
+    //   this.innerCanvas.setResolution(this.innerCanvasSize.x, this.innerCanvasSize.y);
+    // }
     this.render({ renderInnerCanvas: true });
   }
 
@@ -457,7 +463,8 @@ export default class CanvasOverlay implements IRenderCanvas {
     this.footerSize = footerRenderer.sizePx;
 
     // Update canvas resolution + size.
-    const devicePixelRatio = this.isExporting ? 1 : getPixelRatio();
+    // const devicePixelRatio = this.isExporting ? 1 : getPixelRatio();
+    const devicePixelRatio = getPixelRatio();
 
     const baseCanvasWidthPx = this.innerCanvasSize.x;
     const baseCanvasHeightPx = this.innerCanvasSize.y + this.headerSize.y + this.footerSize.y;
@@ -470,13 +477,6 @@ export default class CanvasOverlay implements IRenderCanvas {
     this.canvasContainerDiv.style.height = `${baseCanvasHeightPx}px`;
     this.canvas.style.width = `${baseCanvasWidthPx}px`;
     this.canvas.style.height = `${baseCanvasHeightPx}px`;
-
-    // TODO: The inner canvas should already handle this but there's a noticeable
-    // improvement in rendering quality/sharpness when it's set here...
-    this.innerCanvas.canvas.width = Math.round(this.innerCanvasSize.x * devicePixelRatio);
-    this.innerCanvas.canvas.height = Math.round(this.innerCanvasSize.y * devicePixelRatio);
-    this.innerCanvas.canvas.style.width = `${this.innerCanvasSize.x}px`;
-    this.innerCanvas.canvas.style.height = `${this.innerCanvasSize.y}px`;
 
     //Clear canvas
     this.ctx.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height);

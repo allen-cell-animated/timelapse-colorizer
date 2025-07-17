@@ -341,6 +341,8 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     this.checkPixelRatio();
 
     this.renderer.setSize(width, height);
+    this.canvas.width = Math.round(width * this.renderer.getPixelRatio());
+    this.canvas.height = Math.round(height * this.renderer.getPixelRatio());
     // TODO: either make this a 1x1 target and draw it with a new camera every time we pick,
     // or keep it up to date with the canvas on each redraw (and don't draw to it when we pick!)
     this.pickRenderTarget.setSize(width, height);
@@ -881,12 +883,8 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     this.setUniform("highlightedId", this.params?.track.getIdAtTime(this.currentFrame));
   }
 
-  public render(options?: RenderOptions): void {
+  public render(_options?: RenderOptions): void {
     this.checkPixelRatio();
-    if (options?.targetResolution) {
-      this.setResolution(options.targetResolution.x, options.targetResolution.y);
-      this.renderer.setPixelRatio(1);
-    }
     this.syncHighlightedId();
     this.syncTrackPathLine();
 

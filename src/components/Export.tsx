@@ -17,7 +17,7 @@ import styled from "styled-components";
 import { Vector2 } from "three";
 import { clamp } from "three/src/math/MathUtils";
 
-import { toEven } from "../colorizer/canvas/utils";
+import { getPixelRatio, toEven } from "../colorizer/canvas/utils";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "../colorizer/utils/analytics";
 import { useViewerStateStore } from "../state";
 import { StyledRadioGroup } from "../styles/components";
@@ -192,13 +192,19 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
   const [dimensionsInput, setDimensionsInput] = useState([1, 1]);
   const [aspectRatio, setAspectRatio] = useState<number | null>(dimensionsInput[0] / dimensionsInput[1]);
 
+  // Note that viewport dimensions are calculated as the resolution of the
+  // canvas, which is upscaled by the device's pixel ratio. For example, a
+  // canvas with a 100x100 size in pixels on a device with a pixel ratio of 2
+  // will be rendering at a resolution of 200x200. Export uses the inner
+  // resolution
+  const pixelRatio = getPixelRatio();
   const innerFrameDimensions = useMemo(() => {
     if (recordingMode === RecordingMode.VIDEO_MP4) {
       // Video codecs will sometimes require even dimensions. Round to even numbers when exporting.
-      return dimensionsInput.map(toEven);
+      return dimensionsInput.map((value) => toEven(value));
     }
-    return dimensionsInput.map(Math.round);
-  }, [dimensionsInput, recordingMode]);
+    return dimensionsInput.map((value) => Math.round(value));
+  }, [dimensionsInput, recordingMode, pixelRatio]);
 
   const exportDimensions = useMemo(
     () =>
