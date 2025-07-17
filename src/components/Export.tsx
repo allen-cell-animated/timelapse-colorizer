@@ -39,12 +39,14 @@ import SpinBox from "./SpinBox";
 const enum ExportHtmlIds {
   FRAME_RANGE_RADIO = "export-modal-frame-range-radio",
   FRAME_CUSTOM_RANGE_INPUT = "export-modal-frame-custom-range-input",
+  FRAME_DIMENSION_WIDTH_INPUT = "export-modal-dimensions-width-input",
   FRAME_CUSTOM_RANGE_FRAME_INCREMENT_INPUT = "export-modal-frame-custom-range-frame-increment-input",
+  SHOW_FEATURE_LEGEND_CHECKBOX = "export-modal-show-feature-legend-checkbox",
+  SHOW_DATASET_NAME_CHECKBOX = "export-modal-show-dataset-name-checkbox",
+  FINAL_DIMENSIONS_TEXT = "export-modal-final-dimensions-text",
   FPS_INPUT = "export-modal-fps-input",
   VIDEO_QUALITY_RADIO = "export-modal-video-quality-radio",
   IMAGE_FILENAME_INPUT = "export-modal-image-filename-input",
-  SHOW_FEATURE_LEGEND_CHECKBOX = "export-modal-show-feature-legend-checkbox",
-  SHOW_DATASET_NAME_CHECKBOX = "export-modal-show-dataset-name-checkbox",
 }
 
 type ExportButtonProps = {
@@ -62,7 +64,6 @@ type ExportButtonProps = {
 };
 
 const FRAME_RANGE_RADIO_LABEL_ID = "export-modal-frame-range-label";
-const FRAME_DIMENSION_WIDTH_INPUT_ID = "export-modal-dimensions-width";
 const FRAME_DIMENSION_HEIGHT_INPUT_ID = "export-modal-dimensions-height";
 
 const defaultProps: Partial<ExportButtonProps> = {
@@ -630,7 +631,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
           </FlexColumnAlignCenter>
 
           {/* Range options (All/Current Frame/Custom) */}
-          <Card size="small" title={<p id={FRAME_RANGE_RADIO_LABEL_ID}>Frame range</p>}>
+          <Card size="small" title={<legend id={FRAME_RANGE_RADIO_LABEL_ID}>Frame range</legend>}>
             <MaxWidthRadioGroup
               value={rangeMode}
               onChange={(e: RadioChangeEvent) => {
@@ -707,7 +708,11 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
           </Card>
           <Card size="small" title={"Dimensions"}>
             <SettingsContainer indentPx={0} gapPx={6}>
-              <SettingsItem label="Frame dimensions" labelStyle={{ marginTop: "2px", height: "min-content" }}>
+              <SettingsItem
+                label="Frame dimensions"
+                labelStyle={{ marginTop: "2px", height: "min-content" }}
+                htmlFor={ExportHtmlIds.FRAME_DIMENSION_WIDTH_INPUT}
+              >
                 <FlexColumn style={{ alignItems: "flex-start", paddingBottom: "8px" }} $gap={6}>
                   <FlexRow $gap={6}>
                     <Button
@@ -727,7 +732,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
                   <FlexColumn>
                     <FlexRowAlignCenter $gap={4}>
                       <StyledInputNumber
-                        id={FRAME_DIMENSION_WIDTH_INPUT_ID}
+                        id={ExportHtmlIds.FRAME_DIMENSION_WIDTH_INPUT}
                         addonBefore={
                           <HintText>
                             W<VisuallyHidden>idth</VisuallyHidden>
@@ -762,30 +767,35 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
                           onClick={() => setAspectRatio(aspectRatio ? null : dimensionsInput[0] / dimensionsInput[1])}
                         >
                           {aspectRatio ? <LockOutlined /> : <UnlockOutlined />}
+                          <VisuallyHidden>{aspectRatio ? "Unlock aspect ratio" : "Lock aspect ratio"}</VisuallyHidden>
                         </IconButton>
                       </Tooltip>
                     </FlexRowAlignCenter>
                   </FlexColumn>
                 </FlexColumn>
               </SettingsItem>
-              <SettingsItem label="Dataset name">
+              <SettingsItem label="Dataset name" htmlFor={ExportHtmlIds.SHOW_DATASET_NAME_CHECKBOX}>
                 <div style={{ width: "fit-content" }}>
                   <Checkbox
+                    id={ExportHtmlIds.SHOW_DATASET_NAME_CHECKBOX}
                     checked={showHeaderDuringExport}
                     onChange={(e) => setShowHeaderDuringExport(e.target.checked)}
                   />
                 </div>
               </SettingsItem>
-              <SettingsItem label={"Feature legend"}>
+              <SettingsItem label={"Feature legend"} htmlFor={ExportHtmlIds.SHOW_FEATURE_LEGEND_CHECKBOX}>
                 <div style={{ width: "fit-content" }}>
                   <Checkbox
+                    id={ExportHtmlIds.SHOW_FEATURE_LEGEND_CHECKBOX}
                     checked={showLegendDuringExport}
                     onChange={(e) => setShowLegendDuringExport(e.target.checked)}
                   />
                 </div>
               </SettingsItem>
-              <SettingsItem label="Final dimensions">
-                <HintText>{`${exportDimensions[0]} x ${exportDimensions[1]}`}</HintText>
+              <SettingsItem label="Final dimensions" isNonFormComponent={true}>
+                <HintText
+                  id={ExportHtmlIds.FINAL_DIMENSIONS_TEXT}
+                >{`${exportDimensions[0]} x ${exportDimensions[1]}`}</HintText>
               </SettingsItem>
             </SettingsContainer>
           </Card>
