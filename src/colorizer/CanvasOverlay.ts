@@ -537,16 +537,6 @@ export default class CanvasOverlay implements IRenderCanvas {
     });
   }
 
-  getHeaderSize(): Vector2 {
-    const headerRenderer = this.getHeaderRenderer(true);
-    return headerRenderer.sizePx;
-  }
-
-  getFooterSize(): Vector2 {
-    const footerRenderer = this.getFooterRenderer(true);
-    return footerRenderer.sizePx;
-  }
-
   /**
    * Gets the screen-space pixel dimensions of the canvas (including the header and footer) when the
    * canvas is being exported.

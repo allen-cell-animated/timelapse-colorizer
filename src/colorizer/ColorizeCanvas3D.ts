@@ -17,6 +17,7 @@ import { Box3, Color, Matrix4, Quaternion, Vector2, Vector3 } from "three";
 import { clamp, inverseLerp, lerp } from "three/src/math/MathUtils";
 
 import { MAX_FEATURE_CATEGORIES } from "../constants";
+import { getPixelRatio } from "./canvas";
 import {
   CanvasScaleInfo,
   CanvasType,
@@ -178,6 +179,9 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
   setResolution(width: number, height: number): void {
     this.view3d.resize(null, width, height);
     this.canvasResolution.set(width, height);
+    const pixelRatio = getPixelRatio();
+    this.canvas.width = Math.round(width * pixelRatio);
+    this.canvas.height = Math.round(height * pixelRatio);
   }
 
   private configureColorizeFeature(volume: Volume, channelIndex: number): void {
@@ -327,8 +331,6 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     const needsRender = didColorRampUpdate || didDatasetUpdate || didLineUpdate;
 
     if (needsRender) {
-      // TODO: Change the render function to take an enum instead of a boolean
-      // for readability
       this.render({ synchronous: false });
     }
 
