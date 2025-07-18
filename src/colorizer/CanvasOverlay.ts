@@ -33,7 +33,23 @@ import ColorizeCanvas2D from "./ColorizeCanvas2D";
 import { ColorizeCanvas3D } from "./ColorizeCanvas3D";
 import Dataset from "./Dataset";
 import { IInnerRenderCanvas } from "./IInnerRenderCanvas";
-import { IRenderCanvas, RenderCanvasStateParams } from "./IRenderCanvas";
+import { IRenderCanvas, RenderCanvasStateParams, RenderOptions } from "./IRenderCanvas";
+
+type OverlayRenderOptions = RenderOptions & {
+  renderInnerCanvas?: boolean;
+};
+
+export type ExportOptions = {
+  /** If true, enforces even pixel dimensions for the exported canvas. */
+  enforceEven: boolean;
+  /** If true, shows the dataset name as a header in the exported canvas. */
+  showHeader: boolean;
+  /**
+   * If true, shows the legend in the footer (and the scale bar and timestamp
+   * if enabled) in the exported canvas.
+   */
+  showFooter: boolean;
+};
 
 /**
  * Wraps an IInnerRenderCanvas class, overlaying and compositing additional dynamic
@@ -85,8 +101,7 @@ export default class CanvasOverlay implements IRenderCanvas {
    * additional optional elements like the header and footer.
    */
   private isExporting: boolean;
-  public isHeaderVisibleOnExport: boolean;
-  public isFooterVisibleOnExport: boolean;
+  private exportOptions: ExportOptions;
   public isScaleBarVisible: boolean;
   public isTimestampVisible: boolean;
   public isAnnotationVisible: boolean;
@@ -153,8 +168,7 @@ export default class CanvasOverlay implements IRenderCanvas {
     this.footerSize = new Vector2(0, 0);
 
     this.isExporting = false;
-    this.isHeaderVisibleOnExport = true;
-    this.isFooterVisibleOnExport = true;
+    this.exportOptions = { enforceEven: false, showFooter: true, showHeader: true };
     this.isScaleBarVisible = true;
     this.isTimestampVisible = true;
     this.isAnnotationVisible = true;
@@ -202,10 +216,10 @@ export default class CanvasOverlay implements IRenderCanvas {
   public setResolution(width: number, height: number): void {
     // Enforce even resolution because some video codecs only support even
     // dimensions.
-    this.innerCanvasSize.x = toEven(width);
-    this.innerCanvasSize.y = toEven(height);
+    this.innerCanvasSize.x = width;
+    this.innerCanvasSize.y = height;
     this.innerCanvas.setResolution(this.innerCanvasSize.x, this.innerCanvasSize.y);
-    this.render();
+    this.render({ renderInnerCanvas: true });
   }
 
   public getIdAtPixel(x: number, y: number): PixelIdInfo | null {
@@ -242,7 +256,11 @@ export default class CanvasOverlay implements IRenderCanvas {
   // TODO: Move `isExporting` flag into state
   public setIsExporting(isExporting: boolean): void {
     this.isExporting = isExporting;
-    this.render(false);
+    this.render({ renderInnerCanvas: false });
+  }
+
+  public setExportOptions(options: Partial<ExportOptions>): void {
+    this.exportOptions = { ...this.exportOptions, ...options };
   }
 
   /**
@@ -251,7 +269,7 @@ export default class CanvasOverlay implements IRenderCanvas {
    */
   private handleRenderableAction(shouldRender: boolean): boolean {
     if (shouldRender) {
-      this.render(false);
+      this.render({ renderInnerCanvas: false });
     }
     return shouldRender;
   }
@@ -330,7 +348,7 @@ export default class CanvasOverlay implements IRenderCanvas {
 
     // Inner canvas will re-render on setParams, so it doesn't need
     // to be re-rendered here.
-    this.render(false);
+    this.render({ renderInnerCanvas: false });
   }
 
   public async setCanvas(canvas: IInnerRenderCanvas): Promise<void> {
@@ -345,7 +363,7 @@ export default class CanvasOverlay implements IRenderCanvas {
     this.innerCanvas.setOnRenderCallback(this.onInnerCanvasRender);
     await this.innerCanvas.setParams(this.params);
     await this.innerCanvas.setFrame(this.currentFrame);
-    this.render(false);
+    this.render({ renderInnerCanvas: false });
   }
 
   public setAnnotationData(
@@ -358,14 +376,14 @@ export default class CanvasOverlay implements IRenderCanvas {
     this.timeToLabelIds = timeToLabelIds;
     this.selectedLabelIdx = selectedLabelIdx;
     this.rangeStartId = rangeStartId;
-    this.render(false);
+    this.render({ renderInnerCanvas: false });
   }
 
   // Rendering functions ////////////////////////////
 
-  private getBaseRendererParams(): BaseRenderParams {
+  private getBaseRendererParams(overrideResolution?: Vector2): BaseRenderParams {
     return {
-      canvasSize: this.innerCanvasSize,
+      canvasSize: overrideResolution ?? this.innerCanvasSize,
       collection: this.params.collection,
       dataset: this.params.dataset,
       datasetKey: this.params.datasetKey,
@@ -393,17 +411,17 @@ export default class CanvasOverlay implements IRenderCanvas {
     return getAnnotationRenderer(this.ctx, params, this.annotationStyle);
   }
 
-  private getHeaderRenderer(visible: boolean): RenderInfo {
+  private getHeaderRenderer(visible: boolean, overrideResolution?: Vector2): RenderInfo {
     const params = {
-      ...this.getBaseRendererParams(),
+      ...this.getBaseRendererParams(overrideResolution),
       visible,
     };
     return getHeaderRenderer(this.ctx, params, this.headerStyle);
   }
 
-  private getFooterRenderer(visible: boolean): RenderInfo {
+  private getFooterRenderer(visible: boolean, overrideResolution?: Vector2): RenderInfo {
     const scaleInfo = this.innerCanvas.scaleInfo;
-    const baseParams = this.getBaseRendererParams();
+    const baseParams = this.getBaseRendererParams(overrideResolution);
     const params: FooterParams = {
       ...baseParams,
       visible,
@@ -435,7 +453,7 @@ export default class CanvasOverlay implements IRenderCanvas {
     if (result !== null) {
       this.currentFrame = result.frame;
       // setFrame already re-renders the inner canvas.
-      this.render(false);
+      this.render({ renderInnerCanvas: false });
     }
     return result;
   }
@@ -445,17 +463,22 @@ export default class CanvasOverlay implements IRenderCanvas {
    * @param doesInnerCanvasNeedRender Whether the inner canvas needs to be
    * re-rendered. True by default.
    */
-  render(doesInnerCanvasNeedRender: boolean = true): void {
+  render(options?: OverlayRenderOptions): void {
     // Expand size by header + footer, if rendering:
-    const headerRenderer = this.getHeaderRenderer(this.isHeaderVisibleOnExport && this.isExporting);
-    const footerRenderer = this.getFooterRenderer(this.isFooterVisibleOnExport && this.isExporting);
+    const headerRenderer = this.getHeaderRenderer(this.exportOptions.showHeader && this.isExporting);
+    const footerRenderer = this.getFooterRenderer(this.exportOptions.showFooter && this.isExporting);
     this.headerSize = headerRenderer.sizePx;
     this.footerSize = footerRenderer.sizePx;
 
     // Update canvas resolution + size.
     const devicePixelRatio = getPixelRatio();
-    const baseCanvasWidthPx = toEven(this.innerCanvasSize.x);
-    const baseCanvasHeightPx = toEven(this.innerCanvasSize.y + this.headerSize.y + this.footerSize.y);
+
+    let baseCanvasWidthPx = this.innerCanvasSize.x;
+    let baseCanvasHeightPx = this.innerCanvasSize.y + this.headerSize.y + this.footerSize.y;
+    if (this.isExporting && this.exportOptions.enforceEven) {
+      baseCanvasWidthPx = toEven(baseCanvasWidthPx * devicePixelRatio) / devicePixelRatio;
+      baseCanvasHeightPx = toEven(baseCanvasHeightPx * devicePixelRatio) / devicePixelRatio;
+    }
 
     // We use devicePixelRatio to scale the canvas with browser zoom / high-DPI
     // displays so text + graphics are sharp.
@@ -466,21 +489,14 @@ export default class CanvasOverlay implements IRenderCanvas {
     this.canvas.style.width = `${baseCanvasWidthPx}px`;
     this.canvas.style.height = `${baseCanvasHeightPx}px`;
 
-    // TODO: The inner canvas should already handle this but there's a noticeable
-    // improvement in rendering quality/sharpness when it's set here...
-    this.innerCanvas.canvas.width = Math.round(this.innerCanvasSize.x * devicePixelRatio);
-    this.innerCanvas.canvas.height = Math.round(this.innerCanvasSize.y * devicePixelRatio);
-    this.innerCanvas.canvas.style.width = `${this.innerCanvasSize.x}px`;
-    this.innerCanvas.canvas.style.height = `${this.innerCanvasSize.y}px`;
-
     //Clear canvas
     this.ctx.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height);
 
     this.ctx.imageSmoothingEnabled = false;
 
-    if (doesInnerCanvasNeedRender || this.isExporting) {
+    if (options?.renderInnerCanvas || this.isExporting) {
       this.disableCanvasSyncUntilNextRender();
-      this.innerCanvas.render(this.isExporting);
+      this.innerCanvas.render({ ...options, synchronous: this.isExporting });
     }
     if (this.isExporting && this.innerCanvas.canvas.width !== 0 && this.innerCanvas.canvas.height !== 0) {
       // In export mode only, draw the inner canvas inside of the overlay
@@ -503,7 +519,7 @@ export default class CanvasOverlay implements IRenderCanvas {
   /** Called when the inner canvas renders asynchronously. */
   private onInnerCanvasRender(): void {
     if (this.isAnnotationVisible) {
-      this.render(false);
+      this.render({ renderInnerCanvas: false });
     }
   }
 
@@ -525,17 +541,18 @@ export default class CanvasOverlay implements IRenderCanvas {
    * Gets the screen-space pixel dimensions of the canvas (including the header and footer) when the
    * canvas is being exported.
    */
-  getExportDimensions(): [number, number] {
-    const headerRenderer = this.getHeaderRenderer(this.isHeaderVisibleOnExport);
-    const footerRenderer = this.getFooterRenderer(this.isFooterVisibleOnExport);
+  getExportDimensions(baseResolution: Vector2, exportOptions: ExportOptions): Vector2 {
+    const headerRenderer = this.getHeaderRenderer(exportOptions.showHeader, baseResolution);
+    const footerRenderer = this.getFooterRenderer(exportOptions.showFooter, baseResolution);
     this.headerSize = headerRenderer.sizePx;
     this.footerSize = footerRenderer.sizePx;
 
-    const devicePixelRatio = getPixelRatio();
-    const canvasWidth = toEven(Math.round(this.innerCanvasSize.x * devicePixelRatio));
-    const canvasHeight = toEven(
-      Math.round((this.innerCanvasSize.y + this.headerSize.y + this.footerSize.y) * devicePixelRatio)
-    );
-    return [canvasWidth, canvasHeight];
+    const pixelRatio = getPixelRatio();
+    const canvasWidth = Math.round(baseResolution.x * pixelRatio);
+    const canvasHeight = Math.round((baseResolution.y + this.headerSize.y + this.footerSize.y) * pixelRatio);
+    if (exportOptions.enforceEven) {
+      return new Vector2(toEven(canvasWidth), toEven(canvasHeight));
+    }
+    return new Vector2(canvasWidth, canvasHeight);
   }
 }
