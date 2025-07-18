@@ -1,9 +1,16 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { ReactElement } from "react";
 import React from "react";
+import { Vector2 } from "three";
 import { describe, expect, it, vi } from "vitest";
 
+import CanvasOverlay from "../src/colorizer/CanvasOverlay";
 import Export from "../src/components/Export";
+
+const mockCanvas = {
+  resolution: new Vector2(100, 100),
+  getExportDimensions: () => new Vector2(100, 100),
+} as unknown as CanvasOverlay;
 
 describe("ExportButton", () => {
   describe("Image Prefixing", () => {
@@ -15,8 +22,7 @@ describe("ExportButton", () => {
           setFrame={async function (_frame: number): Promise<void> {
             throw new Error("Function not implemented.");
           }}
-          getCanvas={vi.fn()}
-          getCanvasExportDimensions={vi.fn()}
+          canvas={mockCanvas}
           currentFrame={0}
           onClick={vi.fn()}
           setIsRecording={vi.fn()}

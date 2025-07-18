@@ -51,7 +51,7 @@ const enum ExportHtmlIds {
 type ExportButtonProps = {
   totalFrames: number;
   setFrame: (frame: number, options?: RenderOptions) => Promise<void>;
-  getCanvas: () => CanvasOverlay;
+  canvas: CanvasOverlay;
   /** Callback, called whenever the button is clicked. Can be used to stop playback. */
   onClick: () => void;
   currentFrame: number;
@@ -222,8 +222,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
   }, [dimensionsInput, recordingMode]);
 
   const exportDimensions = useMemo(() => {
-    return props
-      .getCanvas()
+    return props.canvas
       .getExportDimensions(
         new Vector2(innerFrameDimensions[0] / pixelRatio, innerFrameDimensions[1] / pixelRatio),
         exportOptions
@@ -246,7 +245,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
   useEffect(() => {
     const onCanvasResize = () => {
       if (useCurrentViewportSize) {
-        const canvas = props.getCanvas();
+        const canvas = props.canvas;
         const resolution = getCanvasInnerDimensions(canvas).toArray();
         setDimensionsInput(resolution);
         if (aspectRatio) {
@@ -257,7 +256,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
     onCanvasResize();
     window.addEventListener("resize", onCanvasResize);
     return () => window.removeEventListener("resize", onCanvasResize);
-  }, [useCurrentViewportSize, aspectRatio, props.getCanvas().domElement]);
+  }, [useCurrentViewportSize, aspectRatio, props.canvas.domElement]);
 
   // Override setRecordingMode when switching to video; users should not choose current frame only
   // (since exporting the current frame only as a video doesn't really make sense.)
@@ -393,7 +392,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
 
     // Copy configuration to options object
     // Note that different codecs will be selected by the browser based on the canvas dimensions.
-    const canvas = props.getCanvas();
+    const canvas = props.canvas;
     const canvasScreenSizePx = new Vector2(...innerFrameDimensions).multiplyScalar(1 / pixelRatio);
     canvas.setIsExporting(true);
     canvas.setResolution(...canvasScreenSizePx.toArray());
@@ -437,11 +436,11 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
     // Initialize different recorders based on the provided options.
     switch (recordingMode) {
       case RecordingMode.VIDEO_MP4:
-        recorder.current = new Mp4VideoRecorder(props.setFrame, () => props.getCanvas().canvas, recordingOptions);
+        recorder.current = new Mp4VideoRecorder(props.setFrame, () => props.canvas.canvas, recordingOptions);
         break;
       case RecordingMode.IMAGE_SEQUENCE:
       default:
-        recorder.current = new ImageSequenceRecorder(props.setFrame, () => props.getCanvas().canvas, recordingOptions);
+        recorder.current = new ImageSequenceRecorder(props.setFrame, () => props.canvas.canvas, recordingOptions);
         break;
     }
     recorder.current.start();
@@ -456,7 +455,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
   const isImageDimensions =
     imageDimensions && imageDimensions[0] === dimensionsInput[0] && imageDimensions[1] === dimensionsInput[1];
 
-  const viewportDimensions = getCanvasInnerDimensions(props.getCanvas()).toArray();
+  const viewportDimensions = getCanvasInnerDimensions(props.canvas).toArray();
   const isViewportDimensions =
     viewportDimensions[0] === dimensionsInput[0] && viewportDimensions[1] === dimensionsInput[1];
 

@@ -564,6 +564,11 @@ function Viewer(): ReactElement {
     [dataset, annotationState.handleAnnotationClick]
   );
 
+  const onClickExport = useCallback((): void => {
+    // Stop playback when exporting.
+    timeControls.pause();
+  }, [timeControls]);
+
   // RENDERING /////////////////////////////////////////////////////////////
 
   const openCopyNotification = (): void => {
@@ -707,9 +712,8 @@ function Viewer(): ReactElement {
             <Export
               totalFrames={dataset?.numberOfFrames || 0}
               setFrame={setFrame}
-              getCanvas={() => canv}
-              // Stop playback when exporting
-              onClick={() => timeControls.pause()}
+              canvas={canv}
+              onClick={onClickExport}
               currentFrame={currentFrame}
               defaultImagePrefix={datasetKey + "-" + featureKey}
               disabled={dataset === null}
