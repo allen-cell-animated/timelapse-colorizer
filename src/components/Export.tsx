@@ -251,21 +251,26 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
 
   const [percentComplete, setPercentComplete] = useState(0);
 
-  useEffect(() => {
-    const syncViewportSize = (): void => {
-      if (useCurrentViewportSize) {
-        const canvas = props.canvas;
-        const resolution = getCanvasInnerResolution(canvas).toArray();
-        setDimensionsInput(resolution);
-        if (aspectRatio) {
-          setAspectRatio(resolution[0] / resolution[1]);
-        }
+  const syncViewportSize = useCallback((): void => {
+    if (useCurrentViewportSize) {
+      const canvas = props.canvas;
+      const resolution = getCanvasInnerResolution(canvas).toArray();
+      setDimensionsInput(resolution);
+      if (aspectRatio) {
+        setAspectRatio(resolution[0] / resolution[1]);
       }
-    };
-    syncViewportSize();
+    }
+  }, [useCurrentViewportSize, aspectRatio, props.canvas]);
+
+  // Sync on window resize and on modal open/close
+  useEffect(() => {
     window.addEventListener("resize", syncViewportSize);
     return () => window.removeEventListener("resize", syncViewportSize);
-  }, [useCurrentViewportSize, aspectRatio, props.canvas.domElement]);
+  }, [syncViewportSize]);
+
+  useEffect(() => {
+    syncViewportSize();
+  }, [isModalOpen, syncViewportSize]);
 
   // Override setRecordingMode when switching to video; users should not choose current frame only
   // (since exporting the current frame only as a video doesn't really make sense.)
