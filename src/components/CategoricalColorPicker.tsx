@@ -76,8 +76,7 @@ export default function CategoricalColorPicker(inputProps: CategoricalColorPicke
             size={"small"}
             disabledAlpha={true}
             // Necessary to prevent the color picker from going off the screen
-            // TODO: Fix this? This prevents tab navigation from working.
-            getPopupContainer={undefined}
+            placement="right"
           />
           <Tooltip title={label} placement="top">
             <label htmlFor={colorPickerId}>
