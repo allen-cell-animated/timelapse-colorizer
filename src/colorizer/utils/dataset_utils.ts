@@ -104,6 +104,15 @@ type ManifestFileV1_1_0 = Spread<
       segmentationChannel: number;
       /** Total number of frames in the time-series volume. */
       totalFrames: number;
+      backdrops?: {
+        source: string;
+        name: string;
+        description?: string;
+        /** Index of the channel in the source volume. */
+        channelIndex?: number;
+        min?: number;
+        max?: number;
+      }[];
     };
   }
 >;
