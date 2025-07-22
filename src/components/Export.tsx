@@ -199,15 +199,8 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
   const [useCurrentViewportSize, setUseCurrentViewportSize] = useState(true);
   const [dimensionsInput, setDimensionsInput] = useState([1, 1]);
   const [aspectRatio, setAspectRatio] = useState<number | null>(dimensionsInput[0] / dimensionsInput[1]);
-
-  // Note that viewport dimensions are calculated as the resolution of the
-  // canvas, which is upscaled by the device's pixel ratio. For example, an HTML
-  // canvas with a size of 100x100 on a device and a pixel ratio of 1.5 (e.g.
-  // 150% zoom) will be rendering at a resolution of 150x150. Users can control
-  // the final resolution of the canvas, so we will divide by the pixel ratio so
-  // the canvas has the correct dimensions.
-
   const pixelRatio = getPixelRatio();
+
   const exportOptions = useMemo<ExportOptions>(
     () => ({
       // Some video codecs require even dimensions.
@@ -218,7 +211,17 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
     [recordingMode, showHeaderDuringExport, showLegendDuringExport]
   );
 
-  /** Target resolution of the viewport area in the final rendered canvas. */
+  /**
+   * Target resolution of the viewport area in the final rendered canvas.
+   *
+   * Note that the canvas' inner resolution is the canvas' size multiplied by
+   * the device's pixel ratio. For example, an HTML canvas with a size of
+   * 100x100 on a device and a pixel ratio of 1.5 (e.g. 150% zoom) will be
+   * rendering at a resolution of 150x150.
+   *
+   * To get the canvas size from the resolution, this value needs to be divided
+   * by the device pixel ratio.
+   */
   const targetCanvasResolution = useMemo(() => {
     if (exportOptions.enforceEven) {
       return dimensionsInput.map((value) => toEven(value));
@@ -226,6 +229,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
     return dimensionsInput.map((value) => Math.round(value));
   }, [dimensionsInput, exportOptions]);
 
+  /** Final size of the exported image/video frame, based on current options. */
   const exportDimensions = useMemo(() => {
     return props.canvas
       .getExportDimensions(
@@ -248,7 +252,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
   const [percentComplete, setPercentComplete] = useState(0);
 
   useEffect(() => {
-    const updateViewportSize = (): void => {
+    const syncViewportSize = (): void => {
       if (useCurrentViewportSize) {
         const canvas = props.canvas;
         const resolution = getCanvasInnerResolution(canvas).toArray();
@@ -258,9 +262,9 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
         }
       }
     };
-    updateViewportSize();
-    window.addEventListener("resize", updateViewportSize);
-    return () => window.removeEventListener("resize", updateViewportSize);
+    syncViewportSize();
+    window.addEventListener("resize", syncViewportSize);
+    return () => window.removeEventListener("resize", syncViewportSize);
   }, [useCurrentViewportSize, aspectRatio, props.canvas.domElement]);
 
   // Override setRecordingMode when switching to video; users should not choose current frame only
@@ -398,12 +402,11 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
     const canvas = props.canvas;
     canvas.setIsExporting(true);
     canvas.setExportOptions(exportOptions);
-    // The canvas' inner resolution is `= pixelRatio * baseResolution`, so we
-    // divide here to make sure the final resolution matches the target
-    // resolution.
-    const canvasScreenSizePx = new Vector2(...targetCanvasResolution).multiplyScalar(1 / pixelRatio);
-    canvas.setResolution(...canvasScreenSizePx.toArray());
-    const exportDims = canvas.getExportDimensions(canvasScreenSizePx, exportOptions).toArray();
+    // Dividing by pixel ratio means that the canvas' final inner resolution
+    // will match `targetCanvasResolution`.
+    const canvasHtmlSizePx = new Vector2(...targetCanvasResolution).multiplyScalar(1 / pixelRatio);
+    canvas.setResolution(...canvasHtmlSizePx.toArray());
+    const exportDims = canvas.getExportDimensions(canvasHtmlSizePx, exportOptions).toArray();
 
     const recordingOptions: Partial<RecordingOptions> = {
       min: min,
@@ -452,12 +455,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
     recorder.current.start();
   };
 
-  const imageDimensions = useMemo(() => {
-    if (!dataset || dataset.has3dFrames()) {
-      return null;
-    }
-    return dataset.frameResolution.toArray();
-  }, [dataset, dataset?.frameResolution.x, dataset?.frameResolution.y]);
+  const imageDimensions = dataset && !dataset.has3dFrames() ? dataset.frameResolution.toArray() : null;
   const isImageDimensions =
     imageDimensions && imageDimensions[0] === dimensionsInput[0] && imageDimensions[1] === dimensionsInput[1];
 
@@ -834,7 +832,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
               <SettingsItem label="Final dimensions" isNonFormComponent={true}>
                 <HintText
                   id={ExportHtmlIds.FINAL_DIMENSIONS_TEXT}
-                >{`${exportDimensions[0]} x ${exportDimensions[1]}`}</HintText>
+                >{`${exportDimensions[0]} × ${exportDimensions[1]}`}</HintText>
               </SettingsItem>
             </SettingsContainer>
           </Card>
