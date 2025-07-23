@@ -666,14 +666,14 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
           </FlexColumnAlignCenter>
 
           {/* Range options (All/Current Frame/Custom) */}
-          <Card size="small" title={<legend id={ExportHtmlIds.FRAME_RANGE_RADIO_LABEL_ID}>Frame range</legend>}>
+          <Card size="small" title="Frame range">
             <MaxWidthRadioGroup
+              // TODO: Use fieldset + label to align with accessibility standards
               value={rangeMode}
               onChange={(e: RadioChangeEvent) => {
                 setRangeMode(e.target.value);
               }}
               disabled={isRecording}
-              aria-labelledby={ExportHtmlIds.FRAME_RANGE_RADIO_LABEL_ID}
               id={ExportHtmlIds.FRAME_RANGE_RADIO}
             >
               <Space direction="vertical">
@@ -775,11 +775,8 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
                     <FlexRowAlignCenter $gap={4}>
                       <StyledInputNumber
                         id={ExportHtmlIds.FRAME_DIMENSION_WIDTH_INPUT}
-                        addonBefore={
-                          <HintText>
-                            W<VisuallyHidden>idth</VisuallyHidden>
-                          </HintText>
-                        }
+                        aria-label="Width"
+                        addonBefore={<HintText>W</HintText>}
                         value={dimensionsInput[0]}
                         onChange={handleSetWidth}
                         controls={false}
@@ -788,11 +785,8 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
                       <span style={{ padding: "0 4px" }}>×</span>
                       <StyledInputNumber
                         id={ExportHtmlIds.FRAME_DIMENSION_HEIGHT_INPUT_ID}
-                        addonBefore={
-                          <HintText>
-                            H<VisuallyHidden>eight</VisuallyHidden>
-                          </HintText>
-                        }
+                        aria-label="Height"
+                        addonBefore={<HintText>H</HintText>}
                         value={dimensionsInput[1]}
                         onChange={handleSetHeight}
                         controls={false}
