@@ -26,6 +26,7 @@ import {
   PixelIdInfo,
   TrackPathColorMode,
 } from "./types";
+import { getBackdropChannelIndices, getVolumeSources } from "./utils/channel_utils";
 import {
   computeTrackLinePointsAndIds,
   computeVertexColorsFromIds,
@@ -67,6 +68,8 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
 
   private pendingFrame: number;
   private currentFrame: number;
+
+  private backdropIndexToChannelIndex: number[] | null = null;
 
   private linePoints: Float32Array;
   private lineIds: number[];
@@ -200,6 +203,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
           outlierData: packDataTexture(Array.from(dataset.outliers ?? []), FeatureDataType.U8),
           featureMin: range[0],
           featureMax: range[1],
+          outlineAlpha: 1,
           outlineColor: this.params.outlineColor.clone().convertLinearToSRGB(),
           outlierColor: this.params.outlierDrawSettings.color.clone().convertLinearToSRGB(),
           outOfRangeColor: this.params.outOfRangeDrawSettings.color.clone().convertLinearToSRGB(),
@@ -281,7 +285,8 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
           this.volume.cleanup();
           this.volume = null;
         }
-        this.initializingVolumePromise = this.loadNewVolume(params.dataset.frames3d.source);
+        const sources = getVolumeSources(params.dataset.frames3d);
+        this.initializingVolumePromise = this.loadNewVolume(sources);
         this.initializingVolumePromise.then(() => {
           this.setFrame(params.pendingFrame);
         });
@@ -336,14 +341,14 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     return Promise.resolve();
   }
 
-  private async loadNewVolume(path: string | string[]): Promise<Volume> {
+  private async loadNewVolume(sources: string[]): Promise<Volume> {
     if (!this.params) {
       throw new Error("Cannot load volume without parameters.");
     }
     await loaderContext.onOpen();
 
-    console.log("Loading volume from path:", path);
-    this.loader = await loaderContext.createLoader(path);
+    console.log("Loading volume from path:", sources);
+    this.loader = await loaderContext.createLoader(sources);
     const loadSpec = new LoadSpec();
     loadSpec.time = this.params.pendingFrame;
     const volume = await this.loader.createVolume(loadSpec, (v: Volume, channelIndex: number) => {
@@ -359,6 +364,12 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     });
     this.view3d.addVolume(volume);
     this.volume = volume;
+
+    this.backdropIndexToChannelIndex = getBackdropChannelIndices(
+      sources,
+      volume.imageInfo.numChannelsPerSource,
+      this.params.dataset?.frames3d?.backdrops
+    );
 
     const segChannel = this.params.dataset?.frames3d?.segmentationChannel ?? 0;
     this.view3d.setVolumeChannelEnabled(volume, segChannel, true);

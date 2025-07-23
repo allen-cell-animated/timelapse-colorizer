@@ -49,12 +49,22 @@ type BackdropData = {
   frames: string[];
 };
 
+type Backdrop3dData = {
+  source: string;
+  name: string;
+  description?: string;
+  channelIndex: number;
+  min?: number;
+  max?: number;
+};
+
 export type Frames3dData = {
   /** Source for 3D data, resolved to http/https URLs. Expected to be a path to an OME-Zarr array.*/
   source: string;
   /** Index of the segmentation channel in the source data. */
   segmentationChannel: number;
   totalFrames: number;
+  backdrops?: Backdrop3dData[];
 };
 
 const defaultMetadata: ManifestFileMetadata = {
