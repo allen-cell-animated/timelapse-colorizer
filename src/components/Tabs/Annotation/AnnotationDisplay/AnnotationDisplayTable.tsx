@@ -48,6 +48,18 @@ const StyledAntTable = styled(Table)`
       align-items: center;
     }
   }
+
+  .ant-table-body {
+    /** Fix bug where scrollbars would appear in empty table */
+    overflow: unset !important;
+  }
+
+  &&& .ant-table-tbody-virtual-scrollbar-horizontal {
+    /* Fix bug where a horizontal scrollbar would appear that scrolls by 1 pixel
+     * only
+    */
+    display: none;
+  }
 `;
 
 type AnnotationTableProps = {
@@ -101,7 +113,7 @@ const AnnotationDisplayTable = memo(function AnnotationDisplayTable(inputProps: 
     {
       title: "",
       key: "action",
-      width: "5%",
+      width: props.idToValue ? "5%" : "3%",
       render: (_, record) => (
         <div style={{ display: "flex", justifyContent: "right" }}>
           <IconButton
@@ -180,6 +192,7 @@ const AnnotationDisplayTable = memo(function AnnotationDisplayTable(inputProps: 
           </FlexColumnAlignCenter>
         ),
       }}
+      style={{ overflow: "unset" }}
     ></StyledAntTable>
   );
 });

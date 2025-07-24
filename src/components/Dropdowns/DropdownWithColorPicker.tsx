@@ -1,4 +1,3 @@
-import { Color as AntdColor } from "@rc-component/color-picker";
 import { ColorPicker } from "antd";
 import { PresetsItem } from "antd/es/color-picker/interface";
 import React, { ReactElement, useRef } from "react";
@@ -49,7 +48,6 @@ export default function DropdownWithColorPicker(propsInput: DropdownWithColorPic
       .toString(16)
       .padStart(2, "0");
   }
-  const propColor = new AntdColor(colorHexString);
 
   return (
     <HorizontalDiv ref={colorPickerRef}>
@@ -71,8 +69,8 @@ export default function DropdownWithColorPicker(propsInput: DropdownWithColorPic
         }}
         size="small"
         disabledAlpha={!showAlpha}
-        defaultValue={propColor}
-        color={propColor}
+        defaultValue={colorHexString}
+        value={colorHexString}
         presets={props.presets}
         // onChange returns a different color type, so must convert from hex
         onChange={(color, hex) =>
