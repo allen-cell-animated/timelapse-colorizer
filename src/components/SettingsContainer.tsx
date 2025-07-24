@@ -13,6 +13,7 @@ type SettingsItemProps = {
   htmlFor?: string;
   labelStyle?: React.CSSProperties;
   style?: React.CSSProperties;
+  isNonFormComponent?: boolean;
 };
 
 const defaultSettingsItemProps = {
@@ -33,7 +34,7 @@ export function SettingsItem(inputProps: PropsWithChildren<Partial<SettingsItemP
   }
 
   useEffect(() => {
-    if (props.label && !props.htmlFor) {
+    if (props.label && !props.htmlFor && !props.isNonFormComponent) {
       console.warn(
         "SettingsItem: Please set the 'htmlFor' attribute to support screen readers in setting '" + props.label + "'."
       );
@@ -41,11 +42,17 @@ export function SettingsItem(inputProps: PropsWithChildren<Partial<SettingsItemP
   }, [props.label, props.htmlFor]);
 
   let labelElement = <div></div>;
-  if (props.label) {
+  if (props.label && !props.isNonFormComponent) {
     labelElement = (
       <label style={props.labelStyle} id={props.labelId} htmlFor={props.htmlFor}>
         {props.label}
       </label>
+    );
+  } else if (props.label && props.isNonFormComponent) {
+    labelElement = (
+      <div style={props.labelStyle} id={props.labelId}>
+        {props.label}
+      </div>
     );
   }
 

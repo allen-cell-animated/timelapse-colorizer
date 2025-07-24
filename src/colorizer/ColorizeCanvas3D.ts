@@ -17,6 +17,7 @@ import { Box3, Color, Matrix4, Quaternion, Vector2, Vector3 } from "three";
 import { clamp, inverseLerp, lerp } from "three/src/math/MathUtils";
 
 import { MAX_FEATURE_CATEGORIES } from "../constants";
+import { getPixelRatio } from "./canvas";
 import {
   CanvasScaleInfo,
   CanvasType,
@@ -37,7 +38,7 @@ import { packDataTexture } from "./utils/texture_utils";
 
 import { ColorRampType } from "./ColorRamp";
 import { IInnerRenderCanvas } from "./IInnerRenderCanvas";
-import { RenderCanvasStateParams } from "./IRenderCanvas";
+import { RenderCanvasStateParams, RenderOptions } from "./IRenderCanvas";
 
 const CACHE_MAX_SIZE = 1_000_000_000;
 const CONCURRENCY_LIMIT = 8;
@@ -178,6 +179,9 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
   setResolution(width: number, height: number): void {
     this.view3d.resize(null, width, height);
     this.canvasResolution.set(width, height);
+    const pixelRatio = getPixelRatio();
+    this.canvas.width = Math.round(width * pixelRatio);
+    this.canvas.height = Math.round(height * pixelRatio);
   }
 
   private configureColorizeFeature(volume: Volume, channelIndex: number): void {
@@ -327,9 +331,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     const needsRender = didColorRampUpdate || didDatasetUpdate || didLineUpdate;
 
     if (needsRender) {
-      // TODO: Change the render function to take an enum instead of a boolean
-      // for readability
-      this.render(false);
+      this.render({ synchronous: false });
     }
 
     // Eventually volume change is handled here?
@@ -422,7 +424,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
 
       this.currentFrame = requestedFrame;
       this.pendingFrame = -1;
-      this.render(true);
+      this.render({ synchronous: true });
       const result: FrameLoadResult = {
         frame: requestedFrame,
         frameError: false,
@@ -471,10 +473,10 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     this.view3d.setSelectedID(this.volume, this.params.dataset.frames3d?.segmentationChannel ?? 0, id);
   }
 
-  render(synchronous = false): void {
+  render(options?: RenderOptions): void {
     this.syncTrackPathLine();
     this.syncSelectedId();
-    this.view3d.redraw(synchronous);
+    this.view3d.redraw(options?.synchronous);
   }
 
   dispose(): void {
