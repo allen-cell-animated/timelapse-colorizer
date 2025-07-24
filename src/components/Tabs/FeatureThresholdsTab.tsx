@@ -20,7 +20,7 @@ import { FlexColumn } from "../../styles/utils";
 import { FeatureType } from "../../colorizer/Dataset";
 import { useViewerStateStore } from "../../state/ViewerState";
 import IconButton from "../IconButton";
-import LabeledSlider from "../LabeledSlider";
+import LabeledSlider from "../Inputs/LabeledSlider";
 
 const PanelContainer = styled(FlexColumn)`
   flex-grow: 1;

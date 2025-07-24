@@ -1,21 +1,21 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { PropsWithChildren, ReactElement } from "react";
 import styled, { css } from "styled-components";
 
+const SETTINGS_ITEM_CLASS = "settings-item";
+
 type SettingsItemProps = {
-  /** A string or ReactElement label. Strings will be displayed as `p`. Defaults to empty string ("").*/
+  /** A string or ReactElement label, placed inside of a `label` tag.*/
   label?: string | ReactElement;
-  /** HTML ID applied to the `label` element, if `label` is a string. */
-  id?: string;
-  /** A formatting function that will be applied to the label. If defined, overrides `labelFormatter`
-   * of the parent `SettingsContainer`. */
-  labelFormatter?: (label: string | ReactElement) => string | ReactElement;
+  /** HTML ID applied to the `label` element.*/
+  labelId?: string;
+  /** HTML `for` attribute applied to the `label` element. */
+  htmlFor?: string;
   labelStyle?: React.CSSProperties;
   style?: React.CSSProperties;
 };
 
 const defaultSettingsItemProps = {
-  label: "",
   labelStyle: {},
 };
 
@@ -32,15 +32,28 @@ export function SettingsItem(inputProps: PropsWithChildren<Partial<SettingsItemP
     props.children = <div>{props.children}</div>;
   }
 
-  const formattedLabel = props.labelFormatter ? props.labelFormatter(props.label) : props.label;
+  useEffect(() => {
+    if (props.label && !props.htmlFor) {
+      console.warn(
+        "SettingsItem: Please set the 'htmlFor' attribute to support screen readers in setting '" + props.label + "'."
+      );
+    }
+  }, [props.label, props.htmlFor]);
+
+  let labelElement = <div></div>;
+  if (props.label) {
+    labelElement = (
+      <label style={props.labelStyle} id={props.labelId} htmlFor={props.htmlFor}>
+        {props.label}
+      </label>
+    );
+  }
 
   return (
-    <label style={props.style}>
-      <span style={props.labelStyle} id={props.id}>
-        {formattedLabel}
-      </span>
+    <div style={props.style} className={SETTINGS_ITEM_CLASS}>
+      {labelElement}
       {props.children}
-    </label>
+    </div>
   );
 }
 
@@ -49,10 +62,10 @@ export function SettingsItem(inputProps: PropsWithChildren<Partial<SettingsItemP
  *
  * For all children matching the following pattern:
  * ```
- * <label>
- *   <span>Some Label Text</span>
+ * <div className="settings-item">
+ *   <any>Some Label Text</any>
  *   <... any element ...>
- * </label>
+ * </div>
  * ```
  * aligns the label text and the element in grid columns.
  */
@@ -71,7 +84,7 @@ const SettingsDivContainer = styled.div<{ $labelWidth?: string; $gapPx?: number;
     `;
   }}
 
-  & > label {
+  & > div.${SETTINGS_ITEM_CLASS} {
     grid-column: 1 / 3; // Labels span both columns
     display: grid;
     grid-template-columns: subgrid;
@@ -81,25 +94,24 @@ const SettingsDivContainer = styled.div<{ $labelWidth?: string; $gapPx?: number;
         gap: ${props.$gapPx ? props.$gapPx : 6}px;
       `;
     }}
-  }
 
-  & > label > span:first-of-type {
-    display: grid;
-    grid-column: 1;
-    align-items: center;
-    text-align: right;
-  }
+    & > :first-child {
+      display: grid;
+      grid-column: 1;
+      align-items: center;
+      text-align: right;
+    }
 
-  & > label > :not(span:first-of-type) {
-    grid-column: 2;
-    // Lines up the bottom of the input with the bottom of the label,
-    // where the colon separator is.
-    align-items: end;
+    & > :not(:first-child) {
+      grid-column: 2;
+      // Lines up the bottom of the input with the bottom of the label,
+      // where the colon separator is.
+      align-items: end;
+    }
   }
 `;
 
 type SettingsContainerProps = {
-  labelFormatter?: (label: string | ReactElement) => string | ReactElement;
   labelWidth?: string;
   gapPx?: number;
   indentPx?: number;
@@ -114,22 +126,21 @@ const defaultSettingsContainerProps: Partial<SettingsContainerProps> = {
 /**
  * A grid container that aligns a list of `SettingsItem` components by labels and input.
  *
- * @param labelFormatter A formatting function that will be applied to the labels of all `SettingsItem` children, unless overridden.
- * @param labelWidth CSS string used to set the width of the label column. Defaults to `"fit-content(30%)"`, where the label column
+ * @param $labelWidth CSS string used to set the width of the label column. Defaults to `"fit-content(30%)"`, where the label column
  * will be up to 30% of the `SettingsContainer`'s width..
  * If you do not want the label column to be sized automatically, set this to a fixed width or percentage (ex: `"30%"` or `"100px"`).
- * @param gapPx The vertical gap, in pixels, between each `SettingsItem` and the horizontal gap between the label
+ * @param $gapPx The vertical gap, in pixels, between each `SettingsItem` and the horizontal gap between the label
  * and settings content. 6 by default.
- * @param indentPx The left indent, in pixels, of items in the container. 10 by default.
+ * @param $indentPx The left indent, in pixels, of items in the container. 10 by default.
  *
  * @example
  * ```
  * <SettingsContainer>
- *   <SettingsItem label="Name:">
- *     <input type="text" />
+ *   <SettingsItem label="Name:" htmlFor="name-input">
+ *     <input type="text" id="name-input"/>
  *   </SettingsItem>
- *   <SettingsItem label="Reset:">
- *     <button>Reset</button>
+ *   <SettingsItem label="Reset:" htmlFor="reset-button">
+ *     <button id="reset-button">Reset</button>
  *   </SettingsItem>
  *   <SettingsItem>  // no label
  *     <input type="checkbox" />
@@ -138,29 +149,11 @@ const defaultSettingsContainerProps: Partial<SettingsContainerProps> = {
  * ```
  */
 export function SettingsContainer(inputProps: PropsWithChildren<Partial<SettingsContainerProps>>): ReactElement {
-  const props = { ...defaultSettingsContainerProps, ...inputProps } as PropsWithChildren<
-    Required<SettingsContainerProps>
-  >;
-
-  const renderChildren = (children: React.ReactNode): React.ReactNode => {
-    return React.Children.map(children, (child) => {
-      if (React.isValidElement(child)) {
-        if (child.type === SettingsItem && props.labelFormatter && child.props.labelFormatter === undefined) {
-          // Override label formatter if provided and the child doesn't have an override
-          return React.cloneElement(child, {
-            labelFormatter: props.labelFormatter,
-          } as SettingsItemProps);
-        } else {
-          return child;
-        }
-      }
-      return child;
-    });
-  };
+  const props = { ...defaultSettingsContainerProps, ...inputProps };
 
   return (
     <SettingsDivContainer $gapPx={props.gapPx} $indentPx={props.indentPx} $labelWidth={props.labelWidth}>
-      {renderChildren(props.children)}
+      {props.children}
     </SettingsDivContainer>
   );
 }
