@@ -201,6 +201,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
           featureMin: range[0],
           featureMax: range[1],
           outlineColor: this.params.outlineColor.clone().convertLinearToSRGB(),
+          outlineAlpha: 1,
           outlierColor: this.params.outlierDrawSettings.color.clone().convertLinearToSRGB(),
           outOfRangeColor: this.params.outOfRangeDrawSettings.color.clone().convertLinearToSRGB(),
           outlierDrawMode: this.params.outlierDrawSettings.mode,
