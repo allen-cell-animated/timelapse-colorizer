@@ -81,7 +81,6 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
   constructor() {
     this.params = null;
     this.view3d = new View3d();
-    this.view3d.loaderContext = loaderContext;
     this.canvasResolution = new Vector2(10, 10);
     this.setResolution(10, 10);
     this.view3d.setShowAxis(true);
