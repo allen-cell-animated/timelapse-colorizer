@@ -160,6 +160,7 @@ export default function SettingsTab(): ReactElement {
               items={backdropOptions}
               onChange={(key) => dataset && setBackdropKey(key)}
               disabled={isBackdropOptionsDisabled}
+              controlTooltipPlacement="right"
             />
           </SettingsItem>
           <SettingsItem label="Brightness" htmlFor={SettingsHtmlIds.BACKDROP_BRIGHTNESS_SLIDER}>
