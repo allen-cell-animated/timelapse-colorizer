@@ -70,6 +70,11 @@ export const renderCanvasStateParamsSelector = (state: ViewerStoreState): Render
   backdropBrightness: state.backdropBrightness,
 });
 
+export type RenderOptions = {
+  /** If true, renders synchronously. */
+  synchronous?: boolean;
+};
+
 /**
  * A canvas that renders timelapse data.
  */
@@ -111,7 +116,7 @@ export interface IRenderCanvas {
    */
   setOnFrameLoadCallback(callback: (result: FrameLoadResult) => void): void;
 
-  render(synchronous?: boolean): void;
+  render(options?: RenderOptions): void;
 
   /**
    * Disposes of the canvas and its resources.

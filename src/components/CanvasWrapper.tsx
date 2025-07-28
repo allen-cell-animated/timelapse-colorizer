@@ -7,6 +7,7 @@ import { Vector2 } from "three";
 import { ImagesIconSVG, ImagesSlashIconSVG, NoImageSVG, TagIconSVG, TagSlashIconSVG } from "../assets";
 import { AnnotationSelectionMode, LoadTroubleshooting, PixelIdInfo, TabType } from "../colorizer/types";
 import { AnnotationState } from "../colorizer/utils/react_utils";
+import { CANVAS_ASPECT_RATIO } from "../constants";
 import { FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter, VisuallyHidden } from "../styles/utils";
 
 import { LabelData, LabelType } from "../colorizer/AnnotationData";
@@ -21,7 +22,6 @@ import LoadingSpinner from "./LoadingSpinner";
 import AnnotationInputPopover from "./Tabs/Annotation/AnnotationInputPopover";
 import { TooltipWithSubtitle } from "./Tooltips/TooltipWithSubtitle";
 
-const ASPECT_RATIO = 14.6 / 10;
 /* Minimum distance in either X or Y that mouse should move
  * before mouse event is considered a drag
  */
@@ -137,8 +137,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const setBackdropVisible = useViewerStateStore((state) => state.setBackdropVisible);
   const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
   const setTrack = useViewerStateStore((state) => state.setTrack);
-  const showHeaderDuringExport = useViewerStateStore((state) => state.showHeaderDuringExport);
-  const showLegendDuringExport = useViewerStateStore((state) => state.showLegendDuringExport);
   const showScaleBar = useViewerStateStore((state) => state.showScaleBar);
   const showTimestamp = useViewerStateStore((state) => state.showTimestamp);
   const frameLoadResult = useViewerStateStore((state) => state.frameLoadResult);
@@ -231,10 +229,9 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   }, [showTimestamp]);
 
   useMemo(() => {
+    // TODO: This should be handled in state.
     canv.setIsExporting(props.isRecording);
-    canv.isHeaderVisibleOnExport = showHeaderDuringExport;
-    canv.isFooterVisibleOnExport = showLegendDuringExport;
-  }, [showLegendDuringExport, props.isRecording]);
+  }, [props.isRecording]);
 
   useMemo(() => {
     const annotationLabels = props.annotationState.data.getLabels();
@@ -264,14 +261,18 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     const widthPx = Math.min(
       containerRef.current?.clientWidth ?? props.maxWidthPx,
       props.maxWidthPx,
-      props.maxHeightPx * ASPECT_RATIO
+      props.maxHeightPx * CANVAS_ASPECT_RATIO
     );
-    return new Vector2(Math.floor(widthPx), Math.floor(widthPx / ASPECT_RATIO));
+    return new Vector2(Math.floor(widthPx), Math.floor(widthPx / CANVAS_ASPECT_RATIO));
   }, [props.maxHeightPx, props.maxWidthPx]);
 
   // Respond to window resizing
   useEffect(() => {
     const updateCanvasDimensions = (): void => {
+      if (props.isRecording) {
+        // Do not resize during recordings.
+        return;
+      }
       const canvasSizePx = getCanvasSizePx();
       canv.setResolution(canvasSizePx.x, canvasSizePx.y);
     };
@@ -285,7 +286,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     return () => {
       window.removeEventListener("resize", handleResize);
     };
-  }, [canv, getCanvasSizePx]);
+  }, [canv, getCanvasSizePx, props.isRecording]);
 
   // CANVAS ACTIONS /////////////////////////////////////////////////
 
