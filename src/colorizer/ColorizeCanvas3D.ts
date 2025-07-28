@@ -82,7 +82,6 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
   constructor() {
     this.params = null;
     this.view3d = new View3d();
-    this.view3d.loaderContext = loaderContext;
     this.canvasResolution = new Vector2(10, 10);
     this.setResolution(10, 10);
     this.view3d.setShowAxis(true);
@@ -205,6 +204,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
           featureMin: range[0],
           featureMax: range[1],
           outlineColor: this.params.outlineColor.clone().convertLinearToSRGB(),
+          outlineAlpha: 1,
           outlierColor: this.params.outlierDrawSettings.color.clone().convertLinearToSRGB(),
           outOfRangeColor: this.params.outOfRangeDrawSettings.color.clone().convertLinearToSRGB(),
           outlierDrawMode: this.params.outlierDrawSettings.mode,
