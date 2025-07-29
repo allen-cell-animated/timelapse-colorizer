@@ -1,12 +1,14 @@
 import { StateCreator } from "zustand";
 
 import { FeatureThreshold } from "../../colorizer";
-import { getInRangeLUT, validateThresholds } from "../../colorizer/utils/data_utils";
+import { validateThresholds } from "../../colorizer/utils/data_utils";
 import { deserializeThresholds, serializeThresholds, UrlParam } from "../../colorizer/utils/url_utils";
 import { SerializedStoreData, SubscribableStore } from "../types";
-import { addDerivedStateSubscriber } from "../utils/store_utils";
+import { addDerivedStateSubscriber, makeDebouncedCallback } from "../utils/store_utils";
 import { CollectionSlice } from "./collection_slice";
 import { DatasetSlice } from "./dataset_slice";
+
+import { getSharedWorkerPool } from "../../colorizer/workers/SharedWorkerPool";
 
 export type ThresholdSliceState = {
   thresholds: FeatureThreshold[];
@@ -20,6 +22,7 @@ export type ThresholdSliceSerializableState = Pick<ThresholdSliceState, "thresho
 
 export type ThresholdSliceActions = {
   setThresholds: (thresholds: FeatureThreshold[]) => void;
+  setInRangeLUT: (inRangeLUT: Uint8Array) => void;
 };
 
 export type ThresholdSlice = ThresholdSliceState & ThresholdSliceActions;
@@ -38,6 +41,7 @@ export const createThresholdSlice: StateCreator<ThresholdSlice & DatasetSlice, [
       set({ thresholds: validateThresholds(dataset, thresholds) });
     }
   },
+  setInRangeLUT: (inRangeLUT) => set({ inRangeLUT }),
 });
 
 export const addThresholdDerivedStateSubscribers = (
@@ -48,7 +52,19 @@ export const addThresholdDerivedStateSubscribers = (
   addDerivedStateSubscriber(
     store,
     (state) => [state.thresholds, state.dataset],
-    ([thresholds, dataset]) => ({ inRangeLUT: dataset ? getInRangeLUT(dataset, thresholds) : new Uint8Array(0) })
+    makeDebouncedCallback(([thresholds, dataset]) => {
+      const updateInRangeLUT = async (): Promise<void> => {
+        if (!dataset) {
+          return;
+        }
+        const workerpool = getSharedWorkerPool();
+        const inRangeLUT = await workerpool.getInRangeLUT(dataset, thresholds);
+        if (inRangeLUT !== null) {
+          store.setState({ inRangeLUT });
+        }
+      };
+      updateInRangeLUT();
+    }, 50)
   );
 
   // Validate thresholds on dataset change
