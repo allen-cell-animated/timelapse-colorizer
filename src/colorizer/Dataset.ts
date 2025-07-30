@@ -464,7 +464,7 @@ export default class Dataset {
     if (this.times && !this.features.has(TIME_FEATURE_KEY)) {
       const timeData = new Float32Array(this.times);
       this.features.set(TIME_FEATURE_KEY, {
-        name: "Time",
+        name: "Time (frames)",
         key: TIME_FEATURE_KEY,
         data: this.times,
         tex: packDataTexture(timeData, FeatureDataType.F32),
