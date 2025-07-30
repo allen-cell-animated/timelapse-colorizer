@@ -52,7 +52,7 @@ type SelectionDropdownProps = {
 const defaultProps: Partial<SelectionDropdownProps> = {
   buttonType: "outlined",
   showSelectedItemTooltip: true,
-  controlTooltipPlacement: "right",
+  controlTooltipPlacement: "top",
 };
 
 // Override options in the menu list to include tooltips and, optionally, image content.
