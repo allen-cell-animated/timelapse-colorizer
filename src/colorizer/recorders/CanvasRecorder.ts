@@ -33,7 +33,7 @@ export type RecordingOptions = {
   /** Called when the recording has completed successfully. (Will not be called if the recording
    * operation is cancelled.) */
   onCompleted: () => Promise<void>;
-  /** Called when each frame has completed */
+  /** Called when each frame has completed. */
   onRecordedFrame: (frame: number) => void;
   /** Called when the recording process encounters an error. If recording has started, will attempt
    * to continue without stopping the recording process. If this is not desired, call `abort()` in the callback.

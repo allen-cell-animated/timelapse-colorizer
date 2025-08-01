@@ -4,6 +4,7 @@ import styled from "styled-components";
 import { Color, ColorRepresentation } from "three";
 
 import { FlexRow, FlexRowAlignCenter } from "../styles/utils";
+import { AntColor } from "../utils/color_utils";
 
 import { useViewerStateStore } from "../state/ViewerState";
 import WrappedColorPicker from "./Inputs/WrappedColorPicker";
@@ -59,7 +60,7 @@ export default function CategoricalColorPicker(inputProps: CategoricalColorPicke
     for (let i = 0; i < props.categories.length; i++) {
       const color = categoricalPalette[i];
       const label = props.categories[i];
-      const onChange = (_value: any, hex: string): void => {
+      const onChange = (_color: AntColor, hex: string): void => {
         const newPalette = [...categoricalPalette];
         newPalette[i] = new Color(hex as ColorRepresentation);
         setCategoricalPalette(newPalette);
