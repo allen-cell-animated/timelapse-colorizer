@@ -4,6 +4,7 @@ import {
   Light,
   Line3d,
   LoadSpec,
+  Lut,
   RawArrayLoader,
   RENDERMODE_RAYMARCH,
   SKY_LIGHT,
@@ -70,6 +71,10 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
   private pendingFrame: number;
   private currentFrame: number;
 
+  /**
+   * Maps from the local index of a backdrop, as presented in the Dataset and
+   * TFE's UI, to its actual channel index in the Volume.
+   */
   private backdropIndexToChannelIndex: number[] | null = null;
 
   private linePoints: Float32Array;
@@ -208,7 +213,6 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
           featureMax: range[1],
           outlineAlpha: 1,
           outlineColor: this.params.outlineColor.clone().convertLinearToSRGB(),
-          outlineAlpha: 1,
           outlierColor: this.params.outlierDrawSettings.color.clone().convertLinearToSRGB(),
           outOfRangeColor: this.params.outOfRangeDrawSettings.color.clone().convertLinearToSRGB(),
           outlierDrawMode: this.params.outlierDrawSettings.mode,
@@ -323,6 +327,42 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     return needsRender;
   }
 
+  private updateVolumeChannels(
+    volume: Volume,
+    channelSettings: RenderCanvasStateParams["channelSettings"],
+    backdropIndexToChannelIndex: number[]
+  ): void {
+    for (let backdropIdx = 0; backdropIdx < backdropIndexToChannelIndex.length; backdropIdx++) {
+      const settings = channelSettings[backdropIdx];
+      const channelIndex = backdropIndexToChannelIndex[backdropIdx];
+      this.view3d.setVolumeChannelEnabled(volume, channelIndex, settings.visible);
+      this.view3d.setVolumeChannelOptions(volume, channelIndex, {
+        color: settings.color.convertLinearToSRGB().toArray() as [number, number, number],
+      });
+      const histogram = volume.getHistogram(channelIndex);
+      const minBin = histogram.findBinOfValue(settings.min);
+      const maxBin = histogram.findBinOfValue(settings.max);
+      const lut = new Lut().createFromMinMax(minBin, maxBin);
+      volume.setLut(channelIndex, lut);
+    }
+    if (volume.isLoaded()) {
+      this.view3d.updateActiveChannels(volume);
+      this.view3d.updateLuts(volume);
+    }
+  }
+
+  private handleChannelUpdate(prevParams: RenderCanvasStateParams | null, params: RenderCanvasStateParams): boolean {
+    if (
+      hasPropertyChanged(params, prevParams, ["channelSettings"]) &&
+      this.volume &&
+      this.backdropIndexToChannelIndex
+    ) {
+      this.updateVolumeChannels(this.volume, params.channelSettings, this.backdropIndexToChannelIndex);
+      return true;
+    }
+    return false;
+  }
+
   public setParams(params: RenderCanvasStateParams): Promise<void> {
     if (this.params === params) {
       return Promise.resolve();
@@ -333,7 +373,8 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     const didColorRampUpdate = this.handleColorRampUpdate(prevParams, params);
     const didDatasetUpdate = this.handleDatasetUpdate(prevParams, params);
     const didLineUpdate = this.handleLineUpdate(prevParams, params);
-    const needsRender = didColorRampUpdate || didDatasetUpdate || didLineUpdate;
+    const didChannelUpdate = this.handleChannelUpdate(prevParams, params);
+    const needsRender = didColorRampUpdate || didDatasetUpdate || didLineUpdate || didChannelUpdate;
 
     if (needsRender) {
       this.render({ synchronous: false });
