@@ -8,6 +8,7 @@ import { DatasetSlice } from "./dataset_slice";
 export type ChannelSettings = {
   visible: boolean;
   color: Color;
+  opacity: number;
   min: number;
   max: number;
   dataMin: number;
@@ -49,6 +50,7 @@ export const addChannelDerivedStateSubscribers = (store: SubscribableStore<Chann
         const newChannelSettings = dataset.frames3d.backdrops.map((backdrop) => ({
           visible: true,
           color: new Color(0.5, 0.5, 0.5),
+          opacity: 1,
           min: backdrop.min ?? 0,
           max: backdrop.max ?? 255,
           dataMin: backdrop.min ?? 0,

@@ -1,9 +1,9 @@
 import { Collapse } from "antd";
-import React, { PropsWithChildren, ReactElement } from "react";
+import React, { PropsWithChildren, ReactElement, ReactNode } from "react";
 import styled from "styled-components";
 
 type CustomCollapseProps = {
-  label: string;
+  label: ReactNode;
 };
 
 const CustomCollapseElement = styled(Collapse)`

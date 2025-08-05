@@ -1,15 +1,32 @@
 import { ColorPickerProps, GetProp } from "antd";
 import { Color } from "three";
 
+import { isHexAlphaColor, isHexColor } from "../colorizer/utils/url_utils";
+
 export type AntColor = Extract<GetProp<ColorPickerProps, "value">, string | { cleared: any }>;
 
 export const threeToAntColor = (color: Color): AntColor => {
   return `#${color.getHexString()}`;
 };
 
+export const threeToAntColorWithAlpha = (color: Color, alpha: number): AntColor => {
+  const hex = color.getHexString();
+  const alphaHex = Math.round(alpha * 255)
+    .toString(16)
+    .padStart(2, "0");
+  return `#${hex}${alphaHex}`;
+};
+
 export const antToThreeColor = (color: AntColor): { color: Color; alpha: number } => {
-  if (typeof color === "string") {
-    const hex = color.startsWith("#") ? color.slice(1) : color;
+  console.log("antToThreeColor called with color:", color);
+  let colorStr: string;
+  if (typeof color === "object") {
+    colorStr = color.toHexString();
+  } else {
+    colorStr = color;
+  }
+  if (typeof colorStr === "string") {
+    const hex = colorStr.startsWith("#") ? colorStr.slice(1) : colorStr;
     const threeColor = new Color(`#${hex.slice(0, 6)}`);
     let alpha = 1;
     if (hex.length === 8) {

@@ -17,6 +17,7 @@ import SelectionDropdown from "../Dropdowns/SelectionDropdown";
 import LabeledSlider from "../Inputs/LabeledSlider";
 import WrappedColorPicker from "../Inputs/WrappedColorPicker";
 import { SettingsContainer, SettingsItem } from "../SettingsContainer";
+import ChannelSettings from "./Settings/ChannelSettings";
 import VectorFieldSettings from "./Settings/VectorFieldSettings";
 
 const enum SettingsHtmlIds {
@@ -144,34 +145,6 @@ export default function SettingsTab(): ReactElement {
     <FlexColumn $gap={5}>
       <CustomCollapse label="Backdrop">
         <SettingsContainer indentPx={SETTINGS_INDENT_PX} gapPx={SETTINGS_GAP_PX}>
-          <SettingsItem>
-            <div style={{ width: "fit-content" }}>
-              <Checkbox
-                disabled={channelSettings.length === 0}
-                checked={channelSettings.length > 0 && channelSettings[0].visible}
-                onChange={(event) => {
-                  console.log(channelSettings);
-                  updateChannelSettings(0, { visible: event.target.checked });
-                }}
-              >
-                Show backdrop channel 0
-              </Checkbox>
-            </div>
-          </SettingsItem>
-          <SettingsItem>
-            <div style={{ width: "fit-content" }}>
-              <Checkbox
-                disabled={channelSettings.length === 0}
-                checked={channelSettings.length > 1 && channelSettings[1].visible}
-                onChange={(event) => {
-                  console.log(channelSettings);
-                  updateChannelSettings(1, { visible: event.target.checked });
-                }}
-              >
-                Show backdrop channel 1
-              </Checkbox>
-            </div>
-          </SettingsItem>
           <SettingsItem label={"Show backdrops"} htmlFor={SettingsHtmlIds.SHOW_BACKDROPS_CHECKBOX}>
             <div style={{ width: "fit-content" }}>
               <Checkbox
@@ -246,6 +219,8 @@ export default function SettingsTab(): ReactElement {
           </SettingsItem>
         </SettingsContainer>
       </CustomCollapse>
+
+      <ChannelSettings />
 
       <CustomCollapse label="Objects">
         <SettingsContainer indentPx={SETTINGS_INDENT_PX} gapPx={SETTINGS_GAP_PX}>

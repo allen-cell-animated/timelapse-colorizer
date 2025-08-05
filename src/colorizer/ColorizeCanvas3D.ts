@@ -358,8 +358,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
       const minBin = histogram.findBinOfValue(settings.min);
       const maxBin = histogram.findBinOfValue(settings.max);
       const lut = new Lut().createFromMinMax(minBin, maxBin);
-      // const lut = new Lut().createFullRange();
-      // const lut = new Lut().createFromMinMax(0, 1);
+
       volume.setLut(channelIndex, lut);
       // Disable colorizing on this channel
     }
@@ -419,9 +418,11 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
       console.log("Loaded channel index", channelIndex);
 
       this.view3d.onVolumeData(currentVol, [channelIndex]);
-      this.view3d.setVolumeChannelEnabled(currentVol, channelIndex, true);
       if (channelIndex === segChannel) {
+        this.view3d.setVolumeChannelEnabled(currentVol, channelIndex, true);
         this.configureColorizeFeature(currentVol, channelIndex);
+      } else {
+        this.view3d.setVolumeChannelEnabled(currentVol, channelIndex, false);
       }
       this.view3d.updateActiveChannels(currentVol);
       this.view3d.updateLuts(currentVol);
