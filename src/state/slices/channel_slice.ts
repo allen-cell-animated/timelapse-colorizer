@@ -11,23 +11,34 @@ export type ChannelSettings = {
   opacity: number;
   min: number;
   max: number;
+  // TODO: Move these outside, since they don't affect rendering?
   dataMin: number;
   dataMax: number;
 };
 
 export type ChannelSliceState = {
   channelSettings: ChannelSettings[];
+  syncChannelDataRangeCallback: (channelIndex: number) => void;
+  applyNoneChannelRangeCallback: (channelIndex: number) => void;
+  applyDefaultChannelRangeCallback: (channelIndex: number) => void;
+  applyIJAutoChannelRangeCallback: (channelIndex: number) => void;
+  applyAuto2ChannelRangeCallback: (channelIndex: number) => void;
 };
 
 export type ChannelSliceSerializableState = Pick<ChannelSliceState, "channelSettings">;
 
 export type ChannelSliceActions = {
   updateChannelSettings: (index: number, settings: Partial<ChannelSettings>) => void;
+  setSyncChannelDataRangeCallback: (callback: (channelIndex: number) => void) => void;
+  setApplyNoneChannelRangeCallback: (callback: (channelIndex: number) => void) => void;
+  setApplyDefaultChannelRangeCallback: (callback: (channelIndex: number) => void) => void;
+  setApplyIJAutoChannelRangeCallback: (callback: (channelIndex: number) => void) => void;
+  setApplyAuto2ChannelRangeCallback: (callback: (channelIndex: number) => void) => void;
 };
 
 export type ChannelSlice = ChannelSliceState & ChannelSliceActions;
 
-export const createChannelSlice: StateCreator<ChannelSlice, [], [], ChannelSlice> = (set, get) => ({
+export const createChannelSlice: StateCreator<ChannelSlice, [], [], ChannelSlice> = (set, _get) => ({
   channelSettings: [],
   updateChannelSettings: (index, settings) => {
     set((state) => {
@@ -38,6 +49,19 @@ export const createChannelSlice: StateCreator<ChannelSlice, [], [], ChannelSlice
       return { channelSettings: newSettings };
     });
   },
+
+  // Callbacks
+  syncChannelDataRangeCallback: () => {},
+  applyNoneChannelRangeCallback: () => {},
+  applyDefaultChannelRangeCallback: () => {},
+  applyIJAutoChannelRangeCallback: () => {},
+  applyAuto2ChannelRangeCallback: () => {},
+
+  setSyncChannelDataRangeCallback: (callback) => set({ syncChannelDataRangeCallback: callback }),
+  setApplyNoneChannelRangeCallback: (callback) => set({ applyNoneChannelRangeCallback: callback }),
+  setApplyDefaultChannelRangeCallback: (callback) => set({ applyDefaultChannelRangeCallback: callback }),
+  setApplyIJAutoChannelRangeCallback: (callback) => set({ applyIJAutoChannelRangeCallback: callback }),
+  setApplyAuto2ChannelRangeCallback: (callback) => set({ applyAuto2ChannelRangeCallback: callback }),
 });
 
 export const addChannelDerivedStateSubscribers = (store: SubscribableStore<ChannelSlice & DatasetSlice>): void => {
@@ -64,10 +88,10 @@ export const addChannelDerivedStateSubscribers = (store: SubscribableStore<Chann
 };
 
 // TODO: Implement serialization
-export const serializeChannelSlice = (slice: Partial<ChannelSliceSerializableState>): SerializedStoreData => ({});
+export const serializeChannelSlice = (_slice: Partial<ChannelSliceSerializableState>): SerializedStoreData => ({});
 
 export const selectChannelSliceSerializationDeps = (slice: ChannelSlice): ChannelSliceSerializableState => ({
   channelSettings: slice.channelSettings,
 });
 
-export const loadChannelSliceFromParams = (slice: ChannelSlice, params: URLSearchParams): void => {};
+export const loadChannelSliceFromParams = (_slice: ChannelSlice, _params: URLSearchParams): void => {};
