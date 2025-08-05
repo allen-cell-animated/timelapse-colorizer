@@ -22,6 +22,7 @@ import { getPixelRatio } from "./canvas";
 import {
   CanvasScaleInfo,
   CanvasType,
+  ChannelRangePreset,
   DrawMode,
   FeatureDataType,
   FrameLoadResult,
@@ -333,6 +334,50 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
       needsRender = true;
     }
     return needsRender;
+  }
+
+  public getBackdropChannelRangePreset(backdropIndex: number, preset: ChannelRangePreset): [number, number] | null {
+    if (!this.volume || !this.backdropIndexToChannelIndex) {
+      return null;
+    }
+    const channelIndex = this.backdropIndexToChannelIndex[backdropIndex];
+    const histogram = this.volume.getHistogram(channelIndex);
+    let newMin = 0;
+    let newMax = 0;
+    switch (preset) {
+      case ChannelRangePreset.NONE:
+        newMin = histogram.getDataMin();
+        newMax = histogram.getDataMax();
+        break;
+      case ChannelRangePreset.DEFAULT:
+        // Ramp over 50th to 98th percentile
+        const pct50Bin = histogram.findBinOfPercentile(0.5);
+        const pct98Bin = histogram.findBinOfPercentile(0.983);
+        newMin = histogram.getBinRange(pct50Bin)[0];
+        newMax = histogram.getBinRange(pct98Bin)[1];
+      case ChannelRangePreset.IJ_AUTO:
+        const [minIJBin, maxIJBin] = histogram.findAutoIJBins();
+        newMin = histogram.getBinRange(minIJBin)[0];
+        newMax = histogram.getBinRange(maxIJBin)[1];
+        break;
+      case ChannelRangePreset.AUTO_2:
+        // Ramp over middle 80%
+        const [minBestFitBin, maxBestFitBin] = histogram.findBestFitBins();
+        newMin = histogram.getBinRange(minBestFitBin)[0];
+        newMax = histogram.getBinRange(maxBestFitBin)[1];
+        break;
+      default:
+        return null;
+    }
+    return [newMin, newMax];
+  }
+
+  public getBackdropChannelDataRange(backdropIndex: number): [number, number] | null {
+    if (!this.volume || !this.backdropIndexToChannelIndex) {
+      return null;
+    }
+    const channelIndex = this.backdropIndexToChannelIndex[backdropIndex];
+    return [this.volume.getChannel(channelIndex).rawMin, this.volume.getChannel(channelIndex).rawMax];
   }
 
   private updateVolumeChannels(

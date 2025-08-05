@@ -1,6 +1,7 @@
 import { Color } from "three";
 import { StateCreator } from "zustand";
 
+import { ChannelRangePreset } from "../../colorizer/types";
 import { SerializedStoreData, SubscribableStore } from "../types";
 import { addDerivedStateSubscriber } from "../utils/store_utils";
 import { DatasetSlice } from "./dataset_slice";
@@ -18,11 +19,8 @@ export type ChannelSettings = {
 
 export type ChannelSliceState = {
   channelSettings: ChannelSettings[];
-  syncChannelDataRangeCallback: (channelIndex: number) => void;
-  applyNoneChannelRangeCallback: (channelIndex: number) => void;
-  applyDefaultChannelRangeCallback: (channelIndex: number) => void;
-  applyIJAutoChannelRangeCallback: (channelIndex: number) => void;
-  applyAuto2ChannelRangeCallback: (channelIndex: number) => void;
+  syncChannelDataRange: (channelIndex: number) => void;
+  applyChannelRangePreset: (channelIndex: number, preset: ChannelRangePreset) => void;
 };
 
 export type ChannelSliceSerializableState = Pick<ChannelSliceState, "channelSettings">;
@@ -30,10 +28,7 @@ export type ChannelSliceSerializableState = Pick<ChannelSliceState, "channelSett
 export type ChannelSliceActions = {
   updateChannelSettings: (index: number, settings: Partial<ChannelSettings>) => void;
   setSyncChannelDataRangeCallback: (callback: (channelIndex: number) => void) => void;
-  setApplyNoneChannelRangeCallback: (callback: (channelIndex: number) => void) => void;
-  setApplyDefaultChannelRangeCallback: (callback: (channelIndex: number) => void) => void;
-  setApplyIJAutoChannelRangeCallback: (callback: (channelIndex: number) => void) => void;
-  setApplyAuto2ChannelRangeCallback: (callback: (channelIndex: number) => void) => void;
+  setApplyChannelRangePresetCallback: (callback: (channelIndex: number, preset: ChannelRangePreset) => void) => void;
 };
 
 export type ChannelSlice = ChannelSliceState & ChannelSliceActions;
@@ -51,17 +46,10 @@ export const createChannelSlice: StateCreator<ChannelSlice, [], [], ChannelSlice
   },
 
   // Callbacks
-  syncChannelDataRangeCallback: () => {},
-  applyNoneChannelRangeCallback: () => {},
-  applyDefaultChannelRangeCallback: () => {},
-  applyIJAutoChannelRangeCallback: () => {},
-  applyAuto2ChannelRangeCallback: () => {},
-
-  setSyncChannelDataRangeCallback: (callback) => set({ syncChannelDataRangeCallback: callback }),
-  setApplyNoneChannelRangeCallback: (callback) => set({ applyNoneChannelRangeCallback: callback }),
-  setApplyDefaultChannelRangeCallback: (callback) => set({ applyDefaultChannelRangeCallback: callback }),
-  setApplyIJAutoChannelRangeCallback: (callback) => set({ applyIJAutoChannelRangeCallback: callback }),
-  setApplyAuto2ChannelRangeCallback: (callback) => set({ applyAuto2ChannelRangeCallback: callback }),
+  syncChannelDataRange: () => {},
+  setSyncChannelDataRangeCallback: (callback) => set({ syncChannelDataRange: callback }),
+  applyChannelRangePreset: () => {},
+  setApplyChannelRangePresetCallback: (callback) => set({ applyChannelRangePreset: callback }),
 });
 
 export const addChannelDerivedStateSubscribers = (store: SubscribableStore<ChannelSlice & DatasetSlice>): void => {

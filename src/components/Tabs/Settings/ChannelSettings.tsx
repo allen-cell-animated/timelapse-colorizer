@@ -1,7 +1,8 @@
 import { SyncOutlined } from "@ant-design/icons";
-import { Button, Checkbox } from "antd";
+import { Button, Checkbox, Tooltip } from "antd";
 import React, { ReactElement, useMemo } from "react";
 
+import { ChannelRangePreset } from "../../../colorizer";
 import { useViewerStateStore } from "../../../state";
 import { ViewerStoreState } from "../../../state/slices";
 import { FlexColumn, FlexRowAlignCenter } from "../../../styles/utils";
@@ -18,10 +19,11 @@ type ChannelSettingProps = {
   settings: ViewerStoreState["channelSettings"][number];
   updateSettings: (settings: Partial<ViewerStoreState["channelSettings"][number]>) => void;
   onClickSync: () => void;
+  onClickRangePreset: (preset: ChannelRangePreset) => void;
 };
 
 function ChannelSetting(props: ChannelSettingProps): ReactElement {
-  const { name, channelIndex, settings, updateSettings, onClickSync } = props;
+  const { name, channelIndex, settings, updateSettings, onClickSync, onClickRangePreset } = props;
   const rangeSliderId = `settings-channel-range-slider-${channelIndex}`;
 
   const collapseLabel = (
@@ -49,12 +51,12 @@ function ChannelSetting(props: ChannelSettingProps): ReactElement {
       <SettingsContainer>
         <SettingsItem label="Range" htmlFor={rangeSliderId} labelStyle={{ height: "fit-content", paddingTop: 3 }}>
           <FlexRowAlignCenter $gap={8}>
-            <Button>None</Button>
-            <Button>Default</Button>
-            <Button>IJ Auto</Button>
-            <Button>Auto 2</Button>
+            <Button onClick={() => onClickRangePreset(ChannelRangePreset.NONE)}>None</Button>
+            <Button onClick={() => onClickRangePreset(ChannelRangePreset.DEFAULT)}>Default</Button>
+            <Button onClick={() => onClickRangePreset(ChannelRangePreset.IJ_AUTO)}>IJ Auto</Button>
+            <Button onClick={() => onClickRangePreset(ChannelRangePreset.AUTO_2)}>Auto 2</Button>
           </FlexRowAlignCenter>
-          <FlexRowAlignCenter>
+          <FlexRowAlignCenter $gap={6}>
             <LabeledSlider
               id={rangeSliderId}
               type="range"
@@ -66,9 +68,11 @@ function ChannelSetting(props: ChannelSettingProps): ReactElement {
               maxInputBound={Number.MAX_SAFE_INTEGER}
               onChange={(min, max) => updateSettings({ min, max })}
             />
-            <Button onClick={onClickSync}>
-              <SyncOutlined /> Sync
-            </Button>
+            <Tooltip title="Updates the slider's possible range to match the channel's data range on the current frame. Does not update the range.">
+              <Button onClick={onClickSync}>
+                <SyncOutlined /> Sync
+              </Button>
+            </Tooltip>
           </FlexRowAlignCenter>
         </SettingsItem>
       </SettingsContainer>
@@ -80,6 +84,8 @@ export default function ChannelSettings(): ReactElement {
   const dataset = useViewerStateStore((state) => state.dataset);
   const channelSettings = useViewerStateStore((state) => state.channelSettings);
   const updateChannelSettings = useViewerStateStore((state) => state.updateChannelSettings);
+  const syncChannelDataRange = useViewerStateStore((state) => state.syncChannelDataRange);
+  const applyChannelRange = useViewerStateStore((state) => state.applyChannelRangePreset);
 
   const areAllChannelsVisible = channelSettings.every((setting) => setting.visible);
   const areNoChannelsVisible = channelSettings.every((setting) => !setting.visible);
@@ -103,13 +109,12 @@ export default function ChannelSettings(): ReactElement {
           channelIndex={index}
           settings={settings}
           updateSettings={(settings) => updateChannelSettings(index, settings)}
-          onClickSync={function (): void {
-            throw new Error("Function not implemented.");
-          }}
+          onClickSync={() => syncChannelDataRange(index)}
+          onClickRangePreset={(preset) => applyChannelRange(index, preset)}
         />
       );
     });
-  }, [channelSettings, updateChannelSettings, dataset]);
+  }, [channelSettings, updateChannelSettings, dataset, syncChannelDataRange, applyChannelRange]);
 
   return (
     <CustomCollapse label={"Channels"}>

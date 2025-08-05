@@ -1,8 +1,6 @@
 import { ColorPickerProps, GetProp } from "antd";
 import { Color } from "three";
 
-import { isHexAlphaColor, isHexColor } from "../colorizer/utils/url_utils";
-
 export type AntColor = Extract<GetProp<ColorPickerProps, "value">, string | { cleared: any }>;
 
 export const threeToAntColor = (color: Color): AntColor => {
