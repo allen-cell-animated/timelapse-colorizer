@@ -48,7 +48,7 @@ export const addChannelDerivedStateSubscribers = (store: SubscribableStore<Chann
       if (dataset && dataset.frames3d && dataset.frames3d.backdrops) {
         const newChannelSettings = dataset.frames3d.backdrops.map((backdrop) => ({
           visible: true,
-          color: new Color(1, 0, 0),
+          color: new Color(0.5, 0.5, 0.5),
           min: backdrop.min ?? 0,
           max: backdrop.max ?? 255,
           dataMin: backdrop.min ?? 0,

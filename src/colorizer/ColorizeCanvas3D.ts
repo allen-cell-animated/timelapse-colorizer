@@ -343,27 +343,27 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     for (let backdropIdx = 0; backdropIdx < backdropIndexToChannelIndex.length; backdropIdx++) {
       const settings = channelSettings[backdropIdx];
       const channelIndex = backdropIndexToChannelIndex[backdropIdx];
-      console.log("Updating volume channel index ", channelIndex, "with settings", settings);
+      const colorArr: [number, number, number] = [
+        settings.color.r * 255,
+        settings.color.g * 255,
+        settings.color.b * 255,
+      ];
       this.view3d.setVolumeChannelEnabled(volume, channelIndex, settings.visible);
       this.view3d.setVolumeChannelOptions(volume, channelIndex, {
         enabled: settings.visible,
-        specularColor: settings.color.convertLinearToSRGB().toArray() as [number, number, number],
-        color: settings.color.convertLinearToSRGB().toArray() as [number, number, number],
+        color: colorArr,
         isosurfaceEnabled: false,
       });
-      // const histogram = volume.getHistogram(channelIndex);
-      // const minBin = histogram.findBinOfValue(settings.min);
-      // const maxBin = histogram.findBinOfValue(settings.max);
-      // const lut = new Lut().createFromMinMax(minBin, maxBin);
+      const histogram = volume.getHistogram(channelIndex);
+      const minBin = histogram.findBinOfValue(settings.min);
+      const maxBin = histogram.findBinOfValue(settings.max);
+      const lut = new Lut().createFromMinMax(minBin, maxBin);
       // const lut = new Lut().createFullRange();
-      const lut = new Lut().createFromMinMax(0, 1);
-      console.log("Updating volume channel index ", channelIndex, " with lut", lut);
-      console.log("Is channel loaded? ", volume.getChannel(channelIndex).loaded);
+      // const lut = new Lut().createFromMinMax(0, 1);
       volume.setLut(channelIndex, lut);
       // Disable colorizing on this channel
     }
     if (volume.isLoaded()) {
-      console.log("Volume is loaded, updating channels and LUTs");
       this.view3d.updateActiveChannels(volume);
       this.view3d.updateLuts(volume);
       this.view3d.redraw();
