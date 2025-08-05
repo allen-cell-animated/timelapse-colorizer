@@ -520,9 +520,18 @@
     "totalFrames": 570,
     "backdrops": [
       {
-        "name": "Raw Image",
+        "name": "EGFP",
         "source": "https://allencell.s3.amazonaws.com/aics/nuc-morph-dataset/hipsc_fov_nuclei_timelapse_dataset/hipsc_fov_nuclei_timelapse_data_used_for_analysis/baseline_colonies_fov_timelapse_dataset/20200323_09_small/raw.ome.zarr",
-        "channelIndex": 0
+        "channelIndex": 0,
+        "min": 101,
+        "max": 177
+      },
+      {
+        "name": "Brightfield",
+        "source": "https://allencell.s3.amazonaws.com/aics/nuc-morph-dataset/hipsc_fov_nuclei_timelapse_dataset/hipsc_fov_nuclei_timelapse_data_used_for_analysis/baseline_colonies_fov_timelapse_dataset/20200323_09_small/raw.ome.zarr",
+        "channelIndex": 1,
+        "min": 33615,
+        "max": 36466
       }
     ]
   },
