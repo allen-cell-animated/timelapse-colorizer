@@ -44,7 +44,20 @@ export const addChannelDerivedStateSubscribers = (store: SubscribableStore<Chann
   addDerivedStateSubscriber(
     store,
     (state) => ({ dataset: state.dataset }),
-    () => ({})
+    ({ dataset }) => {
+      if (dataset && dataset.frames3d && dataset.frames3d.backdrops) {
+        const newChannelSettings = dataset.frames3d.backdrops.map((backdrop) => ({
+          visible: true,
+          color: new Color(1, 0, 0),
+          min: backdrop.min ?? 0,
+          max: backdrop.max ?? 255,
+          dataMin: backdrop.min ?? 0,
+          dataMax: backdrop.max ?? 255,
+        }));
+        return { channelSettings: newChannelSettings };
+      }
+      return {};
+    }
   );
 };
 

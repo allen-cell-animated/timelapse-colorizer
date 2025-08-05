@@ -220,6 +220,14 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
           hideOutOfRange: this.params.outOfRangeDrawSettings.mode === DrawMode.HIDE,
           frameToGlobalIdLookup: dataset.frameToGlobalIdLookup ?? new Map(),
         };
+        console.log(
+          "Configuring colorize feature for volume",
+          volume,
+          "channel",
+          channelIndex,
+          "with feature",
+          feature
+        );
         this.view3d.setChannelColorizeFeature(volume, channelIndex, feature);
       }
     }
@@ -335,19 +343,30 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     for (let backdropIdx = 0; backdropIdx < backdropIndexToChannelIndex.length; backdropIdx++) {
       const settings = channelSettings[backdropIdx];
       const channelIndex = backdropIndexToChannelIndex[backdropIdx];
+      console.log("Updating volume channel index ", channelIndex, "with settings", settings);
       this.view3d.setVolumeChannelEnabled(volume, channelIndex, settings.visible);
       this.view3d.setVolumeChannelOptions(volume, channelIndex, {
+        enabled: settings.visible,
+        specularColor: settings.color.convertLinearToSRGB().toArray() as [number, number, number],
         color: settings.color.convertLinearToSRGB().toArray() as [number, number, number],
+        isosurfaceEnabled: false,
       });
-      const histogram = volume.getHistogram(channelIndex);
-      const minBin = histogram.findBinOfValue(settings.min);
-      const maxBin = histogram.findBinOfValue(settings.max);
-      const lut = new Lut().createFromMinMax(minBin, maxBin);
+      // const histogram = volume.getHistogram(channelIndex);
+      // const minBin = histogram.findBinOfValue(settings.min);
+      // const maxBin = histogram.findBinOfValue(settings.max);
+      // const lut = new Lut().createFromMinMax(minBin, maxBin);
+      // const lut = new Lut().createFullRange();
+      const lut = new Lut().createFromMinMax(0, 1);
+      console.log("Updating volume channel index ", channelIndex, " with lut", lut);
+      console.log("Is channel loaded? ", volume.getChannel(channelIndex).loaded);
       volume.setLut(channelIndex, lut);
+      // Disable colorizing on this channel
     }
     if (volume.isLoaded()) {
+      console.log("Volume is loaded, updating channels and LUTs");
       this.view3d.updateActiveChannels(volume);
       this.view3d.updateLuts(volume);
+      this.view3d.redraw();
     }
   }
 
@@ -394,16 +413,22 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     this.loader = await loaderContext.createLoader(sources);
     const loadSpec = new LoadSpec();
     loadSpec.time = this.params.pendingFrame;
+    const segChannel = this.params.dataset?.frames3d?.segmentationChannel ?? 0;
     const volume = await this.loader.createVolume(loadSpec, (v: Volume, channelIndex: number) => {
       const currentVol = v;
+      console.log("Loaded channel index", channelIndex);
 
       this.view3d.onVolumeData(currentVol, [channelIndex]);
-
-      this.configureColorizeFeature(currentVol, channelIndex);
-
+      this.view3d.setVolumeChannelEnabled(currentVol, channelIndex, true);
+      if (channelIndex === segChannel) {
+        this.configureColorizeFeature(currentVol, channelIndex);
+      }
       this.view3d.updateActiveChannels(currentVol);
       this.view3d.updateLuts(currentVol);
-      this.view3d.redraw();
+
+      if (this.params && this.backdropIndexToChannelIndex) {
+        this.updateVolumeChannels(volume, this.params.channelSettings, this.backdropIndexToChannelIndex);
+      }
     });
     this.view3d.addVolume(volume);
     this.volume = volume;
@@ -414,7 +439,6 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
       this.params.dataset?.frames3d?.backdrops
     );
 
-    const segChannel = this.params.dataset?.frames3d?.segmentationChannel ?? 0;
     this.view3d.setVolumeChannelEnabled(volume, segChannel, true);
     this.view3d.setVolumeChannelOptions(volume, segChannel, {
       isosurfaceEnabled: false,
@@ -435,6 +459,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     this.view3d.setBoundingBoxColor(volume, [0.5, 0.5, 0.5]);
     this.view3d.resetCamera();
 
+    this.updateVolumeChannels(volume, this.params.channelSettings, this.backdropIndexToChannelIndex);
     this.updateLineGeometry(this.linePoints, this.lineColors);
 
     // TODO: Look at gamma/levels setting? Vole-app looks good at levels

@@ -86,6 +86,7 @@ export default class Dataset {
   private frames: DataCache<number, Texture> | null;
   private frameDimensions: Vector2 | null;
 
+  // TODO: validate frames 3D data
   public frames3d?: Frames3dData;
 
   private segIdsFile?: string;
@@ -525,6 +526,8 @@ export default class Dataset {
         source: this.resolvePathToUrl(frames3dSrc.source),
         segmentationChannel: manifest.frames3d?.segmentationChannel ?? 0,
         totalFrames: manifest.frames3d?.totalFrames ?? 0,
+        // TODO: Add validation here
+        backdrops: frames3dSrc.backdrops as Backdrop3dData[] | undefined,
       };
     }
     this.outlierFile = manifest.outliers;
