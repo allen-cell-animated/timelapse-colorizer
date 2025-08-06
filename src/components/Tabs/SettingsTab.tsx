@@ -5,13 +5,14 @@ import { Color, ColorRepresentation } from "three";
 
 import { OUTLINE_COLOR_DEFAULT } from "../../colorizer/constants";
 import { DrawMode, TrackPathColorMode } from "../../colorizer/types";
+import { StyledHorizontalRule } from "../../styles/components";
 import { FlexColumn, VisuallyHidden } from "../../styles/utils";
 import { threeToAntColor } from "../../utils/color_utils";
 import { SelectItem } from "../Dropdowns/types";
 import { DEFAULT_OUTLINE_COLOR_PRESETS } from "./Settings/constants";
 
 import { useViewerStateStore } from "../../state/ViewerState";
-import CustomCollapse from "../CustomCollapse";
+import CheckboxCollapse from "../CheckboxCollapse";
 import DropdownWithColorPicker from "../Dropdowns/DropdownWithColorPicker";
 import SelectionDropdown from "../Dropdowns/SelectionDropdown";
 import LabeledSlider from "../Inputs/LabeledSlider";
@@ -121,6 +122,8 @@ export default function SettingsTab(): ReactElement {
   const trackPathColor = useViewerStateStore((state) => state.trackPathColor);
   const trackPathColorMode = useViewerStateStore((state) => state.trackPathColorMode);
   const trackPathWidthPx = useViewerStateStore((state) => state.trackPathWidthPx);
+  const vectorVisible = useViewerStateStore((state) => state.vectorVisible);
+  const setVectorVisible = useViewerStateStore((state) => state.setVectorVisible);
 
   let backdropOptions = useMemo(
     () =>
@@ -139,20 +142,14 @@ export default function SettingsTab(): ReactElement {
   }
 
   return (
-    <FlexColumn $gap={5}>
-      <CustomCollapse label="Backdrop">
+    <FlexColumn $gap={10}>
+      <CheckboxCollapse
+        label="Backdrop"
+        disabled={isBackdropDisabled}
+        checked={backdropVisible}
+        onChange={setBackdropVisible}
+      >
         <SettingsContainer indentPx={SETTINGS_INDENT_PX} gapPx={SETTINGS_GAP_PX}>
-          <SettingsItem label={"Show backdrops"} htmlFor={SettingsHtmlIds.SHOW_BACKDROPS_CHECKBOX}>
-            <div style={{ width: "fit-content" }}>
-              <Checkbox
-                id={SettingsHtmlIds.SHOW_BACKDROPS_CHECKBOX}
-                type="checkbox"
-                disabled={isBackdropDisabled}
-                checked={backdropVisible}
-                onChange={(event) => setBackdropVisible(event.target.checked)}
-              />
-            </div>
-          </SettingsItem>
           <SettingsItem label="Backdrop" htmlFor={SettingsHtmlIds.BACKDROP_KEY_SELECT}>
             <SelectionDropdown
               id={SettingsHtmlIds.BACKDROP_KEY_SELECT}
@@ -215,9 +212,11 @@ export default function SettingsTab(): ReactElement {
             </div>
           </SettingsItem>
         </SettingsContainer>
-      </CustomCollapse>
+      </CheckboxCollapse>
 
-      <CustomCollapse label="Objects">
+      <StyledHorizontalRule />
+
+      <CheckboxCollapse checked={true} disabled={true} label="Objects">
         <SettingsContainer indentPx={SETTINGS_INDENT_PX} gapPx={SETTINGS_GAP_PX}>
           <SettingsItem label="Highlight" htmlFor={SettingsHtmlIds.HIGHLIGHT_COLOR_PICKER}>
             {/* NOTE: 'Highlight color' is 'outline' internally, and 'Outline color' is 'edge' for legacy reasons. */}
@@ -359,13 +358,14 @@ export default function SettingsTab(): ReactElement {
             </div>
           </SettingsItem>
         </SettingsContainer>
-      </CustomCollapse>
+      </CheckboxCollapse>
 
-      <CustomCollapse label="Vector arrows">
+      <StyledHorizontalRule />
+      <CheckboxCollapse label="Vector arrows" checked={vectorVisible} onChange={setVectorVisible}>
         <SettingsContainer indentPx={SETTINGS_INDENT_PX} gapPx={SETTINGS_GAP_PX}>
           <VectorFieldSettings />
         </SettingsContainer>
-      </CustomCollapse>
+      </CheckboxCollapse>
       <div style={{ height: "100px" }}></div>
     </FlexColumn>
   );
