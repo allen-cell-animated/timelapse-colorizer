@@ -12,6 +12,8 @@ type CheckboxCollapseProps = {
   labelStyle?: React.CSSProperties;
   /** Additional elements that are placed in the same row after the checkbox and label. */
   headerContent?: ReactNode;
+  /** If true, scrolls the collapse content into view when checkbox is checked. */
+  scrollIntoViewOnChecked?: boolean;
 };
 
 const defaultProps: Partial<CheckboxCollapseProps> = {
@@ -19,12 +21,13 @@ const defaultProps: Partial<CheckboxCollapseProps> = {
     fontSize: "var(--font-size-label)",
   },
   headerContent: null,
+  scrollIntoViewOnChecked: true,
 };
 
 const CollapseContent = styled.div<{ $collapsed?: boolean; $maxHeight: string }>`
   margin-left: 40px;
   height: ${(props) => (props.$collapsed ? "0" : props.$maxHeight)};
-  transition: height 0.2s ease-in-out;
+  transition: height 0.15s ease-in-out;
   overflow: hidden;
 `;
 
@@ -34,6 +37,17 @@ export default function CheckboxCollapse(inputProps: PropsWithChildren<CheckboxC
   const headerContentContainerRef = React.useRef<HTMLDivElement>(null);
 
   const [contentScrollHeight, setContentScrollHeight] = useState(0);
+
+  useEffect(() => {
+    if (props.scrollIntoViewOnChecked && props.checked && headerContentContainerRef.current) {
+      setTimeout(() => {
+        headerContentContainerRef.current!.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }, 100);
+    }
+  }, [props.scrollIntoViewOnChecked, props.checked]);
 
   useEffect(() => {
     if (headerContentContainerRef.current) {
@@ -52,6 +66,8 @@ export default function CheckboxCollapse(inputProps: PropsWithChildren<CheckboxC
             checked={props.checked}
             onChange={(e) => (props.onChange ? props.onChange(e.target.checked) : null)}
             disabled={props.disabled}
+            // Align with default label text
+            style={{ paddingTop: "2px" }}
           />
           <label htmlFor={id} style={props.labelStyle}>
             {props.label}
