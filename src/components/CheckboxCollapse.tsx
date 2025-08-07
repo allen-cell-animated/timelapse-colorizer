@@ -21,6 +21,7 @@ type CheckboxCollapseProps = {
    * is clicked.
    */
   scrollIntoViewOnChecked?: boolean;
+  contentIndentPx?: number;
 };
 
 const defaultProps: Partial<CheckboxCollapseProps> = {
@@ -29,6 +30,7 @@ const defaultProps: Partial<CheckboxCollapseProps> = {
   },
   headerContent: null,
   scrollIntoViewOnChecked: true,
+  contentIndentPx: 40,
 };
 
 /**
@@ -115,7 +117,7 @@ export default function CheckboxCollapse(inputProps: PropsWithChildren<CheckboxC
       </FlexRowAlignCenter>
       <div
         style={{
-          marginLeft: "40px",
+          marginLeft: `${props.contentIndentPx}px`,
           height: isInitialRender ? "auto" : collapseHeight,
           overflow: hideOverflow ? "hidden" : "visible",
           transition: `height ${heightTransitionDuration} ease-in-out`,

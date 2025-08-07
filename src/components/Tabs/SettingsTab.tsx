@@ -221,7 +221,7 @@ export default function SettingsTab(): ReactElement {
 
       <StyledHorizontalRule />
 
-      <CheckboxCollapse checked={showTrackPath} label="Track path" onChange={setShowTrackPath}>
+      <CheckboxCollapse checked={showTrackPath} label="Track path" onChange={setShowTrackPath} contentIndentPx={70}>
         <SettingsContainer>
           <SettingsItem label="Color" htmlFor={SettingsHtmlIds.TRACK_PATH_COLOR_SELECT}>
             <DropdownWithColorPicker
@@ -352,7 +352,7 @@ export default function SettingsTab(): ReactElement {
       </CheckboxCollapse>
 
       <StyledHorizontalRule />
-      <CheckboxCollapse label="Vector arrows" checked={vectorVisible} onChange={setVectorVisible}>
+      <CheckboxCollapse label="Vector arrows" checked={vectorVisible} onChange={setVectorVisible} contentIndentPx={46}>
         <SettingsContainer indentPx={SETTINGS_INDENT_PX} gapPx={SETTINGS_GAP_PX}>
           <VectorFieldSettings />
         </SettingsContainer>
