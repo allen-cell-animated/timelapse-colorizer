@@ -126,7 +126,7 @@ export default function VectorFieldSettings(): ReactElement {
        * See https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/input/radio#defining_a_radio_group
        */}
       <SettingsItem
-        label="Show vector in tooltip as"
+        label="Tooltip mode"
         labelStyle={{ height: "fit-content" }}
         htmlFor={VectorSettingsHtmlIds.VECTOR_TOOLTIP_MODE_RADIO}
       >
