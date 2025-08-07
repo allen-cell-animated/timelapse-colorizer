@@ -1,5 +1,5 @@
 import { Checkbox } from "antd";
-import React, { PropsWithChildren, ReactElement, ReactNode } from "react";
+import React, { PropsWithChildren, ReactElement, ReactNode, useEffect, useState } from "react";
 import styled from "styled-components";
 
 import { FlexColumn, FlexRowAlignCenter } from "../styles/utils";
@@ -21,16 +21,26 @@ const defaultProps: Partial<CheckboxCollapseProps> = {
   headerContent: null,
 };
 
-const CollapseContent = styled.div<{ $collapsed?: boolean }>`
-  padding-left: 40px;
-  height: ${(props) => (props.$collapsed ? "0" : "fit-content")};
-  transition: height 2s ease-in-out;
-  overflow: clip;
+const CollapseContent = styled.div<{ $collapsed?: boolean; $maxHeight: string }>`
+  margin-left: 40px;
+  height: ${(props) => (props.$collapsed ? "0" : props.$maxHeight)};
+  transition: height 0.2s ease-in-out;
+  overflow: hidden;
 `;
 
 export default function CheckboxCollapse(inputProps: PropsWithChildren<CheckboxCollapseProps>): ReactElement {
   const props = { ...defaultProps, ...inputProps };
   const id = `checkbox-collapse-${props.label.replace(/\s+/g, "-").toLowerCase()}`;
+  const headerContentContainerRef = React.useRef<HTMLDivElement>(null);
+
+  const [contentScrollHeight, setContentScrollHeight] = useState(0);
+
+  useEffect(() => {
+    if (headerContentContainerRef.current) {
+      // Extra padding here to account so focus ring on some UI elements is not clipped
+      setContentScrollHeight(headerContentContainerRef.current.scrollHeight + 8);
+    }
+  }, [props.children]);
 
   return (
     <FlexColumn>
@@ -49,7 +59,9 @@ export default function CheckboxCollapse(inputProps: PropsWithChildren<CheckboxC
         </FlexRowAlignCenter>
         {props.headerContent}
       </FlexRowAlignCenter>
-      <CollapseContent $collapsed={!props.checked}>{props.children}</CollapseContent>
+      <CollapseContent $collapsed={!props.checked} $maxHeight={contentScrollHeight + "px"}>
+        <div ref={headerContentContainerRef}>{props.children}</div>
+      </CollapseContent>
     </FlexColumn>
   );
 }
