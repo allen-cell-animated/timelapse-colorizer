@@ -1,6 +1,5 @@
 import { Checkbox, CheckboxChangeEvent } from "antd";
 import React, { PropsWithChildren, ReactElement, ReactNode, useCallback, useEffect, useState } from "react";
-import styled from "styled-components";
 
 import { FlexColumn, FlexRowAlignCenter } from "../styles/utils";
 
@@ -10,9 +9,15 @@ type CheckboxCollapseProps = {
   disabled?: boolean;
   label: string;
   labelStyle?: React.CSSProperties;
-  /** Additional elements that are placed in the same row as the checkbox and label.*/
-  headerContent?: ReactNode;
-  /** If true, scrolls the collapse content into view when the checkbox is clicked. */
+  /**
+   * Additional element or elements that are placed in the same row as the
+   * checkbox and label.
+   */
+  headerContent?: ReactNode[] | ReactNode;
+  /**
+   * If true (default), scrolls the collapse content into view when the checkbox
+   * is clicked.
+   */
   scrollIntoViewOnChecked?: boolean;
 };
 
@@ -24,13 +29,6 @@ const defaultProps: Partial<CheckboxCollapseProps> = {
   scrollIntoViewOnChecked: true,
 };
 
-const CollapseContent = styled.div<{ $collapsed?: boolean; $contentHeight: string }>`
-  margin-left: 40px;
-  height: ${(props) => (props.$collapsed ? "0" : props.$contentHeight)};
-  transition: height 0.15s ease-in-out;
-  overflow: hidden;
-`;
-
 /**
  * Collapsible area controlled by a labeled checkbox. Height changes are
  * animated and can automatically scroll the content area into view.
@@ -40,7 +38,15 @@ export default function CheckboxCollapse(inputProps: PropsWithChildren<CheckboxC
 
   const [isInitialRender, setIsInitialRender] = useState(true);
   const [contentScrollHeight, setContentScrollHeight] = useState(0);
-  const headerContentContainerRef = React.useRef<HTMLDivElement>(null);
+  const contentContainerRef = React.useRef<HTMLDivElement>(null);
+
+  // Update content scroll height whenever content changes
+  useEffect(() => {
+    if (contentContainerRef.current && contentContainerRef.current.scrollHeight > 0) {
+      setContentScrollHeight(contentContainerRef.current.scrollHeight);
+      setIsInitialRender(false);
+    }
+  }, [props.children]);
 
   const onCheckboxChanged = useCallback(
     (e: CheckboxChangeEvent) => {
@@ -48,35 +54,22 @@ export default function CheckboxCollapse(inputProps: PropsWithChildren<CheckboxC
         props.onChange(e.target.checked);
       }
       // Auto scroll if enabled
-      if (e.target.checked && props.scrollIntoViewOnChecked && headerContentContainerRef.current) {
+      if (e.target.checked && props.scrollIntoViewOnChecked && contentContainerRef.current) {
+        // Must be delayed since the content container is expanding
         setTimeout(() => {
-          headerContentContainerRef.current!.scrollIntoView({
+          contentContainerRef.current!.scrollIntoView({
             behavior: "smooth",
             block: "center",
           });
-        }, 125);
+        }, 150);
       }
     },
     [props.onChange, props.scrollIntoViewOnChecked, props.checked, isInitialRender]
   );
 
-  // Update content scroll height whenever content changes
-  useEffect(() => {
-    if (headerContentContainerRef.current && headerContentContainerRef.current.scrollHeight > 0) {
-      // Extra padding here to account so focus ring on some UI elements is not clipped
-      setContentScrollHeight(headerContentContainerRef.current.scrollHeight);
-    }
-  }, [props.children]);
-
-  useEffect(() => {
-    if (contentScrollHeight !== 0 && contentScrollHeight !== 8) {
-      setTimeout(() => {
-        setIsInitialRender(false);
-      }, 100);
-    }
-  }, [contentScrollHeight]);
-
   const id = `checkbox-collapse-${props.label.replace(/\s+/g, "-").toLowerCase()}`;
+
+  const collapseHeight = props.checked ? contentScrollHeight + "px" : "0";
 
   return (
     <FlexColumn>
@@ -92,21 +85,24 @@ export default function CheckboxCollapse(inputProps: PropsWithChildren<CheckboxC
             style={{ paddingTop: "2px" }}
           />
           <label htmlFor={id} style={{ ...defaultProps.labelStyle, ...props.labelStyle }}>
-            {props.label} - {contentScrollHeight} - {isInitialRender ? "initial" : "rendered"}
+            {props.label}
           </label>
         </FlexRowAlignCenter>
         {props.headerContent}
       </FlexRowAlignCenter>
-      <CollapseContent
-        $collapsed={!props.checked}
-        // Disable transition/height control on initial rendering to prevent animation every time the component is mounted
-        $contentHeight={isInitialRender ? "auto" : contentScrollHeight + "px"}
-        style={isInitialRender ? { transition: "none" } : undefined}
+      <div
+        style={{
+          marginLeft: "40px",
+          height: isInitialRender ? "auto" : collapseHeight,
+          overflow: "hidden",
+          // Disable transition/height control on initial rendering to prevent animation every time the component is mounted
+          transition: isInitialRender ? "none" : "height 0.15s ease-in-out",
+        }}
       >
-        <div ref={headerContentContainerRef} style={{ padding: "8px 0" }}>
+        <div ref={contentContainerRef} style={{ padding: "8px 0" }}>
           {props.children}
         </div>
-      </CollapseContent>
+      </div>
     </FlexColumn>
   );
 }

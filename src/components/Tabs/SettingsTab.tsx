@@ -142,7 +142,7 @@ export default function SettingsTab(): ReactElement {
   }
 
   return (
-    <FlexColumn $gap={10}>
+    <FlexColumn $gap={5}>
       <CheckboxCollapse checked={true} disabled={true} label="Objects">
         <SettingsContainer indentPx={SETTINGS_INDENT_PX} gapPx={SETTINGS_GAP_PX}>
           <SettingsItem label="Highlight" htmlFor={SettingsHtmlIds.HIGHLIGHT_COLOR_PICKER}>
