@@ -75,7 +75,7 @@ const EDGE_COLOR_PRESETS: PresetsItem[] = [
 ];
 
 const TRACK_MODE_ITEMS: SelectItem[] = [
-  { value: TrackPathColorMode.USE_OUTLINE_COLOR.toString(), label: "Outline" },
+  { value: TrackPathColorMode.USE_OUTLINE_COLOR.toString(), label: "Highlight" },
   { value: TrackPathColorMode.USE_CUSTOM_COLOR.toString(), label: "Custom" },
   { value: TrackPathColorMode.USE_FEATURE_COLOR.toString(), label: "Feature" },
 ];
@@ -303,6 +303,7 @@ export default function SettingsTab(): ReactElement {
               items={backdropOptions}
               onChange={(key) => dataset && setBackdropKey(key)}
               disabled={isBackdropOptionsDisabled}
+              width={"280px"}
             />
           </SettingsItem>
           <SettingsItem label="Brightness" htmlFor={SettingsHtmlIds.BACKDROP_BRIGHTNESS_SLIDER}>
