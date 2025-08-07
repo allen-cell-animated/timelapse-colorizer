@@ -143,79 +143,6 @@ export default function SettingsTab(): ReactElement {
 
   return (
     <FlexColumn $gap={10}>
-      <CheckboxCollapse
-        label="Backdrop"
-        disabled={isBackdropDisabled}
-        checked={backdropVisible}
-        onChange={setBackdropVisible}
-      >
-        <SettingsContainer indentPx={SETTINGS_INDENT_PX} gapPx={SETTINGS_GAP_PX}>
-          <SettingsItem label="Backdrop" htmlFor={SettingsHtmlIds.BACKDROP_KEY_SELECT}>
-            <SelectionDropdown
-              id={SettingsHtmlIds.BACKDROP_KEY_SELECT}
-              selected={selectedBackdropKey}
-              items={backdropOptions}
-              onChange={(key) => dataset && setBackdropKey(key)}
-              disabled={isBackdropOptionsDisabled}
-            />
-          </SettingsItem>
-          <SettingsItem label="Brightness" htmlFor={SettingsHtmlIds.BACKDROP_BRIGHTNESS_SLIDER}>
-            <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
-              <LabeledSlider
-                id={SettingsHtmlIds.BACKDROP_BRIGHTNESS_SLIDER}
-                type="value"
-                minSliderBound={0}
-                maxSliderBound={200}
-                minInputBound={0}
-                maxInputBound={200}
-                value={backdropBrightness}
-                onChange={setBackdropBrightness}
-                marks={[100]}
-                numberFormatter={(value?: number) => `${value}%`}
-                disabled={isBackdropOptionsDisabled}
-              />
-            </div>
-          </SettingsItem>
-
-          <SettingsItem label="Saturation" htmlFor={SettingsHtmlIds.BACKDROP_SATURATION_SLIDER}>
-            <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
-              <LabeledSlider
-                id={SettingsHtmlIds.BACKDROP_SATURATION_SLIDER}
-                type="value"
-                minSliderBound={0}
-                maxSliderBound={100}
-                minInputBound={0}
-                maxInputBound={100}
-                value={backdropSaturation}
-                onChange={setBackdropSaturation}
-                marks={[100]}
-                numberFormatter={(value?: number) => `${value}%`}
-                disabled={isBackdropOptionsDisabled}
-              />
-            </div>
-          </SettingsItem>
-          <SettingsItem label="Object opacity" htmlFor={SettingsHtmlIds.OBJECT_OPACITY_SLIDER}>
-            <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
-              <LabeledSlider
-                id={SettingsHtmlIds.OBJECT_OPACITY_SLIDER}
-                type="value"
-                disabled={isBackdropOptionsDisabled}
-                minSliderBound={0}
-                maxSliderBound={100}
-                minInputBound={0}
-                maxInputBound={100}
-                value={objectOpacity}
-                onChange={setObjectOpacity}
-                marks={[100]}
-                numberFormatter={(value?: number) => `${value}%`}
-              />
-            </div>
-          </SettingsItem>
-        </SettingsContainer>
-      </CheckboxCollapse>
-
-      <StyledHorizontalRule />
-
       <CheckboxCollapse checked={true} disabled={true} label="Objects">
         <SettingsContainer indentPx={SETTINGS_INDENT_PX} gapPx={SETTINGS_GAP_PX}>
           <SettingsItem label="Highlight" htmlFor={SettingsHtmlIds.HIGHLIGHT_COLOR_PICKER}>
@@ -355,6 +282,79 @@ export default function SettingsTab(): ReactElement {
           <SettingsItem label="Timestamp" htmlFor={SettingsHtmlIds.TIMESTAMP_SWITCH}>
             <div>
               <Switch id={SettingsHtmlIds.TIMESTAMP_SWITCH} checked={showTimestamp} onChange={setShowTimestamp} />
+            </div>
+          </SettingsItem>
+        </SettingsContainer>
+      </CheckboxCollapse>
+
+      <StyledHorizontalRule />
+
+      <CheckboxCollapse
+        label="Backdrop"
+        disabled={isBackdropDisabled}
+        checked={backdropVisible}
+        onChange={setBackdropVisible}
+      >
+        <SettingsContainer indentPx={SETTINGS_INDENT_PX} gapPx={SETTINGS_GAP_PX}>
+          <SettingsItem label="Backdrop" htmlFor={SettingsHtmlIds.BACKDROP_KEY_SELECT}>
+            <SelectionDropdown
+              id={SettingsHtmlIds.BACKDROP_KEY_SELECT}
+              selected={selectedBackdropKey}
+              items={backdropOptions}
+              onChange={(key) => dataset && setBackdropKey(key)}
+              disabled={isBackdropOptionsDisabled}
+            />
+          </SettingsItem>
+          <SettingsItem label="Brightness" htmlFor={SettingsHtmlIds.BACKDROP_BRIGHTNESS_SLIDER}>
+            <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
+              <LabeledSlider
+                id={SettingsHtmlIds.BACKDROP_BRIGHTNESS_SLIDER}
+                type="value"
+                minSliderBound={0}
+                maxSliderBound={200}
+                minInputBound={0}
+                maxInputBound={200}
+                value={backdropBrightness}
+                onChange={setBackdropBrightness}
+                marks={[100]}
+                numberFormatter={(value?: number) => `${value}%`}
+                disabled={isBackdropOptionsDisabled}
+              />
+            </div>
+          </SettingsItem>
+
+          <SettingsItem label="Saturation" htmlFor={SettingsHtmlIds.BACKDROP_SATURATION_SLIDER}>
+            <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
+              <LabeledSlider
+                id={SettingsHtmlIds.BACKDROP_SATURATION_SLIDER}
+                type="value"
+                minSliderBound={0}
+                maxSliderBound={100}
+                minInputBound={0}
+                maxInputBound={100}
+                value={backdropSaturation}
+                onChange={setBackdropSaturation}
+                marks={[100]}
+                numberFormatter={(value?: number) => `${value}%`}
+                disabled={isBackdropOptionsDisabled}
+              />
+            </div>
+          </SettingsItem>
+          <SettingsItem label="Object opacity" htmlFor={SettingsHtmlIds.OBJECT_OPACITY_SLIDER}>
+            <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
+              <LabeledSlider
+                id={SettingsHtmlIds.OBJECT_OPACITY_SLIDER}
+                type="value"
+                disabled={isBackdropOptionsDisabled}
+                minSliderBound={0}
+                maxSliderBound={100}
+                minInputBound={0}
+                maxInputBound={100}
+                value={objectOpacity}
+                onChange={setObjectOpacity}
+                marks={[100]}
+                numberFormatter={(value?: number) => `${value}%`}
+              />
             </div>
           </SettingsItem>
         </SettingsContainer>
