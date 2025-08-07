@@ -142,7 +142,7 @@ export default function SettingsTab(): ReactElement {
   }
 
   return (
-    <FlexColumn $gap={5}>
+    <FlexColumn $gap={4}>
       <CheckboxCollapse checked={true} disabled={true} label="Objects">
         <SettingsContainer indentPx={SETTINGS_INDENT_PX} gapPx={SETTINGS_GAP_PX}>
           <SettingsItem label="Highlight" htmlFor={SettingsHtmlIds.HIGHLIGHT_COLOR_PICKER}>
@@ -206,74 +206,6 @@ export default function SettingsTab(): ReactElement {
             />
           </SettingsItem>
 
-          <SettingsItem
-            label={"Track path"}
-            htmlFor={SettingsHtmlIds.SHOW_TRACK_PATH_SWITCH}
-            labelStyle={{ height: "min-content" }}
-            style={{ marginTop: "15px" }}
-          >
-            <div>
-              <Switch
-                id={SettingsHtmlIds.SHOW_TRACK_PATH_SWITCH}
-                checked={showTrackPath}
-                onChange={setShowTrackPath}
-              ></Switch>
-            </div>
-          </SettingsItem>
-          {showTrackPath && (
-            <>
-              <SettingsItem label="Color" htmlFor={SettingsHtmlIds.TRACK_PATH_COLOR_SELECT}>
-                <DropdownWithColorPicker
-                  id={SettingsHtmlIds.TRACK_PATH_COLOR_SELECT}
-                  selected={trackPathColorMode.toString()}
-                  items={TRACK_MODE_ITEMS}
-                  onValueChange={(value) => setTrackPathColorMode(Number.parseInt(value, 10) as TrackPathColorMode)}
-                  onColorChange={setTrackPathColor}
-                  color={trackPathColor}
-                  presets={DEFAULT_OUTLINE_COLOR_PRESETS}
-                  showColorPicker={trackPathColorMode === TrackPathColorMode.USE_CUSTOM_COLOR}
-                />
-              </SettingsItem>
-              <SettingsItem label="Width" htmlFor={SettingsHtmlIds.TRACK_PATH_WIDTH_SLIDER}>
-                <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
-                  <LabeledSlider
-                    id={SettingsHtmlIds.TRACK_PATH_WIDTH_SLIDER}
-                    type="value"
-                    minSliderBound={1}
-                    maxSliderBound={5}
-                    minInputBound={0}
-                    maxInputBound={100}
-                    precision={1}
-                    value={trackPathWidthPx}
-                    onChange={setTrackPathWidthPx}
-                    marks={[1.5]}
-                    step={0.1}
-                    numberFormatter={(value?: number) => `${value?.toFixed(1)}`}
-                  />
-                </div>
-              </SettingsItem>
-              <SettingsItem
-                label={"Show breaks"}
-                htmlFor={SettingsHtmlIds.TRACK_PATH_SHOW_BREAKS_CHECKBOX}
-                labelStyle={{ height: "min-content" }}
-                style={{ marginBottom: "20px", marginTop: "-5px" }}
-              >
-                <Tooltip title="Show breaks in the track path where the track is not continuous." placement="right">
-                  <div style={{ width: "fit-content" }}>
-                    <VisuallyHidden>Show breaks in the track path where the track is not continuous.</VisuallyHidden>
-                    <Checkbox
-                      id={SettingsHtmlIds.TRACK_PATH_SHOW_BREAKS_CHECKBOX}
-                      type="checkbox"
-                      checked={showTrackPathBreaks}
-                      onChange={(event) => {
-                        setShowTrackPathBreaks(event.target.checked);
-                      }}
-                    ></Checkbox>
-                  </div>
-                </Tooltip>
-              </SettingsItem>
-            </>
-          )}
           <SettingsItem label="Scale bar" htmlFor={SettingsHtmlIds.SCALE_BAR_SWITCH}>
             <div>
               <Switch id={SettingsHtmlIds.SCALE_BAR_SWITCH} checked={showScaleBar} onChange={setShowScaleBar} />
@@ -283,6 +215,63 @@ export default function SettingsTab(): ReactElement {
             <div>
               <Switch id={SettingsHtmlIds.TIMESTAMP_SWITCH} checked={showTimestamp} onChange={setShowTimestamp} />
             </div>
+          </SettingsItem>
+        </SettingsContainer>
+      </CheckboxCollapse>
+
+      <StyledHorizontalRule />
+
+      <CheckboxCollapse checked={showTrackPath} label="Track path" onChange={setShowTrackPath}>
+        <SettingsContainer>
+          <SettingsItem label="Color" htmlFor={SettingsHtmlIds.TRACK_PATH_COLOR_SELECT}>
+            <DropdownWithColorPicker
+              id={SettingsHtmlIds.TRACK_PATH_COLOR_SELECT}
+              selected={trackPathColorMode.toString()}
+              items={TRACK_MODE_ITEMS}
+              onValueChange={(value) => setTrackPathColorMode(Number.parseInt(value, 10) as TrackPathColorMode)}
+              onColorChange={setTrackPathColor}
+              color={trackPathColor}
+              presets={DEFAULT_OUTLINE_COLOR_PRESETS}
+              showColorPicker={trackPathColorMode === TrackPathColorMode.USE_CUSTOM_COLOR}
+            />
+          </SettingsItem>
+          <SettingsItem label="Width" htmlFor={SettingsHtmlIds.TRACK_PATH_WIDTH_SLIDER}>
+            <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
+              <LabeledSlider
+                id={SettingsHtmlIds.TRACK_PATH_WIDTH_SLIDER}
+                type="value"
+                minSliderBound={1}
+                maxSliderBound={5}
+                minInputBound={0}
+                maxInputBound={100}
+                precision={1}
+                value={trackPathWidthPx}
+                onChange={setTrackPathWidthPx}
+                marks={[1.5]}
+                step={0.1}
+                numberFormatter={(value?: number) => `${value?.toFixed(1)}`}
+              />
+            </div>
+          </SettingsItem>
+          <SettingsItem
+            label={"Show breaks"}
+            htmlFor={SettingsHtmlIds.TRACK_PATH_SHOW_BREAKS_CHECKBOX}
+            labelStyle={{ height: "min-content" }}
+            style={{ marginTop: "-5px" }}
+          >
+            <Tooltip title="Show breaks in the track path where the track is not continuous." placement="right">
+              <div style={{ width: "fit-content" }}>
+                <VisuallyHidden>Show breaks in the track path where the track is not continuous.</VisuallyHidden>
+                <Checkbox
+                  id={SettingsHtmlIds.TRACK_PATH_SHOW_BREAKS_CHECKBOX}
+                  type="checkbox"
+                  checked={showTrackPathBreaks}
+                  onChange={(event) => {
+                    setShowTrackPathBreaks(event.target.checked);
+                  }}
+                ></Checkbox>
+              </div>
+            </Tooltip>
           </SettingsItem>
         </SettingsContainer>
       </CheckboxCollapse>
