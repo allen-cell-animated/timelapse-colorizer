@@ -1,4 +1,4 @@
-import { Card, Checkbox, Radio } from "antd";
+import { Card, Radio } from "antd";
 import React, { ReactElement, useMemo } from "react";
 import { Color, ColorRepresentation } from "three";
 
@@ -35,7 +35,6 @@ export default function VectorFieldSettings(): ReactElement {
   const setVectorMotionTimeIntervals = useViewerStateStore((state) => state.setVectorMotionTimeIntervals);
   const setVectorScaleFactor = useViewerStateStore((state) => state.setVectorScaleFactor);
   const setVectorTooltipMode = useViewerStateStore((state) => state.setVectorTooltipMode);
-  const setVectorVisible = useViewerStateStore((state) => state.setVectorVisible);
   const vectorColor = useViewerStateStore((state) => state.vectorColor);
   const vectorKey = useViewerStateStore((state) => state.vectorKey);
   const vectorMotionTimeIntervals = useViewerStateStore((state) => state.vectorMotionTimeIntervals);
@@ -49,18 +48,6 @@ export default function VectorFieldSettings(): ReactElement {
 
   return (
     <>
-      <SettingsItem label={"Show vector arrows"} htmlFor={VectorSettingsHtmlIds.SHOW_VECTOR_ARROWS_CHECKBOX}>
-        <div style={{ width: "fit-content" }}>
-          {/* TODO: Replace with a top-level checkbox for Vector arrows when Collapse menus are removed */}
-          <Checkbox
-            id={VectorSettingsHtmlIds.SHOW_VECTOR_ARROWS_CHECKBOX}
-            checked={vectorVisible}
-            onChange={(e) => setVectorVisible(e.target.checked)}
-            disabled={dataset === null}
-          />
-        </div>
-      </SettingsItem>
-
       <SettingsItem
         label="Vector"
         labelStyle={{ height: "min-content", paddingTop: "2px" }}
@@ -72,6 +59,7 @@ export default function VectorFieldSettings(): ReactElement {
           selected={vectorKey}
           items={vectorOptions}
           onChange={setVectorKey}
+          controlTooltipPlacement="right"
         ></SelectionDropdown>
         {vectorKey === VECTOR_KEY_MOTION_DELTA && vectorOptionsEnabled && (
           <Card style={{ position: "relative", width: "fit-content", marginTop: "10px" }} size="small">
@@ -139,7 +127,7 @@ export default function VectorFieldSettings(): ReactElement {
        * See https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/input/radio#defining_a_radio_group
        */}
       <SettingsItem
-        label="Show vector in tooltip as"
+        label="Tooltip mode"
         labelStyle={{ height: "fit-content" }}
         htmlFor={VectorSettingsHtmlIds.VECTOR_TOOLTIP_MODE_RADIO}
       >
