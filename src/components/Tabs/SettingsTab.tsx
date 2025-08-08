@@ -123,8 +123,6 @@ export default function SettingsTab(): ReactElement {
   const trackPathColor = useViewerStateStore((state) => state.trackPathColor);
   const trackPathColorMode = useViewerStateStore((state) => state.trackPathColorMode);
   const trackPathWidthPx = useViewerStateStore((state) => state.trackPathWidthPx);
-  const channelSettings = useViewerStateStore((state) => state.channelSettings);
-  const updateChannelSettings = useViewerStateStore((state) => state.updateChannelSettings);
   const vectorVisible = useViewerStateStore((state) => state.vectorVisible);
   const setVectorVisible = useViewerStateStore((state) => state.setVectorVisible);
 
@@ -356,9 +354,7 @@ export default function SettingsTab(): ReactElement {
 
       <StyledHorizontalRule />
 
-      <CheckboxCollapse checked={true} label={"Channels"}>
-        <ChannelSettings />
-      </CheckboxCollapse>
+      <ChannelSettings />
 
       <StyledHorizontalRule />
 

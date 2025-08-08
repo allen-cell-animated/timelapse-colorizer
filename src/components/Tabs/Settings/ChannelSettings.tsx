@@ -1,6 +1,6 @@
 import { SyncOutlined } from "@ant-design/icons";
 import { Button, Checkbox, Tooltip } from "antd";
-import React, { ReactElement, useMemo } from "react";
+import React, { ReactElement, useContext, useMemo } from "react";
 
 import { ChannelRangePreset } from "../../../colorizer";
 import { useViewerStateStore } from "../../../state";
@@ -8,6 +8,8 @@ import { ViewerStoreState } from "../../../state/slices";
 import { FlexColumn, FlexRowAlignCenter } from "../../../styles/utils";
 import { antToThreeColor, threeToAntColorWithAlpha } from "../../../utils/color_utils";
 
+import { AppThemeContext } from "../../AppStyle";
+import CheckboxCollapse from "../../CheckboxCollapse";
 import CustomCollapse from "../../CustomCollapse";
 import LabeledSlider from "../../Inputs/LabeledSlider";
 import WrappedColorPicker from "../../Inputs/WrappedColorPicker";
@@ -22,6 +24,7 @@ type ChannelSettingProps = {
   onClickRangePreset: (preset: ChannelRangePreset) => void;
 };
 
+/** Controls for an individual channel's settings */
 function ChannelSetting(props: ChannelSettingProps): ReactElement {
   const { name, channelIndex, settings, updateSettings, onClickSync, onClickRangePreset } = props;
   const rangeSliderId = `settings-channel-range-slider-${channelIndex}`;
@@ -81,6 +84,8 @@ function ChannelSetting(props: ChannelSettingProps): ReactElement {
 }
 
 export default function ChannelSettings(): ReactElement {
+  const theme = useContext(AppThemeContext);
+
   const dataset = useViewerStateStore((state) => state.dataset);
   const channelSettings = useViewerStateStore((state) => state.channelSettings);
   const updateChannelSettings = useViewerStateStore((state) => state.updateChannelSettings);
@@ -98,7 +103,11 @@ export default function ChannelSettings(): ReactElement {
 
   const channelSettingElements = useMemo(() => {
     if (!dataset || !dataset.frames3d || !dataset.frames3d.backdrops) {
-      return <div>No channels available</div>;
+      return (
+        <div>
+          <p style={{ color: theme.color.text.hint }}>No channels available</p>
+        </div>
+      );
     }
     return dataset.frames3d.backdrops.map((backdropData, index) => {
       const name = backdropData.name || `Channel ${index + 1}`;
@@ -117,17 +126,26 @@ export default function ChannelSettings(): ReactElement {
   }, [channelSettings, updateChannelSettings, dataset, syncChannelDataRange, applyChannelRange]);
 
   return (
-    <CustomCollapse label={"Channels"}>
-      <Checkbox
-        checked={areAllChannelsVisible}
-        indeterminate={!areNoChannelsVisible && !areAllChannelsVisible}
-        onChange={(e) => {
-          handleShowAllChannelsChange(e.target.checked);
-        }}
-      >
-        Show all channels
-      </Checkbox>
+    <CheckboxCollapse
+      checked={true}
+      label={"Channels"}
+      disabled={channelSettings.length === 0}
+      headerContent={
+        <>
+          |
+          <Checkbox
+            checked={areAllChannelsVisible}
+            indeterminate={!areNoChannelsVisible && !areAllChannelsVisible}
+            onChange={(e) => {
+              handleShowAllChannelsChange(e.target.checked);
+            }}
+          >
+            Show all channels
+          </Checkbox>
+        </>
+      }
+    >
       <FlexColumn $gap={16}>{channelSettingElements}</FlexColumn>
-    </CustomCollapse>
+    </CheckboxCollapse>
   );
 }
