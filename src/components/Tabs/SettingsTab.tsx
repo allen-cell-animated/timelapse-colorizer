@@ -12,12 +12,12 @@ import { SelectItem } from "../Dropdowns/types";
 import { DEFAULT_OUTLINE_COLOR_PRESETS } from "./Settings/constants";
 
 import { useViewerStateStore } from "../../state/ViewerState";
-import ToggleCollapse from "../CheckboxCollapse";
 import DropdownWithColorPicker from "../Dropdowns/DropdownWithColorPicker";
 import SelectionDropdown from "../Dropdowns/SelectionDropdown";
 import LabeledSlider from "../Inputs/LabeledSlider";
 import WrappedColorPicker from "../Inputs/WrappedColorPicker";
 import { SettingsContainer, SettingsItem } from "../SettingsContainer";
+import ToggleCollapse from "../ToggleCollapse";
 import VectorFieldSettings from "./Settings/VectorFieldSettings";
 
 const enum SettingsHtmlIds {
