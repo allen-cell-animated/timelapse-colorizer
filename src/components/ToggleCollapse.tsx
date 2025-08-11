@@ -1,10 +1,11 @@
 import { CaretDownFilled, CaretUpFilled } from "@ant-design/icons";
-import { Button, Switch } from "antd";
+import { Switch } from "antd";
 import React, { PropsWithChildren, ReactElement, ReactNode, useCallback, useContext, useEffect, useState } from "react";
 
 import { FlexColumn, FlexRowAlignCenter, VisuallyHidden } from "../styles/utils";
 
 import { AppThemeContext } from "./AppStyle";
+import TextButton from "./Buttons/TextButton";
 
 const ANIMATION_DURATION_MS = 150;
 
@@ -161,19 +162,14 @@ export default function ToggleCollapse(inputProps: PropsWithChildren<ToggleColla
           {props.headerContent}
         </FlexRowAlignCenter>
 
-        <Button
-          onClick={onClickExpandCollapseButton}
-          icon={
-            <span style={{ fontSize: theme.font.size.section, color: theme.color.text.theme }}>
-              {isExpanded ? <CaretUpFilled /> : <CaretDownFilled />}
-            </span>
-          }
-          type="text"
-        >
+        <TextButton onClick={onClickExpandCollapseButton} style={{ padding: "0 5px" }}>
+          <span style={{ fontSize: theme.font.size.label }}>
+            {isExpanded ? <CaretUpFilled /> : <CaretDownFilled />}
+          </span>
           <VisuallyHidden>
             {isExpanded ? "Collapse" : "Expand"} {props.label.toLowerCase() + " settings section"}
           </VisuallyHidden>
-        </Button>
+        </TextButton>
       </FlexRowAlignCenter>
       <div
         style={{
