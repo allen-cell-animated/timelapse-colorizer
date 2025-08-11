@@ -1,8 +1,10 @@
 import { CaretDownFilled, CaretUpFilled } from "@ant-design/icons";
 import { Button, Switch } from "antd";
-import React, { PropsWithChildren, ReactElement, ReactNode, useCallback, useEffect, useState } from "react";
+import React, { PropsWithChildren, ReactElement, ReactNode, useCallback, useContext, useEffect, useState } from "react";
 
 import { FlexColumn, FlexRowAlignCenter, VisuallyHidden } from "../styles/utils";
+
+import { AppThemeContext } from "./AppStyle";
 
 const ANIMATION_DURATION_MS = 150;
 
@@ -46,6 +48,7 @@ const defaultProps: Partial<ToggleCollapseProps> = {
 export default function ToggleCollapse(inputProps: PropsWithChildren<ToggleCollapseProps>): ReactElement {
   const props = { ...defaultProps, ...inputProps };
 
+  const theme = useContext(AppThemeContext);
   const [isExpanded, setIsExpanded] = useState(props.toggleChecked ?? true);
   const [isInitialRender, setIsInitialRender] = useState(true);
   const [contentHeight, setContentHeight] = useState(0);
@@ -160,7 +163,11 @@ export default function ToggleCollapse(inputProps: PropsWithChildren<ToggleColla
 
         <Button
           onClick={onClickExpandCollapseButton}
-          icon={isExpanded ? <CaretUpFilled /> : <CaretDownFilled />}
+          icon={
+            <span style={{ fontSize: theme.font.size.section, color: theme.color.text.theme }}>
+              {isExpanded ? <CaretUpFilled /> : <CaretDownFilled />}
+            </span>
+          }
           type="text"
         >
           <VisuallyHidden>

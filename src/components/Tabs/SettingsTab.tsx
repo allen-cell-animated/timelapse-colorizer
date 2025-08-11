@@ -143,6 +143,7 @@ export default function SettingsTab(): ReactElement {
 
   return (
     <FlexColumn $gap={4}>
+      <StyledHorizontalRule />
       <ToggleCollapse label="Objects">
         <SettingsContainer indentPx={SETTINGS_INDENT_PX} gapPx={SETTINGS_GAP_PX}>
           <SettingsItem label="Highlight" htmlFor={SettingsHtmlIds.HIGHLIGHT_COLOR_PICKER}>
