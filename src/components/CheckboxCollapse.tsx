@@ -1,30 +1,35 @@
-import { Checkbox, CheckboxChangeEvent } from "antd";
+import { CaretDownFilled, CaretUpFilled } from "@ant-design/icons";
+import { Button, Switch } from "antd";
 import React, { PropsWithChildren, ReactElement, ReactNode, useCallback, useEffect, useState } from "react";
 
-import { FlexColumn, FlexRowAlignCenter } from "../styles/utils";
+import { FlexColumn, FlexRowAlignCenter, VisuallyHidden } from "../styles/utils";
 
 const ANIMATION_DURATION_MS = 150;
 
-type CheckboxCollapseProps = {
-  checked: boolean;
-  onChange?: (checked: boolean) => void;
-  disabled?: boolean;
+type ToggleCollapseProps = {
   label: string;
   labelStyle?: React.CSSProperties;
   /**
+   * If defined, includes a toggle switch in the header row with this checked
+   * state. Changes to this state will also trigger collapse/expand behavior.
+   */
+  toggleChecked?: boolean;
+  onToggleChange?: (checked: boolean) => void;
+  toggleDisabled?: boolean;
+  /**
    * Additional element or elements that are placed in the same row as the
-   * checkbox and label.
+   * label (and toggle switch, if included).
    */
   headerContent?: ReactNode[] | ReactNode;
   /**
-   * If true (default), scrolls the collapse content into view when the checkbox
-   * is clicked.
+   * If true (default), scrolls the collapse content into view when the toggle
+   * switch is checked.
    */
   scrollIntoViewOnChecked?: boolean;
   contentIndentPx?: number;
 };
 
-const defaultProps: Partial<CheckboxCollapseProps> = {
+const defaultProps: Partial<ToggleCollapseProps> = {
   labelStyle: {
     fontSize: "var(--font-size-label)",
   },
@@ -34,16 +39,25 @@ const defaultProps: Partial<CheckboxCollapseProps> = {
 };
 
 /**
- * Collapsible area controlled by a labeled checkbox. Height changes are
- * animated and can automatically scroll the content area into view.
+ * Labeled collapsible area, with an optional toggle control. Height changes are
+ * animated, and the component can automatically scroll the content area into
+ * view.
  */
-export default function CheckboxCollapse(inputProps: PropsWithChildren<CheckboxCollapseProps>): ReactElement {
+export default function ToggleCollapse(inputProps: PropsWithChildren<ToggleCollapseProps>): ReactElement {
   const props = { ...defaultProps, ...inputProps };
 
+  const [isExpanded, setIsExpanded] = useState(props.toggleChecked ?? true);
   const [isInitialRender, setIsInitialRender] = useState(true);
   const [contentHeight, setContentHeight] = useState(0);
   const [hideOverflow, setHideOverflow] = useState(false);
   const contentContainerRef = React.useRef<HTMLDivElement>(null);
+
+  // Sync expanded state with toggle state
+  useEffect(() => {
+    if (props.toggleChecked !== undefined) {
+      setIsExpanded(props.toggleChecked);
+    }
+  }, [props.toggleChecked]);
 
   // Update content scroll height whenever content changes
   useEffect(() => {
@@ -55,65 +69,104 @@ export default function CheckboxCollapse(inputProps: PropsWithChildren<CheckboxC
     }
   }, [props.children]);
 
+  // Manage overflow visibility during expansion and collapse
   useEffect(() => {
     // Hiding overflow must be disabled once the content is fully expanded to
     // prevent dropdown menus and other popovers from being clipped, but
     // `overflow` cannot be animated using CSS transitions.
-    if (props.checked) {
+    if (isExpanded) {
       setTimeout(() => {
         setHideOverflow(false);
       }, ANIMATION_DURATION_MS);
     } else {
       setHideOverflow(true);
     }
-  }, [props.checked]);
+  }, [isExpanded]);
+
+  //// Helper methods ////
+
+  const expandAndScrollIntoView = useCallback(() => {
+    // Note that the scroll into view behavior is only triggered from
+    // user interaction, to prevent unexpected scrolling on initial render.
+    setIsExpanded(true);
+    // Must be delayed since the content container is expanding
+    setTimeout(() => {
+      contentContainerRef.current!.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+      });
+    }, ANIMATION_DURATION_MS + 10);
+  }, [contentContainerRef]);
 
   const onCheckboxChanged = useCallback(
-    (e: CheckboxChangeEvent) => {
-      if (props.onChange) {
-        props.onChange(e.target.checked);
+    (checked: boolean) => {
+      if (props.onToggleChange) {
+        props.onToggleChange(checked);
       }
-      // Auto scroll if enabled. Note that this will only trigger  to user
-      // interaction (clicking) to prevent unwanted scrolling when the collapse
-      // is expanded from props.
-      if (e.target.checked && props.scrollIntoViewOnChecked && contentContainerRef.current) {
-        // Must be delayed since the content container is expanding
-        setTimeout(() => {
-          contentContainerRef.current!.scrollIntoView({
-            behavior: "smooth",
-            block: "nearest",
-            // container: "nearest",
-          });
-        }, ANIMATION_DURATION_MS + 10);
+      if (!isExpanded && checked && props.scrollIntoViewOnChecked && contentContainerRef.current) {
+        expandAndScrollIntoView();
       }
     },
-    [props.onChange, props.scrollIntoViewOnChecked, props.checked, isInitialRender]
+    [
+      props.onToggleChange,
+      props.scrollIntoViewOnChecked,
+      props.toggleChecked,
+      isInitialRender,
+      isExpanded,
+      expandAndScrollIntoView,
+    ]
   );
 
-  const id = `checkbox-collapse-${props.label.replace(/\s+/g, "-").toLowerCase()}`;
+  const onClickExpandCollapseButton = useCallback(() => {
+    if (isExpanded) {
+      setIsExpanded(false);
+    } else {
+      expandAndScrollIntoView();
+    }
+  }, [isExpanded, expandAndScrollIntoView]);
 
-  const collapseHeight = props.checked ? contentHeight + "px" : "0";
+  //// Rendering ////
+
+  const toggleId = `toggle-collapse-${props.label.replace(/\s+/g, "-").toLowerCase()}`;
+  const collapseHeight = isExpanded ? contentHeight + "px" : "0";
   // Disable transition on initial rendering so the collapse does not animate
   const heightTransitionDuration = isInitialRender ? "0ms" : `${ANIMATION_DURATION_MS}ms`;
 
   return (
     <FlexColumn>
-      <FlexRowAlignCenter>
-        <FlexRowAlignCenter $gap={4}>
-          <Checkbox
-            type="checkbox"
-            id={id}
-            checked={props.checked}
-            onChange={onCheckboxChanged}
-            disabled={props.disabled}
-            // Align with default label text
-            style={{ paddingTop: "2px" }}
-          />
-          <label htmlFor={id} style={{ ...defaultProps.labelStyle, ...props.labelStyle }}>
-            {props.label}
-          </label>
+      <FlexRowAlignCenter style={{ justifyContent: "space-between" }}>
+        <FlexRowAlignCenter $gap={6}>
+          <FlexRowAlignCenter $gap={6}>
+            {props.toggleChecked ? (
+              <label htmlFor={toggleId} style={{ ...defaultProps.labelStyle, ...props.labelStyle }}>
+                {props.label}
+              </label>
+            ) : (
+              <span style={{ ...defaultProps.labelStyle, ...props.labelStyle }}>{props.label}</span>
+            )}
+            {props.toggleChecked !== undefined && (
+              <Switch
+                id={toggleId}
+                checked={props.toggleChecked}
+                onChange={onCheckboxChanged}
+                disabled={props.toggleDisabled}
+                // Align with default label text
+                style={{ paddingTop: "2px" }}
+              />
+            )}
+          </FlexRowAlignCenter>
+          {props.headerContent}
         </FlexRowAlignCenter>
-        {props.headerContent}
+
+        <Button
+          onClick={onClickExpandCollapseButton}
+          icon={isExpanded ? <CaretUpFilled /> : <CaretDownFilled />}
+          type="text"
+        >
+          <VisuallyHidden>
+            {isExpanded ? "Collapse" : "Expand"} {props.label.toLowerCase() + " settings section"}
+          </VisuallyHidden>
+        </Button>
       </FlexRowAlignCenter>
       <div
         style={{
