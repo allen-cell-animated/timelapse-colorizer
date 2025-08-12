@@ -12,12 +12,12 @@ import { SelectItem } from "../Dropdowns/types";
 import { DEFAULT_OUTLINE_COLOR_PRESETS } from "./Settings/constants";
 
 import { useViewerStateStore } from "../../state/ViewerState";
-import CheckboxCollapse from "../CheckboxCollapse";
 import DropdownWithColorPicker from "../Dropdowns/DropdownWithColorPicker";
 import SelectionDropdown from "../Dropdowns/SelectionDropdown";
 import LabeledSlider from "../Inputs/LabeledSlider";
 import WrappedColorPicker from "../Inputs/WrappedColorPicker";
 import { SettingsContainer, SettingsItem } from "../SettingsContainer";
+import ToggleCollapse from "../ToggleCollapse";
 import ChannelSettings from "./Settings/ChannelSettings";
 import VectorFieldSettings from "./Settings/VectorFieldSettings";
 
@@ -144,7 +144,8 @@ export default function SettingsTab(): ReactElement {
 
   return (
     <FlexColumn $gap={4}>
-      <CheckboxCollapse checked={true} disabled={true} label="Objects">
+      <StyledHorizontalRule />
+      <ToggleCollapse label="Objects">
         <SettingsContainer indentPx={SETTINGS_INDENT_PX} gapPx={SETTINGS_GAP_PX}>
           <SettingsItem label="Highlight" htmlFor={SettingsHtmlIds.HIGHLIGHT_COLOR_PICKER}>
             {/* NOTE: 'Highlight color' is 'outline' internally, and 'Outline color' is 'edge' for legacy reasons. */}
@@ -207,22 +208,38 @@ export default function SettingsTab(): ReactElement {
             />
           </SettingsItem>
 
-          <SettingsItem label="Scale bar" htmlFor={SettingsHtmlIds.SCALE_BAR_SWITCH}>
+          <SettingsItem label="Scale bar" htmlFor={SettingsHtmlIds.SCALE_BAR_SWITCH} labelStyle={{ marginTop: "1px" }}>
             <div>
-              <Switch id={SettingsHtmlIds.SCALE_BAR_SWITCH} checked={showScaleBar} onChange={setShowScaleBar} />
+              <Switch
+                id={SettingsHtmlIds.SCALE_BAR_SWITCH}
+                checked={showScaleBar}
+                onChange={setShowScaleBar}
+                size="small"
+                style={{ paddingTop: "0" }}
+              />
             </div>
           </SettingsItem>
-          <SettingsItem label="Timestamp" htmlFor={SettingsHtmlIds.TIMESTAMP_SWITCH}>
+          <SettingsItem label="Timestamp" htmlFor={SettingsHtmlIds.TIMESTAMP_SWITCH} labelStyle={{ marginTop: "1px" }}>
             <div>
-              <Switch id={SettingsHtmlIds.TIMESTAMP_SWITCH} checked={showTimestamp} onChange={setShowTimestamp} />
+              <Switch
+                id={SettingsHtmlIds.TIMESTAMP_SWITCH}
+                checked={showTimestamp}
+                onChange={setShowTimestamp}
+                size="small"
+              />
             </div>
           </SettingsItem>
         </SettingsContainer>
-      </CheckboxCollapse>
+      </ToggleCollapse>
 
       <StyledHorizontalRule />
 
-      <CheckboxCollapse checked={showTrackPath} label="Track path" onChange={setShowTrackPath} contentIndentPx={70}>
+      <ToggleCollapse
+        toggleChecked={showTrackPath}
+        label="Track path"
+        onToggleChange={setShowTrackPath}
+        contentIndentPx={70}
+      >
         <SettingsContainer>
           <SettingsItem label="Color" htmlFor={SettingsHtmlIds.TRACK_PATH_COLOR_SELECT}>
             <DropdownWithColorPicker
@@ -275,15 +292,15 @@ export default function SettingsTab(): ReactElement {
             </Tooltip>
           </SettingsItem>
         </SettingsContainer>
-      </CheckboxCollapse>
+      </ToggleCollapse>
 
       <StyledHorizontalRule />
 
-      <CheckboxCollapse
+      <ToggleCollapse
         label="Backdrop"
-        disabled={isBackdropDisabled}
-        checked={backdropVisible}
-        onChange={setBackdropVisible}
+        toggleDisabled={isBackdropDisabled}
+        toggleChecked={backdropVisible}
+        onToggleChange={setBackdropVisible}
       >
         <SettingsContainer indentPx={SETTINGS_INDENT_PX} gapPx={SETTINGS_GAP_PX}>
           <SettingsItem label="Backdrop" htmlFor={SettingsHtmlIds.BACKDROP_KEY_SELECT}>
@@ -350,7 +367,7 @@ export default function SettingsTab(): ReactElement {
             </div>
           </SettingsItem>
         </SettingsContainer>
-      </CheckboxCollapse>
+      </ToggleCollapse>
 
       <StyledHorizontalRule />
 
@@ -358,12 +375,18 @@ export default function SettingsTab(): ReactElement {
 
       <StyledHorizontalRule />
 
-      <CheckboxCollapse label="Vector arrows" checked={vectorVisible} onChange={setVectorVisible} contentIndentPx={46}>
+      <ToggleCollapse
+        label="Vector arrows"
+        toggleChecked={vectorVisible}
+        onToggleChange={setVectorVisible}
+        contentIndentPx={46}
+      >
         <SettingsContainer indentPx={SETTINGS_INDENT_PX} gapPx={SETTINGS_GAP_PX}>
           <VectorFieldSettings />
         </SettingsContainer>
-      </CheckboxCollapse>
-      <div style={{ height: "100px" }}></div>
+      </ToggleCollapse>
+      {/* Extra padding to prevent layout shift when toggling open/closed */}
+      <div style={{ height: "400px" }}></div>
     </FlexColumn>
   );
 }
