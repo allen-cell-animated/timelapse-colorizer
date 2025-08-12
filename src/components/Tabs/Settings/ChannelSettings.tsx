@@ -9,11 +9,11 @@ import { FlexColumn, FlexRowAlignCenter } from "../../../styles/utils";
 import { antToThreeColor, threeToAntColorWithAlpha } from "../../../utils/color_utils";
 
 import { AppThemeContext } from "../../AppStyle";
-import CheckboxCollapse from "../../CheckboxCollapse";
 import CustomCollapse from "../../CustomCollapse";
 import LabeledSlider from "../../Inputs/LabeledSlider";
 import WrappedColorPicker from "../../Inputs/WrappedColorPicker";
 import { SettingsContainer, SettingsItem } from "../../SettingsContainer";
+import ToggleCollapse from "../../ToggleCollapse";
 
 type ChannelSettingProps = {
   name: string;
@@ -126,10 +126,8 @@ export default function ChannelSettings(): ReactElement {
   }, [channelSettings, updateChannelSettings, dataset, syncChannelDataRange, applyChannelRange]);
 
   return (
-    <CheckboxCollapse
-      checked={true}
+    <ToggleCollapse
       label={"Channels"}
-      disabled={channelSettings.length === 0}
       headerContent={
         <>
           |
@@ -139,6 +137,7 @@ export default function ChannelSettings(): ReactElement {
             onChange={(e) => {
               handleShowAllChannelsChange(e.target.checked);
             }}
+            disabled={channelSettings.length === 0}
           >
             Show all channels
           </Checkbox>
@@ -146,6 +145,6 @@ export default function ChannelSettings(): ReactElement {
       }
     >
       <FlexColumn $gap={16}>{channelSettingElements}</FlexColumn>
-    </CheckboxCollapse>
+    </ToggleCollapse>
   );
 }
