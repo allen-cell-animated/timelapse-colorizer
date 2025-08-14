@@ -26,27 +26,22 @@ const Banner = styled(FlexColumnAlignCenter)`
   margin: 0;
 `;
 
-const BannerTextContainer = styled(FlexColumnAlignCenter)`
-  --padding-x: 30px;
-  padding: var(--padding-x);
-  max-width: calc(1060px - 2 * var(--padding-x));
+const BannerTextContainer = styled(FlexColumn)`
+  max-width: calc(1060px);
+  width: calc(90vw - 40px);
+  padding: 30px 0;
 
-  --total-padding-x: calc(2 * var(--padding-x) + 2 * var(--container-padding-x));
-  width: calc(90vw - var(--total-padding-x));
-  border-radius: 5px;
-  // Fallback in case color-mix is unsupported.
-  background-color: var(--color-background);
-  // Make the background slightly transparent. Note that this may fail on internet explorer.
-  background-color: color-mix(in srgb, var(--color-background) 80%, transparent);
-  box-shadow: 0 4px 4px rgba(0, 0, 0, 0.3);
-  gap: 10px;
+  & > div {
+    // Inner container is sized smaller
+    max-width: calc(min(775px, 70vw));
 
-  & > h1 {
-    margin-top: 0;
-  }
+    & > h1 {
+      margin-top: 0;
+    }
 
-  & > p {
-    font-size: var(--font-size-label);
+    & > p {
+      font-size: var(--font-size-label);
+    }
   }
 `;
 
@@ -291,40 +286,33 @@ export default function LandingPage(): ReactElement {
           </Suspense>
         </BannerVideoContainer>
         <BannerTextContainer>
-          <FlexColumnAlignCenter>
-            <h1 style={{ marginBottom: 0 }}>Timelapse Feature Explorer</h1>
-            <h2 style={{ margin: 0 }}>An interactive, web-based viewer for segmented timelapse data</h2>
-          </FlexColumnAlignCenter>
-          <p>
-            Timelapse Feature Explorer is an online viewer for visualization and analysis of segmented time-series
-            microscopy data. Ideal for biomedical researchers and other data professionals, it offers an intuitive set
-            of tools for scientific research and deeper understanding of dynamic datasets.
-          </p>
+          <FlexColumn $gap={10}>
+            <h1 style={{ marginBottom: 0 }}>An interactive, web-based viewer for segmented timelapse data</h1>
+            <p>
+              <b>Timelapse Feature Explorer</b> lets you view and analyze microscopy data online. Designed for
+              biomedical researchers and data professionals, it provides intuitive tools for exploring dynamic datasets.
+            </p>
+          </FlexColumn>
         </BannerTextContainer>
       </Banner>
 
       <ContentContainer>
         <FeatureHighlightsContainer>
           <FeatureHighlightsItem>
-            <h3>Dynamic color mapping</h3>
-            <p>Customizable colormaps to understand patterns and trends within time lapse data.</p>
+            <h3>Explore your data</h3>
+            <p>Zoom, pan, and apply colormaps to observe patterns and trends with fast, responsive playback.</p>
           </FeatureHighlightsItem>
           <FeatureHighlightsItem>
-            <h3>Interactive data exploration</h3>
-            <p>Easily switch between features for focused analysis or comparing different datasets.</p>
+            <h3>Plot anything</h3>
+            <p>Use integrated plots to understand dynamics in one track-- or all of them.</p>
           </FeatureHighlightsItem>
           <FeatureHighlightsItem>
-            <h3>Temporal navigation controls</h3>
-            <p>
-              Feature-rich playback controls to observe motion and dynamics over time, revealing trends and anomalies.
-            </p>
+            <h3>Annotate everything</h3>
+            <p>Label segmentations or flag errors in a few clicks, with easy CSV export to update your data.</p>
           </FeatureHighlightsItem>
           <FeatureHighlightsItem>
-            <h3>Feature extraction and visualization</h3>
-            <p>
-              Integrated plots show feature evolution, outliers, clusters and other patterns facilitating a nuanced
-              understanding of temporal dynamics.
-            </p>
+            <h3>Share with anyone</h3>
+            <p>Save videos and images in seconds, or share links to give collaborators the same interactive view.</p>
           </FeatureHighlightsItem>
         </FeatureHighlightsContainer>
       </ContentContainer>
