@@ -509,10 +509,10 @@ export default class CanvasOverlay implements IRenderCanvas {
 
     this.ctx.scale(devicePixelRatio, devicePixelRatio);
 
-    headerRenderer.render(new Vector2(0, 0));
     if (this.isAnnotationVisible) {
       this.getAnnotationRenderer().render(new Vector2(0, this.headerSize.y));
     }
+    headerRenderer.render(new Vector2(0, 0));
     footerRenderer.render(new Vector2(0, this.innerCanvasSize.y + this.headerSize.y));
   }
 
