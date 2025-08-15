@@ -93,7 +93,12 @@ const FeatureHighlightsItem = styled(FlexColumn)`
 const LoadPromptContainer = styled(FlexColumnAlignCenter)`
   background-color: var(--color-background-alt);
   margin: 30px 0;
-  padding: 30px;
+  padding: 30px 0;
+
+  & > h2 {
+    margin: auto;
+    max-width: calc(90vw - 40px);
+  }
 `;
 
 const ProjectList = styled.ul`
