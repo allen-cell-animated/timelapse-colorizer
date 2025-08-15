@@ -289,8 +289,8 @@ export default function LandingPage(): ReactElement {
           <FlexColumn $gap={10}>
             <h1 style={{ marginBottom: 0 }}>An interactive, web-based viewer for segmented timelapse data</h1>
             <p>
-              <b>Timelapse Feature Explorer</b> lets you view and analyze microscopy data online. Designed for
-              biomedical researchers and data professionals, it provides intuitive tools for exploring dynamic datasets.
+              Designed for biomedical researchers and data professionals, <b>Timelapse Feature Explorer</b> provides
+              intuitive tools for exploring and analyzing dynamic datasets.
             </p>
           </FlexColumn>
         </BannerTextContainer>
