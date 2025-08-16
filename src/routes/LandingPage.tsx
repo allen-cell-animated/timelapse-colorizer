@@ -27,12 +27,13 @@ const Banner = styled(FlexColumnAlignCenter)`
 `;
 
 const BannerTextContainer = styled(FlexColumn)`
-  max-width: calc(1060px);
+  max-width: 1060px;
   width: calc(90vw - 40px);
   padding: 30px 0;
 
   & > div {
-    // Inner container is sized smaller
+    // Text does not take full width to leave the right section clear (where
+    // animated video is playing)
     max-width: calc(min(775px, 70vw));
 
     & > h1 {
