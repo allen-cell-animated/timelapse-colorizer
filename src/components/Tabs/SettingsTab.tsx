@@ -5,18 +5,19 @@ import { Color, ColorRepresentation } from "three";
 
 import { OUTLINE_COLOR_DEFAULT } from "../../colorizer/constants";
 import { DrawMode, TrackPathColorMode } from "../../colorizer/types";
+import { StyledHorizontalRule } from "../../styles/components";
 import { FlexColumn, VisuallyHidden } from "../../styles/utils";
 import { threeToAntColor } from "../../utils/color_utils";
 import { SelectItem } from "../Dropdowns/types";
 import { DEFAULT_OUTLINE_COLOR_PRESETS } from "./Settings/constants";
 
 import { useViewerStateStore } from "../../state/ViewerState";
-import CustomCollapse from "../CustomCollapse";
 import DropdownWithColorPicker from "../Dropdowns/DropdownWithColorPicker";
 import SelectionDropdown from "../Dropdowns/SelectionDropdown";
 import LabeledSlider from "../Inputs/LabeledSlider";
 import WrappedColorPicker from "../Inputs/WrappedColorPicker";
 import { SettingsContainer, SettingsItem } from "../SettingsContainer";
+import ToggleCollapse from "../ToggleCollapse";
 import VectorFieldSettings from "./Settings/VectorFieldSettings";
 
 const enum SettingsHtmlIds {
@@ -74,7 +75,7 @@ const EDGE_COLOR_PRESETS: PresetsItem[] = [
 ];
 
 const TRACK_MODE_ITEMS: SelectItem[] = [
-  { value: TrackPathColorMode.USE_OUTLINE_COLOR.toString(), label: "Outline" },
+  { value: TrackPathColorMode.USE_OUTLINE_COLOR.toString(), label: "Highlight" },
   { value: TrackPathColorMode.USE_CUSTOM_COLOR.toString(), label: "Custom" },
   { value: TrackPathColorMode.USE_FEATURE_COLOR.toString(), label: "Feature" },
 ];
@@ -121,6 +122,8 @@ export default function SettingsTab(): ReactElement {
   const trackPathColor = useViewerStateStore((state) => state.trackPathColor);
   const trackPathColorMode = useViewerStateStore((state) => state.trackPathColorMode);
   const trackPathWidthPx = useViewerStateStore((state) => state.trackPathWidthPx);
+  const vectorVisible = useViewerStateStore((state) => state.vectorVisible);
+  const setVectorVisible = useViewerStateStore((state) => state.setVectorVisible);
 
   let backdropOptions = useMemo(
     () =>
@@ -139,86 +142,9 @@ export default function SettingsTab(): ReactElement {
   }
 
   return (
-    <FlexColumn $gap={5}>
-      <CustomCollapse label="Backdrop">
-        <SettingsContainer indentPx={SETTINGS_INDENT_PX} gapPx={SETTINGS_GAP_PX}>
-          <SettingsItem label={"Show backdrops"} htmlFor={SettingsHtmlIds.SHOW_BACKDROPS_CHECKBOX}>
-            <div style={{ width: "fit-content" }}>
-              <Checkbox
-                id={SettingsHtmlIds.SHOW_BACKDROPS_CHECKBOX}
-                type="checkbox"
-                disabled={isBackdropDisabled}
-                checked={backdropVisible}
-                onChange={(event) => setBackdropVisible(event.target.checked)}
-              />
-            </div>
-          </SettingsItem>
-          <SettingsItem label="Backdrop" htmlFor={SettingsHtmlIds.BACKDROP_KEY_SELECT}>
-            <SelectionDropdown
-              id={SettingsHtmlIds.BACKDROP_KEY_SELECT}
-              selected={selectedBackdropKey}
-              items={backdropOptions}
-              onChange={(key) => dataset && setBackdropKey(key)}
-              disabled={isBackdropOptionsDisabled}
-              controlTooltipPlacement="right"
-            />
-          </SettingsItem>
-          <SettingsItem label="Brightness" htmlFor={SettingsHtmlIds.BACKDROP_BRIGHTNESS_SLIDER}>
-            <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
-              <LabeledSlider
-                id={SettingsHtmlIds.BACKDROP_BRIGHTNESS_SLIDER}
-                type="value"
-                minSliderBound={0}
-                maxSliderBound={200}
-                minInputBound={0}
-                maxInputBound={200}
-                value={backdropBrightness}
-                onChange={setBackdropBrightness}
-                marks={[100]}
-                numberFormatter={(value?: number) => `${value}%`}
-                disabled={isBackdropOptionsDisabled}
-              />
-            </div>
-          </SettingsItem>
-
-          <SettingsItem label="Saturation" htmlFor={SettingsHtmlIds.BACKDROP_SATURATION_SLIDER}>
-            <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
-              <LabeledSlider
-                id={SettingsHtmlIds.BACKDROP_SATURATION_SLIDER}
-                type="value"
-                minSliderBound={0}
-                maxSliderBound={100}
-                minInputBound={0}
-                maxInputBound={100}
-                value={backdropSaturation}
-                onChange={setBackdropSaturation}
-                marks={[100]}
-                numberFormatter={(value?: number) => `${value}%`}
-                disabled={isBackdropOptionsDisabled}
-              />
-            </div>
-          </SettingsItem>
-          <SettingsItem label="Object opacity" htmlFor={SettingsHtmlIds.OBJECT_OPACITY_SLIDER}>
-            <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
-              <LabeledSlider
-                id={SettingsHtmlIds.OBJECT_OPACITY_SLIDER}
-                type="value"
-                disabled={isBackdropOptionsDisabled}
-                minSliderBound={0}
-                maxSliderBound={100}
-                minInputBound={0}
-                maxInputBound={100}
-                value={objectOpacity}
-                onChange={setObjectOpacity}
-                marks={[100]}
-                numberFormatter={(value?: number) => `${value}%`}
-              />
-            </div>
-          </SettingsItem>
-        </SettingsContainer>
-      </CustomCollapse>
-
-      <CustomCollapse label="Objects">
+    <FlexColumn $gap={4}>
+      <StyledHorizontalRule />
+      <ToggleCollapse label="Objects">
         <SettingsContainer indentPx={SETTINGS_INDENT_PX} gapPx={SETTINGS_GAP_PX}>
           <SettingsItem label="Highlight" htmlFor={SettingsHtmlIds.HIGHLIGHT_COLOR_PICKER}>
             {/* NOTE: 'Highlight color' is 'outline' internally, and 'Outline color' is 'edge' for legacy reasons. */}
@@ -281,93 +207,180 @@ export default function SettingsTab(): ReactElement {
             />
           </SettingsItem>
 
-          <SettingsItem
-            label={"Track path"}
-            htmlFor={SettingsHtmlIds.SHOW_TRACK_PATH_SWITCH}
-            labelStyle={{ height: "min-content" }}
-            style={{ marginTop: "15px" }}
-          >
+          <SettingsItem label="Scale bar" htmlFor={SettingsHtmlIds.SCALE_BAR_SWITCH} labelStyle={{ marginTop: "1px" }}>
             <div>
               <Switch
-                id={SettingsHtmlIds.SHOW_TRACK_PATH_SWITCH}
-                checked={showTrackPath}
-                onChange={setShowTrackPath}
-              ></Switch>
+                id={SettingsHtmlIds.SCALE_BAR_SWITCH}
+                checked={showScaleBar}
+                onChange={setShowScaleBar}
+                size="small"
+                style={{ paddingTop: "0" }}
+              />
             </div>
           </SettingsItem>
-          {showTrackPath && (
-            <>
-              <SettingsItem label="Color" htmlFor={SettingsHtmlIds.TRACK_PATH_COLOR_SELECT}>
-                <DropdownWithColorPicker
-                  id={SettingsHtmlIds.TRACK_PATH_COLOR_SELECT}
-                  selected={trackPathColorMode.toString()}
-                  items={TRACK_MODE_ITEMS}
-                  onValueChange={(value) => setTrackPathColorMode(Number.parseInt(value, 10) as TrackPathColorMode)}
-                  onColorChange={setTrackPathColor}
-                  color={trackPathColor}
-                  presets={DEFAULT_OUTLINE_COLOR_PRESETS}
-                  showColorPicker={trackPathColorMode === TrackPathColorMode.USE_CUSTOM_COLOR}
-                />
-              </SettingsItem>
-              <SettingsItem label="Width" htmlFor={SettingsHtmlIds.TRACK_PATH_WIDTH_SLIDER}>
-                <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
-                  <LabeledSlider
-                    id={SettingsHtmlIds.TRACK_PATH_WIDTH_SLIDER}
-                    type="value"
-                    minSliderBound={1}
-                    maxSliderBound={5}
-                    minInputBound={0}
-                    maxInputBound={100}
-                    precision={1}
-                    value={trackPathWidthPx}
-                    onChange={setTrackPathWidthPx}
-                    marks={[1.5]}
-                    step={0.1}
-                    numberFormatter={(value?: number) => `${value?.toFixed(1)}`}
-                  />
-                </div>
-              </SettingsItem>
-              <SettingsItem
-                label={"Show breaks"}
-                htmlFor={SettingsHtmlIds.TRACK_PATH_SHOW_BREAKS_CHECKBOX}
-                labelStyle={{ height: "min-content" }}
-                style={{ marginBottom: "20px", marginTop: "-5px" }}
-              >
-                <Tooltip title="Show breaks in the track path where the track is not continuous." placement="right">
-                  <div style={{ width: "fit-content" }}>
-                    <VisuallyHidden>Show breaks in the track path where the track is not continuous.</VisuallyHidden>
-                    <Checkbox
-                      id={SettingsHtmlIds.TRACK_PATH_SHOW_BREAKS_CHECKBOX}
-                      type="checkbox"
-                      checked={showTrackPathBreaks}
-                      onChange={(event) => {
-                        setShowTrackPathBreaks(event.target.checked);
-                      }}
-                    ></Checkbox>
-                  </div>
-                </Tooltip>
-              </SettingsItem>
-            </>
-          )}
-          <SettingsItem label="Scale bar" htmlFor={SettingsHtmlIds.SCALE_BAR_SWITCH}>
+          <SettingsItem label="Timestamp" htmlFor={SettingsHtmlIds.TIMESTAMP_SWITCH} labelStyle={{ marginTop: "1px" }}>
             <div>
-              <Switch id={SettingsHtmlIds.SCALE_BAR_SWITCH} checked={showScaleBar} onChange={setShowScaleBar} />
-            </div>
-          </SettingsItem>
-          <SettingsItem label="Timestamp" htmlFor={SettingsHtmlIds.TIMESTAMP_SWITCH}>
-            <div>
-              <Switch id={SettingsHtmlIds.TIMESTAMP_SWITCH} checked={showTimestamp} onChange={setShowTimestamp} />
+              <Switch
+                id={SettingsHtmlIds.TIMESTAMP_SWITCH}
+                checked={showTimestamp}
+                onChange={setShowTimestamp}
+                size="small"
+              />
             </div>
           </SettingsItem>
         </SettingsContainer>
-      </CustomCollapse>
+      </ToggleCollapse>
 
-      <CustomCollapse label="Vector arrows">
+      <StyledHorizontalRule />
+
+      <ToggleCollapse
+        toggleChecked={showTrackPath}
+        label="Track path"
+        onToggleChange={setShowTrackPath}
+        contentIndentPx={70}
+      >
+        <SettingsContainer>
+          <SettingsItem label="Color" htmlFor={SettingsHtmlIds.TRACK_PATH_COLOR_SELECT}>
+            <DropdownWithColorPicker
+              id={SettingsHtmlIds.TRACK_PATH_COLOR_SELECT}
+              selected={trackPathColorMode.toString()}
+              items={TRACK_MODE_ITEMS}
+              onValueChange={(value) => setTrackPathColorMode(Number.parseInt(value, 10) as TrackPathColorMode)}
+              onColorChange={setTrackPathColor}
+              color={trackPathColor}
+              presets={DEFAULT_OUTLINE_COLOR_PRESETS}
+              showColorPicker={trackPathColorMode === TrackPathColorMode.USE_CUSTOM_COLOR}
+            />
+          </SettingsItem>
+          <SettingsItem label="Width" htmlFor={SettingsHtmlIds.TRACK_PATH_WIDTH_SLIDER}>
+            <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
+              <LabeledSlider
+                id={SettingsHtmlIds.TRACK_PATH_WIDTH_SLIDER}
+                type="value"
+                minSliderBound={1}
+                maxSliderBound={5}
+                minInputBound={0}
+                maxInputBound={100}
+                precision={1}
+                value={trackPathWidthPx}
+                onChange={setTrackPathWidthPx}
+                marks={[1.5]}
+                step={0.1}
+                numberFormatter={(value?: number) => `${value?.toFixed(1)}`}
+              />
+            </div>
+          </SettingsItem>
+          <SettingsItem
+            label={"Show breaks"}
+            htmlFor={SettingsHtmlIds.TRACK_PATH_SHOW_BREAKS_CHECKBOX}
+            labelStyle={{ height: "min-content" }}
+            style={{ marginTop: "-5px" }}
+          >
+            <Tooltip title="Show breaks in the track path where the track is not continuous." placement="right">
+              <div style={{ width: "fit-content" }}>
+                <VisuallyHidden>Show breaks in the track path where the track is not continuous.</VisuallyHidden>
+                <Checkbox
+                  id={SettingsHtmlIds.TRACK_PATH_SHOW_BREAKS_CHECKBOX}
+                  type="checkbox"
+                  checked={showTrackPathBreaks}
+                  onChange={(event) => {
+                    setShowTrackPathBreaks(event.target.checked);
+                  }}
+                ></Checkbox>
+              </div>
+            </Tooltip>
+          </SettingsItem>
+        </SettingsContainer>
+      </ToggleCollapse>
+
+      <StyledHorizontalRule />
+
+      <ToggleCollapse
+        label="Backdrop"
+        toggleDisabled={isBackdropDisabled}
+        toggleChecked={backdropVisible}
+        onToggleChange={setBackdropVisible}
+      >
+        <SettingsContainer indentPx={SETTINGS_INDENT_PX} gapPx={SETTINGS_GAP_PX}>
+          <SettingsItem label="Backdrop" htmlFor={SettingsHtmlIds.BACKDROP_KEY_SELECT}>
+            <SelectionDropdown
+              id={SettingsHtmlIds.BACKDROP_KEY_SELECT}
+              selected={selectedBackdropKey}
+              items={backdropOptions}
+              onChange={(key) => dataset && setBackdropKey(key)}
+              disabled={isBackdropOptionsDisabled}
+              width={"280px"}
+              controlTooltipPlacement="right"
+            />
+          </SettingsItem>
+          <SettingsItem label="Brightness" htmlFor={SettingsHtmlIds.BACKDROP_BRIGHTNESS_SLIDER}>
+            <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
+              <LabeledSlider
+                id={SettingsHtmlIds.BACKDROP_BRIGHTNESS_SLIDER}
+                type="value"
+                minSliderBound={0}
+                maxSliderBound={200}
+                minInputBound={0}
+                maxInputBound={200}
+                value={backdropBrightness}
+                onChange={setBackdropBrightness}
+                marks={[100]}
+                numberFormatter={(value?: number) => `${value}%`}
+                disabled={isBackdropOptionsDisabled}
+              />
+            </div>
+          </SettingsItem>
+
+          <SettingsItem label="Saturation" htmlFor={SettingsHtmlIds.BACKDROP_SATURATION_SLIDER}>
+            <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
+              <LabeledSlider
+                id={SettingsHtmlIds.BACKDROP_SATURATION_SLIDER}
+                type="value"
+                minSliderBound={0}
+                maxSliderBound={100}
+                minInputBound={0}
+                maxInputBound={100}
+                value={backdropSaturation}
+                onChange={setBackdropSaturation}
+                marks={[100]}
+                numberFormatter={(value?: number) => `${value}%`}
+                disabled={isBackdropOptionsDisabled}
+              />
+            </div>
+          </SettingsItem>
+          <SettingsItem label="Object opacity" htmlFor={SettingsHtmlIds.OBJECT_OPACITY_SLIDER}>
+            <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
+              <LabeledSlider
+                id={SettingsHtmlIds.OBJECT_OPACITY_SLIDER}
+                type="value"
+                disabled={isBackdropOptionsDisabled}
+                minSliderBound={0}
+                maxSliderBound={100}
+                minInputBound={0}
+                maxInputBound={100}
+                value={objectOpacity}
+                onChange={setObjectOpacity}
+                marks={[100]}
+                numberFormatter={(value?: number) => `${value}%`}
+              />
+            </div>
+          </SettingsItem>
+        </SettingsContainer>
+      </ToggleCollapse>
+
+      <StyledHorizontalRule />
+      <ToggleCollapse
+        label="Vector arrows"
+        toggleChecked={vectorVisible}
+        onToggleChange={setVectorVisible}
+        contentIndentPx={46}
+      >
         <SettingsContainer indentPx={SETTINGS_INDENT_PX} gapPx={SETTINGS_GAP_PX}>
           <VectorFieldSettings />
         </SettingsContainer>
-      </CustomCollapse>
-      <div style={{ height: "100px" }}></div>
+      </ToggleCollapse>
+      {/* Extra padding to prevent layout shift when toggling open/closed */}
+      <div style={{ height: "400px" }}></div>
     </FlexColumn>
   );
 }

@@ -127,7 +127,7 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
   ];
 
   if (vectorTooltipText) {
-    objectInfoContent.push(<p key="vector">{vectorTooltipText}</p>);
+    objectInfoContent.splice(2, 0, <p key="vector">{vectorTooltipText}</p>);
   }
 
   // Show all current labels applied to the hovered object
