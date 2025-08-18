@@ -308,6 +308,13 @@ const CssContainer = styled.div`
     }
   }
 
+  h1,
+  h2,
+  h3,
+  h4 {
+    line-height: 1.25;
+  }
+
   h1 {
     font-size: var(--font-size-header);
     font-style: normal;
@@ -333,7 +340,7 @@ const CssContainer = styled.div`
     font-size: var(--font-size-content);
     font-style: normal;
     font-weight: 400;
-    margin: 2px;
+    margin: 2px 0;
   }
 
   label {
