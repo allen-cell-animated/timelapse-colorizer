@@ -217,6 +217,7 @@ export enum TabType {
   CORRELATION_PLOT = "correlation_plot",
   FILTERS = "filters",
   ANNOTATION = "annotation",
+  PLOT_3D = "3d_plot",
   SETTINGS = "settings",
 }
 

@@ -80,6 +80,23 @@ export default class ColorRamp {
     return canvas;
   }
 
+  public getPlotlyColorScale(reversed: boolean = false): [number, string][] {
+    const colorScale: [number, string][] = [];
+    const numStops = this.colorStops.length;
+    for (let i = 0; i < numStops; i++) {
+      const color = this.colorStops[i];
+      let t = i / (numStops - 1);
+      if (reversed) {
+        t = 1 - t;
+      }
+      colorScale.push([t, `#${color.getHexString()}`]);
+    }
+    if (reversed) {
+      colorScale.reverse();
+    }
+    return colorScale;
+  }
+
   public dispose(): void {
     this.texture.dispose();
   }
