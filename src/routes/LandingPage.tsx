@@ -314,11 +314,11 @@ export default function LandingPage(): ReactElement {
           </FeatureHighlightsItem>
           <FeatureHighlightsItem>
             <h3>Annotate everything</h3>
-            <p>Label segmentations or flag errors in a few clicks, with easy CSV export to update your data.</p>
+            <p>Label segmentations or flag errors in a few clicks, then export to update your data.</p>
           </FeatureHighlightsItem>
           <FeatureHighlightsItem>
             <h3>Share with anyone</h3>
-            <p>Save videos and images in seconds, or share links to give collaborators the same interactive view.</p>
+            <p>Save videos and images in seconds, or share a link to give to collaborators.</p>
           </FeatureHighlightsItem>
         </FeatureHighlightsContainer>
       </ContentContainer>
