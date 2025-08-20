@@ -32,7 +32,7 @@ export type ManifestFileMetadata = Spread<ManifestFileMetadataV1_1_0>;
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 type ManifestFileV0_0_0 = {
-  frames: string[];
+  frames?: string[];
   /** Deprecated; Map from feature name to relative path. */
   features: Record<string, string>;
   /** Deprecated; avoid using in new datasets. Instead, use the new `FeatureMetadata` spec. */
@@ -64,6 +64,11 @@ type ManifestFileV1_0_0 = Omit<ManifestFileV0_0_0, "features" | "featureMetadata
     unit?: string;
     type?: string;
     categories?: string[];
+    // Added in v1.3.0
+    min?: number | null;
+    max?: number | null;
+    // Added in v1.4.2
+    description?: string;
   }[];
   /** Optional list of backdrop/overlay images. */
   backdrops?: { name: string; key: string; frames: string[] }[];
@@ -74,6 +79,32 @@ type ManifestFileV1_0_0 = Omit<ManifestFileV0_0_0, "features" | "featureMetadata
 type ManifestFileV1_1_0 = Spread<
   ManifestFileV1_0_0 & {
     metadata?: Partial<ManifestFileMetadataV1_1_0>;
+    /**
+     * Segmentation IDs for objects as they appear in image/frame data.
+     * Segmentation IDs should be unique for each object in a frame, and for
+     * best performance should be contiguous integers starting from 1.
+     *
+     * If an object at some time `t` has segmentation ID `21`, all pixels with a
+     * value of 21 in the frame at time `t` belong to that object.
+     */
+    segIds?: string;
+    /**
+     * Optional 3D volumetric segmentation data.
+     */
+    frames3d?: {
+      /**
+       * URL or path relative to the root of the manifest. Expected to be a
+       * time-series ZARR (e.g. ends with `.ome.zarr`). */
+      source: string;
+      /**
+       * The index of the channel to use as a segmentation. If multiple volumes
+       * are specified in `source`, `segmentationChannel` indexes into a list of
+       * the channels of all volumes concatenated together.
+       **/
+      segmentationChannel: number;
+      /** Total number of frames in the time-series volume. */
+      totalFrames: number;
+    };
   }
 >;
 
@@ -90,7 +121,8 @@ export type AnyManifestFile = ManifestFileV0_0_0 | ManifestFileV1_0_0 | Manifest
  */
 // eslint-disable-next-line @typescript-eslint/naming-convention
 function isV0_0_0(manifest: AnyManifestFile): manifest is ManifestFileV0_0_0 {
-  return typeof Object.values(manifest.features)[0] === "string";
+  const values = Object.values(manifest.features);
+  return values.length === 0 || typeof values[0] === "string";
 }
 
 /**
@@ -99,6 +131,9 @@ function isV0_0_0(manifest: AnyManifestFile): manifest is ManifestFileV0_0_0 {
  * @returns An object with fields reflecting the most recent ManifestFile spec.
  */
 export const updateManifestVersion = (manifest: AnyManifestFile): ManifestFile => {
+  if (!manifest.features) {
+    throw new Error("Manifest JSON is missing the required 'features' field.");
+  }
   if (isV0_0_0(manifest)) {
     // Parse feature metadata into the new features format
     const features: ManifestFile["features"] = [];

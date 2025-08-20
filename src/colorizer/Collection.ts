@@ -1,4 +1,5 @@
 import { DEFAULT_COLLECTION_FILENAME, DEFAULT_DATASET_FILENAME } from "../constants";
+import { LoadErrorMessage, LoadTroubleshooting, ReportWarningCallback } from "./types";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./utils/analytics";
 import {
   CollectionEntry,
@@ -6,10 +7,19 @@ import {
   CollectionFileMetadata,
   updateCollectionVersion,
 } from "./utils/collection_utils";
-import { DEFAULT_FETCH_TIMEOUT_MS, fetchWithTimeout, formatPath, isBlob, isJson, isUrl } from "./utils/url_utils";
+import { formatAsBulletList, uncapitalizeFirstLetter } from "./utils/data_utils";
+import {
+  DEFAULT_FETCH_TIMEOUT_MS,
+  fetchManifestJson,
+  fetchWithTimeout,
+  formatPath,
+  isJson,
+  isUrl,
+} from "./utils/url_utils";
 
 import Dataset from "./Dataset";
 import { FilePathResolver, IPathResolver, UrlPathResolver } from "./loaders/FileSystemResolver";
+import { IArrayLoader, ITextureImageLoader } from "./loaders/ILoader";
 
 export type CollectionData = Map<string, CollectionEntry>;
 
@@ -23,6 +33,20 @@ export type DatasetLoadResult =
       loaded: true;
       dataset: Dataset;
     };
+
+export type CollectionLoadOptions = {
+  pathResolver?: IPathResolver;
+  fetchMethod?: typeof fetchWithTimeout;
+  reportWarning?: ReportWarningCallback;
+};
+
+export type DatasetLoadOptions = {
+  manifestLoader?: typeof fetchManifestJson;
+  onLoadProgress?: (complete: number, total: number) => void;
+  arrayLoader?: IArrayLoader;
+  frameLoader?: ITextureImageLoader;
+  reportWarning?: ReportWarningCallback;
+};
 
 /**
  * Collections describe a group of datasets, designated with a string name and a path.
@@ -82,7 +106,7 @@ export default class Collection {
     if (this.hasDataset(datasetKey)) {
       return this.entries.get(datasetKey)!.path;
     }
-    throw new Error(`Collection does not contain dataset ${datasetKey}: Could not get path.`);
+    throw new Error(`Collection does not contain dataset ${datasetKey}. Could not get path.`);
   }
 
   /**
@@ -95,7 +119,7 @@ export default class Collection {
     if (this.hasDataset(datasetKey)) {
       return this.entries.get(datasetKey)!.name;
     }
-    throw new Error(`Collection does not contain dataset ${datasetKey}: Could not get name.`);
+    throw new Error(`Collection does not contain dataset ${datasetKey}. Could not get name.`);
   }
 
   public hasDataset(datasetKey: string): boolean {
@@ -126,6 +150,11 @@ export default class Collection {
   /**
    * Attempts to load and return the dataset specified by the key.
    * @param datasetKey string key of the dataset.
+   * @param options Optional configuration, containing any of the following properties:
+   *  - `onLoadProgress` optional callback for loading progress.
+   *  - `arrayLoader` optional array loader to use for loading the dataset.
+   *  - `reportWarning` optional callback for reporting warning messages during loading (potential errors
+   * that are non-blocking).
    * @returns A promise of a `DatasetLoadResult`.
    * - On a success, returns an object with a Dataset `dataset` and the `loaded` flag set to true.
    * - On a failure, returns an object with a null `dataset` and `loaded` set to false, as well as
@@ -133,7 +162,7 @@ export default class Collection {
    *
    * See `DatasetLoadResult` for more details.
    */
-  public async tryLoadDataset(datasetKey: string): Promise<DatasetLoadResult> {
+  public async tryLoadDataset(datasetKey: string, options: DatasetLoadOptions = {}): Promise<DatasetLoadResult> {
     console.time("loadDataset");
 
     if (!this.hasDataset(datasetKey)) {
@@ -141,10 +170,29 @@ export default class Collection {
     }
     const path = this.getAbsoluteDatasetPath(datasetKey);
     console.log(`Fetching dataset from path '${path}'`);
-    // TODO: Override fetch method
+
+    let totalLoadItems = 0;
+    let completedLoadItems = 0;
+    const onLoadStart = (): void => {
+      totalLoadItems++;
+    };
+    const onLoadComplete = (): void => {
+      completedLoadItems++;
+      options.onLoadProgress?.(completedLoadItems, totalLoadItems);
+    };
+
     try {
-      const dataset = new Dataset(path, { pathResolver: this.pathResolver });
-      await dataset.open();
+      const dataset = new Dataset(path, {
+        pathResolver: this.pathResolver,
+        frameLoader: options.frameLoader,
+        arrayLoader: options.arrayLoader,
+      });
+      await dataset.open({
+        onLoadStart,
+        onLoadComplete,
+        reportWarning: options.reportWarning,
+        manifestLoader: options.manifestLoader,
+      });
       console.timeEnd("loadDataset");
       return { loaded: true, dataset: dataset };
     } catch (e) {
@@ -154,7 +202,7 @@ export default class Collection {
         return {
           loaded: false,
           dataset: null,
-          errorMessage: `Error: Could not load dataset manifest '${datasetKey}'. ("${e}")`,
+          errorMessage: e.message,
         };
       } else {
         return { loaded: false, dataset: null };
@@ -222,29 +270,59 @@ export default class Collection {
   // ===================================================================================
   // Static Loader Methods
 
+  private static checkForDuplicateDatasetNames(
+    datasets: CollectionEntry[],
+    reportWarning?: ReportWarningCallback
+  ): void {
+    const collectionData: Map<string, CollectionEntry> = new Map();
+    const duplicateDatasetNames = new Set<string>();
+
+    for (const entry of datasets) {
+      if (collectionData.has(entry.name)) {
+        duplicateDatasetNames.add(entry.name);
+        console.warn(`Duplicate dataset name ${entry.name} found in collection JSON; skipping.`);
+      }
+      collectionData.set(entry.name, entry);
+    }
+
+    if (duplicateDatasetNames.size > 0) {
+      reportWarning?.("Duplicate dataset names were found in the collection.", [
+        "The following dataset(s) had duplicate names and were skipped when loading the collection:",
+        ...formatAsBulletList(Array.from(duplicateDatasetNames), 5),
+        "If you are the dataset author, please ensure that every dataset has a unique name in the collection.",
+      ]);
+    }
+  }
+
   /**
    * Asynchronously loads a Collection object from the provided URL.
    * @param collectionParam The URL of the resource. This can either be a direct path to
    * collection JSON file or the path of a directory containing `collection.json`.
-   * @param fetchMethod Optional. The fetch command used to retrieve the URL.
+   * @param options Optional configuration, containing any of the following properties:
+   * - `fetchMethod` optional override for the fetch method, used to retrieve the URL.
+   * - `reportWarning` optional callback for reporting warning messages during loading.
    * @throws Error if the JSON could not be retrieved or is an unrecognized format.
    * @returns A new Collection object containing the retrieved data.
    */
   public static async loadCollection(
     collectionParam: string,
-    pathResolver: IPathResolver = new UrlPathResolver(),
-    fetchMethod = fetchWithTimeout
+    options: CollectionLoadOptions = {}
   ): Promise<Collection> {
     const absoluteCollectionUrl = Collection.formatAbsoluteCollectionPath(collectionParam);
+    const fetchMethod = options.fetchMethod ?? fetchWithTimeout;
+    const pathResolver = options.pathResolver ?? new UrlPathResolver();
 
     let response;
     try {
       response = await fetchMethod(pathResolver.resolve("", absoluteCollectionUrl)!, DEFAULT_FETCH_TIMEOUT_MS);
     } catch (e) {
-      throw new Error(`Could not retrieve collections JSON data from url '${absoluteCollectionUrl}': '${e}'`);
+      throw new Error(LoadErrorMessage.UNREACHABLE_COLLECTION + " " + LoadTroubleshooting.CHECK_NETWORK);
     }
     if (!response.ok) {
-      throw new Error(`Could not retrieve collections JSON data from url '${absoluteCollectionUrl}': Fetch failed.`);
+      throw new Error(
+        `Received a ${response.status} (${response.statusText}) code from the server while retrieving` +
+          ` collections JSON from url '${absoluteCollectionUrl}'. ${LoadTroubleshooting.CHECK_FILE_EXISTS}`
+      );
     }
 
     let collection: CollectionFile;
@@ -252,14 +330,12 @@ export default class Collection {
       const json = await response.json();
       collection = updateCollectionVersion(json);
     } catch (e) {
-      throw new Error(`Could not parse collections JSON data from url '${absoluteCollectionUrl}': '${e}'`);
+      throw new Error(LoadErrorMessage.COLLECTION_JSON_PARSE_FAILED + e);
     }
 
     // Convert JSON array into map
-    if (collection.datasets.length === 0) {
-      throw new Error(
-        `Could not retrieve collections JSON data from url '${absoluteCollectionUrl}': No datasets found.`
-      );
+    if (!collection.datasets || collection.datasets.length === 0) {
+      throw new Error(LoadErrorMessage.COLLECTION_HAS_NO_DATASETS);
     }
     const collectionData: Map<string, CollectionEntry> = new Map();
     for (const entry of collection.datasets) {
@@ -267,6 +343,7 @@ export default class Collection {
       newEntry.path = this.formatAbsoluteDatasetPath(absoluteCollectionUrl, entry.path);
       collectionData.set(entry.name, newEntry);
     }
+    Collection.checkForDuplicateDatasetNames(collection.datasets, options.reportWarning);
 
     triggerAnalyticsEvent(AnalyticsEvent.COLLECTION_LOAD, {
       collectionWriterVersion: collection.metadata?.writerVersion || "N/A",
@@ -296,34 +373,97 @@ export default class Collection {
   }
 
   /**
+   * Merges and formats error messages from a failed collection and dataset load.
+   */
+  private static formatLoadingError(url: string, collectionLoadError: Error, datasetLoadError: Error): Error {
+    if (url.endsWith(DEFAULT_COLLECTION_FILENAME)) {
+      // Assume that this was a collection because the URL ended with "collection.json."
+      return collectionLoadError;
+    } else if (url.endsWith(DEFAULT_DATASET_FILENAME)) {
+      // Assume that this was a dataset because the URL ended with "dataset.json."
+      return datasetLoadError;
+    } else if (
+      collectionLoadError.message.startsWith(LoadErrorMessage.UNREACHABLE_COLLECTION) &&
+      datasetLoadError.message.includes(LoadErrorMessage.UNREACHABLE_MANIFEST)
+    ) {
+      // Handle TypeError from failed fetch, likely due to server being unreachable.
+      return new Error(LoadErrorMessage.BOTH_UNREACHABLE + " " + LoadTroubleshooting.CHECK_NETWORK);
+    } else if (
+      // Merge 404 errors from both collection and dataset fetches
+      collectionLoadError.message.includes("404 (Not Found)") &&
+      datasetLoadError.message.includes("404 (Not Found)")
+    ) {
+      return new Error(LoadErrorMessage.BOTH_404);
+    } else {
+      // Format and return a message containing both errors.
+      console.error(`URL '${url}' could not be loaded as a collection or dataset.`);
+      const collectionMessage =
+        uncapitalizeFirstLetter(collectionLoadError?.message) ||
+        "(no error message provided; this is likely a bug and should be reported)";
+      const datasetMessage =
+        uncapitalizeFirstLetter(datasetLoadError?.message) ||
+        "(no error message provided; this is likely a bug and should be reported)";
+
+      return new Error(
+        `Could not load the provided URL as either a collection or a dataset.
+        \n- If this is a collection, ${collectionMessage}
+        \n- If this is a dataset, ${datasetMessage}`
+      );
+    }
+  }
+
+  /**
    * Attempt to load an ambiguous URL as either a collection or dataset, and return a new
    * Collection representing its contents (either the loaded collection or a dummy collection
    * containing just the dataset).
    * @param url the URL resource to attempt to load.
-   * @param fetchMethod optional override for the fetch method.
+   * @param options optional configuration object containing any of the following properties:
+   *  - `fetchMethod` optional override for the fetch method.
+   *  - `reportWarning` optional callback for reporting warning messages during loading.
    * @throws an error if `url` is not a URL.
    * @returns a Promise of a new Collection object, either loaded from a collection JSON file or
    * generated as a wrapper around a single dataset.
    */
-  public static async loadFromAmbiguousUrl(
-    url: string,
-    pathResolver: IPathResolver = new UrlPathResolver(),
-    fetchMethod = fetchWithTimeout
-  ): Promise<Collection> {
+  public static async loadFromAmbiguousUrl(url: string, options: CollectionLoadOptions = {}): Promise<Collection> {
     // TODO: Also handle Nucmorph URLs that are pasted in? If website base URL matches, redirect?
 
     if (!isUrl(url)) {
       throw new Error(`Provided resource '${url}' is not a URL and cannot be loaded.`);
     }
 
+    let result: Collection | null = null;
+    let collectionLoadError: Error | null = null;
+    let datasetLoadError: Error | null = null;
+
+    // Try loading as a collection
     try {
-      return await Collection.loadCollection(url, pathResolver, fetchMethod);
+      result = await Collection.loadCollection(url, options);
     } catch (e) {
+      collectionLoadError = e as Error;
+      console.warn(e);
       console.log("URL resource could not be parsed as a collection; attempting to make a single-database collection.");
     }
 
     // Could not load as a collection, attempt to load as a dataset.
-    return await Collection.makeCollectionFromSingleDataset(url);
+    if (!result) {
+      try {
+        const collection = Collection.makeCollectionFromSingleDataset(url);
+        // Attempt to load the default dataset immediately to surface any loading errors.
+        const loadResult = await collection.tryLoadDataset(collection.getDefaultDatasetKey());
+        if (!loadResult.loaded) {
+          throw new Error(loadResult.errorMessage);
+        }
+        return collection;
+      } catch (e) {
+        datasetLoadError = e as Error;
+      }
+    }
+
+    if (!result) {
+      throw Collection.formatLoadingError(url, collectionLoadError!, datasetLoadError!);
+    }
+
+    return result;
   }
 
   //
@@ -332,7 +472,7 @@ export default class Collection {
     const filePathResolver = new FilePathResolver(fileMap);
 
     try {
-      return await Collection.loadCollection(collectionFilePath, filePathResolver);
+      return await Collection.loadCollection(collectionFilePath, { pathResolver: filePathResolver });
     } catch (e) {
       console.error(e);
     }

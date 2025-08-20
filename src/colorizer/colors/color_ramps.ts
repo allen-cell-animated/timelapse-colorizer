@@ -1,4 +1,6 @@
-import ColorRamp from "../ColorRamp";
+import { GLASBEY_DARK_COLORS, GLASBEY_DEFAULT_COLORS, GLASBEY_LIGHT_COLORS } from "./glasbey";
+
+import ColorRamp, { ColorRampType } from "../ColorRamp";
 
 // TODO: Could add additional tags for filtering, etc. to each color ramp!
 export type RawColorData = {
@@ -7,6 +9,12 @@ export type RawColorData = {
   /** Display name. */
   name: string;
   colorStops: `#${string}`[];
+  /**
+   * Ramps meant for features with many integer values (e.g. track ID).
+   * Most commonly used for glasbey color ramp visualizations, where lots
+   * of colors are needed to distinguish between many different values.
+   */
+  categorical?: boolean;
 };
 
 export type ColorRampData = RawColorData & {
@@ -18,7 +26,14 @@ export type ColorRampData = RawColorData & {
 // DO NOT REMOVE COLOR RAMPS FROM THIS LIST OR CHANGE THEIR KEYS. This will break backwards compatibility with URLs.
 // Instead, remove them from `DISPLAY_COLOR_RAMP_KEYS` to omit them from the UI.
 const rawColorRampData: RawColorData[] = [
-  { key: "matplotlib-cool", name: "Matplotlib - Cool", colorStops: ["#00ffff", "#ff00ff"] },
+  {
+    key: "matplotlib-cool",
+    name: "Matplotlib - Cool",
+    // TODO: This results in some banding in the scatterplot because Three is using linear SRGB
+    // color space for interpolation. This could potentially be fixed by manually calculating the
+    // interpolated colors in the color ramp.
+    colorStops: ["#00ffff", "#20e0ff", "#40c0ff", "#60a0ff", "#8080ff", "#a060ff", "#c040ff", "#e020ff", "#ff00ff"],
+  },
   {
     key: "matplotlib-viridis",
     name: "Matplotlib - Viridis",
@@ -186,13 +201,104 @@ const rawColorRampData: RawColorData[] = [
     // seaborn.cubehelix_palette(start=2.3, rot=-0.3, as_cmap=True, reverse=True)
     colorStops: ["#0f3221", "#31673d", "#64945a", "#a0ba84", "#d9ddbf"],
   },
+  {
+    key: "fabio_crameri-romao",
+    name: "Crameri - RomaO (Cyclical)",
+    // Note: this is reversed from the original to match the other palettes
+    // which typically reserve warm colors for higher values.
+    colorStops: [
+      "#733957",
+      "#664476",
+      "#585893",
+      "#4F76AE",
+      "#5494C0",
+      "#6AB2CB",
+      "#8DCEDB",
+      "#B1DDD7",
+      "#CCE1B1",
+      "#D6D790",
+      "#CFBC66",
+      "#BC9540",
+      "#A9732E",
+      "#98572C",
+      "#8B4433",
+      "#7E3943",
+      "#733957",
+    ],
+  },
+  {
+    key: "fabio_crameri-viko",
+    name: "Crameri - VikO (Cyclical)",
+    colorStops: [
+      "#4F1A3D",
+      "#442551",
+      "#38396C",
+      "#345487",
+      "#43739F",
+      "#6895B6",
+      "#90AFC5",
+      "#BAC1C6",
+      "#D5BEB3",
+      "#D9AC94",
+      "#D0916F",
+      "#BE714B",
+      "#A34D2D",
+      "#842E1F",
+      "#6C1B21",
+      "#5B152C",
+      "#50193C",
+    ],
+  },
+  {
+    key: "fabio_crameri-broco",
+    name: "Crameri - BrocO (Cyclical)",
+    colorStops: [
+      "#372F38",
+      "#36344C",
+      "#39456A",
+      "#47608A",
+      "#5F7DA3",
+      "#7E99B8",
+      "#9FB4C8",
+      "#BDC8D0",
+      "#CFD3C6",
+      "#C9CAA9",
+      "#B3B284",
+      "#959462",
+      "#777646",
+      "#5C5A33",
+      "#484329",
+      "#3C352B",
+      "#372F37",
+    ],
+  },
+  {
+    // TODO: Add an additional description field to describe how the categorical
+    // repeating ramps function?
+    key: "colorcet-glasbey",
+    name: "Colorcet - Glasbey (Repeating)",
+    categorical: true,
+    colorStops: GLASBEY_DEFAULT_COLORS,
+  },
+  {
+    key: "colorcet-glasbey_light",
+    name: "Colorcet - Glasbey Light (Repeating)",
+    categorical: true,
+    colorStops: GLASBEY_LIGHT_COLORS,
+  },
+  {
+    key: "colorcet-glasbey_dark",
+    name: "Colorcet - Glasbey Dark (Repeating)",
+    categorical: true,
+    colorStops: GLASBEY_DARK_COLORS,
+  },
 ];
 
 // Convert the color stops into color ramps
 const colorRampData: ColorRampData[] = rawColorRampData.map((value) => {
   return {
     ...value,
-    colorRamp: new ColorRamp(value.colorStops),
+    colorRamp: new ColorRamp(value.colorStops, value.categorical ? ColorRampType.CATEGORICAL : ColorRampType.LINEAR),
   };
 });
 
@@ -222,5 +328,11 @@ export const DISPLAY_COLOR_RAMP_KEYS = [
   "esri-blue_red_8",
   "esri-green_brown_1",
   "matplotlib-purple_orange",
+  "fabio_crameri-romao",
+  "fabio_crameri-viko",
+  "fabio_crameri-broco",
+  "colorcet-glasbey",
+  "colorcet-glasbey_light",
+  "colorcet-glasbey_dark",
 ];
 export const DEFAULT_COLOR_RAMP_KEY = Array.from(colorRampMap.keys())[0];

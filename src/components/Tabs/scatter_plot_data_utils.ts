@@ -1,11 +1,14 @@
 import Plotly, { PlotData } from "plotly.js-dist-min";
-import { Color, HexColorString } from "three";
+import { Color } from "three";
 
-import { ColorRamp, Dataset } from "../../colorizer";
+import { ColorRamp, Dataset, HexColorString } from "../../colorizer";
 import { remap } from "../../colorizer/utils/math_utils";
 
-/** Extra feature added to the dropdowns representing the frame number. */
-export const SCATTERPLOT_TIME_FEATURE = { key: "scatterplot_time", label: "Time" };
+/**
+ * Extra feature added to the dropdowns representing the frame number.
+ * Deprecated because Time is now automatically added as a feature to the dataset.
+ */
+export const DEPRECATED_SCATTERPLOT_TIME_KEY = "scatterplot_time";
 
 export type DataArray = Uint32Array | Float32Array | number[];
 
@@ -13,6 +16,7 @@ export type TraceData = {
   x: number[];
   y: number[];
   objectIds: number[];
+  segIds: number[];
   trackIds: number[];
   color: HexColorString;
   marker: Partial<Plotly.PlotMarker>;
@@ -65,6 +69,7 @@ export function makeEmptyTraceData(color: HexColorString, marker: Partial<Plotly
     x: [],
     y: [],
     objectIds: [],
+    segIds: [],
     trackIds: [],
     color,
     marker,
@@ -90,6 +95,7 @@ export function splitTraceData(traceData: TraceData, maxPoints: number): TraceDa
       x: traceData.x.slice(i, end),
       y: traceData.y.slice(i, end),
       objectIds: traceData.objectIds.slice(i, end),
+      segIds: traceData.segIds.slice(i, end),
       trackIds: traceData.trackIds.slice(i, end),
       color: traceData.color,
       marker: traceData.marker,
@@ -121,37 +127,15 @@ export function scaleColorOpacityByMarkerCount(numMarkers: number, baseColor: He
   return (baseColor + opacityString) as HexColorString;
 }
 
-/** Retrieve feature name, if it exists. Accounts for the added time feature. */
-export const getFeatureOrTimeName = (featureKey: string | null, dataset: Dataset | null): string => {
-  if (featureKey === null || dataset === null) {
-    return "";
-  }
-  if (featureKey === SCATTERPLOT_TIME_FEATURE.key) {
-    return SCATTERPLOT_TIME_FEATURE.label;
-  }
-  return dataset.getFeatureName(featureKey) || "";
-};
-
-/** Retrieve feature name with units, if it exists. Accounts for the added time feature. */
-export const getFeatureOrTimeNameWithUnits = (featureKey: string | null, dataset: Dataset | null): string => {
-  if (featureKey === null || dataset === null) {
-    return "";
-  }
-  if (featureKey === SCATTERPLOT_TIME_FEATURE.key) {
-    return SCATTERPLOT_TIME_FEATURE.label;
-  }
-  return dataset.getFeatureNameWithUnits(featureKey) || "";
-};
-
 /**
  * Returns a Plotly hovertemplate string for a scatter plot trace.
  * The trace must include the `id` (object ID) and `customdata` (track ID) fields.
  */
 export function getHoverTemplate(dataset: Dataset, xAxisFeatureKey: string, yAxisFeatureKey: string): string {
   return (
-    `${getFeatureOrTimeName(xAxisFeatureKey, dataset)}: %{x} ${dataset.getFeatureUnits(xAxisFeatureKey)}` +
-    `<br>${getFeatureOrTimeName(yAxisFeatureKey, dataset)}: %{y} ${dataset.getFeatureUnits(yAxisFeatureKey)}` +
-    `<br>Track ID: %{customdata}<br>Object ID: %{id}<extra></extra>`
+    `${dataset.getFeatureName(xAxisFeatureKey)}: %{x} ${dataset.getFeatureUnits(xAxisFeatureKey)}` +
+    `<br>${dataset.getFeatureName(yAxisFeatureKey)}: %{y} ${dataset.getFeatureUnits(yAxisFeatureKey)}` +
+    `<br>Track ID: %{customdata[0]}<br>Label ID: %{customdata[1]}<extra></extra>`
   );
 }
 
@@ -160,9 +144,13 @@ export function makeLineTrace(
   xData: DataArray,
   yData: DataArray,
   objectIds: number[],
+  segIds: number[],
   trackIds: number[],
   hovertemplate?: string
 ): Partial<Plotly.PlotData> {
+  const stackedCustomData = trackIds.map((id, index) => {
+    return [id.toString(), segIds[index].toString()];
+  });
   return {
     x: xData,
     y: yData,
@@ -172,11 +160,15 @@ export function makeLineTrace(
       color: "#aaaaaa",
     },
     ids: objectIds.map((id) => id.toString()),
-    customdata: trackIds.map((id) => id.toString()),
+    customdata: stackedCustomData,
+    hoverinfo: "skip", // will be overridden if hovertemplate is provided
     hovertemplate,
   };
 }
 
+// TODO: Crosshairs can be rendered using Plotly's layout shapes instead of traces,
+// which means time playback can run faster (assuming other plot params don't change).
+// See `Plotting.ts` for an example, and also https://plotly.com/javascript/reference/layout/shapes/.
 /**
  * Returns an array of Plotly traces that render a crosshair at the X,Y coordinates.
  */

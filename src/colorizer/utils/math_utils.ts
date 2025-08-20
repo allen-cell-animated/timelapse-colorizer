@@ -1,28 +1,50 @@
 import { Vector2 } from "three";
 
+import Track from "../Track";
+
 /**
- * Formats a number as a string decimal with a defined number of digits
- * after the decimal place. Optionally ignores integers and returns them as-is.
+ * Formats a number as a string decimal, with a maximum number of significant
+ * digits after the decimal place.
+ * @param input The number to format.
+ * @param maxSignificantDigitsAfterDecimal The maximum number of significant
+ * digits after the decimal place. If `input` is less than 1, this will be the
+ * number of significant digits. If `input is greater than 1, this will be the
+ * number of digits after the decimal point.
+ * @param showIntegersAsDecimals If true, integers will be shown as numbers with
+ * decimal points. False by default.
+ * @returns A string representation of the number.
+ * - If the number is `undefined` or `null`, returns `"NaN"`.
+ * - If the number is an integer and `skipIntegers` is true, returns the number
+ *   as a string without a decimal point.
+ * - If the number is less than 1, returns the number with
+ *   `maxSignificantDigitsAfterDecimal` significant digits. (using
+ *   `toPrecision`).
+ * - Otherwise, returns the number with `maxSignificantDigitsAfterDecimal`
+ *   digits after the decimal point (using `toFixed`).
+ *
  */
-export function numberToStringDecimal(
+export function formatNumber(
   input: number | undefined | null,
-  decimalPlaces: number,
-  skipIntegers: boolean = true
+  maxSignificantDigitsAfterDecimal: number,
+  showIntegersAsDecimals: boolean = false
 ): string {
   if (input === undefined || input === null) {
     return "NaN";
-  }
-  if (Number.isInteger(input) && skipIntegers) {
+  } else if (Number.isInteger(input) && !showIntegersAsDecimals) {
     return input.toString();
+  } else if (Math.abs(input) < 1) {
+    // For numbers less than 1, return value by precision
+    return input.toPrecision(maxSignificantDigitsAfterDecimal);
+  } else {
+    return input.toFixed(maxSignificantDigitsAfterDecimal);
   }
-  return input.toFixed(decimalPlaces);
 }
 
 /**
  * Returns the number with a maximum number of digits after the decimal place, rounded to nearest.
  */
 export function setMaxDecimalPrecision(input: number, decimalPlaces: number): number {
-  return Number.parseFloat(numberToStringDecimal(input, decimalPlaces, true));
+  return Number.parseFloat(formatNumber(input, decimalPlaces, true));
 }
 
 // Adapted from https://gist.github.com/ArneS/2ecfbe4a9d7072ac56c0.
@@ -161,4 +183,155 @@ export function getDisplayDateString(date: Date): string {
 
 export function getBuildDisplayDateString(): string {
   return getDisplayDateString(new Date(Number.parseInt(import.meta.env.VITE_BUILD_TIME_UTC, 10)));
+}
+
+type TrackData = {
+  ids: number[];
+  times: number[];
+  centroids: number[];
+};
+
+/**
+ * Constructs an array of tracks from the given data.
+ */
+export function constructAllTracksFromData(trackIds: Uint32Array, times: Uint32Array, centroids: Uint16Array): Track[] {
+  const trackIdToTrackData = new Map<number, TrackData>();
+
+  for (let id = 0; id < trackIds.length; id++) {
+    const trackId = trackIds[id];
+    let trackData = trackIdToTrackData.get(trackId);
+    if (!trackData) {
+      trackData = { ids: [], times: [], centroids: [] };
+      trackIdToTrackData.set(trackId, trackData);
+    }
+    trackData.ids.push(id);
+    trackData.times.push(times[id]);
+    trackData.centroids.push(centroids[id * 3], centroids[id * 3 + 1], centroids[id * 3 + 2]);
+  }
+
+  // Construct and return tracks. Tracks will automatically sort their data by time.
+  const tracks = Array.from(trackIdToTrackData.entries()).map(([trackId, trackData]) => {
+    return new Track(trackId, trackData.times, trackData.ids, trackData.centroids, [] as number[]);
+  });
+  return tracks;
+}
+
+/**
+ * Returns a lookup from any timepoints `t` in the track to the position delta between the centroid
+ * at time `t` and `t-1`. If the track does not exist at timepoint `t-1`, the delta is undefined.
+ */
+function timeToMotionDelta(track: Track): { [key: number]: [number, number, number] | undefined } {
+  const deltas: { [key: number]: [number, number, number] | undefined } = {};
+
+  // Track IDs are sorted by time, but are not guaranteed to be contiguous.
+  // For each time `t`, check if `t-1` exists and then calculate the delta.
+  for (let i = 0; i < track.ids.length; i++) {
+    const time = track.times[i];
+    const prevTime = track.times[i - 1];
+    if (i === 0 || prevTime !== time - 1) {
+      deltas[time] = undefined;
+    }
+
+    const currentCentroidX = track.centroids[i * 3];
+    const currentCentroidY = track.centroids[i * 3 + 1];
+    const currentCentroidZ = track.centroids[i * 3 + 2];
+    const prevCentroidX = track.centroids[(i - 1) * 3];
+    const prevCentroidY = track.centroids[(i - 1) * 3 + 1];
+    const prevCentroidZ = track.centroids[(i - 1) * 3 + 2];
+    deltas[time] = [
+      currentCentroidX - prevCentroidX,
+      currentCentroidY - prevCentroidY,
+      currentCentroidZ - prevCentroidZ,
+    ];
+  }
+
+  return deltas;
+}
+
+/**
+ * Calculates an array of motion deltas for each object in the dataset, averaged over the specified number of timesteps.
+ * @param tracks An array of all tracks in the dataset to calculate motion deltas for.
+ * @param numTimeIntervals The number of time intervals to average over (minimum 1). For an object at time `t`, the motion
+ * delta will be calculated over time `t` to `t - numTimeIntervals`. If the object is not present for any or all timepoints
+ * in the range, the motion deltas will be `NaN`.
+ * @returns one of the following:
+ * - an array of motion deltas, with length equal to `dataset.numObjects * 2`. For each object id `i`, the x and y components
+ * of its motion delta are stored at indices `2i` and `2i + 1`, respectively. If an object does not exist for the specified number
+ * of time intervals, both values will be `NaN`.
+ */
+export function calculateMotionDeltas(tracks: Track[], numTimeIntervals: number): Float32Array {
+  numTimeIntervals = Math.max(numTimeIntervals, 1);
+
+  // Count total objects to allocate the motion deltas array
+  let numObjects = 0;
+  for (const track of tracks) {
+    numObjects += track.ids.length;
+  }
+  const motionDeltas = new Float32Array(numObjects * 3);
+
+  for (const track of tracks) {
+    const timeToDelta = timeToMotionDelta(track);
+
+    for (let i = 0; i < track.ids.length; i++) {
+      const objectId = track.ids[i];
+      const timestamp = track.times[i];
+
+      // Get all valid deltas for timepoints `t` to `t - numTimesteps`.
+      const deltas: [number, number, number][] = [];
+      for (let j = 0; j < numTimeIntervals; j++) {
+        const delta = timeToDelta[timestamp - j];
+        if (delta) {
+          deltas.push(delta);
+        }
+      }
+
+      // Check that the object has enough valid deltas to meet the threshold;
+      // if so average and store the delta.
+      if (deltas.length === numTimeIntervals) {
+        const averagedDelta: [number, number, number] = deltas.reduce(
+          (acc, delta) => [
+            acc[0] + delta[0] / deltas.length,
+            acc[1] + delta[1] / deltas.length,
+            acc[2] + delta[2] / deltas.length,
+          ],
+          [0, 0, 0]
+        );
+        motionDeltas[3 * objectId] = averagedDelta[0];
+        motionDeltas[3 * objectId + 1] = averagedDelta[1];
+        motionDeltas[3 * objectId + 2] = averagedDelta[2];
+      } else {
+        // NOTE: These may need to become Infinity for shader compatibility
+        motionDeltas[3 * objectId] = NaN;
+        motionDeltas[3 * objectId + 1] = NaN;
+        motionDeltas[3 * objectId + 2] = NaN;
+      }
+    }
+  }
+
+  return motionDeltas;
+}
+
+/**
+ * If the centroids data is in 2D (only x and y coords), pad the data to 3D by adding
+ * a z coordinate of 0.
+ * @param centroidsData
+ * @param numObjects
+ */
+export function padCentroidsTo3d(centroidsData: Uint16Array, numObjects: number): Uint16Array {
+  if (centroidsData.length === numObjects * 3) {
+    return centroidsData;
+  } else if (centroidsData.length === numObjects * 2) {
+    const paddedCentroids = new Uint16Array(numObjects * 3);
+    for (let i = 0; i < numObjects; i++) {
+      paddedCentroids[i * 3] = centroidsData[i * 2];
+      paddedCentroids[i * 3 + 1] = centroidsData[i * 2 + 1];
+      paddedCentroids[i * 3 + 2] = 0;
+    }
+    return paddedCentroids;
+  } else {
+    console.warn(
+      `padCentroidsTo3d: Length of centroids data (${centroidsData.length}) is not a multiple of the number of objects (${numObjects}).`
+    );
+    return centroidsData;
+  }
 }

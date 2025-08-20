@@ -1,29 +1,26 @@
-// Typescript doesn't recognize RequestInit
-
 /* global RequestInit */
-import { Color, ColorRepresentation, HexColorString } from "three";
+// Typescript doesn't recognize RequestInit
+import { Color } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "../../constants";
+import { DrawMode, HexColorString, isThresholdCategorical, TrackPathColorMode } from "../types";
 import {
-  DEFAULT_CATEGORICAL_PALETTE_KEY,
-  getKeyFromPalette,
-  KNOWN_CATEGORICAL_PALETTES,
-} from "../colors/categorical_palettes";
-import {
-  defaultViewerConfig,
   DrawSettings,
   FeatureThreshold,
   isDrawMode,
-  isTabType,
-  isThresholdCategorical,
+  LoadErrorMessage,
+  LoadTroubleshooting,
   PlotRangeType,
-  ScatterPlotConfig,
   ThresholdType,
-  ViewerConfig,
 } from "../types";
-import { numberToStringDecimal } from "./math_utils";
+import { nanToNull } from "./data_load_utils";
+import { AnyManifestFile } from "./dataset_utils";
+import { formatNumber } from "./math_utils";
 
-enum UrlParam {
+// TODO: This file needs to be split up for easier reading and unit testing.
+
+export const URL_COLOR_RAMP_REVERSED_SUFFIX = "!";
+export enum UrlParam {
   TRACK = "track",
   DATASET = "dataset",
   FEATURE = "feature",
@@ -32,18 +29,25 @@ enum UrlParam {
   THRESHOLDS = "filters",
   RANGE = "range",
   COLOR_RAMP = "color",
-  COLOR_RAMP_REVERSED_SUFFIX = "!",
   PALETTE = "palette",
   PALETTE_KEY = "palette-key",
+  SHOW_BACKDROP = "bg",
   BACKDROP_KEY = "bg-key",
   BACKDROP_BRIGHTNESS = "bg-brightness",
   BACKDROP_SATURATION = "bg-sat",
-  FOREGROUND_ALPHA = "fg-alpha",
+  OBJECT_OPACITY = "fg-alpha",
   OUTLIER_MODE = "outlier-mode",
   OUTLIER_COLOR = "outlier-color",
   FILTERED_MODE = "filter-mode",
   FILTERED_COLOR = "filter-color",
+  OUTLINE_COLOR = "outline-color",
+  EDGE_COLOR = "edge-color",
+  EDGE_MODE = "edge",
   SHOW_PATH = "path",
+  PATH_COLOR = "path-color",
+  PATH_WIDTH = "path-width",
+  PATH_COLOR_MODE = "path-mode",
+  SHOW_PATH_BREAKS = "path-breaks",
   SHOW_SCALEBAR = "scalebar",
   SHOW_TIMESTAMP = "timestamp",
   KEEP_RANGE = "keep-range",
@@ -51,31 +55,18 @@ enum UrlParam {
   SCATTERPLOT_Y_AXIS = "scatter-y",
   SCATTERPLOT_RANGE_MODE = "scatter-range",
   OPEN_TAB = "tab",
+  SHOW_VECTOR = "vc",
+  VECTOR_KEY = "vc-key",
+  VECTOR_COLOR = "vc-color",
+  VECTOR_SCALE = "vc-scale",
+  VECTOR_TOOLTIP_MODE = "vc-tooltip",
+  VECTOR_TIME_INTERVALS = "vc-time-int",
 }
 
 const ALLEN_FILE_PREFIX = "/allen/";
 const ALLEN_PREFIX_TO_HTTPS: Record<string, string> = {
   // eslint-disable-next-line @typescript-eslint/naming-convention
-  "/allen/aics/assay-dev": "https://dev-aics-dtp-001.int.allencell.org/assay-dev",
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  "/allen/aics/microscopy": "https://dev-aics-dtp-001.int.allencell.org/microscopy",
-};
-
-export type UrlParams = {
-  collection: string;
-  dataset: string;
-  /** Either feature key or feature name. */
-  feature: string;
-  track: number;
-  time: number;
-  thresholds: FeatureThreshold[];
-  range: [number, number];
-  colorRampKey: string | null;
-  colorRampReversed: boolean | null;
-  categoricalPalette: Color[];
-  config: Partial<ViewerConfig>;
-  selectedBackdropKey: string | null;
-  scatterPlotConfig: Partial<ScatterPlotConfig>;
+  "/allen/aics/": "https://dev-aics-dtp-001.int.allencell.org/",
 };
 
 export const DEFAULT_FETCH_TIMEOUT_MS = 2000;
@@ -94,6 +85,47 @@ export function fetchWithTimeout(
 ): Promise<Response> {
   const fetchPromise = fetch(url, { signal: AbortSignal.timeout(timeoutMs), ...options });
   return fetchPromise;
+}
+
+/**
+ * Fetches a manifest JSON file from a given URL and returns the parsed JSON object.
+ */
+export async function fetchManifestJson(url: string): Promise<AnyManifestFile> {
+  let response;
+  try {
+    response = await fetchWithTimeout(url, DEFAULT_FETCH_TIMEOUT_MS);
+  } catch (error) {
+    console.error(`Fetching manifest JSON from url '${url}' failed with the following error:`, error);
+    throw new Error(LoadErrorMessage.UNREACHABLE_MANIFEST + " " + LoadTroubleshooting.CHECK_NETWORK);
+  }
+
+  if (!response.ok) {
+    console.error(`Failed to fetch manifest file from url '${url}':`, response);
+    throw new Error(
+      `Received a ${response.status} (${response.statusText}) code from the server while retrieving manifest JSON. ${LoadTroubleshooting.CHECK_FILE_EXISTS}`
+    );
+  }
+
+  try {
+    return await JSON.parse(nanToNull(await response.text()));
+  } catch (error) {
+    console.error(`Failed to parse manifest file from url '${url}':`, error);
+    throw new Error(LoadErrorMessage.MANIFEST_JSON_PARSE_FAILED + error);
+  }
+}
+
+/**
+ * Returns the value of a promise if it was resolved, or logs a warning and returns null if it was rejected.
+ */
+export function getPromiseValue<T>(
+  promise: PromiseSettledResult<T>,
+  onFailure?: (rejectionReason: any) => void
+): T | null {
+  if (promise.status === "rejected") {
+    onFailure?.(promise.reason);
+    return null;
+  }
+  return promise.value;
 }
 
 /**
@@ -129,10 +161,14 @@ function serializeThreshold(threshold: FeatureThreshold): string {
     return `${featureKey}:${featureUnit}:${selectedHex}`;
   } else {
     // Numeric feature
-    const min = numberToStringDecimal(threshold.min, 3);
-    const max = numberToStringDecimal(threshold.max, 3);
+    const min = formatNumber(threshold.min, 3);
+    const max = formatNumber(threshold.max, 3);
     return `${featureKey}:${featureUnit}:${min}:${max}`;
   }
+}
+
+export function serializeThresholds(thresholds: FeatureThreshold[]): string {
+  return thresholds.map(serializeThreshold).join(",");
 }
 
 /**
@@ -196,11 +232,7 @@ function deserializeThreshold(thresholdString: string): FeatureThreshold | undef
   return threshold;
 }
 
-function serializeThresholds(thresholds: FeatureThreshold[]): string {
-  return thresholds.map(serializeThreshold).join(",");
-}
-
-function deserializeThresholds(thresholds: string | null): FeatureThreshold[] | undefined {
+export function deserializeThresholds(thresholds: string | null): FeatureThreshold[] | undefined {
   if (!thresholds) {
     return undefined;
   }
@@ -213,49 +245,25 @@ function deserializeThresholds(thresholds: string | null): FeatureThreshold[] | 
   }, [] as FeatureThreshold[]);
 }
 
-/**
- * If the boolean parameter is defined, serializes it as a string and adds it to the parameters array.
- */
-function tryAddBooleanParam(parameters: string[], value: boolean | undefined, key: string): void {
-  if (value !== undefined) {
-    parameters.push(`${key}=${value ? "1" : "0"}`);
-  }
+export function encodeColor(value: Color): string {
+  return value.getHexString();
 }
 
-function serializeViewerConfig(config: Partial<ViewerConfig>): string[] {
-  const parameters: string[] = [];
-  // Backdrop
-  if (config.backdropSaturation !== undefined) {
-    parameters.push(`${UrlParam.BACKDROP_SATURATION}=${config.backdropSaturation}`);
-  }
-  if (config.backdropBrightness !== undefined) {
-    parameters.push(`${UrlParam.BACKDROP_BRIGHTNESS}=${config.backdropBrightness}`);
-  }
+export function encodeMaybeColor(value: Color | undefined): string | undefined {
+  return value ? encodeColor(value) : undefined;
+}
 
-  // Foreground
-  if (config.objectOpacity !== undefined) {
-    parameters.push(`${UrlParam.FOREGROUND_ALPHA}=${config.objectOpacity}`);
-  }
+export function encodeColorWithAlpha(value: Color, alpha: number): string {
+  return `${value.getHexString()}${Math.round(alpha * 255)
+    .toString(16)
+    .padStart(2, "0")}`;
+}
 
-  // Outlier + filter colors
-  if (config.outlierDrawSettings) {
-    parameters.push(`${UrlParam.OUTLIER_COLOR}=${config.outlierDrawSettings.color.getHexString()}`);
-    parameters.push(`${UrlParam.OUTLIER_MODE}=${config.outlierDrawSettings.mode}`);
+export function encodeMaybeColorWithAlpha(value: Color | undefined, alpha: number | undefined): string | undefined {
+  if (value === undefined || alpha === undefined) {
+    return undefined;
   }
-  if (config.outOfRangeDrawSettings) {
-    parameters.push(`${UrlParam.FILTERED_COLOR}=${config.outOfRangeDrawSettings.color.getHexString()}`);
-    parameters.push(`${UrlParam.FILTERED_MODE}=${config.outOfRangeDrawSettings.mode}`);
-  }
-  if (config.openTab) {
-    parameters.push(`${UrlParam.OPEN_TAB}=${config.openTab}`);
-  }
-
-  tryAddBooleanParam(parameters, config.showScaleBar, UrlParam.SHOW_SCALEBAR);
-  tryAddBooleanParam(parameters, config.showTimestamp, UrlParam.SHOW_TIMESTAMP);
-  tryAddBooleanParam(parameters, config.showTrackPath, UrlParam.SHOW_PATH);
-  tryAddBooleanParam(parameters, config.keepRangeBetweenDatasets, UrlParam.KEEP_RANGE);
-
-  return parameters;
+  return encodeColorWithAlpha(value, alpha);
 }
 
 export function isHexColor(value: string | null): value is HexColorString {
@@ -263,7 +271,66 @@ export function isHexColor(value: string | null): value is HexColorString {
   return value !== null && hexRegex.test(value);
 }
 
-function parseDrawSettings(color: string | null, mode: string | null, defaultSettings: DrawSettings): DrawSettings {
+export function isHexAlphaColor(value: string | null): value is HexColorString {
+  const hexAlphaRegex = /^#([0-9a-f]{4}){1,2}$/;
+  return value !== null && hexAlphaRegex.test(value);
+}
+
+export function decodeHexColor(value: string | null): Color | undefined {
+  value = value?.startsWith("#") ? value : "#" + value;
+  return isHexColor(value) ? new Color(value) : undefined;
+}
+
+export function decodeHexAlphaColor(value: string | null): { color: Color; alpha: number } | undefined {
+  if (value === null) {
+    return undefined;
+  }
+  // Ensure the value starts with a hash
+  value = value.startsWith("#") ? value : "#" + value;
+
+  if (isHexAlphaColor(value)) {
+    const isShortenedHex = value.length === 5; // #RGBA vs #RRGGBBAA
+    // Extract the color and alpha components
+    const colorHex = isShortenedHex ? value.slice(0, -1) : value.slice(0, -2);
+    // Double up the last digit for 4-digit hex colors.
+    const alphaHex = isShortenedHex ? value.slice(-1).repeat(2) : value.slice(-2);
+    const color = new Color(colorHex);
+    const alpha = parseInt(alphaHex, 16) / 255;
+    return { color, alpha };
+  } else if (isHexColor(value)) {
+    // If it's a regular hex color (3 or 6 digits), return it with alpha 1
+    return { color: new Color(value), alpha: 1 };
+  } else {
+    return undefined;
+  }
+}
+
+export function encodeNumber(value: number): string {
+  return formatNumber(value, 3);
+}
+
+export function encodeMaybeNumber(value: number | undefined): string | undefined {
+  return value !== undefined ? encodeNumber(value) : undefined;
+}
+
+export function decodeFloat(value: string | null): number | undefined {
+  return value === null ? undefined : parseFloat(value);
+}
+
+export function decodeInt(value: string | null): number | undefined {
+  return value === null ? undefined : parseInt(value, 10);
+}
+
+export function parseDrawMode(mode: string | null): DrawMode | undefined {
+  const modeInt = parseInt(mode || "-1", 10);
+  return mode && isDrawMode(modeInt) ? modeInt : undefined;
+}
+
+export function parseDrawSettings(
+  color: string | null,
+  mode: string | null,
+  defaultSettings: DrawSettings
+): DrawSettings {
   const modeInt = parseInt(mode || "-1", 10);
   const hexColor = "#" + color;
   return {
@@ -272,53 +339,29 @@ function parseDrawSettings(color: string | null, mode: string | null, defaultSet
   };
 }
 
-function getBooleanParam(value: string | null): boolean | undefined {
+export function parseTrackPathMode(mode: string | null): TrackPathColorMode | undefined {
+  const modeInt = parseInt(mode || "-1", 10);
+  const isTrackPathColorMode =
+    modeInt === TrackPathColorMode.USE_CUSTOM_COLOR || modeInt === TrackPathColorMode.USE_OUTLINE_COLOR;
+  return mode && isTrackPathColorMode ? (modeInt as TrackPathColorMode) : undefined;
+}
+
+export function encodeBoolean(value: boolean): string {
+  return value ? "1" : "0";
+}
+
+export function encodeMaybeBoolean(value: boolean | undefined): string | undefined {
+  return value !== undefined ? encodeBoolean(value) : undefined;
+}
+
+export function decodeBoolean(value: string | null): boolean | undefined {
   if (value === null) {
     return undefined;
   }
   return value === "1";
 }
 
-function deserializeViewerConfig(params: URLSearchParams): Partial<ViewerConfig> | undefined {
-  const newConfig: Partial<ViewerConfig> = {};
-  if (params.get(UrlParam.BACKDROP_SATURATION)) {
-    newConfig.backdropSaturation = parseInt(params.get(UrlParam.BACKDROP_SATURATION)!, 10);
-  }
-  if (params.get(UrlParam.BACKDROP_BRIGHTNESS)) {
-    newConfig.backdropBrightness = parseInt(params.get(UrlParam.BACKDROP_BRIGHTNESS)!, 10);
-  }
-  if (params.get(UrlParam.FOREGROUND_ALPHA)) {
-    newConfig.objectOpacity = parseInt(params.get(UrlParam.FOREGROUND_ALPHA)!, 10);
-  }
-  if (params.get(UrlParam.OUTLIER_COLOR) || params.get(UrlParam.OUTLIER_MODE)) {
-    newConfig.outlierDrawSettings = parseDrawSettings(
-      params.get(UrlParam.OUTLIER_COLOR),
-      params.get(UrlParam.OUTLIER_MODE),
-      defaultViewerConfig.outlierDrawSettings
-    );
-  }
-  if (params.get(UrlParam.FILTERED_COLOR) || params.get(UrlParam.FILTERED_MODE)) {
-    newConfig.outOfRangeDrawSettings = parseDrawSettings(
-      params.get(UrlParam.FILTERED_COLOR),
-      params.get(UrlParam.FILTERED_MODE),
-      defaultViewerConfig.outOfRangeDrawSettings
-    );
-  }
-  const openTab = params.get(UrlParam.OPEN_TAB);
-  if (openTab && isTabType(openTab)) {
-    newConfig.openTab = openTab;
-  }
-
-  newConfig.showScaleBar = getBooleanParam(params.get(UrlParam.SHOW_SCALEBAR));
-  newConfig.showTimestamp = getBooleanParam(params.get(UrlParam.SHOW_TIMESTAMP));
-  newConfig.showTrackPath = getBooleanParam(params.get(UrlParam.SHOW_PATH));
-  newConfig.keepRangeBetweenDatasets = getBooleanParam(params.get(UrlParam.KEEP_RANGE));
-
-  const finalConfig = removeUndefinedProperties(newConfig);
-  return Object.keys(finalConfig).length === 0 ? undefined : finalConfig;
-}
-
-const rangeTypeToUrlParam: Record<PlotRangeType, string> = {
+const scatterPlotRangeTypeToUrlParam: Record<PlotRangeType, string> = {
   [PlotRangeType.ALL_TIME]: "all",
   [PlotRangeType.CURRENT_TRACK]: "track",
   [PlotRangeType.CURRENT_FRAME]: "frame",
@@ -330,114 +373,15 @@ const urlParamToRangeType: Record<string, PlotRangeType> = {
   frame: PlotRangeType.CURRENT_FRAME,
 };
 
-function serializeScatterPlotConfig(config: Partial<ScatterPlotConfig>): string[] {
-  const parameters: string[] = [];
-  if (config.rangeType) {
-    const rangeString = rangeTypeToUrlParam[config.rangeType];
-    parameters.push(`${UrlParam.SCATTERPLOT_RANGE_MODE}=${rangeString}`);
-  }
-  config.xAxis && parameters.push(`${UrlParam.SCATTERPLOT_X_AXIS}=${encodeURIComponent(config.xAxis)}`);
-  config.yAxis && parameters.push(`${UrlParam.SCATTERPLOT_Y_AXIS}=${encodeURIComponent(config.yAxis)}`);
-  return parameters;
+export function encodeScatterPlotRangeType(rangeType: PlotRangeType): string {
+  return scatterPlotRangeTypeToUrlParam[rangeType];
 }
 
-function deserializeScatterPlotConfig(params: URLSearchParams): Partial<ScatterPlotConfig> | undefined {
-  const newConfig: Partial<ScatterPlotConfig> = {};
-  const rangeString = params.get(UrlParam.SCATTERPLOT_RANGE_MODE);
-  if (rangeString && urlParamToRangeType[rangeString]) {
-    newConfig.rangeType = urlParamToRangeType[rangeString];
+export function decodeScatterPlotRangeType(rangeString: string | null): PlotRangeType | undefined {
+  if (rangeString === null) {
+    return;
   }
-  const xAxis = decodePossiblyNullString(params.get(UrlParam.SCATTERPLOT_X_AXIS));
-  const yAxis = decodePossiblyNullString(params.get(UrlParam.SCATTERPLOT_Y_AXIS));
-  if (xAxis) {
-    newConfig.xAxis = xAxis;
-  }
-  if (yAxis) {
-    newConfig.yAxis = yAxis;
-  }
-  const finalConfig = removeUndefinedProperties(newConfig);
-  return Object.keys(finalConfig).length === 0 ? undefined : finalConfig;
-}
-
-/**
- * Creates a url query string from parameters that can be appended onto the base URL.
- *
- * @param state: An object matching any of the properties of `UrlParams`.
- * - `collection`: string path to the collection. Ignores paths matching the default collection address.
- * - `dataset`: string name or URL of the dataset.
- * - `feature`: string name of the feature.
- * - `track`: integer track number.
- * - `time`: integer frame number.
- * - `thresholds`: array of feature threshold.
- * - `range`: array of two numbers, representing the min and max of the color map range.
- * - `colorRampKey`: the key of the current color map.
- * - `colorRampReversed`: boolean, whether the color map is reversed.
- * - `categoricalPalette`: an array of (three.js) Color objects representing the current color palette to use.
- *
- * @returns
- * - If no parameters are present or valid, returns an empty string.
- * - Else, returns a string of URL parameters that can be appended to the URL directly (ex: `?collection=<some_url>&time=23`).
- */
-export function paramsToUrlQueryString(state: Partial<UrlParams>): string {
-  // Get parameters, ignoring null/empty values
-  const includedParameters: string[] = [];
-
-  if (state.collection) {
-    includedParameters.push(`${UrlParam.COLLECTION}=${encodeURIComponent(state.collection)}`);
-  }
-  if (state.dataset) {
-    includedParameters.push(`${UrlParam.DATASET}=${encodeURIComponent(state.dataset)}`);
-  }
-  if (state.feature) {
-    includedParameters.push(`${UrlParam.FEATURE}=${encodeURIComponent(state.feature)}`);
-  }
-  if (state.track !== undefined) {
-    includedParameters.push(`${UrlParam.TRACK}=${state.track}`);
-  }
-  if (state.time !== undefined) {
-    includedParameters.push(`${UrlParam.TIME}=${state.time}`);
-  }
-  if (state.thresholds && state.thresholds.length > 0) {
-    includedParameters.push(`${UrlParam.THRESHOLDS}=${encodeURIComponent(serializeThresholds(state.thresholds))}`);
-  }
-  if (state.range && state.range.length === 2) {
-    const rangeString = `${numberToStringDecimal(state.range[0], 3)},${numberToStringDecimal(state.range[1], 3)}`;
-    includedParameters.push(`${UrlParam.RANGE}=${encodeURIComponent(rangeString)}`);
-  }
-  if (state.colorRampKey) {
-    if (state.colorRampReversed) {
-      includedParameters.push(
-        `${UrlParam.COLOR_RAMP}=${encodeURIComponent(state.colorRampKey + UrlParam.COLOR_RAMP_REVERSED_SUFFIX)}`
-      );
-    } else {
-      includedParameters.push(`${UrlParam.COLOR_RAMP}=${encodeURIComponent(state.colorRampKey)}`);
-    }
-  }
-  if (state.categoricalPalette) {
-    const key = getKeyFromPalette(state.categoricalPalette);
-    if (key !== null) {
-      includedParameters.push(`${UrlParam.PALETTE_KEY}=${key}`);
-    } else {
-      // Save the hex color stops as a string separated by dashes.
-      // TODO: Save only the edited colors to shorten URL.
-      const stops = state.categoricalPalette.map((color: Color) => {
-        return color.getHexString();
-      });
-      includedParameters.push(`${UrlParam.PALETTE}=${stops.join("-")}`);
-    }
-  }
-  if (state.config) {
-    includedParameters.push(...serializeViewerConfig(state.config));
-  }
-  if (state.selectedBackdropKey) {
-    includedParameters.push(`${UrlParam.BACKDROP_KEY}=${encodeURIComponent(state.selectedBackdropKey)}`);
-  }
-  if (state.scatterPlotConfig) {
-    includedParameters.push(...serializeScatterPlotConfig(state.scatterPlotConfig));
-  }
-
-  // If parameters present, join with URL syntax and push into the URL
-  return includedParameters.length > 0 ? "?" + includedParameters.join("&") : "";
+  return urlParamToRangeType[rangeString];
 }
 
 /**
@@ -460,6 +404,11 @@ function normalizeFilePathSlashes(input: string): string {
   input = input.replaceAll("\\", "/");
   // Replace double slashes with single
   input = input.replaceAll("//", "/");
+  if (input.startsWith("//")) {
+    // If the string still starts with double slashes, remove the first.
+    // (Usually `\\\\` for Windows paths)
+    input = input.slice(1);
+  }
   return input;
 }
 
@@ -489,8 +438,8 @@ export function convertAllenPathToHttps(input: string): string | null {
 /**
  * Decodes strings using `decodeURIComponent`, handling null inputs.
  */
-function decodePossiblyNullString(input: string | null): string | null {
-  return input === null ? null : decodeURIComponent(input);
+export function decodeString(input: string | null): string | undefined {
+  return input === null ? undefined : decodeURIComponent(input);
 }
 
 export function isBlob(path: string): boolean {
@@ -522,100 +471,10 @@ export function formatPath(input: string): string {
   return input.trim();
 }
 
-/**
- * Returns a copy of an object where any properties with a value of `undefined`
- * are not included.
- */
-function removeUndefinedProperties<T>(object: T): Partial<T> {
-  const ret: Partial<T> = {};
-  for (const key in object) {
-    if (object[key] !== undefined) {
-      ret[key] = object[key];
-    }
-  }
-  return ret;
-}
-
-/**
- * Loads viewer parameters from a URLSearchParams object.
- * @param queryString A URLSearchParams object.
- * @returns A partial UrlParams object with values loaded from the queryString.
- * Enforces min/max ordering for thresholds and range.
- */
-export function loadFromUrlSearchParams(urlParams: URLSearchParams): Partial<UrlParams> {
-  const base10Radix = 10; // required for parseInt
-  const collectionParam = urlParams.get(UrlParam.COLLECTION) ?? undefined;
-  const datasetParam = urlParams.get(UrlParam.DATASET) ?? undefined;
-  const featureParam = urlParams.get(UrlParam.FEATURE) ?? undefined;
-  const trackParam = urlParams.get(UrlParam.TRACK) ? parseInt(urlParams.get(UrlParam.TRACK)!, base10Radix) : undefined;
-  // This assumes there are no negative timestamps in the dataset
-  const timeParam = urlParams.get(UrlParam.TIME) ? parseInt(urlParams.get(UrlParam.TIME)!, base10Radix) : undefined;
-
-  // Parse and validate thresholds
-  const thresholdsParam = deserializeThresholds(urlParams.get(UrlParam.THRESHOLDS));
-
-  let rangeParam: [number, number] | undefined = undefined;
-  const rawRangeParam = decodePossiblyNullString(urlParams.get(UrlParam.RANGE));
-  if (rawRangeParam) {
-    const [min, max] = rawRangeParam.split(",");
-    rangeParam = [parseFloat(min), parseFloat(max)];
-    // Enforce min/max ordering
-    if (rangeParam[0] > rangeParam[1]) {
-      rangeParam.reverse();
-    }
-  }
-
-  const colorRampRawParam = urlParams.get(UrlParam.COLOR_RAMP);
-  let colorRampParam: string | undefined = colorRampRawParam || undefined;
-  let colorRampReversedParam: boolean | undefined = undefined;
-  //  Color ramps are marked as reversed by adding ! to the end of the key
-  if (
-    colorRampRawParam &&
-    colorRampRawParam.charAt(colorRampRawParam.length - 1) === UrlParam.COLOR_RAMP_REVERSED_SUFFIX
-  ) {
-    colorRampReversedParam = true;
-    colorRampParam = colorRampRawParam.slice(0, -1);
-  }
-
-  // Parse palette data
-  const paletteKeyParam = urlParams.get(UrlParam.PALETTE_KEY);
-  const paletteStringParam = urlParams.get(UrlParam.PALETTE);
-  const defaultPalette = KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_KEY)!;
-
-  let categoricalPalette: Color[] | undefined = undefined;
-  if (paletteKeyParam) {
-    // Use key if provided
-    categoricalPalette = KNOWN_CATEGORICAL_PALETTES.get(paletteKeyParam)?.colors || defaultPalette.colors;
-  } else if (paletteStringParam) {
-    // Parse into color objects
-    const hexColors: ColorRepresentation[] = paletteStringParam
-      .split("-")
-      .map((hex) => "#" + hex) as ColorRepresentation[];
-    if (hexColors.length < MAX_FEATURE_CATEGORIES) {
-      // backfill extra colors to meet max length using default palette
-      hexColors.push(...defaultPalette.colorStops.slice(hexColors.length));
-    }
-    categoricalPalette = hexColors.map((hex) => new Color(hex));
-  }
-
-  const config = deserializeViewerConfig(urlParams);
-  const selectedBackdropKey = decodePossiblyNullString(urlParams.get(UrlParam.BACKDROP_KEY)) ?? undefined;
-  const scatterPlotConfig = deserializeScatterPlotConfig(urlParams);
-
-  // Remove undefined entries from the object for a cleaner return value
-  return removeUndefinedProperties({
-    collection: collectionParam,
-    dataset: datasetParam,
-    feature: featureParam,
-    track: trackParam,
-    time: timeParam,
-    thresholds: thresholdsParam,
-    range: rangeParam,
-    colorRampKey: colorRampParam,
-    colorRampReversed: colorRampReversedParam,
-    categoricalPalette,
-    config,
-    selectedBackdropKey,
-    scatterPlotConfig,
-  });
-}
+export const makeGitHubIssueLink = (title: string, body: string, labels?: string[]): string => {
+  const baseUrl = "https://github.com/allen-cell-animated/timelapse-colorizer/issues/new";
+  const titleParam = `title=${encodeURIComponent(title)}`;
+  const bodyParam = `body=${encodeURIComponent(body)}`;
+  const labelsParam = labels ? `labels=${labels.map(encodeURIComponent).join(",")}` : "";
+  return `${baseUrl}?${titleParam}&${bodyParam}&${labelsParam}`;
+};

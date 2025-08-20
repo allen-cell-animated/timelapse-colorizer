@@ -1,9 +1,12 @@
+import { LockOutlined } from "@ant-design/icons";
+import { Tooltip } from "antd";
 import React, { PropsWithChildren, ReactElement } from "react";
 import { Link } from "react-router-dom";
 import styled from "styled-components";
 
 import { AicsLogoAndNameSVG, AicsLogoSVG } from "../assets";
-import { FlexRowAlignCenter } from "../styles/utils";
+import { INTERNAL_BUILD } from "../constants";
+import { FlexRowAlignCenter, VisuallyHidden } from "../styles/utils";
 
 const AICS_LOGO_RESIZE_THRESHOLD_PX = 540;
 
@@ -76,6 +79,15 @@ function HeaderLogo(props: { headerOpensInNewTab?: boolean }): ReactElement {
       >
         <h1 style={{ margin: "0", fontSize: "20px" }}>Timelapse Feature Explorer</h1>
       </HeaderLink>
+      {INTERNAL_BUILD && (
+        <Tooltip title="The viewer is in internal build mode. Some experimental features may be enabled.">
+          <LockOutlined style={{ fontSize: "18px", marginLeft: "6px", color: "var(--color-text-theme)" }}>
+            <VisuallyHidden>
+              The viewer is in internal build mode. Some experimental features may be enabled.
+            </VisuallyHidden>
+          </LockOutlined>
+        </Tooltip>
+      )}
     </FlexRowAlignCenter>
   );
 }

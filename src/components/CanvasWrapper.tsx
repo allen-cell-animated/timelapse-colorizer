@@ -1,23 +1,27 @@
 import { HomeOutlined, ZoomInOutlined, ZoomOutOutlined } from "@ant-design/icons";
-import { Tooltip, TooltipProps } from "antd";
+import { Tooltip } from "antd";
 import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
-import { Color, ColorRepresentation, Vector2 } from "three";
-import { clamp } from "three/src/math/MathUtils";
+import { Vector2 } from "three";
 
-import { HandIconSVG, NoImageSVG } from "../assets";
-import { ColorizeCanvas, ColorRamp, Dataset, Track } from "../colorizer";
-import { ViewerConfig } from "../colorizer/types";
-import * as mathUtils from "../colorizer/utils/math_utils";
-import { FlexColumn, FlexColumnAlignCenter, VisuallyHidden } from "../styles/utils";
+import { ImagesIconSVG, ImagesSlashIconSVG, NoImageSVG, TagIconSVG, TagSlashIconSVG } from "../assets";
+import { AnnotationSelectionMode, LoadTroubleshooting, PixelIdInfo, TabType } from "../colorizer/types";
+import { AnnotationState } from "../colorizer/utils/react_utils";
+import { CANVAS_ASPECT_RATIO } from "../constants";
+import { FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter, VisuallyHidden } from "../styles/utils";
 
-import Collection from "../colorizer/Collection";
+import { LabelData, LabelType } from "../colorizer/AnnotationData";
+import CanvasOverlay from "../colorizer/CanvasOverlay";
+import { renderCanvasStateParamsSelector } from "../colorizer/IRenderCanvas";
+import { useViewerStateStore } from "../state/ViewerState";
 import { AppThemeContext } from "./AppStyle";
 import { AlertBannerProps } from "./Banner";
+import { LinkStyleButton } from "./Buttons/LinkStyleButton";
 import IconButton from "./IconButton";
 import LoadingSpinner from "./LoadingSpinner";
+import AnnotationInputPopover from "./Tabs/Annotation/AnnotationInputPopover";
+import { TooltipWithSubtitle } from "./Tooltips/TooltipWithSubtitle";
 
-const ASPECT_RATIO = 14.6 / 10;
 /* Minimum distance in either X or Y that mouse should move
  * before mouse event is considered a drag
  */
@@ -26,24 +30,17 @@ const LEFT_CLICK_BUTTON = 0;
 const MIDDLE_CLICK_BUTTON = 1;
 const RIGHT_CLICK_BUTTON = 2;
 
-const MAX_INVERSE_ZOOM = 2; // 0.5x zoom
-const MIN_INVERSE_ZOOM = 0.1; // 10x zoom
+const CanvasContainer = styled(FlexColumnAlignCenter)<{ $annotationModeEnabled: boolean }>`
+  position: relative;
+  background-color: var(--color-viewport-background);
 
-function TooltipWithSubtext(props: TooltipProps & { title: ReactNode; subtext: ReactNode }): ReactElement {
-  return (
-    <Tooltip
-      {...props}
-      title={
-        <>
-          <p style={{ margin: 0 }}>{props.title}</p>
-          <p style={{ margin: 0, fontSize: "12px" }}>{props.subtext}</p>
-        </>
-      }
-    >
-      {props.children}
-    </Tooltip>
-  );
-}
+  outline: 1px solid
+    ${(props) => (props.$annotationModeEnabled ? "var(--color-viewport-annotation-outline)" : "transparent")};
+  box-shadow: 0 0 8px 2px
+    ${(props) => (props.$annotationModeEnabled ? "var(--color-viewport-annotation-outline)" : "transparent")};
+
+  transition: box-shadow 0.1s ease-in, outline 0.1s ease-in;
+`;
 
 const CanvasControlsContainer = styled(FlexColumn)`
   position: absolute;
@@ -70,35 +67,41 @@ const MissingFileIconContainer = styled(FlexColumnAlignCenter)`
   pointer-events: none;
 `;
 
+const AnnotationModeContainer = styled(FlexColumn)`
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background-color: var(--color-viewport-overlay-background);
+  border: 1px solid var(--color-viewport-overlay-outline);
+  z-index: 100;
+  padding: 8px 8px;
+  border-radius: 4px;
+  pointer-events: none;
+  gap: 6px;
+`;
+
+const HotkeyText = styled.div`
+  padding: 1px 4px;
+  border-radius: 4px;
+  background-color: var(--color-viewport-overlay-background);
+  border: 1px solid var(--color-viewport-overlay-outline);
+`;
+
 type CanvasWrapperProps = {
-  canv: ColorizeCanvas;
-  /** Dataset to look up track and ID information in.
-   * Changing this does NOT update the canvas dataset; do so
-   * directly by calling `canv.setDataset()`.
-   */
-  dataset: Dataset | null;
-  /** Pan and zoom will be reset on collection change. */
-  collection: Collection | null;
-  config: ViewerConfig;
+  canv: CanvasOverlay;
+
   loading: boolean;
+  loadingProgress: number | null;
+  isRecording: boolean;
 
-  selectedBackdropKey: string | null;
+  annotationState: AnnotationState;
 
-  colorRamp: ColorRamp;
-  colorRampMin: number;
-  colorRampMax: number;
-
-  selectedTrack: Track | null;
-  categoricalColors: Color[];
-
-  inRangeLUT?: Uint8Array;
+  onClickId?: (info: PixelIdInfo | null) => void;
 
   /** Called when the mouse hovers over the canvas; reports the currently hovered id. */
-  onMouseHover?: (id: number) => void;
+  onMouseHover?: (info: PixelIdInfo | null) => void;
   /** Called when the mouse exits the canvas. */
   onMouseLeave?: () => void;
-  /** Called when the canvas is clicked; reports the track info of the clicked object. */
-  onTrackClicked?: (track: Track | null) => void;
 
   showAlert?: (props: AlertBannerProps) => void;
 
@@ -109,8 +112,7 @@ type CanvasWrapperProps = {
 const defaultProps: Partial<CanvasWrapperProps> = {
   onMouseHover() {},
   onMouseLeave() {},
-  onTrackClicked: () => {},
-  inRangeLUT: new Uint8Array(0),
+  onClickId() {},
   maxWidthPx: 1400,
   maxHeightPx: 1000,
 };
@@ -124,23 +126,38 @@ const defaultProps: Partial<CanvasWrapperProps> = {
 export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<CanvasWrapperProps>;
 
+  // Access state properties
+  const pendingFrame = useViewerStateStore((state) => state.pendingFrame);
+  const currentFrame = useViewerStateStore((state) => state.currentFrame);
+  const backdropKey = useViewerStateStore((state) => state.backdropKey);
+  const backdropVisible = useViewerStateStore((state) => state.backdropVisible);
+  const clearTrack = useViewerStateStore((state) => state.clearTrack);
+  const collection = useViewerStateStore((state) => state.collection);
+  const dataset = useViewerStateStore((state) => state.dataset);
+  const setBackdropVisible = useViewerStateStore((state) => state.setBackdropVisible);
+  const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
+  const setTrack = useViewerStateStore((state) => state.setTrack);
+  const showScaleBar = useViewerStateStore((state) => state.showScaleBar);
+  const showTimestamp = useViewerStateStore((state) => state.showTimestamp);
+  const frameLoadResult = useViewerStateStore((state) => state.frameLoadResult);
+
   const containerRef = useRef<HTMLDivElement>(null);
 
   const canv = props.canv;
-  const canvasRef = useRef<HTMLDivElement>(null);
+  const canvasPlaceholderRef = useRef<HTMLDivElement>(null);
 
-  /**
-   * Canvas zoom level, stored as its inverse. This makes it so linear changes in zoom level
-   * (by +/-0.25) affect the zoom level more when zoomed in than zoomed out.
-   */
-  const canvasZoomInverse = useRef(1.0);
-  /**
-   * The offset of the frame in the canvas, in normalized frame coordinates. [0, 0] means the
-   * frame will be centered, while [-0.5, -0.5] means the top right corner of the frame will be
-   * centered in the canvas view.
-   * X and Y are clamped to a range of [-0.5, 0.5] to prevent the frame from being panned out of view.
-   */
-  const canvasPanOffset = useRef(new Vector2(0, 0));
+  const [lastClickPosition, setLastClickPosition] = useState<[number, number]>([0, 0]);
+
+  const isFrameLoading = pendingFrame !== currentFrame;
+  const loadProgress = props.loading ? props.loadingProgress : null;
+
+  // Add subscriber so canvas parameters are updated when the state changes.
+  useEffect(() => {
+    return useViewerStateStore.subscribe(renderCanvasStateParamsSelector, (params) => {
+      canv.setParams(params);
+    });
+  }, []);
+
   const isMouseLeftDown = useRef(false);
   const isMouseMiddleDown = useRef(false);
   const isMouseRightDown = useRef(false);
@@ -151,38 +168,31 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
    */
   const isMouseDragging = useRef(false);
   const totalMouseDrag = useRef(new Vector2(0, 0));
-  const [enablePan, setEnablePan] = useState(false);
 
   const isMouseOverCanvas = useRef(false);
   const lastMousePositionPx = useRef(new Vector2(0, 0));
   const theme = useContext(AppThemeContext);
 
-  const [showMissingFileIcon, setShowMissingFileIcon] = useState(false);
+  const isMissingFile = frameLoadResult !== null && (frameLoadResult.frameError || frameLoadResult.backdropError);
 
   // CANVAS PROPERTIES /////////////////////////////////////////////////
 
-  const onFrameChangedCallback = useCallback(
-    (isMissing: boolean) => {
-      setShowMissingFileIcon(isMissing);
-      if (props.showAlert && isMissing) {
-        props.showAlert({
-          type: "warning",
-          message: "Warning: One or more frames failed to load.",
-          description:
-            "Check your network connection and access to the dataset path, or use the browser console to view details. Otherwise, contact the dataset creator as there may be missing files.",
-          showDoNotShowAgainCheckbox: true,
-          closable: true,
-        });
-      }
-    },
-    [props.showAlert, setShowMissingFileIcon, canv]
-  );
-
-  canv.setOnFrameChangeCallback(onFrameChangedCallback);
-
-  // Mount the canvas to the wrapper's location in the document.
+  // Show warning if files are missing
   useEffect(() => {
-    canvasRef.current?.parentNode?.replaceChild(canv.domElement, canvasRef.current);
+    if (isMissingFile) {
+      props.showAlert({
+        type: "warning",
+        message: "Warning: One or more frames or backdrops failed to load.",
+        description: LoadTroubleshooting.CHECK_FILE_OR_NETWORK,
+        showDoNotShowAgainCheckbox: true,
+        closable: true,
+      });
+    }
+  }, [frameLoadResult]);
+
+  // Mount the canvas to the placeholder's location in the document.
+  useEffect(() => {
+    canvasPlaceholderRef.current?.parentNode?.replaceChild(canv.domElement, canvasPlaceholderRef.current);
   }, []);
 
   // These are all useMemo calls because the updates to the canvas must happen in the same render;
@@ -196,64 +206,50 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       fontColor: theme.color.text.primary,
       fontFamily: theme.font.family,
     };
-    canv.overlay.updateScaleBarOptions(defaultTheme);
-    canv.overlay.updateTimestampOptions(defaultTheme);
-    canv.overlay.updateBackgroundOptions({ stroke: theme.color.layout.borders });
-    canv.setCanvasBackgroundColor(new Color(theme.color.viewport.background as ColorRepresentation));
+    const sidebarTheme = {
+      ...defaultTheme,
+      stroke: theme.color.layout.borders,
+      fill: theme.color.layout.background,
+    };
+    canv.updateScaleBarStyle(defaultTheme);
+    canv.updateTimestampStyle(defaultTheme);
+    canv.updateInsetBoxStyle({ stroke: theme.color.layout.borders });
+    canv.updateLegendStyle(defaultTheme);
+    canv.updateFooterStyle(sidebarTheme);
+    canv.updateHeaderStyle(sidebarTheme);
   }, [theme]);
-
-  // Update canvas color ramp
-  useMemo(() => {
-    canv.setColorRamp(props.colorRamp);
-    canv.setColorMapRangeMin(props.colorRampMin);
-    canv.setColorMapRangeMax(props.colorRampMax);
-  }, [props.colorRamp, props.colorRampMin, props.colorRampMax]);
-
-  // Update backdrops
-  useMemo(() => {
-    canv.setBackdropKey(props.selectedBackdropKey);
-    canv.setBackdropBrightness(props.config.backdropBrightness);
-    canv.setBackdropSaturation(props.config.backdropSaturation);
-  }, [props.selectedBackdropKey, props.config.backdropBrightness, props.config.backdropSaturation]);
-
-  // Update categorical colors
-  useMemo(() => {
-    canv.setCategoricalColors(props.categoricalColors);
-  }, [props.categoricalColors]);
-
-  // Update drawing modes for outliers + out of range values
-  useMemo(() => {
-    const settings = props.config.outOfRangeDrawSettings;
-    canv.setOutOfRangeDrawMode(settings.mode, settings.color);
-  }, [props.config.outOfRangeDrawSettings]);
-
-  useMemo(() => {
-    const settings = props.config.outlierDrawSettings;
-    canv.setOutlierDrawMode(settings.mode, settings.color);
-  }, [props.config.outlierDrawSettings]);
-
-  useMemo(() => {
-    canv.setObjectOpacity(props.config.objectOpacity);
-  }, [props.config.objectOpacity]);
-
-  useMemo(() => {
-    canv.setInRangeLUT(props.inRangeLUT);
-  }, [props.inRangeLUT]);
-
-  // Updated track-related settings
-  useMemo(() => {
-    canv.setSelectedTrack(props.selectedTrack);
-    canv.setShowTrackPath(props.config.showTrackPath);
-  }, [props.selectedTrack, props.config.showTrackPath]);
 
   // Update overlay settings
   useMemo(() => {
-    canv.setScaleBarVisibility(props.config.showScaleBar);
-  }, [props.config.showScaleBar]);
+    canv.isScaleBarVisible = showScaleBar;
+  }, [showScaleBar]);
 
   useMemo(() => {
-    canv.setTimestampVisibility(props.config.showTimestamp);
-  }, [props.config.showTimestamp]);
+    canv.isTimestampVisible = showTimestamp;
+  }, [showTimestamp]);
+
+  useMemo(() => {
+    // TODO: This should be handled in state.
+    canv.setIsExporting(props.isRecording);
+  }, [props.isRecording]);
+
+  useMemo(() => {
+    const annotationLabels = props.annotationState.data.getLabels();
+    const timeToAnnotationLabelIds = dataset ? props.annotationState.data.getTimeToLabelIdMap(dataset) : new Map();
+    canv.isAnnotationVisible = props.annotationState.visible;
+    canv.setAnnotationData(
+      annotationLabels,
+      timeToAnnotationLabelIds,
+      props.annotationState.currentLabelIdx,
+      props.annotationState.rangeStartId
+    );
+  }, [
+    dataset,
+    props.annotationState.data,
+    props.annotationState.rangeStartId,
+    props.annotationState.currentLabelIdx,
+    props.annotationState.visible,
+  ]);
 
   // CANVAS RESIZING /////////////////////////////////////////////////
 
@@ -265,137 +261,114 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     const widthPx = Math.min(
       containerRef.current?.clientWidth ?? props.maxWidthPx,
       props.maxWidthPx,
-      props.maxHeightPx * ASPECT_RATIO
+      props.maxHeightPx * CANVAS_ASPECT_RATIO
     );
-    return new Vector2(Math.floor(widthPx), Math.floor(widthPx / ASPECT_RATIO));
+    return new Vector2(Math.floor(widthPx), Math.floor(widthPx / CANVAS_ASPECT_RATIO));
   }, [props.maxHeightPx, props.maxWidthPx]);
 
   // Respond to window resizing
   useEffect(() => {
     const updateCanvasDimensions = (): void => {
+      if (props.isRecording) {
+        // Do not resize during recordings.
+        return;
+      }
       const canvasSizePx = getCanvasSizePx();
-      canv.setSize(canvasSizePx.x, canvasSizePx.y);
+      canv.setResolution(canvasSizePx.x, canvasSizePx.y);
     };
     updateCanvasDimensions(); // Initial size setting
 
     const handleResize = (): void => {
       updateCanvasDimensions();
-      canv.render();
     };
 
     window.addEventListener("resize", handleResize);
     return () => {
       window.removeEventListener("resize", handleResize);
     };
-  }, [canv, getCanvasSizePx]);
+  }, [canv, getCanvasSizePx, props.isRecording]);
 
   // CANVAS ACTIONS /////////////////////////////////////////////////
 
-  // Reset the canvas zoom + pan when the collection changes
+  // Reset the canvas views when the collection changes
   useEffect(() => {
-    canvasZoomInverse.current = 1.0;
-    canvasPanOffset.current = new Vector2(0, 0);
-    canv.setZoom(1.0);
-    canv.setPan(0, 0);
-  }, [props.collection]);
-
-  /** Report clicked tracks via the passed callback. */
-  const handleTrackSelection = useCallback(
-    async (event: MouseEvent): Promise<void> => {
-      const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
-      // Reset track input
-      if (id < 0 || props.dataset === null) {
-        props.onTrackClicked(null);
-      } else {
-        const trackId = props.dataset.getTrackId(id);
-        const newTrack = props.dataset.buildTrack(trackId);
-        props.onTrackClicked(newTrack);
-      }
-    },
-    [canv, props.dataset]
-  );
+    canv.resetView();
+  }, [collection]);
 
   /**
-   * Returns the full size of the frame in screen pixels, including offscreen pixels.
+   * Updates the canvas' cursor type based on panning and annotation editing
+   * modes. Should be called after click interactions and mouse movement.
    */
-  const getFrameSizeInScreenPx = useCallback((): Vector2 => {
-    const canvasSizePx = getCanvasSizePx();
-    const frameResolution = props.dataset ? props.dataset.frameResolution : canvasSizePx;
-    const canvasZoom = 1 / canvasZoomInverse.current;
-    return mathUtils.getFrameSizeInScreenPx(canvasSizePx, frameResolution, canvasZoom);
-  }, [props.dataset?.frameResolution, getCanvasSizePx]);
+  const updateCanvasCursor = useCallback(
+    (offsetX: number, offsetY: number): void => {
+      if (isMouseDragging.current) {
+        canv.domElement.style.cursor = "move";
+      } else if (props.annotationState.isAnnotationModeEnabled) {
+        // Check if mouse is over an object, and if it's labeled with an editable label.
+        // If so, show the edit cursor.
+        const labelIdx = props.annotationState.currentLabelIdx;
+        if (labelIdx !== null) {
+          const labelData = props.annotationState.data.getLabels()[labelIdx];
+          if (labelData.options.type !== LabelType.BOOLEAN) {
+            const id = canv.getIdAtPixel(offsetX, offsetY);
+            if (id !== null && id.globalId !== undefined && labelData.ids.has(id.globalId)) {
+              canv.domElement.style.cursor = "text";
+              return;
+            }
+          }
+        }
 
-  /** Change zoom by some delta factor. */
-  const handleZoom = useCallback(
-    (zoomDelta: number): void => {
-      canvasZoomInverse.current += zoomDelta;
-      canvasZoomInverse.current = clamp(canvasZoomInverse.current, MIN_INVERSE_ZOOM, MAX_INVERSE_ZOOM);
-      canv.setZoom(1 / canvasZoomInverse.current);
+        if (props.annotationState.selectionMode === AnnotationSelectionMode.TRACK) {
+          canv.domElement.style.cursor = "cell";
+        } else {
+          canv.domElement.style.cursor = "crosshair";
+        }
+      } else {
+        canv.domElement.style.cursor = "auto";
+      }
     },
-    [canv]
+    [
+      isMouseDragging,
+      props.annotationState.isAnnotationModeEnabled,
+      props.annotationState.data,
+      props.annotationState.selectionMode,
+      props.annotationState.currentLabelIdx,
+    ]
   );
 
-  /** Zoom with respect to the pointer; keeps the mouse in the same position relative to the underlying
-   *  frame by panning as the zoom changes.
-   */
-  const handleZoomToMouse = useCallback(
-    (event: WheelEvent, zoomDelta: number): void => {
-      const canvasSizePx = getCanvasSizePx();
-      const startingFrameSizePx = getFrameSizeInScreenPx();
-      const canvasOffsetPx = new Vector2(event.offsetX, event.offsetY);
-
-      const currentMousePosition = mathUtils.convertCanvasOffsetPxToFrameCoords(
-        canvasSizePx,
-        startingFrameSizePx,
-        canvasOffsetPx,
-        canvasPanOffset.current
-      );
-
-      handleZoom(zoomDelta);
-
-      const newFrameSizePx = getFrameSizeInScreenPx();
-      const newMousePosition = mathUtils.convertCanvasOffsetPxToFrameCoords(
-        canvasSizePx,
-        newFrameSizePx,
-        canvasOffsetPx,
-        canvasPanOffset.current
-      );
-      const mousePositionDelta = newMousePosition.clone().sub(currentMousePosition);
-
-      canvasPanOffset.current.x = clamp(canvasPanOffset.current.x + mousePositionDelta.x, -0.5, 0.5);
-      canvasPanOffset.current.y = clamp(canvasPanOffset.current.y + mousePositionDelta.y, -0.5, 0.5);
-
-      canv.setPan(canvasPanOffset.current.x, canvasPanOffset.current.y);
+  /** Report clicked tracks via the passed callback. */
+  const handleClick = useCallback(
+    async (event: MouseEvent): Promise<void> => {
+      setLastClickPosition([event.offsetX, event.offsetY]);
+      const info = canv.getIdAtPixel(event.offsetX, event.offsetY);
+      // Reset track input
+      if (dataset === null || info === null || info.globalId === undefined) {
+        clearTrack();
+      } else {
+        const trackId = dataset.getTrackId(info.globalId);
+        const newTrack = dataset.getTrack(trackId);
+        if (newTrack) {
+          setTrack(newTrack);
+        }
+      }
+      props.onClickId(info);
+      updateCanvasCursor(event.offsetX, event.offsetY);
     },
-    [handleZoom, getCanvasSizePx, getFrameSizeInScreenPx]
-  );
-
-  const handlePan = useCallback(
-    (dx: number, dy: number): void => {
-      const frameSizePx = getFrameSizeInScreenPx();
-      // Normalize dx/dy (change in pixels) to frame coordinates
-      canvasPanOffset.current.x += dx / frameSizePx.x;
-      canvasPanOffset.current.y += -dy / frameSizePx.y;
-      // Clamp panning
-      canvasPanOffset.current.x = clamp(canvasPanOffset.current.x, -0.5, 0.5);
-      canvasPanOffset.current.y = clamp(canvasPanOffset.current.y, -0.5, 0.5);
-      canv.setPan(canvasPanOffset.current.x, canvasPanOffset.current.y);
-    },
-    [canv, getCanvasSizePx, props.dataset]
+    [canv, dataset, props.onClickId, setTrack, clearTrack, updateCanvasCursor]
   );
 
   // Mouse event handlers
 
   const onMouseClick = useCallback(
     (event: MouseEvent): void => {
-      // Note that click events won't fire until the mouse is released. We need to check
-      // if the mouse was dragged before treating the click as a track selection; otherwise
-      // the track selection gets changed unexpectedly.
-      if (!isMouseDragging.current && !enablePan) {
-        handleTrackSelection(event);
+      // Note that click events won't fire until the mouse is released. We need
+      // to check if the mouse was dragged before treating the click as a track
+      // selection; otherwise the track selection gets changed unexpectedly.
+      if (!isMouseDragging.current) {
+        handleClick(event);
       }
     },
-    [handleTrackSelection, enablePan]
+    [handleClick]
   );
 
   const onContextMenu = useCallback((event: MouseEvent): void => {
@@ -405,7 +378,14 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   }, []);
 
   const onMouseDown = useCallback((event: MouseEvent): void => {
-    event.preventDefault(); // Prevent text selection
+    // Prevent the default behavior for mouse clicks that would cause text
+    // selection, but keep the behavior where focus is removed from other
+    // elements.
+    event.preventDefault();
+    if (document.activeElement instanceof HTMLElement && !containerRef.current?.contains(document.activeElement)) {
+      document.activeElement.blur();
+    }
+
     isMouseDragging.current = false;
 
     if (event.button === MIDDLE_CLICK_BUTTON) {
@@ -421,27 +401,20 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   const onMouseMove = useCallback(
     (event: MouseEvent): void => {
-      const isMouseLeftHeldWithModifier = isMouseLeftDown.current && (event.ctrlKey || event.metaKey || enablePan);
-      if (isMouseLeftHeldWithModifier || isMouseMiddleDown.current || isMouseRightDown.current) {
-        canv.domElement.style.cursor = "grabbing";
-        handlePan(event.movementX, event.movementY);
+      if (isMouseLeftDown.current || isMouseMiddleDown.current || isMouseRightDown.current) {
         // Add to total drag distance; if it exceeds threshold, consider the mouse interaction
-        // to be a drag and disable track selection.
+        // to be a drag operation. Start panning and disable track selection.
         totalMouseDrag.current.x += Math.abs(event.movementX);
         totalMouseDrag.current.y += Math.abs(event.movementY);
-        if (!isMouseDragging.current && totalMouseDrag.current.length() > MIN_DRAG_THRESHOLD_PX) {
+        if (totalMouseDrag.current.length() > MIN_DRAG_THRESHOLD_PX) {
           isMouseDragging.current = true;
-        }
-      } else {
-        // TODO: Centralized cursor handling?
-        if (enablePan) {
-          canv.domElement.style.cursor = "grab";
-        } else {
-          canv.domElement.style.cursor = "auto";
+          canv.handleDragEvent(event.movementX, event.movementY);
         }
       }
+
+      updateCanvasCursor(event.offsetX, event.offsetY);
     },
-    [handlePan, enablePan]
+    [canv, updateCanvasCursor]
   );
 
   const onMouseUp = useCallback((_event: MouseEvent): void => {
@@ -455,27 +428,12 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     }, 10);
   }, []);
 
-  const onMouseWheel = useCallback(
-    (event: WheelEvent): void => {
+  const onMouseWheel = useCallback((event: WheelEvent): void => {
+    if (event.metaKey || event.ctrlKey) {
       event.preventDefault();
-      if (event.metaKey || event.ctrlKey) {
-        if (Math.abs(event.deltaY) > 25) {
-          // Using mouse wheel (probably). There's no surefire way to detect this, but mice usually
-          // scroll in much larger increments.
-          handleZoomToMouse(event, event.deltaY * 0.001);
-        } else {
-          // Track pad zoom
-          handleZoomToMouse(event, event.deltaY * 0.005);
-        }
-      } else if (event.shiftKey) {
-        // Translate Y to horizontal movement for mice.
-        handlePan(-event.deltaY, 0);
-      } else {
-        handlePan(-event.deltaX, -event.deltaY);
-      }
-    },
-    [handleZoomToMouse]
-  );
+      canv.handleScrollEvent(event.offsetX, event.offsetY, event.deltaY);
+    }
+  }, []);
 
   // Mount the event listeners for pan and zoom interactions.
   // It may be more performant to separate these into individual useEffects, but
@@ -498,18 +456,18 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       document.removeEventListener("mousemove", onMouseMove);
       document.removeEventListener("mouseup", onMouseUp);
     };
-  }, [canv, onMouseClick, onMouseWheel, onMouseDown, onMouseMove, onMouseUp, handlePan]);
+  }, [canv, onMouseClick, onMouseWheel, onMouseDown, onMouseMove, onMouseUp]);
 
   /** Report hovered id via the passed callback. */
   const reportHoveredIdAtPixel = useCallback(
     (x: number, y: number): void => {
-      if (!props.dataset) {
+      if (!dataset) {
         return;
       }
       const id = canv.getIdAtPixel(x, y);
       props.onMouseHover(id);
     },
-    [props.dataset, canv]
+    [dataset, canv]
   );
 
   /** Track whether the canvas is hovered, so we can determine whether to send updates about the
@@ -525,7 +483,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     if (isMouseOverCanvas.current) {
       reportHoveredIdAtPixel(lastMousePositionPx.current.x, lastMousePositionPx.current.y);
     }
-  }, [canv.getCurrentFrame()]);
+  }, [currentFrame]);
 
   useEffect(() => {
     const onMouseMove = (event: MouseEvent): void => {
@@ -539,24 +497,97 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       canv.domElement.removeEventListener("mousemove", onMouseMove);
       canv.domElement.removeEventListener("mouseleave", props.onMouseLeave);
     };
-  }, [props.dataset, canv]);
+  }, [dataset, canv]);
+
+  const makeLinkStyleButton = (key: string, onClick: () => void, content: ReactNode): ReactNode => {
+    return (
+      <LinkStyleButton
+        key={key}
+        onClick={onClick}
+        $color={theme.color.text.darkLink}
+        $hoverColor={theme.color.text.darkLinkHover}
+        tabIndex={-1}
+      >
+        {content}
+      </LinkStyleButton>
+    );
+  };
 
   // RENDERING /////////////////////////////////////////////////
-  canv.render();
+
+  const onViewerSettingsLinkClicked = (): void => {
+    setOpenTab(TabType.SETTINGS);
+  };
+
+  const onAnnotationLinkClicked = (): void => {
+    setOpenTab(TabType.ANNOTATION);
+  };
+
+  const backdropTooltipContents: ReactNode[] = [];
+  backdropTooltipContents.push(
+    <span key="backdrop-name">
+      {backdropKey === null ? "(No backdrops available)" : dataset?.getBackdropData().get(backdropKey)?.name}
+    </span>
+  );
+  // Link to viewer settings
+  backdropTooltipContents.push(
+    makeLinkStyleButton(
+      "backdrop-viewer-settings-link",
+      onViewerSettingsLinkClicked,
+      <span>
+        {"Viewer settings > Backdrop"} <VisuallyHidden>(opens settings tab)</VisuallyHidden>
+      </span>
+    )
+  );
+
+  const labels = props.annotationState.data.getLabels();
+  const annotationTooltipContents: ReactNode[] = [];
+  annotationTooltipContents.push(
+    <span key="annotation-count">
+      {labels.length > 0 ? (labels.length === 1 ? "1 label" : `${labels.length} labels`) : "(No labels)"}
+    </span>
+  );
+  annotationTooltipContents.push(
+    makeLinkStyleButton(
+      "annotation-link",
+      onAnnotationLinkClicked,
+      <span>
+        View and edit annotations <VisuallyHidden>(opens annotations tab)</VisuallyHidden>
+      </span>
+    )
+  );
+  const labelData: LabelData | undefined = labels[props.annotationState.currentLabelIdx ?? 0];
+  const shouldShowRangeSelectionHotkey = props.annotationState.baseSelectionMode !== AnnotationSelectionMode.RANGE;
+  const shouldShowReuseValueHotkey = labelData?.options.type === LabelType.INTEGER && labelData?.options.autoIncrement;
+
   return (
-    <FlexColumnAlignCenter
-      style={{
-        position: "relative",
-        width: "100%",
-        height: "100%",
-        backgroundColor: theme.color.viewport.background,
-      }}
-      ref={containerRef}
-    >
-      <LoadingSpinner loading={props.loading}>
-        <div ref={canvasRef}></div>
+    <CanvasContainer ref={containerRef} $annotationModeEnabled={props.annotationState.isAnnotationModeEnabled}>
+      {
+        // TODO: Fade out annotation mode modal if mouse approaches top left corner?
+        // TODO: Make the hotkey text change styling if the hotkey is pressed?
+        props.annotationState.isAnnotationModeEnabled && (
+          <AnnotationModeContainer>
+            <span style={{ marginLeft: "2px" }}>
+              <b>Annotation editing in progress...</b>
+            </span>
+            {shouldShowRangeSelectionHotkey && (
+              <FlexRowAlignCenter $gap={6}>
+                <HotkeyText>Shift</HotkeyText> hold to select range
+              </FlexRowAlignCenter>
+            )}
+            {shouldShowReuseValueHotkey && (
+              <FlexRowAlignCenter $gap={6}>
+                <HotkeyText>Ctrl</HotkeyText>
+                hold to reuse last value
+              </FlexRowAlignCenter>
+            )}
+          </AnnotationModeContainer>
+        )
+      }
+      <LoadingSpinner loading={props.loading || isFrameLoading} progress={loadProgress}>
+        <div ref={canvasPlaceholderRef}></div>
       </LoadingSpinner>
-      <MissingFileIconContainer style={{ visibility: showMissingFileIcon ? "visible" : "hidden" }}>
+      <MissingFileIconContainer style={{ visibility: isMissingFile ? "visible" : "hidden" }}>
         <NoImageSVG aria-labelledby="no-image" style={{ width: "50px" }} />
         <p id="no-image">
           <b>Missing image data</b>
@@ -566,10 +597,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         <Tooltip title={"Reset view"} placement="right" trigger={["hover", "focus"]}>
           <IconButton
             onClick={() => {
-              canvasZoomInverse.current = 1.0;
-              canvasPanOffset.current = new Vector2(0, 0);
-              canv.setZoom(1.0);
-              canv.setPan(0, 0);
+              canv.resetView();
             }}
             type="link"
           >
@@ -577,50 +605,68 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             <VisuallyHidden>Reset view</VisuallyHidden>
           </IconButton>
         </Tooltip>
-        <TooltipWithSubtext title={"Zoom in"} subtext="Ctrl + Scroll" placement="right" trigger={["hover", "focus"]}>
+        <TooltipWithSubtitle title={"Zoom in"} subtitle="Ctrl + Scroll" placement="right" trigger={["hover", "focus"]}>
           <IconButton
             type="link"
             onClick={() => {
-              handleZoom(-0.25);
+              canv.handleZoomIn();
             }}
           >
             <ZoomInOutlined />
             <VisuallyHidden>Zoom in</VisuallyHidden>
           </IconButton>
-        </TooltipWithSubtext>
-        <TooltipWithSubtext title={"Zoom out"} subtext="Ctrl + Scroll" placement="right" trigger={["hover", "focus"]}>
+        </TooltipWithSubtitle>
+        <TooltipWithSubtitle title={"Zoom out"} subtitle="Ctrl + Scroll" placement="right" trigger={["hover", "focus"]}>
           <IconButton
             type="link"
             onClick={() => {
-              // Little hack because the minimum zoom level is 0.1x, but all the other zoom levels
-              // are in increments of 0.25x. This ensures zooming all the way in and back out will return
-              // the zoom to 1.0x.
-              handleZoom(canvasZoomInverse.current === MIN_INVERSE_ZOOM ? 0.15 : 0.25);
+              canv.handleZoomOut();
             }}
           >
             <ZoomOutOutlined />
             <VisuallyHidden>Zoom out</VisuallyHidden>
           </IconButton>
-        </TooltipWithSubtext>
-        <TooltipWithSubtext
-          title={"Toggle pan"}
-          subtext="Right click + drag"
+        </TooltipWithSubtitle>
+
+        {/* Backdrop toggle */}
+        <TooltipWithSubtitle
+          title={backdropVisible ? "Hide backdrop" : "Show backdrop"}
+          placement="right"
+          subtitleList={backdropTooltipContents}
+          trigger={["hover", "focus"]}
+        >
+          <IconButton
+            type={backdropVisible ? "primary" : "link"}
+            onClick={() => setBackdropVisible(!backdropVisible)}
+            disabled={backdropKey === null}
+          >
+            {backdropVisible ? <ImagesSlashIconSVG /> : <ImagesIconSVG />}
+            <VisuallyHidden>{backdropVisible ? "Hide backdrop" : "Show backdrop"}</VisuallyHidden>
+          </IconButton>
+        </TooltipWithSubtitle>
+
+        {/* Annotation mode toggle */}
+        <TooltipWithSubtitle
+          title={props.annotationState.visible ? "Hide annotations" : "Show annotations"}
+          subtitleList={annotationTooltipContents}
           placement="right"
           trigger={["hover", "focus"]}
         >
           <IconButton
-            type={enablePan ? "primary" : "link"}
+            type={props.annotationState.visible ? "primary" : "link"}
             onClick={() => {
-              setTimeout(() => {
-                setEnablePan(!enablePan);
-              });
+              props.annotationState.setVisibility(!props.annotationState.visible);
             }}
           >
-            <HandIconSVG />
-            <VisuallyHidden>Toggle pan (currently {enablePan ? "ON" : "OFF"}.)</VisuallyHidden>
+            {props.annotationState.visible ? <TagSlashIconSVG /> : <TagIconSVG />}
+            <VisuallyHidden>{props.annotationState.visible ? "Hide annotations" : "Show annotations"}</VisuallyHidden>
           </IconButton>
-        </TooltipWithSubtext>
+        </TooltipWithSubtitle>
       </CanvasControlsContainer>
-    </FlexColumnAlignCenter>
+      <AnnotationInputPopover
+        annotationState={props.annotationState}
+        anchorPositionPx={lastClickPosition}
+      ></AnnotationInputPopover>
+    </CanvasContainer>
   );
 }

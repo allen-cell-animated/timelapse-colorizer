@@ -1,18 +1,31 @@
-import { RGBAFormat, RGBAIntegerFormat, Texture, Vector2 } from "three";
+import { DataTexture, RGBAFormat, RGBAIntegerFormat, Texture, Vector2 } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "../constants";
-import { FeatureArrayType, FeatureDataType } from "./types";
+import {
+  FeatureArrayType,
+  FeatureDataType,
+  GlobalIdLookupInfo,
+  LoadErrorMessage,
+  LoadTroubleshooting,
+  ReportWarningCallback,
+} from "./types";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./utils/analytics";
-import { getKeyFromName } from "./utils/data_utils";
-import { AnyManifestFile, ManifestFile, ManifestFileMetadata, updateManifestVersion } from "./utils/dataset_utils";
+import { buildFrameToGlobalIdLookup, formatAsBulletList, getKeyFromName } from "./utils/data_utils";
+import { ManifestFile, ManifestFileMetadata, updateManifestVersion } from "./utils/dataset_utils";
+import { padCentroidsTo3d } from "./utils/math_utils";
+import { packDataTexture } from "./utils/texture_utils";
 import * as urlUtils from "./utils/url_utils";
 
-import FrameCache from "./FrameCache";
+import DataCache from "./DataCache";
 import { IPathResolver, UrlPathResolver } from "./loaders/FileSystemResolver";
-import { IArrayLoader, IFrameLoader } from "./loaders/ILoader";
+import { IArrayLoader, ITextureImageLoader } from "./loaders/ILoader";
 import UrlImageFrameLoader from "./loaders/ImageFrameLoader";
-import JsonArrayLoader from "./loaders/JsonArrayLoader";
+import ImageFrameLoader from "./loaders/ImageFrameLoader";
+import UrlArrayLoader from "./loaders/UrlArrayLoader";
 import Track from "./Track";
+
+export const TRACK_FEATURE_KEY = "_track_";
+export const TIME_FEATURE_KEY = "_time_";
 
 export enum FeatureType {
   CONTINUOUS = "continuous",
@@ -23,18 +36,27 @@ export enum FeatureType {
 export type FeatureData = {
   name: string;
   key: string;
-  data: Float32Array;
-  tex: Texture;
+  data: Float32Array | Uint32Array;
+  tex: DataTexture;
   min: number;
   max: number;
   unit: string;
   type: FeatureType;
   categories: string[] | null;
+  description: string | null;
 };
 
 type BackdropData = {
   name: string;
   frames: string[];
+};
+
+export type Frames3dData = {
+  /** Source for 3D data, resolved to http/https URLs. Expected to be a path to an OME-Zarr array.*/
+  source: string;
+  /** Index of the segmentation channel in the source data. */
+  segmentationChannel: number;
+  totalFrames: number;
 };
 
 const defaultMetadata: ManifestFileMetadata = {
@@ -47,22 +69,48 @@ const defaultMetadata: ManifestFileMetadata = {
   startTimeSeconds: 0,
 };
 
-const MAX_CACHED_FRAMES = 60;
+const MAX_CACHED_FRAME_BYTES = 500_000_000; // 500 MB
+const MAX_CACHED_BACKDROPS_BYTES = 500_000_000; // 500 MB
 
 export default class Dataset {
   private pathResolver: IPathResolver;
+  private frameLoader: ITextureImageLoader;
+  private frameFiles?: string[];
+  private frames: DataCache<number, Texture> | null;
 
-  private frameLoader: IFrameLoader;
-  private frameFiles: string[];
-  private frames: FrameCache | null;
   private frameDimensions: Vector2 | null;
 
-  private backdropLoader: IFrameLoader;
+  public frames3d?: Frames3dData;
+
+  private segIdsFile?: string;
+  /** Lookup from a global index of an object to the raw segmentation ID in the
+   * frame/image where it appears. */
+  public segIds?: Uint32Array | null;
+
+  /**
+   * Maps from a frame number to a lookup table used to get the global ID of a
+   * segmentation ID in that frame.
+   *
+   * For segmentation ID `segId` at time `t`, the global ID is given by:
+   *
+   * ```
+   * const globalIdLut = frameToGlobalIdLookup[t];
+   * const globalId = globalIdLut.lut[segId - globalIdLut.minSegId] - 1;
+   * ```
+   *
+   * The global ID is `NaN` or `-1` if there is no global ID that matches that
+   * segmentation ID, such as when rows are missing in the dataset.
+   *
+   * See `GlobalIdLookupInfo` for more details.
+   */
+  public frameToGlobalIdLookup: Map<number, GlobalIdLookupInfo> | null;
+
+  private backdropLoader: ITextureImageLoader;
   private backdropData: Map<string, BackdropData>;
-  // TODO: Implement caching for overlays-- extend FrameCache to allow multiple frames per index -> string name?
-  // private backdrops: Map<string, FrameCache | null>;
+  private backdropFrames: DataCache<string, Texture> | null;
 
   private arrayLoader: IArrayLoader;
+  private cleanupArrayLoaderOnDispose: boolean;
   // Use map to enforce ordering
   /** Ordered map from feature keys to feature data. */
   private features: Map<string, FeatureData>;
@@ -74,6 +122,7 @@ export default class Dataset {
   private timesFile?: string;
   public trackIds?: Uint32Array | null;
   public times?: Uint32Array | null;
+  private cachedTracks: Map<number, Track | null>;
 
   public centroidsFile?: string;
   public centroids?: Uint16Array | null;
@@ -95,7 +144,7 @@ export default class Dataset {
    */
   constructor(
     manifestUrl: string,
-    options: { pathResolver?: IPathResolver; frameLoader?: IFrameLoader; arrayLoader?: IArrayLoader } = {}
+    options: { pathResolver?: IPathResolver; frameLoader?: ITextureImageLoader; arrayLoader?: IArrayLoader } = {}
   ) {
     this.pathResolver = options.pathResolver || new UrlPathResolver();
 
@@ -106,23 +155,25 @@ export default class Dataset {
     this.frameLoader = options.frameLoader || new UrlImageFrameLoader(RGBAIntegerFormat);
     this.frameFiles = [];
     this.frames = null;
+    this.backdropFrames = null;
     this.frameDimensions = null;
 
     this.backdropLoader = options.frameLoader || new UrlImageFrameLoader(RGBAFormat);
     this.backdropData = new Map();
 
-    this.arrayLoader = options.arrayLoader || new JsonArrayLoader();
+    this.frameToGlobalIdLookup = null;
+
+    this.cleanupArrayLoaderOnDispose = !options.arrayLoader;
+    this.arrayLoader = options.arrayLoader || new UrlArrayLoader();
     this.features = new Map();
+    this.cachedTracks = new Map();
     this.metadata = defaultMetadata;
+
+    this.getSegmentationId = this.getSegmentationId.bind(this);
   }
 
   // TODO: Handle null/nonexistent values gracefully?
   private resolveUrl = (url: string): string => this.pathResolver.resolve(this.baseUrl, url)!;
-
-  private async fetchJson(url: string): Promise<AnyManifestFile> {
-    const response = await urlUtils.fetchWithTimeout(url, urlUtils.DEFAULT_FETCH_TIMEOUT_MS);
-    return await response.json();
-  }
 
   private parseFeatureType(inputType: string | undefined, defaultType = FeatureType.CONTINUOUS): FeatureType {
     const isFeatureType = (inputType: string): inputType is FeatureType => {
@@ -141,8 +192,14 @@ export default class Dataset {
     const name = metadata.name;
     const key = metadata.key || getKeyFromName(name);
     const url = this.resolveUrl(metadata.data);
-    const source = await this.arrayLoader.load(url);
     const featureType = this.parseFeatureType(metadata.type);
+
+    const source = await this.arrayLoader.load(
+      url,
+      FeatureDataType.F32,
+      metadata.min ?? undefined,
+      metadata.max ?? undefined
+    );
 
     const featureCategories = metadata?.categories;
     // Validation
@@ -160,13 +217,14 @@ export default class Dataset {
       {
         name,
         key,
-        tex: source.getTexture(FeatureDataType.F32),
-        data: source.getBuffer(FeatureDataType.F32),
+        tex: source.getTexture(),
+        data: source.getBuffer(),
         min: source.getMin(),
         max: source.getMax(),
-        unit: metadata?.unit || "",
+        unit: metadata.unit || "",
         type: featureType,
         categories: featureCategories || null,
+        description: metadata.description || null,
       },
     ];
   }
@@ -265,11 +323,19 @@ export default class Dataset {
     return featureData !== undefined && featureData.type === FeatureType.CATEGORICAL;
   }
 
+  public has2dFrames(): boolean {
+    return this.frameFiles !== undefined;
+  }
+
+  public has3dFrames(): boolean {
+    return this.frames3d !== undefined;
+  }
+
   /**
    * Fetches and loads a data file as an array and returns its data as a TypedArray using the provided dataType.
    * @param dataType The expected format of the data.
    * @param fileUrl String url of the file to be loaded.
-   * @throws An error if `fileUrl` is not undefined and the data cannot be loaded from the file.
+   * @throws An error if the data cannot be loaded from the file.
    * @returns Promise of a TypedArray loaded from the file. If `fileUrl` is undefined, returns null.
    */
   private async loadToBuffer<T extends FeatureDataType>(
@@ -279,17 +345,14 @@ export default class Dataset {
     if (!fileUrl) {
       return null;
     }
-    try {
-      const url = this.resolveUrl(fileUrl);
-      const source = await this.arrayLoader.load(url);
-      return source.getBuffer(dataType);
-    } catch (e) {
-      return null;
-    }
+
+    const url = this.resolveUrl(fileUrl);
+    const source = await this.arrayLoader.load(url, dataType);
+    return source.getBuffer();
   }
 
   public get numberOfFrames(): number {
-    return this.frames?.length || 0;
+    return this.getTotalFrames();
   }
 
   public get featureKeys(): string[] {
@@ -306,7 +369,7 @@ export default class Dataset {
 
   /** Loads a single frame from the dataset */
   public async loadFrame(index: number): Promise<Texture | undefined> {
-    if (index < 0 || index >= this.frameFiles.length) {
+    if (index < 0 || this.frameFiles === undefined || index >= this.frameFiles.length) {
       return undefined;
     }
 
@@ -324,8 +387,14 @@ export default class Dataset {
     const fullUrl = this.resolveUrl(this.frameFiles[index]);
     const loadedFrame = await this.frameLoader.load(fullUrl);
     this.frameDimensions = new Vector2(loadedFrame.image.width, loadedFrame.image.height);
-    this.frames?.insert(index, loadedFrame);
+    const frameSizeBytes = loadedFrame.image.width * loadedFrame.image.height * 4;
+    // Note that, due to image compression, images may take up much less space in memory than their raw size.
+    this.frames?.insert(index, loadedFrame, frameSizeBytes);
     return loadedFrame;
+  }
+
+  public getDefaultBackdropKey(): string | null {
+    return this.backdropData.keys().next().value ?? null;
   }
 
   public hasBackdrop(key: string): boolean {
@@ -341,19 +410,21 @@ export default class Dataset {
 
   public async loadBackdrop(key: string, index: number): Promise<Texture | undefined> {
     // TODO: Implement caching
+    const cacheKey = `${key}-${index}`;
+    const cachedFrame = this.backdropFrames?.get(cacheKey);
+    if (cachedFrame) {
+      return cachedFrame;
+    }
+
     const frames = this.backdropData.get(key)?.frames;
     // TODO: Wrapping or clamping?
     if (!frames || index < 0 || index >= frames.length) {
       return undefined;
     }
 
-    // Allow for undefined or null backdrop frames in the manifest
-    if (this.frameFiles[index] === undefined || this.frameFiles[index] === null) {
-      return undefined;
-    }
-
     const fullUrl = this.resolveUrl(frames[index]);
     const loadedFrame = await this.backdropLoader.load(fullUrl);
+    this.backdropFrames?.insert(cacheKey, loadedFrame);
     return loadedFrame;
   }
 
@@ -365,90 +436,197 @@ export default class Dataset {
     return this.frameDimensions || new Vector2(1, 1);
   }
 
-  /**
-   * Returns the value of a promise if it was resolved, or logs a warning and returns null if it was rejected.
-   */
-  private getPromiseValue<T>(promise: PromiseSettledResult<T>, failureWarning?: string): T | null {
-    if (promise.status === "rejected") {
-      if (failureWarning) {
-        console.warn(failureWarning, promise.reason);
-      }
-      return null;
+  /** Adds auto-generated features for time and track to this Dataset. */
+  private addTimeAndTrackFeatures(): void {
+    if (this.trackIds && !this.features.has(TRACK_FEATURE_KEY)) {
+      const trackData = new Float32Array(this.trackIds);
+      this.features.set(TRACK_FEATURE_KEY, {
+        name: "Track ID",
+        key: TRACK_FEATURE_KEY,
+        data: this.trackIds,
+        tex: packDataTexture(trackData, FeatureDataType.F32),
+        min: 0,
+        max: this.trackIds.reduce((max, id) => Math.max(max, id), 0),
+        unit: "",
+        type: FeatureType.DISCRETE,
+        categories: null,
+        description: "Track ID of the object. This feature was added by the viewer.",
+      });
     }
-    return promise.value;
+
+    if (this.times && !this.features.has(TIME_FEATURE_KEY)) {
+      const timeData = new Float32Array(this.times);
+      this.features.set(TIME_FEATURE_KEY, {
+        name: "Time (frames)",
+        key: TIME_FEATURE_KEY,
+        data: this.times,
+        tex: packDataTexture(timeData, FeatureDataType.F32),
+        min: 0,
+        max: this.times.reduce((max, id) => Math.max(max, id), 0),
+        unit: "",
+        type: FeatureType.CONTINUOUS,
+        categories: null,
+        description: "Frame number where the object appears. This feature was added by the viewer.",
+      });
+    }
   }
 
-  /** Loads the dataset manifest and features. */
-  public async open(manifestLoader = this.fetchJson): Promise<void> {
+  /**
+   * Opens the dataset and loads all necessary files from the manifest.
+   * @param options Configuration options for the dataset loader.
+   * - `manifestLoader` The function used to load the manifest JSON data. If undefined, uses a default fetch method.
+   * - `onLoadStart` Called once for each data file (other than the manifest) that starts an async load process.
+   * - `onLoadComplete` Called once when each data file finishes loading.
+   * - `reportWarning` Called with a string or array of strings to report warnings to the user. These are non-fatal errors.
+   * @returns A Promise that resolves when loading completes.
+   */
+  public async open(
+    options: Partial<{
+      manifestLoader: typeof urlUtils.fetchManifestJson;
+      onLoadStart?: () => void;
+      onLoadComplete?: () => void;
+      reportWarning?: ReportWarningCallback;
+    }> = {}
+  ): Promise<void> {
     if (this.hasOpened) {
       return;
     }
     this.hasOpened = true;
 
+    if (!options.manifestLoader) {
+      options.manifestLoader = urlUtils.fetchManifestJson;
+    }
+
     const startTime = new Date();
 
-    const manifest = updateManifestVersion(await manifestLoader(this.manifestUrl));
+    const manifest = updateManifestVersion(await options.manifestLoader(this.manifestUrl));
+
     this.frameFiles = manifest.frames;
+    const frames3dSrc = manifest.frames3d;
+    if (frames3dSrc && frames3dSrc.source) {
+      this.frames3d = {
+        source: this.resolveUrl(frames3dSrc.source),
+        segmentationChannel: manifest.frames3d?.segmentationChannel ?? 0,
+        totalFrames: manifest.frames3d?.totalFrames ?? 0,
+      };
+    }
     this.outlierFile = manifest.outliers;
     this.metadata = { ...defaultMetadata, ...manifest.metadata };
-    console.log("Dataset metadata:", this.metadata);
 
     this.tracksFile = manifest.tracks;
     this.timesFile = manifest.times;
     this.centroidsFile = manifest.centroids;
+    this.boundsFile = manifest.bounds;
+    this.segIdsFile = manifest.segIds;
 
-    if (manifest.backdrops) {
+    if (manifest.backdrops && manifest.frames) {
       for (const { name, key, frames } of manifest.backdrops) {
         this.backdropData.set(key, { name, frames });
-        if (frames.length !== this.frameFiles.length || 0) {
-          // TODO: Show error message in the UI when this happens.
+        if (frames.length !== this.frameFiles?.length || 0) {
           throw new Error(
-            `Number of frames (${this.frameFiles.length}) does not match number of images (${frames.length}) for backdrop '${key}'.`
+            `Number of frames (${this.frameFiles?.length}) does not match number of images (${frames.length}) for backdrop '${key}'. ` +
+              ` If you are a dataset author, please ensure that the number of frames in the manifest matches the number of images for each backdrop.`
           );
         }
       }
     }
 
-    this.frames = new FrameCache(this.frameFiles.length, MAX_CACHED_FRAMES);
+    this.frames = new DataCache(MAX_CACHED_FRAME_BYTES);
+    this.backdropFrames = new DataCache(MAX_CACHED_BACKDROPS_BYTES);
+
+    // Wrap an async operation and report progress when it starts + completes
+    const reportLoadProgress = async <T>(promise: Promise<T>): Promise<T> => {
+      options.onLoadStart?.();
+      return promise.then((result) => {
+        options.onLoadComplete?.();
+        return result;
+      });
+    };
 
     // Load feature data
+    if (manifest.features.length === 0) {
+      throw new Error(LoadErrorMessage.MANIFEST_HAS_NO_FEATURES);
+    }
     const featuresPromises: Promise<[string, FeatureData]>[] = Array.from(manifest.features).map((data) =>
-      this.loadFeature(data)
+      reportLoadProgress(this.loadFeature(data))
     );
 
     const result = await Promise.allSettled([
-      this.loadToBuffer(FeatureDataType.U8, this.outlierFile),
-      this.loadToBuffer(FeatureDataType.U32, this.tracksFile),
-      this.loadToBuffer(FeatureDataType.U32, this.timesFile),
-      this.loadToBuffer(FeatureDataType.U16, this.centroidsFile),
-      this.loadToBuffer(FeatureDataType.U16, this.boundsFile),
-      this.loadFrame(0),
+      reportLoadProgress(this.loadToBuffer(FeatureDataType.U8, this.outlierFile)),
+      reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, this.tracksFile)),
+      reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, this.timesFile)),
+      reportLoadProgress(this.loadToBuffer(FeatureDataType.U16, this.centroidsFile)),
+      reportLoadProgress(this.loadToBuffer(FeatureDataType.U16, this.boundsFile)),
+      reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, this.segIdsFile)),
+      reportLoadProgress(this.loadFrame(0)),
       ...featuresPromises,
     ]);
-    const [outliers, tracks, times, centroids, bounds, _loadedFrame, ...featureResults] = result;
+    const [outliers, tracks, times, centroids, bounds, frameIdOffsets, _loadedFrame, ...featureResults] = result;
 
-    // TODO: Add reporting pathway for Dataset.load?
-    this.outliers = this.getPromiseValue(outliers, "Failed to load outliers: ");
-    this.trackIds = this.getPromiseValue(tracks, "Failed to load tracks: ");
-    this.times = this.getPromiseValue(times, "Failed to load times: ");
-    this.centroids = this.getPromiseValue(centroids, "Failed to load centroids: ");
-    this.bounds = this.getPromiseValue(bounds, "Failed to load bounds: ");
+    const unloadableDataFiles: string[] = [];
+    function makeLoadFailedCallback(fileType: string, url?: string): (reason: any) => void {
+      return (reason: any) => {
+        console.warn(`${fileType} data could not be loaded: ${reason}`);
+        unloadableDataFiles.push(`${fileType}: '${url || "N/A"}'`);
+      };
+    }
 
-    if (times.status === "rejected") {
-      throw new Error("Time data could not be loaded. Is the dataset manifest file valid?");
+    this.outliers = urlUtils.getPromiseValue(outliers, makeLoadFailedCallback("Outliers", this.outlierFile));
+    this.trackIds = urlUtils.getPromiseValue(tracks, makeLoadFailedCallback("Tracks", this.tracksFile));
+    this.times = urlUtils.getPromiseValue(times, makeLoadFailedCallback("Times", this.timesFile));
+    this.centroids = urlUtils.getPromiseValue(centroids, makeLoadFailedCallback("Centroids", this.centroidsFile));
+    this.bounds = urlUtils.getPromiseValue(bounds, makeLoadFailedCallback("Bounds", this.boundsFile));
+    this.segIds = urlUtils.getPromiseValue(frameIdOffsets, makeLoadFailedCallback("Segmentation IDs", this.segIdsFile));
+
+    if (unloadableDataFiles.length > 0) {
+      // Report warning of all the files that couldn't be loaded and their associated errors.
+      options.reportWarning?.("Some data files failed to load.", [
+        "The following data file(s) failed to load, which may cause the viewer to behave unexpectedly:",
+        ...unloadableDataFiles.map((fileType) => ` - ${fileType}`),
+        LoadTroubleshooting.CHECK_FILE_OR_NETWORK,
+      ]);
     }
 
     // Keep original sorting order of features by inserting in promise order.
-    featureResults.forEach((result) => {
-      const featureValue = this.getPromiseValue(result, "Failed to load feature: ");
+    featureResults.forEach((result, index) => {
+      const onFeatureLoadFailed = (reason: any): void => console.warn(`Feature ${index}: `, reason);
+      const featureValue = urlUtils.getPromiseValue(result, onFeatureLoadFailed);
       if (featureValue) {
         const [key, data] = featureValue;
         this.features.set(key, data);
       }
     });
 
-    if (this.features.size === 0) {
-      throw new Error("No features found in dataset. Is the dataset manifest file valid?");
+    if (this.features.size !== manifest.features.length) {
+      // Report the names of all features that could not be loaded.
+      const loadedFeatureNames = new Set(Array.from(this.features.values()).map((f) => f.name));
+      const missingFeatureNames = manifest.features.filter((f) => !loadedFeatureNames.has(f.name)).map((f) => f.name);
+
+      options.reportWarning?.("Some features failed to load.", [
+        "The following feature(s) could not be loaded and will not be shown: ",
+        ...formatAsBulletList(missingFeatureNames, 5),
+        LoadTroubleshooting.CHECK_FILE_OR_NETWORK,
+      ]);
+    }
+
+    this.addTimeAndTrackFeatures();
+
+    // Construct default array of segmentation IDs if not provided in the manifest.
+    if (!this.segIds) {
+      // Construct default segIds array (0, 1, 2, ...)
+      this.segIds = new Uint32Array(this.numObjects);
+      for (let i = 0; i < this.numObjects; i++) {
+        this.segIds[i] = i + 1;
+      }
+    }
+
+    if (this.times) {
+      this.frameToGlobalIdLookup = buildFrameToGlobalIdLookup(this.times, this.segIds, this.getTotalFrames());
+    }
+
+    // Fixup 2D centroids to 3D
+    if (this.centroids) {
+      this.centroids = padCentroidsTo3d(this.centroids, this.numObjects);
     }
 
     // Analytics reporting
@@ -460,7 +638,6 @@ export default class Dataset {
       datasetLoadTimeMs: new Date().getTime() - startTime.getTime(),
     });
 
-    // TODO: Dynamically fetch features
     // TODO: Pre-process feature data to handle outlier values by interpolating between known good values (#21)
   }
 
@@ -469,6 +646,12 @@ export default class Dataset {
     Object.values(this.features).forEach(({ tex }) => tex.dispose());
     this.pathResolver.cleanup();
     this.frames?.dispose();
+    this.backdropFrames?.dispose();
+    // Cleanup array loader if it was created in the constructor
+    if (this.cleanupArrayLoaderOnDispose) {
+      this.arrayLoader.dispose();
+    }
+    this.cachedTracks.clear();
   }
 
   /** get frame index of a given cell id */
@@ -476,9 +659,39 @@ export default class Dataset {
     return this.times?.[index] || 0;
   }
 
+  public getTotalFrames(): number {
+    if (this.has2dFrames()) {
+      return this.frameFiles?.length ?? 0;
+    } else {
+      return this.frames3d?.totalFrames ?? 0;
+    }
+  }
+
+  public isValidFrameIndex(index: number): boolean {
+    return index >= 0 && index < this.getTotalFrames();
+  }
+
   /** get track id of a given cell id */
   public getTrackId(index: number): number {
     return this.trackIds?.[index] || 0;
+  }
+
+  public getSegmentationId(index: number): number {
+    return this.segIds?.[index] || 0;
+  }
+
+  /**
+   * Returns the 3D centroid of a given object id.
+   */
+  public getCentroid(objectId: number): [number, number, number] | undefined {
+    const index = objectId * 3;
+    if (this.centroids === undefined || this.centroids === null || index + 2 >= this.centroids.length) {
+      return undefined;
+    }
+    const x = this.centroids[index];
+    const y = this.centroids[index + 1];
+    const z = this.centroids[index + 2];
+    return [x, y, z];
   }
 
   private getIdsOfTrack(trackId: number): number[] {
@@ -488,7 +701,12 @@ export default class Dataset {
     }, []) as number[];
   }
 
-  public buildTrack(trackId: number): Track {
+  public getTrack(trackId: number): Track | null {
+    const cachedTrack = this.cachedTracks.get(trackId);
+    if (cachedTrack !== undefined) {
+      return cachedTrack;
+    }
+
     // trackIds contains a track id for every cell id in order.
     // get all cell ids for given track
     const ids = this.trackIds ? this.getIdsOfTrack(trackId) : [];
@@ -497,9 +715,10 @@ export default class Dataset {
     const times = this.times ? ids.map((i) => (this.times ? this.times[i] : 0)) : [];
 
     let centroids: number[] = [];
-    if (this.centroids) {
+    const centroidsData = this.centroids;
+    if (centroidsData) {
       centroids = ids.reduce((result, i) => {
-        result.push(this.centroids![2 * i], this.centroids![2 * i + 1]);
+        result.push(...this.getCentroid(i)!);
         return result;
       }, [] as number[]);
     }
@@ -512,7 +731,12 @@ export default class Dataset {
       }, [] as number[]);
     }
 
-    return new Track(trackId, times, ids, centroids, bounds);
+    let track = null;
+    if (ids.length > 0) {
+      track = new Track(trackId, times, ids, centroids, bounds);
+    }
+    this.cachedTracks.set(trackId, track);
+    return track;
   }
 
   /*

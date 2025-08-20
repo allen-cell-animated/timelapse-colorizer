@@ -1,20 +1,26 @@
 import { FolderOpenOutlined, UploadOutlined } from "@ant-design/icons";
 import { Button, Dropdown, Input, InputRef, MenuProps, Space } from "antd";
-import { MenuItemType } from "antd/es/menu/hooks/useItems";
+import { MenuItemType } from "antd/es/menu/interface";
 import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { useClickAnyWhere } from "usehooks-ts";
 
 import { Dataset } from "../colorizer";
+import { ReportWarningCallback } from "../colorizer/types";
 import { openDirectory } from "../colorizer/utils/file";
 import { useRecentCollections } from "../colorizer/utils/react_utils";
 import { convertAllenPathToHttps, isAllenPath } from "../colorizer/utils/url_utils";
 import { FlexRowAlignCenter } from "../styles/utils";
+import { renderStringArrayAsJsx } from "../utils/formatting";
 
 import Collection from "../colorizer/Collection";
 import { AppThemeContext } from "./AppStyle";
 import TextButton from "./Buttons/TextButton";
+import MessageCard from "./MessageCard";
 import StyledModal from "./Modals/StyledModal";
+
+const DEFAULT_URL_FAILURE_MESSAGE =
+  "The dataset(s) could not be loaded with the URL provided. Please check it and try again.";
 
 type LoadDatasetButtonProps = {
   /**
@@ -26,6 +32,7 @@ type LoadDatasetButtonProps = {
   onLoad: (collection: Collection, datasetKey: string, dataset: Dataset) => void;
   /** The URL of the currently loaded resource, used to indicate it on the recent datasets dropdown. */
   currentResourceUrl: string;
+  reportWarning?: ReportWarningCallback;
 };
 
 const defaultProps: Partial<LoadDatasetButtonProps> = {};
@@ -83,7 +90,15 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
   const [recentCollections, registerCollection] = useRecentCollections();
 
   const [isLoading, setIsLoading] = useState(false);
-  const [errorText, setErrorText] = useState<string>("");
+  const [errorText, _setErrorText] = useState<ReactNode>("");
+  const setErrorText = useCallback((newErrorText: ReactNode) => {
+    if (typeof newErrorText === "string" && newErrorText !== "") {
+      const splitText = newErrorText.split("\n");
+      _setErrorText(renderStringArrayAsJsx(splitText));
+    } else {
+      _setErrorText(newErrorText);
+    }
+  }, []);
 
   const [isLoadModalOpen, setIsLoadModalOpen] = useState(false);
 
@@ -125,7 +140,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
    */
   const handleLoadRequest = async (url: string): Promise<[string, Collection, Dataset]> => {
     console.log("Loading '" + url + "'.");
-    const newCollection = await Collection.loadFromAmbiguousUrl(url);
+    const newCollection = await Collection.loadFromAmbiguousUrl(url, { reportWarning: props.reportWarning });
     const newDatasetKey = newCollection.getDefaultDatasetKey();
     const loadResult = await newCollection.tryLoadDataset(newDatasetKey);
     if (!loadResult.loaded) {
@@ -151,15 +166,17 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
       return;
     }
     let formattedUrlInput = urlInput.trim();
+    let hasConvertedAllenPath = false;
     // Check if the URL is an allen resource. If so, attempt to convert it.
     if (isAllenPath(formattedUrlInput)) {
       const convertedUrl = convertAllenPathToHttps(formattedUrlInput);
       if (!convertedUrl) {
         setErrorText(
-          "The provided filestore path cannot be loaded directly. Please check that the path is correct! Alternatively, move your dataset so it is served over HTTPS."
+          "The provided filestore path cannot be loaded directly. Please check that the path is correct; if this a path you expect to work, file an issue on GitHub. Alternatively, move your dataset so it is served over HTTPS."
         );
         return;
       }
+      hasConvertedAllenPath = true;
       formattedUrlInput = convertedUrl;
     }
 
@@ -198,11 +215,13 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
           setErrorText(
             "Timeout: The server took too long to respond. Please check if the file server is online and try again."
           );
-        } else {
+        } else if (hasConvertedAllenPath) {
           setErrorText(
-            reason.toString() ||
-              "The dataset(s) could not be loaded with the URL provided. Please check it and try again."
+            (reason.toString() || DEFAULT_URL_FAILURE_MESSAGE) +
+              "\nIf the problem is not network access, this may be an unrecognized file path. If you expect this path to work, please report an issue on GitHub from the Help menu or contact a developer."
           );
+        } else {
+          setErrorText(reason.toString() || DEFAULT_URL_FAILURE_MESSAGE);
         }
         setIsLoading(false);
       }
@@ -273,7 +292,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
           <div ref={dropdownContextRef} style={{ position: "relative" }}>
             <p>
               <i>
-                <span style={{ color: theme.color.text.hint }}> Click below to show recent datasets</span>
+                <span style={{ color: theme.color.text.hint }}> Click to show recent datasets</span>
               </i>
             </p>
             <div style={{ display: "flex", flexDirection: "row", gap: "6px" }}>
@@ -293,6 +312,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
                     onChange={(event) => setUrlInput(event.target.value)}
                     allowClear
                     disabled={isLoading}
+                    onPressEnter={handleLoadClicked}
                   />
                 </Dropdown>
                 <Button type="primary" onClick={handleLoadClicked} loading={isLoading}>
@@ -338,12 +358,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
               Files loaded: {loadedFiles}/{totalFiles}
             </FlexRowAlignCenter>
           </div>
-
-          {errorText && (
-            <p>
-              <span style={{ color: theme.color.text.error }}>{errorText}</span>
-            </p>
-          )}
+          {errorText && <MessageCard type="error">{errorText}</MessageCard>}
         </div>
       </StyledModal>
     </div>

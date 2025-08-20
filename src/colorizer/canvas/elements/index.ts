@@ -1,0 +1,12 @@
+export type { FooterParams, FooterStyle } from "./footer";
+export { defaultFooterStyle, getFooterRenderer } from "./footer";
+export type { HeaderParams, HeaderStyle } from "./header";
+export { defaultHeaderStyle, getHeaderRenderer } from "./header";
+export type { InsetBoxStyle } from "./insetBox";
+export { defaultInsetBoxStyle } from "./insetBox";
+export type { LegendParams, LegendStyle } from "./legend";
+export { defaultLegendStyle } from "./legend";
+export type { ScaleBarParams, ScaleBarStyle } from "./scaleBar";
+export { defaultScaleBarStyle } from "./scaleBar";
+export type { TimestampParams, TimestampStyle } from "./timestamp";
+export { defaultTimestampStyle } from "./timestamp";

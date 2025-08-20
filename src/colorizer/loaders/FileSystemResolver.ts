@@ -1,4 +1,4 @@
-import { formatPath } from "../utils/url_utils";
+import { convertAllenPathToHttps, formatPath, isAllenPath } from "../utils/url_utils";
 
 export interface IPathResolver {
   resolve(baseUrl: string, url: string): string | null;
@@ -8,13 +8,23 @@ export interface IPathResolver {
 
 export class UrlPathResolver implements IPathResolver {
   resolve(baseUrl: string, url: string): string | null {
-    // Remove starting/trailing slashes
     baseUrl = formatPath(baseUrl);
     url = formatPath(url);
-    if (baseUrl !== "") {
-      return baseUrl + "/" + url;
-    } else {
+
+    if (url.startsWith("http://") || url.startsWith("https://")) {
       return url;
+    } else if (isAllenPath(url)) {
+      const newUrl = convertAllenPathToHttps(url);
+      if (newUrl) {
+        return newUrl;
+      } else {
+        throw new Error(
+          `Error while resolving path: Allen filepath '${url}' was detected but could not be converted to an HTTPS URL.` +
+            ` This may be because the file is in a directory that is not publicly servable.`
+        );
+      }
+    } else {
+      return `${baseUrl}/${url}`;
     }
   }
 

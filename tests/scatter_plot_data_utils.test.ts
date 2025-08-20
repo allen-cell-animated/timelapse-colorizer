@@ -16,18 +16,22 @@ describe("subsampleColorRamp", () => {
     expect(colors).to.deep.equal([new Color("#ff0000"), new Color("#0000ff")]);
   });
 
-  it("Returns evenly spaced colors", () => {
+  it("Returns subsampled colors colors", () => {
     const ramp = new ColorRamp(["#a0a0a0", "#000000"]);
+    // Note that colors are not exactly evenly spaced in RGB values because
+    // Three.JS uses Linear-sRGB color space for interpolation. This means that
+    // colors the ramp will be perceptually uniform in the sRGB color space, but
+    // the differences in RGB values will not be.
     const expectedColors = [
       new Color("#a0a0a0"),
-      new Color("#808080"),
-      new Color("#606060"),
-      new Color("#404040"),
-      new Color("#202020"),
+      new Color("#919191"),
+      new Color("#7F7F7F"),
+      new Color("#696969"),
+      new Color("#4B4B4B"),
       new Color("#000000"),
     ];
     const colors = subsampleColorRamp(ramp, 6);
-    expect(colors).to.deep.equal(expectedColors);
+    expect(colors.map((col) => col.getHex())).to.deep.equal(expectedColors.map((col) => col.getHex()));
   });
 });
 
@@ -100,6 +104,7 @@ describe("splitTraceData", () => {
       x: [],
       y: [],
       objectIds: [],
+      segIds: [],
       trackIds: [],
       color: "#ff00ff",
       marker: {},
@@ -108,6 +113,7 @@ describe("splitTraceData", () => {
       traceData.x.push(i);
       traceData.y.push(i);
       traceData.objectIds.push(i);
+      traceData.segIds.push(i);
       traceData.trackIds.push(i);
     }
     return traceData;
@@ -137,7 +143,7 @@ describe("splitTraceData", () => {
         const originalIndex = i * 100 + j;
         expect(trace.x[j]).to.equal(traceData.x[originalIndex]);
         expect(trace.y[j]).to.equal(traceData.y[originalIndex]);
-        expect(trace.objectIds[j]).to.equal(traceData.objectIds[originalIndex]);
+        expect(trace.segIds[j]).to.equal(traceData.segIds[originalIndex]);
         expect(trace.trackIds[j]).to.equal(traceData.trackIds[originalIndex]);
       }
     }

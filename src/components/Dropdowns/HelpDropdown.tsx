@@ -3,6 +3,7 @@ import React, { ReactElement, useState } from "react";
 import styled, { css } from "styled-components";
 
 import { getBuildDisplayDateString } from "../../colorizer/utils/math_utils";
+import { INTERNAL_BUILD } from "../../constants";
 import { VisuallyHidden } from "../../styles/utils";
 
 import StyledModal from "../Modals/StyledModal";
@@ -32,6 +33,13 @@ const StyledLink = styled.a`
 
 const StyledButton = styled(Button)`
   ${listButtonStyling}
+
+  & > span {
+    /* Fixes a bug where the button contents would be centered instead of
+     * left-aligned.
+     */
+    width: 100%;
+  }
 `;
 
 export default function HelpDropdown(): ReactElement {
@@ -82,6 +90,11 @@ export default function HelpDropdown(): ReactElement {
       >
         <p>Timelapse Feature Explorer v{import.meta.env.VITE_APP_VERSION}</p>
         <p>Last built on {getBuildDisplayDateString()}</p>
+        {INTERNAL_BUILD && (
+          <p>
+            <b>--INTERNAL BUILD--</b>
+          </p>
+        )}
       </StyledModal>
     </div>
   );

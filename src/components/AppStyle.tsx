@@ -4,6 +4,10 @@ import styled from "styled-components";
 
 import { latoRegularEot, latoRegularTtf, latoRegularWoff, latoRegularWoff2 } from "../assets";
 
+export const Z_INDEX_TOOLTIP = 2000;
+export const Z_INDEX_POPOVER = 2050;
+export const Z_INDEX_MODAL = 2100;
+
 type AppStyleProps = {
   className?: string;
 };
@@ -29,10 +33,16 @@ const palette = {
   link: "#0094FF",
   linkDark: "#007FD6",
   warning: "#faad14",
-  successLight: "#b7eb8f",
-  errorLight: "#ffa39e",
-  infoLight: "#91d5ff",
-  warningLight: "#ffe58f",
+  successMediumDark: "#6BD352",
+  successMedium: "#b7eb8f",
+  successLight: "#f6ffed",
+  errorMedium: "#ffa39e",
+  errorLight: "#fff2f0",
+  infoMedium: "#91d5ff",
+  infoLight: "#e6f4ff",
+  warningMedium: "#ffe58f",
+  warningLight: "#fffbe6",
+  transparentGold: "#ebc88d9f",
 };
 
 // Note: Some advanced version of this could swap different theme objects, and
@@ -47,14 +57,18 @@ const theme = {
     text: {
       primary: palette.gray60,
       secondary: palette.gray50,
-      hint: palette.gray30,
+      hint: palette.gray40,
       disabled: palette.gray30,
       button: palette.gray0,
+      info: palette.link,
       error: palette.error,
+      warning: palette.warning,
       success: palette.success,
       theme: palette.theme,
       link: palette.link,
       linkHover: palette.linkDark,
+      darkLink: palette.gray20,
+      darkLinkHover: palette.gray10,
     },
     layout: {
       background: palette.gray0,
@@ -65,22 +79,29 @@ const theme = {
       modalOverlay: "rgba(0, 0, 0, 0.7)",
     },
     viewport: {
-      background: palette.gray7,
       overlayBackground: "rgba(255, 255, 255, 0.8)",
       overlayOutline: "rgba(0, 0, 0, 0.2)",
+      annotationOutline: palette.successMediumDark,
     },
+    // TODO: Reorganize the button colors by primary/default/secondary etc.
     button: {
       backgroundPrimary: palette.theme,
       backgroundDisabled: palette.gray10,
       outline: palette.theme,
       outlineActive: palette.themeDark,
+      innerOutline: palette.gray30,
       hover: palette.themeLight,
       active: palette.themeDark,
-      focusShadow: "rgba(137, 98, 211, 0.06)",
+      focusShadow: palette.themeGray,
+      success: {
+        background: palette.success,
+        hover: palette.successMediumDark,
+      },
     },
     dropdown: {
       backgroundHover: palette.gray10,
       backgroundSelected: palette.themeGray,
+      textSelected: palette.theme,
     },
     slider: {
       rail: palette.gray10,
@@ -91,12 +112,21 @@ const theme = {
     tooltip: {
       background: "rgba(50, 50, 51, 0.90)",
     },
+    annotation: {
+      selectedRange: palette.transparentGold,
+    },
     alert: {
       border: {
-        info: palette.infoLight,
-        warning: palette.warningLight,
+        info: palette.infoMedium,
+        warning: palette.warningMedium,
+        error: palette.errorMedium,
+        success: palette.successMedium,
+      },
+      fill: {
         error: palette.errorLight,
+        warning: palette.warningLight,
         success: palette.successLight,
+        info: palette.infoLight,
       },
     },
   },
@@ -120,10 +150,12 @@ const theme = {
     height: 28,
     heightSmall: 28,
     radius: 4,
+    radiusLg: 6,
   },
 };
 
 export const AppThemeContext = createContext(theme);
+export type AppTheme = typeof theme;
 
 type DocumentContextType = {
   modalContainerRef: HTMLDivElement | null;
@@ -132,8 +164,6 @@ export const DocumentContext = createContext<DocumentContextType>({ modalContain
 
 /** Applies theme as CSS variables that affect the rest of the document. */
 const CssContainer = styled.div`
-  @import url("https://fonts.googleapis.com/css2?family=Lato&display=swap");
-
   @font-face {
     font-family: LatoExtended;
     font-style: normal;
@@ -148,11 +178,14 @@ const CssContainer = styled.div`
   --color-text-hint: ${theme.color.text.hint};
   --color-text-disabled: ${theme.color.text.disabled};
   --color-text-button: ${theme.color.text.button};
+  --color-text-info: ${theme.color.text.info};
   --color-text-error: ${theme.color.text.error};
+  --color-text-warning: ${theme.color.text.warning};
   --color-text-success: ${theme.color.text.success};
   --color-text-theme: ${theme.color.theme};
   --color-text-theme-dark: ${theme.color.themeDark};
   --color-text-link: ${theme.color.text.link};
+  --color-text-link-hover: ${theme.color.text.linkHover};
 
   /* Layout */
   --color-background-alt: ${theme.color.layout.backgroundAlt};
@@ -170,6 +203,12 @@ const CssContainer = styled.div`
   --color-button-hover: ${theme.color.button.hover};
   --color-button-active: ${theme.color.button.active};
   --color-button-disabled: ${theme.color.button.backgroundDisabled};
+  --color-button-outline: ${theme.color.button.outline};
+  --color-button-outline-active: ${theme.color.button.outlineActive};
+  --color-button-focus-shadow: ${theme.color.button.focusShadow};
+
+  --color-button-success-bg: ${theme.color.button.success.background};
+  --color-button-success-hover: ${theme.color.button.success.hover};
 
   --button-height: ${theme.controls.height}px;
   --button-height-small: ${theme.controls.heightSmall}px;
@@ -177,6 +216,7 @@ const CssContainer = styled.div`
 
   --color-dropdown-hover: ${theme.color.dropdown.backgroundHover};
   --color-dropdown-selected: ${theme.color.dropdown.backgroundSelected};
+  --color-dropdown-text-selected: ${theme.color.dropdown.textSelected};
 
   --color-collapse-hover: ${theme.color.theme};
   --color-collapse-active: ${theme.color.themeDark};
@@ -188,11 +228,16 @@ const CssContainer = styled.div`
 
   --color-viewport-overlay-background: ${theme.color.viewport.overlayBackground};
   --color-viewport-overlay-outline: ${theme.color.viewport.overlayOutline};
+  --color-viewport-annotation-outline: ${theme.color.viewport.annotationOutline};
 
   --color-alert-info-border: ${theme.color.alert.border.info};
   --color-alert-warning-border: ${theme.color.alert.border.warning};
   --color-alert-error-border: ${theme.color.alert.border.error};
   --color-alert-success-border: ${theme.color.alert.border.success};
+  --color-alert-error-fill: ${theme.color.alert.fill.error};
+  --color-alert-warning-fill: ${theme.color.alert.fill.warning};
+  --color-alert-success-fill: ${theme.color.alert.fill.success};
+  --color-alert-info-fill: ${theme.color.alert.fill.info};
 
   /* Fonts */
   --default-font: ${theme.font.family};
@@ -244,6 +289,11 @@ const CssContainer = styled.div`
     color: ${theme.color.button.outline};
   }
 
+  // Fix a bug where the color picker inner block was not centered
+  .ant-color-picker-trigger > .ant-color-picker-color-block {
+    margin: auto;
+  }
+
   font-family: var(--default-font);
   font-style: normal;
   font-weight: 400;
@@ -252,10 +302,17 @@ const CssContainer = styled.div`
   color: var(--color-text-primary);
 
   a {
-    &:focus,
     &:focus-visible {
       text-decoration: underline;
+      box-shadow: 0 0 0 3px var(--color-text-link);
     }
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    line-height: 1.25;
   }
 
   h1 {
@@ -283,7 +340,7 @@ const CssContainer = styled.div`
     font-size: var(--font-size-content);
     font-style: normal;
     font-weight: 400;
-    margin: 2px;
+    margin: 2px 0;
   }
 
   label {
@@ -328,7 +385,7 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
             colorTextQuaternary: theme.color.text.disabled,
             controlHeightSM: theme.controls.heightSmall,
             fontFamily: theme.font.family,
-            borderRadiusLG: 6,
+            borderRadiusLG: theme.controls.radiusLg,
             colorText: theme.color.text.primary,
             colorTextPlaceholder: theme.color.text.hint,
             colorBgSpotlight: theme.color.tooltip.background,
@@ -349,6 +406,9 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
               fontSize: theme.font.size.content,
               paddingXS: 6,
             },
+            Progress: {
+              defaultColor: theme.color.theme,
+            },
             Slider: {
               // Override hover colors
               dotActiveBorderColor: theme.color.theme,
@@ -366,19 +426,32 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
               cardBg: theme.color.layout.tabBackground,
               colorBorder: theme.color.layout.borders,
               colorBorderSecondary: theme.color.layout.borders,
-            },
-            Tooltip: {
-              zIndexPopup: 2000,
+              fontSizeLG: theme.font.size.content,
             },
             Divider: {
+              colorSplit: theme.color.layout.dividers,
               marginLG: 0,
+            },
+            Tooltip: {
+              zIndexPopup: Z_INDEX_TOOLTIP,
+            },
+            Popover: {
+              zIndexPopup: Z_INDEX_POPOVER,
+            },
+            Popconfirm: {
+              zIndexPopup: Z_INDEX_POPOVER,
+              colorText: theme.color.text.secondary,
             },
             Modal: {
               // Set z-index to 2100 here because Ant sets popups to 1050 by default, and modals to 1000.
-              zIndexBase: 2100,
-              zIndexPopupBase: 2100,
+              zIndexBase: Z_INDEX_MODAL,
+              zIndexPopupBase: Z_INDEX_MODAL,
               titleFontSize: theme.font.size.section,
               margin: 20,
+            },
+            Table: {
+              colorIcon: theme.color.text.disabled,
+              colorIconHover: theme.color.text.hint,
             },
           },
         }}

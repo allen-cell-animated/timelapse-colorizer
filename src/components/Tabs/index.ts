@@ -1,6 +1,8 @@
+import AnnotationTab from "./Annotation/AnnotationTab";
+import CorrelationPlotTab from "./CorrelationPlot/CorrelationPlotTab";
 import FeatureThresholdsTab from "./FeatureThresholdsTab";
 import PlotTab from "./PlotTab";
 import ScatterPlotTab from "./ScatterPlotTab";
 import SettingsTab from "./SettingsTab";
 
-export { FeatureThresholdsTab, PlotTab, ScatterPlotTab, SettingsTab };
+export { AnnotationTab, CorrelationPlotTab, FeatureThresholdsTab, PlotTab, ScatterPlotTab, SettingsTab };

@@ -2,20 +2,29 @@ import { Color, ColorRepresentation, DataTexture, FloatType, LinearFilter, Neare
 
 export enum ColorRampType {
   LINEAR,
-  HARD_STOP,
+  CATEGORICAL,
 }
 
+const DISPLAY_GRADIENT_MAX_STOPS = 24;
+
 export default class ColorRamp {
-  private colorStops: Color[];
+  public readonly colorStops: Color[];
   public readonly texture: DataTexture;
-  private type: ColorRampType;
+  public readonly type: ColorRampType;
 
   constructor(colorStops: ColorRepresentation[], type: ColorRampType = ColorRampType.LINEAR) {
     this.colorStops = colorStops.map((color) => new Color(color));
-    const dataArr = this.colorStops.flatMap((col) => [col.r, col.g, col.b, 1]);
+    const dataArr = this.colorStops.flatMap((col) => {
+      // Must convert from LinearSRGB to sRGB color space before getting the RGB
+      // components since WebGL (canvas, etc.) expects sRGB, but Three stores
+      // color data using LinearSRGB by default. See
+      // https://threejs.org/manual/#en/color-management.
+      const srgbCol = col.clone().convertLinearToSRGB();
+      return [srgbCol.r, srgbCol.g, srgbCol.b, 1];
+    });
     this.texture = new DataTexture(new Float32Array(dataArr), this.colorStops.length, 1, RGBAFormat, FloatType);
     this.type = type;
-    if (this.type === ColorRampType.HARD_STOP) {
+    if (this.type === ColorRampType.CATEGORICAL) {
       this.texture.minFilter = NearestFilter;
       this.texture.magFilter = NearestFilter;
     } else {
@@ -24,6 +33,22 @@ export default class ColorRamp {
     }
     this.texture.internalFormat = "RGBA32F";
     this.texture.needsUpdate = true;
+  }
+
+  public static linearGradientFromColors(
+    ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
+    colorStops: Color[],
+    width: number,
+    height: number,
+    x: number = 0,
+    y: number = 0
+  ): CanvasGradient {
+    const gradient = ctx.createLinearGradient(x, y, width + x, height + y);
+    const step = 1 / (colorStops.length - 1);
+    colorStops.forEach((color, idx) => {
+      gradient.addColorStop(step * idx, `#${color.getHexString()}`);
+    });
+    return gradient;
   }
 
   /** Creates a canvas filled in with this color ramp, to present as an option in a menu e.g. */
@@ -37,17 +62,16 @@ export default class ColorRamp {
       ctx.fillStyle = `#${this.colorStops[0].getHexString()}`;
       ctx.fillRect(0, 0, width, height);
     } else if (this.type === ColorRampType.LINEAR) {
-      const gradient = ctx.createLinearGradient(0, 0, vertical ? 0 : width, vertical ? height : 0);
-      const step = 1 / (this.colorStops.length - 1);
-      this.colorStops.forEach((color, idx) => {
-        gradient.addColorStop(step * idx, `#${color.getHexString()}`);
-      });
+      const gradientWidth = vertical ? 0 : width;
+      const gradientHeight = vertical ? height : 0;
+      const gradient = ColorRamp.linearGradientFromColors(ctx, this.colorStops, gradientWidth, gradientHeight);
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, width, height);
     } else {
       // Draw as hard stop gradients
-      const step = width / this.colorStops.length;
-      this.colorStops.forEach((color, idx) => {
+      const stops = this.colorStops.slice(0, DISPLAY_GRADIENT_MAX_STOPS);
+      const step = width / stops.length;
+      stops.forEach((color, idx) => {
         ctx.fillStyle = `#${color.getHexString()}`;
         ctx.fillRect(Math.floor(step * idx), 0, Math.ceil(step), height);
       });
@@ -73,7 +97,13 @@ export default class ColorRamp {
     // Scale t so it represents a (float) index in the array of color stops
     const tIndex = t * (this.colorStops.length - 1);
 
-    // Get the two colors on either side of the tIndex
+    if (this.type === ColorRampType.CATEGORICAL) {
+      // For categorical ramps, we return the nearest color
+      return this.colorStops[Math.round(tIndex)].clone();
+    }
+
+    // For linear ramps, we need to interpolate between the two colors  on
+    // either side of the tIndex
     const minIndex = Math.floor(tIndex);
     const maxIndex = Math.ceil(tIndex);
     // For single-color color ramps, or if t is the exact index of a color stop

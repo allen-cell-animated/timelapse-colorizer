@@ -1,75 +1,23 @@
 import semver from "semver";
-import { DataTexture, RGBAFormat, Texture, UnsignedByteType, Vector2 } from "three";
+import { Vector2 } from "three";
 import { describe, expect, it } from "vitest";
 
-import { ArraySource, IArrayLoader, IFrameLoader } from "../src/colorizer";
-import { FeatureArrayType, FeatureDataType, featureTypeSpecs } from "../src/colorizer/types";
+import { FeatureDataType } from "../src/colorizer";
 import { AnyManifestFile, ManifestFile } from "../src/colorizer/utils/dataset_utils";
 import { MAX_FEATURE_CATEGORIES } from "../src/constants";
-import { ANY_ERROR } from "./test_utils";
+import { MOCK_DATASET_ARRAY_LOADER_DEFAULT_SOURCE, MOCK_DATASET_MANIFEST } from "./state/ViewerState/constants";
+import {
+  ANY_ERROR,
+  DEFAULT_DATASET_DIR,
+  DEFAULT_DATASET_PATH,
+  makeMockAsyncLoader,
+  makeMockDataset,
+  MockArrayLoader,
+  MockArraySource,
+  MockFrameLoader,
+} from "./test_utils";
 
 import Dataset, { FeatureType } from "../src/colorizer/Dataset";
-
-const DEFAULT_PATH = "https://some-path.json";
-
-const makeMockFetchMethod = <T>(url: string, manifestJson: T): ((url: string) => Promise<T>) => {
-  return async (inputUrl: string): Promise<T> => {
-    if (inputUrl !== url) {
-      throw new Error(`Input url '${inputUrl}' does not match expected url '${url}'.`);
-    }
-    return Promise.resolve(manifestJson);
-  };
-};
-
-class MockFrameLoader implements IFrameLoader {
-  width: number;
-  height: number;
-
-  constructor(width: number = 1, height: number = 1) {
-    this.width = width;
-    this.height = height;
-  }
-
-  load(_url: string): Promise<Texture> {
-    return Promise.resolve(
-      new DataTexture(
-        new Uint8Array(this.width * this.height * 4),
-        this.width,
-        this.height,
-        RGBAFormat,
-        UnsignedByteType
-      )
-    );
-  }
-}
-
-class MockArraySource implements ArraySource {
-  getBuffer<T extends FeatureDataType>(type: T): FeatureArrayType[T] {
-    return new featureTypeSpecs[type].ArrayConstructor([]);
-  }
-  getTexture(_type: FeatureDataType): Texture {
-    return new Texture();
-  }
-  getMin(): number {
-    return 0;
-  }
-  getMax(): number {
-    return 1;
-  }
-}
-
-class MockArrayLoader implements IArrayLoader {
-  load(_url: string): Promise<ArraySource> {
-    return Promise.resolve(new MockArraySource());
-  }
-}
-
-export const makeMockDataset = async (manifest: AnyManifestFile): Promise<Dataset> => {
-  const dataset = new Dataset(DEFAULT_PATH, new MockFrameLoader(), new MockArrayLoader());
-  const mockFetch = makeMockFetchMethod(DEFAULT_PATH, manifest);
-  await dataset.open(mockFetch);
-  return dataset;
-};
 
 describe("Dataset", () => {
   // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -223,9 +171,9 @@ describe("Dataset", () => {
             feature1: { type: "categorical" },
           },
         };
-        const dataset = new Dataset(DEFAULT_PATH, new MockFrameLoader(), new MockArrayLoader());
-        const mockFetch = makeMockFetchMethod(DEFAULT_PATH, badManifest);
-        await expect(dataset.open(mockFetch)).rejects.toThrowError(ANY_ERROR);
+        const dataset = new Dataset(DEFAULT_DATASET_PATH, new MockFrameLoader(), new MockArrayLoader());
+        const mockFetch = makeMockAsyncLoader(DEFAULT_DATASET_PATH, badManifest);
+        await expect(dataset.open({ manifestLoader: mockFetch })).rejects.toThrowError(ANY_ERROR);
       });
 
       it("throws an error if the number of categories exceeds the max", async () => {
@@ -242,13 +190,13 @@ describe("Dataset", () => {
             },
           },
         };
-        const dataset = new Dataset(DEFAULT_PATH, new MockFrameLoader(), new MockArrayLoader());
-        const mockFetch = makeMockFetchMethod(DEFAULT_PATH, badManifest);
-        await expect(dataset.open(mockFetch)).rejects.toThrowError(ANY_ERROR);
+        const dataset = new Dataset(DEFAULT_DATASET_PATH, new MockFrameLoader(), new MockArrayLoader());
+        const mockFetch = makeMockAsyncLoader(DEFAULT_DATASET_PATH, badManifest);
+        await expect(dataset.open({ manifestLoader: mockFetch })).rejects.toThrowError(ANY_ERROR);
       });
 
       it("Loads the first frame and retrieves frame dimensions on open", async () => {
-        const mockFetch = makeMockFetchMethod(DEFAULT_PATH, manifest);
+        const mockFetch = makeMockAsyncLoader(DEFAULT_DATASET_PATH, manifest);
         const dimensionTests = [
           [0, 0],
           [1, 1],
@@ -260,9 +208,9 @@ describe("Dataset", () => {
         ];
 
         for (const [width, height] of dimensionTests) {
-          const dataset = new Dataset(DEFAULT_PATH, new MockFrameLoader(width, height), new MockArrayLoader());
+          const dataset = new Dataset(DEFAULT_DATASET_PATH, new MockFrameLoader(width, height), new MockArrayLoader());
           expect(dataset.frameResolution).to.deep.equal(new Vector2(1, 1));
-          await dataset.open(mockFetch);
+          await dataset.open({ manifestLoader: mockFetch });
           expect(dataset.frameResolution).to.deep.equal(new Vector2(width, height));
         }
       });
@@ -306,4 +254,84 @@ describe("Dataset", () => {
       });
     });
   }
+
+  it("changes relative source paths for 3D data to URLs", async () => {
+    const manifestWith3dSource: AnyManifestFile = {
+      ...MOCK_DATASET_MANIFEST,
+      frames3d: {
+        source: "seg.ome.zarr",
+        segmentationChannel: 1,
+        totalFrames: 4,
+      },
+    };
+    const dataset = await makeMockDataset(manifestWith3dSource);
+    expect(dataset.has3dFrames()).to.be.true;
+    const frames3d = dataset.frames3d;
+    expect(frames3d?.source).to.equal(DEFAULT_DATASET_DIR + "seg.ome.zarr");
+    expect(frames3d?.segmentationChannel).to.equal(1);
+    expect(frames3d?.totalFrames).to.equal(4);
+  });
+
+  it("converts allen Zarr paths to URLs", async () => {
+    const manifestWith3dSource: AnyManifestFile = {
+      ...MOCK_DATASET_MANIFEST,
+      frames3d: {
+        source: "/allen/aics/assay-dev/some/path/to/seg.ome.zarr",
+        segmentationChannel: 0,
+        totalFrames: 4,
+      },
+    };
+    const dataset = await makeMockDataset(manifestWith3dSource);
+    expect(dataset.has3dFrames()).to.be.true;
+    const frames3d = dataset.frames3d;
+    expect(frames3d?.source).to.equal("https://dev-aics-dtp-001.int.allencell.org/assay-dev/some/path/to/seg.ome.zarr");
+  });
+
+  describe("centroids data", () => {
+    it("loads 2D centroid data as 3D", async () => {
+      const mockArrayLoaderSource = {
+        ...MOCK_DATASET_ARRAY_LOADER_DEFAULT_SOURCE,
+        [DEFAULT_DATASET_DIR + "centroids.json"]: new MockArraySource(
+          FeatureDataType.F32,
+          new Float32Array([0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8])
+        ),
+      };
+      const mockArrayLoader = new MockArrayLoader(mockArrayLoaderSource);
+      const mockDatasetManifest = {
+        ...MOCK_DATASET_MANIFEST,
+        centroids: "centroids.json",
+      };
+      const dataset = await makeMockDataset(mockDatasetManifest, mockArrayLoader);
+      expect(dataset.centroids).to.deep.equal(
+        new Uint16Array([0, 0, 0, 1, 1, 0, 2, 2, 0, 3, 3, 0, 4, 4, 0, 5, 5, 0, 6, 6, 0, 7, 7, 0, 8, 8, 0])
+      );
+    });
+
+    it("loads 3D centroid data", async () => {
+      const mockArrayLoaderSource = {
+        ...MOCK_DATASET_ARRAY_LOADER_DEFAULT_SOURCE,
+        [DEFAULT_DATASET_DIR + "centroids.json"]: new MockArraySource(
+          FeatureDataType.U16,
+          new Uint16Array([0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8])
+        ),
+      };
+      const mockArrayLoader = new MockArrayLoader(mockArrayLoaderSource);
+      const mockDatasetManifest = {
+        ...MOCK_DATASET_MANIFEST,
+        centroids: "centroids.json",
+      };
+      const dataset = await makeMockDataset(mockDatasetManifest, mockArrayLoader);
+      expect(dataset.centroids).to.deep.equal(
+        new Uint16Array([0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8])
+      );
+    });
+
+    it("has track and time keys in the dataset", async () => {
+      const mockArrayLoaderSource = MOCK_DATASET_ARRAY_LOADER_DEFAULT_SOURCE;
+      const dataset = await makeMockDataset(MOCK_DATASET_MANIFEST, new MockArrayLoader(mockArrayLoaderSource));
+      // Regression test: this test will break if the key constants are modified or removed.
+      expect(dataset.featureKeys).includes("_track_");
+      expect(dataset.featureKeys).includes("_time_");
+    });
+  });
 });

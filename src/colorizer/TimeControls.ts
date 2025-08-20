@@ -1,55 +1,57 @@
 import { DEFAULT_PLAYBACK_FPS } from "../constants";
 
-import ColorizeCanvas from "./ColorizeCanvas";
-
 // time / playback controls
 const NO_TIMER_ID = -1;
 
 export default class TimeControls {
   private timerId: number;
-  private setFrameFn?: (frame: number) => Promise<void>;
+  private mostRecentPlayRequestId: number;
+  private getFrameFn: () => number;
+  private setFrameFn: (frame: number) => Promise<void>;
   private playbackFps: number;
-
-  private canvas: ColorizeCanvas;
+  private totalFrames: number;
 
   private pauseCallbacks: (() => void)[];
 
-  constructor(canvas: ColorizeCanvas, playbackFps: number = DEFAULT_PLAYBACK_FPS) {
-    this.canvas = canvas;
+  constructor(getFrameFn: () => number, setFrameFn: (frame: number) => Promise<void>) {
     this.timerId = NO_TIMER_ID;
     this.pauseCallbacks = [];
-    this.playbackFps = playbackFps;
-  }
+    this.playbackFps = DEFAULT_PLAYBACK_FPS;
+    this.mostRecentPlayRequestId = 0;
+    this.totalFrames = 1;
 
-  /**
-   * Adds a callback that will be called to change the current frame.
-   * @param fn A function that takes a frame number and returns a promise that resolves once the
-   * frame is loaded.
-   */
-  public setFrameCallback(fn: (frame: number) => Promise<void>): void {
-    this.setFrameFn = fn;
+    this.getFrameFn = getFrameFn;
+    this.setFrameFn = setFrameFn;
+
+    this.isPlaying = this.isPlaying.bind(this);
+    this.play = this.play.bind(this);
+    this.pause = this.pause.bind(this);
   }
 
   public setPlaybackFps(fps: number): void {
     this.playbackFps = fps;
   }
 
+  public setTotalFrames(totalFrames: number): void {
+    this.totalFrames = totalFrames;
+  }
+
   private wrapFrame(index: number): number {
-    const totalFrames = this.canvas.getTotalFrames();
-    return (index + totalFrames) % totalFrames;
+    return (index + this.totalFrames) % this.totalFrames;
   }
 
   private playTimeSeries(onNewFrameCallback: () => void): void {
     if (this.isPlaying()) {
       return;
     }
+    this.mostRecentPlayRequestId += 1;
 
     // TODO: Fix this function so that it doesn't stop the slider from also operating
 
     // `lastFrameNum` is a parameter here because relying on `ColorizeCanvas.getCurrentFrame()` can
     // lead to race conditions that lead to frames getting loaded more than once.
-    const loadNextFrame = async (lastFrameNum: number): Promise<void> => {
-      if (!this.isPlaying()) {
+    const loadNextFrame = async (lastFrameNum: number, requestId: number): Promise<void> => {
+      if (this.mostRecentPlayRequestId !== requestId || !this.isPlaying()) {
         return;
       }
 
@@ -64,25 +66,25 @@ export default class TimeControls {
       }
 
       // do the update
-      if (this.setFrameFn) {
-        await this.setFrameFn(nextFrame);
-      }
+      await this.setFrameFn(nextFrame);
+
       const endTime = Date.now();
       const timeElapsed = endTime - startTime;
       onNewFrameCallback();
 
-      if (!this.isPlaying()) {
-        // The timer was stopped while the frame was loading, so stop playback.
+      if (this.mostRecentPlayRequestId !== requestId || !this.isPlaying()) {
+        // The timer was stopped while the frame was loading or a different
+        // request was started, so stop playback.
         return;
       }
 
       // Add additional delay, if needed, to maintain playback fps.
       // TODO: Could add some sort of smoothing here to make the playback more consistent.
       const delayMs = Math.max(0, 1000 / this.playbackFps - timeElapsed);
-      this.timerId = window.setTimeout(() => loadNextFrame(nextFrame), delayMs);
+      this.timerId = window.setTimeout(() => loadNextFrame(nextFrame, requestId), delayMs);
     };
 
-    this.timerId = window.setTimeout(() => loadNextFrame(this.canvas.getCurrentFrame()), 0);
+    this.timerId = window.setTimeout(() => loadNextFrame(this.getFrameFn(), this.mostRecentPlayRequestId), 0);
   }
 
   /**
@@ -91,9 +93,6 @@ export default class TimeControls {
    * @param onNewFrameCallback An optional callback that will be called whenever a new frame is loaded.
    */
   public async play(onNewFrameCallback: () => void = () => {}): Promise<void> {
-    if (this.canvas.getCurrentFrame() >= this.canvas.getTotalFrames() - 1) {
-      await this.canvas.setFrame(0);
-    }
     this.playTimeSeries(onNewFrameCallback);
   }
 
@@ -113,9 +112,7 @@ export default class TimeControls {
    * Increment or decrement the time series by the given number of frames.
    */
   public async advanceFrame(delta: number = 1): Promise<void> {
-    if (this.setFrameFn) {
-      await this.setFrameFn(this.wrapFrame(this.canvas.getCurrentFrame() + delta));
-    }
+    await this.setFrameFn(this.wrapFrame(this.getFrameFn() + delta));
   }
 
   public isPlaying(): boolean {
