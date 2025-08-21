@@ -1,5 +1,5 @@
 import { FolderOpenOutlined, UploadOutlined } from "@ant-design/icons";
-import { Button, Dropdown, Input, InputRef, MenuProps, Space } from "antd";
+import { Button, Dropdown, Input, InputRef, MenuProps, Space, Upload } from "antd";
 import { MenuItemType } from "antd/es/menu/interface";
 import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
@@ -7,8 +7,10 @@ import { useClickAnyWhere } from "usehooks-ts";
 
 import { Dataset } from "../colorizer";
 import { ReportWarningCallback } from "../colorizer/types";
+import { zipToFileMap } from "../colorizer/utils/data_load_utils";
 import { useRecentCollections } from "../colorizer/utils/react_utils";
 import { convertAllenPathToHttps, isAllenPath } from "../colorizer/utils/url_utils";
+import { FlexRowAlignCenter } from "../styles/utils";
 import { renderStringArrayAsJsx } from "../utils/formatting";
 
 import Collection from "../colorizer/Collection";
@@ -32,6 +34,8 @@ type LoadDatasetButtonProps = {
   currentResourceUrl: string;
   reportWarning?: ReportWarningCallback;
 };
+
+type LoadedCollectionResult = [string, Collection, Dataset];
 
 const defaultProps: Partial<LoadDatasetButtonProps> = {};
 
@@ -123,17 +127,25 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
     }
   });
 
-  /**
-   * Attempt to load a URL and return the resource path, the loaded collection, and the loaded dataset.
-   * The URL can either be a collection or a dataset, so handle it as an ambiguous URL.
-   * @throws an error if the URL could not be loaded.
-   * @returns an array, containing:
-   *   - the loaded collection
-   *   - the loaded dataset
-   */
-  const handleLoadRequest = async (url: string): Promise<[string, Collection, Dataset]> => {
-    console.log("Loading '" + url + "'.");
-    const newCollection = await Collection.loadFromAmbiguousUrl(url, { reportWarning: props.reportWarning });
+  const onCollectionLoaded = (loadedUrl: string, collection: Collection, dataset: Dataset): void => {
+    props.onLoad(collection, collection.getDefaultDatasetKey(), dataset);
+
+    // Add a slight delay before closing and resetting the modal for a smoother experience
+    setTimeout(() => {
+      setIsLoadModalOpen(false);
+      setIsLoading(false);
+      // Add to recent collections
+      registerCollection({
+        url: loadedUrl,
+        label: urlInput, // Use raw url input for the label
+      });
+      setErrorText("");
+      setUrlInput("");
+    }, 500);
+    return;
+  };
+
+  const loadCollectionData = async (newCollection: Collection): Promise<LoadedCollectionResult> => {
     const newDatasetKey = newCollection.getDefaultDatasetKey();
     const loadResult = await newCollection.tryLoadDataset(newDatasetKey);
     if (!loadResult.loaded) {
@@ -151,6 +163,18 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
 
     const resourceUrl = newCollection.url || newCollection.getDefaultDatasetKey();
     return [resourceUrl, newCollection, loadResult.dataset];
+  };
+
+  const handleLoadUrl = async (url: string): Promise<LoadedCollectionResult> => {
+    console.log("Loading '" + url + "'.");
+    const collection = await Collection.loadFromAmbiguousUrl(url, { reportWarning: props.reportWarning });
+    return loadCollectionData(collection);
+  };
+
+  const handleLoadFromFileMap = async (fileMap: Record<string, File>): Promise<LoadedCollectionResult> => {
+    console.log("Loading from file map:", fileMap);
+    const collection = await Collection.loadCollectionFromFile(fileMap, { reportWarning: props.reportWarning });
+    return loadCollectionData(collection);
   };
 
   const handleLoadClicked = useCallback(async (): Promise<void> => {
@@ -184,24 +208,8 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
     }
     setIsLoading(true);
 
-    handleLoadRequest(formattedUrlInput).then(
-      ([loadedUrl, collection, dataset]) => {
-        props.onLoad(collection, collection.getDefaultDatasetKey(), dataset);
-
-        // Add a slight delay before closing and resetting the modal for a smoother experience
-        setTimeout(() => {
-          setIsLoadModalOpen(false);
-          setIsLoading(false);
-          // Add to recent collections
-          registerCollection({
-            url: loadedUrl,
-            label: urlInput, // Use raw url input for the label
-          });
-          setErrorText("");
-          setUrlInput("");
-        }, 500);
-        return;
-      },
+    handleLoadUrl(formattedUrlInput).then(
+      (result) => onCollectionLoaded(...result),
       (reason) => {
         // failed
         if (reason && reason.toString().includes("AbortError")) {
@@ -314,6 +322,29 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
               </Space.Compact>
             </div>
           </div>
+
+          <FlexRowAlignCenter>
+            <Upload
+              name="file"
+              multiple={false}
+              accept=".zip"
+              showUploadList={false}
+              beforeUpload={async (zipFile: File): Promise<void> => {
+                const fileMap = await zipToFileMap(zipFile);
+                console.log(fileMap);
+                setIsLoading(true);
+                handleLoadFromFileMap(fileMap)
+                  .then((result) => onCollectionLoaded(...result))
+                  .catch((reason) => {
+                    // failed
+                    setErrorText(reason.toString() || DEFAULT_URL_FAILURE_MESSAGE);
+                    setIsLoading(false);
+                  });
+              }}
+            >
+              <Button>Load from ZIP</Button>
+            </Upload>
+          </FlexRowAlignCenter>
           {errorText && <MessageCard type="error">{errorText}</MessageCard>}
         </div>
       </StyledModal>

@@ -1,5 +1,6 @@
 import { parquetRead } from "hyparquet";
 import { compressors } from "hyparquet-compressors";
+import JSZip from "jszip";
 
 import { FeatureArrayType, FeatureDataType, featureTypeSpecs } from "../types";
 
@@ -86,4 +87,51 @@ export async function loadFromParquetUrl<T extends FeatureDataType>(url: string,
     },
   });
   return { data, min: dataMin, max: dataMax };
+}
+
+export async function zipToFileMap(zipFile: File): Promise<Record<string, File>> {
+  const zip = await JSZip.loadAsync(zipFile);
+
+  // Load all contents and save them as File objects
+  const fileMap: Record<string, File> = {};
+  const filePromises: Promise<void>[] = [];
+  const loadToFileMap = async (relativePath: string, zipObject: JSZip.JSZipObject) => {
+    const fileContents = await zipObject.async("blob");
+    fileMap[relativePath] = new File([fileContents], relativePath);
+  };
+
+  zip.forEach((relativePath, zipObject) => {
+    if (zipObject.dir) {
+      // Skip directories
+      return;
+    }
+    filePromises.push(loadToFileMap(relativePath, zipObject));
+  });
+
+  await Promise.allSettled(filePromises);
+
+  // Handle case where files are all nested one or more layers deep in empty
+  // folders by removing the shared prefix. This is very common when zipping
+  // folders.
+  let prefix = Object.keys(fileMap)[0];
+  for (const key of Object.keys(fileMap)) {
+    if (key.startsWith(prefix)) {
+      continue;
+    }
+    // Find the longest common prefix
+    let i = 0;
+    while (i < prefix.length && i < key.length && prefix[i] === key[i]) {
+      i++;
+    }
+    prefix = prefix.slice(0, i);
+  }
+  console.log("Prefix:", prefix);
+
+  // Remove prefix from the start of all paths
+  const trimmedFileMap: Record<string, File> = {};
+  for (const key of Object.keys(fileMap)) {
+    trimmedFileMap[key.slice(prefix.length)] = fileMap[key];
+  }
+
+  return trimmedFileMap;
 }

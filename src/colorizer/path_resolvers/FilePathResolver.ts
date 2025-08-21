@@ -11,8 +11,13 @@ export class FilePathResolver implements IPathResolver {
    */
   private fileUrls: Record<string, string>;
 
-  constructor(directoryFiles: Record<string, File>) {
-    this.files = directoryFiles;
+  /**
+   * Creates a new FilePathResolver that can be queried to retrieve File objects
+   * from a string relative path.
+   * @param fileMap A map from a relative string path to a File object.
+   */
+  constructor(fileMap: Record<string, File>) {
+    this.files = fileMap;
     this.fileUrls = {};
   }
 
@@ -22,8 +27,6 @@ export class FilePathResolver implements IPathResolver {
     url = formatPath(url);
     const path = baseUrl !== "" ? baseUrl + "/" + url : url;
 
-    // TODO: Use a nested directory structure to reduce the amount of repeated strings?
-    // Split the path, and look for matches in each level of the directory structure
     if (!this.files[path]) {
       return null;
     }
