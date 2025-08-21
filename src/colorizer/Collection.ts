@@ -1,5 +1,5 @@
 import { DEFAULT_COLLECTION_FILENAME, DEFAULT_DATASET_FILENAME } from "../constants";
-import { IPathResolver, UrlPathResolver } from "./path_resolvers";
+import { FilePathResolver, IPathResolver, UrlPathResolver } from "./path_resolvers";
 import { LoadErrorMessage, LoadTroubleshooting, ReportWarningCallback } from "./types";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./utils/analytics";
 import {
@@ -35,6 +35,7 @@ export type DatasetLoadResult =
     };
 
 export type CollectionLoadOptions = {
+  pathResolver?: IPathResolver;
   fetchMethod?: typeof fetchWithTimeout;
   reportWarning?: ReportWarningCallback;
 };
@@ -76,9 +77,9 @@ export default class Collection {
     pathResolver?: IPathResolver
   ) {
     this.entries = entries;
-    this.url = url ? Collection.formatAbsoluteCollectionPath(url) : url;
-    this.metadata = metadata;
     this.pathResolver = pathResolver || new UrlPathResolver();
+    this.url = url ? this.pathResolver.resolve("", Collection.formatAbsoluteCollectionPath(url)) : url;
+    this.metadata = metadata;
     console.log("Collection metadata: ", this.metadata);
 
     // Check that all entry paths are JSON urls.
@@ -88,8 +89,12 @@ export default class Collection {
           `Expected dataset '${key}' to have an absolute JSON path; collection was provided path '${value.path}'.`
         );
       }
-      if (!isUrl(value.path)) {
-        throw new Error(`Expected dataset '${key}' to have a URL path; collection was provided path '${value.path}'.`);
+      if (pathResolver instanceof UrlPathResolver) {
+        if (!isUrl(value.path)) {
+          throw new Error(
+            `Expected dataset '${key}' to have a URL path; collection was provided path '${value.path}'.`
+          );
+        }
       }
     });
   }
@@ -307,11 +312,13 @@ export default class Collection {
     options: CollectionLoadOptions = {}
   ): Promise<Collection> {
     const absoluteCollectionUrl = Collection.formatAbsoluteCollectionPath(collectionParam);
+    const pathResolver = options.pathResolver || new UrlPathResolver();
 
     let response;
     try {
       const fetchMethod = options.fetchMethod ?? fetchWithTimeout;
-      response = await fetchMethod(absoluteCollectionUrl, DEFAULT_FETCH_TIMEOUT_MS);
+      const collectionPath = pathResolver.resolve("", absoluteCollectionUrl)!;
+      response = await fetchMethod(collectionPath, DEFAULT_FETCH_TIMEOUT_MS);
     } catch (e) {
       throw new Error(LoadErrorMessage.UNREACHABLE_COLLECTION + " " + LoadTroubleshooting.CHECK_NETWORK);
     }
@@ -351,7 +358,7 @@ export default class Collection {
       collectionData.set(key, newEntry);
     });
 
-    return new Collection(collectionData, absoluteCollectionUrl, collection.metadata);
+    return new Collection(collectionData, absoluteCollectionUrl, collection.metadata, pathResolver);
   }
 
   /**
@@ -360,14 +367,20 @@ export default class Collection {
    * @returns a new Collection, where the only dataset is that of the provided `datasetUrl`.
    * The `url` field of the Collection will also be set to `null`.
    */
-  public static makeCollectionFromSingleDataset(datasetUrl: string): Collection {
+  public static makeCollectionFromSingleDataset(
+    datasetUrl: string,
+    pathResolver: IPathResolver = new UrlPathResolver()
+  ): Collection {
     // Add the default filename if the url is not a .JSON path.
     if (!isJson(datasetUrl)) {
       datasetUrl = formatPath(datasetUrl) + "/" + DEFAULT_DATASET_FILENAME;
+      if (datasetUrl.startsWith("/")) {
+        datasetUrl = datasetUrl.slice(1);
+      }
     }
     const collectionData: CollectionData = new Map([[datasetUrl, { path: datasetUrl, name: datasetUrl }]]);
 
-    return new Collection(collectionData, null);
+    return new Collection(collectionData, null, {}, pathResolver);
   }
 
   /**
@@ -465,5 +478,21 @@ export default class Collection {
     }
 
     return result;
+  }
+
+  public static async loadCollectionFromFile(
+    fileMap: Record<string, File>,
+    options: Partial<{ reportWarning: ReportWarningCallback }> = {}
+  ): Promise<Collection> {
+    const collectionFilePath = DEFAULT_COLLECTION_FILENAME;
+    const filePathResolver = new FilePathResolver(fileMap);
+
+    try {
+      return await Collection.loadCollection(collectionFilePath, { pathResolver: filePathResolver, ...options });
+    } catch (e) {
+      console.error(e);
+    }
+
+    return await Collection.makeCollectionFromSingleDataset("", filePathResolver);
   }
 }

@@ -510,7 +510,8 @@ export default class Dataset {
 
     const startTime = new Date();
 
-    const manifest = updateManifestVersion(await options.manifestLoader(this.manifestUrl));
+    const resolvedManifestUrl = this.resolvePath(this.manifestUrl)!;
+    const manifest = updateManifestVersion(await options.manifestLoader(resolvedManifestUrl));
 
     this.frameFiles = manifest.frames;
     const frames3dSrc = manifest.frames3d;
