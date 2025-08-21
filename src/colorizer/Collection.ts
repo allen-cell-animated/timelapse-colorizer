@@ -34,22 +34,11 @@ export type DatasetLoadResult =
       dataset: Dataset;
     };
 
-// export const enum CollectionSourceType {
-//   URL,
-//   FILE,
-// }
-
 export type CollectionLoadOptions = {
   pathResolver?: IPathResolver;
   fetchMethod?: typeof fetchWithTimeout;
   reportWarning?: ReportWarningCallback;
-  // config?: CollectionConfig;
 };
-
-// export type CollectionConfig = {
-//   sourceType: CollectionSourceType;
-//   source: string;
-// };
 
 export type DatasetLoadOptions = {
   manifestLoader?: typeof fetchManifestJson;
@@ -73,8 +62,6 @@ export default class Collection {
    * such as when generating dummy Collections for single datasets.
    */
   public readonly url: string | null;
-  // public readonly type: CollectionSourceType;
-  // public readonly source: string;
 
   /**
    * Constructs a new Collection from a CollectionData map.
@@ -102,7 +89,9 @@ export default class Collection {
           `Expected dataset '${key}' to have an absolute JSON path; collection was provided path '${value.path}'.`
         );
       }
-      if (pathResolver instanceof UrlPathResolver) {
+      // TODO: Replace this with a declared type (file vs. URL) that is passed
+      // in when a Collection is created.
+      if (this.pathResolver instanceof UrlPathResolver) {
         if (!isUrl(value.path)) {
           throw new Error(
             `Expected dataset '${key}' to have a URL path; collection was provided path '${value.path}'.`

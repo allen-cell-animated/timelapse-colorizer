@@ -2,6 +2,10 @@ import { formatPath, isAllenPath, isUrl, resolveUrl } from "../utils/url_utils";
 
 import { IPathResolver } from "./IPathResolver";
 
+/**
+ * Creates and manages object URLs for a collection of files, allowing paths to
+ * be resolved to files that can be fetched.
+ */
 export class FilePathResolver implements IPathResolver {
   /** Keys are string paths to files, values are File objects. */
   private files: Record<string, File>;
@@ -21,26 +25,29 @@ export class FilePathResolver implements IPathResolver {
     this.fileUrls = {};
   }
 
-  resolve(baseUrl: string, url: string): string | null {
+  /**
+   * Returns a URL of either a local file or a remote resource. Returns `null`
+   * if the path could not be resolved to an existing file.
+   */
+  resolve(basePath: string, path: string): string | null {
     // Remove starting/trailing slashes
-    baseUrl = formatPath(baseUrl);
-    url = formatPath(url);
+    basePath = formatPath(basePath);
+    path = formatPath(path);
 
     // Check for URL paths and return those directly
-    if (isUrl(url) || isUrl(baseUrl) || isAllenPath(url) || isAllenPath(baseUrl)) {
-      return resolveUrl(baseUrl, url);
+    if (isUrl(path) || isUrl(basePath) || isAllenPath(path) || isAllenPath(basePath)) {
+      return resolveUrl(basePath, path);
     }
-
-    const path = baseUrl !== "" ? baseUrl + "/" + url : url;
 
     // Return a file URL if the file exists.
-    if (!this.files[path]) {
+    const joinedPath = basePath !== "" ? basePath + "/" + path : path;
+    if (!this.files[joinedPath]) {
       return null;
     }
-    if (!this.fileUrls[path]) {
-      this.fileUrls[path] = URL.createObjectURL(this.files[path]);
+    if (!this.fileUrls[joinedPath]) {
+      this.fileUrls[joinedPath] = URL.createObjectURL(this.files[joinedPath]);
     }
-    return this.fileUrls[path];
+    return this.fileUrls[joinedPath];
   }
 
   cleanup(): void {
