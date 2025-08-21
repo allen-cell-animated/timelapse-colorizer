@@ -95,14 +95,13 @@ export async function zipToFileMap(zipFile: File): Promise<Record<string, File>>
   // Load all contents and save them as File objects
   const fileMap: Record<string, File> = {};
   const filePromises: Promise<void>[] = [];
-  const loadToFileMap = async (relativePath: string, zipObject: JSZip.JSZipObject) => {
+  const loadToFileMap = async (relativePath: string, zipObject: JSZip.JSZipObject): Promise<void> => {
     const fileContents = await zipObject.async("blob");
     fileMap[relativePath] = new File([fileContents], relativePath);
   };
 
   zip.forEach((relativePath, zipObject) => {
     if (zipObject.dir) {
-      // Skip directories
       return;
     }
     filePromises.push(loadToFileMap(relativePath, zipObject));
