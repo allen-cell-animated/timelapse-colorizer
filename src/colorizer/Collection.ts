@@ -34,11 +34,22 @@ export type DatasetLoadResult =
       dataset: Dataset;
     };
 
+// export const enum CollectionSourceType {
+//   URL,
+//   FILE,
+// }
+
 export type CollectionLoadOptions = {
   pathResolver?: IPathResolver;
   fetchMethod?: typeof fetchWithTimeout;
   reportWarning?: ReportWarningCallback;
+  // config?: CollectionConfig;
 };
+
+// export type CollectionConfig = {
+//   sourceType: CollectionSourceType;
+//   source: string;
+// };
 
 export type DatasetLoadOptions = {
   manifestLoader?: typeof fetchManifestJson;
@@ -62,6 +73,8 @@ export default class Collection {
    * such as when generating dummy Collections for single datasets.
    */
   public readonly url: string | null;
+  // public readonly type: CollectionSourceType;
+  // public readonly source: string;
 
   /**
    * Constructs a new Collection from a CollectionData map.
@@ -216,12 +229,19 @@ export default class Collection {
   // ===================================================================================
   // Helper Methods
 
+  private static joinPath(path: string, file: string): string {
+    if (path === "") {
+      return file;
+    }
+    return path + "/" + file;
+  }
+
   private static formatDatasetPath(datasetPath: string): string {
     datasetPath = formatPath(datasetPath);
     if (!isUrl(datasetPath)) {
       throw new Error(`Cannot fetch dataset '${datasetPath}' because it is not a URL.`);
     }
-    return isJson(datasetPath) ? datasetPath : datasetPath + "/" + DEFAULT_DATASET_FILENAME;
+    return isJson(datasetPath) ? datasetPath : Collection.joinPath(datasetPath, DEFAULT_DATASET_FILENAME);
   }
 
   /**
@@ -233,7 +253,7 @@ export default class Collection {
    */
   public static formatAbsoluteCollectionPath(collectionUrl: string): string {
     collectionUrl = formatPath(collectionUrl);
-    return isJson(collectionUrl) ? collectionUrl : collectionUrl + "/" + DEFAULT_COLLECTION_FILENAME;
+    return isJson(collectionUrl) ? collectionUrl : Collection.joinPath(collectionUrl, DEFAULT_COLLECTION_FILENAME);
   }
 
   /**
@@ -367,20 +387,14 @@ export default class Collection {
    * @returns a new Collection, where the only dataset is that of the provided `datasetUrl`.
    * The `url` field of the Collection will also be set to `null`.
    */
-  public static makeCollectionFromSingleDataset(
-    datasetUrl: string,
-    pathResolver: IPathResolver = new UrlPathResolver()
-  ): Collection {
+  public static makeCollectionFromSingleDataset(datasetUrl: string, options: CollectionLoadOptions = {}): Collection {
     // Add the default filename if the url is not a .JSON path.
     if (!isJson(datasetUrl)) {
-      datasetUrl = formatPath(datasetUrl) + "/" + DEFAULT_DATASET_FILENAME;
-      if (datasetUrl.startsWith("/")) {
-        datasetUrl = datasetUrl.slice(1);
-      }
+      datasetUrl = Collection.joinPath(formatPath(datasetUrl), DEFAULT_DATASET_FILENAME);
     }
     const collectionData: CollectionData = new Map([[datasetUrl, { path: datasetUrl, name: datasetUrl }]]);
 
-    return new Collection(collectionData, null, {}, pathResolver);
+    return new Collection(collectionData, null, {}, options.pathResolver);
   }
 
   /**
@@ -423,27 +437,11 @@ export default class Collection {
     }
   }
 
-  /**
-   * Attempt to load an ambiguous URL as either a collection or dataset, and return a new
-   * Collection representing its contents (either the loaded collection or a dummy collection
-   * containing just the dataset).
-   * @param url the URL resource to attempt to load.
-   * @param options optional configuration object containing any of the following properties:
-   *  - `fetchMethod` optional override for the fetch method.
-   *  - `reportWarning` optional callback for reporting warning messages during loading.
-   * @throws an error if `url` is not a URL.
-   * @returns a Promise of a new Collection object, either loaded from a collection JSON file or
-   * generated as a wrapper around a single dataset.
-   */
-  public static async loadFromAmbiguousUrl(
-    url: string,
-    options: Partial<{ fetchMethod: typeof fetchWithTimeout; reportWarning: ReportWarningCallback }> = {}
+  private static async loadFromAmbiguousResource(
+    path: string,
+    options: CollectionLoadOptions = {}
   ): Promise<Collection> {
     // TODO: Also handle Nucmorph URLs that are pasted in? If website base URL matches, redirect?
-
-    if (!isUrl(url)) {
-      throw new Error(`Provided resource '${url}' is not a URL and cannot be loaded.`);
-    }
 
     let result: Collection | null = null;
     let collectionLoadError: Error | null = null;
@@ -451,17 +449,17 @@ export default class Collection {
 
     // Try loading as a collection
     try {
-      result = await Collection.loadCollection(url, options);
+      result = await Collection.loadCollection(path, options);
     } catch (e) {
       collectionLoadError = e as Error;
       console.warn(e);
-      console.log("URL resource could not be parsed as a collection; attempting to make a single-database collection.");
+      console.log("Resource could not be parsed as a collection; attempting to make a single-database collection.");
     }
 
     // Could not load as a collection, attempt to load as a dataset.
     if (!result) {
       try {
-        const collection = Collection.makeCollectionFromSingleDataset(url);
+        const collection = Collection.makeCollectionFromSingleDataset(path, options);
         // Attempt to load the default dataset immediately to surface any loading errors.
         const loadResult = await collection.tryLoadDataset(collection.getDefaultDatasetKey());
         if (!loadResult.loaded) {
@@ -474,25 +472,50 @@ export default class Collection {
     }
 
     if (!result) {
-      throw Collection.formatLoadingError(url, collectionLoadError!, datasetLoadError!);
+      throw Collection.formatLoadingError(path, collectionLoadError!, datasetLoadError!);
     }
 
     return result;
   }
 
-  public static async loadCollectionFromFile(
+  /**
+   * Attempt to load an ambiguous URL as either a collection or dataset, and return a new
+   * Collection representing its contents (either the loaded collection or a dummy collection
+   * containing just the dataset).
+   * @param path the URL resource to attempt to load.
+   * @param options optional configuration object containing any of the following properties:
+   *  - `fetchMethod` optional override for the fetch method.
+   *  - `reportWarning` optional callback for reporting warning messages during loading.
+   * @throws an error if `url` is not a URL.
+   * @returns a Promise of a new Collection object, either loaded from a collection JSON file or
+   * generated as a wrapper around a single dataset.
+   */
+  public static async loadFromAmbiguousUrl(
+    url: string,
+    options: Partial<{
+      fetchMethod: typeof fetchWithTimeout;
+      reportWarning: ReportWarningCallback;
+    }> = {}
+  ): Promise<Collection> {
+    if (!isUrl(url)) {
+      throw new Error(`Provided URLs '${url}' is not a URL and cannot be loaded.`);
+    }
+    return Collection.loadFromAmbiguousResource(url, options);
+  }
+
+  public static async loadFromAmbiguousFile(
+    _fileName: string,
     fileMap: Record<string, File>,
     options: Partial<{ reportWarning: ReportWarningCallback }> = {}
   ): Promise<Collection> {
-    const collectionFilePath = DEFAULT_COLLECTION_FILENAME;
     const filePathResolver = new FilePathResolver(fileMap);
+    const collection = await Collection.loadFromAmbiguousResource("", {
+      ...options,
+      pathResolver: filePathResolver,
+    });
 
-    try {
-      return await Collection.loadCollection(collectionFilePath, { pathResolver: filePathResolver, ...options });
-    } catch (e) {
-      console.error(e);
-    }
+    // TODO: Mark collection as being from a local file?
 
-    return await Collection.makeCollectionFromSingleDataset("", filePathResolver);
+    return collection;
   }
 }
