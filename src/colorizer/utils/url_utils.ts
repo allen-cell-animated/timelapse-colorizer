@@ -464,6 +464,31 @@ export function formatPath(input: string): string {
   return input.trim();
 }
 
+/**
+ * Resolves relative paths to absolute URLs using an optional base path.
+ * Also handles resolution for `/allen` paths.
+ */
+export function resolveUrl(baseUrl: string, url: string): string {
+  baseUrl = formatPath(baseUrl);
+  url = formatPath(url);
+
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    return url;
+  } else if (isAllenPath(url)) {
+    const newUrl = convertAllenPathToHttps(url);
+    if (newUrl) {
+      return newUrl;
+    } else {
+      throw new Error(
+        `Error while resolving path: Allen filepath '${url}' was detected but could not be converted to an HTTPS URL.` +
+          ` This may be because the file is in a directory that is not publicly servable.`
+      );
+    }
+  } else {
+    return `${baseUrl}/${url}`;
+  }
+}
+
 export const makeGitHubIssueLink = (title: string, body: string, labels?: string[]): string => {
   const baseUrl = "https://github.com/allen-cell-animated/timelapse-colorizer/issues/new";
   const titleParam = `title=${encodeURIComponent(title)}`;

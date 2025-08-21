@@ -1,4 +1,4 @@
-import { formatPath } from "../utils/url_utils";
+import { formatPath, isAllenPath, isUrl, resolveUrl } from "../utils/url_utils";
 
 import { IPathResolver } from "./IPathResolver";
 
@@ -25,8 +25,15 @@ export class FilePathResolver implements IPathResolver {
     // Remove starting/trailing slashes
     baseUrl = formatPath(baseUrl);
     url = formatPath(url);
+
+    // Check for URL paths and return those directly
+    if (isUrl(url) || isUrl(baseUrl) || isAllenPath(url) || isAllenPath(baseUrl)) {
+      return resolveUrl(baseUrl, url);
+    }
+
     const path = baseUrl !== "" ? baseUrl + "/" + url : url;
 
+    // Return a file URL if the file exists.
     if (!this.files[path]) {
       return null;
     }
