@@ -171,9 +171,14 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
     return loadCollectionData(collection);
   };
 
-  const handleLoadFromFileMap = async (fileMap: Record<string, File>): Promise<LoadedCollectionResult> => {
-    console.log("Loading from file map:", fileMap);
-    const collection = await Collection.loadCollectionFromFile(fileMap, { reportWarning: props.reportWarning });
+  const handleLoadFromZipFile = async (
+    fileName: string,
+    fileMap: Record<string, File>
+  ): Promise<LoadedCollectionResult> => {
+    console.log("Loading from ZIP file:", fileName);
+    const collection = await Collection.loadFromAmbiguousFile(fileName, fileMap, {
+      reportWarning: props.reportWarning,
+    });
     return loadCollectionData(collection);
   };
 
@@ -333,7 +338,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
                 const fileMap = await zipToFileMap(zipFile);
                 console.log(fileMap);
                 setIsLoading(true);
-                handleLoadFromFileMap(fileMap)
+                handleLoadFromZipFile(zipFile.name, fileMap)
                   .then((result) => onCollectionLoaded(...result))
                   .catch((reason) => {
                     // failed
