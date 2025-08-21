@@ -1,4 +1,5 @@
 import { DEFAULT_COLLECTION_FILENAME, DEFAULT_DATASET_FILENAME } from "../constants";
+import { IPathResolver, UrlPathResolver } from "./path_resolvers";
 import { LoadErrorMessage, LoadTroubleshooting, ReportWarningCallback } from "./types";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./utils/analytics";
 import {
@@ -52,6 +53,7 @@ export type DatasetLoadOptions = {
  * information and paths.
  */
 export default class Collection {
+  private pathResolver: IPathResolver;
   private entries: CollectionData;
   public metadata: Partial<CollectionFileMetadata>;
   /**
@@ -67,10 +69,16 @@ export default class Collection {
    * @param url the optional string url representing the source of the Collection. `null` by default.
    * @throws an error if a `path` is not a URL to a JSON resource.
    */
-  constructor(entries: CollectionData, url: string | null = null, metadata: Partial<CollectionFileMetadata> = {}) {
+  constructor(
+    entries: CollectionData,
+    url: string | null = null,
+    metadata: Partial<CollectionFileMetadata> = {},
+    pathResolver?: IPathResolver
+  ) {
     this.entries = entries;
     this.url = url ? Collection.formatAbsoluteCollectionPath(url) : url;
     this.metadata = metadata;
+    this.pathResolver = pathResolver || new UrlPathResolver();
     console.log("Collection metadata: ", this.metadata);
 
     // Check that all entry paths are JSON urls.
@@ -172,7 +180,11 @@ export default class Collection {
     };
 
     try {
-      const dataset = new Dataset(path, options.frameLoader, options.arrayLoader);
+      const dataset = new Dataset(path, {
+        frameLoader: options.frameLoader,
+        arrayLoader: options.arrayLoader,
+        pathResolver: this.pathResolver,
+      });
       await dataset.open({
         onLoadStart,
         onLoadComplete,
