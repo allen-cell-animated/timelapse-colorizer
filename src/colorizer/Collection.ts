@@ -490,10 +490,7 @@ export default class Collection {
    */
   public static async loadFromAmbiguousUrl(
     url: string,
-    options: Partial<{
-      fetchMethod: typeof fetchWithTimeout;
-      reportWarning: ReportWarningCallback;
-    }> = {}
+    options: Omit<CollectionLoadOptions, "pathResolver"> = {}
   ): Promise<Collection> {
     url = formatPath(url);
     if (!isUrl(url)) {
@@ -516,7 +513,7 @@ export default class Collection {
   public static async loadFromAmbiguousFile(
     _fileName: string,
     fileMap: Record<string, File>,
-    options: Partial<{ reportWarning: ReportWarningCallback }> = {}
+    options: Omit<CollectionLoadOptions, "pathResolver"> = {}
   ): Promise<Collection> {
     const filePathResolver = new FilePathResolver(fileMap);
     let collection: Collection;
@@ -529,7 +526,6 @@ export default class Collection {
       filePathResolver.cleanup();
       throw e;
     }
-
     // TODO: Mark collection as being from a local file and save the file name.
     return collection;
   }
