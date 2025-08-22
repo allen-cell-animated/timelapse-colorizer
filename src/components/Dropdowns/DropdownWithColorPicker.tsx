@@ -62,10 +62,11 @@ export default function DropdownWithColorPicker(propsInput: DropdownWithColorPic
         width={"105px"}
       ></SelectionDropdown>
       <WrappedColorPicker
-        // Uses the default 1s transition animation
-        style={{
+        containerStyle={{
           visibility: props.showColorPicker ? "visible" : "hidden",
           opacity: props.showColorPicker ? "1" : "0",
+          // Copied from Ant transition styles
+          transition: "visibility 0s, opacity 0.2s cubic-bezier(0.645, 0.045, 0.355, 1)",
         }}
         size="small"
         disabledAlpha={!showAlpha}
