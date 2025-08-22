@@ -232,9 +232,10 @@ export default class Collection {
 
   private static formatDatasetPath(datasetPath: string): string {
     datasetPath = formatPath(datasetPath);
-    if (!isUrl(datasetPath)) {
-      throw new Error(`Cannot fetch dataset '${datasetPath}' because it is not a URL.`);
-    }
+    // TODO: Conditionally check this based on the type of collection source (file vs. url)
+    // if (!isUrl(datasetPath)) {
+    //   throw new Error(`Cannot fetch dataset '${datasetPath}' because it is not a URL.`);
+    // }
     return isJson(datasetPath) ? datasetPath : Collection.joinPath(datasetPath, DEFAULT_DATASET_FILENAME);
   }
 
@@ -270,7 +271,7 @@ export default class Collection {
     // Dataset is a relative path; strip out the filename from the collection path to get just the directory URL
     collectionUrl = Collection.formatAbsoluteCollectionPath(collectionUrl);
     const collectionDirectory = formatPath(collectionUrl.substring(0, collectionUrl.lastIndexOf("/")));
-    return this.formatDatasetPath(collectionDirectory + "/" + datasetPath);
+    return this.formatDatasetPath(Collection.joinPath(collectionDirectory, datasetPath));
   }
 
   // TODO: Refactor how dummy collections store URLs? The URL should always be a valid resource maybe?
@@ -518,10 +519,16 @@ export default class Collection {
     options: Partial<{ reportWarning: ReportWarningCallback }> = {}
   ): Promise<Collection> {
     const filePathResolver = new FilePathResolver(fileMap);
-    const collection = await Collection.loadFromAmbiguousResource("", {
-      ...options,
-      pathResolver: filePathResolver,
-    });
+    let collection: Collection;
+    try {
+      collection = await Collection.loadFromAmbiguousResource("", {
+        ...options,
+        pathResolver: filePathResolver,
+      });
+    } catch (e) {
+      filePathResolver.cleanup();
+      throw e;
+    }
 
     // TODO: Mark collection as being from a local file and save the file name.
     return collection;
