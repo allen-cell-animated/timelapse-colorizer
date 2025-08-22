@@ -170,6 +170,10 @@ export default class Dataset {
     this.getSegmentationId = this.getSegmentationId.bind(this);
   }
 
+  private resolveManifestPath = (url: string): string | null => {
+    return this.pathResolver.resolve("", url);
+  };
+
   private resolvePath = (url: string): string | null => {
     return this.pathResolver.resolve(this.baseUrl, url);
   };
@@ -510,7 +514,7 @@ export default class Dataset {
 
     const startTime = new Date();
 
-    const resolvedManifestUrl = this.resolvePath(this.manifestUrl)!;
+    const resolvedManifestUrl = this.resolveManifestPath(this.manifestUrl)!;
     const manifest = updateManifestVersion(await options.manifestLoader(resolvedManifestUrl));
 
     this.frameFiles = manifest.frames;
