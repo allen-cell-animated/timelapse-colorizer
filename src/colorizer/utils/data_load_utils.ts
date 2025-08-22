@@ -119,8 +119,12 @@ export async function zipToFileMap(zipFile: File): Promise<Record<string, File>>
   // Handle case where files are all nested one or more layers deep in empty
   // folders by removing the shared prefix. This is very common when zipping
   // folders.
+  const fileKeys = Object.keys(fileMap);
+  if (fileKeys.length === 0) {
+    return {};
+  }
   let prefix = Object.keys(fileMap)[0].split("/").slice(0, -1).join("/");
-  for (const key of Object.keys(fileMap)) {
+  for (const key of fileKeys) {
     if (key.startsWith(prefix)) {
       continue;
     }
