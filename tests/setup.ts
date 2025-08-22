@@ -17,8 +17,6 @@ window.URL.createObjectURL = (_blob: Blob): string => {
 const { getComputedStyle } = window;
 window.getComputedStyle = (elt) => getComputedStyle(elt);
 
-// Fix error where File and createObjectUrl do not exist:
-
 // Mocks the `zustand` package so stores can be reset after each test run
 vi.mock("zustand");
 

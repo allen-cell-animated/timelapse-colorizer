@@ -4,7 +4,6 @@ import { FilePathResolver } from "../../src/colorizer/path_resolvers";
 
 describe("FilePathResolver", () => {
   describe("resolve", () => {
-    // TODO: Mock createObjectURL because it is not available in the test environment
     const exampleResolver = new FilePathResolver({
       "example.txt": new File(["Hello World\n"], "example.txt"),
       "dir/example.txt": new File(["Hello from a directory\n"], "dir/example.txt"),
