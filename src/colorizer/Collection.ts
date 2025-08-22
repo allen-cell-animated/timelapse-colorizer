@@ -332,7 +332,12 @@ export default class Collection {
     let response;
     try {
       const fetchMethod = options.fetchMethod ?? fetchWithTimeout;
-      const collectionPath = pathResolver.resolve("", absoluteCollectionUrl)!;
+      const collectionPath = pathResolver.resolve("", absoluteCollectionUrl);
+      if (!collectionPath) {
+        throw new Error(
+          `Could not resolve collection path for ${absoluteCollectionUrl}. ${LoadTroubleshooting.CHECK_FILE_EXISTS}`
+        );
+      }
       response = await fetchMethod(collectionPath, DEFAULT_FETCH_TIMEOUT_MS);
     } catch (e) {
       throw new Error(LoadErrorMessage.UNREACHABLE_COLLECTION + " " + LoadTroubleshooting.CHECK_NETWORK);
