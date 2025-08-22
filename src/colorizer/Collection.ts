@@ -215,6 +215,11 @@ export default class Collection {
     }
   }
 
+  public dispose(): void {
+    this.entries.clear();
+    this.pathResolver.cleanup();
+  }
+
   // ===================================================================================
   // Helper Methods
 
@@ -445,7 +450,7 @@ export default class Collection {
     } catch (e) {
       collectionLoadError = e as Error;
       console.warn(e);
-      console.log("Resource could not be parsed as a collection; attempting to make a single-database collection.");
+      console.log("Resource could not be parsed as a collection; attempting to make a single-dataset collection.");
     }
 
     // Could not load as a collection, attempt to load as a dataset.
