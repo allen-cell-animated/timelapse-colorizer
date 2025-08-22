@@ -514,7 +514,10 @@ export default class Dataset {
 
     const startTime = new Date();
 
-    const resolvedManifestUrl = this.resolveManifestPath(this.manifestUrl)!;
+    const resolvedManifestUrl = this.resolveManifestPath(this.manifestUrl);
+    if (resolvedManifestUrl === null) {
+      throw new Error(`Failed to resolve path for dataset manifest '${this.manifestUrl}'. Does the file exist?`);
+    }
     const manifest = updateManifestVersion(await options.manifestLoader(resolvedManifestUrl));
 
     this.frameFiles = manifest.frames;
