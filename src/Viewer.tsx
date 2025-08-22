@@ -488,8 +488,11 @@ function Viewer(): ReactElement {
     (newCollection: Collection, newDatasetKey: string, newDataset: Dataset): void => {
       setCollection(newCollection);
       replaceDataset(newDataset, newDatasetKey);
+      if (newCollection !== collection && collection !== null) {
+        collection.dispose();
+      }
     },
-    [replaceDataset]
+    [replaceDataset, collection]
   );
 
   // SCRUBBING CONTROLS ////////////////////////////////////////////////////
