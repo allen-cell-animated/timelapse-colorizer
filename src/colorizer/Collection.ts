@@ -426,12 +426,15 @@ export default class Collection {
     }
   }
 
+  /**
+   * Attempts to load a collection or dataset from the given file or directory,
+   * with preference for collections.
+   * @throws an error if the path could not be read as a collection or dataset.
+   */
   private static async loadFromAmbiguousResource(
     path: string,
     options: CollectionLoadOptions = {}
   ): Promise<Collection> {
-    // TODO: Also handle Nucmorph URLs that are pasted in? If website base URL matches, redirect?
-
     let result: Collection | null = null;
     let collectionLoadError: Error | null = null;
     let datasetLoadError: Error | null = null;
@@ -486,12 +489,24 @@ export default class Collection {
       reportWarning: ReportWarningCallback;
     }> = {}
   ): Promise<Collection> {
+    url = formatPath(url);
     if (!isUrl(url)) {
       throw new Error(`Provided URLs '${url}' is not a URL and cannot be loaded.`);
     }
     return Collection.loadFromAmbiguousResource(url, options);
   }
 
+  /**
+   * Attempts to load a collection from a directory structure.
+   * @param fileName The name of the file that was loaded.
+   * @param fileMap A map of relative paths to a File object.
+   * @param options Optional configuration object containing the following
+   * properties:
+   *   - `reportWarning`: A callback function for reporting warnings about
+   *     malformed data.
+   * @returns A Promise of a new Collection object, either loaded from a
+   * collection JSON file or generated as a wrapper around a single dataset.
+   */
   public static async loadFromAmbiguousFile(
     _fileName: string,
     fileMap: Record<string, File>,
@@ -503,8 +518,7 @@ export default class Collection {
       pathResolver: filePathResolver,
     });
 
-    // TODO: Mark collection as being from a local file?
-
+    // TODO: Mark collection as being from a local file and save the file name.
     return collection;
   }
 }
