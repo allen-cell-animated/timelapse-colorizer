@@ -89,6 +89,13 @@ export async function loadFromParquetUrl<T extends FeatureDataType>(url: string,
   return { data, min: dataMin, max: dataMax };
 }
 
+/**
+ * Parses a ZIP file into a map of file paths to their contents. If files are nested
+ * inside one or more levels of empty directories, those directories will be stripped
+ * from the file paths.
+ * @param zipFile A ZIP file object.
+ * @returns A Promise that resolves to a map of file paths to a File object.
+ */
 export async function zipToFileMap(zipFile: File): Promise<Record<string, File>> {
   const zip = await JSZip.loadAsync(zipFile);
 
@@ -112,19 +119,23 @@ export async function zipToFileMap(zipFile: File): Promise<Record<string, File>>
   // Handle case where files are all nested one or more layers deep in empty
   // folders by removing the shared prefix. This is very common when zipping
   // folders.
-  let prefix = Object.keys(fileMap)[0];
+  let prefix = Object.keys(fileMap)[0].split("/").slice(0, -1).join("/");
   for (const key of Object.keys(fileMap)) {
     if (key.startsWith(prefix)) {
       continue;
     }
     // Find the longest common prefix
+    const prefixDirectories = prefix.split("/");
+    const keyDirectories = key.split("/");
     let i = 0;
-    while (i < prefix.length && i < key.length && prefix[i] === key[i]) {
+    while (i < prefixDirectories.length && i < keyDirectories.length && prefixDirectories[i] === keyDirectories[i]) {
       i++;
     }
-    prefix = prefix.slice(0, i);
+    prefix = prefixDirectories.slice(0, i).join("/");
   }
-  console.log("Prefix:", prefix);
+  if (prefix !== "") {
+    prefix += "/"; // Include final directory slash
+  }
 
   // Remove prefix from the start of all paths
   const trimmedFileMap: Record<string, File> = {};
