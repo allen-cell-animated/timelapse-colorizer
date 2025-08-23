@@ -34,6 +34,28 @@ export type DatasetLoadResult =
       dataset: Dataset;
     };
 
+export const enum CollectionSourceType {
+  URL,
+  ZIP_FILE,
+}
+
+export type CollectionConfig = {
+  /**
+   * Source path of the collection file, if one was used to load this
+   * Collection. This can be a URL or a file path. `null` if there was no source
+   * collection file, and the collection was an auto-generated wrapper around a
+   * dataset.
+   */
+  sourcePath?: string | null;
+  /**
+   * Filename that was used to load this Collection.
+   */
+  sourceFilename?: string | null;
+  /** The type of Collection source. This can be an uploaded ZIP file or a URL. */
+  sourceType?: CollectionSourceType;
+  pathResolver?: IPathResolver;
+};
+
 export type CollectionLoadOptions = {
   pathResolver?: IPathResolver;
   fetchMethod?: typeof fetchWithTimeout;
@@ -58,40 +80,44 @@ export default class Collection {
   private entries: CollectionData;
   public metadata: Partial<CollectionFileMetadata>;
   /**
-   * The URL this Collection was loaded from. `null` if this Collection is a placeholder object,
+   * The path this Collection was loaded from. `null` if this Collection is a placeholder object,
    * such as when generating dummy Collections for single datasets.
    */
-  public readonly url: string | null;
+  public readonly sourcePath: string | null;
+  /** Optional. Name of the file used to open this Collection, if loaded from a file source.*/
+  public readonly sourceFilename: string | null;
+  public readonly sourceType: CollectionSourceType;
 
   /**
    * Constructs a new Collection from a CollectionData map.
    * @param entries A map from string keys to CollectionEntry objects. The `path` of all
    * entries MUST be the absolute path to the manifest JSON file of the dataset.
-   * @param url the optional string url representing the source of the Collection. `null` by default.
+   * @param source the optional string url representing the source of the Collection. `null` by default.
    * @throws an error if a `path` is not a URL to a JSON resource.
    */
   constructor(
     entries: CollectionData,
-    url: string | null = null,
-    metadata: Partial<CollectionFileMetadata> = {},
-    pathResolver?: IPathResolver
+    config: Partial<CollectionConfig> = {},
+    metadata: Partial<CollectionFileMetadata> = {}
   ) {
     this.entries = entries;
-    this.pathResolver = pathResolver || new UrlPathResolver();
-    this.url = url ? this.pathResolver.resolve("", Collection.formatAbsoluteCollectionPath(url)) : url;
+    this.pathResolver = config.pathResolver || new UrlPathResolver();
+    this.sourcePath = config.sourcePath
+      ? this.pathResolver.resolve("", Collection.formatAbsoluteCollectionPath(config.sourcePath))
+      : null;
+    this.sourceType = config.sourceType || CollectionSourceType.URL;
+    this.sourceFilename = config.sourceFilename ?? null;
     this.metadata = metadata;
     console.log("Collection metadata: ", this.metadata);
 
-    // Check that all entry paths are JSON urls.
+    // Check that all entry paths are JSONs.
     this.entries.forEach((value, key) => {
       if (!isJson(value.path)) {
         throw new Error(
           `Expected dataset '${key}' to have an absolute JSON path; collection was provided path '${value.path}'.`
         );
       }
-      // TODO: Replace this with a declared type (file vs. URL) that is passed
-      // in when a Collection is created.
-      if (this.pathResolver instanceof UrlPathResolver) {
+      if (this.sourceType === CollectionSourceType.URL) {
         if (!isUrl(value.path)) {
           throw new Error(
             `Expected dataset '${key}' to have a URL path; collection was provided path '${value.path}'.`
@@ -274,15 +300,17 @@ export default class Collection {
     return this.formatDatasetPath(Collection.joinPath(collectionDirectory, datasetPath));
   }
 
-  // TODO: Refactor how dummy collections store URLs? The URL should always be a valid resource maybe?
   /**
    * Returns a URL to the collection or dataset.
    */
-  public getUrl(): string {
-    if (this.url === null) {
+  public getUrl(): string | null {
+    if (this.sourceType === CollectionSourceType.ZIP_FILE) {
+      return null;
+    }
+    if (this.sourcePath === null) {
       return this.entries.get(this.getDefaultDatasetKey())!.path;
     }
-    return this.url;
+    return this.sourcePath;
   }
 
   // ===================================================================================
@@ -324,20 +352,21 @@ export default class Collection {
    */
   public static async loadCollection(
     collectionParam: string,
-    options: CollectionLoadOptions = {}
+    options: CollectionLoadOptions = {},
+    config: CollectionConfig = {}
   ): Promise<Collection> {
     const absoluteCollectionUrl = Collection.formatAbsoluteCollectionPath(collectionParam);
     const pathResolver = options.pathResolver || new UrlPathResolver();
 
     let response;
-    try {
-      const fetchMethod = options.fetchMethod ?? fetchWithTimeout;
-      const collectionPath = pathResolver.resolve("", absoluteCollectionUrl);
-      if (!collectionPath) {
-        throw new Error(
-          `Could not resolve collection path for ${absoluteCollectionUrl}. ${LoadTroubleshooting.CHECK_FILE_EXISTS}`
-        );
+    const fetchMethod = options.fetchMethod ?? fetchWithTimeout;
+    const collectionPath = pathResolver.resolve("", absoluteCollectionUrl)!;
+    if (collectionPath === null) {
+      if (config?.sourceType === CollectionSourceType.ZIP_FILE) {
+        throw new Error("Expected 'collection.json' file could not be found. " + LoadTroubleshooting.CHECK_ZIP_FORMAT);
       }
+    }
+    try {
       response = await fetchMethod(collectionPath, DEFAULT_FETCH_TIMEOUT_MS);
     } catch (e) {
       throw new Error(LoadErrorMessage.UNREACHABLE_COLLECTION + " " + LoadTroubleshooting.CHECK_NETWORK);
@@ -378,33 +407,46 @@ export default class Collection {
       collectionData.set(key, newEntry);
     });
 
-    return new Collection(collectionData, absoluteCollectionUrl, collection.metadata, pathResolver);
+    return new Collection(
+      collectionData,
+      {
+        ...config,
+        sourcePath: absoluteCollectionUrl,
+      },
+      collection.metadata
+    );
   }
 
   /**
    * Generates a dummy collection for a single URL collection.
    * @param datasetUrl The URL of the dataset.
    * @returns a new Collection, where the only dataset is that of the provided `datasetUrl`.
-   * The `url` field of the Collection will also be set to `null`.
+   * The `sourcePath` field of the Collection will also be set to `null`.
    */
-  public static makeCollectionFromSingleDataset(datasetUrl: string, options: CollectionLoadOptions = {}): Collection {
+  public static makeCollectionFromSingleDataset(datasetUrl: string, config: CollectionConfig = {}): Collection {
     // Add the default filename if the url is not a .JSON path.
     if (!isJson(datasetUrl)) {
       datasetUrl = Collection.joinPath(formatPath(datasetUrl), DEFAULT_DATASET_FILENAME);
     }
     const collectionData: CollectionData = new Map([[datasetUrl, { path: datasetUrl, name: datasetUrl }]]);
 
-    return new Collection(collectionData, null, {}, options.pathResolver);
+    return new Collection(collectionData, { ...config, sourcePath: null });
   }
 
   /**
    * Merges and formats error messages from a failed collection and dataset load.
    */
-  private static formatLoadingError(url: string, collectionLoadError: Error, datasetLoadError: Error): Error {
-    if (url.endsWith(DEFAULT_COLLECTION_FILENAME)) {
+  private static formatLoadingError(
+    path: string,
+    type: CollectionSourceType,
+    collectionLoadError: Error,
+    datasetLoadError: Error
+  ): Error {
+    const typeName = type === CollectionSourceType.ZIP_FILE ? "ZIP file" : "URL";
+    if (path.endsWith(DEFAULT_COLLECTION_FILENAME)) {
       // Assume that this was a collection because the URL ended with "collection.json."
       return collectionLoadError;
-    } else if (url.endsWith(DEFAULT_DATASET_FILENAME)) {
+    } else if (path.endsWith(DEFAULT_DATASET_FILENAME)) {
       // Assume that this was a dataset because the URL ended with "dataset.json."
       return datasetLoadError;
     } else if (
@@ -421,7 +463,11 @@ export default class Collection {
       return new Error(LoadErrorMessage.BOTH_404);
     } else {
       // Format and return a message containing both errors.
-      console.error(`URL '${url}' could not be loaded as a collection or dataset.`);
+      console.error(
+        `${
+          type === CollectionSourceType.URL ? `URL '${path}'` : `ZIP file`
+        } could not be loaded as a collection or dataset.`
+      );
       const collectionMessage =
         uncapitalizeFirstLetter(collectionLoadError?.message) ||
         "(no error message provided; this is likely a bug and should be reported)";
@@ -430,7 +476,7 @@ export default class Collection {
         "(no error message provided; this is likely a bug and should be reported)";
 
       return new Error(
-        `Could not load the provided URL as either a collection or a dataset.
+        `Could not load the provided ${typeName} as either a collection or a dataset.
         \n- If this is a collection, ${collectionMessage}
         \n- If this is a dataset, ${datasetMessage}`
       );
@@ -444,7 +490,8 @@ export default class Collection {
    */
   private static async loadFromAmbiguousResource(
     path: string,
-    options: CollectionLoadOptions = {}
+    options: CollectionLoadOptions = {},
+    config: CollectionConfig = {}
   ): Promise<Collection> {
     let result: Collection | null = null;
     let collectionLoadError: Error | null = null;
@@ -475,7 +522,12 @@ export default class Collection {
     }
 
     if (!result) {
-      throw Collection.formatLoadingError(path, collectionLoadError!, datasetLoadError!);
+      throw Collection.formatLoadingError(
+        path,
+        config?.sourceType ?? CollectionSourceType.URL,
+        collectionLoadError!,
+        datasetLoadError!
+      );
     }
 
     return result;
@@ -501,7 +553,15 @@ export default class Collection {
     if (!isUrl(url)) {
       throw new Error(`Provided URLs '${url}' is not a URL and cannot be loaded.`);
     }
-    return Collection.loadFromAmbiguousResource(url, options);
+    const loadOptions = {
+      ...options,
+      pathResolver: new UrlPathResolver(),
+    };
+    const config = {
+      sourceType: CollectionSourceType.URL,
+      pathResolver: new UrlPathResolver(),
+    };
+    return Collection.loadFromAmbiguousResource(url, loadOptions, config);
   }
 
   /**
@@ -516,17 +576,23 @@ export default class Collection {
    * collection JSON file or generated as a wrapper around a single dataset.
    */
   public static async loadFromAmbiguousFile(
-    _fileName: string,
+    fileName: string,
     fileMap: Record<string, File>,
     options: Omit<CollectionLoadOptions, "pathResolver"> = {}
   ): Promise<Collection> {
     const filePathResolver = new FilePathResolver(fileMap);
     let collection: Collection;
     try {
-      collection = await Collection.loadFromAmbiguousResource("", {
+      const loadOptions = {
         ...options,
         pathResolver: filePathResolver,
-      });
+      };
+      const config = {
+        sourceFilename: fileName,
+        sourceType: CollectionSourceType.ZIP_FILE,
+        pathResolver: filePathResolver,
+      };
+      collection = await Collection.loadFromAmbiguousResource("", loadOptions, config);
     } catch (e) {
       filePathResolver.cleanup();
       throw e;

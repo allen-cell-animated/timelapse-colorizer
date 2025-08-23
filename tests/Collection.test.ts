@@ -174,7 +174,7 @@ describe("Collection", () => {
       const datasetPath = "http://website.com/data/some-manifest.json";
       const collection = await Collection.makeCollectionFromSingleDataset(datasetPath);
 
-      expect(collection.url).to.be.null;
+      expect(collection.sourcePath).to.be.null;
     });
   });
 });

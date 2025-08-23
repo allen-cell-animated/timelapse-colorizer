@@ -164,7 +164,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
       }
     }
 
-    const resourceUrl = newCollection.url || newCollection.getDefaultDatasetKey();
+    const resourceUrl = newCollection.sourcePath || newCollection.getDefaultDatasetKey();
     return [resourceUrl, newCollection, loadResult.dataset];
   };
 
