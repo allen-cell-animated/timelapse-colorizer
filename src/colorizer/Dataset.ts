@@ -516,7 +516,7 @@ export default class Dataset {
 
     const resolvedManifestUrl = this.resolveManifestPath(this.manifestUrl);
     if (resolvedManifestUrl === null) {
-      throw new Error(`Failed to resolve path for dataset manifest '${this.manifestUrl}'. Does the file exist?`);
+      throw new Error(`No '${this.manifestUrl}' was found. ${LoadTroubleshooting.CHECK_ZIP_FORMAT}`);
     }
     const manifest = updateManifestVersion(await options.manifestLoader(resolvedManifestUrl));
 
