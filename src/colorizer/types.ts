@@ -319,6 +319,7 @@ export enum LoadTroubleshooting {
     " Please check your network access.",
   CHECK_FILE_EXISTS = "Please check if the file exists and if you have access to it, or see the developer console for more details.",
   CHECK_FILE_OR_NETWORK = "This may be because of an unsupported format, missing files, or server and network issues. Please see the developer console for more details.",
+  CHECK_ZIP_FORMAT = "Make sure a 'collection.json' or 'manifest.json' file exists in the root directory of the ZIP file.",
 }
 
 export enum LoadErrorMessage {
