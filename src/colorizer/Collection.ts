@@ -363,7 +363,7 @@ export default class Collection {
     const collectionPath = pathResolver.resolve("", absoluteCollectionUrl)!;
     if (collectionPath === null) {
       if (config?.sourceType === CollectionSourceType.ZIP_FILE) {
-        throw new Error("Expected 'collection.json' file could not be found. " + LoadTroubleshooting.CHECK_ZIP_FORMAT);
+        throw new Error("No 'collection.json' was found. " + LoadTroubleshooting.CHECK_ZIP_FORMAT);
       }
     }
     try {
@@ -461,6 +461,11 @@ export default class Collection {
       datasetLoadError.message.includes("404 (Not Found)")
     ) {
       return new Error(LoadErrorMessage.BOTH_404);
+    } else if (
+      collectionLoadError.message.includes(LoadTroubleshooting.CHECK_ZIP_FORMAT) &&
+      datasetLoadError.message.includes(LoadTroubleshooting.CHECK_ZIP_FORMAT)
+    ) {
+      return new Error(LoadErrorMessage.ZIP_BOTH_UNREACHABLE + " " + LoadTroubleshooting.CHECK_ZIP_FORMAT);
     } else {
       // Format and return a message containing both errors.
       console.error(
@@ -499,7 +504,7 @@ export default class Collection {
 
     // Try loading as a collection
     try {
-      result = await Collection.loadCollection(path, options);
+      result = await Collection.loadCollection(path, options, config);
     } catch (e) {
       collectionLoadError = e as Error;
       console.warn(e);
@@ -509,7 +514,7 @@ export default class Collection {
     // Could not load as a collection, attempt to load as a dataset.
     if (!result) {
       try {
-        const collection = Collection.makeCollectionFromSingleDataset(path, options);
+        const collection = Collection.makeCollectionFromSingleDataset(path, config);
         // Attempt to load the default dataset immediately to surface any loading errors.
         const loadResult = await collection.tryLoadDataset(collection.getDefaultDatasetKey());
         if (!loadResult.loaded) {
