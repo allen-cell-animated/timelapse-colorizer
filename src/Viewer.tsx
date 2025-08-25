@@ -140,6 +140,8 @@ function Viewer(): ReactElement {
   const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
   const setScatterXAxis = useViewerStateStore((state) => state.setScatterXAxis);
   const setScatterYAxis = useViewerStateStore((state) => state.setScatterYAxis);
+  const setSourceFilename = useViewerStateStore((state) => state.setSourceFilename);
+  const sourceFilename = useViewerStateStore((state) => state.sourceFilename);
   const timeControls = useViewerStateStore((state) => state.timeControls);
 
   const isFeatureSelected = dataset !== null && featureKey !== null;
@@ -150,6 +152,8 @@ function Viewer(): ReactElement {
   const [, addRecentCollection] = useRecentCollections();
   const annotationState = useAnnotations();
 
+  const fileLoadPromiseResolveRef = useRef<((collection: Collection) => void) | null>(null);
+  const [showFileLoadModal, setShowFileLoadModal] = useState(false);
   const [isInitialDatasetLoaded, setIsInitialDatasetLoaded] = useState(false);
   const [isDatasetLoading, setIsDatasetLoading] = useState(false);
   const [datasetLoadProgress, setDatasetLoadProgress] = useState<number | null>(null);
@@ -356,6 +360,24 @@ function Viewer(): ReactElement {
     });
   }, [showAlert]);
 
+  const showFileLoadPrompt = useCallback(
+    async (filename: string): Promise<Collection> => {
+      setSourceFilename(filename);
+      setShowFileLoadModal(true);
+      let resolveCallback: (collection: Collection) => void;
+      const collectionPromise = new Promise<Collection>((resolve, _reject) => {
+        resolveCallback = resolve;
+      });
+      fileLoadPromiseResolveRef.current = resolveCallback!;
+      return collectionPromise;
+    },
+    [setSourceFilename, setShowFileLoadModal]
+  );
+
+  const onLoadedFileCollection = useCallback((collection: Collection) => {
+    fileLoadPromiseResolveRef.current?.(collection);
+  }, []);
+
   /**
    * Replaces the current dataset with another loaded dataset. Handles cleanup and state changes.
    * @param newDataset the new Dataset to replace the existing with. If null, does nothing.
@@ -419,6 +441,7 @@ function Viewer(): ReactElement {
         reportWarning: showDatasetLoadWarning,
         reportLoadError: showDatasetLoadError,
         reportMissingDataset: showMissingDatasetAlert,
+        promptForFileLoad: showFileLoadPrompt,
       });
 
       if (!result) {
@@ -450,7 +473,7 @@ function Viewer(): ReactElement {
       return;
     };
     loadInitialDataset();
-  }, []);
+  }, [showFileLoadPrompt]);
 
   // DISPLAY CONTROLS //////////////////////////////////////////////////////
   const handleDatasetChange = useCallback(

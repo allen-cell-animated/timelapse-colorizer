@@ -21,11 +21,12 @@ import { formatNumber } from "./math_utils";
 
 export const URL_COLOR_RAMP_REVERSED_SUFFIX = "!";
 export enum UrlParam {
-  TRACK = "track",
+  COLLECTION = "collection",
   DATASET = "dataset",
+  SOURCE_FILENAME = "file",
+  TRACK = "track",
   FEATURE = "feature",
   TIME = "t",
-  COLLECTION = "collection",
   THRESHOLDS = "filters",
   RANGE = "range",
   COLOR_RAMP = "color",
