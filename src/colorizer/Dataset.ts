@@ -516,7 +516,11 @@ export default class Dataset {
 
     const resolvedManifestUrl = this.resolveManifestPath(this.manifestUrl);
     if (resolvedManifestUrl === null) {
-      throw new Error(`Failed to resolve path for dataset manifest '${this.manifestUrl}'. Does the file exist?`);
+      // TODO: Currently, only the FilePathResolver (used for ZIP files) can
+      // return `null` when resolving paths, which indicates that a file does
+      // not exist. If support for loading from other sources (local folders,
+      // etc.) is added, Dataset will need to store metadata about the source.
+      throw new Error(`No '${this.manifestUrl}' was found. ${LoadTroubleshooting.CHECK_ZIP_FORMAT_MANIFEST}`);
     }
     const manifest = updateManifestVersion(await options.manifestLoader(resolvedManifestUrl));
 
