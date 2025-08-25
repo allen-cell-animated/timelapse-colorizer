@@ -516,7 +516,7 @@ export default class Dataset {
 
     const resolvedManifestUrl = this.resolveManifestPath(this.manifestUrl);
     if (resolvedManifestUrl === null) {
-      throw new Error(`No '${this.manifestUrl}' was found. ${LoadTroubleshooting.CHECK_ZIP_FORMAT}`);
+      throw new Error(`No '${this.manifestUrl}' was found. ${LoadTroubleshooting.CHECK_ZIP_FORMAT_MANIFEST}`);
     }
     const manifest = updateManifestVersion(await options.manifestLoader(resolvedManifestUrl));
 
