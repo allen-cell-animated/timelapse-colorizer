@@ -171,7 +171,10 @@ describe("Dataset", () => {
             feature1: { type: "categorical" },
           },
         };
-        const dataset = new Dataset(DEFAULT_DATASET_PATH, new MockFrameLoader(), new MockArrayLoader());
+        const dataset = new Dataset(DEFAULT_DATASET_PATH, {
+          frameLoader: new MockFrameLoader(),
+          arrayLoader: new MockArrayLoader(),
+        });
         const mockFetch = makeMockAsyncLoader(DEFAULT_DATASET_PATH, badManifest);
         await expect(dataset.open({ manifestLoader: mockFetch })).rejects.toThrowError(ANY_ERROR);
       });
@@ -190,7 +193,10 @@ describe("Dataset", () => {
             },
           },
         };
-        const dataset = new Dataset(DEFAULT_DATASET_PATH, new MockFrameLoader(), new MockArrayLoader());
+        const dataset = new Dataset(DEFAULT_DATASET_PATH, {
+          frameLoader: new MockFrameLoader(),
+          arrayLoader: new MockArrayLoader(),
+        });
         const mockFetch = makeMockAsyncLoader(DEFAULT_DATASET_PATH, badManifest);
         await expect(dataset.open({ manifestLoader: mockFetch })).rejects.toThrowError(ANY_ERROR);
       });
@@ -208,7 +214,10 @@ describe("Dataset", () => {
         ];
 
         for (const [width, height] of dimensionTests) {
-          const dataset = new Dataset(DEFAULT_DATASET_PATH, new MockFrameLoader(width, height), new MockArrayLoader());
+          const dataset = new Dataset(DEFAULT_DATASET_PATH, {
+            frameLoader: new MockFrameLoader(width, height),
+            arrayLoader: new MockArrayLoader(),
+          });
           expect(dataset.frameResolution).to.deep.equal(new Vector2(1, 1));
           await dataset.open({ manifestLoader: mockFetch });
           expect(dataset.frameResolution).to.deep.equal(new Vector2(width, height));
