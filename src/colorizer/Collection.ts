@@ -396,7 +396,6 @@ export default class Collection {
     const pathResolver = options.pathResolver || new UrlPathResolver();
 
     let response;
-    const fetchMethod = options.fetchMethod ?? fetchWithTimeout;
     const collectionPath = pathResolver.resolve("", absoluteCollectionUrl);
     if (collectionPath === null) {
       if (config?.sourceType === CollectionSourceType.ZIP_FILE) {
@@ -408,6 +407,7 @@ export default class Collection {
       }
     }
     try {
+      const fetchMethod = options.fetchMethod ?? fetchWithTimeout;
       response = await fetchMethod(collectionPath, DEFAULT_FETCH_TIMEOUT_MS);
     } catch (e) {
       throw new Error(LoadErrorMessage.UNREACHABLE_COLLECTION + " " + LoadTroubleshooting.CHECK_NETWORK);
@@ -600,13 +600,14 @@ export default class Collection {
     if (!isUrl(url)) {
       throw new Error(`Provided URLs '${url}' is not a URL and cannot be loaded.`);
     }
+    const urlResolver = new UrlPathResolver();
     const loadOptions = {
       ...options,
-      pathResolver: new UrlPathResolver(),
+      pathResolver: urlResolver,
     };
     const config = {
       sourceType: CollectionSourceType.URL,
-      pathResolver: new UrlPathResolver(),
+      pathResolver: urlResolver,
     };
     return Collection.loadFromAmbiguousResource(url, loadOptions, config);
   }
