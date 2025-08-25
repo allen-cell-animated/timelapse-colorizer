@@ -428,10 +428,14 @@ function Viewer(): ReactElement {
 
       const { collection: newCollection, dataset: newDataset, datasetKey: newDatasetKey } = result;
       setCollection(newCollection);
+
+      // Collection URL will be `null` if the dataset was loaded from a local
+      // ZIP file.
       const collectionUrl = newCollection.getUrl();
       if (collectionUrl !== null) {
         addRecentCollection({ url: collectionUrl });
       }
+
       await replaceDataset(newDataset, newDatasetKey);
       setIsInitialDatasetLoaded(true);
       setIsDatasetLoading(false);

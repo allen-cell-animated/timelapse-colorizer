@@ -39,22 +39,41 @@ export const enum CollectionSourceType {
   ZIP_FILE,
 }
 
+/**
+ * Optional configuration for the Collection, including options for how paths should be
+ * resolved and metadata about the collection source.
+ */
 export type CollectionConfig = {
   /**
    * Source path of the collection file, if one was used to load this
    * Collection. This can be a URL or a file path. `null` if there was no source
    * collection file, and the collection was an auto-generated wrapper around a
    * dataset.
+   *
+   * When loaded from a local collection file, this should be `collection.json`.
    */
   sourcePath?: string | null;
   /**
-   * Filename that was used to load this Collection.
+   * Name of the file that the Collection was loaded from, if loaded from a file
+   * source instead of a URL.
+   *
+   * For example, a ZIP file `MyCollection.zip` containing a `collection.json`
+   * at the root directory should have:
+   * - `sourceFilename` set to `MyCollection.zip`
+   * - `sourcePath` set to `collection.json`.
    */
   sourceFilename?: string | null;
   /** The type of Collection source. This can be an uploaded ZIP file or a URL. */
   sourceType?: CollectionSourceType;
   pathResolver?: IPathResolver;
 };
+
+const makeDefaultCollectionConfig = (): Required<CollectionConfig> => ({
+  sourcePath: null,
+  sourceFilename: null,
+  sourceType: CollectionSourceType.URL,
+  pathResolver: new UrlPathResolver(),
+});
 
 export type CollectionLoadOptions = {
   pathResolver?: IPathResolver;
@@ -84,16 +103,25 @@ export default class Collection {
    * such as when generating dummy Collections for single datasets.
    */
   public readonly sourcePath: string | null;
-  /** Optional. Name of the file used to open this Collection, if loaded from a file source.*/
+  /**
+   * Name of the file containing this Collection, if loaded from a
+   * file source.
+   */
   public readonly sourceFilename: string | null;
   public readonly sourceType: CollectionSourceType;
 
   /**
    * Constructs a new Collection from a CollectionData map.
-   * @param entries A map from string keys to CollectionEntry objects. The `path` of all
-   * entries MUST be the absolute path to the manifest JSON file of the dataset.
-   * @param source the optional string url representing the source of the Collection. `null` by default.
-   * @throws an error if a `path` is not a URL to a JSON resource.
+   * @param entries A map from string keys to CollectionEntry objects. The
+   * `path` of all entries MUST be the absolute path to the manifest JSON file
+   * of the dataset.
+   * @param config Optional configuration for the Collection, including path
+   * resolution and metadata about the collection source. By default, the source
+   * will be assumed to be from a URL.
+   * @param metadata Optional metadata, as loaded from a collection JSON
+   * manifest.
+   * @throws an error if any `path` in `entries` is not a valid path to a JSON
+   * resource.
    */
   constructor(
     entries: CollectionData,
@@ -101,12 +129,15 @@ export default class Collection {
     metadata: Partial<CollectionFileMetadata> = {}
   ) {
     this.entries = entries;
-    this.pathResolver = config.pathResolver || new UrlPathResolver();
+
+    const defaultConfig = makeDefaultCollectionConfig();
+    this.pathResolver = config.pathResolver ?? defaultConfig.pathResolver;
     this.sourcePath = config.sourcePath
       ? this.pathResolver.resolve("", Collection.formatAbsoluteCollectionPath(config.sourcePath))
-      : null;
-    this.sourceType = config.sourceType || CollectionSourceType.URL;
-    this.sourceFilename = config.sourceFilename ?? null;
+      : defaultConfig.sourcePath;
+    this.sourceType = config.sourceType ?? defaultConfig.sourceType;
+    this.sourceFilename = config.sourceFilename ?? defaultConfig.sourceFilename;
+
     this.metadata = metadata;
     console.log("Collection metadata: ", this.metadata);
 
@@ -342,12 +373,18 @@ export default class Collection {
 
   /**
    * Asynchronously loads a Collection object from the provided URL.
-   * @param collectionParam The URL of the resource. This can either be a direct path to
-   * collection JSON file or the path of a directory containing `collection.json`.
-   * @param options Optional configuration, containing any of the following properties:
-   * - `fetchMethod` optional override for the fetch method, used to retrieve the URL.
-   * - `reportWarning` optional callback for reporting warning messages during loading.
-   * @throws Error if the JSON could not be retrieved or is an unrecognized format.
+   * @param collectionParam The URL of the resource. This can either be a direct
+   * path to collection JSON file or the path of a directory containing
+   * `collection.json`.
+   * @param options Optional configuration, containing any of the following
+   * properties:
+   * - `fetchMethod` optional override for the fetch method, used to retrieve
+   *   the URL.
+   * - `reportWarning` optional callback for reporting warning messages during
+   *   loading.
+   * @param config Optional configuration for the Collection constructor.
+   * @throws Error if the JSON could not be retrieved or is an unrecognized
+   * format.
    * @returns A new Collection object containing the retrieved data.
    */
   public static async loadCollection(
@@ -360,10 +397,14 @@ export default class Collection {
 
     let response;
     const fetchMethod = options.fetchMethod ?? fetchWithTimeout;
-    const collectionPath = pathResolver.resolve("", absoluteCollectionUrl)!;
+    const collectionPath = pathResolver.resolve("", absoluteCollectionUrl);
     if (collectionPath === null) {
       if (config?.sourceType === CollectionSourceType.ZIP_FILE) {
         throw new Error("No 'collection.json' was found. " + LoadTroubleshooting.CHECK_ZIP_FORMAT_COLLECTION);
+      } else {
+        throw new Error(
+          `Could not resolve path '${absoluteCollectionUrl}' to a URL. This is likely a bug; please report the issue from the Help menu.`
+        );
       }
     }
     try {
@@ -420,6 +461,7 @@ export default class Collection {
   /**
    * Generates a dummy collection for a single URL collection.
    * @param datasetUrl The URL of the dataset.
+   * @param config the configuration object that will be passed to the Collection constructor.
    * @returns a new Collection, where the only dataset is that of the provided `datasetUrl`.
    * The `sourcePath` field of the Collection will also be set to `null`.
    */

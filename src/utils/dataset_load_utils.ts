@@ -56,7 +56,12 @@ const loadCollectionFromParams = async (
   } else if (datasetParam !== null && isUrl(datasetParam)) {
     // 2. Dataset URL only
     // Make a dummy collection that will include only this dataset
-    collection = await Collection.makeCollectionFromSingleDataset(datasetParam, collectionConfig);
+    try {
+      collection = await Collection.makeCollectionFromSingleDataset(datasetParam, collectionConfig);
+    } catch (error) {
+      console.error("loadCollectionFromParams: ", error);
+      return { type: LoadResultType.LOAD_ERROR, message: (error as Error).message };
+    }
   } else if (collectionParam === null && datasetParam === null) {
     // No arguments provided, report missing datasets as a special case
     return { type: LoadResultType.MISSING_DATASET };
