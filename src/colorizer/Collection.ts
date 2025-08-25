@@ -363,7 +363,7 @@ export default class Collection {
     const collectionPath = pathResolver.resolve("", absoluteCollectionUrl)!;
     if (collectionPath === null) {
       if (config?.sourceType === CollectionSourceType.ZIP_FILE) {
-        throw new Error("No 'collection.json' was found. " + LoadTroubleshooting.CHECK_ZIP_FORMAT);
+        throw new Error("No 'collection.json' was found. " + LoadTroubleshooting.CHECK_ZIP_FORMAT_COLLECTION);
       }
     }
     try {
