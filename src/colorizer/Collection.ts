@@ -504,8 +504,8 @@ export default class Collection {
     ) {
       return new Error(LoadErrorMessage.BOTH_404);
     } else if (
-      collectionLoadError.message.includes(LoadTroubleshooting.CHECK_ZIP_FORMAT) &&
-      datasetLoadError.message.includes(LoadTroubleshooting.CHECK_ZIP_FORMAT)
+      collectionLoadError.message.includes(LoadTroubleshooting.CHECK_ZIP_FORMAT_COLLECTION) &&
+      datasetLoadError.message.includes(LoadTroubleshooting.CHECK_ZIP_FORMAT_MANIFEST)
     ) {
       return new Error(LoadErrorMessage.ZIP_BOTH_UNREACHABLE + " " + LoadTroubleshooting.CHECK_ZIP_FORMAT);
     } else {
