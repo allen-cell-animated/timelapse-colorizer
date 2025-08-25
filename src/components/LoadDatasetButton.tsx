@@ -248,15 +248,17 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
 
   // RENDERING ////////////////////////////////////////////////////////
 
-  const collectionsDropdownItems: MenuItemType[] = recentCollections.map(({ url, label }) => {
-    const isCurrentUrl = props.currentResourceUrl === url;
-    return {
-      key: url,
-      label: label,
-      style: isCurrentUrl ? { color: "var(--color-text-hint)" } : undefined,
-      icon: isCurrentUrl ? <FolderOpenOutlined /> : undefined,
-    };
-  });
+  const collectionsDropdownItems: MenuItemType[] = recentCollections
+    .map(({ url, label }) => {
+      const isCurrentUrl = props.currentResourceUrl === url;
+      return {
+        key: url,
+        label: label,
+        style: isCurrentUrl ? { color: "var(--color-text-hint)" } : undefined,
+        icon: isCurrentUrl ? <FolderOpenOutlined /> : undefined,
+      };
+    })
+    .filter((item) => item.label);
 
   // Get the URLs (keys) of any recent collections that match the currently selected urlInput.
   const matchingKeys = recentCollections.filter(({ label }) => label === urlInput).map(({ url }) => url);
