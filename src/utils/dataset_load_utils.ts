@@ -135,12 +135,14 @@ export const loadInitialCollectionAndDataset = async (
     arrayLoader?: DatasetLoadOptions["arrayLoader"];
     frameLoader?: DatasetLoadOptions["frameLoader"];
     onLoadProgress?: ReportLoadProgressCallback;
+    promptForFileLoad?: (filename: string) => Promise<Collection>;
     reportMissingDataset?: () => void;
     reportWarning?: ReportWarningCallback;
     reportLoadError?: ReportErrorCallback;
   } = {}
 ): Promise<{ collection: Collection; dataset: Dataset; datasetKey: string } | null> => {
   // Load collection
+  const sourceFilenameParam = params.get(UrlParam.SOURCE_FILENAME);
   const collectionParam = params.get(UrlParam.COLLECTION);
   const datasetParam = overrides?.datasetKey ?? params.get(UrlParam.DATASET);
 
@@ -148,6 +150,8 @@ export const loadInitialCollectionAndDataset = async (
   if (overrides && overrides.collection) {
     // An already-loaded Collection object has been provided. Skip loading.
     collection = overrides.collection;
+  } else if (sourceFilenameParam !== null && options.promptForFileLoad) {
+    collection = await options.promptForFileLoad(sourceFilenameParam);
   } else {
     const collectionResult = await loadCollectionFromParams(collectionParam, datasetParam, {
       fetchMethod: options.collectionFetchMethod,
