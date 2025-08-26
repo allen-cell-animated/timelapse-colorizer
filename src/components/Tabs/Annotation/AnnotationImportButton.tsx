@@ -48,6 +48,7 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
     setErrorText("");
     const isCsv = file.type === "text/csv" || file.name.endsWith(".csv");
     if (!isCsv || !dataset) {
+      setUploadedFile(file);
       setErrorText("Only CSV files are supported.");
       return;
     }
@@ -111,7 +112,7 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
         destroyOnHidden={true}
       >
         <FlexColumn $gap={6}>
-          {uploadedFile ? (
+          {uploadedFile || errorText ? (
             <AnnotationFileInfo
               errorText={errorText}
               file={uploadedFile}
