@@ -63,6 +63,7 @@ import Header from "./components/Header";
 import IconButton from "./components/IconButton";
 import LabeledSlider from "./components/Inputs/LabeledSlider";
 import LoadDatasetButton from "./components/LoadDatasetButton";
+import LoadFileModal from "./components/LoadFileModal";
 import SmallScreenWarning from "./components/Modals/SmallScreenWarning";
 import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
 import SpinBox from "./components/SpinBox";
@@ -376,6 +377,7 @@ function Viewer(): ReactElement {
 
   const onLoadedFileCollection = useCallback((collection: Collection) => {
     fileLoadPromiseResolveRef.current?.(collection);
+    setTimeout(() => setShowFileLoadModal(false), 500);
   }, []);
 
   /**
@@ -737,11 +739,18 @@ function Viewer(): ReactElement {
         <h3>{datasetHeader}</h3>
         <FlexRowAlignCenter $gap={12} $wrap="wrap">
           <FlexRowAlignCenter $gap={2} $wrap="wrap">
-            <LoadDatasetButton
-              onLoad={handleDatasetLoad}
-              currentResourceUrl={collection?.sourcePath ?? datasetKey ?? ""}
-              reportWarning={showDatasetLoadWarning}
-            />
+            <div>
+              <LoadDatasetButton
+                onLoad={handleDatasetLoad}
+                currentResourceUrl={collection?.sourcePath ?? datasetKey ?? ""}
+                reportWarning={showDatasetLoadWarning}
+              />
+              <LoadFileModal
+                sourceFilename={sourceFilename ?? ""}
+                onLoad={onLoadedFileCollection}
+                open={showFileLoadModal}
+              />
+            </div>
             <Export
               totalFrames={dataset?.numberOfFrames || 0}
               setFrame={setFrame}

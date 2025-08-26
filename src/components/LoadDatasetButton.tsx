@@ -75,6 +75,8 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
   const theme = useContext(AppThemeContext);
   const dropdownContextRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<InputRef>(null);
+  const setSourceFilename = useViewerStateStore((state) => state.setSourceFilename);
+  const clearSourceFilename = useViewerStateStore((state) => state.clearSourceFilename);
 
   // STATE ////////////////////////////////////////////////////////////
 
@@ -217,7 +219,10 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
     setIsLoadingUrl(true);
 
     handleLoadUrl(formattedUrlInput).then(
-      (result) => onCollectionLoaded(...result),
+      (result) => {
+        onCollectionLoaded(...result);
+        clearSourceFilename();
+      },
       (reason) => {
         // failed
         if (reason && reason.toString().includes("AbortError")) {
@@ -235,7 +240,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
         setIsLoadingUrl(false);
       }
     );
-  }, [urlInput, props.onLoad]);
+  }, [urlInput, props.onLoad, clearSourceFilename]);
 
   const handleCancel = useCallback(() => {
     // should this cancel datasets/collection loading mid-load?
@@ -353,6 +358,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
                 }
                 const didLoadCollection = await handleLoadFromZipFile(zipFile.name, fileMap)
                   .then((result) => {
+                    setSourceFilename(zipFile.name);
                     onCollectionLoaded(...result);
                     return true;
                   })
