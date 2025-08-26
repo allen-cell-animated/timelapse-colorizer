@@ -35,12 +35,7 @@ export default function LoadFileModal(props: LoadFileModalProps): ReactElement {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [uploadedCollection, setUploadedCollection] = useState<Collection | null>(null);
   const [errorText, setErrorText] = useState<string | undefined>(undefined);
-
-  const handleLoadFromZipFile = async (fileName: string, fileMap: Record<string, File>): Promise<Collection> => {
-    console.log("Loading from ZIP file:", fileName);
-    const collection = await Collection.loadFromAmbiguousFile(fileName, fileMap, {});
-    return collection;
-  };
+  const [loadProgress, setLoadProgress] = useState(0);
 
   const onZipUpload = useCallback(
     async (zipFile: File): Promise<boolean> => {
@@ -50,12 +45,16 @@ export default function LoadFileModal(props: LoadFileModalProps): ReactElement {
       setErrorText("");
       setUploadedFile(zipFile);
       setIsLoadingZip(true);
-      const fileMap = await zipToFileMap(zipFile);
+      setLoadProgress(0);
+      const handleProgressUpdate = (complete: number, total: number): void => {
+        setLoadProgress(Math.floor((complete / total) * 100));
+      };
+      const fileMap = await zipToFileMap(zipFile, handleProgressUpdate);
       if (Object.keys(fileMap).length === 0) {
         setErrorText("No files found in ZIP file.");
         return false;
       }
-      const didLoadCollection = await handleLoadFromZipFile(zipFile.name, fileMap)
+      const didLoadCollection = await Collection.loadFromAmbiguousFile(zipFile.name, fileMap, {})
         .then((result) => {
           setUploadedCollection(result);
           return true;
@@ -68,7 +67,7 @@ export default function LoadFileModal(props: LoadFileModalProps): ReactElement {
       setIsLoadingZip(false);
       return didLoadCollection;
     },
-    [isLoadingZip, setErrorText, setIsLoadingZip, setSourceFilename, props.onLoad]
+    [isLoadingZip, setErrorText, setIsLoadingZip, setSourceFilename, setLoadProgress, props.onLoad]
   );
 
   //// Rendering ////
@@ -124,13 +123,13 @@ export default function LoadFileModal(props: LoadFileModalProps): ReactElement {
   return (
     <StyledModal title={"Reload dataset"} open={props.open} footer={null} closeIcon={null}>
       <FlexColumn $gap={10}>
-        <FlexColumn>
+        <FlexColumn style={{ wordWrap: "break-word", wordBreak: "break-all" }}>
           <p style={{ margin: "0" }}>To continue, please reload the dataset from a ZIP file.</p>
           <p>
-            This dataset was previously opened from the file <ZipFolderOutlinedSVG /> <b>{props.sourceFilename}</b>
+            Previous file: <ZipFolderOutlinedSVG /> <b>{props.sourceFilename}</b>
           </p>
         </FlexColumn>
-        <LoadingSpinner loading={isLoadingZip} iconSize={48}>
+        <LoadingSpinner loading={isLoadingZip} progress={loadProgress} iconSize={48}>
           {uploadedCollection || errorText ? (
             <FileInfoCard
               fileName={uploadedFile?.name ?? ""}
