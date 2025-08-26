@@ -18,15 +18,13 @@ import StyledModal from "./Modals/StyledModal";
 
 type LoadFileModalProps = {
   sourceFilename: string;
-  targetDataset: string;
+  targetDataset: string | null;
   onLoad: (collection: Collection) => void;
   open: boolean;
 };
 
 /**
- * Prompts a user to load a specific ZIP file.
- * @param props
- * @returns
+ * Prompts a user to reload a collection from a ZIP file.
  */
 export default function LoadFileModal(props: LoadFileModalProps): ReactElement {
   const setSourceFilename = useViewerStateStore((state) => state.setSourceFilename);
@@ -100,6 +98,29 @@ export default function LoadFileModal(props: LoadFileModalProps): ReactElement {
     );
   }, [uploadedCollection]);
 
+  const collectionWarning = useMemo((): ReactNode => {
+    if (props.targetDataset === null || uploadedCollection === null) {
+      return null;
+    }
+    // Check if the collection has a matching dataset
+    let hasMatchingDataset = false;
+    for (const datasetKey of uploadedCollection.getDatasetKeys()) {
+      if (datasetKey === props.targetDataset) {
+        hasMatchingDataset = true;
+        break;
+      }
+    }
+    if (hasMatchingDataset) {
+      return null;
+    }
+    return (
+      <p>
+        The collection does not contain the expected dataset <b>{props.targetDataset}</b>. A different ZIP file may have
+        been loaded or the collection may have been modified.
+      </p>
+    );
+  }, [uploadedCollection, props.targetDataset]);
+
   return (
     <StyledModal title={"Reload dataset"} open={props.open} footer={null} closeIcon={null}>
       <FlexColumn $gap={10}>
@@ -119,6 +140,7 @@ export default function LoadFileModal(props: LoadFileModalProps): ReactElement {
                 setUploadedFile(null);
               }}
               errorText={errorText}
+              warningText={collectionWarning}
             >
               {collectionInfo}
             </FileInfoCard>

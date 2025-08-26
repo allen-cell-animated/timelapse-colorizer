@@ -153,13 +153,16 @@ function Viewer(): ReactElement {
   const [, addRecentCollection] = useRecentCollections();
   const annotationState = useAnnotations();
 
+  // Loading from a local file
   const fileLoadPromiseResolveRef = useRef<((collection: Collection) => void) | null>(null);
+  const [expectedFileLoadDatasetName, setExpectedFileLoadDatasetName] = useState<string | null>(null);
   const [showFileLoadModal, setShowFileLoadModal] = useState(false);
+  const isFileUploadPending = fileLoadPromiseResolveRef.current !== null;
+
   const [isInitialDatasetLoaded, setIsInitialDatasetLoaded] = useState(false);
   const [isDatasetLoading, setIsDatasetLoading] = useState(false);
   const [datasetLoadProgress, setDatasetLoadProgress] = useState<number | null>(null);
   const [datasetOpen, setDatasetOpen] = useState(false);
-  const isFileUploadPending = fileLoadPromiseResolveRef.current !== null;
 
   const [playbackFps, setPlaybackFps] = useState(DEFAULT_PLAYBACK_FPS);
 
@@ -363,9 +366,10 @@ function Viewer(): ReactElement {
   }, [showAlert]);
 
   const showFileLoadPrompt = useCallback(
-    async (filename: string): Promise<Collection> => {
+    async (filename: string, datasetName: string | null): Promise<Collection> => {
       setSourceFilename(filename);
       setShowFileLoadModal(true);
+      setExpectedFileLoadDatasetName(datasetName);
       let resolveCallback: (collection: Collection) => void;
       const collectionPromise = new Promise<Collection>((resolve, _reject) => {
         resolveCallback = resolve;
@@ -750,6 +754,7 @@ function Viewer(): ReactElement {
                 sourceFilename={sourceFilename ?? ""}
                 onLoad={onLoadedFileCollection}
                 open={showFileLoadModal}
+                targetDataset={expectedFileLoadDatasetName}
               />
             </div>
             <Export
