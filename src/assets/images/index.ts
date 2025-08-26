@@ -1,15 +1,16 @@
-import AicsLogoSVGAsset from "./AICS-logo.svg?react";
 import AicsLogoAndNameSVGAsset from "./AICS-logo-and-name.svg?react";
+import AicsLogoSVGAsset from "./AICS-logo.svg?react";
 import DropdownSVGAsset from "./dropdown-arrow.svg?react";
-import ImagesIconSVGAsset from "./icon-images.svg?react";
 import ImagesSlashIconSVGAsset from "./icon-images-slash.svg?react";
+import ImagesIconSVGAsset from "./icon-images.svg?react";
 import SwitchIconSVGAsset from "./icon-switch-arrows.svg?react";
-import TagIconSVGAsset from "./icon-tag.svg?react";
 import TagAddIconSVGAsset from "./icon-tag-add.svg?react";
 import TagSlashIconSVGAsset from "./icon-tag-slash.svg?react";
+import TagIconSVGAsset from "./icon-tag.svg?react";
 import NoImageSVGAsset from "./no-image.svg?react";
 import SpinBoxHandleDownSVGAsset from "./spin_box-handle-down.svg?react";
 import SpinBoxHandleUpSVGAsset from "./spin_box-handle-up.svg?react";
+import ZipFolderOutlinedSVGAsset from "./zip-folder-outlined.svg?react";
 
 export const AicsLogoAndNameSVG = AicsLogoAndNameSVGAsset;
 export const AicsLogoSVG = AicsLogoSVGAsset;
@@ -23,3 +24,4 @@ export const TagSlashIconSVG = TagSlashIconSVGAsset;
 export const TagAddIconSVG = TagAddIconSVGAsset;
 export const SpinBoxHandleDownSVG = SpinBoxHandleDownSVGAsset;
 export const SpinBoxHandleUpSVG = SpinBoxHandleUpSVGAsset;
+export const ZipFolderOutlinedSVG = ZipFolderOutlinedSVGAsset;

@@ -159,6 +159,7 @@ function Viewer(): ReactElement {
   const [isDatasetLoading, setIsDatasetLoading] = useState(false);
   const [datasetLoadProgress, setDatasetLoadProgress] = useState<number | null>(null);
   const [datasetOpen, setDatasetOpen] = useState(false);
+  const isFileUploadPending = fileLoadPromiseResolveRef.current !== null;
 
   const [playbackFps, setPlaybackFps] = useState(DEFAULT_PLAYBACK_FPS);
 
@@ -882,7 +883,8 @@ function Viewer(): ReactElement {
                 annotationState={annotationState}
               >
                 <CanvasWrapper
-                  loading={isDatasetLoading}
+                  // Disable loading spinner when file upload is pending
+                  loading={isDatasetLoading && !isFileUploadPending}
                   loadingProgress={datasetLoadProgress}
                   canv={canv}
                   isRecording={isRecording}
