@@ -107,6 +107,7 @@ export async function zipToFileMap(zipFile: File): Promise<Record<string, File>>
     fileMap[relativePath] = new File([fileContents], relativePath);
   };
 
+  // TODO: Optionally report load progress? See pattern in Dataset + Viewer
   zip.forEach((relativePath, zipObject) => {
     if (zipObject.dir) {
       return;
