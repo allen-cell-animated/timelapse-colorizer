@@ -8,15 +8,16 @@ export type RecentCollection = {
   /** The absolute URL path of the collection resource. */
   url: string;
   /**
-   * The user input for the collection resource.
-   * If `undefined`, uses the existing label (if already in recent datasets) or reuses the URL (if new).
+   * The user input for the collection resource. If `undefined`, uses the
+   * existing label (if already in recent datasets) or reuses the URL (if new).
    */
   label?: string;
 };
 
 /**
- * Wrapper around locally-stored recent collections.
- * @returns an array containing the list of recent collections and a function to add a new collection to the list.
+ * Stores and retrieves recent collections from local storage.
+ * @returns an array containing the list of recent collections and a function to
+ * add a new collection to the list.
  */
 export const useRecentCollections = (): [RecentCollection[], (collection: RecentCollection) => void] => {
   const [recentCollections, setRecentCollections] = useLocalStorage<RecentCollection[]>(
@@ -25,24 +26,23 @@ export const useRecentCollections = (): [RecentCollection[], (collection: Recent
   );
 
   const addRecentCollection = (collection: RecentCollection): void => {
-    const datasetIndex = recentCollections.findIndex(({ url }) => url === collection.url);
-    if (datasetIndex === -1) {
-      // New dataset, add to front while maintaining max length
+    const index = recentCollections.findIndex(({ url }) => url === collection.url);
+    if (index === -1) {
+      // New collection, add to front while maintaining max length
       if (collection.label === undefined) {
         collection.label = collection.url;
       }
       setRecentCollections([collection as RecentCollection, ...recentCollections.slice(0, MAX_RECENT_COLLECTIONS - 1)]);
     } else {
-      if (collection.label === undefined) {
-        // Reuse existing label
-        collection.label = recentCollections[datasetIndex].label;
-      }
-      // Move to front; this also updates the label if it changed.
+      // Move existing collection to front and update the label.
+      const newCollectionEntry: RecentCollection = {
+        url: collection.url,
+        label: collection.label ?? recentCollections[index].label,
+      };
       setRecentCollections([
-        collection as RecentCollection,
-
-        ...recentCollections.slice(0, datasetIndex),
-        ...recentCollections.slice(datasetIndex + 1),
+        newCollectionEntry,
+        ...recentCollections.slice(0, index),
+        ...recentCollections.slice(index + 1),
       ]);
     }
   };

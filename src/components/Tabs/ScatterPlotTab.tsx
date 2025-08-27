@@ -7,7 +7,7 @@ import { Color, ColorRepresentation } from "three";
 import { SwitchIconSVG } from "../../assets";
 import { ColorRampType, Dataset } from "../../colorizer";
 import { DrawMode, HexColorString, PlotRangeType } from "../../colorizer/types";
-import { useDebounce } from "../../hooks/useDebounce";
+import { useDebounce } from "../../hooks";
 import { FlexRow, FlexRowAlignCenter } from "../../styles/utils";
 import { ShowAlertBannerCallback } from "../Banner/hooks";
 import { SelectItem } from "../Dropdowns/types";

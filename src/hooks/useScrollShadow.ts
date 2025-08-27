@@ -24,15 +24,20 @@ export const ScrollShadowContainer = styled.div`
 /**
  * Hook for adding scroll shadows to an element.
  *
- * Adapted with edits from https://medium.com/dfind-consulting/react-scroll-hook-with-shadows-9ba2d47ae32.
- * Added typing and fixed a bug where shadows would not appear before users interacted with the element, and
- * another where shadows would not disappear when the element was not scrollable.
+ * Adapted from a solution by Marius Ibsen at
+ * https://medium.com/dfind-consulting/react-scroll-hook-with-shadows-9ba2d47ae32.
+ * Added typing and fixed a bug where shadows would not appear before users
+ * interacted with the element, and another where shadows would not disappear
+ * when the element was not scrollable.
  *
- * @param shadowColor a CSS-interpretable string representing a color.
+ * @param shadowColor a CSS color string for shadows. Set to "#00000030" by
+ * default.
  * @returns an object with three properties:
- * - `scrollShadowStyle`: a CSSProperties object that can be applied to the element to add a shadow. NOTE:
- * This does not have to be the scrolling element; see the example for an overlay shadow.
- * - `onScrollHandler`: an event handler to attach to the scrolling element's `onScroll` event.
+ * - `scrollShadowStyle`: a CSSProperties object that can be applied to the
+ *   element to add a shadow. NOTE: This does not have to be the scrolling
+ *   element; see the example for an overlay shadow.
+ * - `onScrollHandler`: an event handler to assign as the scrolling element's
+ *   `onScroll` event.
  * - `scrollRef`: a ref to attach to the scrolling element.
  *
  * @example
@@ -43,24 +48,24 @@ export const ScrollShadowContainer = styled.div`
  *   const { scrollShadowStyle, onScrollHandler, scrollRef } = useScrollShadow();
  *
  *   return (
- *   <div style={{position: "relative"}}>
- *     <div
- *       ref={scrollRef}
- *       onScroll={onScrollHandler}
- *       style={{overflow-y: "auto", height: "50px"}}
- *     >
- *       <p>Some content</p>
- *       <p>Some more content</p>
- *       <p>Some more content</p>
+ *     <div style={{position: "relative"}}>
+ *       <div
+ *         ref={scrollRef}
+ *         onScroll={onScrollHandler}
+ *         style={{overflow-y: "auto", height: "50px"}}
+ *       >
+ *         <p>Some content</p>
+ *         <p>Some more content</p>
+ *         <p>Some more content</p>
+ *       </div>
+ *       <ScrollShadowContainer style={{
+ *         ...scrollShadowStyle
+ *       }} />
  *     </div>
- *     <ScrollShadowContainer style={{
- *       ...scrollShadowStyle
- *     }} />
- *   </div>
+ *   );
  * }
  * ```
  */
-
 export function useScrollShadow(shadowColor: string = "#00000030"): {
   scrollShadowStyle: React.CSSProperties;
   onScrollHandler: EventHandler<any>;
@@ -98,12 +103,10 @@ export function useScrollShadow(shadowColor: string = "#00000030"): {
   useEffect(() => {
     if (scrollRef.current) {
       updateScrollInfo(scrollRef.current);
-
       mutationObserver.observe(scrollRef.current, {
         childList: true,
         subtree: true,
       });
-
       return () => {
         mutationObserver.disconnect();
       };

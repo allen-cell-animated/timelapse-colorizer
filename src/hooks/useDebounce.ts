@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
 
 /**
- * Delays changes to a value until no changes have occurred for the
- * set delay period, in milliseconds. This is useful for delaying changes to state
- * when a value may update very quickly.
+ * Delays changes to a value until no changes have occurred for the set delay
+ * period, in milliseconds. This is useful for delaying changes to state when a
+ * value may update very quickly.
  *
  * Adapted from https://usehooks-ts.com/react-hook/use-debounce.
  *
  * @param value The value to return.
- * @param delayMs The delay, in milliseconds.
+ * @param delayMs The delay, in milliseconds. 500 by default.
  * @returns The `value` once no changes have occurred for `delay` milliseconds.
  * @example
  * ```
@@ -26,13 +26,11 @@ import { useEffect, useState } from "react";
  * )
  * ```
  */
-
-export function useDebounce<T>(value: T, delayMs?: number): T {
+export function useDebounce<T>(value: T, delayMs: number = 500): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
 
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedValue(value), delayMs ?? 500);
-
+    const timer = setTimeout(() => setDebouncedValue(value), delayMs);
     return () => {
       clearTimeout(timer);
     };
