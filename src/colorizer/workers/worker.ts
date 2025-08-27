@@ -14,7 +14,18 @@ async function loadUrlData(url: string, type: FeatureDataType): Promise<Transfer
   } else if (url.endsWith(".parquet")) {
     result = await loadFromParquetUrl(url, type);
   } else {
-    throw new Error(`Unsupported file format: ${url}`);
+    // Try loading as either format.
+    try {
+      result = await loadFromJsonUrl(url, type);
+    } catch (error1) {
+      try {
+        result = await loadFromParquetUrl(url, type);
+      } catch (error2) {
+        // TODO: Nicer error handling here?
+        console.error(error1, error2);
+        throw new Error(`Could not parse '${url}' as either a JSON or Parquet file.`);
+      }
+    }
   }
 
   const { min, max, data } = result;
