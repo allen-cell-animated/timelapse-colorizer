@@ -8,8 +8,8 @@ import { useClickAnyWhere } from "usehooks-ts";
 import { Dataset } from "../colorizer";
 import { ReportWarningCallback } from "../colorizer/types";
 import { zipToFileMap } from "../colorizer/utils/data_load_utils";
-import { useRecentCollections } from "../colorizer/utils/react_utils";
 import { convertAllenPathToHttps, isAllenPath } from "../colorizer/utils/url_utils";
+import { useRecentCollections } from "../hooks";
 import { FlexRowAlignCenter } from "../styles/utils";
 import { renderStringArrayAsJsx } from "../utils/formatting";
 

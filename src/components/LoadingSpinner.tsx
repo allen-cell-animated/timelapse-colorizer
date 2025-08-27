@@ -3,7 +3,7 @@ import { Progress, Spin } from "antd";
 import React, { PropsWithChildren, ReactElement, ReactNode } from "react";
 import styled, { css } from "styled-components";
 
-import { useDebounce } from "../colorizer/utils/react_utils";
+import { useDebounce } from "../hooks/useDebounce";
 
 const VANISH_DURATION_MS = 250;
 
