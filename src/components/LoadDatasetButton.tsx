@@ -371,8 +371,8 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
                 return didLoadCollection;
               }}
             >
-              <Button loading={isLoadingZip} disabled={isLoadingUrl}>
-                Load from ZIP
+              <Button loading={isLoadingZip} disabled={isLoadingUrl} type="link" style={{ padding: 0 }}>
+                Load .zip file
               </Button>
             </Upload>
           </FlexRowAlignCenter>

@@ -2,11 +2,10 @@ import { UploadOutlined } from "@ant-design/icons";
 import { Button } from "antd";
 import React, { ReactElement, ReactNode, useCallback, useMemo, useState } from "react";
 
-import { ZipFolderOutlinedSVG } from "../assets";
 import { zipToFileMap } from "../colorizer/utils/data_load_utils";
 import { useViewerStateStore } from "../state";
 import { FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter } from "../styles/utils";
-import { formatQuantityString } from "../utils/formatting";
+import { formatQuantityString, renderStringArrayAsJsx } from "../utils/formatting";
 
 import Collection from "../colorizer/Collection";
 import { ButtonStyleLink } from "./Buttons/ButtonStyleLink";
@@ -34,7 +33,17 @@ export default function LoadFileModal(props: LoadFileModalProps): ReactElement {
   const [isLoadingZip, setIsLoadingZip] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [uploadedCollection, setUploadedCollection] = useState<Collection | null>(null);
-  const [errorText, setErrorText] = useState<string | undefined>(undefined);
+  // TODO: Make into a separate hook for automatic error/warning formatting?
+  const [errorText, _setErrorText] = useState<ReactNode>(null);
+  const setErrorText = useCallback((newErrorText: ReactNode) => {
+    if (typeof newErrorText === "string" && newErrorText !== "") {
+      const splitText = newErrorText.split("\n");
+      _setErrorText(renderStringArrayAsJsx(splitText));
+    } else {
+      _setErrorText(newErrorText);
+    }
+  }, []);
+
   const [loadProgress, setLoadProgress] = useState(0);
 
   const onZipUpload = useCallback(
@@ -42,7 +51,7 @@ export default function LoadFileModal(props: LoadFileModalProps): ReactElement {
       if (isLoadingZip) {
         return false;
       }
-      setErrorText("");
+      setErrorText(null);
       setUploadedFile(zipFile);
       setIsLoadingZip(true);
       setLoadProgress(0);
@@ -114,8 +123,7 @@ export default function LoadFileModal(props: LoadFileModalProps): ReactElement {
     }
     return (
       <p>
-        The collection does not contain the expected dataset <b>{props.targetDataset}</b>. A different ZIP file may have
-        been loaded or the collection may have been modified.
+        The .zip file is missing the dataset <b>{props.targetDataset}</b>. Settings may be lost.
       </p>
     );
   }, [uploadedCollection, props.targetDataset]);
@@ -124,12 +132,12 @@ export default function LoadFileModal(props: LoadFileModalProps): ReactElement {
     <StyledModal title={"Reload dataset"} open={props.open} footer={null} closeIcon={null}>
       <FlexColumn $gap={10}>
         <FlexColumn style={{ wordWrap: "break-word", wordBreak: "break-all" }}>
-          <p style={{ margin: "0" }}>To continue, please reload the dataset from a ZIP file.</p>
+          <p style={{ margin: "0" }}>To continue, please reload the dataset from a .zip file.</p>
           <p>
-            Previous file: <ZipFolderOutlinedSVG /> <b>{props.sourceFilename}</b>
+            Previous file: <b>{props.sourceFilename}</b>
           </p>
         </FlexColumn>
-        <LoadingSpinner loading={isLoadingZip} progress={loadProgress} iconSize={48}>
+        <LoadingSpinner loading={isLoadingZip} progress={loadProgress} iconSize={64}>
           {uploadedCollection || errorText ? (
             <FileInfoCard
               fileName={uploadedFile?.name ?? ""}
@@ -150,17 +158,13 @@ export default function LoadFileModal(props: LoadFileModalProps): ReactElement {
               accept=".zip"
               showUploadList={false}
               beforeUpload={onZipUpload}
+              disabled={isLoadingZip}
             >
-              <FlexColumnAlignCenter>
+              {/* 121 px is a magic number that matches the size of the info card when file is missing */}
+              <FlexColumnAlignCenter style={{ height: "121px", justifyContent: "center" }}>
                 <span>
                   <UploadOutlined />
                 </span>
-                <FlexRowAlignCenter $gap={4}>
-                  <ZipFolderOutlinedSVG />
-                  <p style={{ wordWrap: "break-word", wordBreak: "break-all" }}>
-                    <b>{props.sourceFilename}</b>
-                  </p>
-                </FlexRowAlignCenter>
                 <p>Click or drag a .zip file here to upload</p>
               </FlexColumnAlignCenter>
             </StyledUpload>
@@ -168,7 +172,7 @@ export default function LoadFileModal(props: LoadFileModalProps): ReactElement {
         </LoadingSpinner>
         <FlexRowAlignCenter $gap={10} style={{ justifyContent: "flex-end" }}>
           <ButtonStyleLink to="/" type="outlined">
-            Return to homepage
+            Go to homepage
           </ButtonStyleLink>
           <Button
             disabled={!uploadedCollection}

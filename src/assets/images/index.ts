@@ -10,7 +10,6 @@ import TagSlashIconSVGAsset from "./icon-tag-slash.svg?react";
 import NoImageSVGAsset from "./no-image.svg?react";
 import SpinBoxHandleDownSVGAsset from "./spin_box-handle-down.svg?react";
 import SpinBoxHandleUpSVGAsset from "./spin_box-handle-up.svg?react";
-import ZipFolderOutlinedSVGAsset from "./zip-folder-outlined.svg?react";
 
 export const AicsLogoAndNameSVG = AicsLogoAndNameSVGAsset;
 export const AicsLogoSVG = AicsLogoSVGAsset;
@@ -24,4 +23,3 @@ export const TagSlashIconSVG = TagSlashIconSVGAsset;
 export const TagAddIconSVG = TagAddIconSVGAsset;
 export const SpinBoxHandleDownSVG = SpinBoxHandleDownSVGAsset;
 export const SpinBoxHandleUpSVG = SpinBoxHandleUpSVGAsset;
-export const ZipFolderOutlinedSVG = ZipFolderOutlinedSVGAsset;
