@@ -5,8 +5,11 @@ import { FilePathResolver } from "../../src/colorizer/path_resolvers";
 describe("FilePathResolver", () => {
   describe("resolve", () => {
     const exampleResolver = new FilePathResolver({
+      // eslint-disable-next-line
       "example.txt": new File(["Hello World\n"], "example.txt"),
+      // eslint-disable-next-line
       "dir/example.txt": new File(["Hello from a directory\n"], "dir/example.txt"),
+      // eslint-disable-next-line
       "dir/subdir/example.txt": new File(["Hello from a subdirectory\n"], "dir/subdir/example.txt"),
     });
 

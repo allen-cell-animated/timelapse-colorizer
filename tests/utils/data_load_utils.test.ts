@@ -15,8 +15,11 @@ describe("zipToFileMap", () => {
 
     const fileMap = await zipToFileMap(zipFile);
     expect(fileMap).toEqual({
+      // eslint-disable-next-line
       "test1.json": expect.any(File),
+      // eslint-disable-next-line
       "dir/test2.json": expect.any(File),
+      // eslint-disable-next-line
       "dir/subdir/test3.json": expect.any(File),
     });
   });
@@ -31,8 +34,11 @@ describe("zipToFileMap", () => {
 
     const fileMap = await zipToFileMap(zipFile);
     expect(fileMap).toEqual({
+      // eslint-disable-next-line
       "test.json": expect.any(File),
+      // eslint-disable-next-line
       "test2.json": expect.any(File),
+      // eslint-disable-next-line
       "subdir/test3.json": expect.any(File),
     });
   });
@@ -47,8 +53,11 @@ describe("zipToFileMap", () => {
 
     const fileMap = await zipToFileMap(zipFile);
     expect(fileMap).toEqual({
+      // eslint-disable-next-line
       "test.json": expect.any(File),
+      // eslint-disable-next-line
       "test2.json": expect.any(File),
+      // eslint-disable-next-line
       "subdir4/test3.json": expect.any(File),
     });
   });
@@ -62,8 +71,11 @@ describe("zipToFileMap", () => {
     const zipFile = new File([zipBlob], "test.zip");
     const fileMap = await zipToFileMap(zipFile);
     expect(fileMap).toEqual({
+      // eslint-disable-next-line
       "subdirA/test.json": expect.any(File),
+      // eslint-disable-next-line
       "subdirB/test2.json": expect.any(File),
+      // eslint-disable-next-line
       "subdirC/test3.json": expect.any(File),
     });
   });
@@ -75,6 +87,7 @@ describe("zipToFileMap", () => {
     const zipFile = new File([zipBlob], "test.zip");
     const fileMap = await zipToFileMap(zipFile);
     expect(fileMap).toEqual({
+      // eslint-disable-next-line
       "test.json": expect.any(File),
     });
   });
