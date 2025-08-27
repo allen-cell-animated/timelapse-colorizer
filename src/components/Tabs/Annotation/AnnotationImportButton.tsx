@@ -3,7 +3,7 @@ import { Modal, Radio, Space, Upload, UploadFile } from "antd";
 import React, { ReactElement, useState } from "react";
 import styled, { css } from "styled-components";
 
-import { AnnotationState } from "../../../colorizer/utils/react_utils";
+import { AnnotationState } from "../../../hooks";
 import { useViewerStateStore } from "../../../state";
 import { FlexColumn } from "../../../styles/utils";
 

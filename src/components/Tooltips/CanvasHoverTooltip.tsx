@@ -5,7 +5,7 @@ import { useShallow } from "zustand/shallow";
 
 import { AnnotationSelectionMode, PixelIdInfo, VECTOR_KEY_MOTION_DELTA, VectorTooltipMode } from "../../colorizer";
 import { formatNumber } from "../../colorizer/utils/math_utils";
-import { AnnotationState } from "../../colorizer/utils/react_utils";
+import { AnnotationState } from "../../hooks";
 import { selectVectorConfigFromState } from "../../state/slices";
 import { FlexColumn, FlexRow } from "../../styles/utils";
 

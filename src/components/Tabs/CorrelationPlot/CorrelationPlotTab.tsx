@@ -9,7 +9,7 @@ import React, { memo, ReactElement, useEffect, useMemo, useRef, useState } from 
 import styled from "styled-components";
 
 import { Dataset } from "../../../colorizer";
-import { useDebounce } from "../../../colorizer/utils/react_utils";
+import { useDebounce } from "../../../hooks";
 import { FlexColumnAlignCenter, FlexRowAlignCenter } from "../../../styles/utils";
 import {
   areSetsEqual,

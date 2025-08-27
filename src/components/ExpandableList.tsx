@@ -1,7 +1,7 @@
 import React, { PropsWithChildren, ReactElement, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 
-import { ScrollShadowContainer, useScrollShadow } from "../colorizer/utils/react_utils";
+import { ScrollShadowContainer, useScrollShadow } from "../hooks";
 import { FlexColumn } from "../styles/utils";
 
 import TextButton from "./Buttons/TextButton";

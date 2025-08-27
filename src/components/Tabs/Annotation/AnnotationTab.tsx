@@ -4,7 +4,7 @@ import React, { ReactElement, useCallback, useMemo, useState, useTransition } fr
 import { useShallow } from "zustand/shallow";
 
 import { AnnotationSelectionMode } from "../../../colorizer";
-import { AnnotationState } from "../../../colorizer/utils/react_utils";
+import { AnnotationState } from "../../../hooks";
 import { useViewerStateStore } from "../../../state";
 import { StyledRadioGroup } from "../../../styles/components";
 import { FlexColumnAlignCenter, FlexRow, VisuallyHidden } from "../../../styles/utils";

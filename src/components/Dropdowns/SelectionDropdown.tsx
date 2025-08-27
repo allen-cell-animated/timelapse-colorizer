@@ -3,7 +3,7 @@ import Fuse from "fuse.js";
 import React, { ReactElement, useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { components, ControlProps, OptionProps } from "react-select";
 
-import { useDebounce } from "../../colorizer/utils/react_utils";
+import { useDebounce } from "../../hooks/useDebounce";
 import { FlexRowAlignCenter } from "../../styles/utils";
 import { SelectItem } from "./types";
 
