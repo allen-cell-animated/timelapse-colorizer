@@ -68,6 +68,12 @@ export type CollectionLoadOptions = {
   pathResolver?: IPathResolver;
   fetchMethod?: typeof fetchWithTimeout;
   reportWarning?: ReportWarningCallback;
+  /**
+   * Options used when attempting to load a Dataset during Collection loading.
+   * Currently, Datasets will only be loaded when the Collection is created from
+   * a single dataset (e.g. via `Collection.makeCollectionFromSingleDataset`).
+   */
+  datasetLoadOptions?: DatasetLoadOptions;
 };
 
 export type DatasetLoadOptions = {
@@ -541,7 +547,10 @@ export default class Collection {
       try {
         const collection = Collection.makeCollectionFromSingleDataset(path, config);
         // Attempt to load the default dataset immediately to surface any loading errors.
-        const loadResult = await collection.tryLoadDataset(collection.getDefaultDatasetKey());
+        const loadResult = await collection.tryLoadDataset(
+          collection.getDefaultDatasetKey(),
+          options.datasetLoadOptions
+        );
         if (!loadResult.loaded) {
           throw new Error(loadResult.errorMessage);
         }

@@ -7,8 +7,16 @@ import "vitest-canvas-mock";
 // Fix for the following error:
 // `TypeError: The "obj" argument must be an instance of Blob. Received an instance of Blob`
 // https://github.com/vitest-dev/vitest/issues/3985
-window.URL.createObjectURL = (_blob: Blob): string => {
-  return "http://mocked-created-url/" + generateUUID();
+let urlToFile: Record<string, Blob> = {};
+
+window.URL.createObjectURL = (blob: Blob): string => {
+  const url = "http://mocked-created-url/" + generateUUID();
+  urlToFile[url] = blob;
+  return url;
+};
+
+window.URL.revokeObjectURL = (url: string): void => {
+  delete urlToFile[url];
 };
 
 // Fix for the following error:
@@ -22,4 +30,5 @@ vi.mock("zustand");
 
 afterEach(() => {
   cleanup();
+  urlToFile = {};
 });
