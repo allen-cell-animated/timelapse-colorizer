@@ -70,8 +70,8 @@ export type CollectionLoadOptions = {
   reportWarning?: ReportWarningCallback;
   /**
    * Options used when attempting to load a Dataset during Collection loading.
-   * Currently, Datasets will only be loaded when the Collection is created from
-   * a single dataset (e.g. via `Collection.makeCollectionFromSingleDataset`).
+   * Currently, this occurs when the Collection is created from a single dataset
+   * (e.g. via `Collection.makeCollectionFromSingleDataset`).
    */
   datasetLoadOptions?: DatasetLoadOptions;
 };

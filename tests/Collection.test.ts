@@ -185,6 +185,7 @@ describe("Collection", () => {
   });
 
   describe("loadFromAmbiguousFile", () => {
+    //// Helper methods ////
     // Mock createObjectURL and associated fetching
     let urlToFile: Record<string, File> = {};
     window.URL.createObjectURL = (file: File): string => {
@@ -220,34 +221,31 @@ describe("Collection", () => {
       );
     }
 
+    //// Constants ////
+
     const MOCK_COLLECTION_JSON = `[{"path": "dataset", "name": "dataset"}]`;
     const MOCK_COLLECTION_FILEMAP = {
       "collection.json": new File([MOCK_COLLECTION_JSON], "collection.json"),
     };
     const MOCK_DATASET_FILEMAP = {
       "manifest.json": new File([JSON.stringify(MOCK_DATASET_MANIFEST)], "manifest.json"),
-      // Add some additional files to
+      // add minimal files to ensure the Dataset can actually load
       "times.json": new File([JSON.stringify(MOCK_DATASET_TIMES)], "times.json"),
       "feature1.json": new File([JSON.stringify(MOCK_DATASET_FEATURE_1)], "frames.json"),
     };
 
     const DATASET_LOAD_OPTIONS: DatasetLoadOptions = {
       manifestLoader: async (url) => {
-        return await mockFetch(url)
-          .then((response: Response) => response.json())
-          .then((data) => {
-            return data;
-          });
+        return await mockFetch(url).then((response: Response) => response.json());
       },
       arrayLoader: new MockFetchArrayLoader(mockFetch),
-      reportWarning: (message) => {
-        console.warn(`Warning loading dataset: ${message}`);
-      },
     };
     const COLLECTION_LOAD_CONFIG: CollectionLoadOptions = {
       fetchMethod: mockFetch,
       datasetLoadOptions: DATASET_LOAD_OPTIONS,
     };
+
+    //// Tests ////
 
     it("can load a collection from a file tree", async () => {
       const collection = await Collection.loadFromAmbiguousFile("", MOCK_COLLECTION_FILEMAP, COLLECTION_LOAD_CONFIG);
