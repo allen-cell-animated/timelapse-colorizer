@@ -19,6 +19,7 @@ type LoadFileModalProps = {
   sourceFilename: string;
   targetDataset: string | null;
   onLoad: (collection: Collection) => void;
+  onClose: () => void;
   open: boolean;
 };
 
@@ -123,13 +124,13 @@ export default function LoadFileModal(props: LoadFileModalProps): ReactElement {
     }
     return (
       <p>
-        The .zip file is missing the dataset <b>{props.targetDataset}</b>. Settings may be lost.
+        The .zip file is missing the dataset <b>{props.targetDataset}.</b> Some settings may be lost.
       </p>
     );
   }, [uploadedCollection, props.targetDataset]);
 
   return (
-    <StyledModal title={"Reload dataset"} open={props.open} footer={null} closeIcon={null}>
+    <StyledModal title={"Reload dataset"} open={props.open} footer={null} onCancel={props.onClose}>
       <FlexColumn $gap={10}>
         <FlexColumn style={{ wordWrap: "break-word", wordBreak: "break-all" }}>
           <p style={{ margin: "0" }}>To continue, please reload the dataset from a .zip file.</p>
