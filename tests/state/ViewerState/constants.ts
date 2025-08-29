@@ -109,7 +109,7 @@ export const MOCK_DATASET_FEATURE_2 = [0, 10, 20, 30, 40, 50, 60, 70, 80];
 export const MOCK_DATASET_FEATURE_3 = [0, 0, 0, 1, 1, 1, 2, 2, 2];
 export const MOCK_DATASET_FEATURE_4 = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];
 
-export const makeMockDatasetArrayLoader = (basePath: string) => ({
+export const makeMockDatasetArrayLoader = (basePath: string): Record<string, MockArraySource<FeatureDataType>> => ({
   [basePath + "times.json"]: new MockArraySource(FeatureDataType.U32, new Uint32Array(MOCK_DATASET_TIMES)),
   [basePath + "seg_ids.json"]: new MockArraySource(FeatureDataType.U32, new Uint32Array(MOCK_DATASET_SEG_IDS)),
   [basePath + "tracks.json"]: new MockArraySource(FeatureDataType.U32, new Uint32Array(MOCK_DATASET_TRACKS)),

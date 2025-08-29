@@ -187,13 +187,15 @@ describe("Collection", () => {
   describe("loadFromAmbiguousFile", () => {
     //// Helper methods ////
     // Mock createObjectURL and associated fetching
-    let urlToFile: Record<string, File> = {};
+    const urlToFile: Record<string, File> = {};
+
     window.URL.createObjectURL = (file: File): string => {
       console.log(file);
       const url = "http://mocked-created-url/" + generateUUID();
       urlToFile[url] = file;
       return url;
     };
+
     window.URL.revokeObjectURL = (url: string): void => {
       delete urlToFile[url];
     };
@@ -210,6 +212,7 @@ describe("Collection", () => {
         return Promise.resolve(
           new Response(fileContents, {
             status: 200,
+            // eslint-disable-next-line
             headers: { "Content-Type": file.type },
           })
         );
@@ -225,12 +228,16 @@ describe("Collection", () => {
 
     const MOCK_COLLECTION_JSON = `[{"path": "dataset", "name": "dataset"}]`;
     const MOCK_COLLECTION_FILEMAP = {
+      // eslint-disable-next-line
       "collection.json": new File([MOCK_COLLECTION_JSON], "collection.json"),
     };
     const MOCK_DATASET_FILEMAP = {
+      // eslint-disable-next-line
       "manifest.json": new File([JSON.stringify(MOCK_DATASET_MANIFEST)], "manifest.json"),
       // add minimal files to ensure the Dataset can actually load
+      // eslint-disable-next-line
       "times.json": new File([JSON.stringify(MOCK_DATASET_TIMES)], "times.json"),
+      // eslint-disable-next-line
       "feature1.json": new File([JSON.stringify(MOCK_DATASET_FEATURE_1)], "frames.json"),
     };
 
@@ -247,7 +254,7 @@ describe("Collection", () => {
 
     //// Tests ////
 
-    it("can load a collection from a file tree", async () => {
+    it("can load a collection from a file map", async () => {
       const collection = await Collection.loadFromAmbiguousFile("", MOCK_COLLECTION_FILEMAP, COLLECTION_LOAD_CONFIG);
 
       expect(collection).to.be.instanceOf(Collection);
@@ -256,9 +263,10 @@ describe("Collection", () => {
       expect(collection.getAbsoluteDatasetPath("dataset")).to.equal("dataset/manifest.json");
       expect(collection.sourcePath).not.to.be.null;
       expect(collection.sourceType).toEqual(CollectionSourceType.ZIP_FILE);
+      collection.dispose();
     });
 
-    it("can load a single dataset from a file tree", async () => {
+    it("can load a single dataset from a file map", async () => {
       const collection = await Collection.loadFromAmbiguousFile("", MOCK_DATASET_FILEMAP, COLLECTION_LOAD_CONFIG);
 
       expect(collection).to.be.instanceOf(Collection);
@@ -267,6 +275,7 @@ describe("Collection", () => {
       expect(collection.getAbsoluteDatasetPath("manifest.json")).to.equal("manifest.json");
       expect(collection.sourcePath).to.be.null;
       expect(collection.sourceType).toEqual(CollectionSourceType.ZIP_FILE);
+      collection.dispose();
     });
 
     it("throws an error if no manifest files exist", async () => {
@@ -276,8 +285,9 @@ describe("Collection", () => {
       );
     });
 
-    it("throws an error collection.json is malformed", async () => {
+    it("throws an error Collection manifest is malformed", async () => {
       const fileMap = {
+        // eslint-disable-next-line
         "collection.json": new File([`{"some-property": "value"}`], "collection.json"),
       };
       await expect(
@@ -288,6 +298,7 @@ describe("Collection", () => {
     it("throws an error if dataset manifest is malformed", async () => {
       const fileMap = {
         ...MOCK_DATASET_FILEMAP,
+        // eslint-disable-next-line
         "manifest.json": new File([`{"some-property": "value"}`], "manifest.json"),
       };
       await expect(Collection.loadFromAmbiguousFile("", fileMap, COLLECTION_LOAD_CONFIG)).rejects.toThrowError(
