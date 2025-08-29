@@ -63,6 +63,7 @@ import Header from "./components/Header";
 import IconButton from "./components/IconButton";
 import LabeledSlider from "./components/Inputs/LabeledSlider";
 import LoadDatasetButton from "./components/LoadDatasetButton";
+import LoadFileModal from "./components/LoadFileModal";
 import SmallScreenWarning from "./components/Modals/SmallScreenWarning";
 import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
 import SpinBox from "./components/SpinBox";
@@ -140,6 +141,8 @@ function Viewer(): ReactElement {
   const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
   const setScatterXAxis = useViewerStateStore((state) => state.setScatterXAxis);
   const setScatterYAxis = useViewerStateStore((state) => state.setScatterYAxis);
+  const setSourceFilename = useViewerStateStore((state) => state.setSourceFilename);
+  const sourceFilename = useViewerStateStore((state) => state.sourceFilename);
   const timeControls = useViewerStateStore((state) => state.timeControls);
 
   const isFeatureSelected = dataset !== null && featureKey !== null;
@@ -149,6 +152,12 @@ function Viewer(): ReactElement {
 
   const [, addRecentCollection] = useRecentCollections();
   const annotationState = useAnnotations();
+
+  // Loading from a local file
+  const fileLoadPromiseResolveRef = useRef<((result: Collection | null) => void) | null>(null);
+  const [expectedFileLoadDatasetName, setExpectedFileLoadDatasetName] = useState<string | null>(null);
+  const [showFileLoadModal, setShowFileLoadModal] = useState(false);
+  const isFileUploadPending = fileLoadPromiseResolveRef.current !== null;
 
   const [isInitialDatasetLoaded, setIsInitialDatasetLoaded] = useState(false);
   const [isDatasetLoading, setIsDatasetLoading] = useState(false);
@@ -356,6 +365,24 @@ function Viewer(): ReactElement {
     });
   }, [showAlert]);
 
+  const showFileLoadPrompt = useCallback(
+    async (filename: string, datasetName: string | null): Promise<Collection | null> => {
+      setSourceFilename(filename);
+      setShowFileLoadModal(true);
+      setExpectedFileLoadDatasetName(datasetName);
+      const collectionPromise = new Promise<Collection | null>((resolve) => {
+        fileLoadPromiseResolveRef.current = resolve;
+      });
+      return collectionPromise;
+    },
+    [setSourceFilename, setShowFileLoadModal]
+  );
+
+  const onLoadedFileCollection = useCallback((collection: Collection) => {
+    fileLoadPromiseResolveRef.current?.(collection);
+    setTimeout(() => setShowFileLoadModal(false), 500);
+  }, []);
+
   /**
    * Replaces the current dataset with another loaded dataset. Handles cleanup and state changes.
    * @param newDataset the new Dataset to replace the existing with. If null, does nothing.
@@ -419,6 +446,7 @@ function Viewer(): ReactElement {
         reportWarning: showDatasetLoadWarning,
         reportLoadError: showDatasetLoadError,
         reportMissingDataset: showMissingDatasetAlert,
+        promptForFileLoad: showFileLoadPrompt,
       });
 
       if (!result) {
@@ -450,7 +478,7 @@ function Viewer(): ReactElement {
       return;
     };
     loadInitialDataset();
-  }, []);
+  }, [showFileLoadPrompt]);
 
   // DISPLAY CONTROLS //////////////////////////////////////////////////////
   const handleDatasetChange = useCallback(
@@ -714,11 +742,23 @@ function Viewer(): ReactElement {
         <h3>{datasetHeader}</h3>
         <FlexRowAlignCenter $gap={12} $wrap="wrap">
           <FlexRowAlignCenter $gap={2} $wrap="wrap">
-            <LoadDatasetButton
-              onLoad={handleDatasetLoad}
-              currentResourceUrl={collection?.sourcePath ?? datasetKey ?? ""}
-              reportWarning={showDatasetLoadWarning}
-            />
+            <div>
+              <LoadDatasetButton
+                onLoad={handleDatasetLoad}
+                currentResourceUrl={collection?.sourcePath ?? datasetKey ?? ""}
+                reportWarning={showDatasetLoadWarning}
+              />
+              <LoadFileModal
+                sourceFilename={sourceFilename ?? ""}
+                onLoad={onLoadedFileCollection}
+                open={showFileLoadModal}
+                targetDataset={expectedFileLoadDatasetName}
+                onClose={() => {
+                  setShowFileLoadModal(false);
+                  fileLoadPromiseResolveRef.current?.(null);
+                }}
+              />
+            </div>
             <Export
               totalFrames={dataset?.numberOfFrames || 0}
               setFrame={setFrame}
@@ -850,7 +890,8 @@ function Viewer(): ReactElement {
                 annotationState={annotationState}
               >
                 <CanvasWrapper
-                  loading={isDatasetLoading}
+                  // Disable loading spinner when file upload is pending
+                  loading={isDatasetLoading && !isFileUploadPending}
                   loadingProgress={datasetLoadProgress}
                   canv={canv}
                   isRecording={isRecording}

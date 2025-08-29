@@ -10,12 +10,14 @@ import { ReportWarningCallback } from "../colorizer/types";
 import { zipToFileMap } from "../colorizer/utils/data_load_utils";
 import { convertAllenPathToHttps, isAllenPath } from "../colorizer/utils/url_utils";
 import { useRecentCollections } from "../hooks";
+import { useViewerStateStore } from "../state";
 import { FlexRowAlignCenter } from "../styles/utils";
 import { renderStringArrayAsJsx } from "../utils/formatting";
 
 import Collection from "../colorizer/Collection";
 import { AppThemeContext } from "./AppStyle";
 import TextButton from "./Buttons/TextButton";
+import StyledInlineProgress from "./Feedback/StyledInlineProgress";
 import MessageCard from "./MessageCard";
 import StyledModal from "./Modals/StyledModal";
 
@@ -75,6 +77,8 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
   const theme = useContext(AppThemeContext);
   const dropdownContextRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<InputRef>(null);
+  const setSourceFilename = useViewerStateStore((state) => state.setSourceFilename);
+  const clearSourceFilename = useViewerStateStore((state) => state.clearSourceFilename);
 
   // STATE ////////////////////////////////////////////////////////////
 
@@ -93,6 +97,8 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
 
   const [isLoadingUrl, setIsLoadingUrl] = useState(false);
   const [isLoadingZip, setIsLoadingZip] = useState(false);
+  const [zipLoadProgress, setZipLoadProgress] = useState(0);
+
   const [errorText, _setErrorText] = useState<ReactNode>("");
   const setErrorText = useCallback((newErrorText: ReactNode) => {
     if (typeof newErrorText === "string" && newErrorText !== "") {
@@ -185,6 +191,39 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
     return loadCollectionData(collection);
   };
 
+  const handleLoadZipClicked = useCallback(
+    async (zipFile: File): Promise<boolean> => {
+      if (isLoadingUrl || isLoadingZip) {
+        return false;
+      }
+      setErrorText("");
+      setIsLoadingZip(true);
+      setZipLoadProgress(0);
+      const handleProgressUpdate = (complete: number, total: number): void => {
+        setZipLoadProgress(Math.floor((complete / total) * 100));
+      };
+      const fileMap = await zipToFileMap(zipFile, handleProgressUpdate);
+      if (Object.keys(fileMap).length === 0) {
+        setErrorText("No files found in ZIP file.");
+        return false;
+      }
+      const didLoadCollection = await handleLoadFromZipFile(zipFile.name, fileMap)
+        .then((result) => {
+          setSourceFilename(zipFile.name);
+          onCollectionLoaded(...result);
+          return true;
+        })
+        .catch((reason) => {
+          // failed
+          setErrorText(reason.toString() || DEFAULT_URL_FAILURE_MESSAGE);
+          return false;
+        });
+      setIsLoadingZip(false);
+      return didLoadCollection;
+    },
+    [isLoadingUrl, isLoadingZip]
+  );
+
   const handleLoadClicked = useCallback(async (): Promise<void> => {
     if (urlInput === "") {
       setErrorText("Please enter a URL!");
@@ -217,7 +256,10 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
     setIsLoadingUrl(true);
 
     handleLoadUrl(formattedUrlInput).then(
-      (result) => onCollectionLoaded(...result),
+      (result) => {
+        onCollectionLoaded(...result);
+        clearSourceFilename();
+      },
       (reason) => {
         // failed
         if (reason && reason.toString().includes("AbortError")) {
@@ -235,7 +277,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
         setIsLoadingUrl(false);
       }
     );
-  }, [urlInput, props.onLoad]);
+  }, [urlInput, props.onLoad, clearSourceFilename]);
 
   const handleCancel = useCallback(() => {
     // should this cancel datasets/collection loading mid-load?
@@ -340,34 +382,16 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
               multiple={false}
               accept=".zip"
               showUploadList={false}
-              beforeUpload={async (zipFile: File): Promise<boolean> => {
-                if (isLoadingUrl || isLoadingZip) {
-                  return false;
-                }
-                setErrorText("");
-                setIsLoadingZip(true);
-                const fileMap = await zipToFileMap(zipFile);
-                if (Object.keys(fileMap).length === 0) {
-                  setErrorText("No files found in ZIP file.");
-                  return false;
-                }
-                const didLoadCollection = await handleLoadFromZipFile(zipFile.name, fileMap)
-                  .then((result) => {
-                    onCollectionLoaded(...result);
-                    return true;
-                  })
-                  .catch((reason) => {
-                    // failed
-                    setErrorText(reason.toString() || DEFAULT_URL_FAILURE_MESSAGE);
-                    return false;
-                  });
-                setIsLoadingZip(false);
-                return didLoadCollection;
-              }}
+              beforeUpload={handleLoadZipClicked}
             >
-              <Button loading={isLoadingZip} disabled={isLoadingUrl}>
-                Load from ZIP
-              </Button>
+              <FlexRowAlignCenter $gap={6}>
+                <Button disabled={isLoadingUrl || isLoadingZip} type="link" style={{ padding: 0 }}>
+                  Load .zip file
+                </Button>
+                {(isLoadingZip || zipLoadProgress !== 0) && !errorText && (
+                  <StyledInlineProgress percent={zipLoadProgress} sizePx={16} />
+                )}
+              </FlexRowAlignCenter>
             </Upload>
           </FlexRowAlignCenter>
           {errorText && <MessageCard type="error">{errorText}</MessageCard>}
