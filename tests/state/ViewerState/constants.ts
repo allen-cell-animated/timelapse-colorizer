@@ -160,5 +160,5 @@ export const MOCK_COLLECTION_MANIFEST: CollectionFile = {
 
 export const MOCK_COLLECTION = new Collection(
   new Map([[MOCK_DATASET_KEY, { path: MOCK_DATASET_PATH, name: MOCK_DATASET_KEY }]]),
-  MOCK_COLLECTION_PATH
+  { sourcePath: MOCK_COLLECTION_PATH }
 );

@@ -13,6 +13,7 @@ export type CollectionEntry = {
   name: string;
 };
 
+/** Metadata loaded directly from the collection JSON file. */
 export type CollectionFileMetadata = {
   name: string;
   description: string;

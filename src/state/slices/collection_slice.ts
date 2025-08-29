@@ -29,11 +29,11 @@ export const serializeCollectionSlice = (slice: Partial<CollectionSliceSerializa
   const collection = slice.collection;
   // Collection URL is null if a single dataset was loaded directly.
   // In this case, the collection doesn't need to be included in the URL.
-  if (!collection || collection.url === null) {
+  if (!collection || collection.sourcePath === null) {
     return {};
   }
   return {
-    [UrlParam.COLLECTION]: collection.url,
+    [UrlParam.COLLECTION]: collection.sourcePath,
   };
 };
 
