@@ -9,6 +9,7 @@ import { AppThemeContext } from "../AppStyle";
 type StyledInlineProgressProps = {
   percent: number;
   error?: boolean;
+  sizePx?: number;
 };
 
 const defaultProps: Partial<StyledInlineProgressProps> = {
@@ -31,7 +32,7 @@ export default function StyledInlineProgress(inputProps: StyledInlineProgressPro
       <Progress
         style={{ marginRight: "8px", verticalAlign: "middle" }}
         type="circle"
-        size={theme.controls.heightSmall - 6}
+        size={props.sizePx ?? theme.controls.heightSmall - 6}
         percent={props.percent}
         showInfo={false}
         strokeColor={progressBarColor}
