@@ -17,7 +17,7 @@ import { IRenderCanvas } from "../colorizer/IRenderCanvas";
 import CanvasRecorder, { RecordingOptions } from "../colorizer/recorders/CanvasRecorder";
 import ImageSequenceRecorder from "../colorizer/recorders/ImageSequenceRecorder";
 import Mp4VideoRecorder, { VideoBitrate } from "../colorizer/recorders/Mp4VideoRecorder";
-import { AppThemeContext } from "./AppStyle";
+import { AppThemeContext, Z_INDEX_MODAL } from "./AppStyle";
 import TextButton from "./Buttons/TextButton";
 import StyledInlineProgress from "./Feedback/StyledInlineProgress";
 import IconButton from "./IconButton";
@@ -346,6 +346,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
       onOk: () => {
         stopRecording(true);
       },
+      zIndex: Z_INDEX_MODAL,
     });
   }, [isRecording, stopRecording]);
 

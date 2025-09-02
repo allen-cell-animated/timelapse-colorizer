@@ -1,6 +1,7 @@
 import { Upload } from "antd";
 import styled from "styled-components";
 
+/** Ant Upload with font size and hover color adjustments. */
 export const StyledUpload = styled(Upload.Dragger)`
   &&& {
     color: var(--color-text-hint);
