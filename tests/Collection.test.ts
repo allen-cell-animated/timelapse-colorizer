@@ -208,19 +208,15 @@ describe("Collection", () => {
           reader.onerror = reject;
           reader.readAsText(file);
         });
-        return Promise.resolve(
-          new Response(fileContents, {
-            status: 200,
-            // eslint-disable-next-line
-            headers: { "Content-Type": file.type },
-          })
-        );
+        return new Response(fileContents, {
+          status: 200,
+          // eslint-disable-next-line
+          headers: { "Content-Type": file.type },
+        });
       }
-      return Promise.resolve(
-        new Response("Not Found", {
-          status: 404,
-        })
-      );
+      return new Response("Not Found", {
+        status: 404,
+      });
     }
 
     //// Constants ////
