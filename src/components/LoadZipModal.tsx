@@ -160,8 +160,8 @@ export default function LoadZipModal(props: LoadZipModalProps): ReactElement {
           <Button
             disabled={!uploadedCollection}
             onClick={() => {
-              if (uploadedCollection) {
-                setSourceZipName(uploadedFile!.name);
+              if (uploadedCollection && uploadedFile) {
+                setSourceZipName(uploadedFile.name);
                 props.onLoad(uploadedCollection);
               }
             }}
