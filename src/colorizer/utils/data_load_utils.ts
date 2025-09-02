@@ -124,9 +124,15 @@ export async function zipToFileMap(
     if (zipObject.dir) {
       return;
     }
-    onLoadStart();
-    // TODO: Handle loading errors?
-    filePromises.push(loadToFileMap(relativePath, zipObject).finally(onLoadComplete));
+    const loadFileCallback = async (): Promise<void> => {
+      onLoadStart();
+      try {
+        return await loadToFileMap(relativePath, zipObject).then(onLoadComplete);
+      } catch (error) {
+        console.error(`Failed to load file ${relativePath} from ${zipFile.name}:`, error);
+      }
+    };
+    filePromises.push(loadFileCallback());
   });
 
   await Promise.allSettled(filePromises);
