@@ -8,6 +8,7 @@ import { AppTheme, AppThemeContext } from "../AppStyle";
 
 type WrappedColorPickerProps = ColorPickerProps & {
   id?: string;
+  containerStyle?: React.CSSProperties;
 };
 
 // Square button trigger with an inset color block inside
@@ -93,7 +94,7 @@ export default function WrappedColorPicker(props: WrappedColorPickerProps): Reac
   }, [props.value]);
 
   return (
-    <div ref={colorPickerContainerRef}>
+    <div ref={colorPickerContainerRef} style={props.containerStyle}>
       <ColorPicker
         getPopupContainer={() => colorPickerContainerRef.current || document.body}
         {...props}
