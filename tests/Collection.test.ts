@@ -190,7 +190,6 @@ describe("Collection", () => {
     const urlToFile: Record<string, File> = {};
 
     window.URL.createObjectURL = (file: File): string => {
-      console.log(file);
       const url = "http://mocked-created-url/" + generateUUID();
       urlToFile[url] = file;
       return url;
