@@ -35,8 +35,8 @@ export type DatasetLoadResult =
     };
 
 export const enum CollectionSourceType {
-  URL,
-  ZIP_FILE,
+  URL = "url",
+  ZIP_FILE = "zip",
 }
 
 /**
@@ -53,16 +53,6 @@ export type CollectionConfig = {
    * When loaded from a local collection file, this should be `collection.json`.
    */
   sourcePath?: string | null;
-  /**
-   * Name of the file that the Collection was loaded from, if loaded from a file
-   * source instead of a URL.
-   *
-   * For example, a ZIP file `MyCollection.zip` containing a `collection.json`
-   * at the root directory should have:
-   * - `sourceFilename` set to `MyCollection.zip`
-   * - `sourcePath` set to `collection.json`.
-   */
-  sourceFilename?: string | null;
   /** The type of Collection source. This can be an uploaded ZIP file or a URL. */
   sourceType?: CollectionSourceType;
   pathResolver?: IPathResolver;
@@ -70,7 +60,6 @@ export type CollectionConfig = {
 
 const makeDefaultCollectionConfig = (): Required<CollectionConfig> => ({
   sourcePath: null,
-  sourceFilename: null,
   sourceType: CollectionSourceType.URL,
   pathResolver: new UrlPathResolver(),
 });
@@ -103,11 +92,6 @@ export default class Collection {
    * such as when generating dummy Collections for single datasets.
    */
   public readonly sourcePath: string | null;
-  /**
-   * Name of the file containing this Collection, if loaded from a
-   * file source.
-   */
-  public readonly sourceFilename: string | null;
   public readonly sourceType: CollectionSourceType;
 
   /**
@@ -136,7 +120,6 @@ export default class Collection {
       ? this.pathResolver.resolve("", Collection.formatAbsoluteCollectionPath(config.sourcePath))
       : defaultConfig.sourcePath;
     this.sourceType = config.sourceType ?? defaultConfig.sourceType;
-    this.sourceFilename = config.sourceFilename ?? defaultConfig.sourceFilename;
 
     this.metadata = metadata;
     console.log("Collection metadata: ", this.metadata);
@@ -624,7 +607,7 @@ export default class Collection {
    * collection JSON file or generated as a wrapper around a single dataset.
    */
   public static async loadFromAmbiguousFile(
-    fileName: string,
+    _fileName: string,
     fileMap: Record<string, File>,
     options: Omit<CollectionLoadOptions, "pathResolver"> = {}
   ): Promise<Collection> {
@@ -636,7 +619,6 @@ export default class Collection {
         pathResolver: filePathResolver,
       };
       const config = {
-        sourceFilename: fileName,
         sourceType: CollectionSourceType.ZIP_FILE,
         pathResolver: filePathResolver,
       };

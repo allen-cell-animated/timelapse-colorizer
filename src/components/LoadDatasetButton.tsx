@@ -349,6 +349,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
                 const fileMap = await zipToFileMap(zipFile);
                 if (Object.keys(fileMap).length === 0) {
                   setErrorText("No files found in ZIP file.");
+                  setIsLoadingZip(false);
                   return false;
                 }
                 const didLoadCollection = await handleLoadFromZipFile(zipFile.name, fileMap)
