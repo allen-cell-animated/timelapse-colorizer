@@ -284,7 +284,7 @@ describe("Collection", () => {
       );
     });
 
-    it("throws an error Collection manifest is malformed", async () => {
+    it("throws an error if Collection manifest is malformed", async () => {
       const fileMap = {
         // eslint-disable-next-line
         "collection.json": new File([`{"some-property": "value"}`], "collection.json"),
