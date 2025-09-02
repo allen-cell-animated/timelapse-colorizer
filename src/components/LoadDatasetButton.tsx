@@ -10,9 +10,9 @@ import { ReportWarningCallback } from "../colorizer/types";
 import { zipToFileMap } from "../colorizer/utils/data_load_utils";
 import { convertAllenPathToHttps, isAllenPath } from "../colorizer/utils/url_utils";
 import { useRecentCollections } from "../hooks";
+import { useJsxText } from "../hooks/useJsxText";
 import { useViewerStateStore } from "../state";
 import { FlexRowAlignCenter } from "../styles/utils";
-import { renderStringArrayAsJsx } from "../utils/formatting";
 
 import Collection from "../colorizer/Collection";
 import { AppThemeContext } from "./AppStyle";
@@ -98,16 +98,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
   const [isLoadingUrl, setIsLoadingUrl] = useState(false);
   const [isLoadingZip, setIsLoadingZip] = useState(false);
   const [zipLoadProgress, setZipLoadProgress] = useState(0);
-
-  const [errorText, _setErrorText] = useState<ReactNode>("");
-  const setErrorText = useCallback((newErrorText: ReactNode) => {
-    if (typeof newErrorText === "string" && newErrorText !== "") {
-      const splitText = newErrorText.split("\n");
-      _setErrorText(renderStringArrayAsJsx(splitText));
-    } else {
-      _setErrorText(newErrorText);
-    }
-  }, []);
+  const [errorText, setErrorText] = useJsxText();
 
   const [isLoadModalOpen, setIsLoadModalOpen] = useState(false);
 

@@ -3,9 +3,10 @@ import { Button } from "antd";
 import React, { ReactElement, ReactNode, useCallback, useMemo, useState } from "react";
 
 import { zipToFileMap } from "../colorizer/utils/data_load_utils";
+import { useJsxText } from "../hooks/useJsxText";
 import { useViewerStateStore } from "../state";
 import { FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter } from "../styles/utils";
-import { formatQuantityString, renderStringArrayAsJsx } from "../utils/formatting";
+import { formatQuantityString } from "../utils/formatting";
 
 import Collection from "../colorizer/Collection";
 import { ButtonStyleLink } from "./Buttons/ButtonStyleLink";
@@ -29,21 +30,10 @@ type LoadFileModalProps = {
 export default function LoadFileModal(props: LoadFileModalProps): ReactElement {
   const setSourceFilename = useViewerStateStore((state) => state.setSourceFilename);
 
-  // TODO: Show a preview of the loaded collection, like in AnnotationImportButton
-  // const [loadedCollection, setLoadedCollection] = useState<Collection | null>(null);
   const [isLoadingZip, setIsLoadingZip] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [uploadedCollection, setUploadedCollection] = useState<Collection | null>(null);
-  // TODO: Make into a separate hook for automatic error/warning formatting?
-  const [errorText, _setErrorText] = useState<ReactNode>(null);
-  const setErrorText = useCallback((newErrorText: ReactNode) => {
-    if (typeof newErrorText === "string" && newErrorText !== "") {
-      const splitText = newErrorText.split("\n");
-      _setErrorText(renderStringArrayAsJsx(splitText));
-    } else {
-      _setErrorText(newErrorText);
-    }
-  }, []);
+  const [errorText, setErrorText] = useJsxText(null);
 
   const [loadProgress, setLoadProgress] = useState(0);
 
