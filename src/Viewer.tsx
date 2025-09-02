@@ -154,10 +154,10 @@ function Viewer(): ReactElement {
   const annotationState = useAnnotations();
 
   // Loading from a local file
-  const fileLoadPromiseResolveRef = useRef<((result: Collection | null) => void) | null>(null);
+  const zipLoadPromiseResolveRef = useRef<((result: Collection | null) => void) | null>(null);
   const [expectedFileLoadDatasetName, setExpectedFileLoadDatasetName] = useState<string | null>(null);
-  const [showFileLoadModal, setShowFileLoadModal] = useState(false);
-  const isFileUploadPending = fileLoadPromiseResolveRef.current !== null;
+  const [showZipLoadModal, setShowZipLoadModal] = useState(false);
+  const isZipUploadPending = zipLoadPromiseResolveRef.current !== null;
 
   const [isInitialDatasetLoaded, setIsInitialDatasetLoaded] = useState(false);
   const [isDatasetLoading, setIsDatasetLoading] = useState(false);
@@ -365,23 +365,26 @@ function Viewer(): ReactElement {
     });
   }, [showAlert]);
 
-  const showFileLoadPrompt = useCallback(
+  const showZipLoadPrompt = useCallback(
     async (filename: string, datasetName: string | null): Promise<Collection | null> => {
       setSourceZipName(filename);
-      setShowFileLoadModal(true);
+      setShowZipLoadModal(true);
       setExpectedFileLoadDatasetName(datasetName);
       const collectionPromise = new Promise<Collection | null>((resolve) => {
-        fileLoadPromiseResolveRef.current = resolve;
+        zipLoadPromiseResolveRef.current = resolve;
       });
       return collectionPromise;
     },
-    [setSourceZipName, setShowFileLoadModal]
+    [setSourceZipName, setShowZipLoadModal, setExpectedFileLoadDatasetName]
   );
 
-  const onLoadedFileCollection = useCallback((collection: Collection) => {
-    fileLoadPromiseResolveRef.current?.(collection);
-    setTimeout(() => setShowFileLoadModal(false), 500);
-  }, []);
+  const onLoadedZipCollection = useCallback(
+    (collection: Collection) => {
+      zipLoadPromiseResolveRef.current?.(collection);
+      setTimeout(() => setShowZipLoadModal(false), 500);
+    },
+    [setShowZipLoadModal]
+  );
 
   /**
    * Replaces the current dataset with another loaded dataset. Handles cleanup and state changes.
@@ -446,7 +449,7 @@ function Viewer(): ReactElement {
         reportWarning: showDatasetLoadWarning,
         reportLoadError: showDatasetLoadError,
         reportMissingDataset: showMissingDatasetAlert,
-        promptForFileLoad: showFileLoadPrompt,
+        promptForFileLoad: showZipLoadPrompt,
       });
 
       if (!result) {
@@ -478,7 +481,7 @@ function Viewer(): ReactElement {
       return;
     };
     loadInitialDataset();
-  }, [showFileLoadPrompt]);
+  }, [showZipLoadPrompt]);
 
   // DISPLAY CONTROLS //////////////////////////////////////////////////////
   const handleDatasetChange = useCallback(
@@ -750,12 +753,12 @@ function Viewer(): ReactElement {
               />
               <LoadZipModal
                 sourceZipName={sourceZipName ?? ""}
-                onLoad={onLoadedFileCollection}
-                open={showFileLoadModal}
+                onLoad={onLoadedZipCollection}
+                open={showZipLoadModal}
                 targetDataset={expectedFileLoadDatasetName}
                 onClose={() => {
-                  setShowFileLoadModal(false);
-                  fileLoadPromiseResolveRef.current?.(null);
+                  setShowZipLoadModal(false);
+                  zipLoadPromiseResolveRef.current?.(null);
                 }}
               />
             </div>
@@ -891,7 +894,7 @@ function Viewer(): ReactElement {
               >
                 <CanvasWrapper
                   // Disable loading spinner when file upload is pending
-                  loading={isDatasetLoading && !isFileUploadPending}
+                  loading={isDatasetLoading && !isZipUploadPending}
                   loadingProgress={datasetLoadProgress}
                   canv={canv}
                   isRecording={isRecording}

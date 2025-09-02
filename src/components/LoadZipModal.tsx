@@ -76,7 +76,6 @@ export default function LoadZipModal(props: LoadZipModalProps): ReactElement {
     if (uploadedCollection === null) {
       return null;
     }
-
     // Display a list of all the datasets in the collection
     const datasetCount = uploadedCollection.getDatasetKeys().length;
     return (
@@ -102,21 +101,14 @@ export default function LoadZipModal(props: LoadZipModalProps): ReactElement {
       return null;
     }
     // Check if the collection has a matching dataset
-    let hasMatchingDataset = false;
-    for (const datasetKey of uploadedCollection.getDatasetKeys()) {
-      if (datasetKey === props.targetDataset) {
-        hasMatchingDataset = true;
-        break;
-      }
+    if (!uploadedCollection.getDatasetKeys().includes(props.targetDataset)) {
+      return (
+        <p>
+          The .zip file is missing the dataset <b>{props.targetDataset}.</b> Some settings may be lost.
+        </p>
+      );
     }
-    if (hasMatchingDataset) {
-      return null;
-    }
-    return (
-      <p>
-        The .zip file is missing the dataset <b>{props.targetDataset}.</b> Some settings may be lost.
-      </p>
-    );
+    return null;
   }, [uploadedCollection, props.targetDataset]);
 
   return (

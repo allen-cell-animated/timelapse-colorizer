@@ -145,7 +145,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
     return;
   };
 
-  const loadCollectionData = async (newCollection: Collection): Promise<LoadedCollectionResult> => {
+  const loadCollectionData = useCallback(async (newCollection: Collection): Promise<LoadedCollectionResult> => {
     const newDatasetKey = newCollection.getDefaultDatasetKey();
     const loadResult = await newCollection.tryLoadDataset(newDatasetKey);
     if (!loadResult.loaded) {
@@ -163,24 +163,27 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
 
     const resourceUrl = newCollection.sourcePath || newCollection.getDefaultDatasetKey();
     return [resourceUrl, newCollection, loadResult.dataset];
-  };
+  }, []);
 
-  const handleLoadUrl = async (url: string): Promise<LoadedCollectionResult> => {
-    console.log("Loading '" + url + "'.");
-    const collection = await Collection.loadFromAmbiguousUrl(url, { reportWarning: props.reportWarning });
-    return loadCollectionData(collection);
-  };
+  const handleLoadUrl = useCallback(
+    async (url: string): Promise<LoadedCollectionResult> => {
+      console.log("Loading '" + url + "'.");
+      const collection = await Collection.loadFromAmbiguousUrl(url, { reportWarning: props.reportWarning });
+      return loadCollectionData(collection);
+    },
+    [loadCollectionData, props.reportWarning]
+  );
 
-  const handleLoadFromZipFile = async (
-    fileName: string,
-    fileMap: Record<string, File>
-  ): Promise<LoadedCollectionResult> => {
-    console.log("Loading from ZIP file:", fileName);
-    const collection = await Collection.loadFromAmbiguousFile(fileName, fileMap, {
-      reportWarning: props.reportWarning,
-    });
-    return loadCollectionData(collection);
-  };
+  const handleLoadFromZipFile = useCallback(
+    async (fileName: string, fileMap: Record<string, File>): Promise<LoadedCollectionResult> => {
+      console.log("Loading from ZIP file:", fileName);
+      const collection = await Collection.loadFromAmbiguousFile(fileName, fileMap, {
+        reportWarning: props.reportWarning,
+      });
+      return loadCollectionData(collection);
+    },
+    [loadCollectionData, props.reportWarning]
+  );
 
   const handleLoadZipClicked = useCallback(
     async (zipFile: File): Promise<boolean> => {
@@ -213,7 +216,16 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
       setIsLoadingZip(false);
       return didLoadCollection;
     },
-    [isLoadingUrl, isLoadingZip]
+    [
+      isLoadingUrl,
+      isLoadingZip,
+      setErrorText,
+      setIsLoadingZip,
+      setZipLoadProgress,
+      handleLoadFromZipFile,
+      setSourceZipName,
+      onCollectionLoaded,
+    ]
   );
 
   const handleLoadClicked = useCallback(async (): Promise<void> => {
