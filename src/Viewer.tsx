@@ -7,17 +7,15 @@ import {
   StepBackwardFilled,
   StepForwardFilled,
 } from "@ant-design/icons";
-import { Checkbox, notification, Slider, Tabs, Tooltip } from "antd";
+import { notification, Slider, Tabs } from "antd";
 import { NotificationConfig } from "antd/es/notification/interface";
 import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 
 import {
-  ColorRampType,
   Dataset,
   DISPLAY_CATEGORICAL_PALETTE_KEYS,
   DISPLAY_COLOR_RAMP_KEYS,
-  isThresholdNumeric,
   KNOWN_CATEGORICAL_PALETTES,
   KNOWN_COLOR_RAMPS,
   LoadTroubleshooting,
@@ -26,7 +24,6 @@ import {
   TabType,
 } from "./colorizer";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./colorizer/utils/analytics";
-import { thresholdMatchFinder } from "./colorizer/utils/data_utils";
 import { useAnnotations, useConstructor, useDebounce, useRecentCollections } from "./colorizer/utils/react_utils";
 import { showFailedUrlParseAlert } from "./components/Banner/alert_templates";
 import { SelectItem } from "./components/Dropdowns/types";
@@ -53,7 +50,7 @@ import { AppThemeContext } from "./components/AppStyle";
 import { useAlertBanner } from "./components/Banner";
 import TextButton from "./components/Buttons/TextButton";
 import CanvasWrapper from "./components/CanvasWrapper";
-import CategoricalColorPicker from "./components/CategoricalColorPicker";
+import FeatureControls from "./components/Controls/FeatureControls";
 import ColorRampDropdown from "./components/Dropdowns/ColorRampDropdown";
 import HelpDropdown from "./components/Dropdowns/HelpDropdown";
 import SelectionDropdown from "./components/Dropdowns/SelectionDropdown";
@@ -61,7 +58,6 @@ import Export from "./components/Export";
 import GlossaryPanel from "./components/GlossaryPanel";
 import Header from "./components/Header";
 import IconButton from "./components/IconButton";
-import LabeledSlider from "./components/Inputs/LabeledSlider";
 import LoadDatasetButton from "./components/LoadDatasetButton";
 import SmallScreenWarning from "./components/Modals/SmallScreenWarning";
 import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
@@ -114,10 +110,8 @@ function Viewer(): ReactElement {
   // TODO: Refactor dataset dropdowns, color ramp controls, and time controls into separate
   // components to greatly reduce the state required for this component.
   // Get viewer state:
-  const [colorRampMin, colorRampMax] = useViewerStateStore((state) => state.colorRampRange);
   const categoricalPalette = useViewerStateStore((state) => state.categoricalPalette);
   const collection = useViewerStateStore((state) => state.collection);
-  const colorRamp = useViewerStateStore((state) => state.colorRamp);
   const colorRampKey = useViewerStateStore((state) => state.colorRampKey);
   const colorRampReversed = useViewerStateStore((state) => state.isColorRampReversed);
   const currentFrame = useViewerStateStore((state) => state.currentFrame);
@@ -125,18 +119,15 @@ function Viewer(): ReactElement {
   const datasetKey = useViewerStateStore((state) => state.datasetKey);
   const featureKey = useViewerStateStore((state) => state.featureKey);
   const featureThresholds = useViewerStateStore((state) => state.thresholds);
-  const keepColorRampRange = useViewerStateStore((state) => state.keepColorRampRange);
   const openTab = useViewerStateStore((state) => state.openTab);
   const selectedPaletteKey = useViewerStateStore((state) => state.categoricalPaletteKey);
   const setCategoricalPalette = useViewerStateStore((state) => state.setCategoricalPalette);
   const setCollection = useViewerStateStore((state) => state.setCollection);
   const setColorRampKey = useViewerStateStore((state) => state.setColorRampKey);
-  const setColorRampRange = useViewerStateStore((state) => state.setColorRampRange);
   const setColorRampReversed = useViewerStateStore((state) => state.setColorRampReversed);
   const setDataset = useViewerStateStore((state) => state.setDataset);
   const setFeatureKey = useViewerStateStore((state) => state.setFeatureKey);
   const setFrame = useViewerStateStore((state) => state.setFrame);
-  const setKeepColorRampRange = useViewerStateStore((state) => state.setKeepColorRampRange);
   const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
   const setScatterXAxis = useViewerStateStore((state) => state.setScatterXAxis);
   const setScatterYAxis = useViewerStateStore((state) => state.setScatterYAxis);
@@ -145,7 +136,6 @@ function Viewer(): ReactElement {
   const isFeatureSelected = dataset !== null && featureKey !== null;
   const isFeatureCategorical = isFeatureSelected && dataset.isFeatureCategorical(featureKey);
   const featureCategories = isFeatureCategorical ? dataset.getFeatureCategories(featureKey) || [] : [];
-  const featureNameWithUnits = isFeatureSelected ? dataset.getFeatureNameWithUnits(featureKey) : undefined;
 
   const [, addRecentCollection] = useRecentCollections();
   const annotationState = useAnnotations();
@@ -601,27 +591,6 @@ function Viewer(): ReactElement {
 
   const disableUi: boolean = isRecording || !datasetOpen;
   const disableTimeControlsUi = disableUi;
-  // Disable color ramp controls when the feature is numeric but we've selected
-  // a categorical color ramp (e.g. glasbey)
-  const disableRampControlsUi = !isFeatureCategorical && colorRamp.type === ColorRampType.CATEGORICAL;
-
-  // TODO: Move into subcomponent for color ramp controls
-  // Show min + max marks on the color ramp slider if a feature is selected and
-  // is currently being thresholded/filtered on.
-  const getColorMapSliderMarks = (): undefined | number[] => {
-    if (dataset === null || featureKey === null || featureThresholds.length === 0) {
-      return undefined;
-    }
-    const featureData = dataset.getFeatureData(featureKey);
-    if (!featureData) {
-      return undefined;
-    }
-    const threshold = featureThresholds.find(thresholdMatchFinder(featureKey, featureData.unit));
-    if (!threshold || !isThresholdNumeric(threshold)) {
-      return undefined;
-    }
-    return [threshold.min, threshold.max];
-  };
 
   const allTabItems: TabItem[] = [
     {
@@ -786,56 +755,7 @@ function Viewer(): ReactElement {
             {/** Canvas */}
             <div className={styles.canvasTopAndCanvasContainer}>
               <div className={styles.canvasTopContainer}>
-                <h3 style={{ margin: "0" }}>{featureNameWithUnits ?? "Feature value range"}</h3>
-                <FlexRowAlignCenter $gap={12} style={{ flexWrap: "wrap", justifyContent: "space-between" }}>
-                  <div style={{ flexBasis: 250, flexShrink: 2, flexGrow: 2, minWidth: "75px" }}>
-                    {
-                      // Render either a categorical color picker or a range slider depending on the feature type
-                      isFeatureCategorical ? (
-                        <CategoricalColorPicker categories={featureCategories} disabled={disableUi} />
-                      ) : (
-                        <Tooltip
-                          trigger={["hover", "focus"]}
-                          title={
-                            disableRampControlsUi
-                              ? "Color ramp adjustment is disabled when a Glasbey color map is selected."
-                              : undefined
-                          }
-                        >
-                          <div style={{ width: "100%" }}>
-                            <LabeledSlider
-                              type="range"
-                              min={colorRampMin}
-                              max={colorRampMax}
-                              minSliderBound={
-                                featureKey !== null ? dataset?.getFeatureData(featureKey)?.min : undefined
-                              }
-                              maxSliderBound={
-                                featureKey !== null ? dataset?.getFeatureData(featureKey)?.max : undefined
-                              }
-                              onChange={function (min: number, max: number): void {
-                                setColorRampRange([min, max]);
-                              }}
-                              marks={getColorMapSliderMarks()}
-                              disabled={disableUi || disableRampControlsUi}
-                            />
-                          </div>
-                        </Tooltip>
-                      )
-                    }
-                  </div>
-                  <div style={{ flexBasis: 100, flexShrink: 1, flexGrow: 1, width: "fit-content" }}>
-                    <Checkbox
-                      checked={keepColorRampRange}
-                      onChange={() => {
-                        // Invert lock on range
-                        setKeepColorRampRange(!keepColorRampRange);
-                      }}
-                    >
-                      Keep range when switching datasets and features
-                    </Checkbox>
-                  </div>
-                </FlexRowAlignCenter>
+                <FeatureControls disabled={disableUi} />
               </div>
               <CanvasHoverTooltip
                 lastValidHoveredId={lastValidHoveredId}
