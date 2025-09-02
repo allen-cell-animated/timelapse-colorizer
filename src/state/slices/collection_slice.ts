@@ -8,33 +8,33 @@ import Collection from "../../colorizer/Collection";
 export type CollectionSliceState = {
   collection: Collection | null;
   /**
-   * The name of the file that the current collection/dataset was loaded from.
+   * The name of the zip file that the current collection/dataset was loaded from.
    */
-  sourceFilename: string | null;
+  sourceZipName: string | null;
 };
 
-export type CollectionSliceSerializableState = Pick<CollectionSliceState, "collection" | "sourceFilename">;
+export type CollectionSliceSerializableState = Pick<CollectionSliceState, "collection" | "sourceZipName">;
 
 export type CollectionSliceActions = {
   setCollection: (collection: Collection) => void;
-  setSourceFilename: (srcFilename: string) => void;
-  clearSourceFilename: () => void;
+  setSourceZipName: (zipName: string) => void;
+  clearSourceZipName: () => void;
 };
 
 export type CollectionSlice = CollectionSliceState & CollectionSliceActions;
 
 export const createCollectionSlice: StateCreator<CollectionSlice, [], [], CollectionSlice> = (set, _get) => ({
   collection: null,
-  sourceFilename: null,
+  sourceZipName: null,
 
   setCollection: (collection: Collection) => {
     set({ collection });
   },
-  setSourceFilename: (sourceFilename: string) => {
-    set({ sourceFilename });
+  setSourceZipName: (sourceZipName: string) => {
+    set({ sourceZipName });
   },
-  clearSourceFilename: () => {
-    set({ sourceFilename: null });
+  clearSourceZipName: () => {
+    set({ sourceZipName: null });
   },
 });
 
@@ -42,11 +42,11 @@ export const serializeCollectionSlice = (slice: Partial<CollectionSliceSerializa
   const ret: SerializedStoreData = {};
 
   const collection = slice.collection;
-  const sourceFilename = slice.sourceFilename;
+  const sourceZipName = slice.sourceZipName;
 
-  if (sourceFilename !== null) {
+  if (sourceZipName !== null) {
     // Source file overrides collection parameter.
-    ret[UrlParam.SOURCE_FILENAME] = sourceFilename;
+    ret[UrlParam.SOURCE_ZIP] = sourceZipName;
   } else {
     // Collection URL is null if a single dataset was loaded directly.
     // In this case, the collection doesn't need to be included in the URL.
@@ -61,5 +61,5 @@ export const serializeCollectionSlice = (slice: Partial<CollectionSliceSerializa
 /** Selects state values that serialization depends on. */
 export const selectCollectionSliceSerializationDeps = (slice: CollectionSlice): CollectionSliceSerializableState => ({
   collection: slice.collection,
-  sourceFilename: slice.sourceFilename,
+  sourceZipName: slice.sourceZipName,
 });

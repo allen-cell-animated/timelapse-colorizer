@@ -23,7 +23,7 @@ export const URL_COLOR_RAMP_REVERSED_SUFFIX = "!";
 export enum UrlParam {
   COLLECTION = "collection",
   DATASET = "dataset",
-  SOURCE_FILENAME = "file",
+  SOURCE_ZIP = "zip",
   TRACK = "track",
   FEATURE = "feature",
   TIME = "t",

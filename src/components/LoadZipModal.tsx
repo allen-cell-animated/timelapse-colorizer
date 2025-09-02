@@ -16,8 +16,8 @@ import { StyledUpload } from "./Inputs/StyledUpload";
 import LoadingSpinner from "./LoadingSpinner";
 import StyledModal from "./Modals/StyledModal";
 
-type LoadFileModalProps = {
-  sourceFilename: string;
+type LoadZipModalProps = {
+  sourceZipName: string;
   targetDataset: string | null;
   onLoad: (collection: Collection) => void;
   onClose: () => void;
@@ -27,8 +27,8 @@ type LoadFileModalProps = {
 /**
  * Prompts a user to reload a collection from a ZIP file.
  */
-export default function LoadFileModal(props: LoadFileModalProps): ReactElement {
-  const setSourceFilename = useViewerStateStore((state) => state.setSourceFilename);
+export default function LoadZipModal(props: LoadZipModalProps): ReactElement {
+  const setSourceZipName = useViewerStateStore((state) => state.setSourceZipName);
 
   const [isLoadingZip, setIsLoadingZip] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -67,7 +67,7 @@ export default function LoadFileModal(props: LoadFileModalProps): ReactElement {
       setIsLoadingZip(false);
       return didLoadCollection;
     },
-    [isLoadingZip, setErrorText, setIsLoadingZip, setSourceFilename, setLoadProgress, props.onLoad]
+    [isLoadingZip, setErrorText, setIsLoadingZip, setSourceZipName, setLoadProgress, props.onLoad]
   );
 
   //// Rendering ////
@@ -125,7 +125,7 @@ export default function LoadFileModal(props: LoadFileModalProps): ReactElement {
         <FlexColumn style={{ wordWrap: "break-word", wordBreak: "break-all" }}>
           <p style={{ margin: "0" }}>To continue, please reload the dataset from a .zip file.</p>
           <p>
-            Previous file: <b>{props.sourceFilename}</b>
+            Previous file: <b>{props.sourceZipName}</b>
           </p>
         </FlexColumn>
         <LoadingSpinner loading={isLoadingZip} progress={loadProgress} iconSize={64}>
@@ -144,7 +144,7 @@ export default function LoadFileModal(props: LoadFileModalProps): ReactElement {
             </FileInfoCard>
           ) : (
             <StyledUpload
-              name={props.sourceFilename}
+              name={props.sourceZipName}
               multiple={false}
               accept=".zip"
               showUploadList={false}
@@ -169,7 +169,7 @@ export default function LoadFileModal(props: LoadFileModalProps): ReactElement {
             disabled={!uploadedCollection}
             onClick={() => {
               if (uploadedCollection) {
-                setSourceFilename(uploadedFile!.name);
+                setSourceZipName(uploadedFile!.name);
                 props.onLoad(uploadedCollection);
               }
             }}

@@ -77,8 +77,8 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
   const theme = useContext(AppThemeContext);
   const dropdownContextRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<InputRef>(null);
-  const setSourceFilename = useViewerStateStore((state) => state.setSourceFilename);
-  const clearSourceFilename = useViewerStateStore((state) => state.clearSourceFilename);
+  const setSourceZipName = useViewerStateStore((state) => state.setSourceZipName);
+  const clearSourceZipName = useViewerStateStore((state) => state.clearSourceZipName);
 
   // STATE ////////////////////////////////////////////////////////////
 
@@ -201,7 +201,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
       }
       const didLoadCollection = await handleLoadFromZipFile(zipFile.name, fileMap)
         .then((result) => {
-          setSourceFilename(zipFile.name);
+          setSourceZipName(zipFile.name);
           onCollectionLoaded(...result);
           return true;
         })
@@ -250,7 +250,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
     handleLoadUrl(formattedUrlInput).then(
       (result) => {
         onCollectionLoaded(...result);
-        clearSourceFilename();
+        clearSourceZipName();
       },
       (reason) => {
         // failed
@@ -269,7 +269,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
         setIsLoadingUrl(false);
       }
     );
-  }, [urlInput, props.onLoad, clearSourceFilename]);
+  }, [urlInput, props.onLoad, clearSourceZipName]);
 
   const handleCancel = useCallback(() => {
     // should this cancel datasets/collection loading mid-load?

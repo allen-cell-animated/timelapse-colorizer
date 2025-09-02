@@ -44,7 +44,7 @@ const CATEGORICAL_PALETTE = KNOWN_CATEGORICAL_PALETTES.get(CATEGORICAL_PALETTE_K
 
 const EXAMPLE_STORE: ViewerStoreSerializableState = {
   collection: MOCK_COLLECTION,
-  sourceFilename: null,
+  sourceZipName: null,
   datasetKey: MOCK_DATASET_KEY,
   featureKey: MockFeatureKeys.FEATURE1,
   track: MOCK_DATASET_DEFAULT_TRACK,
@@ -104,7 +104,7 @@ const EXAMPLE_STORE: ViewerStoreSerializableState = {
 };
 
 // Omit key "palette" because it is overridden by key "palette-key"
-type ExpectedParamType = Required<Omit<SerializedStoreData, UrlParam.PALETTE | UrlParam.SOURCE_FILENAME>>;
+type ExpectedParamType = Required<Omit<SerializedStoreData, UrlParam.PALETTE | UrlParam.SOURCE_ZIP>>;
 const EXAMPLE_STORE_EXPECTED_PARAMS: ExpectedParamType = {
   collection: MOCK_COLLECTION_PATH,
   dataset: MOCK_DATASET_KEY,

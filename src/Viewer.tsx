@@ -63,7 +63,7 @@ import Header from "./components/Header";
 import IconButton from "./components/IconButton";
 import LabeledSlider from "./components/Inputs/LabeledSlider";
 import LoadDatasetButton from "./components/LoadDatasetButton";
-import LoadFileModal from "./components/LoadFileModal";
+import LoadZipModal from "./components/LoadZipModal";
 import SmallScreenWarning from "./components/Modals/SmallScreenWarning";
 import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
 import SpinBox from "./components/SpinBox";
@@ -141,8 +141,8 @@ function Viewer(): ReactElement {
   const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
   const setScatterXAxis = useViewerStateStore((state) => state.setScatterXAxis);
   const setScatterYAxis = useViewerStateStore((state) => state.setScatterYAxis);
-  const setSourceFilename = useViewerStateStore((state) => state.setSourceFilename);
-  const sourceFilename = useViewerStateStore((state) => state.sourceFilename);
+  const setSourceZipName = useViewerStateStore((state) => state.setSourceZipName);
+  const sourceZipName = useViewerStateStore((state) => state.sourceZipName);
   const timeControls = useViewerStateStore((state) => state.timeControls);
 
   const isFeatureSelected = dataset !== null && featureKey !== null;
@@ -367,7 +367,7 @@ function Viewer(): ReactElement {
 
   const showFileLoadPrompt = useCallback(
     async (filename: string, datasetName: string | null): Promise<Collection | null> => {
-      setSourceFilename(filename);
+      setSourceZipName(filename);
       setShowFileLoadModal(true);
       setExpectedFileLoadDatasetName(datasetName);
       const collectionPromise = new Promise<Collection | null>((resolve) => {
@@ -375,7 +375,7 @@ function Viewer(): ReactElement {
       });
       return collectionPromise;
     },
-    [setSourceFilename, setShowFileLoadModal]
+    [setSourceZipName, setShowFileLoadModal]
   );
 
   const onLoadedFileCollection = useCallback((collection: Collection) => {
@@ -748,8 +748,8 @@ function Viewer(): ReactElement {
                 currentResourceUrl={collection?.sourcePath ?? datasetKey ?? ""}
                 reportWarning={showDatasetLoadWarning}
               />
-              <LoadFileModal
-                sourceFilename={sourceFilename ?? ""}
+              <LoadZipModal
+                sourceZipName={sourceZipName ?? ""}
                 onLoad={onLoadedFileCollection}
                 open={showFileLoadModal}
                 targetDataset={expectedFileLoadDatasetName}
