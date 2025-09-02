@@ -40,7 +40,7 @@
 
 .canvasTopContainer {
   padding: 14px 16px;
-  overflow: hidden;
+  /* overflow: hidden; */
   border-bottom: 1px solid var(--color-borders);
 }
 

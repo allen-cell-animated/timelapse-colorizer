@@ -26,7 +26,6 @@ import {
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./colorizer/utils/analytics";
 import { useAnnotations, useConstructor, useDebounce, useRecentCollections } from "./colorizer/utils/react_utils";
 import { showFailedUrlParseAlert } from "./components/Banner/alert_templates";
-import { SelectItem } from "./components/Dropdowns/types";
 import { DEFAULT_PLAYBACK_FPS, INTERNAL_BUILD } from "./constants";
 import { getDifferingProperties } from "./state/utils/data_validation";
 import {
@@ -36,7 +35,7 @@ import {
   serializeViewerState,
 } from "./state/utils/store_io";
 import { makeDebouncedCallback } from "./state/utils/store_utils";
-import { FlexRow, FlexRowAlignCenter } from "./styles/utils";
+import { FlexRowAlignCenter } from "./styles/utils";
 import { LocationState } from "./types";
 import { loadInitialCollectionAndDataset } from "./utils/dataset_load_utils";
 
@@ -55,7 +54,6 @@ import ColorRampDropdown from "./components/Dropdowns/ColorRampDropdown";
 import HelpDropdown from "./components/Dropdowns/HelpDropdown";
 import SelectionDropdown from "./components/Dropdowns/SelectionDropdown";
 import Export from "./components/Export";
-import GlossaryPanel from "./components/GlossaryPanel";
 import Header from "./components/Header";
 import IconButton from "./components/IconButton";
 import LoadDatasetButton from "./components/LoadDatasetButton";
@@ -126,7 +124,6 @@ function Viewer(): ReactElement {
   const setColorRampKey = useViewerStateStore((state) => state.setColorRampKey);
   const setColorRampReversed = useViewerStateStore((state) => state.setColorRampReversed);
   const setDataset = useViewerStateStore((state) => state.setDataset);
-  const setFeatureKey = useViewerStateStore((state) => state.setFeatureKey);
   const setFrame = useViewerStateStore((state) => state.setFrame);
   const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
   const setScatterXAxis = useViewerStateStore((state) => state.setScatterXAxis);
@@ -579,15 +576,6 @@ function Viewer(): ReactElement {
   };
 
   const datasetDropdownData = useMemo(() => collection?.getDatasetKeys() || [], [collection]);
-  const featureDropdownData = useMemo((): SelectItem[] => {
-    if (!dataset) {
-      return [];
-    }
-    // Add units to the dataset feature names if present
-    return dataset.featureKeys.map((key) => {
-      return { value: key, label: dataset.getFeatureNameWithUnits(key) };
-    });
-  }, [dataset]);
 
   const disableUi: boolean = isRecording || !datasetOpen;
   const disableTimeControlsUi = disableUi;
@@ -712,22 +700,6 @@ function Viewer(): ReactElement {
             items={datasetDropdownData}
             onChange={handleDatasetChange}
           />
-          <FlexRow $gap={6}>
-            <SelectionDropdown
-              disabled={disableUi}
-              label="Feature"
-              // TODO: Show feature description here?
-              selected={featureKey ?? undefined}
-              items={featureDropdownData}
-              onChange={(value) => {
-                if (value !== featureKey && dataset) {
-                  setFeatureKey(value);
-                  reportFeatureSelected(dataset, value);
-                }
-              }}
-            />
-            <GlossaryPanel dataset={dataset} />
-          </FlexRow>
 
           <ColorRampDropdown
             knownColorRamps={KNOWN_COLOR_RAMPS}
@@ -755,7 +727,7 @@ function Viewer(): ReactElement {
             {/** Canvas */}
             <div className={styles.canvasTopAndCanvasContainer}>
               <div className={styles.canvasTopContainer}>
-                <FeatureControls disabled={disableUi} />
+                <FeatureControls disabled={disableUi} onFeatureSelected={reportFeatureSelected} />
               </div>
               <CanvasHoverTooltip
                 lastValidHoveredId={lastValidHoveredId}
