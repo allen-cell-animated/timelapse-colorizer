@@ -1,6 +1,7 @@
 import { DataTexture, RGBAFormat, RGBAIntegerFormat, Texture, Vector2 } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "../constants";
+import { IPathResolver, UrlPathResolver } from "./path_resolvers";
 import {
   FeatureArrayType,
   FeatureDataType,
@@ -131,6 +132,7 @@ export default class Dataset {
   public baseUrl: string;
   public manifestUrl: string;
   private hasOpened: boolean;
+  private pathResolver: IPathResolver;
 
   /**
    * Constructs a new Dataset using the provided manifest path.
@@ -138,13 +140,17 @@ export default class Dataset {
    * @param frameLoader Optional.
    * @param arrayLoader Optional.
    */
-  constructor(manifestUrl: string, frameLoader?: ITextureImageLoader, arrayLoader?: IArrayLoader) {
+  constructor(
+    manifestUrl: string,
+    options: { frameLoader?: ITextureImageLoader; arrayLoader?: IArrayLoader; pathResolver?: IPathResolver }
+  ) {
     this.manifestUrl = manifestUrl;
+    this.pathResolver = options.pathResolver ?? new UrlPathResolver();
 
     this.baseUrl = urlUtils.formatPath(manifestUrl.substring(0, manifestUrl.lastIndexOf("/")));
     this.hasOpened = false;
 
-    this.frameLoader = frameLoader || new ImageFrameLoader(RGBAIntegerFormat);
+    this.frameLoader = options.frameLoader || new ImageFrameLoader(RGBAIntegerFormat);
     this.frameFiles = [];
     this.frames = null;
     this.backdropFrames = null;
@@ -152,11 +158,11 @@ export default class Dataset {
 
     this.frameToGlobalIdLookup = null;
 
-    this.backdropLoader = frameLoader || new ImageFrameLoader(RGBAFormat);
+    this.backdropLoader = options.frameLoader || new ImageFrameLoader(RGBAFormat);
     this.backdropData = new Map();
 
-    this.cleanupArrayLoaderOnDispose = !arrayLoader;
-    this.arrayLoader = arrayLoader || new UrlArrayLoader();
+    this.cleanupArrayLoaderOnDispose = !options.arrayLoader;
+    this.arrayLoader = options.arrayLoader || new UrlArrayLoader();
     this.features = new Map();
     this.cachedTracks = new Map();
     this.metadata = defaultMetadata;
@@ -164,22 +170,12 @@ export default class Dataset {
     this.getSegmentationId = this.getSegmentationId.bind(this);
   }
 
-  private resolvePathToUrl = (url: string): string => {
-    if (url.startsWith("http://") || url.startsWith("https://")) {
-      return url;
-    } else if (urlUtils.isAllenPath(url)) {
-      const newUrl = urlUtils.convertAllenPathToHttps(url);
-      if (newUrl) {
-        return newUrl;
-      } else {
-        throw new Error(
-          `Error while resolving path: Allen filepath '${url}' was detected but could not be converted to an HTTPS URL.` +
-            ` This may be because the file is in a directory that is not publicly servable.`
-        );
-      }
-    } else {
-      return `${this.baseUrl}/${url}`;
-    }
+  private resolveManifestPath = (url: string): string | null => {
+    return this.pathResolver.resolve("", url);
+  };
+
+  private resolvePath = (url: string): string | null => {
+    return this.pathResolver.resolve(this.baseUrl, url);
   };
 
   private parseFeatureType(inputType: string | undefined, defaultType = FeatureType.CONTINUOUS): FeatureType {
@@ -198,7 +194,10 @@ export default class Dataset {
   private async loadFeature(metadata: ManifestFile["features"][number]): Promise<[string, FeatureData]> {
     const name = metadata.name;
     const key = metadata.key || getKeyFromName(name);
-    const url = this.resolvePathToUrl(metadata.data);
+    const url = this.resolvePath(metadata.data);
+    if (!url) {
+      throw new Error(`Failed to resolve URL for feature ${name}: '${metadata.data}'`);
+    }
     const featureType = this.parseFeatureType(metadata.type);
 
     const source = await this.arrayLoader.load(
@@ -353,7 +352,10 @@ export default class Dataset {
       return null;
     }
 
-    const url = this.resolvePathToUrl(fileUrl);
+    const url = this.resolvePath(fileUrl);
+    if (!url) {
+      throw new Error(`Failed to resolve path: '${fileUrl}'`);
+    }
     const source = await this.arrayLoader.load(url, dataType);
     return source.getBuffer();
   }
@@ -391,7 +393,10 @@ export default class Dataset {
       return undefined;
     }
 
-    const fullUrl = this.resolvePathToUrl(this.frameFiles[index]);
+    const fullUrl = this.resolvePath(this.frameFiles[index]);
+    if (!fullUrl) {
+      throw new Error(`Failed to resolve path for frame ${index}: '${this.frameFiles[index]}'`);
+    }
     const loadedFrame = await this.frameLoader.load(fullUrl);
     this.frameDimensions = new Vector2(loadedFrame.image.width, loadedFrame.image.height);
     const frameSizeBytes = loadedFrame.image.width * loadedFrame.image.height * 4;
@@ -429,7 +434,10 @@ export default class Dataset {
       return undefined;
     }
 
-    const fullUrl = this.resolvePathToUrl(frames[index]);
+    const fullUrl = this.resolvePath(frames[index]);
+    if (!fullUrl) {
+      throw new Error(`Failed to resolve path for backdrop '${key}' at index ${index}: '${frames[index]}'`);
+    }
     const loadedFrame = await this.backdropLoader.load(fullUrl);
     this.backdropFrames?.insert(cacheKey, loadedFrame);
     return loadedFrame;
@@ -506,13 +514,21 @@ export default class Dataset {
 
     const startTime = new Date();
 
-    const manifest = updateManifestVersion(await options.manifestLoader(this.manifestUrl));
+    const resolvedManifestUrl = this.resolveManifestPath(this.manifestUrl);
+    if (resolvedManifestUrl === null) {
+      throw new Error(`Failed to resolve path for dataset manifest '${this.manifestUrl}'. Does the file exist?`);
+    }
+    const manifest = updateManifestVersion(await options.manifestLoader(resolvedManifestUrl));
 
     this.frameFiles = manifest.frames;
     const frames3dSrc = manifest.frames3d;
     if (frames3dSrc && frames3dSrc.source) {
+      const frameSource = this.resolvePath(frames3dSrc.source);
+      if (!frameSource) {
+        throw new Error(`Failed to resolve path for 3D frame source: '${frames3dSrc.source}'`);
+      }
       this.frames3d = {
-        source: this.resolvePathToUrl(frames3dSrc.source),
+        source: frameSource,
         segmentationChannel: manifest.frames3d?.segmentationChannel ?? 0,
         totalFrames: manifest.frames3d?.totalFrames ?? 0,
       };

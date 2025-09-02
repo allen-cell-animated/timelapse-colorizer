@@ -1,5 +1,5 @@
 import { FolderOpenOutlined, UploadOutlined } from "@ant-design/icons";
-import { Button, Dropdown, Input, InputRef, MenuProps, Space } from "antd";
+import { Button, Dropdown, Input, InputRef, MenuProps, Space, Upload } from "antd";
 import { MenuItemType } from "antd/es/menu/interface";
 import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
@@ -7,8 +7,10 @@ import { useClickAnyWhere } from "usehooks-ts";
 
 import { Dataset } from "../colorizer";
 import { ReportWarningCallback } from "../colorizer/types";
+import { zipToFileMap } from "../colorizer/utils/data_load_utils";
 import { useRecentCollections } from "../colorizer/utils/react_utils";
 import { convertAllenPathToHttps, isAllenPath } from "../colorizer/utils/url_utils";
+import { FlexRowAlignCenter } from "../styles/utils";
 import { renderStringArrayAsJsx } from "../utils/formatting";
 
 import Collection from "../colorizer/Collection";
@@ -32,6 +34,8 @@ type LoadDatasetButtonProps = {
   currentResourceUrl: string;
   reportWarning?: ReportWarningCallback;
 };
+
+type LoadedCollectionResult = [string, Collection, Dataset];
 
 const defaultProps: Partial<LoadDatasetButtonProps> = {};
 
@@ -87,7 +91,8 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
 
   const [recentCollections, registerCollection] = useRecentCollections();
 
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingUrl, setIsLoadingUrl] = useState(false);
+  const [isLoadingZip, setIsLoadingZip] = useState(false);
   const [errorText, _setErrorText] = useState<ReactNode>("");
   const setErrorText = useCallback((newErrorText: ReactNode) => {
     if (typeof newErrorText === "string" && newErrorText !== "") {
@@ -107,7 +112,8 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
       // Clear modal when opening
       // TODO: This does not actually stop the underlying load operation. Could cause the interface to act
       // unexpectedly, but maybe not a huge problem because there's a ~4s timeout on the load operation anyways.
-      setIsLoading(false);
+      setIsLoadingUrl(false);
+      setIsLoadingZip(false);
       setErrorText("");
     }
   }, [isLoadModalOpen]);
@@ -123,17 +129,26 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
     }
   });
 
-  /**
-   * Attempt to load a URL and return the resource path, the loaded collection, and the loaded dataset.
-   * The URL can either be a collection or a dataset, so handle it as an ambiguous URL.
-   * @throws an error if the URL could not be loaded.
-   * @returns an array, containing:
-   *   - the loaded collection
-   *   - the loaded dataset
-   */
-  const handleLoadRequest = async (url: string): Promise<[string, Collection, Dataset]> => {
-    console.log("Loading '" + url + "'.");
-    const newCollection = await Collection.loadFromAmbiguousUrl(url, { reportWarning: props.reportWarning });
+  const onCollectionLoaded = (loadedUrl: string, collection: Collection, dataset: Dataset): void => {
+    props.onLoad(collection, collection.getDefaultDatasetKey(), dataset);
+
+    // Add a slight delay before closing and resetting the modal for a smoother experience
+    setTimeout(() => {
+      setIsLoadModalOpen(false);
+      setIsLoadingUrl(false);
+      setIsLoadingZip(false);
+      // Add to recent collections
+      registerCollection({
+        url: loadedUrl,
+        label: urlInput, // Use raw url input for the label
+      });
+      setErrorText("");
+      setUrlInput("");
+    }, 500);
+    return;
+  };
+
+  const loadCollectionData = async (newCollection: Collection): Promise<LoadedCollectionResult> => {
     const newDatasetKey = newCollection.getDefaultDatasetKey();
     const loadResult = await newCollection.tryLoadDataset(newDatasetKey);
     if (!loadResult.loaded) {
@@ -151,6 +166,23 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
 
     const resourceUrl = newCollection.url || newCollection.getDefaultDatasetKey();
     return [resourceUrl, newCollection, loadResult.dataset];
+  };
+
+  const handleLoadUrl = async (url: string): Promise<LoadedCollectionResult> => {
+    console.log("Loading '" + url + "'.");
+    const collection = await Collection.loadFromAmbiguousUrl(url, { reportWarning: props.reportWarning });
+    return loadCollectionData(collection);
+  };
+
+  const handleLoadFromZipFile = async (
+    fileName: string,
+    fileMap: Record<string, File>
+  ): Promise<LoadedCollectionResult> => {
+    console.log("Loading from ZIP file:", fileName);
+    const collection = await Collection.loadFromAmbiguousFile(fileName, fileMap, {
+      reportWarning: props.reportWarning,
+    });
+    return loadCollectionData(collection);
   };
 
   const handleLoadClicked = useCallback(async (): Promise<void> => {
@@ -179,29 +211,13 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
       );
       return;
     }
-    if (isLoading) {
+    if (isLoadingUrl || isLoadingZip) {
       return;
     }
-    setIsLoading(true);
+    setIsLoadingUrl(true);
 
-    handleLoadRequest(formattedUrlInput).then(
-      ([loadedUrl, collection, dataset]) => {
-        props.onLoad(collection, collection.getDefaultDatasetKey(), dataset);
-
-        // Add a slight delay before closing and resetting the modal for a smoother experience
-        setTimeout(() => {
-          setIsLoadModalOpen(false);
-          setIsLoading(false);
-          // Add to recent collections
-          registerCollection({
-            url: loadedUrl,
-            label: urlInput, // Use raw url input for the label
-          });
-          setErrorText("");
-          setUrlInput("");
-        }, 500);
-        return;
-      },
+    handleLoadUrl(formattedUrlInput).then(
+      (result) => onCollectionLoaded(...result),
       (reason) => {
         // failed
         if (reason && reason.toString().includes("AbortError")) {
@@ -216,14 +232,15 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
         } else {
           setErrorText(reason.toString() || DEFAULT_URL_FAILURE_MESSAGE);
         }
-        setIsLoading(false);
+        setIsLoadingUrl(false);
       }
     );
   }, [urlInput, props.onLoad]);
 
   const handleCancel = useCallback(() => {
     // should this cancel datasets/collection loading mid-load?
-    setIsLoading(false);
+    setIsLoadingUrl(false);
+    setIsLoadingZip(false);
     setErrorText("");
     setIsLoadModalOpen(false);
     setShowRecentDropdown(false);
@@ -304,16 +321,54 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
                     ref={inputRef}
                     onChange={(event) => setUrlInput(event.target.value)}
                     allowClear
-                    disabled={isLoading}
+                    disabled={isLoadingUrl || isLoadingZip}
                     onPressEnter={handleLoadClicked}
                   />
                 </Dropdown>
-                <Button type="primary" onClick={handleLoadClicked} loading={isLoading}>
+                <Button type="primary" onClick={handleLoadClicked} loading={isLoadingUrl} disabled={isLoadingZip}>
                   Load
                 </Button>
               </Space.Compact>
             </div>
           </div>
+
+          <FlexRowAlignCenter>
+            <Upload
+              name="file"
+              multiple={false}
+              accept=".zip"
+              showUploadList={false}
+              beforeUpload={async (zipFile: File): Promise<boolean> => {
+                if (isLoadingUrl || isLoadingZip) {
+                  return false;
+                }
+                setErrorText("");
+                setIsLoadingZip(true);
+                const fileMap = await zipToFileMap(zipFile);
+                if (Object.keys(fileMap).length === 0) {
+                  setErrorText("No files found in ZIP file.");
+                  setIsLoadingZip(false);
+                  return false;
+                }
+                const didLoadCollection = await handleLoadFromZipFile(zipFile.name, fileMap)
+                  .then((result) => {
+                    onCollectionLoaded(...result);
+                    return true;
+                  })
+                  .catch((reason) => {
+                    // failed
+                    setErrorText(reason.toString() || DEFAULT_URL_FAILURE_MESSAGE);
+                    return false;
+                  });
+                setIsLoadingZip(false);
+                return didLoadCollection;
+              }}
+            >
+              <Button loading={isLoadingZip} disabled={isLoadingUrl}>
+                Load from ZIP
+              </Button>
+            </Upload>
+          </FlexRowAlignCenter>
           {errorText && <MessageCard type="error">{errorText}</MessageCard>}
         </div>
       </StyledModal>

@@ -52,7 +52,7 @@ export function makeMockFetchMethod(validUrl: string, bodyJson: any): typeof fet
     text: function (): Promise<string> {
       throw new Error("Function not implemented.");
     },
-    bytes: function (): Promise<Uint8Array> {
+    bytes: function (): Promise<Uint8Array<ArrayBuffer>> {
       throw new Error("Function not implemented.");
     },
   };
@@ -143,7 +143,7 @@ export const makeMockDataset = async (
   manifest: AnyManifestFile,
   loader: MockArrayLoader = new MockArrayLoader()
 ): Promise<Dataset> => {
-  const dataset = new Dataset(DEFAULT_DATASET_PATH, new MockFrameLoader(), loader);
+  const dataset = new Dataset(DEFAULT_DATASET_PATH, { frameLoader: new MockFrameLoader(), arrayLoader: loader });
   const mockLoader = makeMockAsyncLoader(DEFAULT_DATASET_PATH, manifest);
   await dataset.open({ manifestLoader: mockLoader });
   return dataset;
