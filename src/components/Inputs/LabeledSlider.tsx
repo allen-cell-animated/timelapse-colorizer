@@ -38,6 +38,7 @@ type BaseLabeledSliderProps = {
    * under the slider endpoints. If undefined, formats numbers to `maxDecimalsToDisplay` decimal places.
    */
   numberFormatter?: (value?: number) => React.ReactNode;
+  sliderStyles?: SliderBaseProps["styles"];
 };
 
 type LabeledRangeSliderProps = BaseLabeledSliderProps & {
@@ -228,6 +229,7 @@ export default function LabeledSlider(inputProps: LabeledSliderProps): ReactElem
       formatter: numberFormatter,
       open: props.disabled ? false : undefined, // Hide tooltip when disabled
     },
+    styles: props.sliderStyles,
   };
   const valueSliderProps: SliderSingleProps = {
     value: props.type === "value" ? props.value : undefined,

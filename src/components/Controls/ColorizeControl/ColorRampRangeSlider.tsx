@@ -1,7 +1,7 @@
 import { Tooltip } from "antd";
 import React, { ReactElement, useMemo } from "react";
 
-import { ColorRampType, isThresholdNumeric } from "../../../colorizer";
+import { ColorRamp, ColorRampType, isThresholdNumeric } from "../../../colorizer";
 import { thresholdMatchFinder } from "../../../colorizer/utils/data_utils";
 import { useViewerStateStore } from "../../../state";
 
@@ -10,6 +10,29 @@ import LabeledSlider from "../../Inputs/LabeledSlider";
 type ColorRampRangeSliderProps = {
   disabled: boolean;
 };
+
+function getCssLinearGradient(
+  min: number,
+  max: number,
+  minRange: number,
+  maxRange: number,
+  colorRamp: ColorRamp
+): string {
+  // When `max > maxRange` or `min < minRange`, the gradient stops will be
+  // outside of the [0, 100] range. This is intentional, because it allows the
+  // gradient to stretch past the bounds of physical color ramp control.
+  const tMin = Math.min(((min - minRange) / (maxRange - minRange)) * 100, 0);
+  const tMax = Math.max(((max - minRange) / (maxRange - minRange)) * 100, 100);
+  const colorStops = colorRamp.colorStops;
+
+  const stops: [string, number][] = [];
+  const stepSize = (tMax - tMin) / (colorStops.length - 1);
+  for (let i = 0; i < colorStops.length; i++) {
+    const position = tMin + stepSize * i;
+    stops.push(["#" + colorStops[i].getHexString(), position]);
+  }
+  return `linear-gradient(to right, ${stops.map(([color, pos]) => `${color} ${pos}%`).join(", ")})`;
+}
 
 export default function ColorRampRangeSlider(props: ColorRampRangeSliderProps): ReactElement {
   const [colorRampMin, colorRampMax] = useViewerStateStore((state) => state.colorRampRange);
@@ -39,6 +62,14 @@ export default function ColorRampRangeSlider(props: ColorRampRangeSliderProps): 
 
   const isUsingGlasbeyRamp = colorRamp.type === ColorRampType.CATEGORICAL;
 
+  const minBound = featureKey !== null ? dataset?.getFeatureData(featureKey)?.min : undefined;
+  const maxBound = featureKey !== null ? dataset?.getFeatureData(featureKey)?.max : undefined;
+  const bgGradient = useMemo(
+    () =>
+      getCssLinearGradient(colorRampMin, colorRampMax, minBound ?? colorRampMin, maxBound ?? colorRampMax, colorRamp),
+    [colorRampMin, colorRampMax, minBound, maxBound, colorRamp, isUsingGlasbeyRamp]
+  );
+
   return (
     <Tooltip
       trigger={["hover", "focus"]}
@@ -49,13 +80,25 @@ export default function ColorRampRangeSlider(props: ColorRampRangeSliderProps): 
           type="range"
           min={colorRampMin}
           max={colorRampMax}
-          minSliderBound={featureKey !== null ? dataset?.getFeatureData(featureKey)?.min : undefined}
-          maxSliderBound={featureKey !== null ? dataset?.getFeatureData(featureKey)?.max : undefined}
+          minSliderBound={minBound}
+          maxSliderBound={maxBound}
           onChange={function (min: number, max: number): void {
             setColorRampRange([min, max]);
           }}
           marks={marks}
           disabled={props.disabled || isUsingGlasbeyRamp}
+          sliderStyles={
+            isUsingGlasbeyRamp
+              ? undefined
+              : {
+                  track: {
+                    background: "transparent",
+                  },
+                  tracks: {
+                    background: bgGradient,
+                  },
+                }
+          }
         />
       </div>
     </Tooltip>
