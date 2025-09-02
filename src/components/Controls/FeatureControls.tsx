@@ -1,12 +1,19 @@
 import { Checkbox } from "antd";
 import React, { ReactElement, useMemo } from "react";
 
-import { Dataset } from "../../colorizer";
+import {
+  Dataset,
+  DISPLAY_CATEGORICAL_PALETTE_KEYS,
+  DISPLAY_COLOR_RAMP_KEYS,
+  KNOWN_CATEGORICAL_PALETTES,
+  KNOWN_COLOR_RAMPS,
+} from "../../colorizer";
 import { useViewerStateStore } from "../../state";
 import { FlexRow, FlexRowAlignCenter } from "../../styles/utils";
 import { SelectItem } from "../Dropdowns/types";
 
 import CategoricalColorPicker from "../CategoricalColorPicker";
+import ColorRampDropdown from "../Dropdowns/ColorRampDropdown";
 import SelectionDropdown from "../Dropdowns/SelectionDropdown";
 import GlossaryPanel from "../GlossaryPanel";
 import ColorRampRangeSlider from "./ColorizeControl/ColorRampRangeSlider";
@@ -22,6 +29,13 @@ export default function FeatureControls(props: FeatureControlsProps): ReactEleme
   const keepColorRampRange = useViewerStateStore((state) => state.keepColorRampRange);
   const setFeatureKey = useViewerStateStore((state) => state.setFeatureKey);
   const setKeepColorRampRange = useViewerStateStore((state) => state.setKeepColorRampRange);
+  const categoricalPalette = useViewerStateStore((state) => state.categoricalPalette);
+  const colorRampKey = useViewerStateStore((state) => state.colorRampKey);
+  const colorRampReversed = useViewerStateStore((state) => state.isColorRampReversed);
+  const selectedPaletteKey = useViewerStateStore((state) => state.categoricalPaletteKey);
+  const setCategoricalPalette = useViewerStateStore((state) => state.setCategoricalPalette);
+  const setColorRampKey = useViewerStateStore((state) => state.setColorRampKey);
+  const setColorRampReversed = useViewerStateStore((state) => state.setColorRampReversed);
 
   const isFeatureSelected = dataset !== null && featureKey !== null;
   const isFeatureCategorical = isFeatureSelected && dataset.isFeatureCategorical(featureKey); // Disable color ramp controls when the feature is numeric but we've selected
@@ -41,7 +55,7 @@ export default function FeatureControls(props: FeatureControlsProps): ReactEleme
   return (
     <>
       {/* <h3 style={{ margin: "0" }}>{featureNameWithUnits ?? "Feature value range"}</h3> */}
-      <FlexRowAlignCenter>
+      <FlexRowAlignCenter $gap={20}>
         <FlexRow $gap={6}>
           <SelectionDropdown
             disabled={props.disabled}
@@ -58,6 +72,24 @@ export default function FeatureControls(props: FeatureControlsProps): ReactEleme
           />
           <GlossaryPanel dataset={dataset} />
         </FlexRow>
+        <ColorRampDropdown
+          knownColorRamps={KNOWN_COLOR_RAMPS}
+          colorRampsToDisplay={DISPLAY_COLOR_RAMP_KEYS}
+          selectedRamp={colorRampKey}
+          reversed={colorRampReversed}
+          onChangeRamp={(name, reversed) => {
+            setColorRampKey(name);
+            setColorRampReversed(reversed);
+          }}
+          disabled={props.disabled}
+          knownCategoricalPalettes={KNOWN_CATEGORICAL_PALETTES}
+          categoricalPalettesToDisplay={DISPLAY_CATEGORICAL_PALETTE_KEYS}
+          useCategoricalPalettes={isFeatureCategorical}
+          numCategories={Math.max(featureCategories.length, 1)}
+          selectedPalette={categoricalPalette}
+          selectedPaletteKey={selectedPaletteKey}
+          onChangePalette={setCategoricalPalette}
+        />
       </FlexRowAlignCenter>
       <FlexRowAlignCenter $gap={12} style={{ flexWrap: "wrap", justifyContent: "space-between" }}>
         <div style={{ flexBasis: 250, flexShrink: 2, flexGrow: 2, minWidth: "75px" }}>

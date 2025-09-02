@@ -12,17 +12,7 @@ import { NotificationConfig } from "antd/es/notification/interface";
 import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 
-import {
-  Dataset,
-  DISPLAY_CATEGORICAL_PALETTE_KEYS,
-  DISPLAY_COLOR_RAMP_KEYS,
-  KNOWN_CATEGORICAL_PALETTES,
-  KNOWN_COLOR_RAMPS,
-  LoadTroubleshooting,
-  PixelIdInfo,
-  ReportWarningCallback,
-  TabType,
-} from "./colorizer";
+import { Dataset, LoadTroubleshooting, PixelIdInfo, ReportWarningCallback, TabType } from "./colorizer";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./colorizer/utils/analytics";
 import { useAnnotations, useConstructor, useDebounce, useRecentCollections } from "./colorizer/utils/react_utils";
 import { showFailedUrlParseAlert } from "./components/Banner/alert_templates";
@@ -50,7 +40,6 @@ import { useAlertBanner } from "./components/Banner";
 import TextButton from "./components/Buttons/TextButton";
 import CanvasWrapper from "./components/CanvasWrapper";
 import FeatureControls from "./components/Controls/FeatureControls";
-import ColorRampDropdown from "./components/Dropdowns/ColorRampDropdown";
 import HelpDropdown from "./components/Dropdowns/HelpDropdown";
 import SelectionDropdown from "./components/Dropdowns/SelectionDropdown";
 import Export from "./components/Export";
@@ -108,21 +97,14 @@ function Viewer(): ReactElement {
   // TODO: Refactor dataset dropdowns, color ramp controls, and time controls into separate
   // components to greatly reduce the state required for this component.
   // Get viewer state:
-  const categoricalPalette = useViewerStateStore((state) => state.categoricalPalette);
   const collection = useViewerStateStore((state) => state.collection);
-  const colorRampKey = useViewerStateStore((state) => state.colorRampKey);
-  const colorRampReversed = useViewerStateStore((state) => state.isColorRampReversed);
   const currentFrame = useViewerStateStore((state) => state.currentFrame);
   const dataset = useViewerStateStore((state) => state.dataset);
   const datasetKey = useViewerStateStore((state) => state.datasetKey);
   const featureKey = useViewerStateStore((state) => state.featureKey);
   const featureThresholds = useViewerStateStore((state) => state.thresholds);
   const openTab = useViewerStateStore((state) => state.openTab);
-  const selectedPaletteKey = useViewerStateStore((state) => state.categoricalPaletteKey);
-  const setCategoricalPalette = useViewerStateStore((state) => state.setCategoricalPalette);
   const setCollection = useViewerStateStore((state) => state.setCollection);
-  const setColorRampKey = useViewerStateStore((state) => state.setColorRampKey);
-  const setColorRampReversed = useViewerStateStore((state) => state.setColorRampReversed);
   const setDataset = useViewerStateStore((state) => state.setDataset);
   const setFrame = useViewerStateStore((state) => state.setFrame);
   const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
@@ -132,7 +114,6 @@ function Viewer(): ReactElement {
 
   const isFeatureSelected = dataset !== null && featureKey !== null;
   const isFeatureCategorical = isFeatureSelected && dataset.isFeatureCategorical(featureKey);
-  const featureCategories = isFeatureCategorical ? dataset.getFeatureCategories(featureKey) || [] : [];
 
   const [, addRecentCollection] = useRecentCollections();
   const annotationState = useAnnotations();
@@ -699,25 +680,6 @@ function Viewer(): ReactElement {
             buttonType="primary"
             items={datasetDropdownData}
             onChange={handleDatasetChange}
-          />
-
-          <ColorRampDropdown
-            knownColorRamps={KNOWN_COLOR_RAMPS}
-            colorRampsToDisplay={DISPLAY_COLOR_RAMP_KEYS}
-            selectedRamp={colorRampKey}
-            reversed={colorRampReversed}
-            onChangeRamp={(name, reversed) => {
-              setColorRampKey(name);
-              setColorRampReversed(reversed);
-            }}
-            disabled={disableUi}
-            knownCategoricalPalettes={KNOWN_CATEGORICAL_PALETTES}
-            categoricalPalettesToDisplay={DISPLAY_CATEGORICAL_PALETTE_KEYS}
-            useCategoricalPalettes={isFeatureCategorical}
-            numCategories={Math.max(featureCategories.length, 1)}
-            selectedPalette={categoricalPalette}
-            selectedPaletteKey={selectedPaletteKey}
-            onChangePalette={setCategoricalPalette}
           />
         </FlexRowAlignCenter>
 
