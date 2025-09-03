@@ -11,7 +11,7 @@ type ColorRampRangeSliderProps = {
   disabled: boolean;
 };
 
-function getCssLinearGradient(
+function getTrackCssGradient(
   min: number,
   max: number,
   minRange: number,
@@ -32,6 +32,21 @@ function getCssLinearGradient(
     stops.push(["#" + colorStops[i].getHexString(), position]);
   }
   return `linear-gradient(to right, ${stops.map(([color, pos]) => `${color} ${pos}%`).join(", ")})`;
+}
+
+function getRailCssGradient(
+  min: number,
+  max: number,
+  minRange: number,
+  maxRange: number,
+  colorRamp: ColorRamp
+): string {
+  const tMin = ((min - minRange) / (maxRange - minRange)) * 100;
+  const tMax = ((max - minRange) / (maxRange - minRange)) * 100;
+  const colorStops = colorRamp.colorStops;
+  const firstStop = colorStops[0];
+  const lastStop = colorStops[colorStops.length - 1];
+  return `linear-gradient(to right, #${firstStop.getHexString()} ${tMin}%, #${lastStop.getHexString()} ${tMax}%)`;
 }
 
 export default function ColorRampRangeSlider(props: ColorRampRangeSliderProps): ReactElement {
@@ -66,8 +81,12 @@ export default function ColorRampRangeSlider(props: ColorRampRangeSliderProps): 
   const maxBound = featureKey !== null ? dataset?.getFeatureData(featureKey)?.max : undefined;
   const bgGradient = useMemo(
     () =>
-      getCssLinearGradient(colorRampMin, colorRampMax, minBound ?? colorRampMin, maxBound ?? colorRampMax, colorRamp),
-    [colorRampMin, colorRampMax, minBound, maxBound, colorRamp, isUsingGlasbeyRamp]
+      getTrackCssGradient(colorRampMin, colorRampMax, minBound ?? colorRampMin, maxBound ?? colorRampMax, colorRamp),
+    [colorRampMin, colorRampMax, minBound, maxBound, colorRamp]
+  );
+  const trackGradient = useMemo(
+    () => getRailCssGradient(colorRampMin, colorRampMax, minBound ?? colorRampMin, maxBound ?? colorRampMax, colorRamp),
+    [colorRampMin, colorRampMax, minBound, maxBound, colorRamp]
   );
 
   return (
@@ -96,6 +115,9 @@ export default function ColorRampRangeSlider(props: ColorRampRangeSliderProps): 
                   },
                   tracks: {
                     background: bgGradient,
+                  },
+                  rail: {
+                    background: trackGradient,
                   },
                 }
           }
