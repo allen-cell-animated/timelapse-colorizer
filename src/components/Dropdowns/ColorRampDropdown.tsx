@@ -237,7 +237,7 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
   };
 
   return (
-    <FlexRowAlignCenter>
+    <FlexRowAlignCenter $gap={4}>
       <DropdownStyleContainer $categorical={props.useCategoricalPalettes}>
         <SelectionDropdown
           disabled={props.disabled}
@@ -255,7 +255,6 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
       <Tooltip title="Reverse color map" open={props.disabled || props.useCategoricalPalettes ? false : undefined}>
         <IconButton
           aria-label="Reverse color map"
-          style={{ marginLeft: "2px" }}
           type="link"
           disabled={props.disabled || props.useCategoricalPalettes}
           onClick={() => {

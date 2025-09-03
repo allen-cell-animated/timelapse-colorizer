@@ -1,10 +1,13 @@
+import { LockOutlined, UnlockOutlined } from "@ant-design/icons";
 import { Tooltip } from "antd";
 import React, { ReactElement, useMemo } from "react";
 
 import { ColorRamp, ColorRampType, isThresholdNumeric } from "../../../colorizer";
 import { thresholdMatchFinder } from "../../../colorizer/utils/data_utils";
 import { useViewerStateStore } from "../../../state";
+import { FlexRowAlignCenter } from "../../../styles/utils";
 
+import IconButton from "../../IconButton";
 import LabeledSlider from "../../Inputs/LabeledSlider";
 
 type ColorRampRangeSliderProps = {
@@ -55,6 +58,8 @@ export default function ColorRampRangeSlider(props: ColorRampRangeSliderProps): 
   const dataset = useViewerStateStore((state) => state.dataset);
   const featureKey = useViewerStateStore((state) => state.featureKey);
   const featureThresholds = useViewerStateStore((state) => state.thresholds);
+  const keepColorRampRange = useViewerStateStore((state) => state.keepColorRampRange);
+  const setKeepColorRampRange = useViewerStateStore((state) => state.setKeepColorRampRange);
 
   const setColorRampRange = useViewerStateStore((state) => state.setColorRampRange);
 
@@ -89,12 +94,15 @@ export default function ColorRampRangeSlider(props: ColorRampRangeSliderProps): 
     [colorRampMin, colorRampMax, minBound, maxBound, colorRamp]
   );
 
+  const keepRangeButtonAltText =
+    (keepColorRampRange ? "Reset" : "Keep") + " range when switching datasets and features";
+
   return (
     <Tooltip
       trigger={["hover", "focus"]}
       title={isUsingGlasbeyRamp ? "Color ramp adjustment is disabled when a Glasbey color map is selected." : undefined}
     >
-      <div style={{ width: "100%" }}>
+      <FlexRowAlignCenter style={{ width: "100%" }} $gap={4}>
         <LabeledSlider
           type="range"
           min={colorRampMin}
@@ -122,7 +130,19 @@ export default function ColorRampRangeSlider(props: ColorRampRangeSliderProps): 
                 }
           }
         />
-      </div>
+        <Tooltip title={keepRangeButtonAltText} trigger={["hover", "focus"]}>
+          <IconButton
+            onClick={() => setKeepColorRampRange(!keepColorRampRange)}
+            type={keepColorRampRange ? "primary" : "link"}
+          >
+            {keepColorRampRange ? (
+              <LockOutlined alt={keepRangeButtonAltText} />
+            ) : (
+              <UnlockOutlined alt={keepRangeButtonAltText} />
+            )}
+          </IconButton>
+        </Tooltip>
+      </FlexRowAlignCenter>
     </Tooltip>
   );
 }

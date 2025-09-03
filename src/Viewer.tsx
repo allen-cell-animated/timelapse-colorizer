@@ -112,9 +112,6 @@ function Viewer(): ReactElement {
   const setScatterYAxis = useViewerStateStore((state) => state.setScatterYAxis);
   const timeControls = useViewerStateStore((state) => state.timeControls);
 
-  const isFeatureSelected = dataset !== null && featureKey !== null;
-  const isFeatureCategorical = isFeatureSelected && dataset.isFeatureCategorical(featureKey);
-
   const [, addRecentCollection] = useRecentCollections();
   const annotationState = useAnnotations();
 

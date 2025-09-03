@@ -28,7 +28,6 @@ export default function FeatureControls(props: FeatureControlsProps): ReactEleme
   const featureKey = useViewerStateStore((state) => state.featureKey);
   const keepColorRampRange = useViewerStateStore((state) => state.keepColorRampRange);
   const setFeatureKey = useViewerStateStore((state) => state.setFeatureKey);
-  const setKeepColorRampRange = useViewerStateStore((state) => state.setKeepColorRampRange);
   const categoricalPalette = useViewerStateStore((state) => state.categoricalPalette);
   const colorRampKey = useViewerStateStore((state) => state.colorRampKey);
   const colorRampReversed = useViewerStateStore((state) => state.isColorRampReversed);
@@ -101,17 +100,6 @@ export default function FeatureControls(props: FeatureControlsProps): ReactEleme
               <ColorRampRangeSlider disabled={props.disabled} />
             )
           }
-        </div>
-        <div style={{ flexBasis: 100, flexShrink: 1, flexGrow: 1, width: "fit-content" }}>
-          <Checkbox
-            checked={keepColorRampRange}
-            onChange={() => {
-              // Invert lock on range
-              setKeepColorRampRange(!keepColorRampRange);
-            }}
-          >
-            Keep range when switching datasets and features
-          </Checkbox>
         </div>
       </FlexRowAlignCenter>
     </>
