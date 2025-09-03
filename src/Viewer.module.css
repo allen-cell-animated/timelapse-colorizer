@@ -13,8 +13,8 @@
   }
 }
 
-@media screen and (max-width: 1250px) {
-  /* Switch from row to column layout when the screen width goes below 1200px */
+@media screen and (max-width: 1024px) {
+  /* Switch from row to column layout when the screen width goes below 1024px */
   .contentPanels {
     flex-direction: column;
     & > div {
@@ -39,8 +39,7 @@
 }
 
 .canvasTopContainer {
-  padding: 14px 16px;
-  /* overflow: hidden; */
+  padding: 16px 16px 12px 18px;
   border-bottom: 1px solid var(--color-borders);
 }
 
