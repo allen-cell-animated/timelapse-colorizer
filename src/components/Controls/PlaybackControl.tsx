@@ -6,11 +6,13 @@ import styled from "styled-components";
 import { useDebounce } from "../../colorizer/utils/react_utils";
 import { DEFAULT_PLAYBACK_FPS } from "../../constants";
 import { useViewerStateStore } from "../../state";
-import { FlexRowAlignCenter } from "../../styles/utils";
+import { FlexRowAlignCenter, VisuallyHidden } from "../../styles/utils";
 
 import IconButton from "../IconButton";
 import PlaybackSpeedControl from "../PlaybackSpeedControl";
 import SpinBox from "../SpinBox";
+
+const FRAME_INPUT_ID = "playback-control-frame-input";
 
 const TimeSliderContainer = styled.div`
   width: calc(min(50vw, 300px));
@@ -130,11 +132,11 @@ export default function PlaybackControl(props: PlaybackControlProps): ReactEleme
             setFrameInput(currentFrame);
           }}
         >
-          <PauseOutlined />
+          <PauseOutlined alt="Pause" />
         </IconButton>
       ) : (
         <IconButton type="primary" disabled={props.disabled} onClick={() => timeControls.play()}>
-          <CaretRightOutlined />
+          <CaretRightOutlined alt="Play" />
         </IconButton>
       )}
 
@@ -160,12 +162,15 @@ export default function PlaybackControl(props: PlaybackControlProps): ReactEleme
       </TimeSliderContainer>
 
       <IconButton disabled={props.disabled} onClick={() => timeControls.advanceFrame(-1)} type="outlined">
-        <StepBackwardFilled />
+        <StepBackwardFilled alt="Step backward" />
       </IconButton>
       <IconButton disabled={props.disabled} onClick={() => timeControls.advanceFrame(1)} type="outlined">
-        <StepForwardFilled />
+        <StepForwardFilled alt="Step forward" />
       </IconButton>
 
+      <VisuallyHidden>
+        <label htmlFor={FRAME_INPUT_ID}>Current Frame</label>
+      </VisuallyHidden>
       <SpinBox
         min={0}
         max={dataset?.numberOfFrames && dataset?.numberOfFrames - 1}
@@ -173,6 +178,7 @@ export default function PlaybackControl(props: PlaybackControlProps): ReactEleme
         onChange={setFrame}
         disabled={props.disabled}
         wrapIncrement={true}
+        id={FRAME_INPUT_ID}
       />
       <div style={{ display: "flex", flexDirection: "row", flexGrow: 1, justifyContent: "flex-end" }}>
         <PlaybackSpeedControl
