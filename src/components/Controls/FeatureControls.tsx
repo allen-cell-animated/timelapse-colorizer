@@ -23,7 +23,6 @@ export default function FeatureControls(props: FeatureControlsProps): ReactEleme
   const setKeepColorRampRange = useViewerStateStore((state) => state.setKeepColorRampRange);
   const setColorRampRange = useViewerStateStore((state) => state.setColorRampRange);
 
-  // TODO: Move into subcomponent for color ramp controls
   // Show min + max marks on the color ramp slider if a feature is selected and
   // is currently being thresholded/filtered on.
   const getColorMapSliderMarks = (): undefined | number[] => {
@@ -42,10 +41,11 @@ export default function FeatureControls(props: FeatureControlsProps): ReactEleme
   };
 
   const isFeatureSelected = dataset !== null && featureKey !== null;
-  const isFeatureCategorical = isFeatureSelected && dataset.isFeatureCategorical(featureKey); // Disable color ramp controls when the feature is numeric but we've selected
-  // a categorical color ramp (e.g. glasbey)
+  const isFeatureCategorical = isFeatureSelected && dataset.isFeatureCategorical(featureKey);
   const featureCategories = isFeatureCategorical ? dataset.getFeatureCategories(featureKey) || [] : [];
-  const disableRampControlsUi = !isFeatureCategorical && colorRamp.type === ColorRampType.CATEGORICAL;
+  // Disable color ramp controls when the feature is numeric but we've selected
+  // a categorical color ramp (e.g. glasbey)
+  const isGlasbeyRamp = !isFeatureCategorical && colorRamp.type === ColorRampType.CATEGORICAL;
   const featureNameWithUnits = isFeatureSelected ? dataset.getFeatureNameWithUnits(featureKey) : undefined;
 
   return (
@@ -61,9 +61,7 @@ export default function FeatureControls(props: FeatureControlsProps): ReactEleme
               <Tooltip
                 trigger={["hover", "focus"]}
                 title={
-                  disableRampControlsUi
-                    ? "Color ramp adjustment is disabled when a Glasbey color map is selected."
-                    : undefined
+                  isGlasbeyRamp ? "Color ramp adjustment is disabled when a Glasbey color map is selected." : undefined
                 }
               >
                 <div style={{ width: "100%" }}>
@@ -77,7 +75,7 @@ export default function FeatureControls(props: FeatureControlsProps): ReactEleme
                       setColorRampRange([min, max]);
                     }}
                     marks={getColorMapSliderMarks()}
-                    disabled={props.disabled || disableRampControlsUi}
+                    disabled={props.disabled || isGlasbeyRamp}
                   />
                 </div>
               </Tooltip>
