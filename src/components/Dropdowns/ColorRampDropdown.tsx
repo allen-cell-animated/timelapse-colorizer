@@ -160,7 +160,7 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
         value: key,
         label: rampData.name,
         image: rampData.colorRamp
-          .createGradientCanvas(DROPDOWN_WIDTH_PX, theme.controls.height, { reverse: rampData.reverse })
+          .createGradientCanvas(DROPDOWN_WIDTH_PX, theme.controls.height, { reverse: rampData.reverseByDefault })
           .toDataURL(),
         tooltip: rampData.name,
       };
@@ -199,7 +199,7 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
     return selectedRamp.createGradientCanvas(DROPDOWN_WIDTH_PX, theme.controls.height).toDataURL();
   }, [props.selectedRamp, props.reversed]);
 
-  const showAsReversed = selectedRampData.reverse === true ? !props.reversed : props.reversed;
+  const showAsReversed = selectedRampData.reverseByDefault === true ? !props.reversed : props.reversed;
   const selectedRampItem = {
     value: SELECTED_RAMP_ITEM_KEY,
     label: selectedRampData.name + (showAsReversed ? " (reversed)" : ""),
@@ -237,7 +237,8 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
 
   const onChangeRamp = (key: string): void => {
     const rampData = props.knownColorRamps.get(key);
-    props.onChangeRamp(key, rampData?.reverse ?? false);
+    const reverse = rampData?.reverseByDefault ?? false;
+    props.onChangeRamp(key, reverse);
   };
 
   return (

@@ -16,12 +16,13 @@ export type RawColorData = {
    */
   categorical?: boolean;
   /**
-   * Whether this color should be shown in its reversed form by default in the
-   * UI, for backwards-compatibility with existing URLs. Linear color ramps were
-   * changed to be light-to-dark (dark = high value), but in the original legacy
-   * behavior they were dark-to-light.
+   * Whether this color should be reversed by default when shown or selected in
+   * the UI, without changing the underlying color stops to maintain backwards
+   * compatibility with legacy URLs. For scientific purposes, linear color ramps
+   * should be shown as light-to-dark (dark = high value), but in the past some
+   * ramps had dark-to-light color stops.
    */
-  reverse?: boolean;
+  reverseByDefault?: boolean;
 };
 
 export type ColorRampData = RawColorData & {
@@ -45,31 +46,31 @@ const rawColorRampData: RawColorData[] = [
     key: "matplotlib-viridis",
     name: "Matplotlib - Viridis",
     colorStops: ["#440154", "#3a528b", "#20908c", "#5ec961", "#fde724"],
-    reverse: true,
+    reverseByDefault: true,
   },
   {
     key: "matplotlib-plasma",
     name: "Matplotlib - Plasma",
     colorStops: ["#0c0786", "#5c00a5", "#9b179e", "#cb4777", "#ec7853", "#fdb32e", "#eff821"],
-    reverse: true,
+    reverseByDefault: true,
   },
   {
     key: "matplotlib-inferno",
     name: "Matplotlib - Inferno",
     colorStops: ["#000003", "#410967", "#932567", "#dc5039", "#fba40a", "#fcfea4"],
-    reverse: true,
+    reverseByDefault: true,
   },
   {
     key: "matplotlib-magma",
     name: "Matplotlib - Magma",
     colorStops: ["#000003", "#3b0f6f", "#8c2980", "#dd4968", "#fd9f6c", "#fbfcbf"],
-    reverse: true,
+    reverseByDefault: true,
   },
   {
     key: "seaborn-mako",
     name: "Seaborn - Mako",
     colorStops: ["#0b0305", "#382a54", "#395d9b", "#3496a9", "#5fceac", "#def4e4"],
-    reverse: true,
+    reverseByDefault: true,
   },
   {
     key: "matplotlib-turbo",
@@ -200,21 +201,21 @@ const rawColorRampData: RawColorData[] = [
     name: "Seaborn - Cubehelix Blue",
     // seaborn.cubehelix_palette(start=0.2, rot=-0.3, as_cmap=True, reverse=True)
     colorStops: ["#27203f", "#48507e", "#6585ab", "#8cb8c9", "#c2e2e2"],
-    reverse: true,
+    reverseByDefault: true,
   },
   {
     key: "seaborn-cubehelix_purple",
     name: "Seaborn - Cubehelix Purple",
     // seaborn.cubehelix_palette(as_cmap=True, reverse=True)
     colorStops: ["#2c1e3d", "#6d3f71", "#aa678f", "#d499a7", "#edd1cb"],
-    reverse: true,
+    reverseByDefault: true,
   },
   {
     key: "seaborn-cubehelix_green",
     name: "Seaborn - Cubehelix Green",
     // seaborn.cubehelix_palette(start=2.3, rot=-0.3, as_cmap=True, reverse=True)
     colorStops: ["#0f3221", "#31673d", "#64945a", "#a0ba84", "#d9ddbf"],
-    reverse: true,
+    reverseByDefault: true,
   },
   {
     key: "matplotlib-reds",
