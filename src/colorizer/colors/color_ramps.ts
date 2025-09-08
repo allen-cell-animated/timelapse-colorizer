@@ -202,6 +202,11 @@ const rawColorRampData: RawColorData[] = [
     colorStops: ["#0f3221", "#31673d", "#64945a", "#a0ba84", "#d9ddbf"],
   },
   {
+    key: "matplotlib-reds",
+    name: "Matplotlib - Reds",
+    colorStops: ["#fff5f0", "#fcbba1", "#fb694a", "#ca181d", "#67000d"],
+  },
+  {
     key: "fabio_crameri-romao",
     name: "Crameri - RomaO (Cyclical)",
     // Note: this is reversed from the original to match the other palettes
@@ -324,6 +329,7 @@ export const DISPLAY_COLOR_RAMP_KEYS = [
   "seaborn-cubehelix_purple",
   "seaborn-cubehelix_green",
   "seaborn-cubehelix_blue",
+  "matplotlib-reds",
   "matplotlib-turbo",
   "esri-blue_red_8",
   "esri-green_brown_1",
