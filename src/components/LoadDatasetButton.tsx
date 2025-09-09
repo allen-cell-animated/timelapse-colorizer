@@ -196,9 +196,15 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
       const handleProgressUpdate = (complete: number, total: number): void => {
         setZipLoadProgress(Math.floor((complete / total) * 100));
       };
-      const fileMap = await zipToFileMap(zipFile, handleProgressUpdate);
+      let fileMap: Record<string, File> = {};
+      try {
+        fileMap = await zipToFileMap(zipFile, handleProgressUpdate);
+      } catch (error) {
+        setErrorText(error instanceof Error ? error.message : String(error));
+        setIsLoadingZip(false);
+        return false;
+      }
       if (Object.keys(fileMap).length === 0) {
-        setErrorText("No files found in ZIP file.");
         setIsLoadingZip(false);
         return false;
       }

@@ -100,7 +100,10 @@ export async function zipToFileMap(
   zipFile: File,
   onLoadProgress?: ReportLoadProgressCallback
 ): Promise<Record<string, File>> {
-  const zip = await JSZip.loadAsync(zipFile);
+  const zip = await JSZip.loadAsync(zipFile).catch((error) => {
+    console.error("Could not parse zip file:", error);
+    throw new Error(`Could not parse '${zipFile.name}'. Please check if it is a valid ZIP file.`);
+  });
 
   // Load all contents and save them as File objects
   const fileMap: Record<string, File> = {};
