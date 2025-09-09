@@ -127,9 +127,12 @@ export async function zipToFileMap(
     const loadFileCallback = async (): Promise<void> => {
       onLoadStart();
       try {
-        return await loadToFileMap(relativePath, zipObject).then(onLoadComplete);
+        await loadToFileMap(relativePath, zipObject);
       } catch (error) {
         console.error(`Failed to load file ${relativePath} from ${zipFile.name}:`, error);
+      } finally {
+        // Currently always called even if a file fails to load.
+        onLoadComplete();
       }
     };
     filePromises.push(loadFileCallback());

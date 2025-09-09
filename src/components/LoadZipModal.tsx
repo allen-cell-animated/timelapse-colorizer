@@ -1,6 +1,6 @@
 import { UploadOutlined } from "@ant-design/icons";
 import { Button } from "antd";
-import React, { ReactElement, ReactNode, useCallback, useMemo, useState } from "react";
+import React, { ReactElement, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { zipToFileMap } from "../colorizer/utils/data_load_utils";
 import { useJsxText } from "../hooks/useJsxText";
@@ -30,12 +30,30 @@ type LoadZipModalProps = {
 export default function LoadZipModal(props: LoadZipModalProps): ReactElement {
   const setSourceZipName = useViewerStateStore((state) => state.setSourceZipName);
 
+  const isOpenRef = useRef(props.open);
+  isOpenRef.current = props.open;
+
   const [isLoadingZip, setIsLoadingZip] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [uploadedCollection, setUploadedCollection] = useState<Collection | null>(null);
   const [errorText, setErrorText] = useJsxText(null);
 
   const [loadProgress, setLoadProgress] = useState(0);
+
+  const clearState = useCallback((): void => {
+    setIsLoadingZip(false);
+    setUploadedCollection(null);
+    setErrorText("");
+    setUploadedFile(null);
+    setLoadProgress(0);
+  }, []);
+
+  // Reset state when modal is closed.
+  useEffect(() => {
+    if (!props.open) {
+      clearState();
+    }
+  }, [clearState, props.open]);
 
   const onZipUpload = useCallback(
     async (zipFile: File): Promise<boolean> => {
@@ -67,7 +85,22 @@ export default function LoadZipModal(props: LoadZipModalProps): ReactElement {
       setIsLoadingZip(false);
       return didLoadCollection;
     },
-    [isLoadingZip, setErrorText, setIsLoadingZip, setSourceZipName, setLoadProgress, props.onLoad]
+    [isLoadingZip, setErrorText, setIsLoadingZip, setLoadProgress, props.onLoad]
+  );
+
+  // Because ZIP file parsing is async, it's possible for the modal to be closed
+  // while the upload is still in progress. If this happens, clear state so the
+  // Collection and File contents don't persist in memory.
+  const wrappedOnZipUpload = useCallback(
+    async (zipFile: File): Promise<boolean> => {
+      const result = await onZipUpload(zipFile);
+      if (!isOpenRef.current) {
+        clearState();
+        return false;
+      }
+      return result;
+    },
+    [onZipUpload, clearState]
   );
 
   //// Rendering ////
@@ -140,7 +173,7 @@ export default function LoadZipModal(props: LoadZipModalProps): ReactElement {
               multiple={false}
               accept=".zip"
               showUploadList={false}
-              beforeUpload={onZipUpload}
+              beforeUpload={wrappedOnZipUpload}
               disabled={isLoadingZip}
             >
               {/* 121 px is a magic number that matches the size of the info card when file is missing */}
