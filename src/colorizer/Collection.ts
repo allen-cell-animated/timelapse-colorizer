@@ -46,9 +46,9 @@ export const enum CollectionSourceType {
 export type CollectionConfig = {
   /**
    * Source path of the collection file, if one was used to load this
-   * Collection. This can be a URL or a file path. `null` if there was no source
-   * collection file, and the collection was an auto-generated wrapper around a
-   * dataset.
+   * Collection. This can be a URL or a file path. `null` (default) if there was
+   * no source collection file, and the collection was an auto-generated wrapper
+   * around a dataset.
    *
    * When loaded from a local collection file, this should be `collection.json`.
    */
