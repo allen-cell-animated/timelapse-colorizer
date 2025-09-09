@@ -293,7 +293,7 @@ export default function LandingPage(): ReactElement {
         </BannerVideoContainer>
         <BannerTextContainer>
           <FlexColumn $gap={10}>
-            <h1 style={{ marginBottom: 0 }}>An interactive, web-based viewer for segmented timelapse data</h1>
+            <h1 style={{ marginBottom: 0 }}>An interactive web viewer for segmented timelapse data</h1>
             <p>
               Designed for biomedical researchers and data professionals, <b>Timelapse Feature Explorer</b> provides
               intuitive tools for exploring and analyzing dynamic datasets.
@@ -318,7 +318,7 @@ export default function LandingPage(): ReactElement {
           </FeatureHighlightsItem>
           <FeatureHighlightsItem>
             <h3>Share with anyone</h3>
-            <p>Save videos and images in seconds, or share a link to give to collaborators.</p>
+            <p>Record videos and images in seconds, or share a link to give to collaborators.</p>
           </FeatureHighlightsItem>
         </FeatureHighlightsContainer>
       </ContentContainer>
