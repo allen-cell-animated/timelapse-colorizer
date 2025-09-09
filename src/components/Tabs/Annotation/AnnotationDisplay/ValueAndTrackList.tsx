@@ -5,7 +5,7 @@ import { Color } from "three";
 
 import { Dataset, Track } from "../../../../colorizer";
 import { LookupInfo } from "../../../../colorizer/utils/annotation_utils";
-import { ScrollShadowContainer, useScrollShadow } from "../../../../colorizer/utils/react_utils";
+import { ScrollShadowContainer, useScrollShadow } from "../../../../hooks";
 
 import PlaceholderListItem from "./ListItems/PlaceholderListItem";
 import TrackListItem from "./ListItems/TrackListItem";

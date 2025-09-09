@@ -27,10 +27,10 @@ import {
 } from "./colorizer";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./colorizer/utils/analytics";
 import { thresholdMatchFinder } from "./colorizer/utils/data_utils";
-import { useAnnotations, useConstructor, useDebounce, useRecentCollections } from "./colorizer/utils/react_utils";
 import { showFailedUrlParseAlert } from "./components/Banner/alert_templates";
 import { SelectItem } from "./components/Dropdowns/types";
 import { DEFAULT_PLAYBACK_FPS, INTERNAL_BUILD } from "./constants";
+import { useAnnotations, useConstructor, useDebounce, useRecentCollections } from "./hooks";
 import { getDifferingProperties } from "./state/utils/data_validation";
 import {
   loadInitialViewerStateFromParams,

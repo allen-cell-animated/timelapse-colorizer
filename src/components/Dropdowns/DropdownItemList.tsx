@@ -1,7 +1,7 @@
 import React, { PropsWithChildren, ReactElement } from "react";
 import styled from "styled-components";
 
-import { ScrollShadowContainer, useScrollShadow } from "../../colorizer/utils/react_utils";
+import { ScrollShadowContainer, useScrollShadow } from "../../hooks";
 import { FlexColumn } from "../../styles/utils";
 
 type DropdownItemListProps = {
