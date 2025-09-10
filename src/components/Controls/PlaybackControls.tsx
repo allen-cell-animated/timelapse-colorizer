@@ -30,7 +30,7 @@ type PlaybackControlProps = {
   disabled: boolean;
 };
 
-export default function PlaybackControl(props: PlaybackControlProps): ReactElement {
+export default function PlaybackControls(props: PlaybackControlProps): ReactElement {
   const dataset = useViewerStateStore((state) => state.dataset);
   const currentFrame = useViewerStateStore((state) => state.currentFrame);
   const setFrame = useViewerStateStore((state) => state.setFrame);

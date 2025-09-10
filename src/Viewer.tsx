@@ -43,7 +43,7 @@ import { useAlertBanner } from "./components/Banner";
 import TextButton from "./components/Buttons/TextButton";
 import CanvasWrapper from "./components/CanvasWrapper";
 import FeatureControls from "./components/Controls/FeatureControls";
-import PlaybackControl from "./components/Controls/PlaybackControl";
+import PlaybackControls from "./components/Controls/PlaybackControls";
 import ColorRampDropdown from "./components/Dropdowns/ColorRampDropdown";
 import HelpDropdown from "./components/Dropdowns/HelpDropdown";
 import SelectionDropdown from "./components/Dropdowns/SelectionDropdown";
@@ -688,7 +688,7 @@ function Viewer(): ReactElement {
             </div>
 
             <div className={styles.timeControls}>
-              <PlaybackControl disabled={disableUi} />
+              <PlaybackControls disabled={disableUi} />
             </div>
           </div>
 
