@@ -37,33 +37,38 @@ export default function PlaybackControl(props: PlaybackControlProps): ReactEleme
   const timeControls = useViewerStateStore((state) => state.timeControls);
 
   const [playbackFps, setPlaybackFps] = useState(DEFAULT_PLAYBACK_FPS);
-  /** The frame selected by the time UI. Changes to frameInput are reflected in
+  /**
+   * The frame selected by the time UI. Changes to frameInput are reflected in
    * canvas after a short delay.
    */
   const [frameInput, setFrameInput] = useState(0);
 
-  // Flag indicating that frameInput should not be synced with playback.
-  const [isUserDirectlyControllingFrameInput, setIsUserDirectlyControllingFrameInput] = useState(false);
+  // True when playback was occurring and the user interrupted it by moving the
+  // time slider, causing a temporary pause state. When the slider is released,
+  // playback will resume.
+  const [isUserInterruptingPlayback, setIsUserInterruptingPlayback] = useState(false);
 
   const timeSliderContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (timeControls.isPlaying()) {
-      setIsUserDirectlyControllingFrameInput(false);
+      setIsUserInterruptingPlayback(false);
     }
   }, [timeControls.isPlaying()]);
 
-  // Sync the time slider with the pending frame.
+  // Set the frame slider's input value whenever a new frame is pending. Sync is
+  // disabled when the user is manipulating the time slider.
   useEffect(() => {
-    // When user is controlling time slider, do not sync frame input w/ playback
-    if (!isUserDirectlyControllingFrameInput) {
-      return useViewerStateStore.subscribe((state) => state.pendingFrame, setFrameInput);
+    let unsubscribe: (() => void) | undefined;
+    if (!isUserInterruptingPlayback) {
+      unsubscribe = useViewerStateStore.subscribe((state) => state.pendingFrame, setFrameInput);
     }
-    return;
-  }, [isUserDirectlyControllingFrameInput]);
+    return unsubscribe;
+  }, [isUserInterruptingPlayback]);
 
-  // Store the current value of the time slider as its own state, and update
-  // the frame using a debounced value to prevent constant updates as it moves.
+  // Load in a new frame whenever the frame input value hasn't changed for
+  // 250ms. This prevents excessive frame loading when the user is dragging the
+  // time slider.
   const debouncedFrameInput = useDebounce(frameInput, 250);
   useEffect(() => {
     if (!timeControls.isPlaying() && currentFrame !== debouncedFrameInput) {
@@ -84,11 +89,11 @@ export default function PlaybackControl(props: PlaybackControlProps): ReactEleme
         // time immediately.
         await setFrame(frameInput);
       }
-      if (isUserDirectlyControllingFrameInput) {
+      if (isUserInterruptingPlayback) {
         await setFrame(frameInput);
         timeControls.play();
         // Update the frame and unpause playback when the slider is released.
-        setIsUserDirectlyControllingFrameInput(false);
+        setIsUserInterruptingPlayback(false);
       }
     };
 
@@ -96,7 +101,7 @@ export default function PlaybackControl(props: PlaybackControlProps): ReactEleme
     return () => {
       document.removeEventListener("pointerup", checkIfPlaybackShouldUnpause);
     };
-  }, [isUserDirectlyControllingFrameInput, frameInput]);
+  }, [isUserInterruptingPlayback, frameInput]);
 
   //// Keyboard Controls ////
   // TODO: Make this a hook?
@@ -118,35 +123,34 @@ export default function PlaybackControl(props: PlaybackControlProps): ReactEleme
     };
   }, [timeControls]);
 
+  // Continue to show the pause icon if the user interrupted playback to
+  // manipulate the time slider, so it doesn't flicker between play/pause
+  // states.
+  const showPauseIcon = timeControls.isPlaying() || isUserInterruptingPlayback;
+  const onClickPlayPause = (): void => {
+    if (showPauseIcon) {
+      timeControls.pause();
+      setFrameInput(currentFrame);
+    } else {
+      timeControls.play();
+    }
+  };
+
   //// Rendering ////
 
   return (
     <FlexRowAlignCenter $gap={4} style={{ flexWrap: "wrap" }}>
-      {timeControls.isPlaying() || isUserDirectlyControllingFrameInput ? (
-        // Swap between play and pause button
-        <IconButton
-          type="primary"
-          disabled={props.disabled}
-          onClick={() => {
-            timeControls.pause();
-            setFrameInput(currentFrame);
-          }}
-        >
-          <PauseOutlined alt="Pause" />
-        </IconButton>
-      ) : (
-        <IconButton type="primary" disabled={props.disabled} onClick={() => timeControls.play()}>
-          <CaretRightOutlined alt="Play" />
-        </IconButton>
-      )}
-
+      <IconButton type="primary" disabled={props.disabled} onClick={onClickPlayPause}>
+        {showPauseIcon ? <PauseOutlined alt="Pause" /> : <CaretRightOutlined alt="Play" />}
+      </IconButton>
       <TimeSliderContainer
         ref={timeSliderContainerRef}
         onPointerDownCapture={() => {
           if (timeControls.isPlaying()) {
-            // If the slider is dragged while playing, pause playback.
+            // If the slider is dragged while playing, pause playback and mark
+            // that playback was interrupted by the user.
             timeControls.pause();
-            setIsUserDirectlyControllingFrameInput(true);
+            setIsUserInterruptingPlayback(true);
           }
         }}
       >
@@ -155,12 +159,9 @@ export default function PlaybackControl(props: PlaybackControlProps): ReactEleme
           max={dataset ? dataset.numberOfFrames - 1 : 0}
           disabled={props.disabled}
           value={frameInput}
-          onChange={(value) => {
-            setFrameInput(value);
-          }}
+          onChange={setFrameInput}
         />
       </TimeSliderContainer>
-
       <IconButton disabled={props.disabled} onClick={() => timeControls.advanceFrame(-1)} type="outlined">
         <StepBackwardFilled alt="Step backward" />
       </IconButton>
@@ -180,6 +181,7 @@ export default function PlaybackControl(props: PlaybackControlProps): ReactEleme
         wrapIncrement={true}
         id={FRAME_INPUT_ID}
       />
+
       <div style={{ display: "flex", flexDirection: "row", flexGrow: 1, justifyContent: "flex-end" }}>
         <PlaybackSpeedControl
           fps={playbackFps}
