@@ -3,8 +3,8 @@ import { Slider } from "antd";
 import React, { ReactElement, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 
-import { useDebounce } from "../../colorizer/utils/react_utils";
 import { DEFAULT_PLAYBACK_FPS } from "../../constants";
+import { useDebounce } from "../../hooks";
 import { useViewerStateStore } from "../../state";
 import { FlexRowAlignCenter, VisuallyHidden } from "../../styles/utils";
 
