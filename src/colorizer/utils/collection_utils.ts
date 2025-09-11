@@ -52,16 +52,40 @@ type AnyCollectionFile = CollectionFileV1_0_0 | CollectionFileV1_1_0;
  * @returns An object with fields reflecting the most recent CollectionFile spec.
  */
 export const updateCollectionVersion = (collection: AnyCollectionFile): CollectionFile => {
+  let ret: CollectionFile;
+
   if (isV1_0_0(collection)) {
-    return {
+    ret = {
       datasets: collection,
       metadata: {},
     };
+  } else {
+    if (collection.metadata === undefined) {
+      collection.metadata = {};
+    }
+    ret = collection;
   }
 
-  if (collection.metadata === undefined) {
-    collection.metadata = {};
+  // Validate collection
+  if (!Array.isArray(ret.datasets)) {
+    throw new Error("Collection 'datasets' field is not an array.");
+  } else {
+    for (const entry of ret.datasets) {
+      if (entry.path === undefined) {
+        console.error("Missing path in collection entry:", entry);
+        throw new Error(`A dataset entry is missing the 'path' field.`);
+      } else if (typeof entry.path !== "string") {
+        console.error("Received a non-string dataset path:", entry.path);
+        throw new Error(
+          `Received a non-string value for the 'path' field of a dataset entry. Check the console for more details.`
+        );
+      }
+      // If name is missing or not a string, use the path instead
+      if (typeof entry.name !== "string") {
+        entry.name = entry.path;
+      }
+    }
   }
 
-  return collection;
+  return ret;
 };
