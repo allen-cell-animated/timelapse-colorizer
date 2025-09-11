@@ -24,10 +24,10 @@ import {
   TabType,
 } from "./colorizer";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./colorizer/utils/analytics";
-import { useAnnotations, useConstructor, useDebounce, useRecentCollections } from "./colorizer/utils/react_utils";
 import { showFailedUrlParseAlert } from "./components/Banner/alert_templates";
 import { SelectItem } from "./components/Dropdowns/types";
 import { DEFAULT_PLAYBACK_FPS, INTERNAL_BUILD } from "./constants";
+import { useAnnotations, useConstructor, useDebounce, useRecentCollections } from "./hooks";
 import { getDifferingProperties } from "./state/utils/data_validation";
 import {
   loadInitialViewerStateFromParams,
@@ -418,7 +418,14 @@ function Viewer(): ReactElement {
 
       const { collection: newCollection, dataset: newDataset, datasetKey: newDatasetKey } = result;
       setCollection(newCollection);
-      addRecentCollection({ url: newCollection.getUrl() });
+
+      // Collection URL will be `null` if the dataset was loaded from a local
+      // ZIP file.
+      const collectionUrl = newCollection.getUrl();
+      if (collectionUrl !== null) {
+        addRecentCollection({ url: collectionUrl });
+      }
+
       await replaceDataset(newDataset, newDatasetKey);
       setIsInitialDatasetLoaded(true);
       setIsDatasetLoading(false);
@@ -678,7 +685,7 @@ function Viewer(): ReactElement {
           <FlexRowAlignCenter $gap={2} $wrap="wrap">
             <LoadDatasetButton
               onLoad={handleDatasetLoad}
-              currentResourceUrl={collection?.url ?? datasetKey ?? ""}
+              currentResourceUrl={collection?.sourcePath ?? datasetKey ?? ""}
               reportWarning={showDatasetLoadWarning}
             />
             <Export

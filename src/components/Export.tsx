@@ -1,17 +1,5 @@
 import { CameraOutlined, CheckCircleOutlined, LockOutlined, UnlockOutlined } from "@ant-design/icons";
-import {
-  App,
-  Button,
-  Card,
-  Checkbox,
-  Input,
-  InputNumber,
-  Progress,
-  Radio,
-  RadioChangeEvent,
-  Space,
-  Tooltip,
-} from "antd";
+import { App, Button, Card, Checkbox, Input, InputNumber, Radio, RadioChangeEvent, Space, Tooltip } from "antd";
 import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import { Vector2 } from "three";
@@ -19,6 +7,7 @@ import { clamp } from "three/src/math/MathUtils";
 
 import { getPixelRatio, toEven } from "../colorizer/canvas/utils";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "../colorizer/utils/analytics";
+import { TOOLTIP_TRIGGER } from "../constants";
 import { useViewerStateStore } from "../state";
 import { StyledRadioGroup } from "../styles/components";
 import { FlexColumn, FlexColumnAlignCenter, FlexRow, FlexRowAlignCenter, VisuallyHidden } from "../styles/utils";
@@ -28,8 +17,9 @@ import { IRenderCanvas } from "../colorizer/IRenderCanvas";
 import CanvasRecorder, { RecordingOptions } from "../colorizer/recorders/CanvasRecorder";
 import ImageSequenceRecorder from "../colorizer/recorders/ImageSequenceRecorder";
 import Mp4VideoRecorder, { VideoBitrate } from "../colorizer/recorders/Mp4VideoRecorder";
-import { AppThemeContext } from "./AppStyle";
+import { AppThemeContext, Z_INDEX_MODAL } from "./AppStyle";
 import TextButton from "./Buttons/TextButton";
+import StyledInlineProgress from "./Feedback/StyledInlineProgress";
 import IconButton from "./IconButton";
 import StyledModal, { useStyledModal } from "./Modals/StyledModal";
 import { SettingsContainer, SettingsItem } from "./SettingsContainer";
@@ -356,6 +346,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
       onOk: () => {
         stopRecording(true);
       },
+      zIndex: Z_INDEX_MODAL,
     });
   }, [isRecording, stopRecording]);
 
@@ -502,8 +493,6 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
 
   //////////////// RENDERING ////////////////
 
-  const tooltipTrigger: ("hover" | "focus")[] = ["hover", "focus"];
-
   const videoQualityOptions = [
     { label: "High", value: VideoBitrate.HIGH },
     { label: "Med", value: VideoBitrate.MEDIUM },
@@ -567,30 +556,13 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
     }
   };
 
-  let progressBarColor = theme.color.theme;
-  if (errorText) {
-    progressBarColor = theme.color.text.error;
-  } else if (percentComplete === 100) {
-    progressBarColor = theme.color.text.success;
-  }
-
   // Footer for the Export modal.
   // Layout: Optional Progress meter - Export/Stop Button - Cancel Button
   const modalFooter = (
     <VerticalDiv>
       <HorizontalDiv style={{ alignItems: "center", justifyContent: "flex-end", flexWrap: "wrap" }}>
         {(percentComplete !== 0 || isRecording) && (
-          <Tooltip title={percentComplete + "%"} style={{ verticalAlign: "middle" }} trigger={tooltipTrigger}>
-            <Progress
-              style={{ marginRight: "8px", verticalAlign: "middle" }}
-              type="circle"
-              size={theme.controls.heightSmall - 6}
-              percent={percentComplete}
-              showInfo={false}
-              strokeColor={progressBarColor}
-              strokeWidth={12}
-            />
-          </Tooltip>
+          <StyledInlineProgress percent={percentComplete} error={!!errorText} />
         )}
         <Button
           type={isRecording ? "default" : "primary"}
@@ -656,7 +628,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
               <Tooltip
                 title={"Video recording isn't supported by this browser."}
                 open={isWebCodecsEnabled ? false : undefined}
-                trigger={tooltipTrigger}
+                trigger={TOOLTIP_TRIGGER}
               >
                 <CustomRadio value={RecordingMode.VIDEO_MP4} disabled={isRecording || !isWebCodecsEnabled}>
                   MP4 video

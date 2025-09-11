@@ -2,7 +2,7 @@ import { ReportErrorCallback, ReportLoadProgressCallback, ReportWarningCallback 
 import { isUrl, UrlParam } from "../colorizer/utils/url_utils";
 import { LocationState } from "../types";
 
-import Collection, { CollectionLoadOptions, DatasetLoadOptions } from "../colorizer/Collection";
+import Collection, { CollectionConfig, CollectionLoadOptions, DatasetLoadOptions } from "../colorizer/Collection";
 import Dataset from "../colorizer/Dataset";
 
 export const enum LoadResultType {
@@ -39,10 +39,15 @@ const loadCollectionFromParams = async (
   // 2. Dataset URL only
 
   let collection: Collection;
+  const collectionConfig: CollectionConfig = {
+    sourcePath: collectionParam,
+    pathResolver: collectionLoadOptions.pathResolver,
+  };
+
   if (collectionParam) {
     // 1. Collection URL and dataset key
     try {
-      collection = await Collection.loadCollection(collectionParam, collectionLoadOptions);
+      collection = await Collection.loadCollection(collectionParam, collectionLoadOptions, collectionConfig);
     } catch (error) {
       // Error loading collection
       console.error("loadCollectionFromParams: ", error);
@@ -51,7 +56,12 @@ const loadCollectionFromParams = async (
   } else if (datasetParam !== null && isUrl(datasetParam)) {
     // 2. Dataset URL only
     // Make a dummy collection that will include only this dataset
-    collection = await Collection.makeCollectionFromSingleDataset(datasetParam);
+    try {
+      collection = await Collection.makeCollectionFromSingleDataset(datasetParam, collectionConfig);
+    } catch (error) {
+      console.error("loadCollectionFromParams: ", error);
+      return { type: LoadResultType.LOAD_ERROR, message: (error as Error).message };
+    }
   } else if (collectionParam === null && datasetParam === null) {
     // No arguments provided, report missing datasets as a special case
     return { type: LoadResultType.MISSING_DATASET };
