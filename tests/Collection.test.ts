@@ -1,9 +1,15 @@
+import { generateUUID } from "three/src/math/MathUtils";
 import { describe, expect, it } from "vitest";
 
 import { DEFAULT_COLLECTION_FILENAME, DEFAULT_DATASET_FILENAME } from "../src/constants";
-import { ANY_ERROR, makeMockFetchMethod } from "./test_utils";
+import { MOCK_DATASET_FEATURE_1, MOCK_DATASET_MANIFEST, MOCK_DATASET_TIMES } from "./state/ViewerState/constants";
+import { ANY_ERROR, makeMockFetchMethod, MockFetchArrayLoader } from "./test_utils";
 
-import Collection from "../src/colorizer/Collection";
+import Collection, {
+  CollectionLoadOptions,
+  CollectionSourceType,
+  DatasetLoadOptions,
+} from "../src/colorizer/Collection";
 
 const collectionData = new Map([
   ["d1", { path: "https://some-path.json", name: "dataset1" }],
@@ -175,6 +181,124 @@ describe("Collection", () => {
       const collection = await Collection.makeCollectionFromSingleDataset(datasetPath);
 
       expect(collection.sourcePath).to.be.null;
+    });
+  });
+
+  describe("loadFromAmbiguousFile", () => {
+    //// Helper methods ////
+    // Mock createObjectURL and associated fetching
+    const urlToFile: Record<string, File> = {};
+
+    window.URL.createObjectURL = (file: File): string => {
+      const url = "http://mocked-created-url/" + generateUUID();
+      urlToFile[url] = file;
+      return url;
+    };
+
+    window.URL.revokeObjectURL = (url: string): void => {
+      delete urlToFile[url];
+    };
+
+    async function mockFetch(url: string): Promise<Response> {
+      if (url in urlToFile) {
+        const file = urlToFile[url];
+        const fileContents = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsText(file);
+        });
+        return new Response(fileContents, {
+          status: 200,
+          // eslint-disable-next-line
+          headers: { "Content-Type": file.type },
+        });
+      }
+      return new Response("Not Found", {
+        status: 404,
+      });
+    }
+
+    //// Constants ////
+
+    const MOCK_COLLECTION_JSON = `[{"path": "dataset", "name": "dataset"}]`;
+    const MOCK_COLLECTION_FILEMAP = {
+      // eslint-disable-next-line
+      "collection.json": new File([MOCK_COLLECTION_JSON], "collection.json"),
+    };
+    const MOCK_DATASET_FILEMAP = {
+      // eslint-disable-next-line
+      "manifest.json": new File([JSON.stringify(MOCK_DATASET_MANIFEST)], "manifest.json"),
+      // add minimal files to ensure the Dataset can actually load
+      // eslint-disable-next-line
+      "times.json": new File([JSON.stringify(MOCK_DATASET_TIMES)], "times.json"),
+      // eslint-disable-next-line
+      "feature1.json": new File([JSON.stringify(MOCK_DATASET_FEATURE_1)], "frames.json"),
+    };
+
+    const DATASET_LOAD_OPTIONS: DatasetLoadOptions = {
+      manifestLoader: async (url) => {
+        return await mockFetch(url).then((response: Response) => response.json());
+      },
+      arrayLoader: new MockFetchArrayLoader(mockFetch),
+    };
+    const COLLECTION_LOAD_CONFIG: CollectionLoadOptions = {
+      fetchMethod: mockFetch,
+      datasetLoadOptions: DATASET_LOAD_OPTIONS,
+    };
+
+    //// Tests ////
+
+    it("can load a collection from a file map", async () => {
+      const collection = await Collection.loadFromAmbiguousFile("", MOCK_COLLECTION_FILEMAP, COLLECTION_LOAD_CONFIG);
+
+      expect(collection).to.be.instanceOf(Collection);
+      expect(collection.getDatasetKeys().length).to.equal(1);
+      expect(collection.hasDataset("dataset")).to.be.true;
+      expect(collection.getAbsoluteDatasetPath("dataset")).to.equal("dataset/manifest.json");
+      expect(collection.sourcePath).not.to.be.null;
+      expect(collection.sourceType).toEqual(CollectionSourceType.ZIP_FILE);
+      collection.dispose();
+    });
+
+    it("can load a single dataset from a file map", async () => {
+      const collection = await Collection.loadFromAmbiguousFile("", MOCK_DATASET_FILEMAP, COLLECTION_LOAD_CONFIG);
+
+      expect(collection).to.be.instanceOf(Collection);
+      expect(collection.getDatasetKeys().length).to.equal(1);
+      expect(collection.hasDataset("manifest.json")).to.be.true;
+      expect(collection.getAbsoluteDatasetPath("manifest.json")).to.equal("manifest.json");
+      expect(collection.sourcePath).to.be.null;
+      expect(collection.sourceType).toEqual(CollectionSourceType.ZIP_FILE);
+      collection.dispose();
+    });
+
+    it("throws an error if no manifest files exist", async () => {
+      const fileMap = {};
+      await expect(Collection.loadFromAmbiguousFile("", fileMap, COLLECTION_LOAD_CONFIG)).rejects.toThrowError(
+        ANY_ERROR
+      );
+    });
+
+    it("throws an error if Collection manifest is malformed", async () => {
+      const fileMap = {
+        // eslint-disable-next-line
+        "collection.json": new File([`{"some-property": "value"}`], "collection.json"),
+      };
+      await expect(
+        Collection.loadFromAmbiguousFile("collection.json", fileMap, COLLECTION_LOAD_CONFIG)
+      ).rejects.toThrowError(ANY_ERROR);
+    });
+
+    it("throws an error if dataset manifest is malformed", async () => {
+      const fileMap = {
+        ...MOCK_DATASET_FILEMAP,
+        // eslint-disable-next-line
+        "manifest.json": new File([`{"some-property": "value"}`], "manifest.json"),
+      };
+      await expect(Collection.loadFromAmbiguousFile("", fileMap, COLLECTION_LOAD_CONFIG)).rejects.toThrowError(
+        ANY_ERROR
+      );
     });
   });
 });
