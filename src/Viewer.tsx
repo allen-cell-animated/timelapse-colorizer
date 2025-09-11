@@ -1,22 +1,14 @@
-import {
-  CaretRightOutlined,
-  CheckCircleOutlined,
-  EllipsisOutlined,
-  PauseOutlined,
-  ShareAltOutlined,
-  StepBackwardFilled,
-  StepForwardFilled,
-} from "@ant-design/icons";
-import { notification, Slider, Tabs } from "antd";
+import { CheckCircleOutlined, EllipsisOutlined, ShareAltOutlined } from "@ant-design/icons";
+import { notification, Tabs } from "antd";
 import { NotificationConfig } from "antd/es/notification/interface";
 import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 
 import { Dataset, LoadTroubleshooting, PixelIdInfo, ReportWarningCallback, TabType } from "./colorizer";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./colorizer/utils/analytics";
-import { useAnnotations, useConstructor, useDebounce, useRecentCollections } from "./colorizer/utils/react_utils";
 import { showFailedUrlParseAlert } from "./components/Banner/alert_templates";
-import { DEFAULT_PLAYBACK_FPS, INTERNAL_BUILD } from "./constants";
+import { INTERNAL_BUILD } from "./constants";
+import { useAnnotations, useConstructor, useRecentCollections } from "./hooks";
 import { getDifferingProperties } from "./state/utils/data_validation";
 import {
   loadInitialViewerStateFromParams,
@@ -40,15 +32,13 @@ import { useAlertBanner } from "./components/Banner";
 import TextButton from "./components/Buttons/TextButton";
 import CanvasWrapper from "./components/CanvasWrapper";
 import FeatureControls from "./components/Controls/FeatureControls";
+import PlaybackControls from "./components/Controls/PlaybackControls";
 import HelpDropdown from "./components/Dropdowns/HelpDropdown";
 import SelectionDropdown from "./components/Dropdowns/SelectionDropdown";
 import Export from "./components/Export";
 import Header from "./components/Header";
-import IconButton from "./components/IconButton";
 import LoadDatasetButton from "./components/LoadDatasetButton";
 import SmallScreenWarning from "./components/Modals/SmallScreenWarning";
-import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
-import SpinBox from "./components/SpinBox";
 import {
   AnnotationTab,
   CorrelationPlotTab,
@@ -94,8 +84,8 @@ function Viewer(): ReactElement {
   const workerPool = getSharedWorkerPool();
   const arrayLoader = useConstructor(() => new UrlArrayLoader(workerPool)).current;
 
-  // TODO: Refactor dataset dropdowns, color ramp controls, and time controls into separate
-  // components to greatly reduce the state required for this component.
+  // TODO: Break down into separate components to greatly reduce the state
+  // required for this component.
   // Get viewer state:
   const collection = useViewerStateStore((state) => state.collection);
   const currentFrame = useViewerStateStore((state) => state.currentFrame);
@@ -120,8 +110,6 @@ function Viewer(): ReactElement {
   const [datasetLoadProgress, setDatasetLoadProgress] = useState<number | null>(null);
   const [datasetOpen, setDatasetOpen] = useState(false);
 
-  const [playbackFps, setPlaybackFps] = useState(DEFAULT_PLAYBACK_FPS);
-
   const [searchParams, setSearchParams] = useSearchParams();
   // Provides a mounting point for Antd's notification component. Otherwise, the notifications
   // are mounted outside of App and don't receive CSS styling variables.
@@ -137,21 +125,6 @@ function Viewer(): ReactElement {
 
   const [isRecording, setIsRecording] = useState(false);
 
-  // TODO: Move all logic for the time slider into its own component!
-  // Flag indicating that frameInput should not be synced with playback.
-  const [isUserDirectlyControllingFrameInput, setIsUserDirectlyControllingFrameInput] = useState(false);
-
-  useEffect(() => {
-    if (timeControls.isPlaying()) {
-      setIsUserDirectlyControllingFrameInput(false);
-    }
-  }, [timeControls.isPlaying()]);
-
-  const timeSliderContainerRef = useRef<HTMLDivElement>(null);
-  /** The frame selected by the time UI. Changes to frameInput are reflected in
-   * canvas after a short delay.
-   */
-  const [frameInput, setFrameInput] = useState(0);
   const [lastValidHoveredId, setLastValidHoveredId] = useState<PixelIdInfo>({ segId: -1, globalId: undefined });
   const [showObjectHoverInfo, setShowObjectHoverInfo] = useState(false);
   const currentHoveredId = showObjectHoverInfo ? lastValidHoveredId : null;
@@ -190,15 +163,6 @@ function Viewer(): ReactElement {
       updateUrlParams();
     });
   }, [isRecording, updateUrlParams]);
-
-  // Sync the time slider with the pending frame.
-  useEffect(() => {
-    // When user is controlling time slider, do not sync frame input w/ playback
-    if (!isUserDirectlyControllingFrameInput) {
-      return useViewerStateStore.subscribe((state) => state.pendingFrame, setFrameInput);
-    }
-    return;
-  }, [isUserDirectlyControllingFrameInput]);
 
   // When the scatterplot tab is opened for the first time, set the default axes
   // to the selected feature and time.
@@ -393,7 +357,14 @@ function Viewer(): ReactElement {
 
       const { collection: newCollection, dataset: newDataset, datasetKey: newDatasetKey } = result;
       setCollection(newCollection);
-      addRecentCollection({ url: newCollection.getUrl() });
+
+      // Collection URL will be `null` if the dataset was loaded from a local
+      // ZIP file.
+      const collectionUrl = newCollection.getUrl();
+      if (collectionUrl !== null) {
+        addRecentCollection({ url: collectionUrl });
+      }
+
       await replaceDataset(newDataset, newDatasetKey);
       setIsInitialDatasetLoaded(true);
       setIsDatasetLoading(false);
@@ -460,64 +431,6 @@ function Viewer(): ReactElement {
     [replaceDataset, collection]
   );
 
-  // SCRUBBING CONTROLS ////////////////////////////////////////////////////
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent): void => {
-      if (e.target instanceof HTMLInputElement) {
-        return;
-      }
-      if (e.key === "ArrowLeft" || e.key === "Left") {
-        timeControls.advanceFrame(-1);
-      } else if (e.key === "ArrowRight" || e.key === "Right") {
-        timeControls.advanceFrame(1);
-      }
-    },
-    [timeControls]
-  );
-
-  useEffect(() => {
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [handleKeyDown]);
-
-  // Store the current value of the time slider as its own state, and update
-  // the frame using a debounced value to prevent constant updates as it moves.
-  const debouncedFrameInput = useDebounce(frameInput, 250);
-  useEffect(() => {
-    if (!timeControls.isPlaying() && currentFrame !== debouncedFrameInput) {
-      setFrame(debouncedFrameInput);
-    }
-    // Dependency only contains debouncedFrameInput to prevent time from jumping back
-    // to old debounced values when time playback is paused.
-  }, [debouncedFrameInput]);
-
-  // When the slider is released, check if playback was occurring and resume it.
-  // We need to attach the pointerup event listener to the document because it will not fire
-  // if the user releases the pointer outside of the slider.
-  useEffect(() => {
-    const checkIfPlaybackShouldUnpause = async (event: PointerEvent): Promise<void> => {
-      const target = event.target;
-      if (target && timeSliderContainerRef.current?.contains(target as Node)) {
-        // If the user clicked and released on the slider, update the
-        // time immediately.
-        await setFrame(frameInput);
-      }
-      if (isUserDirectlyControllingFrameInput) {
-        await setFrame(frameInput);
-        timeControls.play();
-        // Update the frame and unpause playback when the slider is released.
-        setIsUserDirectlyControllingFrameInput(false);
-      }
-    };
-
-    document.addEventListener("pointerup", checkIfPlaybackShouldUnpause);
-    return () => {
-      document.removeEventListener("pointerup", checkIfPlaybackShouldUnpause);
-    };
-  }, [isUserDirectlyControllingFrameInput, frameInput]);
-
   const onClickId = useCallback(
     // `info` is null if the user clicked on a background pixel. Otherwise, it
     // contains the segmentation ID (raw image pixel value) and the global ID.
@@ -556,7 +469,6 @@ function Viewer(): ReactElement {
   const datasetDropdownData = useMemo(() => collection?.getDatasetKeys() || [], [collection]);
 
   const disableUi: boolean = isRecording || !datasetOpen;
-  const disableTimeControlsUi = disableUi;
 
   const allTabItems: TabItem[] = [
     {
@@ -644,7 +556,7 @@ function Viewer(): ReactElement {
           <FlexRowAlignCenter $gap={2} $wrap="wrap">
             <LoadDatasetButton
               onLoad={handleDatasetLoad}
-              currentResourceUrl={collection?.url ?? datasetKey ?? ""}
+              currentResourceUrl={collection?.sourcePath ?? datasetKey ?? ""}
               reportWarning={showDatasetLoadWarning}
             />
             <Export
@@ -713,79 +625,11 @@ function Viewer(): ReactElement {
               </CanvasHoverTooltip>
             </div>
 
-            {/** Time Control Bar */}
             <div className={styles.timeControls}>
-              {timeControls.isPlaying() || isUserDirectlyControllingFrameInput ? (
-                // Swap between play and pause button
-                <IconButton
-                  type="primary"
-                  disabled={disableTimeControlsUi}
-                  onClick={() => {
-                    timeControls.pause();
-                    setFrameInput(currentFrame);
-                  }}
-                >
-                  <PauseOutlined />
-                </IconButton>
-              ) : (
-                <IconButton type="primary" disabled={disableTimeControlsUi} onClick={() => timeControls.play()}>
-                  <CaretRightOutlined />
-                </IconButton>
-              )}
-
-              <div
-                ref={timeSliderContainerRef}
-                className={styles.timeSliderContainer}
-                onPointerDownCapture={() => {
-                  if (timeControls.isPlaying()) {
-                    // If the slider is dragged while playing, pause playback.
-                    timeControls.pause();
-                    setIsUserDirectlyControllingFrameInput(true);
-                  }
-                }}
-              >
-                <Slider
-                  min={0}
-                  max={dataset ? dataset.numberOfFrames - 1 : 0}
-                  disabled={disableTimeControlsUi}
-                  value={frameInput}
-                  onChange={(value) => {
-                    setFrameInput(value);
-                  }}
-                />
-              </div>
-
-              <IconButton
-                disabled={disableTimeControlsUi}
-                onClick={() => timeControls.advanceFrame(-1)}
-                type="outlined"
-              >
-                <StepBackwardFilled />
-              </IconButton>
-              <IconButton disabled={disableTimeControlsUi} onClick={() => timeControls.advanceFrame(1)} type="outlined">
-                <StepForwardFilled />
-              </IconButton>
-
-              <SpinBox
-                min={0}
-                max={dataset?.numberOfFrames && dataset?.numberOfFrames - 1}
-                value={frameInput}
-                onChange={setFrame}
-                disabled={disableTimeControlsUi}
-                wrapIncrement={true}
-              />
-              <div style={{ display: "flex", flexDirection: "row", flexGrow: 1, justifyContent: "flex-end" }}>
-                <PlaybackSpeedControl
-                  fps={playbackFps}
-                  onChange={(fps) => {
-                    setPlaybackFps(fps);
-                    timeControls.setPlaybackFps(fps);
-                  }}
-                  disabled={disableTimeControlsUi}
-                />
-              </div>
+              <PlaybackControls disabled={disableUi} />
             </div>
           </div>
+
           <div className={styles.sidePanels}>
             <div className={styles.plotAndFiltersPanel}>
               <Tabs

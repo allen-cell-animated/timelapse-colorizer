@@ -139,6 +139,24 @@ export class MockArrayLoader implements IArrayLoader {
   }
 }
 
+export class MockFetchArrayLoader implements IArrayLoader {
+  private fetchMethod: (url: string) => Promise<Response>;
+
+  constructor(fetchMethod: (url: string) => Promise<Response>) {
+    this.fetchMethod = fetchMethod;
+  }
+
+  dispose(): void {}
+
+  load<T extends FeatureDataType>(url: string, type: T): Promise<ArraySource<T>> {
+    return this.fetchMethod(url)
+      .then((response) => response.json())
+      .then((data) => {
+        return new MockArraySource(type, data["data"]);
+      });
+  }
+}
+
 export const makeMockDataset = async (
   manifest: AnyManifestFile,
   loader: MockArrayLoader = new MockArrayLoader()

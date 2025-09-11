@@ -1,4 +1,3 @@
-import { Checkbox } from "antd";
 import React, { ReactElement, useMemo } from "react";
 
 import {
@@ -26,7 +25,7 @@ type FeatureControlsProps = {
 export default function FeatureControls(props: FeatureControlsProps): ReactElement {
   const dataset = useViewerStateStore((state) => state.dataset);
   const featureKey = useViewerStateStore((state) => state.featureKey);
-  const keepColorRampRange = useViewerStateStore((state) => state.keepColorRampRange);
+
   const setFeatureKey = useViewerStateStore((state) => state.setFeatureKey);
   const categoricalPalette = useViewerStateStore((state) => state.categoricalPalette);
   const colorRampKey = useViewerStateStore((state) => state.colorRampKey);
@@ -37,8 +36,7 @@ export default function FeatureControls(props: FeatureControlsProps): ReactEleme
   const setColorRampReversed = useViewerStateStore((state) => state.setColorRampReversed);
 
   const isFeatureSelected = dataset !== null && featureKey !== null;
-  const isFeatureCategorical = isFeatureSelected && dataset.isFeatureCategorical(featureKey); // Disable color ramp controls when the feature is numeric but we've selected
-  // a categorical color ramp (e.g. glasbey)
+  const isFeatureCategorical = isFeatureSelected && dataset.isFeatureCategorical(featureKey);
   const featureCategories = isFeatureCategorical ? dataset.getFeatureCategories(featureKey) || [] : [];
 
   const featureDropdownData = useMemo((): SelectItem[] => {

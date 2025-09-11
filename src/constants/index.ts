@@ -27,4 +27,6 @@ export const DEFAULT_LABEL_COLOR_PRESETS = [
   },
 ];
 
+export const TOOLTIP_TRIGGER: ("hover" | "focus")[] = ["hover", "focus"];
+
 export * from "./url";

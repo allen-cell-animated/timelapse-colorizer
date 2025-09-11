@@ -5,7 +5,6 @@ import styled, { css } from "styled-components";
 import { clamp } from "three/src/math/MathUtils";
 
 import { formatNumber, setMaxDecimalPrecision } from "../../colorizer/utils/math_utils";
-import { excludeUndefinedValues } from "../../colorizer/utils/react_utils";
 
 type BaseLabeledSliderProps = {
   id?: string;
@@ -125,6 +124,16 @@ const SliderLabel = styled.p<{ $disabled?: boolean }>`
     right: 0;
   }
 `;
+
+function excludeUndefinedValues<T extends Object>(obj: T): Partial<T> {
+  const ret = {} as Partial<T>;
+  for (const key in obj) {
+    if (obj[key] !== undefined) {
+      ret[key] = obj[key];
+    }
+  }
+  return ret;
+}
 
 ///////////////////////////////////////////////////////////////////
 
