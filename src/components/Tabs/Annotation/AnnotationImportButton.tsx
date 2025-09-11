@@ -1,14 +1,15 @@
 import { ImportOutlined, UploadOutlined } from "@ant-design/icons";
-import { Modal, Radio, Space, Upload, UploadFile } from "antd";
+import { Modal, Radio, Space, UploadFile } from "antd";
 import React, { ReactElement, useState } from "react";
 import styled, { css } from "styled-components";
 
-import { AnnotationState } from "../../../colorizer/utils/react_utils";
+import { AnnotationState } from "../../../hooks";
 import { useViewerStateStore } from "../../../state";
 import { FlexColumn } from "../../../styles/utils";
 
 import { AnnotationData, AnnotationMergeMode, AnnotationParseResult } from "../../../colorizer/AnnotationData";
 import TextButton from "../../Buttons/TextButton";
+import { StyledUpload } from "../../Inputs/StyledUpload";
 import MessageCard from "../../MessageCard";
 import AnnotationFileInfo from "./AnnotationFileInfo";
 
@@ -26,23 +27,6 @@ const MultilineRadio = styled(Radio)<{ $expanded?: boolean }>`
       }
       return css``;
     }}
-  }
-`;
-
-const StyledUpload = styled(Upload.Dragger)`
-  &&& {
-    color: var(--color-text-hint);
-    & * {
-      transition: all 0.2s ease-in-out;
-    }
-
-    & .ant-upload-drag-container span {
-      font-size: var(--font-size-header);
-    }
-
-    &:hover {
-      color: var(--color-text-theme);
-    }
   }
 `;
 
@@ -64,6 +48,7 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
     setErrorText("");
     const isCsv = file.type === "text/csv" || file.name.endsWith(".csv");
     if (!isCsv || !dataset) {
+      setUploadedFile(file);
       setErrorText("Only CSV files are supported.");
       return;
     }
@@ -124,10 +109,10 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
         okButtonProps={{ disabled: !parseResult }}
         onOk={handleImport}
         onCancel={handleCancel}
-        destroyOnClose={true}
+        destroyOnHidden={true}
       >
         <FlexColumn $gap={6}>
-          {uploadedFile ? (
+          {uploadedFile || errorText ? (
             <AnnotationFileInfo
               errorText={errorText}
               file={uploadedFile}

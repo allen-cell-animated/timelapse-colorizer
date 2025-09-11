@@ -6,8 +6,8 @@ import { Vector2 } from "three";
 
 import { ImagesIconSVG, ImagesSlashIconSVG, NoImageSVG, TagIconSVG, TagSlashIconSVG } from "../assets";
 import { AnnotationSelectionMode, LoadTroubleshooting, PixelIdInfo, TabType } from "../colorizer/types";
-import { AnnotationState } from "../colorizer/utils/react_utils";
 import { CANVAS_ASPECT_RATIO } from "../constants";
+import { AnnotationState } from "../hooks";
 import { FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter, VisuallyHidden } from "../styles/utils";
 
 import { LabelData, LabelType } from "../colorizer/AnnotationData";

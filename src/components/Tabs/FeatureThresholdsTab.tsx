@@ -13,8 +13,8 @@ import {
   ThresholdType,
 } from "../../colorizer/types";
 import { thresholdMatchFinder } from "../../colorizer/utils/data_utils";
-import { ScrollShadowContainer, useScrollShadow } from "../../colorizer/utils/react_utils";
 import { MAX_FEATURE_CATEGORIES } from "../../constants";
+import { ScrollShadowContainer, useScrollShadow } from "../../hooks";
 import { FlexColumn } from "../../styles/utils";
 
 import { FeatureType } from "../../colorizer/Dataset";

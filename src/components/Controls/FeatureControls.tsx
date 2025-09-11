@@ -1,5 +1,5 @@
 import { Checkbox, Tooltip } from "antd";
-import React, { ReactElement } from "react";
+import React, { ReactElement, useMemo } from "react";
 
 import { ColorRampType, isThresholdNumeric } from "../../colorizer";
 import { thresholdMatchFinder } from "../../colorizer/utils/data_utils";
@@ -25,7 +25,7 @@ export default function FeatureControls(props: FeatureControlsProps): ReactEleme
 
   // Show min + max marks on the color ramp slider if a feature is selected and
   // is currently being thresholded/filtered on.
-  const getColorMapSliderMarks = (): undefined | number[] => {
+  const sliderMarks = useMemo((): undefined | number[] => {
     if (dataset === null || featureKey === null || featureThresholds.length === 0) {
       return undefined;
     }
@@ -38,7 +38,7 @@ export default function FeatureControls(props: FeatureControlsProps): ReactEleme
       return undefined;
     }
     return [threshold.min, threshold.max];
-  };
+  }, [dataset, featureKey, featureThresholds]);
 
   const isFeatureSelected = dataset !== null && featureKey !== null;
   const isFeatureCategorical = isFeatureSelected && dataset.isFeatureCategorical(featureKey);
@@ -74,7 +74,7 @@ export default function FeatureControls(props: FeatureControlsProps): ReactEleme
                     onChange={function (min: number, max: number): void {
                       setColorRampRange([min, max]);
                     }}
-                    marks={getColorMapSliderMarks()}
+                    marks={sliderMarks}
                     disabled={props.disabled || isGlasbeyRamp}
                   />
                 </div>
