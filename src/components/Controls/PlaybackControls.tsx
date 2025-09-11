@@ -46,13 +46,15 @@ export default function PlaybackControls(props: PlaybackControlProps): ReactElem
   // True when playback was occurring and the user interrupted it by moving the
   // time slider, causing a temporary pause state. When the slider is released,
   // playback will resume.
-  const [isUserInterruptingPlayback, setIsUserInterruptingPlayback] = useState(false);
+  const [isScrubbing, setIsScrubbing] = useState(false);
 
   const timeSliderContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (timeControls.isPlaying()) {
-      setIsUserInterruptingPlayback(false);
+    // If playback is started (via keyboard navigation or shortcuts)
+    // while scrubbing, cancel the scrubbing override.
+    if (timeControls.isPlaying() && isScrubbing) {
+      setIsScrubbing(false);
     }
   }, [timeControls.isPlaying()]);
 
@@ -60,11 +62,11 @@ export default function PlaybackControls(props: PlaybackControlProps): ReactElem
   // disabled when the user is manipulating the time slider.
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;
-    if (!isUserInterruptingPlayback) {
+    if (!isScrubbing) {
       unsubscribe = useViewerStateStore.subscribe((state) => state.pendingFrame, setFrameInput);
     }
     return unsubscribe;
-  }, [isUserInterruptingPlayback]);
+  }, [isScrubbing]);
 
   // Load in a new frame whenever the frame input value hasn't changed for
   // 250ms. This prevents excessive frame loading when the user is dragging the
@@ -89,11 +91,11 @@ export default function PlaybackControls(props: PlaybackControlProps): ReactElem
         // time immediately.
         await setFrame(frameInput);
       }
-      if (isUserInterruptingPlayback) {
+      if (isScrubbing) {
         await setFrame(frameInput);
         timeControls.play();
         // Update the frame and unpause playback when the slider is released.
-        setIsUserInterruptingPlayback(false);
+        setIsScrubbing(false);
       }
     };
 
@@ -101,7 +103,7 @@ export default function PlaybackControls(props: PlaybackControlProps): ReactElem
     return () => {
       document.removeEventListener("pointerup", checkIfPlaybackShouldUnpause);
     };
-  }, [isUserInterruptingPlayback, frameInput]);
+  }, [isScrubbing, frameInput]);
 
   //// Keyboard Controls ////
   // TODO: Make this a hook?
@@ -126,7 +128,7 @@ export default function PlaybackControls(props: PlaybackControlProps): ReactElem
   // Continue to show the pause icon if the user interrupted playback to
   // manipulate the time slider, so it doesn't flicker between play/pause
   // states.
-  const showPauseIcon = timeControls.isPlaying() || isUserInterruptingPlayback;
+  const showPauseIcon = timeControls.isPlaying() || isScrubbing;
   const onClickPlayPause = (): void => {
     if (showPauseIcon) {
       timeControls.pause();
@@ -150,9 +152,12 @@ export default function PlaybackControls(props: PlaybackControlProps): ReactElem
             // If the slider is dragged while playing, pause playback and mark
             // that playback was interrupted by the user.
             timeControls.pause();
-            setIsUserInterruptingPlayback(true);
+            setIsScrubbing(true);
           }
         }}
+        // Note that pointer up behavior is handled above in an event listener
+        // on the document, since `onPointerUpCapture` will only fire if the
+        // mouse is still over the slider.
       >
         <Slider
           min={0}
