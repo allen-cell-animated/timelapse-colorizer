@@ -17,6 +17,7 @@ type AntStyledSelectProps<
   type?: ButtonProps["type"] | "outlined";
   width?: string;
   styles?: StylesConfig<SelectItem, IsMulti, Group>;
+  controlContainerStyle?: React.CSSProperties;
 };
 
 const COLOR_INDICATOR_BASE_STYLE = {
@@ -183,7 +184,7 @@ const getCustomStyles = (theme: AppTheme, width: string): StylesConfig<SelectIte
     ...base,
     height: theme.controls.height,
     minHeight: theme.controls.height,
-    width: width,
+    width: `calc(${width})`,
     borderRadius: theme.controls.radiusLg,
     borderColor: isFocused ? theme.color.button.outlineActive : theme.color.layout.borders,
   }),
@@ -289,10 +290,10 @@ export default function AntStyledSelect<
   Group extends GroupBase<SelectItem> = GroupBase<SelectItem>
 >(props: AntStyledSelectProps<IsMulti, Group>): ReactElement {
   const theme = React.useContext(AppThemeContext);
-  const customStyles = useMemo(() => getCustomStyles(theme, props.width ?? "15vw"), [theme]);
+  const customStyles = useMemo(() => getCustomStyles(theme, props.width ?? "15vw + 30px"), [theme]);
 
   return (
-    <SelectContainer $type={props.type || "outlined"}>
+    <SelectContainer $type={props.type || "outlined"} style={props.controlContainerStyle}>
       <Select
         {...props}
         menuPlacement={props.menuPlacement || "auto"}

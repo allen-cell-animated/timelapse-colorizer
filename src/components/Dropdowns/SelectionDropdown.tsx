@@ -47,6 +47,8 @@ type SelectionDropdownProps = {
   showSelectedItemTooltip?: boolean;
   /** Width of the dropdown. Overrides the default sizing behavior if set. */
   width?: string | null;
+  containerStyle?: React.CSSProperties;
+  controlStyle?: React.CSSProperties;
 };
 
 const defaultProps: Partial<SelectionDropdownProps> = {
@@ -197,7 +199,7 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
   const labelId = props.label ? selectId + "-label" : undefined;
 
   return (
-    <FlexRowAlignCenter $gap={6}>
+    <FlexRowAlignCenter $gap={6} style={props.containerStyle}>
       {props.label && (
         <label htmlFor={selectId}>
           <h3 id={labelId}>{props.label}</h3>
@@ -217,6 +219,8 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
         isDisabled={props.disabled}
         isClearable={false}
         isSearchable={props.isSearchable}
+        // TODO: Allow `onChange` to be async, and show a loading indicator
+        // + the awaited value while waiting for it to resolve.
         onChange={(value) => {
           if (value && value.value) {
             props.onChange(value.value);
@@ -231,6 +235,7 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
           });
         }}
         width={props.width ?? undefined}
+        controlContainerStyle={props.controlStyle}
       />
     </FlexRowAlignCenter>
   );
