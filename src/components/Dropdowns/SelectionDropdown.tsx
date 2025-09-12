@@ -217,6 +217,8 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
         isDisabled={props.disabled}
         isClearable={false}
         isSearchable={props.isSearchable}
+        // TODO: Allow `onChange` to be async, and show a loading indicator
+        // + the awaited value while waiting for it to resolve.
         onChange={(value) => {
           if (value && value.value) {
             props.onChange(value.value);
