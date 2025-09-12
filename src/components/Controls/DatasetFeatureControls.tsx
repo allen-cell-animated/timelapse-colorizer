@@ -34,17 +34,22 @@ export default function DatasetFeatureControls(props: DatasetFeatureControlsProp
   }, [dataset]);
 
   return (
-    <FlexRow $gap={20}>
-      <SelectionDropdown
-        disabled={props.disabled}
-        label="Dataset"
-        selected={datasetKey ?? ""}
-        buttonType="primary"
-        items={datasetDropdownData}
-        onChange={props.onSelectDataset}
-      />
+    <FlexRow $gap={20} style={{ width: "100%" }}>
+      <div style={{ width: "45%" }}>
+        <SelectionDropdown
+          disabled={props.disabled}
+          label="Dataset"
+          selected={datasetKey ?? ""}
+          buttonType="primary"
+          items={datasetDropdownData}
+          onChange={props.onSelectDataset}
+          containerStyle={{ width: "100%" }}
+          controlStyle={{ width: "100%" }}
+          width={"100%"}
+        />
+      </div>
 
-      <FlexRow $gap={6}>
+      <FlexRow $gap={6} style={{ width: "55%" }}>
         <SelectionDropdown
           disabled={props.disabled}
           label="Feature"
@@ -57,6 +62,9 @@ export default function DatasetFeatureControls(props: DatasetFeatureControlsProp
               props.onSelectFeature(dataset, value);
             }
           }}
+          containerStyle={{ width: "100%" }}
+          controlStyle={{ width: "100%" }}
+          width={"100%"}
         />
         <GlossaryPanel dataset={dataset} />
       </FlexRow>

@@ -12,7 +12,7 @@ import {
   KNOWN_COLOR_RAMPS,
   PaletteData,
 } from "../../colorizer";
-import { FlexRowAlignCenter } from "../../styles/utils";
+import { FlexRowAlignCenter, VisuallyHidden } from "../../styles/utils";
 import { SelectItem } from "./types";
 
 import { AppThemeContext } from "../AppStyle";
@@ -133,6 +133,7 @@ type ColorRampSelectionProps = {
   useCategoricalPalettes?: boolean;
   disabled?: boolean;
   reversed?: boolean;
+  id: string | undefined;
 };
 
 const defaultProps: Partial<ColorRampSelectionProps> = {
@@ -239,10 +240,13 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
   return (
     <FlexRowAlignCenter $gap={4}>
       <DropdownStyleContainer $categorical={props.useCategoricalPalettes}>
+        <VisuallyHidden>
+          <label htmlFor={props.id}>Feature color ramp</label>
+        </VisuallyHidden>
         <SelectionDropdown
           disabled={props.disabled}
           items={props.useCategoricalPalettes ? paletteItems : rampItems}
-          label="Color map"
+          id={props.id}
           selected={props.useCategoricalPalettes ? selectedPaletteItem : selectedRampItem}
           onChange={props.useCategoricalPalettes ? onChangePalette : onChangeRamp}
           width={`${DROPDOWN_WIDTH_PX}px`}

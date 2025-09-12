@@ -76,14 +76,11 @@ const ComponentContainer = styled.div`
   flex-direction: row;
   gap: 5px;
   width: 100%;
-  max-width: 460px;
-  min-width: 200px;
 `;
 
 const SliderContainer = styled.div`
   position: relative;
-  max-width: 289px;
-  width: 100%;
+  width: calc(100% - 170px);
   font-size: 10px;
   margin: 4px;
   margin-bottom: 6px;

@@ -54,18 +54,17 @@ export default function ColorizationControls(props: ColorizationControlsProps): 
           selectedPalette={categoricalPalette}
           selectedPaletteKey={selectedPaletteKey}
           onChangePalette={setCategoricalPalette}
+          id="feature-color-ramp-dropdown"
         />
 
-        <div style={{ flexBasis: 250, flexShrink: 2, flexGrow: 2, minWidth: "75px" }}>
-          {
-            // Render either a categorical color picker or a range slider depending on the feature type
-            isFeatureCategorical ? (
-              <CategoricalColorPicker categories={featureCategories} disabled={props.disabled} />
-            ) : (
-              <ColorRampRangeSlider disabled={props.disabled} />
-            )
-          }
-        </div>
+        {
+          // Render either a categorical color picker or a range slider depending on the feature type
+          isFeatureCategorical ? (
+            <CategoricalColorPicker categories={featureCategories} disabled={props.disabled} />
+          ) : (
+            <ColorRampRangeSlider disabled={props.disabled} />
+          )
+        }
       </FlexRowAlignCenter>
     </>
   );
