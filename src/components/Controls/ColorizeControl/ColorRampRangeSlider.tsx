@@ -113,6 +113,7 @@ export default function ColorRampRangeSlider(props: ColorRampRangeSliderProps): 
             setColorRampRange([min, max]);
           }}
           marks={marks}
+          showMidpoint={colorRamp.type === ColorRampType.LINEAR_DIVERGING}
           disabled={props.disabled || isUsingGlasbeyRamp}
           sliderStyles={
             isUsingGlasbeyRamp
