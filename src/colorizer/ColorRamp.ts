@@ -2,6 +2,7 @@ import { Color, ColorRepresentation, DataTexture, FloatType, LinearFilter, Neare
 
 export enum ColorRampType {
   LINEAR,
+  LINEAR_DIVERGING,
   CATEGORICAL,
 }
 
@@ -61,7 +62,7 @@ export default class ColorRamp {
     if (this.colorStops.length < 2) {
       ctx.fillStyle = `#${this.colorStops[0].getHexString()}`;
       ctx.fillRect(0, 0, width, height);
-    } else if (this.type === ColorRampType.LINEAR) {
+    } else if (this.type === ColorRampType.LINEAR || this.type === ColorRampType.LINEAR_DIVERGING) {
       const gradientWidth = vertical ? 0 : width;
       const gradientHeight = vertical ? height : 0;
       const gradient = ColorRamp.linearGradientFromColors(ctx, this.colorStops, gradientWidth, gradientHeight);
@@ -123,6 +124,6 @@ export default class ColorRamp {
    */
   public reverse(): ColorRamp {
     const newColorStops = [...this.colorStops].reverse();
-    return new ColorRamp(newColorStops);
+    return new ColorRamp(newColorStops, this.type);
   }
 }

@@ -2,9 +2,9 @@ import { InputNumber, Slider } from "antd";
 import { SliderBaseProps, SliderRangeProps, SliderSingleProps } from "antd/es/slider";
 import React, { ReactElement, ReactEventHandler, ReactNode, useRef } from "react";
 import styled, { css } from "styled-components";
-import { clamp } from "three/src/math/MathUtils";
+import { clamp, inverseLerp } from "three/src/math/MathUtils";
 
-import { formatNumber, setMaxDecimalPrecision } from "../../colorizer/utils/math_utils";
+import { formatNumber } from "../../colorizer/utils/math_utils";
 
 type BaseLabeledSliderProps = {
   id?: string;
@@ -47,7 +47,7 @@ type LabeledRangeSliderProps = BaseLabeledSliderProps & {
   /** Currently selected max range value.*/
   max: number;
   onChange: (min: number, max: number) => void;
-  showMiddleControl?: boolean;
+  showMidpoint?: boolean;
 };
 
 type LabeledValueSliderProps = BaseLabeledSliderProps & {
@@ -64,10 +64,10 @@ const defaultProps: Partial<LabeledSliderProps> = {
   maxInputBound: Number.MAX_SAFE_INTEGER,
   minSliderBound: Number.NaN,
   maxSliderBound: Number.NaN,
-  minSteps: 25,
+  minSteps: 50,
   maxDecimalsToDisplay: 3,
   marks: undefined,
-  showMiddleControl: false,
+  showMidpoint: false,
 };
 
 // STYLING /////////////////////////////////////////////////////////////////
@@ -96,6 +96,16 @@ const SliderContainer = styled.div`
   // but in this case we only show the marks and no label text.
   & .ant-slider-with-marks {
     margin: 9.625px 4.375px;
+  }
+`;
+
+const MidpointLabel = styled.p`
+  && {
+    margin: 0;
+    font-size: var(--font-size-label-small);
+    color: var(--color-text-secondary);
+    cursor: default;
+    z-index: 0;
   }
 `;
 
@@ -203,11 +213,7 @@ export default function LabeledSlider(inputProps: LabeledSliderProps): ReactElem
     }
   };
 
-  let stepSize = props.step ? props.step : (props.maxSliderBound - props.minSliderBound) / props.minSteps;
-  stepSize = clamp(stepSize, 0, 1);
-  stepSize = setMaxDecimalPrecision(stepSize, 3);
-
-  let marks: undefined | Record<number, ReactNode> = undefined;
+  let marks: Record<number, ReactNode> = {};
   if (props.marks) {
     marks = {};
     // Set the mark values to empty fragments so Antd still renders the marks
@@ -216,6 +222,20 @@ export default function LabeledSlider(inputProps: LabeledSliderProps): ReactElem
     props.marks.forEach((value) => {
       marks![value] = <></>;
     });
+  }
+  // Add a midpoint label if the flag is set and the midpoint is within the slider bounds.
+  if (props.type === "range" && props.showMidpoint) {
+    const midpoint = (props.min + props.max) / 2;
+    const relativeMidpoint = inverseLerp(props.minSliderBound, props.maxSliderBound, midpoint);
+    if (relativeMidpoint > 0 && relativeMidpoint < 1) {
+      if (relativeMidpoint < 0.15 || relativeMidpoint > 0.85) {
+        // TODO: Make this based on a pixel threshold instead of a relative threshold
+        // If the midpoint is too close to either end, don't show the text label.
+        marks[midpoint] = <></>;
+      } else {
+        marks[midpoint] = <MidpointLabel>{formatNumber(midpoint, props.maxDecimalsToDisplay)}</MidpointLabel>;
+      }
+    }
   }
 
   const defaultNumberFormatter = (value?: number): string => formatNumber(value, props.maxDecimalsToDisplay);
@@ -231,7 +251,7 @@ export default function LabeledSlider(inputProps: LabeledSliderProps): ReactElem
     max: props.maxSliderBound,
     disabled: props.disabled,
     marks: marks,
-    step: stepSize,
+    step: props.step,
     // Show formatted decimals in tooltip
     // TODO: Is this better than showing the precise value?
     tooltip: {
