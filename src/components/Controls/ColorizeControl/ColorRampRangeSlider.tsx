@@ -1,12 +1,14 @@
 import { LockOutlined, UnlockOutlined } from "@ant-design/icons";
 import { Tooltip } from "antd";
 import React, { ReactElement, useMemo } from "react";
+import { inverseLerp } from "three/src/math/MathUtils";
 
 import { ColorRamp, ColorRampType, isThresholdNumeric } from "../../../colorizer";
 import { thresholdMatchFinder } from "../../../colorizer/utils/data_utils";
 import { useViewerStateStore } from "../../../state";
 import { FlexRowAlignCenter } from "../../../styles/utils";
 
+import { FeatureType } from "../../../colorizer/Dataset";
 import IconButton from "../../IconButton";
 import LabeledSlider from "../../Inputs/LabeledSlider";
 
@@ -21,15 +23,14 @@ function getTrackCssGradient(
   maxRange: number,
   colorRamp: ColorRamp
 ): string {
-  // When `max > maxRange` or `min < minRange`, the gradient stops will be
-  // outside of the [0, 100] range. This is intentional, because it allows the
-  // gradient to stretch past the bounds of physical color ramp control.
-  const tMin = Math.min(((min - minRange) / (maxRange - minRange)) * 100, 0);
-  const tMax = Math.max(((max - minRange) / (maxRange - minRange)) * 100, 100);
-  const colorStops = colorRamp.colorStops;
+  const range = max - min;
+  const visibleRange = Math.min(max, maxRange) - Math.max(min, minRange);
+  const scaleFactor = (range === 0 ? 1 : range / visibleRange) * 100;
+  const stepSize = scaleFactor / (colorRamp.colorStops.length - 1);
 
+  const tMin = inverseLerp(Math.max(minRange, min), Math.min(max, maxRange), min) * 100;
+  const colorStops = colorRamp.colorStops;
   const stops: [string, number][] = [];
-  const stepSize = (tMax - tMin) / (colorStops.length - 1);
   for (let i = 0; i < colorStops.length; i++) {
     const position = tMin + stepSize * i;
     stops.push(["#" + colorStops[i].getHexString(), position]);
@@ -63,13 +64,14 @@ export default function ColorRampRangeSlider(props: ColorRampRangeSliderProps): 
 
   const setColorRampRange = useViewerStateStore((state) => state.setColorRampRange);
 
+  const featureData = featureKey !== null ? dataset?.getFeatureData(featureKey) : undefined;
+
   // Show min + max marks on the color ramp slider if a feature is selected and
   // is currently being thresholded/filtered on.
   const marks = useMemo((): undefined | number[] => {
     if (dataset === null || featureKey === null || featureThresholds.length === 0) {
       return undefined;
     }
-    const featureData = dataset.getFeatureData(featureKey);
     if (!featureData) {
       return undefined;
     }
@@ -78,12 +80,12 @@ export default function ColorRampRangeSlider(props: ColorRampRangeSliderProps): 
       return undefined;
     }
     return [threshold.min, threshold.max];
-  }, [dataset, featureKey, featureThresholds]);
+  }, [dataset, featureKey, featureThresholds, featureData]);
 
   const isUsingGlasbeyRamp = colorRamp.type === ColorRampType.CATEGORICAL;
 
-  const minBound = featureKey !== null ? dataset?.getFeatureData(featureKey)?.min : undefined;
-  const maxBound = featureKey !== null ? dataset?.getFeatureData(featureKey)?.max : undefined;
+  const minBound = featureData ? featureData?.min : undefined;
+  const maxBound = featureData ? featureData?.max : undefined;
   const bgGradient = useMemo(
     () =>
       getTrackCssGradient(colorRampMin, colorRampMax, minBound ?? colorRampMin, maxBound ?? colorRampMax, colorRamp),
@@ -115,6 +117,7 @@ export default function ColorRampRangeSlider(props: ColorRampRangeSliderProps): 
           marks={marks}
           showMidpoint={colorRamp.type === ColorRampType.LINEAR_DIVERGING}
           disabled={props.disabled || isUsingGlasbeyRamp}
+          step={featureData?.type === FeatureType.DISCRETE ? 1 : undefined}
           sliderStyles={
             isUsingGlasbeyRamp
               ? undefined
