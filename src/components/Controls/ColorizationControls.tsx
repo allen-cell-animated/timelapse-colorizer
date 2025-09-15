@@ -35,7 +35,6 @@ export default function ColorizationControls(props: ColorizationControlsProps): 
 
   return (
     <>
-      {/* <h3 style={{ margin: "0" }}>{featureNameWithUnits ?? "Feature value range"}</h3> */}
       <FlexRowAlignCenter $gap={6}>
         <ColorRampDropdown
           knownColorRamps={KNOWN_COLOR_RAMPS}
@@ -57,14 +56,11 @@ export default function ColorizationControls(props: ColorizationControlsProps): 
           id="feature-color-ramp-dropdown"
         />
 
-        {
-          // Render either a categorical color picker or a range slider depending on the feature type
-          isFeatureCategorical ? (
-            <CategoricalColorPicker categories={featureCategories} disabled={props.disabled} />
-          ) : (
-            <ColorRampRangeSlider disabled={props.disabled} />
-          )
-        }
+        {isFeatureCategorical ? (
+          <CategoricalColorPicker categories={featureCategories} disabled={props.disabled} />
+        ) : (
+          <ColorRampRangeSlider disabled={props.disabled} />
+        )}
       </FlexRowAlignCenter>
     </>
   );
