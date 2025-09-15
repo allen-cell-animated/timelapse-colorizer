@@ -31,7 +31,7 @@ import { AppThemeContext } from "./components/AppStyle";
 import { useAlertBanner } from "./components/Banner";
 import TextButton from "./components/Buttons/TextButton";
 import CanvasWrapper from "./components/CanvasWrapper";
-import ColorizationControls from "./components/Controls/ColorizationControls";
+import ColorizeControls from "./components/Controls/ColorizeControls";
 import DatasetFeatureControls from "./components/Controls/DatasetFeatureControls";
 import PlaybackControls from "./components/Controls/PlaybackControls";
 import HelpDropdown from "./components/Dropdowns/HelpDropdown";
@@ -588,7 +588,7 @@ function Viewer(): ReactElement {
                 onSelectFeature={reportFeatureSelected}
                 disabled={disableUi}
               />
-              <ColorizationControls disabled={disableUi} />
+              <ColorizeControls disabled={disableUi} />
             </FlexColumn>
 
             <CanvasHoverTooltip

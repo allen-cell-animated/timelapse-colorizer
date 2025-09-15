@@ -7,17 +7,17 @@ import {
   KNOWN_COLOR_RAMPS,
 } from "../../colorizer";
 import { useViewerStateStore } from "../../state";
-import { FlexRowAlignCenter } from "../../styles/utils";
+import { FlexRow } from "../../styles/utils";
 
 import CategoricalColorPicker from "../CategoricalColorPicker";
 import ColorRampDropdown from "../Dropdowns/ColorRampDropdown";
 import ColorRampRangeSlider from "./ColorizeControl/ColorRampRangeSlider";
 
-type ColorizationControlsProps = {
+type ColorizeControlsProps = {
   disabled: boolean;
 };
 
-export default function ColorizationControls(props: ColorizationControlsProps): ReactElement {
+export default function ColorizeControls(props: ColorizeControlsProps): ReactElement {
   const dataset = useViewerStateStore((state) => state.dataset);
   const featureKey = useViewerStateStore((state) => state.featureKey);
 
@@ -36,7 +36,7 @@ export default function ColorizationControls(props: ColorizationControlsProps): 
   return (
     <>
       {/* TODO: Once the color ramp dropdown is refactored, change gap to 22px */}
-      <FlexRowAlignCenter $gap={12}>
+      <FlexRow $gap={12} style={{ alignItems: "flex-start" }}>
         <ColorRampDropdown
           label="Colormap"
           knownColorRamps={KNOWN_COLOR_RAMPS}
@@ -63,7 +63,7 @@ export default function ColorizationControls(props: ColorizationControlsProps): 
         ) : (
           <ColorRampRangeSlider disabled={props.disabled} />
         )}
-      </FlexRowAlignCenter>
+      </FlexRow>
     </>
   );
 }
