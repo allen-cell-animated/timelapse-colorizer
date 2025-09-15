@@ -96,9 +96,7 @@ const SliderContainer = styled.div`
 
 const MidpointLabel = styled.p`
   && {
-    // Align vertically with the other slider labels.
     margin: 0;
-    padding-top: 1px;
     // Match font styling with other slider labels.
     font-size: var(--font-size-label-small);
     color: var(--color-text-secondary);
@@ -222,14 +220,15 @@ export default function LabeledSlider(inputProps: LabeledSliderProps): ReactElem
       marks![value] = <></>;
     });
   }
-  // Add a midpoint label if the flag is set and the midpoint is within the slider bounds.
+  // Add a midpoint label if the flag is set.
   if (props.type === "range" && props.showMidpoint) {
     const midpoint = (props.min + props.max) / 2;
     const relativeMidpoint = inverseLerp(props.minSliderBound, props.maxSliderBound, midpoint);
     if (relativeMidpoint > 0 && relativeMidpoint < 1) {
+      // Only show the midpoint marker if it's within the slider bounds.
       if (relativeMidpoint < 0.15 || relativeMidpoint > 0.85) {
-        // TODO: Make this based on a pixel threshold instead of a relative threshold
         // If the midpoint is too close to either end, don't show the text label.
+        // TODO: Make this based on a pixel threshold instead of a relative threshold.
         marks[midpoint] = <></>;
       } else {
         marks[midpoint] = <MidpointLabel>{formatNumber(midpoint, props.maxDecimalsToDisplay)}</MidpointLabel>;
