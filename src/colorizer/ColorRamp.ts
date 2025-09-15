@@ -2,7 +2,7 @@ import { Color, ColorRepresentation, DataTexture, FloatType, LinearFilter, Neare
 
 export enum ColorRampType {
   LINEAR,
-  LINEAR_DIVERGING,
+  DIVERGING,
   CATEGORICAL,
 }
 
@@ -68,13 +68,7 @@ export default class ColorRamp {
     if (colorStops.length < 2) {
       ctx.fillStyle = `#${colorStops[0].getHexString()}`;
       ctx.fillRect(0, 0, width, height);
-    } else if (this.type === ColorRampType.LINEAR) {
-      const gradientWidth = options?.vertical ? 0 : width;
-      const gradientHeight = options?.vertical ? height : 0;
-      const gradient = ColorRamp.linearGradientFromColors(ctx, colorStops, gradientWidth, gradientHeight);
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, width, height);
-    } else {
+    } else if (this.type === ColorRampType.CATEGORICAL) {
       // Draw as hard stop gradients
       const stops = colorStops.slice(0, DISPLAY_GRADIENT_MAX_STOPS);
       const step = width / stops.length;
@@ -82,6 +76,13 @@ export default class ColorRamp {
         ctx.fillStyle = `#${color.getHexString()}`;
         ctx.fillRect(Math.floor(step * idx), 0, Math.ceil(step), height);
       });
+    } else {
+      // All other ramp types are linear gradients
+      const gradientWidth = options?.vertical ? 0 : width;
+      const gradientHeight = options?.vertical ? height : 0;
+      const gradient = ColorRamp.linearGradientFromColors(ctx, this.colorStops, gradientWidth, gradientHeight);
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, width, height);
     }
 
     return canvas;
