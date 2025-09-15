@@ -577,13 +577,12 @@ function Viewer(): ReactElement {
 
       {/** Main Content: Contains canvas and plot, ramp controls, time controls, etc. */}
       <div className={styles.mainContent}>
-        {/** Top Control Bar */}
         {/* Organize the main content areas */}
         <div className={styles.contentPanels}>
           {/** Canvas + Controls + Playback*/}
           <div className={styles.canvasPanel}>
+            {/** Top Control Bar */}
             <FlexColumn $gap={16} style={{ marginBottom: 23, width: "100%" }}>
-              {/* Should have a 16px between dataset and colorization controls */}
               <DatasetFeatureControls
                 onSelectDataset={handleDatasetChange}
                 onSelectFeature={reportFeatureSelected}

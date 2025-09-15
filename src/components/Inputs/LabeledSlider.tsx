@@ -272,6 +272,8 @@ export default function LabeledSlider(inputProps: LabeledSliderProps): ReactElem
     size: "small",
     controls: false,
     disabled: props.disabled,
+    // Magic number. At default magnification with Lato, this keeps 6 digits +
+    // decimal point visible.
     style: { width: "87px" },
     type: "number",
     precision: props.precision,

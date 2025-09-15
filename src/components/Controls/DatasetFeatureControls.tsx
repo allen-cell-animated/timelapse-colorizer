@@ -43,6 +43,7 @@ export default function DatasetFeatureControls(props: DatasetFeatureControlsProp
           buttonType="primary"
           items={datasetDropdownData}
           onChange={props.onSelectDataset}
+          // TODO: Refactor how width is set on dropdowns.
           containerStyle={{ width: "100%" }}
           controlStyle={{ width: "100%" }}
           width={"100%"}
