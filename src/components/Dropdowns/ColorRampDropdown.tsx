@@ -199,7 +199,7 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
     return selectedRamp.createGradientCanvas(DROPDOWN_WIDTH_PX, theme.controls.height).toDataURL();
   }, [props.selectedRamp, props.reversed]);
 
-  const showAsReversed = selectedRampData.reverseByDefault === true ? !props.reversed : props.reversed;
+  const showAsReversed = props.reversed !== selectedRampData.reverseByDefault;
   const selectedRampItem = {
     value: SELECTED_RAMP_ITEM_KEY,
     label: selectedRampData.name + (showAsReversed ? " (reversed)" : ""),
