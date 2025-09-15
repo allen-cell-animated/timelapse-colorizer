@@ -19,10 +19,6 @@ type BaseLabeledSliderProps = {
   minInputBound?: number;
   /** The upper bound for the numeric input. If undefined, uses MAX_SAFE_INTEGER. */
   maxInputBound?: number;
-  // TODO: Turn on/off integer snapping with a hotkey? (like if shift/control is pressed)
-  /** Minimum number of steps for the slider to use if integer steps cannot be used.
-   * Default is 25. */
-  minSteps?: number;
   /** The step size for the slider. Overrides `minSteps` if set. */
   step?: number;
   /** Marks to draw on the slider. */
@@ -64,7 +60,6 @@ const defaultProps: Partial<LabeledSliderProps> = {
   maxInputBound: Number.MAX_SAFE_INTEGER,
   minSliderBound: Number.NaN,
   maxSliderBound: Number.NaN,
-  minSteps: 50,
   maxDecimalsToDisplay: 3,
   marks: undefined,
   showMidpoint: false,
@@ -101,9 +96,13 @@ const SliderContainer = styled.div`
 
 const MidpointLabel = styled.p`
   && {
+    // Align vertically with the other slider labels.
     margin: 0;
+    padding-top: 1px;
+    // Match font styling with other slider labels.
     font-size: var(--font-size-label-small);
     color: var(--color-text-secondary);
+    // Disable pointer cursor Ant applies by default.
     cursor: default;
     z-index: 0;
   }

@@ -16,6 +16,16 @@ type ColorRampRangeSliderProps = {
   disabled: boolean;
 };
 
+/**
+ * Creates a CSS gradient string for the slider track, between the two range
+ * handles. `min` and `max` are the current range values, while `minRange` and
+ * `maxRange` are the overall bounds of the slider.
+ *
+ * @returns A CSS gradient string, where 0% is at the slider's minimum handle
+ * and 100% is at the slider's maximum handle. When `min` and/or `max` is
+ * outside the slider's bounds, the gradient is extrapolated beyond 0% and/or
+ * 100%.
+ */
 function getTrackCssGradient(
   min: number,
   max: number,
@@ -23,21 +33,37 @@ function getTrackCssGradient(
   maxRange: number,
   colorRamp: ColorRamp
 ): string {
+  // Determine the step size between color stops, in percentage space.
   const range = max - min;
   const visibleRange = Math.min(max, maxRange) - Math.max(min, minRange);
   const scaleFactor = (range === 0 ? 1 : range / visibleRange) * 100;
   const stepSize = scaleFactor / (colorRamp.colorStops.length - 1);
 
-  const tMin = inverseLerp(Math.max(minRange, min), Math.min(max, maxRange), min) * 100;
+  const minPercent = inverseLerp(Math.max(minRange, min), Math.min(max, maxRange), min) * 100;
+
+  // Generate the CSS gradient string. Browsers will handle percentages outside
+  // the 0-100% range.
   const colorStops = colorRamp.colorStops;
   const stops: [string, number][] = [];
   for (let i = 0; i < colorStops.length; i++) {
-    const position = tMin + stepSize * i;
-    stops.push(["#" + colorStops[i].getHexString(), position]);
+    const positionPercent = minPercent + stepSize * i;
+    stops.push(["#" + colorStops[i].getHexString(), positionPercent]);
   }
   return `linear-gradient(to right, ${stops.map(([color, pos]) => `${color} ${pos}%`).join(", ")})`;
 }
 
+/**
+ * Gets the CSS gradient for the rail, which is the region outside the selected
+ * range.
+ *
+ * The range below the slider min is filled with the first color stop, and the
+ * range above the slider max is filled with the last color stop.
+ *
+ * ```text
+ * 0% ----o----------------o---- 100%
+ *        ^ slider min     ^ slider max
+ * ```
+ */
 function getRailCssGradient(
   min: number,
   max: number,
@@ -45,12 +71,15 @@ function getRailCssGradient(
   maxRange: number,
   colorRamp: ColorRamp
 ): string {
-  const tMin = ((min - minRange) / (maxRange - minRange)) * 100;
-  const tMax = ((max - minRange) / (maxRange - minRange)) * 100;
+  // Get the min and max positions as percentages of the full slider range. It's
+  // OK if they are outside the 0-100% range, since the rail won't be visible in
+  // that case anyways.
+  const minPercent = ((min - minRange) / (maxRange - minRange)) * 100;
+  const maxPercent = ((max - minRange) / (maxRange - minRange)) * 100;
   const colorStops = colorRamp.colorStops;
   const firstStop = colorStops[0];
   const lastStop = colorStops[colorStops.length - 1];
-  return `linear-gradient(to right, #${firstStop.getHexString()} ${tMin}%, #${lastStop.getHexString()} ${tMax}%)`;
+  return `linear-gradient(to right, #${firstStop.getHexString()} ${minPercent}%, #${lastStop.getHexString()} ${maxPercent}%)`;
 }
 
 export default function ColorRampRangeSlider(props: ColorRampRangeSliderProps): ReactElement {
@@ -115,7 +144,7 @@ export default function ColorRampRangeSlider(props: ColorRampRangeSliderProps): 
             setColorRampRange([min, max]);
           }}
           marks={marks}
-          showMidpoint={colorRamp.type === ColorRampType.LINEAR_DIVERGING}
+          showMidpoint={colorRamp.type === ColorRampType.DIVERGING}
           disabled={props.disabled || isUsingGlasbeyRamp}
           step={featureData?.type === FeatureType.DISCRETE ? 1 : undefined}
           sliderStyles={
