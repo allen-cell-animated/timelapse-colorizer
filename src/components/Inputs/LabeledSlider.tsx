@@ -105,18 +105,6 @@ const MidpointLabel = styled.p`
   }
 `;
 
-const MidpointLabel = styled.p`
-  && {
-    margin: 0;
-    // Match font styling with other slider labels.
-    font-size: var(--font-size-label-small);
-    color: var(--color-text-secondary);
-    // Disable pointer cursor Ant applies by default.
-    cursor: default;
-    z-index: 0;
-  }
-`;
-
 const SliderLabel = styled.p<{ $disabled?: boolean }>`
   position: absolute;
   bottom: var(--label-position);
