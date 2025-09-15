@@ -1,6 +1,6 @@
 import { LockOutlined, UnlockOutlined } from "@ant-design/icons";
 import { Tooltip } from "antd";
-import React, { ReactElement, useMemo } from "react";
+import React, { ReactElement, useCallback, useMemo } from "react";
 import { inverseLerp } from "three/src/math/MathUtils";
 
 import { ColorRamp, ColorRampType, isThresholdNumeric } from "../../../colorizer";
@@ -60,8 +60,8 @@ function getTrackCssGradient(
  * range above the slider max is filled with the last color stop.
  *
  * ```text
- * 0% ----o----------------o---- 100%
- *        ^ slider min     ^ slider max
+ * 0% |----o----------------o----| 100%
+ *         ^ min            ^ max
  * ```
  */
 function getRailCssGradient(
@@ -76,9 +76,8 @@ function getRailCssGradient(
   // that case anyways.
   const minPercent = ((min - minRange) / (maxRange - minRange)) * 100;
   const maxPercent = ((max - minRange) / (maxRange - minRange)) * 100;
-  const colorStops = colorRamp.colorStops;
-  const firstStop = colorStops[0];
-  const lastStop = colorStops[colorStops.length - 1];
+  const firstStop = colorRamp.colorStops[0];
+  const lastStop = colorRamp.colorStops[colorRamp.colorStops.length - 1];
   return `linear-gradient(to right, #${firstStop.getHexString()} ${minPercent}%, #${lastStop.getHexString()} ${maxPercent}%)`;
 }
 
@@ -89,19 +88,15 @@ export default function ColorRampRangeSlider(props: ColorRampRangeSliderProps): 
   const featureKey = useViewerStateStore((state) => state.featureKey);
   const featureThresholds = useViewerStateStore((state) => state.thresholds);
   const keepColorRampRange = useViewerStateStore((state) => state.keepColorRampRange);
-  const setKeepColorRampRange = useViewerStateStore((state) => state.setKeepColorRampRange);
-
   const setColorRampRange = useViewerStateStore((state) => state.setColorRampRange);
+  const setKeepColorRampRange = useViewerStateStore((state) => state.setKeepColorRampRange);
 
   const featureData = featureKey !== null ? dataset?.getFeatureData(featureKey) : undefined;
 
   // Show min + max marks on the color ramp slider if a feature is selected and
   // is currently being thresholded/filtered on.
   const marks = useMemo((): undefined | number[] => {
-    if (dataset === null || featureKey === null || featureThresholds.length === 0) {
-      return undefined;
-    }
-    if (!featureData) {
+    if (featureKey === null || featureThresholds.length === 0 || !featureData) {
       return undefined;
     }
     const threshold = featureThresholds.find(thresholdMatchFinder(featureKey, featureData.unit));
@@ -109,20 +104,44 @@ export default function ColorRampRangeSlider(props: ColorRampRangeSliderProps): 
       return undefined;
     }
     return [threshold.min, threshold.max];
-  }, [dataset, featureKey, featureThresholds, featureData]);
+  }, [featureKey, featureThresholds, featureData]);
 
   const isUsingGlasbeyRamp = colorRamp.type === ColorRampType.CATEGORICAL;
 
-  const minBound = featureData ? featureData?.min : undefined;
-  const maxBound = featureData ? featureData?.max : undefined;
+  const minBound = featureData ? featureData?.min : colorRampMin;
+  const maxBound = featureData ? featureData?.max : colorRampMax;
   const bgGradient = useMemo(
-    () =>
-      getTrackCssGradient(colorRampMin, colorRampMax, minBound ?? colorRampMin, maxBound ?? colorRampMax, colorRamp),
+    () => getTrackCssGradient(colorRampMin, colorRampMax, minBound, maxBound, colorRamp),
     [colorRampMin, colorRampMax, minBound, maxBound, colorRamp]
   );
   const trackGradient = useMemo(
-    () => getRailCssGradient(colorRampMin, colorRampMax, minBound ?? colorRampMin, maxBound ?? colorRampMax, colorRamp),
+    () => getRailCssGradient(colorRampMin, colorRampMax, minBound, maxBound, colorRamp),
     [colorRampMin, colorRampMax, minBound, maxBound, colorRamp]
+  );
+  const sliderStyles = useMemo(
+    () =>
+      // Show as unstyled + disabled when glasbey ramps are selected.
+      isUsingGlasbeyRamp
+        ? undefined
+        : {
+            track: {
+              background: "transparent",
+            },
+            tracks: {
+              background: bgGradient,
+            },
+            rail: {
+              background: trackGradient,
+            },
+          },
+    [isUsingGlasbeyRamp, bgGradient, trackGradient]
+  );
+
+  const onSliderChange = useCallback(
+    (min: number, max: number) => {
+      setColorRampRange([min, max]);
+    },
+    [setColorRampRange]
   );
 
   const keepRangeButtonAltText =
@@ -140,28 +159,12 @@ export default function ColorRampRangeSlider(props: ColorRampRangeSliderProps): 
           max={colorRampMax}
           minSliderBound={minBound}
           maxSliderBound={maxBound}
-          onChange={function (min: number, max: number): void {
-            setColorRampRange([min, max]);
-          }}
+          onChange={onSliderChange}
           marks={marks}
           showMidpoint={colorRamp.type === ColorRampType.DIVERGING}
           disabled={props.disabled || isUsingGlasbeyRamp}
           step={featureData?.type === FeatureType.DISCRETE ? 1 : undefined}
-          sliderStyles={
-            isUsingGlasbeyRamp
-              ? undefined
-              : {
-                  track: {
-                    background: "transparent",
-                  },
-                  tracks: {
-                    background: bgGradient,
-                  },
-                  rail: {
-                    background: trackGradient,
-                  },
-                }
-          }
+          sliderStyles={sliderStyles}
         />
         <Tooltip title={keepRangeButtonAltText} trigger={["hover", "focus"]}>
           <IconButton
