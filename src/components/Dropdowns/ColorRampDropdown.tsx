@@ -159,7 +159,9 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
       return {
         value: key,
         label: rampData.name,
-        image: rampData.colorRamp.createGradientCanvas(DROPDOWN_WIDTH_PX, theme.controls.height).toDataURL(),
+        image: rampData.colorRamp
+          .createGradientCanvas(DROPDOWN_WIDTH_PX, theme.controls.height, { reverse: rampData.reverseByDefault })
+          .toDataURL(),
         tooltip: rampData.name,
       };
     });
@@ -197,11 +199,12 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
     return selectedRamp.createGradientCanvas(DROPDOWN_WIDTH_PX, theme.controls.height).toDataURL();
   }, [props.selectedRamp, props.reversed]);
 
+  const showAsReversed = props.reversed !== selectedRampData.reverseByDefault;
   const selectedRampItem = {
     value: SELECTED_RAMP_ITEM_KEY,
-    label: selectedRampData.name + (props.reversed ? " (reversed)" : ""),
+    label: selectedRampData.name + (showAsReversed ? " (reversed)" : ""),
     image: rampImgSrc,
-    tooltip: selectedRampData.name + (props.reversed ? " (reversed)" : ""),
+    tooltip: selectedRampData.name + (showAsReversed ? " (reversed)" : ""),
   };
 
   const paletteImgSrc = useMemo(() => {
@@ -233,7 +236,9 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
   };
 
   const onChangeRamp = (key: string): void => {
-    props.onChangeRamp(key, false);
+    const rampData = props.knownColorRamps.get(key);
+    const reverse = rampData?.reverseByDefault ?? false;
+    props.onChangeRamp(key, reverse);
   };
 
   return (
