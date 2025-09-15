@@ -60,6 +60,7 @@ export default function VectorFieldSettings(): ReactElement {
           items={vectorOptions}
           onChange={setVectorKey}
           controlTooltipPlacement="right"
+          width={"300px"}
         ></SelectionDropdown>
         {vectorKey === VECTOR_KEY_MOTION_DELTA && vectorOptionsEnabled && (
           <Card style={{ position: "relative", width: "fit-content", marginTop: "10px" }} size="small">

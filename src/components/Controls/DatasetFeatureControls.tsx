@@ -63,11 +63,10 @@ export default function DatasetFeatureControls(props: DatasetFeatureControlsProp
               props.onSelectFeature(dataset, value);
             }
           }}
-          containerStyle={{ width: "100%" }}
-          controlStyle={{ width: "100%" }}
           width={"100%"}
-        />
-        <GlossaryPanel dataset={dataset} />
+        >
+          <GlossaryPanel dataset={dataset} />
+        </SelectionDropdown>
       </FlexRow>
     </FlexRow>
   );

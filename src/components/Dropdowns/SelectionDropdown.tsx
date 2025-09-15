@@ -45,8 +45,13 @@ type SelectionDropdownProps = {
   /** * If true, shows the label of the currently-selected item as a tooltip
    * when hovering over the input/selection area. */
   showSelectedItemTooltip?: boolean;
-  /** Width of the dropdown. Overrides the default sizing behavior if set. */
-  width?: string | null;
+  /**
+   * Total width of the dropdown button and the label. Overrides the default
+   * sizing behavior if set.
+   */
+  width?: string;
+  controlWidth?: string;
+  menuWidth?: string;
   containerStyle?: React.CSSProperties;
   controlStyle?: React.CSSProperties;
 };
@@ -67,7 +72,7 @@ const Option = (props: OptionProps<SelectItem>): ReactElement => {
 
   if ((props.data as SelectItem).image) {
     copiedProps.children = (
-      <img src={copiedProps.data.image} alt={copiedProps.data.label} style={{ width: "100%", height: "100%" }}></img>
+      <img src={copiedProps.data.image} alt={copiedProps.data.label} style={{ width: "118px", height: "100%" }}></img>
     );
   }
 
@@ -110,7 +115,7 @@ function formatAsSelectItems(items: string[] | SelectItem[]): SelectItem[] {
  * the `items` property on every render, which can cause unexpected or unwanted
  * behavior such as flickering on hover during rapid page updates.
  */
-export default function SelectionDropdown(inputProps: SelectionDropdownProps): ReactElement {
+export default function SelectionDropdown(inputProps: React.PropsWithChildren<SelectionDropdownProps>): ReactElement {
   const props = { ...defaultProps, ...inputProps };
 
   const options = useMemo(() => formatAsSelectItems(props.items), [props.items]);
@@ -199,9 +204,9 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
   const labelId = props.label ? selectId + "-label" : undefined;
 
   return (
-    <FlexRowAlignCenter $gap={6} style={props.containerStyle}>
+    <FlexRowAlignCenter $gap={6} style={{ width: props.width, minWidth: props.width }}>
       {props.label && (
-        <label htmlFor={selectId}>
+        <label htmlFor={selectId} style={{ whiteSpace: "nowrap" }}>
           <h3 id={labelId}>{props.label}</h3>
         </label>
       )}
@@ -234,9 +239,10 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
             setSearchInput(input);
           });
         }}
-        width={props.width ?? undefined}
-        controlContainerStyle={props.controlStyle}
+        controlWidth={props.controlWidth}
+        menuWidth={props.menuWidth}
       />
+      {props.children}
     </FlexRowAlignCenter>
   );
 }

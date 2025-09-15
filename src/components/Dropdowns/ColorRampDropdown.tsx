@@ -21,12 +21,14 @@ import SelectionDropdown from "./SelectionDropdown";
 
 const SELECTED_RAMP_ITEM_KEY = "__selected_ramp__";
 const CUSTOM_PALETTE_ITEM_KEY = "__custom__";
-const DROPDOWN_WIDTH_PX = 120;
+const DROPDOWN_CONTROL_WIDTH_PX = 28;
+const DROPDOWN_CONTROL_BORDER_PX = 1;
+const DROPDOWN_MENU_WIDTH_PX = 118;
 const DROPDOWN_DEFAULT_BORDER_PX = 1;
 const DROPDOWN_CATEGORICAL_BORDER_PX = 2;
 
 const DropdownStyleContainer = styled.div<{ $categorical: boolean }>`
-  --width: ${DROPDOWN_WIDTH_PX}px;
+  --width: ${DROPDOWN_CONTROL_WIDTH_PX}px;
   --border-width: 1px;
   --radius: 6px;
   --button-radius: calc(var(--radius) - var(--border-width));
@@ -44,8 +46,9 @@ const DropdownStyleContainer = styled.div<{ $categorical: boolean }>`
     image-rendering: -moz-crisp-edges; /* FF 6.0+ */
     image-rendering: -webkit-optimize-contrast; /* Safari */
     image-rendering: -o-crisp-edges; /* OS X & Windows Opera (12.02) */
-    image-rendering: pixelated; /* Awesome future-browsers */
+    image-rendering: pixelated; /* /* Awesome future-browsers */
     -ms-interpolation-mode: nearest-neighbor; /* IE */
+    width: ${DROPDOWN_MENU_WIDTH_PX}px;
   }
 
   & .react-select__control > img {
@@ -162,7 +165,9 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
         value: key,
         label: rampData.name,
         image: rampData.colorRamp
-          .createGradientCanvas(DROPDOWN_WIDTH_PX, theme.controls.height, { reverse: rampData.reverseByDefault })
+          .createGradientCanvas(DROPDOWN_MENU_WIDTH_PX - 2 * DROPDOWN_CONTROL_BORDER_PX, theme.controls.height, {
+            reverse: rampData.reverseByDefault,
+          })
           .toDataURL(),
         tooltip: rampData.name,
       };
@@ -179,7 +184,9 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
       return {
         value: key,
         label: paletteData.name,
-        image: colorRamp.createGradientCanvas(DROPDOWN_WIDTH_PX, theme.controls.height).toDataURL(),
+        image: colorRamp
+          .createGradientCanvas(DROPDOWN_MENU_WIDTH_PX - 2 * DROPDOWN_CONTROL_BORDER_PX, theme.controls.height)
+          .toDataURL(),
         tooltip: paletteData.name,
       };
     });
@@ -198,7 +205,12 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
     if (props.reversed) {
       selectedRamp = selectedRamp.reverse();
     }
-    return selectedRamp.createGradientCanvas(DROPDOWN_WIDTH_PX, theme.controls.height).toDataURL();
+    if (selectedRamp.type === ColorRampType.CATEGORICAL) {
+      // Clamp number of colors due to smaller dropdown size
+      const visibleColors = selectedRamp.colorStops.slice(0, Math.max(1, 6));
+      selectedRamp = new ColorRamp(visibleColors, ColorRampType.CATEGORICAL);
+    }
+    return selectedRamp.createGradientCanvas(DROPDOWN_CONTROL_WIDTH_PX - 2, theme.controls.height).toDataURL();
   }, [props.selectedRamp, props.reversed]);
 
   const showAsReversed = props.reversed !== selectedRampData.reverseByDefault;
@@ -210,10 +222,10 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
   };
 
   const paletteImgSrc = useMemo(() => {
-    const visibleColors = props.selectedPalette.slice(0, Math.max(1, props.numCategories));
+    const visibleColors = props.selectedPalette.slice(0, Math.max(1, 6));
     const colorRamp = new ColorRamp(visibleColors, ColorRampType.CATEGORICAL);
     return colorRamp
-      .createGradientCanvas(DROPDOWN_WIDTH_PX - DROPDOWN_CATEGORICAL_BORDER_PX, theme.controls.height)
+      .createGradientCanvas(DROPDOWN_MENU_WIDTH_PX - DROPDOWN_CATEGORICAL_BORDER_PX, theme.controls.height)
       .toDataURL();
   }, [props.useCategoricalPalettes, props.numCategories, props.selectedPalette]);
 
@@ -259,25 +271,26 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
           id={props.id}
           selected={props.useCategoricalPalettes ? selectedPaletteItem : selectedRampItem}
           onChange={props.useCategoricalPalettes ? onChangePalette : onChangeRamp}
-          width={`${DROPDOWN_WIDTH_PX}px`}
+          controlWidth={`${DROPDOWN_CONTROL_WIDTH_PX}px`}
+          menuWidth={`${DROPDOWN_MENU_WIDTH_PX}px`}
           isSearchable={false}
           controlTooltipPlacement="top"
-        ></SelectionDropdown>
-      </DropdownStyleContainer>
-
-      {/** Reverse map button */}
-      <Tooltip title="Reverse color map" open={props.disabled || props.useCategoricalPalettes ? false : undefined}>
-        <IconButton
-          aria-label="Reverse color map"
-          type="link"
-          disabled={props.disabled || props.useCategoricalPalettes}
-          onClick={() => {
-            props.onChangeRamp(props.selectedRamp, !props.reversed);
-          }}
         >
-          <RetweetOutlined />
-        </IconButton>
-      </Tooltip>
+          {/** Reverse map button */}
+          <Tooltip title="Reverse color map" open={props.disabled || props.useCategoricalPalettes ? false : undefined}>
+            <IconButton
+              aria-label="Reverse color map"
+              type="link"
+              disabled={props.disabled || props.useCategoricalPalettes}
+              onClick={() => {
+                props.onChangeRamp(props.selectedRamp, !props.reversed);
+              }}
+            >
+              <RetweetOutlined />
+            </IconButton>
+          </Tooltip>
+        </SelectionDropdown>
+      </DropdownStyleContainer>
     </FlexRowAlignCenter>
   );
 }
