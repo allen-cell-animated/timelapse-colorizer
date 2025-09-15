@@ -14,7 +14,7 @@ export type RawColorData = {
    * Most commonly used for glasbey color ramp visualizations, where lots
    * of colors are needed to distinguish between many different values.
    */
-  categorical?: boolean;
+  type?: ColorRampType;
 };
 
 export type ColorRampData = RawColorData & {
@@ -157,31 +157,37 @@ const rawColorRampData: RawColorData[] = [
     key: "esri-blue_red_9",
     name: "ESRI - Blue Red 9",
     colorStops: ["#2c7bb6", "#abd9e9", "#ffffbf", "#fdae61", "#d7191c"],
+    type: ColorRampType.DIVERGING,
   },
   {
     key: "esri-blue_red_8",
     name: "ESRI - Blue Red 8",
     colorStops: ["#0571b0", "#92c5de", "#f7f7f7", "#f4a582", "#ca0020"],
+    type: ColorRampType.DIVERGING,
   },
   {
     key: "esri-red_green_9",
     name: "ESRI - Red Green 9",
     colorStops: ["#d7191c", "#fdae61", "#ffffbf", "#a6d96a", "#1a9641"],
+    type: ColorRampType.DIVERGING,
   },
   {
     key: "esri-purple_red_2",
     name: "ESRI - Purple Red 2",
     colorStops: ["#570959", "#ab84a0", "#fffee6", "#d2987f", "#a53217"],
+    type: ColorRampType.DIVERGING,
   },
   {
     key: "esri-green_brown_1",
     name: "ESRI - Green Brown 1",
     colorStops: ["#018571", "#80cdc1", "#f5f5f5", "#dfc27d", "#a6611a"],
+    type: ColorRampType.DIVERGING,
   },
   {
     key: "matplotlib-purple_orange",
     name: "Matplotlib - Purple Orange",
     colorStops: ["#2d004b", "#998fbf", "#f7f6f5", "#ed9b39", "#7f3b08"],
+    type: ColorRampType.DIVERGING,
   },
   {
     key: "seaborn-cubehelix_blue",
@@ -277,19 +283,19 @@ const rawColorRampData: RawColorData[] = [
     // repeating ramps function?
     key: "colorcet-glasbey",
     name: "Colorcet - Glasbey (Repeating)",
-    categorical: true,
+    type: ColorRampType.CATEGORICAL,
     colorStops: GLASBEY_DEFAULT_COLORS,
   },
   {
     key: "colorcet-glasbey_light",
     name: "Colorcet - Glasbey Light (Repeating)",
-    categorical: true,
+    type: ColorRampType.CATEGORICAL,
     colorStops: GLASBEY_LIGHT_COLORS,
   },
   {
     key: "colorcet-glasbey_dark",
     name: "Colorcet - Glasbey Dark (Repeating)",
-    categorical: true,
+    type: ColorRampType.CATEGORICAL,
     colorStops: GLASBEY_DARK_COLORS,
   },
 ];
@@ -298,7 +304,7 @@ const rawColorRampData: RawColorData[] = [
 const colorRampData: ColorRampData[] = rawColorRampData.map((value) => {
   return {
     ...value,
-    colorRamp: new ColorRamp(value.colorStops, value.categorical ? ColorRampType.CATEGORICAL : ColorRampType.LINEAR),
+    colorRamp: new ColorRamp(value.colorStops, value.type ?? ColorRampType.LINEAR),
   };
 });
 
