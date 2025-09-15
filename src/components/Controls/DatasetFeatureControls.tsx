@@ -34,7 +34,7 @@ export default function DatasetFeatureControls(props: DatasetFeatureControlsProp
   }, [dataset]);
 
   return (
-    <FlexRow $gap={20} style={{ width: "100%" }}>
+    <FlexRow $gap={22} style={{ width: "100%" }}>
       <div style={{ width: "45%" }}>
         <SelectionDropdown
           disabled={props.disabled}

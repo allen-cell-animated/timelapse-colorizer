@@ -582,7 +582,8 @@ function Viewer(): ReactElement {
         <div className={styles.contentPanels}>
           {/** Canvas + Controls + Playback*/}
           <div className={styles.canvasPanel}>
-            <FlexColumn $gap={12} style={{ marginBottom: 16, width: "100%" }}>
+            <FlexColumn $gap={16} style={{ marginBottom: 23, width: "100%" }}>
+              {/* Should have a 16px between dataset and colorization controls */}
               <DatasetFeatureControls
                 onSelectDataset={handleDatasetChange}
                 onSelectFeature={reportFeatureSelected}

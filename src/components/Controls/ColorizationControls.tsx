@@ -35,8 +35,10 @@ export default function ColorizationControls(props: ColorizationControlsProps): 
 
   return (
     <>
-      <FlexRowAlignCenter $gap={6}>
+      {/* TODO: Once the color ramp dropdown is refactored, change gap to 22px */}
+      <FlexRowAlignCenter $gap={12}>
         <ColorRampDropdown
+          label="Colormap"
           knownColorRamps={KNOWN_COLOR_RAMPS}
           colorRampsToDisplay={DISPLAY_COLOR_RAMP_KEYS}
           selectedRamp={colorRampKey}

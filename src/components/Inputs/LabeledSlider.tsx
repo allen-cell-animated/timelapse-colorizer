@@ -80,8 +80,6 @@ const SliderContainer = styled.div`
   position: relative;
   width: 100%;
   font-size: 10px;
-  margin: 4px;
-  margin-bottom: 6px;
   color: var(--color-text-secondary);
   --label-position: calc(-1 * var(--font-size-label-small));
   z-index: 1;
@@ -89,8 +87,9 @@ const SliderContainer = styled.div`
   // Override antd layout change for sliders with marks applied.
   // The margin is normally made larger to accommodate the mark text,
   // but in this case we only show the marks and no label text.
-  & .ant-slider-with-marks {
-    margin: 9.625px 4.375px;
+  & .ant-slider-with-marks,
+  & .ant-slider {
+    margin: 7.625px 4.375px;
   }
 `;
 
@@ -273,7 +272,7 @@ export default function LabeledSlider(inputProps: LabeledSliderProps): ReactElem
     size: "small",
     controls: false,
     disabled: props.disabled,
-    style: { width: "80px" },
+    style: { width: "87px" },
     type: "number",
     precision: props.precision,
   };

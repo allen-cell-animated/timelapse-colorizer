@@ -134,6 +134,7 @@ type ColorRampSelectionProps = {
   disabled?: boolean;
   reversed?: boolean;
   id: string | undefined;
+  label?: string;
 };
 
 const defaultProps: Partial<ColorRampSelectionProps> = {
@@ -240,10 +241,14 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
   return (
     <FlexRowAlignCenter $gap={4}>
       <DropdownStyleContainer $categorical={props.useCategoricalPalettes}>
-        <VisuallyHidden>
-          <label htmlFor={props.id}>Feature color ramp</label>
-        </VisuallyHidden>
+        {/* If no label is provided, add a hidden label. */}
+        {props.label ? null : (
+          <VisuallyHidden>
+            <label htmlFor={props.id}>Color ramp</label>
+          </VisuallyHidden>
+        )}
         <SelectionDropdown
+          label={props.label}
           disabled={props.disabled}
           items={props.useCategoricalPalettes ? paletteItems : rampItems}
           id={props.id}
