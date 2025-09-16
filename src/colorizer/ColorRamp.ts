@@ -129,6 +129,6 @@ export default class ColorRamp {
    */
   public reverse(): ColorRamp {
     const newColorStops = [...this.colorStops].reverse();
-    return new ColorRamp(newColorStops);
+    return new ColorRamp(newColorStops, this.type);
   }
 }
