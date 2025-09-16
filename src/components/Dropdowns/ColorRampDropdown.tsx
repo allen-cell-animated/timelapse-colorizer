@@ -12,7 +12,7 @@ import {
   KNOWN_COLOR_RAMPS,
   PaletteData,
 } from "../../colorizer";
-import { FlexRowAlignCenter, VisuallyHidden } from "../../styles/utils";
+import { FlexRowAlignCenter } from "../../styles/utils";
 import { SelectItem } from "./types";
 
 import { AppThemeContext } from "../AppStyle";
@@ -246,17 +246,13 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
   return (
     <FlexRowAlignCenter $gap={4}>
       <DropdownStyleContainer $categorical={props.useCategoricalPalettes}>
-        {/* If no label is provided, add a hidden label. */}
-        {props.label ? null : (
-          <VisuallyHidden>
-            <label htmlFor={props.id}>Color ramp</label>
-          </VisuallyHidden>
-        )}
         <SelectionDropdown
-          label={props.label}
           disabled={props.disabled}
           items={props.useCategoricalPalettes ? paletteItems : rampItems}
           id={props.id}
+          // TODO: If the dropdown is reused elsewhere where no label is used
+          // (e.g. in settings), allow passing in the id of a labeling element.
+          label={props.label}
           selected={props.useCategoricalPalettes ? selectedPaletteItem : selectedRampItem}
           onChange={props.useCategoricalPalettes ? onChangePalette : onChangeRamp}
           width={`${DROPDOWN_WIDTH_PX}px`}

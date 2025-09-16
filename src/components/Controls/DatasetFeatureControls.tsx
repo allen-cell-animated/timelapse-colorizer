@@ -54,7 +54,6 @@ export default function DatasetFeatureControls(props: DatasetFeatureControlsProp
         <SelectionDropdown
           disabled={props.disabled}
           label="Feature"
-          // TODO: Show feature description here?
           selected={featureKey ?? undefined}
           items={featureDropdownData}
           onChange={(value) => {
