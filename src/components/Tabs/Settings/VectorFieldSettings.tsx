@@ -101,7 +101,7 @@ export default function VectorFieldSettings(): ReactElement {
             id={VectorSettingsHtmlIds.VECTOR_SCALE_FACTOR_SLIDER}
             disabled={!vectorOptionsEnabled}
             type="value"
-            minSliderBound={0}
+            minSliderBound={1}
             maxSliderBound={50}
             minInputBound={0}
             maxInputBound={100}
