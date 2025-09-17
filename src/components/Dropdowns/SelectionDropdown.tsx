@@ -1,7 +1,7 @@
 import { ButtonProps, Tooltip } from "antd";
 import Fuse from "fuse.js";
 import React, { ReactElement, useCallback, useEffect, useMemo, useState, useTransition } from "react";
-import { components, ControlProps, OptionProps } from "react-select";
+import { components, ControlProps, OptionProps, StylesConfig } from "react-select";
 
 import { useDebounce } from "../../hooks/useDebounce";
 import { FlexRowAlignCenter } from "../../styles/utils";
@@ -53,7 +53,7 @@ type SelectionDropdownProps = {
   controlWidth?: string;
   menuWidth?: string;
   containerStyle?: React.CSSProperties;
-  controlStyle?: React.CSSProperties;
+  selectStyles?: StylesConfig<SelectItem, false>;
 };
 
 const defaultProps: Partial<SelectionDropdownProps> = {
@@ -204,7 +204,7 @@ export default function SelectionDropdown(inputProps: React.PropsWithChildren<Se
   const labelId = props.label ? selectId + "-label" : undefined;
 
   return (
-    <FlexRowAlignCenter $gap={6} style={{ width: props.width, minWidth: props.width }}>
+    <FlexRowAlignCenter $gap={6} style={{ width: props.width, minWidth: props.width, ...props.containerStyle }}>
       {props.label && (
         <label htmlFor={selectId} style={{ whiteSpace: "nowrap" }}>
           <h3 id={labelId}>{props.label}</h3>
@@ -241,6 +241,7 @@ export default function SelectionDropdown(inputProps: React.PropsWithChildren<Se
         }}
         controlWidth={props.controlWidth}
         menuWidth={props.menuWidth}
+        styles={props.selectStyles}
       />
       {props.children}
     </FlexRowAlignCenter>
