@@ -12,6 +12,8 @@ import { FeatureType } from "../../../colorizer/Dataset";
 import IconButton from "../../IconButton";
 import LabeledSlider from "../../Inputs/LabeledSlider";
 
+const MINIMUM_SLIDER_STEPS = 300;
+
 type ColorRampRangeSliderProps = {
   disabled: boolean;
 };
@@ -147,38 +149,45 @@ export default function ColorRampRangeSlider(props: ColorRampRangeSliderProps): 
   const keepRangeButtonAltText =
     (keepColorRampRange ? "Reset" : "Keep") + " range when switching datasets and features";
 
+  const stepSize =
+    featureData?.type === FeatureType.DISCRETE ? 1 : Math.min(1, (colorRampMax - colorRampMin) / MINIMUM_SLIDER_STEPS);
+
   return (
-    <Tooltip
-      trigger={["hover", "focus"]}
-      title={isUsingGlasbeyRamp ? "Color ramp adjustment is disabled when a Glasbey color map is selected." : undefined}
-    >
-      <FlexRowAlignCenter style={{ width: "100%" }} $gap={4}>
-        <LabeledSlider
-          type="range"
-          min={colorRampMin}
-          max={colorRampMax}
-          minSliderBound={minBound}
-          maxSliderBound={maxBound}
-          onChange={onSliderChange}
-          marks={marks}
-          showMidpoint={colorRamp.type === ColorRampType.DIVERGING}
-          disabled={props.disabled || isUsingGlasbeyRamp}
-          step={featureData?.type === FeatureType.DISCRETE ? 1 : undefined}
-          sliderStyles={sliderStyles}
-        />
-        <Tooltip title={keepRangeButtonAltText} trigger={["hover", "focus"]}>
-          <IconButton
-            onClick={() => setKeepColorRampRange(!keepColorRampRange)}
-            type={keepColorRampRange ? "primary" : "link"}
-          >
-            {keepColorRampRange ? (
-              <LockOutlined alt={keepRangeButtonAltText} />
-            ) : (
-              <UnlockOutlined alt={keepRangeButtonAltText} />
-            )}
-          </IconButton>
-        </Tooltip>
-      </FlexRowAlignCenter>
-    </Tooltip>
+    <FlexRowAlignCenter style={{ width: "100%" }} $gap={4}>
+      <Tooltip
+        trigger={["hover", "focus"]}
+        title={
+          isUsingGlasbeyRamp ? "Color ramp adjustment is disabled when a Glasbey color map is selected." : undefined
+        }
+      >
+        <div style={{ width: "100%" }}>
+          <LabeledSlider
+            type="range"
+            min={colorRampMin}
+            max={colorRampMax}
+            minSliderBound={minBound}
+            maxSliderBound={maxBound}
+            onChange={onSliderChange}
+            marks={marks}
+            showMidpoint={colorRamp.type === ColorRampType.DIVERGING}
+            disabled={props.disabled || isUsingGlasbeyRamp}
+            step={stepSize}
+            sliderStyles={sliderStyles}
+          />
+        </div>
+      </Tooltip>
+      <Tooltip title={keepRangeButtonAltText} trigger={["hover", "focus"]} placement="top">
+        <IconButton
+          onClick={() => setKeepColorRampRange(!keepColorRampRange)}
+          type={keepColorRampRange ? "primary" : "link"}
+        >
+          {keepColorRampRange ? (
+            <LockOutlined alt={keepRangeButtonAltText} />
+          ) : (
+            <UnlockOutlined alt={keepRangeButtonAltText} />
+          )}
+        </IconButton>
+      </Tooltip>
+    </FlexRowAlignCenter>
   );
 }
