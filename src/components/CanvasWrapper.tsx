@@ -39,6 +39,8 @@ const CanvasContainer = styled(FlexColumnAlignCenter)<{ $annotationModeEnabled: 
   box-shadow: 0 0 8px 2px
     ${(props) => (props.$annotationModeEnabled ? "var(--color-viewport-annotation-outline)" : "transparent")};
   border: 1px solid var(--color-borders);
+  // Prevents the canvas from hiding the border if it's slightly larger than the container.
+  overflow: hidden;
 
   transition: box-shadow 0.1s ease-in, outline 0.1s ease-in;
 `;
@@ -263,7 +265,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       containerRef.current?.clientWidth ?? props.maxWidthPx,
       props.maxWidthPx,
       props.maxHeightPx * CANVAS_ASPECT_RATIO
-    );
+    ); // Subtract 2px for borders
     return new Vector2(Math.floor(widthPx), Math.floor(widthPx / CANVAS_ASPECT_RATIO));
   }, [props.maxHeightPx, props.maxWidthPx]);
 
