@@ -12,8 +12,6 @@ import { FeatureType } from "../../../colorizer/Dataset";
 import IconButton from "../../IconButton";
 import LabeledSlider from "../../Inputs/LabeledSlider";
 
-const MINIMUM_SLIDER_STEPS = 300;
-
 type ColorRampRangeSliderProps = {
   disabled: boolean;
 };
@@ -148,9 +146,7 @@ export default function ColorRampRangeSlider(props: ColorRampRangeSliderProps): 
 
   const keepRangeButtonAltText =
     (keepColorRampRange ? "Reset" : "Keep") + " range when switching datasets and features";
-
-  const stepSize =
-    featureData?.type === FeatureType.DISCRETE ? 1 : Math.min(1, (colorRampMax - colorRampMin) / MINIMUM_SLIDER_STEPS);
+  const stepSize = featureData?.type === FeatureType.DISCRETE ? 1 : undefined;
 
   return (
     <FlexRowAlignCenter style={{ width: "100%" }} $gap={4}>
