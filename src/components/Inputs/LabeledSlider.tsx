@@ -6,6 +6,8 @@ import { clamp, inverseLerp } from "three/src/math/MathUtils";
 
 import { formatNumber } from "../../colorizer/utils/math_utils";
 
+const MINIMUM_SLIDER_STEPS = 300;
+
 type BaseLabeledSliderProps = {
   id?: string;
   type: "range" | "value";
@@ -19,18 +21,23 @@ type BaseLabeledSliderProps = {
   minInputBound?: number;
   /** The upper bound for the numeric input. If undefined, uses MAX_SAFE_INTEGER. */
   maxInputBound?: number;
-  /** The step size for the slider. Overrides `minSteps` if set. */
+  /**
+   * The step size for the slider. If undefined, sets the step size to include
+   * at least `MINIMUM_SLIDER_STEPS` (300) steps between the min and max.
+   */
   step?: number;
   /** Marks to draw on the slider. */
   marks?: number[] | undefined;
-  // TODO: Add a way to fetch significant figures for each feature. This is a temporary fix
-  // and may not work for all features. Use scientific notation maybe?
+  // TODO: Add a way to fetch significant figures for each feature. This is a
+  // temporary fix and may not work for all features. Use scientific notation
+  // maybe?
   maxDecimalsToDisplay?: number;
   /** Optional precision for the numeric input field. */
   precision?: number;
   /**
-   * Optional method for formatting display numbers, used in the slider tooltip and the text labels
-   * under the slider endpoints. If undefined, formats numbers to `maxDecimalsToDisplay` decimal places.
+   * Optional method for formatting display numbers, used in the slider tooltip
+   * and the text labels under the slider endpoints. If undefined, formats
+   * numbers to `maxDecimalsToDisplay` decimal places.
    */
   numberFormatter?: (value?: number) => React.ReactNode;
   sliderStyles?: SliderBaseProps["styles"];
@@ -71,7 +78,7 @@ const ComponentContainer = styled.div`
   display: inline-flex;
   align-items: center;
   flex-direction: row;
-  gap: 5px;
+  gap: 8px;
   width: 100%;
   min-width: 200px;
 `;
@@ -243,12 +250,13 @@ export default function LabeledSlider(inputProps: LabeledSliderProps): ReactElem
   const maxSliderLabel = Number.isNaN(props.maxSliderBound) ? "--" : numberFormatter(props.maxSliderBound);
 
   // Slider Props
+  const stepSize = props.step ?? Math.min(1, (props.maxSliderBound - props.minSliderBound) / MINIMUM_SLIDER_STEPS);
   const sharedSliderProps: Partial<SliderBaseProps> = {
     min: props.minSliderBound,
     max: props.maxSliderBound,
     disabled: props.disabled,
     marks: marks,
-    step: props.step,
+    step: stepSize,
     // Show formatted decimals in tooltip
     // TODO: Is this better than showing the precise value?
     tooltip: {
