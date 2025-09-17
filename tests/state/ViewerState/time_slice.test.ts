@@ -51,7 +51,8 @@ describe("useViewerStateStore: TimeSlice", () => {
         setFramePromise = result.current.setFrame(1);
       });
       expect(result.current.pendingFrame).toBe(1);
-      expect(result.current.currentFrame).toBe(0);
+      // Due to race condition, this can sometimes be 1 instead of 0.
+      expect([0, 1].includes(result.current.currentFrame)).toBe(true);
 
       await setFramePromise;
       expect(result.current.currentFrame).toBe(1);

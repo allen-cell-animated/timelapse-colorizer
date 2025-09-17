@@ -133,6 +133,8 @@ type ColorRampSelectionProps = {
   useCategoricalPalettes?: boolean;
   disabled?: boolean;
   reversed?: boolean;
+  id: string | undefined;
+  label?: string;
 };
 
 const defaultProps: Partial<ColorRampSelectionProps> = {
@@ -242,12 +244,15 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
   };
 
   return (
-    <FlexRowAlignCenter>
+    <FlexRowAlignCenter $gap={4}>
       <DropdownStyleContainer $categorical={props.useCategoricalPalettes}>
         <SelectionDropdown
           disabled={props.disabled}
           items={props.useCategoricalPalettes ? paletteItems : rampItems}
-          label="Color map"
+          id={props.id}
+          // TODO: If the dropdown is reused elsewhere where no label is used
+          // (e.g. in settings), allow passing in the id of a labeling element.
+          label={props.label}
           selected={props.useCategoricalPalettes ? selectedPaletteItem : selectedRampItem}
           onChange={props.useCategoricalPalettes ? onChangePalette : onChangeRamp}
           width={`${DROPDOWN_WIDTH_PX}px`}
@@ -260,7 +265,6 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
       <Tooltip title="Reverse color map" open={props.disabled || props.useCategoricalPalettes ? false : undefined}>
         <IconButton
           aria-label="Reverse color map"
-          style={{ marginLeft: "2px" }}
           type="link"
           disabled={props.disabled || props.useCategoricalPalettes}
           onClick={() => {
