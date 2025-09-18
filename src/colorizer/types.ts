@@ -319,12 +319,16 @@ export enum LoadTroubleshooting {
     " Please check your network access.",
   CHECK_FILE_EXISTS = "Please check if the file exists and if you have access to it, or see the developer console for more details.",
   CHECK_FILE_OR_NETWORK = "This may be because of an unsupported format, missing files, or server and network issues. Please see the developer console for more details.",
+  CHECK_ZIP_FORMAT = "Make sure a 'collection.json' or 'manifest.json' file exists in the base directory.",
+  CHECK_ZIP_FORMAT_COLLECTION = "A 'collection.json' should exist in the base directory.",
+  CHECK_ZIP_FORMAT_MANIFEST = "A 'manifest.json' should exist in the base directory.",
 }
 
-export enum LoadErrorMessage {
+export const enum LoadErrorMessage {
   UNREACHABLE_MANIFEST = "The expected manifest JSON file could not be reached.",
   UNREACHABLE_COLLECTION = "The expected collection JSON file could not be reached.",
   BOTH_UNREACHABLE = "Could not access either a collection or a dataset JSON at the provided URL.",
+  ZIP_BOTH_UNREACHABLE = "No top-level collection or dataset manifest file could be found in the ZIP archive.",
   BOTH_404 = "Could not load the provided URL as either a collection or a dataset. Server returned a 404 (Not Found) code.",
   COLLECTION_HAS_NO_DATASETS = "Collection JSON was loaded but no datasets were found. At least one dataset must be defined in the collection.",
   MANIFEST_HAS_NO_FEATURES = "The dataset's manifest JSON was loaded but no features were found. At least one feature must be defined.",

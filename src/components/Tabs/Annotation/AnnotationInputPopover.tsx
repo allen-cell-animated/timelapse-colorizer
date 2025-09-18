@@ -3,7 +3,7 @@ import { AutoComplete, Card } from "antd";
 import React, { ReactElement, useCallback, useContext, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 
-import { AnnotationState } from "../../../colorizer/utils/react_utils";
+import { AnnotationState } from "../../../hooks";
 import { FlexColumn, FlexRow } from "../../../styles/utils";
 
 import { LabelType } from "../../../colorizer/AnnotationData";

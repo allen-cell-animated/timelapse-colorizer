@@ -10,6 +10,8 @@ import IconButton from "../IconButton";
 import LoadingSpinner from "../LoadingSpinner";
 import PlotWrapper from "../PlotWrapper";
 
+const TRACK_SEARCH_ID = "plot-tab-track-search-input";
+
 const TrackTitleBar = styled(FlexRowAlignCenter)`
   justify-content: end;
   flex-wrap: wrap;
@@ -75,8 +77,11 @@ export default function PlotTab(props: PlotTabProps): ReactElement {
       <TrackTitleBar>
         <NoSpinnerContainer>
           <TrackSearch $gap={6}>
-            <h3>Search</h3>
+            <label htmlFor={TRACK_SEARCH_ID}>
+              <h3>Search</h3>
+            </label>
             <Input
+              id={TRACK_SEARCH_ID}
               type="number"
               value={findTrackInput}
               size="small"

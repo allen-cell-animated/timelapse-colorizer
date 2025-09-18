@@ -2,8 +2,14 @@ import { Color, ColorRepresentation, DataTexture, FloatType, LinearFilter, Neare
 
 export enum ColorRampType {
   LINEAR,
+  DIVERGING,
   CATEGORICAL,
 }
+
+export type GradientCanvasOptions = {
+  vertical?: boolean;
+  reverse?: boolean;
+};
 
 const DISPLAY_GRADIENT_MAX_STOPS = 24;
 
@@ -52,29 +58,31 @@ export default class ColorRamp {
   }
 
   /** Creates a canvas filled in with this color ramp, to present as an option in a menu e.g. */
-  public createGradientCanvas(width: number, height: number, vertical = false): HTMLCanvasElement {
+  public createGradientCanvas(width: number, height: number, options?: GradientCanvasOptions): HTMLCanvasElement {
     const canvas = document.createElement("canvas");
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext("2d")!;
+    const colorStops = options?.reverse ? [...this.colorStops].reverse() : this.colorStops;
 
-    if (this.colorStops.length < 2) {
-      ctx.fillStyle = `#${this.colorStops[0].getHexString()}`;
+    if (colorStops.length < 2) {
+      ctx.fillStyle = `#${colorStops[0].getHexString()}`;
       ctx.fillRect(0, 0, width, height);
-    } else if (this.type === ColorRampType.LINEAR) {
-      const gradientWidth = vertical ? 0 : width;
-      const gradientHeight = vertical ? height : 0;
-      const gradient = ColorRamp.linearGradientFromColors(ctx, this.colorStops, gradientWidth, gradientHeight);
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, width, height);
-    } else {
+    } else if (this.type === ColorRampType.CATEGORICAL) {
       // Draw as hard stop gradients
-      const stops = this.colorStops.slice(0, DISPLAY_GRADIENT_MAX_STOPS);
+      const stops = colorStops.slice(0, DISPLAY_GRADIENT_MAX_STOPS);
       const step = width / stops.length;
       stops.forEach((color, idx) => {
         ctx.fillStyle = `#${color.getHexString()}`;
         ctx.fillRect(Math.floor(step * idx), 0, Math.ceil(step), height);
       });
+    } else {
+      // All other ramp types are linear gradients
+      const gradientWidth = options?.vertical ? 0 : width;
+      const gradientHeight = options?.vertical ? height : 0;
+      const gradient = ColorRamp.linearGradientFromColors(ctx, this.colorStops, gradientWidth, gradientHeight);
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, width, height);
     }
 
     return canvas;
@@ -123,6 +131,6 @@ export default class ColorRamp {
    */
   public reverse(): ColorRamp {
     const newColorStops = [...this.colorStops].reverse();
-    return new ColorRamp(newColorStops);
+    return new ColorRamp(newColorStops, this.type);
   }
 }

@@ -8,8 +8,8 @@ import { useClickAnyWhere } from "usehooks-ts";
 import { Dataset } from "../colorizer";
 import { ReportWarningCallback } from "../colorizer/types";
 import { zipToFileMap } from "../colorizer/utils/data_load_utils";
-import { useRecentCollections } from "../colorizer/utils/react_utils";
 import { convertAllenPathToHttps, isAllenPath } from "../colorizer/utils/url_utils";
+import { useRecentCollections } from "../hooks";
 import { FlexRowAlignCenter } from "../styles/utils";
 import { renderStringArrayAsJsx } from "../utils/formatting";
 
@@ -164,7 +164,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
       }
     }
 
-    const resourceUrl = newCollection.url || newCollection.getDefaultDatasetKey();
+    const resourceUrl = newCollection.sourcePath || newCollection.getDefaultDatasetKey();
     return [resourceUrl, newCollection, loadResult.dataset];
   };
 
@@ -248,15 +248,17 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
 
   // RENDERING ////////////////////////////////////////////////////////
 
-  const collectionsDropdownItems: MenuItemType[] = recentCollections.map(({ url, label }) => {
-    const isCurrentUrl = props.currentResourceUrl === url;
-    return {
-      key: url,
-      label: label,
-      style: isCurrentUrl ? { color: "var(--color-text-hint)" } : undefined,
-      icon: isCurrentUrl ? <FolderOpenOutlined /> : undefined,
-    };
-  });
+  const collectionsDropdownItems: MenuItemType[] = recentCollections
+    .map(({ url, label }) => {
+      const isCurrentUrl = props.currentResourceUrl === url;
+      return {
+        key: url,
+        label: label,
+        style: isCurrentUrl ? { color: "var(--color-text-hint)" } : undefined,
+        icon: isCurrentUrl ? <FolderOpenOutlined /> : undefined,
+      };
+    })
+    .filter((item) => item.label);
 
   // Get the URLs (keys) of any recent collections that match the currently selected urlInput.
   const matchingKeys = recentCollections.filter(({ label }) => label === urlInput).map(({ url }) => url);
