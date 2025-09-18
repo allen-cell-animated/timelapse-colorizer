@@ -35,8 +35,7 @@ export default function ColorizeControls(props: ColorizeControlsProps): ReactEle
 
   return (
     <>
-      {/* TODO: Once the color ramp dropdown is refactored, change gap to 22px */}
-      <FlexRow $gap={12} style={{ alignItems: "flex-start" }}>
+      <FlexRow $gap={22} style={{ alignItems: "flex-start" }}>
         <ColorRampDropdown
           label="Colormap"
           knownColorRamps={KNOWN_COLOR_RAMPS}

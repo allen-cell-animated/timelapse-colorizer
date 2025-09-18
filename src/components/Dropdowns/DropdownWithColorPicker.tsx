@@ -59,7 +59,7 @@ export default function DropdownWithColorPicker(propsInput: DropdownWithColorPic
         showSelectedItemTooltip={false}
         onChange={props.onValueChange}
         disabled={props.disabled}
-        width={"105px"}
+        controlWidth={"105px"}
       ></SelectionDropdown>
       <WrappedColorPicker
         containerStyle={{

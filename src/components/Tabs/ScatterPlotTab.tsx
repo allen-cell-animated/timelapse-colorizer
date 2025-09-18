@@ -866,7 +866,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
             label={"Show objects from"}
             selected={rangeType}
             items={PLOT_RANGE_SELECT_ITEMS}
-            width={"120px"}
+            controlWidth={"120px"}
             onChange={(value: string) => setRangeType(value as PlotRangeType)}
             showSelectedItemTooltip={false}
           ></SelectionDropdown>
