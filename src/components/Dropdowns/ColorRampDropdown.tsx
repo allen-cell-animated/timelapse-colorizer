@@ -37,7 +37,6 @@ const ReverseIconButton = styled(IconButton)`
   margin-left: -7px;
   border-color: var(--color-borders);
   border-left-color: transparent;
-  z-index: 2;
 
   &&:not(:disabled):hover {
     border-color: var(--color-button);
@@ -67,7 +66,7 @@ const DropdownStyleContainer = styled.div<{ $categorical: boolean }>`
     image-rendering: -moz-crisp-edges; /* FF 6.0+ */
     image-rendering: -webkit-optimize-contrast; /* Safari */
     image-rendering: -o-crisp-edges; /* OS X & Windows Opera (12.02) */
-    image-rendering: pixelated; /* /* Awesome future-browsers */
+    image-rendering: pixelated; /* Awesome future-browsers */
     -ms-interpolation-mode: nearest-neighbor; /* IE */
     width: ${DROPDOWN_MENU_WIDTH_PX}px;
   }
@@ -190,7 +189,7 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
         value: key,
         label: rampData.name,
         image: rampData.colorRamp
-          .createGradientCanvas(DROPDOWN_MENU_WIDTH_PX, theme.controls.height, {
+          .createGradientCanvas(DROPDOWN_MENU_WIDTH_PX - 2, theme.controls.height, {
             reverse: rampData.reverseByDefault,
           })
           .toDataURL(),
@@ -209,7 +208,7 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
       return {
         value: key,
         label: paletteData.name,
-        image: colorRamp.createGradientCanvas(DROPDOWN_MENU_WIDTH_PX, theme.controls.height).toDataURL(),
+        image: colorRamp.createGradientCanvas(DROPDOWN_MENU_WIDTH_PX - 2, theme.controls.height).toDataURL(),
         tooltip: paletteData.name,
       };
     });
