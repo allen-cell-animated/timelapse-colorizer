@@ -73,25 +73,8 @@
 }
 
 .canvasPanel .timeControls {
-  display: flex;
-  flex-direction: row;
-  gap: 4px;
   max-width: calc(100vw - 60px);
   margin-top: 10px;
-  flex-wrap: wrap;
-  align-items: center;
-}
-
-.timeSliderContainer {
-  width: calc(min(50vw, 300px));
-  margin: 0 4px;
-  height: var(--button-height);
-  display: flex;
-  align-items: center;
-}
-
-.timeSliderContainer > div {
-  width: 100%;
 }
 
 .sidePanels {
