@@ -49,7 +49,7 @@ export default function StyledInlineProgress(inputProps: StyledInlineProgressPro
           style={{ verticalAlign: "middle" }}
           type="circle"
           size={props.sizePx ?? theme.controls.heightSmall - 6}
-          percent={props.percent}
+          percent={percent}
           showInfo={false}
           strokeColor={progressBarColor}
           strokeWidth={12}
