@@ -335,3 +335,9 @@ export const enum LoadErrorMessage {
   COLLECTION_JSON_PARSE_FAILED = "Parsing failed for the collections JSON file with the following error. Please check that the JSON syntax is correct: ",
   MANIFEST_JSON_PARSE_FAILED = "Parsing failed for the manifest JSON file with the following error. Please check that the JSON syntax is correct: ",
 }
+export const enum ChannelRangePreset {
+  NONE,
+  DEFAULT,
+  IJ_AUTO,
+  AUTO_2,
+}
