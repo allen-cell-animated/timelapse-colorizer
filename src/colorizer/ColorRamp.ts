@@ -80,7 +80,7 @@ export default class ColorRamp {
       // All other ramp types are linear gradients
       const gradientWidth = options?.vertical ? 0 : width;
       const gradientHeight = options?.vertical ? height : 0;
-      const gradient = ColorRamp.linearGradientFromColors(ctx, this.colorStops, gradientWidth, gradientHeight);
+      const gradient = ColorRamp.linearGradientFromColors(ctx, colorStops, gradientWidth, gradientHeight);
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, width, height);
     }
