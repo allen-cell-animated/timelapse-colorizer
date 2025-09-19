@@ -10,6 +10,7 @@ type StyledInlineProgressProps = {
   /** An integer percentage, floored and clamped to the [0, 100] range. */
   percent: number;
   error?: boolean;
+  sizePx?: number;
 };
 
 const defaultProps: Partial<StyledInlineProgressProps> = {
@@ -47,7 +48,7 @@ export default function StyledInlineProgress(inputProps: StyledInlineProgressPro
         <Progress
           style={{ verticalAlign: "middle" }}
           type="circle"
-          size={theme.controls.heightSmall - 6}
+          size={props.sizePx ?? theme.controls.heightSmall - 6}
           percent={percent}
           showInfo={false}
           strokeColor={progressBarColor}

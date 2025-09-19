@@ -2,7 +2,7 @@ import { parquetRead } from "hyparquet";
 import { compressors } from "hyparquet-compressors";
 import JSZip from "jszip";
 
-import { FeatureArrayType, FeatureDataType, featureTypeSpecs } from "../types";
+import { FeatureArrayType, FeatureDataType, featureTypeSpecs, ReportLoadProgressCallback } from "../types";
 
 const isBoolArray = (arr: number[] | boolean[]): arr is boolean[] => typeof arr[0] === "boolean";
 
@@ -96,7 +96,10 @@ export async function loadFromParquetUrl<T extends FeatureDataType>(url: string,
  * @param zipFile A ZIP file object.
  * @returns A Promise that resolves to a map of file paths to a File object.
  */
-export async function zipToFileMap(zipFile: File): Promise<Record<string, File>> {
+export async function zipToFileMap(
+  zipFile: File,
+  onLoadProgress?: ReportLoadProgressCallback
+): Promise<Record<string, File>> {
   const zip = await JSZip.loadAsync(zipFile);
 
   // Load all contents and save them as File objects
@@ -107,15 +110,29 @@ export async function zipToFileMap(zipFile: File): Promise<Record<string, File>>
     fileMap[relativePath] = new File([fileContents], relativePath);
   };
 
+  let totalFiles = 0;
+  let completedFiles = 0;
+  const onLoadStart = (): void => {
+    totalFiles++;
+  };
+  const onLoadComplete = (): void => {
+    completedFiles++;
+    onLoadProgress?.(completedFiles, totalFiles);
+  };
+
   zip.forEach((relativePath, zipObject) => {
     if (zipObject.dir) {
       return;
     }
     const loadFileCallback = async (): Promise<void> => {
+      onLoadStart();
       try {
-        return await loadToFileMap(relativePath, zipObject);
+        await loadToFileMap(relativePath, zipObject);
       } catch (error) {
         console.error(`Failed to load file ${relativePath} from ${zipFile.name}:`, error);
+      } finally {
+        // Currently always called even if a file fails to load.
+        onLoadComplete();
       }
     };
     filePromises.push(loadFileCallback());
