@@ -69,7 +69,12 @@ function ChannelSetting(props: ChannelSettingProps): ReactElement {
   const collapseLabel = (
     <ChannelSettingLabelContainer>
       <span style={{ marginRight: "16px" }}>{name}</span>
-      <FlexRowAlignCenter $gap={8}>
+      <FlexRowAlignCenter
+        $gap={8}
+        onClick={(e) => {
+          e.stopPropagation();
+        }}
+      >
         <WrappedColorPicker
           value={threeToAntColorWithAlpha(settings.color, settings.opacity)}
           onChange={(color) => {
