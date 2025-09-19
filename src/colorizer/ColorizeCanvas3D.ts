@@ -285,8 +285,13 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     ) {
       if (this.volume) {
         // Update color ramp for all channels
+        const segChannel = params.dataset?.frames3d?.segmentationChannel ?? 0;
         for (let i = 0; i < this.volume.numChannels; i++) {
-          this.configureColorizeFeature(this.volume, i);
+          if (i === segChannel) {
+            this.configureColorizeFeature(this.volume, i);
+          } else {
+            this.view3d.setChannelColorizeFeature(this.volume, i, null);
+          }
         }
         return true;
       }
