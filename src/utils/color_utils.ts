@@ -16,7 +16,6 @@ export const threeToAntColorWithAlpha = (color: Color, alpha: number): AntColor 
 };
 
 export const antToThreeColor = (color: AntColor): { color: Color; alpha: number } => {
-  console.log("antToThreeColor called with color:", color);
   let colorStr: string;
   if (typeof color === "object") {
     colorStr = color.toHexString();

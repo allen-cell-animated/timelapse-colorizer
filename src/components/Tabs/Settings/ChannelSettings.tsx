@@ -137,7 +137,7 @@ export default function ChannelSettings(): ReactElement {
   const areAllChannelsVisible = channelSettings.every((setting) => setting.visible);
   const areNoChannelsVisible = channelSettings.every((setting) => !setting.visible);
 
-  const handleShowAllChannelsChange = (checked: boolean) => {
+  const handleShowAllChannelsChange = (checked: boolean): void => {
     channelSettings.forEach((_, index) => {
       updateChannelSettings(index, { visible: checked });
     });
@@ -157,6 +157,7 @@ export default function ChannelSettings(): ReactElement {
       return (
         <ChannelSetting
           name={name}
+          key={index}
           channelIndex={index}
           settings={settings}
           updateSettings={(settings) => updateChannelSettings(index, settings)}

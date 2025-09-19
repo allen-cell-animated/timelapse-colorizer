@@ -355,6 +355,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
         const pct98Bin = histogram.findBinOfPercentile(0.983);
         newMin = histogram.getBinRange(pct50Bin)[0];
         newMax = histogram.getBinRange(pct98Bin)[1];
+        break;
       case ChannelRangePreset.IJ_AUTO:
         const [minIJBin, maxIJBin] = histogram.findAutoIJBins();
         newMin = histogram.getBinRange(minIJBin)[0];
