@@ -4,6 +4,8 @@ import styled from "styled-components";
 
 type CustomCollapseProps = {
   label: ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
 };
 
 const CustomCollapseElement = styled(Collapse)`
@@ -56,10 +58,12 @@ export default function CustomCollapse(props: PropsWithChildren<CustomCollapsePr
     // TODO: This doesn't respond to tab + space bar input, which is an accessibility issue.
     // Not sure if this can be added without rewriting the Collapse component.
     <CustomCollapseElement
+      className={props.className}
       size="small"
       ghost
       defaultActiveKey={"1"}
       items={[{ key: "1", label: <h3 style={{ margin: 0 }}>{props.label}</h3>, children: props.children }]}
+      style={props.style}
     />
   );
 }
