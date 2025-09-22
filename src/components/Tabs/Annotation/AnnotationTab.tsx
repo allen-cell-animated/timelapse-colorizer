@@ -204,7 +204,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
               setIsColorPickerOpen(false);
             }
           }}
-          destroyOnClose={true}
+          destroyOnHidden={true}
           getContainer={() => modalContainerRef.current ?? document.body}
         >
           <div style={{ marginTop: "15px" }}>
