@@ -100,6 +100,8 @@ const EXAMPLE_STORE: ViewerStoreSerializableState = {
   scatterXAxis: MockFeatureKeys.FEATURE3,
   scatterYAxis: MockFeatureKeys.FEATURE2,
   scatterRangeType: PlotRangeType.ALL_TIME,
+  // TODO: Add mock channel settings
+  channelSettings: [],
 };
 
 // Omit key "palette" because it is overridden by key "palette-key"

@@ -32,7 +32,7 @@ export function getBackdropChannelIndices(
   }
 
   const backdropChannelIndices: number[] = [];
-  for (let backdrop of backdrops) {
+  for (const backdrop of backdrops) {
     const sourceIndex = sources.indexOf(backdrop.source);
     if (sourceIndex !== -1) {
       const channelIndex = backdrop.channelIndex ?? 0;
