@@ -26,8 +26,8 @@ export const validateFiniteValue = (value: number, source: string): number => {
  * Returns a copy of an object where any properties with a value of `undefined`
  * are not included.
  */
-export function removeUndefinedProperties<T>(object: T): Partial<T> {
-  const ret: Partial<T> = {};
+export function removeUndefinedProperties<T>(object: T): T {
+  const ret = {} as T;
   for (const key in object) {
     if (object[key] !== undefined) {
       ret[key] = object[key];

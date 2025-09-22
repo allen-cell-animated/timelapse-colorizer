@@ -1,7 +1,8 @@
 import { CaretDownFilled, CaretUpFilled } from "@ant-design/icons";
-import { Switch } from "antd";
+import { Checkbox, Switch } from "antd";
 import React, { PropsWithChildren, ReactElement, ReactNode, useCallback, useContext, useEffect, useState } from "react";
 
+import { removeUndefinedProperties } from "../state/utils/data_validation";
 import { FlexColumn, FlexRowAlignCenter, VisuallyHidden } from "../styles/utils";
 
 import { AppThemeContext } from "./AppStyle";
@@ -14,17 +15,25 @@ type ToggleCollapseProps = {
   label: string;
   labelStyle?: React.CSSProperties;
   /**
-   * If defined, includes a toggle switch in the header row with this checked
-   * state. Changes to this state will also trigger collapse/expand behavior.
+   * If defined, includes a toggle switch (or checkbox) in the header row with
+   * this checked state. Changes to this state will also trigger collapse/expand
+   * behavior.
    */
   toggleChecked?: boolean;
+  toggleType?: "toggle" | "checkbox";
   onToggleChange?: (checked: boolean) => void;
   toggleDisabled?: boolean;
+  checkboxLabel?: string;
   /**
-   * Additional element or elements that are placed in the same row as the
-   * label (and toggle switch, if included).
+   * Additional element(s) placed in the same row as the label, before the
+   * toggle switch.
    */
-  headerContent?: ReactNode[] | ReactNode;
+  preToggleContent?: ReactNode[] | ReactNode;
+  /**
+   * Additional element(s) that are placed in the same row as the label, after
+   * the toggle switch.
+   */
+  postToggleContent?: ReactNode[] | ReactNode;
   /**
    * If true (default), scrolls the collapse content into view when the toggle
    * switch is checked.
@@ -43,10 +52,11 @@ const defaultProps: Partial<ToggleCollapseProps> = {
   labelStyle: {
     fontSize: "var(--font-size-label)",
   },
-  headerContent: null,
+  postToggleContent: null,
   scrollIntoViewOnChecked: true,
   contentIndentPx: 40,
   maxContentHeightPx: 2000,
+  toggleType: "toggle",
 };
 
 /**
@@ -55,7 +65,7 @@ const defaultProps: Partial<ToggleCollapseProps> = {
  * view.
  */
 export default function ToggleCollapse(inputProps: PropsWithChildren<ToggleCollapseProps>): ReactElement {
-  const props = { ...defaultProps, ...inputProps };
+  const props = { ...defaultProps, ...removeUndefinedProperties(inputProps) };
 
   const theme = useContext(AppThemeContext);
   const [isExpanded, setIsExpanded] = useState(props.toggleChecked ?? true);
@@ -120,6 +130,35 @@ export default function ToggleCollapse(inputProps: PropsWithChildren<ToggleColla
   const heightTransitionDuration = isAnimating ? `${ANIMATION_DURATION_MS}ms` : "0ms";
   const showOverflow = isExpanded && !isAnimating;
 
+  // Choose between a switch and a checkbox for the toggle control
+  let toggleControl = null;
+  if (props.toggleChecked !== undefined) {
+    if (props.toggleType === "checkbox") {
+      toggleControl = (
+        <Checkbox
+          type="checkbox"
+          checked={props.toggleChecked}
+          onChange={(e) => onCheckboxChanged(e.target.checked)}
+          disabled={props.toggleDisabled}
+          id={toggleId}
+        >
+          {props.checkboxLabel}
+        </Checkbox>
+      );
+    } else {
+      toggleControl = (
+        <Switch
+          id={toggleId}
+          checked={props.toggleChecked}
+          onChange={onCheckboxChanged}
+          disabled={props.toggleDisabled}
+          // Align with default label text
+          style={{ paddingTop: "2px" }}
+        />
+      );
+    }
+  }
+
   return (
     <FlexColumn className={"toggle-collapse " + props.className}>
       <FlexRowAlignCenter className={"toggle-collapse-control-row"} style={{ justifyContent: "space-between" }}>
@@ -131,17 +170,9 @@ export default function ToggleCollapse(inputProps: PropsWithChildren<ToggleColla
           ) : (
             <span style={{ ...defaultProps.labelStyle, ...props.labelStyle }}>{props.label}</span>
           )}
-          {props.toggleChecked !== undefined && (
-            <Switch
-              id={toggleId}
-              checked={props.toggleChecked}
-              onChange={onCheckboxChanged}
-              disabled={props.toggleDisabled}
-              // Align with default label text
-              style={{ paddingTop: "2px" }}
-            />
-          )}
-          {props.headerContent}
+          {props.preToggleContent}
+          {toggleControl}
+          {props.postToggleContent}
         </FlexRowAlignCenter>
 
         <TextButton onClick={onClickExpandCollapseButton} style={{ padding: "0 5px" }}>
@@ -154,6 +185,7 @@ export default function ToggleCollapse(inputProps: PropsWithChildren<ToggleColla
         </TextButton>
       </FlexRowAlignCenter>
       <div
+        className="toggle-collapse-content"
         // This combines two different tricks. The container should animate the
         // expand or collapse, but when not animating, we want the container to
         // size automatically to fit child components without a delay/animation.

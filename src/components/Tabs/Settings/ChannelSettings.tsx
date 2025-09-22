@@ -10,7 +10,6 @@ import { FlexColumn, FlexRowAlignCenter } from "../../../styles/utils";
 import { antToThreeColor, threeToAntColorWithAlpha } from "../../../utils/color_utils";
 
 import { AppThemeContext } from "../../AppStyle";
-import CustomCollapse from "../../CustomCollapse";
 import LabeledSlider from "../../Inputs/LabeledSlider";
 import WrappedColorPicker from "../../Inputs/WrappedColorPicker";
 import { SettingsContainer, SettingsItem } from "../../SettingsContainer";
@@ -28,37 +27,33 @@ type ChannelSettingProps = {
 const ChannelSettingsContainer = styled(FlexColumn)`
   display: grid;
   row-gap: 16px;
-  // expand/collapse icon
-  grid-template-columns: 20px min-content min-content auto;
-`;
+  padding: 0 0 16px 0;
 
-const ChannelCollapse = styled(CustomCollapse)`
-  &,
-  & > .ant-collapse-item,
-  & > .ant-collapse-item > .ant-collapse-header {
+  // Align color pickers after channel label names
+  // label - color picker - vertical separator - channel toggle
+  grid-template-columns: min-content min-content min-content auto min-content;
+
+  & > .toggle-collapse {
     display: grid;
     grid-template-columns: subgrid;
-    grid-column: 1 / 5;
+    grid-column: 1 / -1;
 
-    & > .ant-collapse-header-text {
+    & > .toggle-collapse-control-row {
       display: grid;
       grid-template-columns: subgrid;
-      grid-column: 3 / 5;
+      grid-column: 1 / -1;
 
-      & > h3 {
+      & > .toggle-collapse-header {
         display: grid;
         grid-template-columns: subgrid;
-        grid-column: 1 / 3;
+        grid-column: 1 / -2; // Leave grid space for toggle button on right
       }
     }
-  }
-`;
 
-const ChannelSettingLabelContainer = styled.div`
-  display: grid;
-  grid-template-columns: subgrid;
-  grid-column: 1 / 3;
-  align-items: center;
+    & > .toggle-collapse-content {
+      grid-column: 1 / -1;
+    }
+  }
 `;
 
 /** Controls for an individual channel's settings */
@@ -67,45 +62,38 @@ function ChannelSetting(props: ChannelSettingProps): ReactElement {
   const rangeSliderId = `settings-channel-range-slider-${channelIndex}`;
 
   const collapseLabel = (
-    <ChannelSettingLabelContainer>
-      <span style={{ marginRight: "16px" }}>{name}</span>
-      <FlexRowAlignCenter
-        $gap={8}
-        onClick={(e) => {
-          e.stopPropagation();
+    <>
+      <WrappedColorPicker
+        value={threeToAntColorWithAlpha(settings.color, settings.opacity)}
+        onChange={(color) => {
+          const { color: threeColor, alpha } = antToThreeColor(color);
+          updateSettings({ color: threeColor, opacity: alpha });
         }}
-      >
-        <WrappedColorPicker
-          value={threeToAntColorWithAlpha(settings.color, settings.opacity)}
-          onChange={(color) => {
-            const { color: threeColor, alpha } = antToThreeColor(color);
-            updateSettings({ color: threeColor, opacity: alpha });
-          }}
-        />
-        |
-        <Checkbox
-          type="checkbox"
-          checked={settings.visible}
-          onChange={(e) => updateSettings({ visible: e.target.checked })}
-        >
-          Show channel
-        </Checkbox>
-      </FlexRowAlignCenter>
-    </ChannelSettingLabelContainer>
+      />
+      |
+    </>
   );
 
   return (
-    <ChannelCollapse label={collapseLabel}>
-      <div>
-        <SettingsContainer>
-          <SettingsItem label="Range" htmlFor={rangeSliderId} labelStyle={{ height: "fit-content", paddingTop: 3 }}>
-            <FlexRowAlignCenter $gap={8}>
-              <Button onClick={() => onClickRangePreset(ChannelRangePreset.NONE)}>None</Button>
-              <Button onClick={() => onClickRangePreset(ChannelRangePreset.DEFAULT)}>Default</Button>
-              <Button onClick={() => onClickRangePreset(ChannelRangePreset.IJ_AUTO)}>IJ Auto</Button>
-              <Button onClick={() => onClickRangePreset(ChannelRangePreset.AUTO_2)}>Auto 2</Button>
-            </FlexRowAlignCenter>
-            <FlexRowAlignCenter $gap={6}>
+    <ToggleCollapse
+      label={name}
+      toggleChecked={settings.visible}
+      toggleType="checkbox"
+      checkboxLabel="Show channel"
+      onToggleChange={(checked) => updateSettings({ visible: checked })}
+      preToggleContent={collapseLabel}
+      contentIndentPx={24}
+    >
+      <SettingsContainer>
+        <SettingsItem label="Range" htmlFor={rangeSliderId} labelStyle={{ height: "fit-content", paddingTop: 3 }}>
+          <FlexRowAlignCenter $gap={8}>
+            <Button onClick={() => onClickRangePreset(ChannelRangePreset.NONE)}>None</Button>
+            <Button onClick={() => onClickRangePreset(ChannelRangePreset.DEFAULT)}>Default</Button>
+            <Button onClick={() => onClickRangePreset(ChannelRangePreset.IJ_AUTO)}>IJ Auto</Button>
+            <Button onClick={() => onClickRangePreset(ChannelRangePreset.AUTO_2)}>Auto 2</Button>
+          </FlexRowAlignCenter>
+          <FlexRowAlignCenter $gap={6}>
+            <div style={{ width: "calc(min(400px, 100%))" }}>
               <LabeledSlider
                 id={rangeSliderId}
                 type="range"
@@ -115,18 +103,19 @@ function ChannelSetting(props: ChannelSettingProps): ReactElement {
                 maxSliderBound={settings.dataMax}
                 minInputBound={Number.MIN_SAFE_INTEGER}
                 maxInputBound={Number.MAX_SAFE_INTEGER}
+                step={1}
                 onChange={(min, max) => updateSettings({ min, max })}
               />
-              <Tooltip title="Updates the slider's possible range to match the channel's data range on the current frame. Does not update the range.">
-                <Button onClick={onClickSync}>
-                  <SyncOutlined /> Sync
-                </Button>
-              </Tooltip>
-            </FlexRowAlignCenter>
-          </SettingsItem>
-        </SettingsContainer>
-      </div>
-    </ChannelCollapse>
+            </div>
+            <Tooltip title="Updates the slider's possible range to match the channel's data range on the current frame. Does not update the range.">
+              <Button onClick={onClickSync}>
+                <SyncOutlined /> Sync
+              </Button>
+            </Tooltip>
+          </FlexRowAlignCenter>
+        </SettingsItem>
+      </SettingsContainer>
+    </ToggleCollapse>
   );
 }
 
@@ -176,7 +165,7 @@ export default function ChannelSettings(): ReactElement {
   return (
     <ToggleCollapse
       label={"Channels"}
-      headerContent={
+      postToggleContent={
         <>
           |
           <Checkbox
@@ -192,7 +181,9 @@ export default function ChannelSettings(): ReactElement {
         </>
       }
     >
-      <ChannelSettingsContainer>{channelSettingElements}</ChannelSettingsContainer>
+      <div style={{ marginRight: "20px" }}>
+        <ChannelSettingsContainer>{channelSettingElements}</ChannelSettingsContainer>
+      </div>
     </ToggleCollapse>
   );
 }
