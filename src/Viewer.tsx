@@ -38,6 +38,7 @@ import HelpDropdown from "./components/Dropdowns/HelpDropdown";
 import Export from "./components/Export";
 import Header from "./components/Header";
 import LoadDatasetButton from "./components/LoadDatasetButton";
+import LoadZipModal from "./components/LoadZipModal";
 import SmallScreenWarning from "./components/Modals/SmallScreenWarning";
 import {
   AnnotationTab,
@@ -99,10 +100,18 @@ function Viewer(): ReactElement {
   const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
   const setScatterXAxis = useViewerStateStore((state) => state.setScatterXAxis);
   const setScatterYAxis = useViewerStateStore((state) => state.setScatterYAxis);
+  const setSourceZipName = useViewerStateStore((state) => state.setSourceZipName);
+  const sourceZipName = useViewerStateStore((state) => state.sourceZipName);
   const timeControls = useViewerStateStore((state) => state.timeControls);
 
   const [, addRecentCollection] = useRecentCollections();
   const annotationState = useAnnotations();
+
+  // Loading from a local file
+  const zipLoadPromiseResolveRef = useRef<((result: Collection | null) => void) | null>(null);
+  const [expectedFileLoadDatasetName, setExpectedFileLoadDatasetName] = useState<string | null>(null);
+  const [showZipLoadModal, setShowZipLoadModal] = useState(false);
+  const isZipUploadPending = zipLoadPromiseResolveRef.current !== null;
 
   const [isInitialDatasetLoaded, setIsInitialDatasetLoaded] = useState(false);
   const [isDatasetLoading, setIsDatasetLoading] = useState(false);
@@ -284,6 +293,27 @@ function Viewer(): ReactElement {
     });
   }, [showAlert]);
 
+  const showZipLoadPrompt = useCallback(
+    async (filename: string, datasetName: string | null): Promise<Collection | null> => {
+      setSourceZipName(filename);
+      setShowZipLoadModal(true);
+      setExpectedFileLoadDatasetName(datasetName);
+      const collectionPromise = new Promise<Collection | null>((resolve) => {
+        zipLoadPromiseResolveRef.current = resolve;
+      });
+      return collectionPromise;
+    },
+    [setSourceZipName, setShowZipLoadModal, setExpectedFileLoadDatasetName]
+  );
+
+  const onLoadedZipCollection = useCallback(
+    (collection: Collection) => {
+      zipLoadPromiseResolveRef.current?.(collection);
+      setTimeout(() => setShowZipLoadModal(false), 500);
+    },
+    [setShowZipLoadModal]
+  );
+
   /**
    * Replaces the current dataset with another loaded dataset. Handles cleanup and state changes.
    * @param newDataset the new Dataset to replace the existing with. If null, does nothing.
@@ -347,6 +377,7 @@ function Viewer(): ReactElement {
         reportWarning: showDatasetLoadWarning,
         reportLoadError: showDatasetLoadError,
         reportMissingDataset: showMissingDatasetAlert,
+        promptForFileLoad: showZipLoadPrompt,
       });
 
       if (!result) {
@@ -378,7 +409,7 @@ function Viewer(): ReactElement {
       return;
     };
     loadInitialDataset();
-  }, []);
+  }, [showZipLoadPrompt]);
 
   // DISPLAY CONTROLS //////////////////////////////////////////////////////
   const handleDatasetChange = useCallback(
@@ -551,11 +582,23 @@ function Viewer(): ReactElement {
         <h3>{datasetHeader}</h3>
         <FlexRowAlignCenter $gap={12} $wrap="wrap">
           <FlexRowAlignCenter $gap={2} $wrap="wrap">
-            <LoadDatasetButton
-              onLoad={handleDatasetLoad}
-              currentResourceUrl={collection?.sourcePath ?? datasetKey ?? ""}
-              reportWarning={showDatasetLoadWarning}
-            />
+            <div>
+              <LoadDatasetButton
+                onLoad={handleDatasetLoad}
+                currentResourceUrl={collection?.sourcePath ?? datasetKey ?? ""}
+                reportWarning={showDatasetLoadWarning}
+              />
+              <LoadZipModal
+                sourceZipName={sourceZipName ?? ""}
+                onLoad={onLoadedZipCollection}
+                open={showZipLoadModal}
+                targetDataset={expectedFileLoadDatasetName}
+                onClose={() => {
+                  setShowZipLoadModal(false);
+                  zipLoadPromiseResolveRef.current?.(null);
+                }}
+              />
+            </div>
             <Export
               totalFrames={dataset?.numberOfFrames || 0}
               setFrame={setFrame}
@@ -597,7 +640,8 @@ function Viewer(): ReactElement {
               annotationState={annotationState}
             >
               <CanvasWrapper
-                loading={isDatasetLoading}
+                // Disable loading spinner when file upload is pending
+                loading={isDatasetLoading && !isZipUploadPending}
                 loadingProgress={datasetLoadProgress}
                 canv={canv}
                 isRecording={isRecording}
