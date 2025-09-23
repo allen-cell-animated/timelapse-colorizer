@@ -122,6 +122,7 @@ type SettingsContainerProps = {
   labelWidth?: string;
   gapPx?: number;
   indentPx?: number;
+  style?: React.CSSProperties;
 };
 
 const defaultSettingsContainerProps: Partial<SettingsContainerProps> = {
@@ -159,7 +160,12 @@ export function SettingsContainer(inputProps: PropsWithChildren<Partial<Settings
   const props = { ...defaultSettingsContainerProps, ...inputProps };
 
   return (
-    <SettingsDivContainer $gapPx={props.gapPx} $indentPx={props.indentPx} $labelWidth={props.labelWidth}>
+    <SettingsDivContainer
+      $gapPx={props.gapPx}
+      $indentPx={props.indentPx}
+      $labelWidth={props.labelWidth}
+      style={props.style}
+    >
       {props.children}
     </SettingsDivContainer>
   );

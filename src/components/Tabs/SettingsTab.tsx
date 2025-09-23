@@ -18,6 +18,7 @@ import LabeledSlider from "../Inputs/LabeledSlider";
 import WrappedColorPicker from "../Inputs/WrappedColorPicker";
 import { SettingsContainer, SettingsItem } from "../SettingsContainer";
 import ToggleCollapse from "../ToggleCollapse";
+import ChannelSettings from "./Settings/ChannelSettings";
 import VectorFieldSettings from "./Settings/VectorFieldSettings";
 
 const enum SettingsHtmlIds {
@@ -369,6 +370,11 @@ export default function SettingsTab(): ReactElement {
       </ToggleCollapse>
 
       <StyledHorizontalRule />
+
+      <ChannelSettings />
+
+      <StyledHorizontalRule />
+
       <ToggleCollapse
         label="Vector arrows"
         toggleChecked={vectorVisible}
