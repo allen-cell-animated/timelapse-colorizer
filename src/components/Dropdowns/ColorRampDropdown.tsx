@@ -185,11 +185,12 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
       if (!rampData) {
         throw new Error(`Invalid color ramp key '${key}'`);
       }
+      const gradientWidthPx = DROPDOWN_MENU_WIDTH_PX - 2 * DROPDOWN_DEFAULT_BORDER_PX;
       return {
         value: key,
         label: rampData.name,
         image: rampData.colorRamp
-          .createGradientCanvas(DROPDOWN_MENU_WIDTH_PX - 2, theme.controls.height, {
+          .createGradientCanvas(gradientWidthPx, theme.controls.height, {
             reverse: rampData.reverseByDefault,
           })
           .toDataURL(),
@@ -205,10 +206,11 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
       }
       const visibleColors = paletteData.colors.slice(0, Math.max(1, props.numCategories));
       const colorRamp = new ColorRamp(visibleColors, ColorRampType.CATEGORICAL);
+      const gradientWidthPx = DROPDOWN_MENU_WIDTH_PX - 2 * DROPDOWN_CATEGORICAL_BORDER_PX;
       return {
         value: key,
         label: paletteData.name,
-        image: colorRamp.createGradientCanvas(DROPDOWN_MENU_WIDTH_PX - 2, theme.controls.height).toDataURL(),
+        image: colorRamp.createGradientCanvas(gradientWidthPx, theme.controls.height).toDataURL(),
         tooltip: paletteData.name,
       };
     });
@@ -227,12 +229,15 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
     if (props.reversed) {
       selectedRamp = selectedRamp.reverse();
     }
+    let borderWidthPx = DROPDOWN_DEFAULT_BORDER_PX;
     if (selectedRamp.type === ColorRampType.CATEGORICAL) {
+      borderWidthPx = DROPDOWN_CATEGORICAL_BORDER_PX;
       // Clamp number of colors due to smaller dropdown size
       const visibleColors = selectedRamp.colorStops.slice(0, DROPDOWN_CONTROL_MAX_COLORS);
       selectedRamp = new ColorRamp(visibleColors, ColorRampType.CATEGORICAL);
     }
-    return selectedRamp.createGradientCanvas(DROPDOWN_CONTROL_WIDTH_PX - 2, theme.controls.height).toDataURL();
+    const gradientWidthPx = DROPDOWN_MENU_WIDTH_PX - 2 * borderWidthPx;
+    return selectedRamp.createGradientCanvas(gradientWidthPx, theme.controls.height).toDataURL();
   }, [props.selectedRamp, props.reversed]);
 
   const showAsReversed = props.reversed !== !!selectedRampData.reverseByDefault;
