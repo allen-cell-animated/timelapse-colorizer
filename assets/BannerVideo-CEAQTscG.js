@@ -1,0 +1,1 @@
+import{j as e}from"./main-jhqzAsXd.js";import"./gh_routing-Ccc8RuuD.js";const o="/timelapse-colorizer/assets/banner_video-8h8QZ5tC.mp4";function s(){return e.jsx("video",{autoPlay:!0,loop:!0,muted:!0,children:e.jsx("source",{src:o,type:"video/mp4"})})}export{s as default};
