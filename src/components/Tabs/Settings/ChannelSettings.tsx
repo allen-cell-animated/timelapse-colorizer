@@ -30,8 +30,8 @@ const ChannelSettingsContainer = styled(FlexColumn)`
   padding: 0 0 16px 0;
 
   // Align color pickers after channel label names
-  // label - color picker - vertical separator - channel toggle
-  grid-template-columns: min-content min-content min-content auto min-content;
+  // label - color picker - vertical separator - channel toggle - collapse button
+  grid-template-columns: min-content min-content min-content 1fr min-content;
 
   & > .toggle-collapse {
     display: grid;
@@ -51,7 +51,12 @@ const ChannelSettingsContainer = styled(FlexColumn)`
     }
 
     & > .toggle-collapse-content {
+      display: grid;
+      grid-template-columns: subgrid;
       grid-column: 1 / -1;
+      & > div {
+        grid-column: 1 / -1;
+      }
     }
   }
 `;
@@ -86,33 +91,35 @@ function ChannelSetting(props: ChannelSettingProps): ReactElement {
     >
       <SettingsContainer>
         <SettingsItem label="Range" htmlFor={rangeSliderId} labelStyle={{ height: "fit-content", paddingTop: 3 }}>
-          <FlexRowAlignCenter $gap={8}>
-            <Button onClick={() => onClickRangePreset(ChannelRangePreset.NONE)}>None</Button>
-            <Button onClick={() => onClickRangePreset(ChannelRangePreset.DEFAULT)}>Default</Button>
-            <Button onClick={() => onClickRangePreset(ChannelRangePreset.IJ_AUTO)}>IJ Auto</Button>
-            <Button onClick={() => onClickRangePreset(ChannelRangePreset.AUTO_2)}>Auto 2</Button>
-          </FlexRowAlignCenter>
-          <FlexRowAlignCenter $gap={6}>
-            <div style={{ width: "calc(min(400px, 100%))" }}>
-              <LabeledSlider
-                id={rangeSliderId}
-                type="range"
-                min={settings.min}
-                max={settings.max}
-                minSliderBound={settings.dataMin}
-                maxSliderBound={settings.dataMax}
-                minInputBound={Number.MIN_SAFE_INTEGER}
-                maxInputBound={Number.MAX_SAFE_INTEGER}
-                step={1}
-                onChange={(min, max) => updateSettings({ min, max })}
-              />
-            </div>
-            <Tooltip title="Updates the slider's possible range to match the channel's data range on the current frame. Does not update the range.">
-              <Button onClick={onClickSync}>
-                <SyncOutlined /> Sync
-              </Button>
-            </Tooltip>
-          </FlexRowAlignCenter>
+          <FlexColumn $gap={6} style={{ alignItems: "flex-start", width: "100%" }}>
+            <FlexRowAlignCenter $gap={8}>
+              <Button onClick={() => onClickRangePreset(ChannelRangePreset.NONE)}>None</Button>
+              <Button onClick={() => onClickRangePreset(ChannelRangePreset.DEFAULT)}>Default</Button>
+              <Button onClick={() => onClickRangePreset(ChannelRangePreset.IJ_AUTO)}>IJ Auto</Button>
+              <Button onClick={() => onClickRangePreset(ChannelRangePreset.AUTO_2)}>Auto 2</Button>
+            </FlexRowAlignCenter>
+            <FlexRowAlignCenter $gap={8} style={{ width: "100%" }}>
+              <div style={{ minWidth: "calc(min(450px, 100%))" }}>
+                <LabeledSlider
+                  id={rangeSliderId}
+                  type="range"
+                  min={settings.min}
+                  max={settings.max}
+                  minSliderBound={settings.dataMin}
+                  maxSliderBound={settings.dataMax}
+                  minInputBound={Number.MIN_SAFE_INTEGER}
+                  maxInputBound={Number.MAX_SAFE_INTEGER}
+                  step={1}
+                  onChange={(min, max) => updateSettings({ min, max })}
+                />
+              </div>
+              <Tooltip title="Updates the slider's possible range to match the channel's data range on the current frame. Does not update the range.">
+                <Button onClick={onClickSync}>
+                  <SyncOutlined /> Sync
+                </Button>
+              </Tooltip>
+            </FlexRowAlignCenter>
+          </FlexColumn>
         </SettingsItem>
       </SettingsContainer>
     </ToggleCollapse>

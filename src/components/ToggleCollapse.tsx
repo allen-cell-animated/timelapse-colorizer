@@ -206,7 +206,7 @@ export default function ToggleCollapse(inputProps: PropsWithChildren<ToggleColla
           style={{
             // TODO: This is a magic number, consider measuring the actual content height?
             maxHeight: isExpanded ? `${props.maxContentHeightPx}px` : "0px",
-            overflow: "hidden",
+            overflow: showOverflow ? "visible" : "hidden",
             transition: `max-height ${heightTransitionDuration} ease-in-out`,
           }}
         >
