@@ -410,6 +410,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
       // Disable colorizing on this channel
     }
     if (volume.isLoaded()) {
+      console.log("Volume loaded, redrawing");
       this.view3d.updateActiveChannels(volume);
       this.view3d.updateLuts(volume);
       this.view3d.redraw();
@@ -457,6 +458,8 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
 
     console.log("Loading volume from path:", sources);
     this.loader = await loaderContext.createLoader(sources);
+    this.loader.syncMultichannelLoading(true);
+
     const loadSpec = new LoadSpec();
     loadSpec.time = this.params.pendingFrame;
     const segChannel = this.params.dataset?.frames3d?.segmentationChannel ?? 0;

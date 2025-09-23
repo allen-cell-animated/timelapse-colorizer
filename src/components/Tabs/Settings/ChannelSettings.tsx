@@ -25,6 +25,13 @@ type ChannelSettingProps = {
   onClickRangePreset: (preset: ChannelRangePreset) => void;
 };
 
+const VerticalDivider = styled.div`
+  width: 1px;
+  background-color: var(--color-borders);
+  margin: 0 12px;
+  height: 14px;
+`;
+
 const ChannelSettingsContainer = styled(FlexColumn)`
   display: grid;
   row-gap: 16px;
@@ -34,31 +41,28 @@ const ChannelSettingsContainer = styled(FlexColumn)`
   // label - color picker - vertical separator - channel toggle - collapse button
   grid-template-columns: min-content min-content min-content 1fr min-content;
 
-  & > .toggle-collapse {
+  & > .toggle-collapse,
+  & > .toggle-collapse > .toggle-collapse-content,
+  & > .toggle-collapse > .toggle-collapse-control-row,
+  & > .toggle-collapse > .toggle-collapse-control-row > .toggle-collapse-header {
     display: grid;
     grid-template-columns: subgrid;
     grid-column: 1 / -1;
+    column-gap: 8px;
+  }
 
-    & > .toggle-collapse-control-row {
-      display: grid;
-      grid-template-columns: subgrid;
-      grid-column: 1 / -1;
+  & > .toggle-collapse > .toggle-collapse-control-row {
+  }
 
-      & > .toggle-collapse-header {
-        display: grid;
-        grid-template-columns: subgrid;
-        grid-column: 1 / -2; // Leave grid space for toggle button on right
-      }
-    }
+  & > .toggle-collapse > .toggle-collapse-control-row > .toggle-collapse-header {
+    // Leave unused column for toggle button to the right
+    grid-column: 1 / -2;
+  }
 
-    & > .toggle-collapse-content {
-      display: grid;
-      grid-template-columns: subgrid;
-      grid-column: 1 / -1;
-      & > div {
-        grid-column: 1 / -1;
-      }
-    }
+  & > .toggle-collapse > .toggle-collapse-content > div {
+    // Span columns so the content fills the full width; otherwise
+    // it will only fill one column
+    grid-column: 1 / -1;
   }
 `;
 
@@ -76,7 +80,7 @@ function ChannelSetting(props: ChannelSettingProps): ReactElement {
           updateSettings({ color: threeColor, opacity: alpha });
         }}
       />
-      |
+      <VerticalDivider />
     </>
   );
 
@@ -90,7 +94,7 @@ function ChannelSetting(props: ChannelSettingProps): ReactElement {
       preToggleContent={collapseLabel}
       contentIndentPx={24}
     >
-      <SettingsContainer>
+      <SettingsContainer style={{ paddingTop: 4 }} indentPx={30}>
         <SettingsItem label="Range" htmlFor={rangeSliderId} labelStyle={{ height: "fit-content", paddingTop: 3 }}>
           <FlexColumn $gap={6} style={{ alignItems: "flex-start", width: "100%" }}>
             <FlexRowAlignCenter $gap={8}>
@@ -190,7 +194,7 @@ export default function ChannelSettings(): ReactElement {
       label={"Channels"}
       postToggleContent={
         <>
-          |
+          <VerticalDivider />
           <Checkbox
             checked={areAllChannelsVisible}
             indeterminate={!areNoChannelsVisible && !areAllChannelsVisible}
@@ -204,7 +208,7 @@ export default function ChannelSettings(): ReactElement {
         </>
       }
     >
-      <div style={{ marginRight: "20px" }}>
+      <div style={{ marginRight: "20px", paddingTop: "4px" }}>
         <ChannelSettingsContainer>{channelSettingElements}</ChannelSettingsContainer>
       </div>
     </ToggleCollapse>
