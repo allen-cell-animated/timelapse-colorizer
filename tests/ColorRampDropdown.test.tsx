@@ -25,6 +25,8 @@ describe("ColorRampDropdown", () => {
     it("can render with correct label", async () => {
       render(
         <ColorRampDropdown
+          label={"Color map"}
+          id={"color-ramp-dropdown"}
           selectedRamp={"map1"}
           knownColorRamps={customColorRamps}
           onChangeRamp={(_value: string) => {}}
@@ -47,6 +49,8 @@ describe("ColorRampDropdown", () => {
       expect(() =>
         render(
           <ColorRampDropdown
+            label={"Color map"}
+            id={"color-ramp-dropdown"}
             selectedRamp={"bad-key"}
             knownColorRamps={customColorRamps}
             onChangeRamp={(_value: string) => {}}
