@@ -181,8 +181,6 @@ export default class CanvasOverlay implements IRenderCanvas {
 
     this.getExportDimensions = this.getExportDimensions.bind(this);
     this.onInnerCanvasRender = this.onInnerCanvasRender.bind(this);
-    this.getBackdropChannelRangePreset = this.getBackdropChannelRangePreset.bind(this);
-    this.getBackdropChannelDataRange = this.getBackdropChannelDataRange.bind(this);
     this.render = this.render.bind(this);
   }
 

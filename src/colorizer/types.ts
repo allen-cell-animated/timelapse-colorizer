@@ -336,8 +336,8 @@ export const enum LoadErrorMessage {
   MANIFEST_JSON_PARSE_FAILED = "Parsing failed for the manifest JSON file with the following error. Please check that the JSON syntax is correct: ",
 }
 export const enum ChannelRangePreset {
-  NONE,
-  DEFAULT,
-  IJ_AUTO,
-  AUTO_2,
+  NONE = "none",
+  DEFAULT = "default",
+  IJ_AUTO = "ij_auto",
+  AUTO_2 = "auto_2",
 }

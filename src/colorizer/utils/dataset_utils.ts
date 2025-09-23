@@ -97,7 +97,7 @@ type ManifestFileV1_1_0 = Spread<
        * time-series ZARR (e.g. ends with `.ome.zarr`).
        */
       source: string;
-      /* The index of the channel to use as a segmentation. */
+      /* The index of the channel to use as a segmentation within the source. */
       segmentationChannel: number;
       /** Total number of frames in the time-series volume. */
       totalFrames: number;

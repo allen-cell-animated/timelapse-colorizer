@@ -29,7 +29,7 @@ import {
   PixelIdInfo,
   TrackPathColorMode,
 } from "./types";
-import { getBackdropChannelIndices, getVolumeSources } from "./utils/channels";
+import { getBackdropToChannelIndexMap, getVolumeSources } from "./utils/channels";
 import {
   computeTrackLinePointsAndIds,
   computeVertexColorsFromIds,
@@ -212,8 +212,8 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
           outlierData: packDataTexture(Array.from(dataset.outliers ?? []), FeatureDataType.U8),
           featureMin: range[0],
           featureMax: range[1],
-          outlineAlpha: 1,
           outlineColor: this.params.outlineColor.clone().convertLinearToSRGB(),
+          outlineAlpha: 1,
           outlierColor: this.params.outlierDrawSettings.color.clone().convertLinearToSRGB(),
           outOfRangeColor: this.params.outOfRangeDrawSettings.color.clone().convertLinearToSRGB(),
           outlierDrawMode: this.params.outlierDrawSettings.mode,
@@ -333,8 +333,22 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     return needsRender;
   }
 
+  private isValidBackdropIndex(backdropIndex: number): boolean {
+    return (
+      this.backdropIndexToChannelIndex !== null &&
+      backdropIndex >= 0 &&
+      backdropIndex < this.backdropIndexToChannelIndex.length &&
+      this.backdropIndexToChannelIndex[backdropIndex] >= 0
+    );
+  }
+
+  /**
+   * Returns the min-max range for a given backdrop channel based on the given
+   * range preset. Returns `null` if the preset cannot be calculated (e.g. no
+   * volume is loaded or the backdrop index is invalid).
+   */
   public getBackdropChannelRangePreset(backdropIndex: number, preset: ChannelRangePreset): [number, number] | null {
-    if (!this.volume || !this.backdropIndexToChannelIndex) {
+    if (!this.volume || !this.backdropIndexToChannelIndex || !this.isValidBackdropIndex(backdropIndex)) {
       return null;
     }
     const channelIndex = this.backdropIndexToChannelIndex[backdropIndex];
@@ -375,7 +389,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
   }
 
   public getBackdropChannelDataRange(backdropIndex: number): [number, number] | null {
-    if (!this.volume || !this.backdropIndexToChannelIndex) {
+    if (!this.volume || !this.backdropIndexToChannelIndex || !this.isValidBackdropIndex(backdropIndex)) {
       return null;
     }
     const channelIndex = this.backdropIndexToChannelIndex[backdropIndex];
@@ -395,22 +409,19 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
         settings.color.g * 255,
         settings.color.b * 255,
       ];
-      this.view3d.setVolumeChannelEnabled(volume, channelIndex, settings.visible);
       this.view3d.setVolumeChannelOptions(volume, channelIndex, {
         enabled: settings.visible,
         color: colorArr,
         isosurfaceEnabled: false,
       });
       const histogram = volume.getHistogram(channelIndex);
-      const minBin = histogram.findBinOfValue(settings.min);
-      const maxBin = histogram.findBinOfValue(settings.max);
+      const minBin = histogram.findFractionalBinOfValue(settings.min);
+      const maxBin = histogram.findFractionalBinOfValue(settings.max);
       const lut = new Lut().createFromMinMax(minBin, maxBin);
 
       volume.setLut(channelIndex, lut);
-      // Disable colorizing on this channel
     }
     if (volume.isLoaded()) {
-      console.log("Volume loaded, redrawing");
       this.view3d.updateActiveChannels(volume);
       this.view3d.updateLuts(volume);
       this.view3d.redraw();
@@ -465,7 +476,6 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     const segChannel = this.params.dataset?.frames3d?.segmentationChannel ?? 0;
     const volume = await this.loader.createVolume(loadSpec, (v: Volume, channelIndex: number) => {
       const currentVol = v;
-      console.log("Loaded channel index", channelIndex);
 
       this.view3d.onVolumeData(currentVol, [channelIndex]);
       if (channelIndex === segChannel) {
@@ -484,7 +494,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     this.view3d.addVolume(volume);
     this.volume = volume;
 
-    this.backdropIndexToChannelIndex = getBackdropChannelIndices(
+    this.backdropIndexToChannelIndex = getBackdropToChannelIndexMap(
       sources,
       volume.imageInfo.numChannelsPerSource,
       this.params.dataset?.frames3d?.backdrops
