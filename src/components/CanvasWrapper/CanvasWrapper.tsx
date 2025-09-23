@@ -4,29 +4,31 @@ import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, use
 import styled from "styled-components";
 import { Vector2 } from "three";
 
-import { ImagesIconSVG, ImagesSlashIconSVG, NoImageSVG, TagIconSVG, TagSlashIconSVG } from "../assets";
+import { NoImageSVG, TagIconSVG, TagSlashIconSVG } from "../../assets";
 import {
   AnnotationSelectionMode,
   ChannelRangePreset,
   LoadTroubleshooting,
   PixelIdInfo,
   TabType,
-} from "../colorizer/types";
-import { CANVAS_ASPECT_RATIO } from "../constants";
-import { AnnotationState } from "../hooks";
-import { FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter, VisuallyHidden } from "../styles/utils";
+} from "../../colorizer/types";
+import { CANVAS_ASPECT_RATIO } from "../../constants";
+import { AnnotationState } from "../../hooks";
+import { FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter, VisuallyHidden } from "../../styles/utils";
+import { makeLinkStyleButton } from "../CanvasWrapper/utils";
 
-import { LabelData, LabelType } from "../colorizer/AnnotationData";
-import CanvasOverlay from "../colorizer/CanvasOverlay";
-import { renderCanvasStateParamsSelector } from "../colorizer/IRenderCanvas";
-import { useViewerStateStore } from "../state/ViewerState";
-import { AppThemeContext } from "./AppStyle";
-import { AlertBannerProps } from "./Banner";
-import { LinkStyleButton } from "./Buttons/LinkStyleButton";
-import IconButton from "./IconButton";
-import LoadingSpinner from "./LoadingSpinner";
-import AnnotationInputPopover from "./Tabs/Annotation/AnnotationInputPopover";
-import { TooltipWithSubtitle } from "./Tooltips/TooltipWithSubtitle";
+import { LabelData, LabelType } from "../../colorizer/AnnotationData";
+import CanvasOverlay from "../../colorizer/CanvasOverlay";
+import { renderCanvasStateParamsSelector } from "../../colorizer/IRenderCanvas";
+import { useViewerStateStore } from "../../state/ViewerState";
+import { AppThemeContext } from "../AppStyle";
+import { AlertBannerProps } from "../Banner";
+import BackdropToggleButton from "../CanvasWrapper/BackdropToggleButton";
+import IconButton from "../IconButton";
+import LoadingSpinner from "../LoadingSpinner";
+import AnnotationInputPopover from "../Tabs/Annotation/AnnotationInputPopover";
+import { TooltipWithSubtitle } from "../Tooltips/TooltipWithSubtitle";
+import ChannelToggleButton from "./ChannelToggleButton";
 
 /* Minimum distance in either X or Y that mouse should move
  * before mouse event is considered a drag
@@ -139,15 +141,12 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   // Access state properties
   const pendingFrame = useViewerStateStore((state) => state.pendingFrame);
   const currentFrame = useViewerStateStore((state) => state.currentFrame);
-  const backdropKey = useViewerStateStore((state) => state.backdropKey);
-  const backdropVisible = useViewerStateStore((state) => state.backdropVisible);
   const clearTrack = useViewerStateStore((state) => state.clearTrack);
   const collection = useViewerStateStore((state) => state.collection);
   const dataset = useViewerStateStore((state) => state.dataset);
   const updateChannelSettings = useViewerStateStore((state) => state.updateChannelSettings);
   const setGetChannelDataRangeCallback = useViewerStateStore((state) => state.setGetChannelDataRangeCallback);
   const setApplyChannelRangePresetCallback = useViewerStateStore((state) => state.setApplyChannelRangePresetCallback);
-  const setBackdropVisible = useViewerStateStore((state) => state.setBackdropVisible);
   const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
   const setTrack = useViewerStateStore((state) => state.setTrack);
   const showScaleBar = useViewerStateStore((state) => state.showScaleBar);
@@ -186,6 +185,9 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const lastMousePositionPx = useRef(new Vector2(0, 0));
 
   const isMissingFile = frameLoadResult !== null && (frameLoadResult.frameError || frameLoadResult.backdropError);
+
+  // TODO: This should be a property in state and not derived here and in CanvasOverlay.
+  const isDataset3d = dataset?.frames3d !== undefined;
 
   // CANVAS PROPERTIES /////////////////////////////////////////////////
 
@@ -528,46 +530,11 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     };
   }, [dataset, canv]);
 
-  const makeLinkStyleButton = (key: string, onClick: () => void, content: ReactNode): ReactNode => {
-    return (
-      <LinkStyleButton
-        key={key}
-        onClick={onClick}
-        $color={theme.color.text.darkLink}
-        $hoverColor={theme.color.text.darkLinkHover}
-        tabIndex={-1}
-      >
-        {content}
-      </LinkStyleButton>
-    );
-  };
-
   // RENDERING /////////////////////////////////////////////////
-
-  const onViewerSettingsLinkClicked = (): void => {
-    setOpenTab(TabType.SETTINGS);
-  };
 
   const onAnnotationLinkClicked = (): void => {
     setOpenTab(TabType.ANNOTATION);
   };
-
-  const backdropTooltipContents: ReactNode[] = [];
-  backdropTooltipContents.push(
-    <span key="backdrop-name">
-      {backdropKey === null ? "(No backdrops available)" : dataset?.getBackdropData().get(backdropKey)?.name}
-    </span>
-  );
-  // Link to viewer settings
-  backdropTooltipContents.push(
-    makeLinkStyleButton(
-      "backdrop-viewer-settings-link",
-      onViewerSettingsLinkClicked,
-      <span>
-        {"Viewer settings > Backdrop"} <VisuallyHidden>(opens settings tab)</VisuallyHidden>
-      </span>
-    )
-  );
 
   const labels = props.annotationState.data.getLabels();
   const annotationTooltipContents: ReactNode[] = [];
@@ -578,6 +545,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   );
   annotationTooltipContents.push(
     makeLinkStyleButton(
+      theme,
       "annotation-link",
       onAnnotationLinkClicked,
       <span>
@@ -657,22 +625,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
           </IconButton>
         </TooltipWithSubtitle>
 
-        {/* Backdrop toggle */}
-        <TooltipWithSubtitle
-          title={backdropVisible ? "Hide backdrop" : "Show backdrop"}
-          placement="right"
-          subtitleList={backdropTooltipContents}
-          trigger={["hover", "focus"]}
-        >
-          <IconButton
-            type={backdropVisible ? "primary" : "link"}
-            onClick={() => setBackdropVisible(!backdropVisible)}
-            disabled={backdropKey === null}
-          >
-            {backdropVisible ? <ImagesSlashIconSVG /> : <ImagesIconSVG />}
-            <VisuallyHidden>{backdropVisible ? "Hide backdrop" : "Show backdrop"}</VisuallyHidden>
-          </IconButton>
-        </TooltipWithSubtitle>
+        {/* 2D backdrop or 3D channels toggle */}
+        {isDataset3d ? <ChannelToggleButton /> : <BackdropToggleButton />}
 
         {/* Annotation mode toggle */}
         <TooltipWithSubtitle
