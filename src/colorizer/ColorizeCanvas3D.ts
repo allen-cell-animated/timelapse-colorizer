@@ -64,7 +64,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
   /** A Promise for the load of the initial Volume object. */
   private initializingVolumePromise: Promise<Volume> | null = null;
   /** A Promise for the load of the volume data for a single frame. */
-  private volumeFrameLoadPromise: Promise<FrameLoadResult> | null = null;
+  private volumeFrameLoadPromise: Promise<FrameLoadResult | null> | null = null;
 
   private pendingFrame: number;
   private currentFrame: number;
@@ -413,7 +413,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
       return Promise.resolve(null);
     }
 
-    const loadVolumeFrame = async (): Promise<FrameLoadResult> => {
+    const loadVolumeFrame = async (): Promise<FrameLoadResult | null> => {
       if (!this.volume || !this.loader) {
         await this.initializingVolumePromise;
         if (!this.volume) {
@@ -421,7 +421,10 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
         }
       }
       await this.view3d.setTime(this.volume, requestedFrame);
-
+      if (requestedFrame !== this.pendingFrame) {
+        // This frame request has been superceded by another request
+        return null;
+      }
       this.currentFrame = requestedFrame;
       this.pendingFrame = -1;
       this.render({ synchronous: true });
@@ -436,7 +439,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     };
     this.pendingFrame = requestedFrame;
     this.volumeFrameLoadPromise = loadVolumeFrame();
-    return this.volumeFrameLoadPromise as Promise<FrameLoadResult>;
+    return this.volumeFrameLoadPromise;
   }
 
   public setOnFrameLoadCallback(callback: (result: FrameLoadResult) => void): void {

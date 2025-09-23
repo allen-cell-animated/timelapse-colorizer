@@ -19,6 +19,7 @@ type AntStyledSelectProps<
   controlWidth?: string;
   menuWidth?: string;
   styles?: StylesConfig<SelectItem, IsMulti, Group>;
+  controlContainerStyle?: React.CSSProperties;
 };
 
 const defaultProps = {
