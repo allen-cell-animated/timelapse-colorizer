@@ -4,20 +4,9 @@ import { NotificationConfig } from "antd/es/notification/interface";
 import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 
-import {
-  Dataset,
-  DISPLAY_CATEGORICAL_PALETTE_KEYS,
-  DISPLAY_COLOR_RAMP_KEYS,
-  KNOWN_CATEGORICAL_PALETTES,
-  KNOWN_COLOR_RAMPS,
-  LoadTroubleshooting,
-  PixelIdInfo,
-  ReportWarningCallback,
-  TabType,
-} from "./colorizer";
+import { Dataset, LoadTroubleshooting, PixelIdInfo, ReportWarningCallback, TabType } from "./colorizer";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./colorizer/utils/analytics";
 import { showFailedUrlParseAlert } from "./components/Banner/alert_templates";
-import { SelectItem } from "./components/Dropdowns/types";
 import { INTERNAL_BUILD } from "./constants";
 import { useAnnotations, useConstructor, useRecentCollections } from "./hooks";
 import { getDifferingProperties } from "./state/utils/data_validation";
@@ -28,7 +17,7 @@ import {
   serializeViewerState,
 } from "./state/utils/store_io";
 import { makeDebouncedCallback } from "./state/utils/store_utils";
-import { FlexRow, FlexRowAlignCenter } from "./styles/utils";
+import { FlexColumn, FlexRowAlignCenter } from "./styles/utils";
 import { LocationState } from "./types";
 import { loadInitialCollectionAndDataset } from "./utils/dataset_load_utils";
 
@@ -42,13 +31,11 @@ import { AppThemeContext } from "./components/AppStyle";
 import { useAlertBanner } from "./components/Banner";
 import TextButton from "./components/Buttons/TextButton";
 import CanvasWrapper from "./components/CanvasWrapper";
-import FeatureControls from "./components/Controls/FeatureControls";
+import ColorizeControls from "./components/Controls/ColorizeControls";
+import DatasetFeatureControls from "./components/Controls/DatasetFeatureControls";
 import PlaybackControls from "./components/Controls/PlaybackControls";
-import ColorRampDropdown from "./components/Dropdowns/ColorRampDropdown";
 import HelpDropdown from "./components/Dropdowns/HelpDropdown";
-import SelectionDropdown from "./components/Dropdowns/SelectionDropdown";
 import Export from "./components/Export";
-import GlossaryPanel from "./components/GlossaryPanel";
 import Header from "./components/Header";
 import LoadDatasetButton from "./components/LoadDatasetButton";
 import LoadZipModal from "./components/LoadZipModal";
@@ -84,7 +71,6 @@ function Viewer(): ReactElement {
   const canv = useConstructor((): CanvasOverlay => {
     const stateDeps = renderCanvasStateParamsSelector(useViewerStateStore.getState());
     const canvas = new CanvasOverlay(stateDeps);
-    canvas.domElement.className = styles.colorizeCanvas;
     // Report frame load results to the store
     canvas.setOnFrameLoadCallback((result) => {
       useViewerStateStore.getState().setFrameLoadResult(result);
@@ -101,23 +87,15 @@ function Viewer(): ReactElement {
   // TODO: Break down into separate components to greatly reduce the state
   // required for this component.
   // Get viewer state:
-  const categoricalPalette = useViewerStateStore((state) => state.categoricalPalette);
   const collection = useViewerStateStore((state) => state.collection);
-  const colorRampKey = useViewerStateStore((state) => state.colorRampKey);
-  const colorRampReversed = useViewerStateStore((state) => state.isColorRampReversed);
   const currentFrame = useViewerStateStore((state) => state.currentFrame);
   const dataset = useViewerStateStore((state) => state.dataset);
   const datasetKey = useViewerStateStore((state) => state.datasetKey);
   const featureKey = useViewerStateStore((state) => state.featureKey);
   const featureThresholds = useViewerStateStore((state) => state.thresholds);
   const openTab = useViewerStateStore((state) => state.openTab);
-  const selectedPaletteKey = useViewerStateStore((state) => state.categoricalPaletteKey);
-  const setCategoricalPalette = useViewerStateStore((state) => state.setCategoricalPalette);
   const setCollection = useViewerStateStore((state) => state.setCollection);
-  const setColorRampKey = useViewerStateStore((state) => state.setColorRampKey);
-  const setColorRampReversed = useViewerStateStore((state) => state.setColorRampReversed);
   const setDataset = useViewerStateStore((state) => state.setDataset);
-  const setFeatureKey = useViewerStateStore((state) => state.setFeatureKey);
   const setFrame = useViewerStateStore((state) => state.setFrame);
   const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
   const setScatterXAxis = useViewerStateStore((state) => state.setScatterXAxis);
@@ -125,10 +103,6 @@ function Viewer(): ReactElement {
   const setSourceZipName = useViewerStateStore((state) => state.setSourceZipName);
   const sourceZipName = useViewerStateStore((state) => state.sourceZipName);
   const timeControls = useViewerStateStore((state) => state.timeControls);
-
-  const isFeatureSelected = dataset !== null && featureKey !== null;
-  const isFeatureCategorical = isFeatureSelected && dataset.isFeatureCategorical(featureKey);
-  const featureCategories = isFeatureCategorical ? dataset.getFeatureCategories(featureKey) || [] : [];
 
   const [, addRecentCollection] = useRecentCollections();
   const annotationState = useAnnotations();
@@ -522,17 +496,6 @@ function Viewer(): ReactElement {
     });
   };
 
-  const datasetDropdownData = useMemo(() => collection?.getDatasetKeys() || [], [collection]);
-  const featureDropdownData = useMemo((): SelectItem[] => {
-    if (!dataset) {
-      return [];
-    }
-    // Add units to the dataset feature names if present
-    return dataset.featureKeys.map((key) => {
-      return { value: key, label: dataset.getFeatureNameWithUnits(key) };
-    });
-  }, [dataset]);
-
   const disableUi: boolean = isRecording || !datasetOpen;
 
   const allTabItems: TabItem[] = [
@@ -657,92 +620,51 @@ function Viewer(): ReactElement {
 
       {/** Main Content: Contains canvas and plot, ramp controls, time controls, etc. */}
       <div className={styles.mainContent}>
-        {/** Top Control Bar */}
-        <FlexRowAlignCenter $gap={20} style={{ margin: "16px 0", flexWrap: "wrap" }}>
-          <SelectionDropdown
-            disabled={disableUi}
-            label="Dataset"
-            selected={datasetKey ?? ""}
-            buttonType="primary"
-            items={datasetDropdownData}
-            onChange={handleDatasetChange}
-          />
-          <FlexRow $gap={6}>
-            <SelectionDropdown
-              disabled={disableUi}
-              label="Feature"
-              // TODO: Show feature description here?
-              selected={featureKey ?? undefined}
-              items={featureDropdownData}
-              onChange={(value) => {
-                if (value !== featureKey && dataset) {
-                  setFeatureKey(value);
-                  reportFeatureSelected(dataset, value);
-                }
-              }}
-            />
-            <GlossaryPanel dataset={dataset} />
-          </FlexRow>
-
-          <ColorRampDropdown
-            knownColorRamps={KNOWN_COLOR_RAMPS}
-            colorRampsToDisplay={DISPLAY_COLOR_RAMP_KEYS}
-            selectedRamp={colorRampKey}
-            reversed={colorRampReversed}
-            onChangeRamp={(name, reversed) => {
-              setColorRampKey(name);
-              setColorRampReversed(reversed);
-            }}
-            disabled={disableUi}
-            knownCategoricalPalettes={KNOWN_CATEGORICAL_PALETTES}
-            categoricalPalettesToDisplay={DISPLAY_CATEGORICAL_PALETTE_KEYS}
-            useCategoricalPalettes={isFeatureCategorical}
-            numCategories={Math.max(featureCategories.length, 1)}
-            selectedPalette={categoricalPalette}
-            selectedPaletteKey={selectedPaletteKey}
-            onChangePalette={setCategoricalPalette}
-          />
-        </FlexRowAlignCenter>
-
         {/* Organize the main content areas */}
         <div className={styles.contentPanels}>
+          {/** Canvas + Controls + Playback*/}
           <div className={styles.canvasPanel}>
-            {/** Canvas */}
-            <div className={styles.canvasTopAndCanvasContainer}>
-              <div className={styles.canvasTopContainer}>
-                <FeatureControls disabled={disableUi} />
-              </div>
-              <CanvasHoverTooltip
-                lastValidHoveredId={lastValidHoveredId}
-                showObjectHoverInfo={showObjectHoverInfo}
+            {/** Top Control Bar */}
+            <FlexColumn $gap={16} style={{ marginBottom: 23, width: "100%" }}>
+              <DatasetFeatureControls
+                onSelectDataset={handleDatasetChange}
+                onSelectFeature={reportFeatureSelected}
+                disabled={disableUi}
+              />
+              <ColorizeControls disabled={disableUi} />
+            </FlexColumn>
+
+            <CanvasHoverTooltip
+              lastValidHoveredId={lastValidHoveredId}
+              showObjectHoverInfo={showObjectHoverInfo}
+              annotationState={annotationState}
+            >
+              <CanvasWrapper
+                // Disable loading spinner when file upload is pending
+                loading={isDatasetLoading && !isZipUploadPending}
+                loadingProgress={datasetLoadProgress}
+                canv={canv}
+                isRecording={isRecording}
+                onClickId={onClickId}
+                onMouseHover={(info: PixelIdInfo | null): void => {
+                  const isObject = info !== null;
+                  setShowObjectHoverInfo(isObject);
+                  if (isObject) {
+                    setLastValidHoveredId(info);
+                  }
+                }}
+                onMouseLeave={() => setShowObjectHoverInfo(false)}
+                showAlert={showAlert}
                 annotationState={annotationState}
-              >
-                <CanvasWrapper
-                  // Disable loading spinner when file upload is pending
-                  loading={isDatasetLoading && !isZipUploadPending}
-                  loadingProgress={datasetLoadProgress}
-                  canv={canv}
-                  isRecording={isRecording}
-                  onClickId={onClickId}
-                  onMouseHover={(info: PixelIdInfo | null): void => {
-                    const isObject = info !== null;
-                    setShowObjectHoverInfo(isObject);
-                    if (isObject) {
-                      setLastValidHoveredId(info);
-                    }
-                  }}
-                  onMouseLeave={() => setShowObjectHoverInfo(false)}
-                  showAlert={showAlert}
-                  annotationState={annotationState}
-                />
-              </CanvasHoverTooltip>
-            </div>
+              />
+            </CanvasHoverTooltip>
 
             <div className={styles.timeControls}>
               <PlaybackControls disabled={disableUi} />
             </div>
           </div>
 
+          {/* Tabs */}
           <div className={styles.sidePanels}>
             <div className={styles.plotAndFiltersPanel}>
               <Tabs

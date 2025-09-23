@@ -38,6 +38,9 @@ const CanvasContainer = styled(FlexColumnAlignCenter)<{ $annotationModeEnabled: 
     ${(props) => (props.$annotationModeEnabled ? "var(--color-viewport-annotation-outline)" : "transparent")};
   box-shadow: 0 0 8px 2px
     ${(props) => (props.$annotationModeEnabled ? "var(--color-viewport-annotation-outline)" : "transparent")};
+  border: 1px solid var(--color-borders);
+  // Prevents the canvas from hiding the border if it's slightly larger than the container.
+  overflow: hidden;
 
   transition: box-shadow 0.1s ease-in, outline 0.1s ease-in;
 `;
@@ -125,6 +128,7 @@ const defaultProps: Partial<CanvasWrapperProps> = {
  */
 export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<CanvasWrapperProps>;
+  const theme = useContext(AppThemeContext);
 
   // Access state properties
   const pendingFrame = useViewerStateStore((state) => state.pendingFrame);
@@ -171,7 +175,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   const isMouseOverCanvas = useRef(false);
   const lastMousePositionPx = useRef(new Vector2(0, 0));
-  const theme = useContext(AppThemeContext);
 
   const isMissingFile = frameLoadResult !== null && (frameLoadResult.frameError || frameLoadResult.backdropError);
 
@@ -262,7 +265,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       containerRef.current?.clientWidth ?? props.maxWidthPx,
       props.maxWidthPx,
       props.maxHeightPx * CANVAS_ASPECT_RATIO
-    );
+    ); // Subtract 2px for borders
     return new Vector2(Math.floor(widthPx), Math.floor(widthPx / CANVAS_ASPECT_RATIO));
   }, [props.maxHeightPx, props.maxWidthPx]);
 

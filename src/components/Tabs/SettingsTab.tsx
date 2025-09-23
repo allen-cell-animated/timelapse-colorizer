@@ -239,7 +239,7 @@ export default function SettingsTab(): ReactElement {
         onToggleChange={setShowTrackPath}
         contentIndentPx={70}
       >
-        <SettingsContainer>
+        <SettingsContainer gapPx={SETTINGS_GAP_PX}>
           <SettingsItem label="Color" htmlFor={SettingsHtmlIds.TRACK_PATH_COLOR_SELECT}>
             <DropdownWithColorPicker
               id={SettingsHtmlIds.TRACK_PATH_COLOR_SELECT}
