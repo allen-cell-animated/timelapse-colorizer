@@ -21,6 +21,7 @@ type ChannelSettingProps = {
   settings: ViewerStoreState["channelSettings"][number];
   updateSettings: (settings: Partial<ViewerStoreState["channelSettings"][number]>) => void;
   onClickSync: () => void;
+  syncDisabled?: boolean;
   onClickRangePreset: (preset: ChannelRangePreset) => void;
 };
 
@@ -114,7 +115,7 @@ function ChannelSetting(props: ChannelSettingProps): ReactElement {
                 />
               </div>
               <Tooltip title="Updates the slider's possible range to match the channel's data range on the current frame. Does not update the range.">
-                <Button onClick={onClickSync}>
+                <Button onClick={onClickSync} disabled={props.syncDisabled}>
                   <SyncOutlined /> Sync
                 </Button>
               </Tooltip>
@@ -131,8 +132,11 @@ export default function ChannelSettings(): ReactElement {
 
   const dataset = useViewerStateStore((state) => state.dataset);
   const channelSettings = useViewerStateStore((state) => state.channelSettings);
+  // Not a direct dependency, but assume that channel data range will change on
+  // frame change
+  const currentFrame = useViewerStateStore((state) => state.currentFrame);
   const updateChannelSettings = useViewerStateStore((state) => state.updateChannelSettings);
-  const syncChannelDataRange = useViewerStateStore((state) => state.syncChannelDataRange);
+  const getChannelDataRange = useViewerStateStore((state) => state.getChannelDataRange);
   const applyChannelRange = useViewerStateStore((state) => state.applyChannelRangePreset);
 
   const areAllChannelsVisible = channelSettings.every((setting) => setting.visible);
@@ -152,9 +156,20 @@ export default function ChannelSettings(): ReactElement {
         </div>
       );
     }
+    const syncChannelDataRange = (channelIndex: number): void => {
+      const range = getChannelDataRange(channelIndex);
+      if (range) {
+        updateChannelSettings(channelIndex, { dataMin: range[0], dataMax: range[1] });
+      }
+    };
     return dataset.frames3d.backdrops.map((backdropData, index) => {
       const name = backdropData.name || `Channel ${index + 1}`;
       const settings = channelSettings[index];
+      const channelDataRange = getChannelDataRange(index);
+      const syncDisabled =
+        channelDataRange === null ||
+        (channelDataRange[0] === channelSettings[index].dataMin &&
+          channelDataRange[1] === channelSettings[index].dataMax);
       return (
         <ChannelSetting
           name={name}
@@ -163,11 +178,12 @@ export default function ChannelSettings(): ReactElement {
           settings={settings}
           updateSettings={(settings) => updateChannelSettings(index, settings)}
           onClickSync={() => syncChannelDataRange(index)}
+          syncDisabled={syncDisabled}
           onClickRangePreset={(preset) => applyChannelRange(index, preset)}
         />
       );
     });
-  }, [channelSettings, updateChannelSettings, dataset, syncChannelDataRange, applyChannelRange]);
+  }, [channelSettings, updateChannelSettings, dataset, currentFrame, getChannelDataRange, applyChannelRange]);
 
   return (
     <ToggleCollapse

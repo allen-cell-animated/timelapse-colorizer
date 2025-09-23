@@ -221,14 +221,6 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
           hideOutOfRange: this.params.outOfRangeDrawSettings.mode === DrawMode.HIDE,
           frameToGlobalIdLookup: dataset.frameToGlobalIdLookup ?? new Map(),
         };
-        console.log(
-          "Configuring colorize feature for volume",
-          volume,
-          "channel",
-          channelIndex,
-          "with feature",
-          feature
-        );
         this.view3d.setChannelColorizeFeature(volume, channelIndex, feature);
       }
     }

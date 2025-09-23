@@ -145,7 +145,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const collection = useViewerStateStore((state) => state.collection);
   const dataset = useViewerStateStore((state) => state.dataset);
   const updateChannelSettings = useViewerStateStore((state) => state.updateChannelSettings);
-  const setSyncChannelDataRangeCallback = useViewerStateStore((state) => state.setSyncChannelDataRangeCallback);
+  const setGetChannelDataRangeCallback = useViewerStateStore((state) => state.setGetChannelDataRangeCallback);
   const setApplyChannelRangePresetCallback = useViewerStateStore((state) => state.setApplyChannelRangePresetCallback);
   const setBackdropVisible = useViewerStateStore((state) => state.setBackdropVisible);
   const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
@@ -277,13 +277,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   useEffect(() => {
     const boundGetBackdropChannelDataRange = canv.getBackdropChannelDataRange.bind(canv);
-    setSyncChannelDataRangeCallback((channelIndex: number) => {
-      const range = boundGetBackdropChannelDataRange(channelIndex);
-      if (range) {
-        updateChannelSettings(channelIndex, { dataMin: range[0], dataMax: range[1] });
-      }
-    });
-  }, [canv, setSyncChannelDataRangeCallback, updateChannelSettings]);
+    setGetChannelDataRangeCallback(boundGetBackdropChannelDataRange);
+  }, [canv, setGetChannelDataRangeCallback, updateChannelSettings]);
 
   // CANVAS RESIZING /////////////////////////////////////////////////
 

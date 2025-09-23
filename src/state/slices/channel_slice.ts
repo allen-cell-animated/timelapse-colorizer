@@ -19,7 +19,7 @@ export type ChannelSettings = {
 
 export type ChannelSliceState = {
   channelSettings: ChannelSettings[];
-  syncChannelDataRange: (channelIndex: number) => void;
+  getChannelDataRange: (channelIndex: number) => null | [number, number];
   applyChannelRangePreset: (channelIndex: number, preset: ChannelRangePreset) => void;
 };
 
@@ -27,7 +27,7 @@ export type ChannelSliceSerializableState = Pick<ChannelSliceState, "channelSett
 
 export type ChannelSliceActions = {
   updateChannelSettings: (index: number, settings: Partial<ChannelSettings>) => void;
-  setSyncChannelDataRangeCallback: (callback: (channelIndex: number) => void) => void;
+  setGetChannelDataRangeCallback: (callback: (channelIndex: number) => null | [number, number]) => void;
   setApplyChannelRangePresetCallback: (callback: (channelIndex: number, preset: ChannelRangePreset) => void) => void;
 };
 
@@ -46,8 +46,10 @@ export const createChannelSlice: StateCreator<ChannelSlice, [], [], ChannelSlice
   },
 
   // Callbacks
-  syncChannelDataRange: () => {},
-  setSyncChannelDataRangeCallback: (callback) => set({ syncChannelDataRange: callback }),
+  getChannelDataRange: () => {
+    return null;
+  },
+  setGetChannelDataRangeCallback: (callback) => set({ getChannelDataRange: callback }),
   applyChannelRangePreset: () => {},
   setApplyChannelRangePresetCallback: (callback) => set({ applyChannelRangePreset: callback }),
 });
