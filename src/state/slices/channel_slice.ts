@@ -12,13 +12,14 @@ export type ChannelSettings = {
   opacity: number;
   min: number;
   max: number;
-  // TODO: Move these outside, since they don't affect rendering?
   dataMin: number;
   dataMax: number;
 };
 
 export type ChannelSliceState = {
   channelSettings: ChannelSettings[];
+
+  // Stored callbacks:
   getChannelDataRange: (channelIndex: number) => null | [number, number];
   applyChannelRangePreset: (channelIndex: number, preset: ChannelRangePreset) => void;
 };
@@ -35,6 +36,12 @@ export type ChannelSlice = ChannelSliceState & ChannelSliceActions;
 
 export const createChannelSlice: StateCreator<ChannelSlice, [], [], ChannelSlice> = (set, _get) => ({
   channelSettings: [],
+  getChannelDataRange: () => {
+    return null;
+  },
+  applyChannelRangePreset: () => {},
+
+  // Actions
   updateChannelSettings: (index, settings) => {
     set((state) => {
       const newSettings = [...state.channelSettings];
@@ -44,24 +51,21 @@ export const createChannelSlice: StateCreator<ChannelSlice, [], [], ChannelSlice
       return { channelSettings: newSettings };
     });
   },
-
-  // Callbacks
-  getChannelDataRange: () => {
-    return null;
-  },
+  // Callback setters
   setGetChannelDataRangeCallback: (callback) => set({ getChannelDataRange: callback }),
-  applyChannelRangePreset: () => {},
   setApplyChannelRangePresetCallback: (callback) => set({ applyChannelRangePreset: callback }),
 });
 
 export const addChannelDerivedStateSubscribers = (store: SubscribableStore<ChannelSlice & DatasetSlice>): void => {
-  // Listen for changes in dataset, reset non-matching channels
+  // When the dataset updates, create a number of default channel settings equal
+  // to the number of backdrop channels in the dataset.
   addDerivedStateSubscriber(
     store,
     (state) => ({ dataset: state.dataset }),
     ({ dataset }) => {
       if (dataset && dataset.frames3d && dataset.frames3d.backdrops) {
-        // TODO: Add color presets for new channels.
+        // TODO: Add a color palette for channels. Ask scientists about
+        // suggested default behavior.
         // TODO: Preserve colors when switching between datasets.
         const newChannelSettings = dataset.frames3d.backdrops.map((backdrop) => ({
           // TODO: Once controls are added for channel settings, update initial
