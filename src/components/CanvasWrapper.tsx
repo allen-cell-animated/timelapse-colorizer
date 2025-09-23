@@ -5,7 +5,13 @@ import styled from "styled-components";
 import { Vector2 } from "three";
 
 import { ImagesIconSVG, ImagesSlashIconSVG, NoImageSVG, TagIconSVG, TagSlashIconSVG } from "../assets";
-import { AnnotationSelectionMode, LoadTroubleshooting, PixelIdInfo, TabType } from "../colorizer/types";
+import {
+  AnnotationSelectionMode,
+  ChannelRangePreset,
+  LoadTroubleshooting,
+  PixelIdInfo,
+  TabType,
+} from "../colorizer/types";
 import { CANVAS_ASPECT_RATIO } from "../constants";
 import { AnnotationState } from "../hooks";
 import { FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter, VisuallyHidden } from "../styles/utils";
@@ -138,6 +144,9 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const clearTrack = useViewerStateStore((state) => state.clearTrack);
   const collection = useViewerStateStore((state) => state.collection);
   const dataset = useViewerStateStore((state) => state.dataset);
+  const updateChannelSettings = useViewerStateStore((state) => state.updateChannelSettings);
+  const setGetChannelDataRangeCallback = useViewerStateStore((state) => state.setGetChannelDataRangeCallback);
+  const setApplyChannelRangePresetCallback = useViewerStateStore((state) => state.setApplyChannelRangePresetCallback);
   const setBackdropVisible = useViewerStateStore((state) => state.setBackdropVisible);
   const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
   const setTrack = useViewerStateStore((state) => state.setTrack);
@@ -253,6 +262,23 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     props.annotationState.currentLabelIdx,
     props.annotationState.visible,
   ]);
+
+  // 3D CALLBACKS /////////////////////////////////////////////////
+
+  useEffect(() => {
+    const getBackdropChannelRangePreset = canv.getBackdropChannelRangePreset.bind(canv);
+    setApplyChannelRangePresetCallback((channelIndex: number, preset: ChannelRangePreset) => {
+      const range = getBackdropChannelRangePreset(channelIndex, preset);
+      if (range) {
+        updateChannelSettings(channelIndex, { min: range[0], max: range[1] });
+      }
+    });
+  }, [canv, setApplyChannelRangePresetCallback, updateChannelSettings]);
+
+  useEffect(() => {
+    const boundGetBackdropChannelDataRange = canv.getBackdropChannelDataRange.bind(canv);
+    setGetChannelDataRangeCallback(boundGetBackdropChannelDataRange);
+  }, [canv, setGetChannelDataRangeCallback, updateChannelSettings]);
 
   // CANVAS RESIZING /////////////////////////////////////////////////
 
