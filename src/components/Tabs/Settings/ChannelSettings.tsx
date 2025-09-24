@@ -35,7 +35,6 @@ const VerticalDivider = styled.div`
 const ChannelSettingsContainer = styled(FlexColumn)`
   display: grid;
   row-gap: 16px;
-  padding: 0 0 16px 0;
 
   // Align color pickers after channel label names
   // label - color picker - vertical separator - channel toggle - collapse button
@@ -155,7 +154,7 @@ export default function ChannelSettings(): ReactElement {
   const channelSettingElements = useMemo(() => {
     if (!dataset || !dataset.frames3d || !dataset.frames3d.backdrops) {
       return (
-        <div>
+        <div style={{ whiteSpace: "nowrap" }}>
           <p style={{ color: theme.color.text.hint }}>No channels available</p>
         </div>
       );
