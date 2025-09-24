@@ -18,8 +18,7 @@ import LabeledSlider from "../Inputs/LabeledSlider";
 import WrappedColorPicker from "../Inputs/WrappedColorPicker";
 import { SettingsContainer, SettingsItem } from "../SettingsContainer";
 import ToggleCollapse from "../ToggleCollapse";
-import ChannelSettings from "./Settings/ChannelSettings";
-import VectorFieldSettings from "./Settings/VectorFieldSettings";
+import { ChannelSettings, VectorFieldSettings } from "./Settings";
 
 const enum SettingsHtmlIds {
   SHOW_BACKDROPS_CHECKBOX = "show-backdrops-checkbox",
