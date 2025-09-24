@@ -4,7 +4,7 @@ import React, { ReactElement } from "react";
 import styled from "styled-components";
 
 import { ChannelRangePreset } from "../../../colorizer";
-import { ViewerStoreState } from "../../../state/slices";
+import { ChannelSetting } from "../../../state/slices";
 import { FlexColumn, FlexRowAlignCenter } from "../../../styles/utils";
 import { antToThreeColor, threeToAntColorWithAlpha } from "../../../utils/color_utils";
 
@@ -13,11 +13,11 @@ import WrappedColorPicker from "../../Inputs/WrappedColorPicker";
 import { SettingsContainer, SettingsItem } from "../../SettingsContainer";
 import ToggleCollapse from "../../ToggleCollapse";
 
-type ChannelSettingProps = {
+type ChannelSettingControlProps = {
   name: string;
   channelIndex: number;
-  settings: ViewerStoreState["channelSettings"][number];
-  updateSettings: (settings: Partial<ViewerStoreState["channelSettings"][number]>) => void;
+  settings: ChannelSetting;
+  updateSettings: (settings: Partial<ChannelSetting>) => void;
   onClickSync: () => void;
   syncDisabled?: boolean;
   onClickRangePreset: (preset: ChannelRangePreset) => void;
@@ -31,7 +31,7 @@ export const VerticalDivider = styled.div`
 `;
 
 /** Controls for an individual channel's settings */
-export function ChannelSetting(props: ChannelSettingProps): ReactElement {
+export function ChannelSettingControl(props: ChannelSettingControlProps): ReactElement {
   const { name, channelIndex, settings, updateSettings, onClickSync, onClickRangePreset } = props;
   const rangeSliderId = `settings-channel-range-slider-${channelIndex}`;
 
@@ -68,7 +68,7 @@ export function ChannelSetting(props: ChannelSettingProps): ReactElement {
               <Button onClick={() => onClickRangePreset(ChannelRangePreset.AUTO_2)}>Auto 2</Button>
             </FlexRowAlignCenter>
             <FlexRowAlignCenter $gap={8} style={{ width: "100%" }}>
-              <div style={{ minWidth: "calc(min(450px, 100%))" }}>
+              <div style={{ minWidth: "calc(min(450px, 75%))" }}>
                 <LabeledSlider
                   id={rangeSliderId}
                   type="range"

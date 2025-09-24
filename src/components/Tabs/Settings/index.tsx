@@ -1,7 +1,6 @@
-import ChannelSettings from "./ChannelSettings";
+import ChannelSettingsControl from "./ChannelSettingsControl";
 import VectorFieldSettings from "./VectorFieldSettings";
 
 export * from "./constants";
 
-export { VectorFieldSettings };
-export { ChannelSettings };
+export { VectorFieldSettings, ChannelSettingsControl };

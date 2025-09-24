@@ -7,7 +7,7 @@ import { FlexColumn } from "../../../styles/utils";
 
 import { AppThemeContext } from "../../AppStyle";
 import ToggleCollapse from "../../ToggleCollapse";
-import { ChannelSetting, VerticalDivider } from "./ChannelSetting";
+import { ChannelSettingControl, VerticalDivider } from "./ChannelSettingControl";
 
 const ChannelSettingsContainer = styled(FlexColumn)`
   display: grid;
@@ -45,7 +45,7 @@ const ChannelSettingsContainer = styled(FlexColumn)`
 /**
  * Settings for one or more channels
  */
-export default function ChannelSettings(): ReactElement {
+export default function ChannelSettingsControl(): ReactElement {
   const theme = useContext(AppThemeContext);
 
   const dataset = useViewerStateStore((state) => state.dataset);
@@ -93,7 +93,7 @@ export default function ChannelSettings(): ReactElement {
         (channelDataRange[0] === channelSettings[index].dataMin &&
           channelDataRange[1] === channelSettings[index].dataMax);
       return (
-        <ChannelSetting
+        <ChannelSettingControl
           name={name}
           key={index}
           channelIndex={index}
