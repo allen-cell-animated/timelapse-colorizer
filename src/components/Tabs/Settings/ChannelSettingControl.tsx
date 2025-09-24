@@ -1,7 +1,6 @@
 import { SyncOutlined } from "@ant-design/icons";
 import { Button, Tooltip } from "antd";
 import React, { ReactElement } from "react";
-import styled from "styled-components";
 
 import { ChannelRangePreset } from "../../../colorizer";
 import { ChannelSetting } from "../../../state/slices";
@@ -23,29 +22,19 @@ type ChannelSettingControlProps = {
   onClickRangePreset: (preset: ChannelRangePreset) => void;
 };
 
-export const VerticalDivider = styled.div`
-  width: 1px;
-  background-color: var(--color-borders);
-  margin: 0 12px;
-  height: 14px;
-`;
-
 /** Controls for an individual channel's settings */
 export function ChannelSettingControl(props: ChannelSettingControlProps): ReactElement {
   const { name, channelIndex, settings, updateSettings, onClickSync, onClickRangePreset } = props;
   const rangeSliderId = `settings-channel-range-slider-${channelIndex}`;
 
   const collapseLabel = (
-    <>
-      <WrappedColorPicker
-        value={threeToAntColorWithAlpha(settings.color, settings.opacity)}
-        onChange={(antdColor) => {
-          const { color, alpha: opacity } = antToThreeColor(antdColor);
-          updateSettings({ color, opacity });
-        }}
-      />
-      <VerticalDivider />
-    </>
+    <WrappedColorPicker
+      value={threeToAntColorWithAlpha(settings.color, settings.opacity)}
+      onChange={(antdColor) => {
+        const { color, alpha: opacity } = antToThreeColor(antdColor);
+        updateSettings({ color, opacity });
+      }}
+    />
   );
 
   return (
@@ -56,9 +45,11 @@ export function ChannelSettingControl(props: ChannelSettingControlProps): ReactE
       checkboxLabel="Show channel"
       onToggleChange={(checked) => updateSettings({ visible: checked })}
       preToggleContent={collapseLabel}
-      contentIndentPx={24}
+      contentIndentPx={12}
+      labelStyle={{ fontSize: "var(--font-size-body)" }}
+      showCollapseButton={false}
     >
-      <SettingsContainer style={{ paddingTop: 4 }} indentPx={30}>
+      <SettingsContainer style={{ paddingTop: 4 }} indentPx={45} labelWidth="45px">
         <SettingsItem label="Range" htmlFor={rangeSliderId} labelStyle={{ height: "fit-content", paddingTop: 3 }}>
           <FlexColumn $gap={6} style={{ alignItems: "flex-start", width: "100%" }}>
             <FlexRowAlignCenter $gap={8}>

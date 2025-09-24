@@ -3,11 +3,11 @@ import React, { ReactElement, useCallback, useContext, useMemo } from "react";
 import styled from "styled-components";
 
 import { useViewerStateStore } from "../../../state";
-import { FlexColumn } from "../../../styles/utils";
+import { FlexColumn, FlexRowAlignCenter } from "../../../styles/utils";
 
 import { AppThemeContext } from "../../AppStyle";
 import ToggleCollapse from "../../ToggleCollapse";
-import { ChannelSettingControl, VerticalDivider } from "./ChannelSettingControl";
+import { ChannelSettingControl } from "./ChannelSettingControl";
 
 /** Approximate height of each ChannelSettingControl. */
 const CHANNEL_SETTING_CONTROL_HEIGHT_PX = 120;
@@ -121,8 +121,7 @@ export default function ChannelSettingsControl(): ReactElement {
     <ToggleCollapse
       label={"Channels"}
       postToggleContent={
-        <>
-          <VerticalDivider />
+        <FlexRowAlignCenter style={{ marginTop: 2 }}>
           <Checkbox
             checked={areAllChannelsVisible}
             indeterminate={!areNoChannelsVisible && !areAllChannelsVisible}
@@ -133,9 +132,10 @@ export default function ChannelSettingsControl(): ReactElement {
           >
             Show all channels
           </Checkbox>
-        </>
+        </FlexRowAlignCenter>
       }
       maxContentHeightPx={maxChannelControlsHeight}
+      contentIndentPx={16}
     >
       <div style={{ marginRight: "20px", paddingTop: "4px" }}>
         <ChannelSettingsContainer>{channelSettingElements}</ChannelSettingsContainer>
