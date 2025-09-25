@@ -50,7 +50,7 @@ export default function ChannelSettingsControl(): ReactElement {
 
   const dataset = useViewerStateStore((state) => state.dataset);
   const channelSettings = useViewerStateStore((state) => state.channelSettings);
-  // Used as a depenedency; assumes that channel data range changes per frame
+  // Used as a dependency; assumes that channel data range changes per frame
   const currentFrame = useViewerStateStore((state) => state.currentFrame);
   const updateChannelSettings = useViewerStateStore((state) => state.updateChannelSettings);
   const getChannelDataRange = useViewerStateStore((state) => state.getChannelDataRange);
