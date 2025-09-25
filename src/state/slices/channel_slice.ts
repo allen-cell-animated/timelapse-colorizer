@@ -6,7 +6,7 @@ import { SerializedStoreData, SubscribableStore } from "../types";
 import { addDerivedStateSubscriber } from "../utils/store_utils";
 import { DatasetSlice } from "./dataset_slice";
 
-export type ChannelSettings = {
+export type ChannelSetting = {
   visible: boolean;
   color: Color;
   opacity: number;
@@ -17,7 +17,7 @@ export type ChannelSettings = {
 };
 
 export type ChannelSliceState = {
-  channelSettings: ChannelSettings[];
+  channelSettings: ChannelSetting[];
 
   // Stored callbacks:
   getChannelDataRange: (channelIndex: number) => null | [number, number];
@@ -27,7 +27,7 @@ export type ChannelSliceState = {
 export type ChannelSliceSerializableState = Pick<ChannelSliceState, "channelSettings">;
 
 export type ChannelSliceActions = {
-  updateChannelSettings: (index: number, settings: Partial<ChannelSettings>) => void;
+  updateChannelSettings: (index: number, settings: Partial<ChannelSetting>) => void;
   setGetChannelDataRangeCallback: (callback: (channelIndex: number) => null | [number, number]) => void;
   setApplyChannelRangePresetCallback: (callback: (channelIndex: number, preset: ChannelRangePreset) => void) => void;
 };

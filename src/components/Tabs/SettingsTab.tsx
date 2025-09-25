@@ -18,7 +18,7 @@ import LabeledSlider from "../Inputs/LabeledSlider";
 import WrappedColorPicker from "../Inputs/WrappedColorPicker";
 import { SettingsContainer, SettingsItem } from "../SettingsContainer";
 import ToggleCollapse from "../ToggleCollapse";
-import VectorFieldSettings from "./Settings/VectorFieldSettings";
+import { ChannelSettingsControl, VectorFieldSettings } from "./Settings";
 
 const enum SettingsHtmlIds {
   SHOW_BACKDROPS_CHECKBOX = "show-backdrops-checkbox",
@@ -369,6 +369,11 @@ export default function SettingsTab(): ReactElement {
       </ToggleCollapse>
 
       <StyledHorizontalRule />
+
+      <ChannelSettingsControl />
+
+      <StyledHorizontalRule />
+
       <ToggleCollapse
         label="Vector arrows"
         toggleChecked={vectorVisible}
