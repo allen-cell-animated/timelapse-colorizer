@@ -9,6 +9,9 @@ import { AppThemeContext } from "../../AppStyle";
 import ToggleCollapse from "../../ToggleCollapse";
 import { ChannelSettingControl, VerticalDivider } from "./ChannelSettingControl";
 
+/** Approximate height of each ChannelSettingControl. */
+const CHANNEL_SETTING_CONTROL_HEIGHT_PX = 120;
+
 const ChannelSettingsContainer = styled(FlexColumn)`
   display: grid;
   row-gap: 16px;
@@ -27,9 +30,6 @@ const ChannelSettingsContainer = styled(FlexColumn)`
     column-gap: 8px;
   }
 
-  & > .toggle-collapse > .toggle-collapse-control-row {
-  }
-
   & > .toggle-collapse > .toggle-collapse-control-row > .toggle-collapse-header {
     // Leave unused column for toggle button to the right
     grid-column: 1 / -2;
@@ -43,14 +43,14 @@ const ChannelSettingsContainer = styled(FlexColumn)`
 `;
 
 /**
- * Settings for one or more channels
+ * Controls for for one or more channel settings, within a collapsible section.
  */
 export default function ChannelSettingsControl(): ReactElement {
   const theme = useContext(AppThemeContext);
 
   const dataset = useViewerStateStore((state) => state.dataset);
   const channelSettings = useViewerStateStore((state) => state.channelSettings);
-  // Assume that channel data range changes per frame
+  // Used as a depenedency; assumes that channel data range changes per frame
   const currentFrame = useViewerStateStore((state) => state.currentFrame);
   const updateChannelSettings = useViewerStateStore((state) => state.updateChannelSettings);
   const getChannelDataRange = useViewerStateStore((state) => state.getChannelDataRange);
@@ -58,6 +58,7 @@ export default function ChannelSettingsControl(): ReactElement {
 
   const areAllChannelsVisible = channelSettings.every((setting) => setting.visible);
   const areNoChannelsVisible = channelSettings.every((setting) => !setting.visible);
+  const maxChannelControlsHeight = CHANNEL_SETTING_CONTROL_HEIGHT_PX * channelSettings.length + 100;
 
   const handleShowAllChannelsChange = (checked: boolean): void => {
     channelSettings.forEach((_, index) => {
@@ -77,6 +78,7 @@ export default function ChannelSettingsControl(): ReactElement {
 
   const channelSettingElements = useMemo(() => {
     if (!dataset || !dataset.frames3d || !dataset.frames3d.backdrops) {
+      // Placeholder
       return (
         <div style={{ whiteSpace: "nowrap" }}>
           <p style={{ color: theme.color.text.hint }}>No channels available</p>
@@ -105,7 +107,15 @@ export default function ChannelSettingsControl(): ReactElement {
         />
       );
     });
-  }, [channelSettings, dataset, currentFrame, updateChannelSettings, syncChannelDataRange, applyChannelRange]);
+  }, [
+    channelSettings,
+    dataset,
+    currentFrame,
+    getChannelDataRange,
+    updateChannelSettings,
+    syncChannelDataRange,
+    applyChannelRange,
+  ]);
 
   return (
     <ToggleCollapse
@@ -125,6 +135,7 @@ export default function ChannelSettingsControl(): ReactElement {
           </Checkbox>
         </>
       }
+      maxContentHeightPx={maxChannelControlsHeight}
     >
       <div style={{ marginRight: "20px", paddingTop: "4px" }}>
         <ChannelSettingsContainer>{channelSettingElements}</ChannelSettingsContainer>

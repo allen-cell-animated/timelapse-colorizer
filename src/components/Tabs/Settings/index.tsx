@@ -3,4 +3,4 @@ import VectorFieldSettings from "./VectorFieldSettings";
 
 export * from "./constants";
 
-export { VectorFieldSettings, ChannelSettingsControl };
+export { ChannelSettingsControl,VectorFieldSettings };

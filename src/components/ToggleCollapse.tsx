@@ -126,7 +126,7 @@ export default function ToggleCollapse(inputProps: PropsWithChildren<ToggleColla
   //// Rendering ////
 
   const toggleId = `toggle-collapse-${props.label.replace(/\s+/g, "-").toLowerCase()}`;
-  // Disable transition on initial rendering so the collapse does not animate
+  // Disable transition when not animating so the collapse auto-resizes to content
   const heightTransitionDuration = isAnimating ? `${ANIMATION_DURATION_MS}ms` : "0ms";
   const showOverflow = isExpanded && !isAnimating;
 
