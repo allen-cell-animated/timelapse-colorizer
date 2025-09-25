@@ -32,6 +32,7 @@ export type RenderCanvasStateParams = Pick<
   | "vectorScaleFactor"
   | "backdropKey"
   | "backdropVisible"
+  | "channelSettings"
   | "objectOpacity"
   | "backdropSaturation"
   | "backdropBrightness"
@@ -65,6 +66,7 @@ export const renderCanvasStateParamsSelector = (state: ViewerStoreState): Render
   vectorScaleFactor: state.vectorScaleFactor,
   backdropKey: state.backdropKey,
   backdropVisible: state.backdropVisible,
+  channelSettings: state.channelSettings,
   objectOpacity: state.objectOpacity,
   backdropSaturation: state.backdropSaturation,
   backdropBrightness: state.backdropBrightness,

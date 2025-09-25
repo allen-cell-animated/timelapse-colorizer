@@ -9,6 +9,13 @@ import {
   createBackdropSlice,
 } from "./backdrop_slice";
 import {
+  addChannelDerivedStateSubscribers,
+  ChannelSliceActions,
+  ChannelSliceSerializableState,
+  ChannelSliceState,
+  createChannelSlice,
+} from "./channel_slice";
+import {
   CollectionSliceActions,
   CollectionSliceSerializableState,
   CollectionSliceState,
@@ -58,6 +65,7 @@ import {
 } from "./vector_slice";
 
 export * from "./backdrop_slice";
+export * from "./channel_slice";
 export * from "./collection_slice";
 export * from "./color_ramp_slice";
 export * from "./config_slice";
@@ -68,6 +76,7 @@ export * from "./time_slice";
 export * from "./vector_slice";
 
 export type ViewerStoreState = BackdropSliceState &
+  ChannelSliceState &
   CollectionSliceState &
   ColorRampSliceState &
   ConfigSliceState &
@@ -78,6 +87,7 @@ export type ViewerStoreState = BackdropSliceState &
   VectorSliceState;
 
 export type ViewerStoreActions = BackdropSliceActions &
+  ChannelSliceActions &
   CollectionSliceActions &
   ColorRampSliceActions &
   ConfigSliceActions &
@@ -92,6 +102,7 @@ export type ViewerStoreActions = BackdropSliceActions &
  * ViewerStoreState.
  */
 export type ViewerStoreSerializableState = BackdropSliceSerializableState &
+  ChannelSliceSerializableState &
   CollectionSliceSerializableState &
   ColorRampSliceSerializableState &
   ConfigSliceSerializableState &
@@ -111,6 +122,7 @@ export type ViewerStore = ViewerStoreState & ViewerStoreActions;
 
 export const viewerStateStoreCreator: StateCreator<ViewerStore> = (...a) => ({
   ...createBackdropSlice(...a),
+  ...createChannelSlice(...a),
   ...createCollectionSlice(...a),
   ...createColorRampSlice(...a),
   ...createConfigSlice(...a),
@@ -128,6 +140,7 @@ export const viewerStateStoreCreator: StateCreator<ViewerStore> = (...a) => ({
  */
 export const addStoreStateSubscribers = (store: SubscribableStore<ViewerStore>): void => {
   addBackdropDerivedStateSubscribers(store);
+  addChannelDerivedStateSubscribers(store);
   addColorRampDerivedStateSubscribers(store);
   addScatterPlotSliceDerivedStateSubscribers(store);
   addThresholdDerivedStateSubscribers(store);
