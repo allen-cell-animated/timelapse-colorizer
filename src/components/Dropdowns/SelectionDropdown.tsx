@@ -11,8 +11,8 @@ import StyledSelect from "./StyledSelect";
 
 // TODO: Have the dropdown show a loading indicator after a selection has been
 // made but before the prop value updates. -> this is especially noticeable when
-// slow datasets. Is there a way we can do this using async promises, maybe? If
-// the promise rejects, discard the changed value?
+// loading large datasets. Is there a way we can do this using async promises,
+// maybe? If the promise rejects, discard the changed value?
 
 type SelectionDropdownProps = {
   /** Text label to include with the dropdown. If null or undefined, hides the label. */
