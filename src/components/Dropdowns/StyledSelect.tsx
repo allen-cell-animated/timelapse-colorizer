@@ -6,6 +6,7 @@ import styled, { css } from "styled-components";
 import { Color } from "three";
 
 import { DropdownSVG } from "../../assets";
+import { removeUndefinedProperties } from "../../state/utils/data_validation";
 import { SelectItem } from "./types";
 
 import { AppTheme, AppThemeContext } from "../AppStyle";
@@ -15,10 +16,17 @@ type AntStyledSelectProps<
   Group extends GroupBase<SelectItem> = GroupBase<SelectItem>
 > = StateManagerProps<SelectItem, IsMulti, Group> & {
   type?: ButtonProps["type"] | "outlined";
-  width?: string;
+  controlWidth?: string;
+  menuWidth?: string;
   styles?: StylesConfig<SelectItem, IsMulti, Group>;
-  controlContainerStyle?: React.CSSProperties;
 };
+
+const defaultProps = {
+  type: "outlined",
+  controlWidth: "calc(15vw + 30px)",
+  menuWidth: "max-content",
+  menuPlacement: "auto",
+} as const;
 
 const COLOR_INDICATOR_BASE_STYLE = {
   display: "block",
@@ -179,12 +187,16 @@ const SelectContainer = styled.div<{ $type: ButtonProps["type"] | "outlined" }>`
   }
 `;
 
-const getCustomStyles = (theme: AppTheme, width: string): StylesConfig<SelectItem, false, GroupBase<SelectItem>> => ({
+const getCustomStyles = (
+  theme: AppTheme,
+  controlWidth: string,
+  menuWidth: string
+): StylesConfig<SelectItem, false, GroupBase<SelectItem>> => ({
   control: (base, { isFocused }) => ({
     ...base,
     height: theme.controls.height,
     minHeight: theme.controls.height,
-    width: `calc(${width})`,
+    width: controlWidth,
     borderRadius: theme.controls.radiusLg,
     borderColor: isFocused ? theme.color.button.outlineActive : theme.color.layout.borders,
   }),
@@ -219,7 +231,7 @@ const getCustomStyles = (theme: AppTheme, width: string): StylesConfig<SelectIte
   menu: (base) => ({
     ...base,
     zIndex: 1050, // Standard z-index for Ant Design popups
-    width: "max-content",
+    width: menuWidth,
     minWidth: base.width,
     maxWidth: "calc(min(50vw, 500px))",
     borderRadius: theme.controls.radiusLg,
@@ -239,7 +251,7 @@ const getCustomStyles = (theme: AppTheme, width: string): StylesConfig<SelectIte
     // Style to match Ant dropdowns
     borderRadius: 4,
     padding: "4px 8px",
-    width: `calc(${styles.width})`,
+    width: styles.width,
     color: isSelected ? theme.color.dropdown.textSelected : theme.color.text.primary,
     backgroundColor: isDisabled
       ? undefined
@@ -288,15 +300,19 @@ const DropdownIndicator = (props: DropdownIndicatorProps<SelectItem>): ReactElem
 export default function AntStyledSelect<
   IsMulti extends boolean = false,
   Group extends GroupBase<SelectItem> = GroupBase<SelectItem>
->(props: AntStyledSelectProps<IsMulti, Group>): ReactElement {
+>(inputProps: AntStyledSelectProps<IsMulti, Group>): ReactElement {
+  const props = { ...defaultProps, ...removeUndefinedProperties(inputProps) };
   const theme = React.useContext(AppThemeContext);
-  const customStyles = useMemo(() => getCustomStyles(theme, props.width ?? "15vw + 30px"), [theme]);
+  const customStyles = useMemo(
+    () => getCustomStyles(theme, props.controlWidth, props.menuWidth),
+    [theme, props.controlWidth, props.menuWidth]
+  );
 
   return (
-    <SelectContainer $type={props.type || "outlined"} style={props.controlContainerStyle}>
+    <SelectContainer $type={props.type} style={{ width: "100%" }}>
       <Select
         {...props}
-        menuPlacement={props.menuPlacement || "auto"}
+        menuPlacement={props.menuPlacement}
         components={{ DropdownIndicator, ...props.components }}
         styles={{ ...(customStyles as unknown as StylesConfig<SelectItem, IsMulti, Group>), ...props.styles }}
       />
