@@ -28,7 +28,7 @@ export function ImageToggleButton(props: ToggleImageButtonProps): ReactElement {
       trigger={["hover", "focus"]}
     >
       <IconButton
-        type={props.visible ? "primary" : "link"}
+        type={props.visible && !props.disabled ? "primary" : "link"}
         onClick={() => props.setVisible(!props.visible)}
         disabled={props.disabled}
       >

@@ -4,10 +4,10 @@ import React, { ReactElement, ReactNode, useContext, useRef } from "react";
 import { TabType } from "../../colorizer";
 import { useViewerStateStore } from "../../state";
 import { VisuallyHidden } from "../../styles/utils";
-import { makeLinkStyleButton } from "./utils";
 
 import { AppThemeContext } from "../AppStyle";
 import { ImageToggleButton } from "../Buttons/ImageToggleButton";
+import TooltipButtonStyleLink from "../Buttons/TooltipButtonStyleLink";
 
 /**
  * Icon button that toggles 3D channels, and includes a tooltip that
@@ -24,7 +24,7 @@ export default function ChannelToggleButton(): ReactElement {
   const channelData = dataset?.frames3d?.backdrops;
   const hasChannels = channelData !== undefined && channelData.length > 0;
   const channelVisibility = channelSettings.map((setting) => setting.visible);
-  const isAnyChannelVisible = channelSettings.some((setting) => setting.visible);
+  const isAnyChannelVisible = hasChannels && channelSettings.some((setting) => setting.visible);
 
   // By default, enable first three channels
   const lastVisibleChannelConfig = useRef<boolean[]>([true, true, true]);
@@ -51,14 +51,11 @@ export default function ChannelToggleButton(): ReactElement {
     });
   }
   tooltipContents.push(
-    makeLinkStyleButton(
-      theme,
-      "channel-viewer-settings-link",
-      () => setOpenTab(TabType.SETTINGS),
+    <TooltipButtonStyleLink onClick={() => setOpenTab(TabType.SETTINGS)} key="channel-settings-link">
       <span>
         {"Viewer settings > Channels"} <VisuallyHidden>(opens settings tab)</VisuallyHidden>
       </span>
-    )
+    </TooltipButtonStyleLink>
   );
 
   const onSetVisible = (visible: boolean): void => {

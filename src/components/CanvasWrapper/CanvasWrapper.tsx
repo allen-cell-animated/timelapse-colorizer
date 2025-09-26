@@ -15,7 +15,6 @@ import {
 import { CANVAS_ASPECT_RATIO } from "../../constants";
 import { AnnotationState } from "../../hooks";
 import { FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter, VisuallyHidden } from "../../styles/utils";
-import { makeLinkStyleButton } from "../CanvasWrapper/utils";
 
 import { LabelData, LabelType } from "../../colorizer/AnnotationData";
 import CanvasOverlay from "../../colorizer/CanvasOverlay";
@@ -23,6 +22,7 @@ import { renderCanvasStateParamsSelector } from "../../colorizer/IRenderCanvas";
 import { useViewerStateStore } from "../../state/ViewerState";
 import { AppThemeContext } from "../AppStyle";
 import { AlertBannerProps } from "../Banner";
+import TooltipButtonStyleLink from "../Buttons/TooltipButtonStyleLink";
 import BackdropToggleButton from "../CanvasWrapper/BackdropToggleButton";
 import IconButton from "../IconButton";
 import LoadingSpinner from "../LoadingSpinner";
@@ -544,14 +544,11 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     </span>
   );
   annotationTooltipContents.push(
-    makeLinkStyleButton(
-      theme,
-      "annotation-link",
-      onAnnotationLinkClicked,
+    <TooltipButtonStyleLink key="annotation-link" onClick={onAnnotationLinkClicked}>
       <span>
         View and edit annotations <VisuallyHidden>(opens annotations tab)</VisuallyHidden>
       </span>
-    )
+    </TooltipButtonStyleLink>
   );
   const labelData: LabelData | undefined = labels[props.annotationState.currentLabelIdx ?? 0];
   const shouldShowRangeSelectionHotkey = props.annotationState.baseSelectionMode !== AnnotationSelectionMode.RANGE;
