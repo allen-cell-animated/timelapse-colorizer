@@ -5,6 +5,7 @@ import styled, { css } from "styled-components";
 import { removeUndefinedProperties } from "../state/utils/data_validation";
 
 const SETTINGS_ITEM_CLASS = "settings-item";
+export const DEFAULT_SETTINGS_LABEL_WIDTH_PX = 100;
 
 type SettingsItemProps = {
   /** A string or ReactElement label, placed inside of a `label` tag.*/
@@ -130,7 +131,7 @@ type SettingsContainerProps = {
 };
 
 const defaultSettingsContainerProps = {
-  labelWidth: "100px",
+  labelWidth: `${DEFAULT_SETTINGS_LABEL_WIDTH_PX}px`,
   gapPx: 6,
   indentPx: 0,
 };

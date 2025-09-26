@@ -1,16 +1,19 @@
-import { SyncOutlined } from "@ant-design/icons";
 import { Button, Tooltip } from "antd";
 import React, { ReactElement } from "react";
+import styled from "styled-components";
 
 import { ChannelRangePreset } from "../../../colorizer";
 import { ChannelSetting } from "../../../state/slices";
-import { FlexColumn, FlexRowAlignCenter } from "../../../styles/utils";
+import { FlexColumn, FlexRowAlignCenter, VisuallyHidden } from "../../../styles/utils";
 import { antToThreeColor, threeToAntColorWithAlpha } from "../../../utils/color_utils";
 
 import LabeledSlider from "../../Inputs/LabeledSlider";
 import WrappedColorPicker from "../../Inputs/WrappedColorPicker";
-import { SettingsContainer, SettingsItem } from "../../SettingsContainer";
+import { DEFAULT_SETTINGS_LABEL_WIDTH_PX, SettingsContainer, SettingsItem } from "../../SettingsContainer";
 import ToggleCollapse from "../../ToggleCollapse";
+
+const INDENT_PX = 12;
+const RANGE_LABEL_WIDTH_PX = DEFAULT_SETTINGS_LABEL_WIDTH_PX - INDENT_PX * 2;
 
 type ChannelSettingControlProps = {
   name: string;
@@ -18,9 +21,15 @@ type ChannelSettingControlProps = {
   settings: ChannelSetting;
   updateSettings: (settings: Partial<ChannelSetting>) => void;
   onClickSync: () => void;
-  syncDisabled?: boolean;
   onClickRangePreset: (preset: ChannelRangePreset) => void;
 };
+
+const StyledToggleCollapse = styled(ToggleCollapse)`
+  // Hide extra padding on empty checkbox label
+  & .toggle-collapse-header .ant-checkbox-wrapper span {
+    padding: 0;
+  }
+`;
 
 /** Controls for an individual channel's settings */
 export function ChannelSettingControl(props: ChannelSettingControlProps): ReactElement {
@@ -38,21 +47,25 @@ export function ChannelSettingControl(props: ChannelSettingControlProps): ReactE
   );
 
   return (
-    <ToggleCollapse
+    <StyledToggleCollapse
       label={name}
       toggleChecked={settings.visible}
       toggleType="checkbox"
-      checkboxLabel="Show channel"
+      checkboxLabel={<VisuallyHidden>Show channel</VisuallyHidden>}
       onToggleChange={(checked) => updateSettings({ visible: checked })}
-      preToggleContent={collapseLabel}
-      contentIndentPx={12}
-      labelStyle={{ fontSize: "var(--font-size-body)" }}
+      postToggleContent={collapseLabel}
+      contentIndentPx={INDENT_PX}
+      contentPaddingPx={6}
+      // Hide collapse button, and allow the section to toggle open/closed based
+      // on whether the channel is visible
       showCollapseButton={false}
+      // Match visually with other setting labels
+      labelStyle={{ fontSize: "var(--font-size-body)", color: "var(--color-text-secondary)" }}
     >
-      <SettingsContainer style={{ paddingTop: 4 }} indentPx={45} labelWidth="45px">
+      <SettingsContainer indentPx={INDENT_PX} labelWidth={`${RANGE_LABEL_WIDTH_PX}px`}>
         <SettingsItem label="Range" htmlFor={rangeSliderId} labelStyle={{ height: "fit-content", paddingTop: 3 }}>
           <FlexColumn $gap={6} style={{ alignItems: "flex-start", width: "100%" }}>
-            <FlexRowAlignCenter $gap={8}>
+            <FlexRowAlignCenter $gap={4}>
               <Button onClick={() => onClickRangePreset(ChannelRangePreset.NONE)}>None</Button>
               <Button onClick={() => onClickRangePreset(ChannelRangePreset.DEFAULT)}>Default</Button>
               <Button onClick={() => onClickRangePreset(ChannelRangePreset.IJ_AUTO)}>IJ Auto</Button>
@@ -73,15 +86,13 @@ export function ChannelSettingControl(props: ChannelSettingControlProps): ReactE
                   onChange={(min, max) => updateSettings({ min, max })}
                 />
               </div>
-              <Tooltip title="Updates the slider's possible range to match the channel's data range on the current frame. Does not update the range.">
-                <Button onClick={onClickSync} disabled={props.syncDisabled}>
-                  <SyncOutlined /> Sync
-                </Button>
+              <Tooltip title="Fits the range of slider values to the current frame's data range">
+                <Button onClick={onClickSync}>Fit to data</Button>
               </Tooltip>
             </FlexRowAlignCenter>
           </FlexColumn>
         </SettingsItem>
       </SettingsContainer>
-    </ToggleCollapse>
+    </StyledToggleCollapse>
   );
 }
