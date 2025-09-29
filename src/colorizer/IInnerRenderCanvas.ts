@@ -1,10 +1,6 @@
 import { Matrix4 } from "three";
 
-import { CANVAS_ASPECT_RATIO } from "@/constants";
-
 import { IRenderCanvas } from "./IRenderCanvas";
-
-console.log(CANVAS_ASPECT_RATIO);
 
 export interface IInnerRenderCanvas extends IRenderCanvas {
   /**
