@@ -3,22 +3,24 @@ import { PresetsItem } from "antd/es/color-picker/interface";
 import React, { ReactElement, useMemo } from "react";
 import { Color, ColorRepresentation } from "three";
 
-import { OUTLINE_COLOR_DEFAULT } from "../../colorizer/constants";
-import { DrawMode, TrackPathColorMode } from "../../colorizer/types";
-import { StyledHorizontalRule } from "../../styles/components";
-import { FlexColumn, VisuallyHidden } from "../../styles/utils";
-import { threeToAntColor } from "../../utils/color_utils";
-import { SelectItem } from "../Dropdowns/types";
-import { DEFAULT_OUTLINE_COLOR_PRESETS } from "./Settings/constants";
+import { OUTLINE_COLOR_DEFAULT } from "@/colorizer/constants";
+import { DrawMode, TrackPathColorMode } from "@/colorizer/types";
+import DropdownWithColorPicker from "@/components/Dropdowns/DropdownWithColorPicker";
+import SelectionDropdown from "@/components/Dropdowns/SelectionDropdown";
+import { SelectItem } from "@/components/Dropdowns/types";
+import LabeledSlider from "@/components/Inputs/LabeledSlider";
+import WrappedColorPicker from "@/components/Inputs/WrappedColorPicker";
+import { SettingsContainer, SettingsItem } from "@/components/SettingsContainer";
+import ToggleCollapse from "@/components/ToggleCollapse";
+import { MAX_SETTINGS_SLIDER_WIDTH } from "@/constants";
+import { useViewerStateStore } from "@/state/ViewerState";
+import { StyledHorizontalRule } from "@/styles/components";
+import { FlexColumn, VisuallyHidden } from "@/styles/utils";
+import { threeToAntColor } from "@/utils/color_utils";
 
-import { useViewerStateStore } from "../../state/ViewerState";
-import DropdownWithColorPicker from "../Dropdowns/DropdownWithColorPicker";
-import SelectionDropdown from "../Dropdowns/SelectionDropdown";
-import LabeledSlider from "../Inputs/LabeledSlider";
-import WrappedColorPicker from "../Inputs/WrappedColorPicker";
-import { SettingsContainer, SettingsItem } from "../SettingsContainer";
-import ToggleCollapse from "../ToggleCollapse";
-import { ChannelSettingsControl, VectorFieldSettings } from "./Settings";
+import ChannelSettingsControl from "./ChannelSettingsControl";
+import { DEFAULT_OUTLINE_COLOR_PRESETS } from "./constants";
+import VectorFieldSettings from "./VectorFieldSettings";
 
 const enum SettingsHtmlIds {
   SHOW_BACKDROPS_CHECKBOX = "show-backdrops-checkbox",
@@ -82,8 +84,6 @@ const TRACK_MODE_ITEMS: SelectItem[] = [
 
 export const SETTINGS_INDENT_PX = 24;
 const SETTINGS_GAP_PX = 8;
-export const MAX_SLIDER_WIDTH = "250px";
-
 export default function SettingsTab(): ReactElement {
   // State accessors
   const backdropBrightness = useViewerStateStore((state) => state.backdropBrightness);
@@ -253,7 +253,7 @@ export default function SettingsTab(): ReactElement {
             />
           </SettingsItem>
           <SettingsItem label="Width" htmlFor={SettingsHtmlIds.TRACK_PATH_WIDTH_SLIDER}>
-            <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
+            <div style={{ maxWidth: MAX_SETTINGS_SLIDER_WIDTH, width: "100%" }}>
               <LabeledSlider
                 id={SettingsHtmlIds.TRACK_PATH_WIDTH_SLIDER}
                 type="value"
@@ -314,7 +314,7 @@ export default function SettingsTab(): ReactElement {
             />
           </SettingsItem>
           <SettingsItem label="Brightness" htmlFor={SettingsHtmlIds.BACKDROP_BRIGHTNESS_SLIDER}>
-            <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
+            <div style={{ maxWidth: MAX_SETTINGS_SLIDER_WIDTH, width: "100%" }}>
               <LabeledSlider
                 id={SettingsHtmlIds.BACKDROP_BRIGHTNESS_SLIDER}
                 type="value"
@@ -332,7 +332,7 @@ export default function SettingsTab(): ReactElement {
           </SettingsItem>
 
           <SettingsItem label="Saturation" htmlFor={SettingsHtmlIds.BACKDROP_SATURATION_SLIDER}>
-            <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
+            <div style={{ maxWidth: MAX_SETTINGS_SLIDER_WIDTH, width: "100%" }}>
               <LabeledSlider
                 id={SettingsHtmlIds.BACKDROP_SATURATION_SLIDER}
                 type="value"
@@ -349,7 +349,7 @@ export default function SettingsTab(): ReactElement {
             </div>
           </SettingsItem>
           <SettingsItem label="Object opacity" htmlFor={SettingsHtmlIds.OBJECT_OPACITY_SLIDER}>
-            <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
+            <div style={{ maxWidth: MAX_SETTINGS_SLIDER_WIDTH, width: "100%" }}>
               <LabeledSlider
                 id={SettingsHtmlIds.OBJECT_OPACITY_SLIDER}
                 type="value"

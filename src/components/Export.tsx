@@ -5,25 +5,24 @@ import styled from "styled-components";
 import { Vector2 } from "three";
 import { clamp } from "three/src/math/MathUtils";
 
-import { getPixelRatio, toEven } from "../colorizer/canvas/utils";
-import { AnalyticsEvent, triggerAnalyticsEvent } from "../colorizer/utils/analytics";
-import { TOOLTIP_TRIGGER } from "../constants";
-import { useViewerStateStore } from "../state";
-import { StyledRadioGroup } from "../styles/components";
-import { FlexColumn, FlexColumnAlignCenter, FlexRow, FlexRowAlignCenter, VisuallyHidden } from "../styles/utils";
-
-import CanvasOverlay, { ExportOptions } from "../colorizer/CanvasOverlay";
-import { IRenderCanvas } from "../colorizer/IRenderCanvas";
-import CanvasRecorder, { RecordingOptions } from "../colorizer/recorders/CanvasRecorder";
-import ImageSequenceRecorder from "../colorizer/recorders/ImageSequenceRecorder";
-import Mp4VideoRecorder, { VideoBitrate } from "../colorizer/recorders/Mp4VideoRecorder";
-import { AppThemeContext, Z_INDEX_MODAL } from "./AppStyle";
-import TextButton from "./Buttons/TextButton";
-import StyledInlineProgress from "./Feedback/StyledInlineProgress";
-import IconButton from "./IconButton";
-import StyledModal, { useStyledModal } from "./Modals/StyledModal";
-import { SettingsContainer, SettingsItem } from "./SettingsContainer";
-import SpinBox from "./SpinBox";
+import { getPixelRatio, toEven } from "@/colorizer/canvas/utils";
+import CanvasOverlay, { ExportOptions } from "@/colorizer/CanvasOverlay";
+import { IRenderCanvas } from "@/colorizer/IRenderCanvas";
+import CanvasRecorder, { RecordingOptions } from "@/colorizer/recorders/CanvasRecorder";
+import ImageSequenceRecorder from "@/colorizer/recorders/ImageSequenceRecorder";
+import Mp4VideoRecorder, { VideoBitrate } from "@/colorizer/recorders/Mp4VideoRecorder";
+import { AnalyticsEvent, triggerAnalyticsEvent } from "@/colorizer/utils/analytics";
+import IconButton from "@/components/Buttons/IconButton";
+import TextButton from "@/components/Buttons/TextButton";
+import StyledInlineProgress from "@/components/Feedback/StyledInlineProgress";
+import StyledModal, { useStyledModal } from "@/components/Modals/StyledModal";
+import { SettingsContainer, SettingsItem } from "@/components/SettingsContainer";
+import SpinBox from "@/components/SpinBox";
+import { TOOLTIP_TRIGGER } from "@/constants";
+import { useViewerStateStore } from "@/state";
+import { AppThemeContext, Z_INDEX_MODAL } from "@/styles/AppStyle";
+import { StyledRadioGroup } from "@/styles/components";
+import { FlexColumn, FlexColumnAlignCenter, FlexRow, FlexRowAlignCenter, VisuallyHidden } from "@/styles/utils";
 
 const enum ExportHtmlIds {
   FRAME_RANGE_RADIO = "export-modal-frame-range-radio",

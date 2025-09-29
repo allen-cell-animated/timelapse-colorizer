@@ -3,14 +3,13 @@ import { Tooltip } from "antd";
 import React, { ReactElement, useCallback, useMemo } from "react";
 import { inverseLerp } from "three/src/math/MathUtils";
 
-import { ColorRamp, ColorRampType, isThresholdNumeric } from "../../../colorizer";
-import { thresholdMatchFinder } from "../../../colorizer/utils/data_utils";
-import { useViewerStateStore } from "../../../state";
-import { FlexRowAlignCenter } from "../../../styles/utils";
-
-import { FeatureType } from "../../../colorizer/Dataset";
-import IconButton from "../../IconButton";
-import LabeledSlider from "../../Inputs/LabeledSlider";
+import { ColorRamp, ColorRampType, isThresholdNumeric } from "@/colorizer";
+import { FeatureType } from "@/colorizer/Dataset";
+import { thresholdMatchFinder } from "@/colorizer/utils/data_utils";
+import IconButton from "@/components/Buttons/IconButton";
+import LabeledSlider from "@/components/Inputs/LabeledSlider";
+import { useViewerStateStore } from "@/state";
+import { FlexRowAlignCenter } from "@/styles/utils";
 
 type ColorRampRangeSliderProps = {
   disabled: boolean;

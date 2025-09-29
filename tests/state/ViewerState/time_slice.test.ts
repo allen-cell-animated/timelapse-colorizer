@@ -1,10 +1,11 @@
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { FrameLoadResult, Track } from "../../../src/colorizer";
-import { UrlParam } from "../../../src/colorizer/utils/url_utils";
-import { useViewerStateStore } from "../../../src/state";
-import { loadTimeSliceFromParams, serializeTimeSlice } from "../../../src/state/slices";
+import { FrameLoadResult, Track } from "@/colorizer";
+import { UrlParam } from "@/colorizer/utils/url_utils";
+import { useViewerStateStore } from "@/state";
+import { loadTimeSliceFromParams, serializeTimeSlice } from "@/state/slices";
+
 import { ANY_ERROR, sleep } from "../../test_utils";
 import { MOCK_DATASET, MOCK_DATASET_WITH_TWO_FRAMES } from "./constants";
 import { clearDatasetAsync, setDatasetAsync } from "./utils";

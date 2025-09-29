@@ -1,11 +1,11 @@
 import Papa from "papaparse";
 import { Color } from "three";
 
-import { removeUndefinedProperties } from "../state/utils/data_validation";
-import { DEFAULT_CATEGORICAL_PALETTE_KEY, KNOWN_CATEGORICAL_PALETTES } from "./colors/categorical_palettes";
-import { cloneLabel, getLabelTypeFromParsedCsv } from "./utils/data_utils";
+import { removeUndefinedProperties } from "@/state/utils/data_validation";
 
+import { DEFAULT_CATEGORICAL_PALETTE_KEY, KNOWN_CATEGORICAL_PALETTES } from "./colors/categorical_palettes";
 import Dataset from "./Dataset";
+import { cloneLabel, getLabelTypeFromParsedCsv } from "./utils/data_utils";
 
 export const CSV_COL_ID = "ID";
 // Column constants for segmentation ID, time, and track are used to validate

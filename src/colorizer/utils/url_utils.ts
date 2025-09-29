@@ -2,8 +2,7 @@
 // Typescript doesn't recognize RequestInit
 import { Color } from "three";
 
-import { MAX_FEATURE_CATEGORIES } from "../../constants";
-import { DrawMode, HexColorString, isThresholdCategorical, TrackPathColorMode } from "../types";
+import { DrawMode, HexColorString, isThresholdCategorical, TrackPathColorMode } from "@/colorizer/types";
 import {
   DrawSettings,
   FeatureThreshold,
@@ -12,7 +11,9 @@ import {
   LoadTroubleshooting,
   PlotRangeType,
   ThresholdType,
-} from "../types";
+} from "@/colorizer/types";
+import { MAX_FEATURE_CATEGORIES } from "@/constants";
+
 import { nanToNull } from "./data_load_utils";
 import { AnyManifestFile } from "./dataset_utils";
 import { formatNumber } from "./math_utils";

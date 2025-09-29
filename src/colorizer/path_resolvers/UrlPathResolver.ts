@@ -1,4 +1,4 @@
-import { resolveUrl } from "../utils/url_utils";
+import { resolveUrl } from "@/colorizer/utils/url_utils";
 
 import { IPathResolver } from "./IPathResolver";
 

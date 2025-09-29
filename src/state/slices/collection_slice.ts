@@ -1,9 +1,8 @@
 import { StateCreator } from "zustand";
 
-import { UrlParam } from "../../colorizer/utils/url_utils";
-import { SerializedStoreData } from "../types";
-
-import Collection from "../../colorizer/Collection";
+import Collection from "@/colorizer/Collection";
+import { UrlParam } from "@/colorizer/utils/url_utils";
+import { SerializedStoreData } from "@/state/types";
 
 export type CollectionSliceState = {
   collection: Collection | null;

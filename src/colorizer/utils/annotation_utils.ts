@@ -1,4 +1,4 @@
-import Dataset from "../Dataset";
+import Dataset from "@/colorizer/Dataset";
 
 export type LookupInfo = {
   trackIds: number[];

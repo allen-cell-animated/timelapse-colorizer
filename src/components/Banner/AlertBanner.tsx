@@ -2,9 +2,9 @@ import { Alert, AlertProps, Button, Checkbox } from "antd";
 import React, { ReactElement, useState } from "react";
 import styled, { css } from "styled-components";
 
-import { Spread } from "../../colorizer/utils/type_utils";
-import { FlexColumn, FlexRowAlignCenter } from "../../styles/utils";
-import { renderStringArrayAsJsx } from "../../utils/formatting";
+import { Spread } from "@/colorizer/utils/type_utils";
+import { FlexColumn, FlexRowAlignCenter } from "@/styles/utils";
+import { renderStringArrayAsJsx } from "@/utils/formatting";
 
 // Adjusts alignment of items within the Alert.
 // Alerts are structured like this:

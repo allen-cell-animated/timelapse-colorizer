@@ -1,7 +1,13 @@
 import { DataTexture, RGBAFormat, RGBAIntegerFormat, Texture, Vector2 } from "three";
 
-import { MAX_FEATURE_CATEGORIES } from "../constants";
+import { MAX_FEATURE_CATEGORIES } from "@/constants";
+
+import DataCache from "./DataCache";
+import { IArrayLoader, ITextureImageLoader } from "./loaders/ILoader";
+import ImageFrameLoader from "./loaders/ImageFrameLoader";
+import UrlArrayLoader from "./loaders/UrlArrayLoader";
 import { IPathResolver, UrlPathResolver } from "./path_resolvers";
+import Track from "./Track";
 import {
   FeatureArrayType,
   FeatureDataType,
@@ -16,12 +22,6 @@ import { ManifestFile, ManifestFileMetadata, updateManifestVersion } from "./uti
 import { padCentroidsTo3d } from "./utils/math_utils";
 import { packDataTexture } from "./utils/texture_utils";
 import * as urlUtils from "./utils/url_utils";
-
-import DataCache from "./DataCache";
-import { IArrayLoader, ITextureImageLoader } from "./loaders/ILoader";
-import ImageFrameLoader from "./loaders/ImageFrameLoader";
-import UrlArrayLoader from "./loaders/UrlArrayLoader";
-import Track from "./Track";
 
 export const TRACK_FEATURE_KEY = "_track_";
 export const TIME_FEATURE_KEY = "_time_";

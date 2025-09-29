@@ -15,17 +15,18 @@ import {
   TrackPathColorMode,
   VECTOR_KEY_MOTION_DELTA,
   VectorTooltipMode,
-} from "../../src/colorizer";
-import { UrlParam } from "../../src/colorizer/utils/url_utils";
-import { useViewerStateStore } from "../../src/state";
-import { ViewerStoreSerializableState } from "../../src/state/slices";
-import { SerializedStoreData } from "../../src/state/types";
+} from "@/colorizer";
+import { UrlParam } from "@/colorizer/utils/url_utils";
+import { useViewerStateStore } from "@/state";
+import { ViewerStoreSerializableState } from "@/state/slices";
+import { SerializedStoreData } from "@/state/types";
 import {
   loadInitialViewerStateFromParams,
   loadViewerStateFromParams,
   serializedDataToUrl,
   serializeViewerParams,
-} from "../../src/state/utils/store_io";
+} from "@/state/utils/store_io";
+
 import { sleep } from "../test_utils";
 import {
   MOCK_COLLECTION,

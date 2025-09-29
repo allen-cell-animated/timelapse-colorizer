@@ -1,6 +1,6 @@
 import { ArrayBufferTarget, Muxer } from "mp4-muxer";
 
-import { sleep } from "../utils/timing_utils";
+import { sleep } from "@/colorizer/utils/timing_utils";
 
 import CanvasRecorder, { defaultRecordingOptions, RecordingOptions } from "./CanvasRecorder";
 

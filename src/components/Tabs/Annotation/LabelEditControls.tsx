@@ -2,15 +2,15 @@ import { CloseCircleFilled, DeleteOutlined, EditOutlined } from "@ant-design/ico
 import { Popconfirm, Popover, Radio, Tooltip } from "antd";
 import React, { PropsWithChildren, ReactElement, useContext, useEffect, useRef, useState } from "react";
 
-import { TagAddIconSVG } from "../../../assets";
-import { AnnotationSelectionMode } from "../../../colorizer";
-import { StyledRadioGroup } from "../../../styles/components";
-import { formatQuantityString } from "../../../utils/formatting";
+import { TagAddIconSVG } from "@/assets";
+import { AnnotationSelectionMode } from "@/colorizer";
+import { LabelData, LabelOptions } from "@/colorizer/AnnotationData";
+import IconButton from "@/components/Buttons/IconButton";
+import { TooltipWithSubtitle } from "@/components/Tooltips/TooltipWithSubtitle";
+import { AppThemeContext } from "@/styles/AppStyle";
+import { StyledRadioGroup } from "@/styles/components";
+import { formatQuantityString } from "@/utils/formatting";
 
-import { LabelData, LabelOptions } from "../../../colorizer/AnnotationData";
-import { AppThemeContext } from "../../AppStyle";
-import IconButton from "../../IconButton";
-import { TooltipWithSubtitle } from "../../Tooltips/TooltipWithSubtitle";
 import CreateLabelForm from "./CreateLabelForm";
 
 type LabelEditControlsProps = {

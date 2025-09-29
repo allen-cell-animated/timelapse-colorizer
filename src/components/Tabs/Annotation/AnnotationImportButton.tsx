@@ -3,14 +3,14 @@ import { Modal, Radio, Space, UploadFile } from "antd";
 import React, { ReactElement, useState } from "react";
 import styled, { css } from "styled-components";
 
-import { AnnotationState } from "../../../hooks";
-import { useViewerStateStore } from "../../../state";
-import { FlexColumn } from "../../../styles/utils";
+import { AnnotationData, AnnotationMergeMode, AnnotationParseResult } from "@/colorizer/AnnotationData";
+import TextButton from "@/components/Buttons/TextButton";
+import { StyledUpload } from "@/components/Inputs/StyledUpload";
+import MessageCard from "@/components/MessageCard";
+import { AnnotationState } from "@/hooks";
+import { useViewerStateStore } from "@/state";
+import { FlexColumn } from "@/styles/utils";
 
-import { AnnotationData, AnnotationMergeMode, AnnotationParseResult } from "../../../colorizer/AnnotationData";
-import TextButton from "../../Buttons/TextButton";
-import { StyledUpload } from "../../Inputs/StyledUpload";
-import MessageCard from "../../MessageCard";
 import AnnotationFileInfo from "./AnnotationFileInfo";
 
 type AnnotationImportButtonProps = {

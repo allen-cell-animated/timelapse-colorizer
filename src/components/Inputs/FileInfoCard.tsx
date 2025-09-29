@@ -2,10 +2,9 @@ import { CloseOutlined, PaperClipOutlined } from "@ant-design/icons";
 import { Card } from "antd";
 import React, { PropsWithChildren, ReactElement, ReactNode } from "react";
 
-import { FlexColumn, FlexRow, VisuallyHidden } from "../../styles/utils";
-
-import IconButton from "../IconButton";
-import MessageCard from "../MessageCard";
+import IconButton from "@/components/Buttons/IconButton";
+import MessageCard from "@/components/MessageCard";
+import { FlexColumn, FlexRow, VisuallyHidden } from "@/styles/utils";
 
 type FileInfoCardProps = {
   fileName: string;

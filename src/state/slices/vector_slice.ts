@@ -7,7 +7,7 @@ import {
   VECTOR_KEY_MOTION_DELTA,
   VectorConfig,
   VectorTooltipMode,
-} from "../../colorizer";
+} from "@/colorizer";
 import {
   decodeBoolean,
   decodeFloat,
@@ -17,13 +17,13 @@ import {
   encodeMaybeColor,
   encodeMaybeNumber,
   UrlParam,
-} from "../../colorizer/utils/url_utils";
-import type { SerializedStoreData, SubscribableStore } from "../types";
-import { setValueIfDefined, validateFiniteValue } from "../utils/data_validation";
-import { addDerivedStateSubscriber, makeDebouncedCallback } from "../utils/store_utils";
-import type { DatasetSlice } from "./dataset_slice";
+} from "@/colorizer/utils/url_utils";
+import { getSharedWorkerPool } from "@/colorizer/workers/SharedWorkerPool";
+import type { SerializedStoreData, SubscribableStore } from "@/state/types";
+import { setValueIfDefined, validateFiniteValue } from "@/state/utils/data_validation";
+import { addDerivedStateSubscriber, makeDebouncedCallback } from "@/state/utils/store_utils";
 
-import { getSharedWorkerPool } from "../../colorizer/workers/SharedWorkerPool";
+import type { DatasetSlice } from "./dataset_slice";
 
 export type VectorSliceState = {
   vectorVisible: boolean;

@@ -1,7 +1,7 @@
 import JSZip from "jszip";
 import { describe, expect, it } from "vitest";
 
-import { zipToFileMap } from "../../src/colorizer/utils/data_load_utils";
+import { zipToFileMap } from "@/colorizer/utils/data_load_utils";
 
 describe("zipToFileMap", () => {
   it("maps zip file entries to file objects", async () => {

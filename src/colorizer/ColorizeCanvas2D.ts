@@ -24,8 +24,10 @@ import { LineSegments2 } from "three/addons/lines/LineSegments2";
 import { LineSegmentsGeometry } from "three/addons/lines/LineSegmentsGeometry";
 import { clamp } from "three/src/math/MathUtils";
 
-import { MAX_FEATURE_CATEGORIES } from "../constants";
+import { MAX_FEATURE_CATEGORIES } from "@/constants";
+
 import { get2DCanvasScaling } from "./canvas/utils";
+import ColorRamp, { ColorRampType } from "./ColorRamp";
 import {
   CANVAS_BACKGROUND_COLOR_DEFAULT,
   EDGE_COLOR_ALPHA_DEFAULT,
@@ -36,6 +38,9 @@ import {
   OUTLIER_COLOR_DEFAULT,
   OUTLINE_COLOR_DEFAULT,
 } from "./constants";
+import Dataset from "./Dataset";
+import { IInnerRenderCanvas } from "./IInnerRenderCanvas";
+import { RenderCanvasStateParams, RenderOptions } from "./IRenderCanvas";
 import {
   Canvas2DScaleInfo,
   CanvasType,
@@ -55,11 +60,6 @@ import {
 } from "./utils/data_utils";
 import { convertCanvasOffsetPxToFrameCoords, getFrameSizeInScreenPx } from "./utils/math_utils";
 import { packDataTexture } from "./utils/texture_utils";
-
-import ColorRamp, { ColorRampType } from "./ColorRamp";
-import Dataset from "./Dataset";
-import { IInnerRenderCanvas } from "./IInnerRenderCanvas";
-import { RenderCanvasStateParams, RenderOptions } from "./IRenderCanvas";
 import VectorField from "./VectorField";
 
 import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";

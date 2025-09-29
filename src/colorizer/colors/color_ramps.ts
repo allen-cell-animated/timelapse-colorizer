@@ -1,6 +1,6 @@
-import { GLASBEY_DARK_COLORS, GLASBEY_DEFAULT_COLORS, GLASBEY_LIGHT_COLORS } from "./glasbey";
+import ColorRamp, { ColorRampType } from "@/colorizer/ColorRamp";
 
-import ColorRamp, { ColorRampType } from "../ColorRamp";
+import { GLASBEY_DARK_COLORS, GLASBEY_DEFAULT_COLORS, GLASBEY_LIGHT_COLORS } from "./glasbey";
 
 // TODO: Could add additional tags for filtering, etc. to each color ramp!
 export type RawColorData = {

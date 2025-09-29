@@ -1,6 +1,6 @@
 import React, { KeyboardEvent, ReactElement, useCallback, useEffect, useState } from "react";
 
-import { SpinBoxHandleDownSVG, SpinBoxHandleUpSVG } from "../assets";
+import { SpinBoxHandleDownSVG, SpinBoxHandleUpSVG } from "@/assets";
 
 import styles from "./SpinBox.module.css";
 

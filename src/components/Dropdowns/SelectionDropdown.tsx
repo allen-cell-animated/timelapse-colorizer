@@ -3,11 +3,11 @@ import Fuse from "fuse.js";
 import React, { ReactElement, useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { components, ControlProps, OptionProps } from "react-select";
 
-import { useDebounce } from "../../hooks/useDebounce";
-import { FlexRowAlignCenter } from "../../styles/utils";
-import { SelectItem } from "./types";
+import { useDebounce } from "@/hooks/useDebounce";
+import { FlexRowAlignCenter } from "@/styles/utils";
 
 import StyledSelect from "./StyledSelect";
+import { SelectItem } from "./types";
 
 // TODO: Have the dropdown show a loading indicator after a selection has been made
 // but before the prop value updates. -> this is especially noticeable when slow datasets.

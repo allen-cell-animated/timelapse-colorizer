@@ -4,13 +4,20 @@ import React, { memo, ReactElement, useContext, useEffect, useMemo, useRef, useS
 import styled from "styled-components";
 import { Color, ColorRepresentation } from "three";
 
-import { SwitchIconSVG } from "../../assets";
-import { ColorRampType, Dataset } from "../../colorizer";
-import { DrawMode, HexColorString, PlotRangeType } from "../../colorizer/types";
-import { useDebounce } from "../../hooks";
-import { FlexRow, FlexRowAlignCenter } from "../../styles/utils";
-import { ShowAlertBannerCallback } from "../Banner/hooks";
-import { SelectItem } from "../Dropdowns/types";
+import { SwitchIconSVG } from "@/assets";
+import { ColorRampType, Dataset } from "@/colorizer";
+import { TIME_FEATURE_KEY } from "@/colorizer/Dataset";
+import { DrawMode, HexColorString, PlotRangeType } from "@/colorizer/types";
+import { ShowAlertBannerCallback } from "@/components/Banner/hooks";
+import IconButton from "@/components/Buttons/IconButton";
+import SelectionDropdown from "@/components/Dropdowns/SelectionDropdown";
+import { SelectItem } from "@/components/Dropdowns/types";
+import LoadingSpinner from "@/components/LoadingSpinner";
+import { useDebounce } from "@/hooks";
+import { useViewerStateStore } from "@/state/ViewerState";
+import { AppThemeContext } from "@/styles/AppStyle";
+import { FlexRow, FlexRowAlignCenter } from "@/styles/utils";
+
 import {
   DataArray,
   drawCrosshair,
@@ -24,13 +31,6 @@ import {
   subsampleColorRamp,
   TraceData,
 } from "./scatter_plot_data_utils";
-
-import { TIME_FEATURE_KEY } from "../../colorizer/Dataset";
-import { useViewerStateStore } from "../../state/ViewerState";
-import { AppThemeContext } from "../AppStyle";
-import SelectionDropdown from "../Dropdowns/SelectionDropdown";
-import IconButton from "../IconButton";
-import LoadingSpinner from "../LoadingSpinner";
 
 // TODO: Translate into seconds/minutes/hours for datasets where frame duration is known?
 

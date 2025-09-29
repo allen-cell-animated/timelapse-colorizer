@@ -1,6 +1,6 @@
 import React, { ReactElement } from "react";
 
-import { bannerVideo } from "../../assets";
+import { bannerVideo } from "@/assets";
 
 /**
  * Banner video asset which can be loaded lazily.

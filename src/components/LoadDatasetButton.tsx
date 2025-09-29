@@ -5,21 +5,20 @@ import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, use
 import styled from "styled-components";
 import { useClickAnyWhere } from "usehooks-ts";
 
-import { Dataset } from "../colorizer";
-import { ReportWarningCallback } from "../colorizer/types";
-import { zipToFileMap } from "../colorizer/utils/data_load_utils";
-import { convertAllenPathToHttps, isAllenPath } from "../colorizer/utils/url_utils";
-import { useRecentCollections } from "../hooks";
-import { useJsxText } from "../hooks/useJsxText";
-import { useViewerStateStore } from "../state";
-import { FlexRowAlignCenter } from "../styles/utils";
-
-import Collection from "../colorizer/Collection";
-import { AppThemeContext } from "./AppStyle";
-import TextButton from "./Buttons/TextButton";
-import StyledInlineProgress from "./Feedback/StyledInlineProgress";
-import MessageCard from "./MessageCard";
-import StyledModal from "./Modals/StyledModal";
+import { Dataset } from "@/colorizer";
+import Collection from "@/colorizer/Collection";
+import { ReportWarningCallback } from "@/colorizer/types";
+import { zipToFileMap } from "@/colorizer/utils/data_load_utils";
+import { convertAllenPathToHttps, isAllenPath } from "@/colorizer/utils/url_utils";
+import TextButton from "@/components/Buttons/TextButton";
+import StyledInlineProgress from "@/components/Feedback/StyledInlineProgress";
+import MessageCard from "@/components/MessageCard";
+import StyledModal from "@/components/Modals/StyledModal";
+import { useRecentCollections } from "@/hooks";
+import { useJsxText } from "@/hooks/useJsxText";
+import { useViewerStateStore } from "@/state";
+import { AppThemeContext } from "@/styles/AppStyle";
+import { FlexRowAlignCenter } from "@/styles/utils";
 
 const DEFAULT_URL_FAILURE_MESSAGE =
   "The dataset(s) could not be loaded with the URL provided. Please check it and try again.";

@@ -1,7 +1,7 @@
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { renderStringArrayAsJsx } from "../src/utils/formatting";
+import { renderStringArrayAsJsx } from "@/utils/formatting";
 
 function doElementsHaveSharedParent(elements: HTMLElement[]): boolean {
   if (elements.length === 0) {

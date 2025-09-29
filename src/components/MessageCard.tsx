@@ -2,9 +2,8 @@ import { CheckCircleFilled, CloseCircleFilled, ExclamationCircleFilled, InfoCirc
 import { Card } from "antd";
 import React, { ReactElement, useContext } from "react";
 
-import { FlexRow } from "../styles/utils";
-
-import { AppThemeContext } from "./AppStyle";
+import { AppThemeContext } from "@/styles/AppStyle";
+import { FlexRow } from "@/styles/utils";
 
 type MessageCardType = "info" | "warning" | "error" | "success";
 

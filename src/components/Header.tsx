@@ -4,9 +4,9 @@ import React, { PropsWithChildren, ReactElement } from "react";
 import { Link } from "react-router-dom";
 import styled from "styled-components";
 
-import { AicsLogoAndNameSVG, AicsLogoSVG } from "../assets";
-import { INTERNAL_BUILD } from "../constants";
-import { FlexRowAlignCenter, VisuallyHidden } from "../styles/utils";
+import { AicsLogoAndNameSVG, AicsLogoSVG } from "@/assets";
+import { INTERNAL_BUILD } from "@/constants";
+import { FlexRowAlignCenter, VisuallyHidden } from "@/styles/utils";
 
 const AICS_LOGO_RESIZE_THRESHOLD_PX = 540;
 

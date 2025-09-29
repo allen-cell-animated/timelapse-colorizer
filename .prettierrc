@@ -8,7 +8,7 @@
     "^node:[\\w]*$",
     "<THIRD_PARTY_MODULES>",
     "^@/[a-zA-Z]+[/\\w]*$",
-    "^[./]+.*/[a-z]+[\\w]*$",
+    "^[./]+.*/[a-zA-Z]+[\\w]*$",
     "^[./].*/[\\w_\\-?]*[.]?[\\w._\\-?&]*$"
   ],
   "importOrderSeparation": true,

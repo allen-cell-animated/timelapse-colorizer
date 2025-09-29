@@ -1,9 +1,8 @@
-import { ReportErrorCallback, ReportLoadProgressCallback, ReportWarningCallback } from "../colorizer/types";
-import { isUrl, UrlParam } from "../colorizer/utils/url_utils";
-import { LocationState } from "../types";
-
-import Collection, { CollectionConfig, CollectionLoadOptions, DatasetLoadOptions } from "../colorizer/Collection";
-import Dataset from "../colorizer/Dataset";
+import Collection, { CollectionConfig, CollectionLoadOptions, DatasetLoadOptions } from "@/colorizer/Collection";
+import Dataset from "@/colorizer/Dataset";
+import { ReportErrorCallback, ReportLoadProgressCallback, ReportWarningCallback } from "@/colorizer/types";
+import { isUrl, UrlParam } from "@/colorizer/utils/url_utils";
+import { LocationState } from "@/types";
 
 export const enum LoadResultType {
   SUCCESS,

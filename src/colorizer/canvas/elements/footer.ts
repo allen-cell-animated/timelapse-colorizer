@@ -8,7 +8,8 @@ import {
   EMPTY_RENDER_INFO,
   FontStyle,
   RenderInfo,
-} from "../types";
+} from "@/colorizer/canvas/types";
+
 import { getInsetBoxRenderer, InsetBoxStyle } from "./insetBox";
 import { getLegendRenderer, LegendParams, LegendStyle } from "./legend";
 import { getScaleBarRenderer, ScaleBarParams, ScaleBarStyle } from "./scaleBar";

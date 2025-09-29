@@ -5,10 +5,10 @@ import { StateManagerProps } from "react-select/dist/declarations/src/useStateMa
 import styled, { css } from "styled-components";
 import { Color } from "three";
 
-import { DropdownSVG } from "../../assets";
-import { SelectItem } from "./types";
+import { DropdownSVG } from "@/assets";
+import { AppTheme, AppThemeContext } from "@/styles/AppStyle";
 
-import { AppTheme, AppThemeContext } from "../AppStyle";
+import { SelectItem } from "./types";
 
 type AntStyledSelectProps<
   IsMulti extends boolean = false,

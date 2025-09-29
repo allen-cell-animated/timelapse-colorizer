@@ -2,10 +2,9 @@ import React, { ReactElement, useCallback, useContext, useEffect, useRef, useSta
 import styled from "styled-components";
 import { Color } from "three";
 
-import { Dataset, Track } from "../../../colorizer";
-import { getIntervals } from "../../../colorizer/utils/data_utils";
-
-import { AppTheme, AppThemeContext } from "../../AppStyle";
+import { Dataset, Track } from "@/colorizer";
+import { getIntervals } from "@/colorizer/utils/data_utils";
+import { AppTheme, AppThemeContext } from "@/styles/AppStyle";
 
 const HIGHLIGHT_CANVAS_CLASSNAME = "pulse";
 

@@ -4,7 +4,7 @@ import React, { ReactElement, ReactEventHandler, ReactNode, useRef } from "react
 import styled, { css } from "styled-components";
 import { clamp, inverseLerp } from "three/src/math/MathUtils";
 
-import { formatNumber } from "../../colorizer/utils/math_utils";
+import { formatNumber } from "@/colorizer/utils/math_utils";
 
 const MINIMUM_SLIDER_STEPS = 300;
 

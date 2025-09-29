@@ -5,12 +5,12 @@ import {
   DISPLAY_COLOR_RAMP_KEYS,
   KNOWN_CATEGORICAL_PALETTES,
   KNOWN_COLOR_RAMPS,
-} from "../../colorizer";
-import { useViewerStateStore } from "../../state";
-import { FlexRow } from "../../styles/utils";
+} from "@/colorizer";
+import CategoricalColorPicker from "@/components/CategoricalColorPicker";
+import ColorRampDropdown from "@/components/Dropdowns/ColorRampDropdown";
+import { useViewerStateStore } from "@/state";
+import { FlexRow } from "@/styles/utils";
 
-import CategoricalColorPicker from "../CategoricalColorPicker";
-import ColorRampDropdown from "../Dropdowns/ColorRampDropdown";
 import ColorRampRangeSlider from "./ColorizeControl/ColorRampRangeSlider";
 
 type ColorizeControlsProps = {

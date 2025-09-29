@@ -2,11 +2,11 @@ import { Checkbox } from "antd";
 import React, { ReactElement, useCallback, useContext, useMemo } from "react";
 import styled from "styled-components";
 
-import { useViewerStateStore } from "../../../state";
-import { FlexColumn } from "../../../styles/utils";
+import ToggleCollapse from "@/components/ToggleCollapse";
+import { useViewerStateStore } from "@/state";
+import { AppThemeContext } from "@/styles/AppStyle";
+import { FlexColumn } from "@/styles/utils";
 
-import { AppThemeContext } from "../../AppStyle";
-import ToggleCollapse from "../../ToggleCollapse";
 import { ChannelSettingControl, VerticalDivider } from "./ChannelSettingControl";
 
 /** Approximate height of each ChannelSettingControl. */

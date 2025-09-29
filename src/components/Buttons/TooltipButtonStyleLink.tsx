@@ -1,6 +1,7 @@
 import React, { ReactElement, useContext } from "react";
 
-import { AppThemeContext } from "../AppStyle";
+import { AppThemeContext } from "@/styles/AppStyle";
+
 import { LinkStyleButton } from "./LinkStyleButton";
 
 /** A button styled like a link that can be used for in-tooltip navigation. */

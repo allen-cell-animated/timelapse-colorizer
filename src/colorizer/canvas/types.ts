@@ -1,7 +1,7 @@
 import { Vector2 } from "three";
 
-import Collection from "../Collection";
-import Dataset from "../Dataset";
+import Collection from "@/colorizer/Collection";
+import Dataset from "@/colorizer/Dataset";
 
 /**
  * Callback to render an element to the canvas.

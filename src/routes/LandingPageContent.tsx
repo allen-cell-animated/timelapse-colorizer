@@ -1,8 +1,8 @@
 import React from "react";
 
-import { ThresholdType } from "../colorizer/types";
-import { ExternalLink } from "../styles/utils";
-import { ProjectEntry } from "../types";
+import { ThresholdType } from "@/colorizer/types";
+import { ExternalLink } from "@/styles/utils";
+import { ProjectEntry } from "@/types";
 
 export const landingPageContent: ProjectEntry[] = [
   {

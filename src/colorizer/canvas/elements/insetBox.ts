@@ -1,6 +1,6 @@
 import { Vector2 } from "three";
 
-import { EMPTY_RENDER_INFO, RenderInfo } from "../types";
+import { EMPTY_RENDER_INFO, RenderInfo } from "@/colorizer/canvas/types";
 
 export type InsetBoxStyle = {
   fill: string;

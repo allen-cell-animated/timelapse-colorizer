@@ -2,10 +2,9 @@ import { Button } from "antd";
 import React, { ReactElement } from "react";
 import { ErrorResponse, Link, useRouteError } from "react-router-dom";
 
-import { AnalyticsEvent, triggerAnalyticsEvent } from "../colorizer/utils/analytics";
-import { FlexColumnAlignCenter } from "../styles/utils";
-
-import Header from "../components/Header";
+import { AnalyticsEvent, triggerAnalyticsEvent } from "@/colorizer/utils/analytics";
+import Header from "@/components/Header";
+import { FlexColumnAlignCenter } from "@/styles/utils";
 
 const isErrorResponse = (error: unknown): error is ErrorResponse => {
   return typeof (error as ErrorResponse).status === "number" && typeof (error as ErrorResponse).statusText === "string";

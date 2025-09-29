@@ -1,14 +1,8 @@
 import Plotly, { PlotData } from "plotly.js-dist-min";
 import { Color } from "three";
 
-import { ColorRamp, Dataset, HexColorString } from "../../colorizer";
-import { remap } from "../../colorizer/utils/math_utils";
-
-/**
- * Extra feature added to the dropdowns representing the frame number.
- * Deprecated because Time is now automatically added as a feature to the dataset.
- */
-export const DEPRECATED_SCATTERPLOT_TIME_KEY = "scatterplot_time";
+import { ColorRamp, Dataset, HexColorString } from "@/colorizer";
+import { remap } from "@/colorizer/utils/math_utils";
 
 export type DataArray = Uint32Array | Float32Array | number[];
 

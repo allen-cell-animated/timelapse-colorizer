@@ -1,4 +1,7 @@
-import { DEFAULT_COLLECTION_FILENAME, DEFAULT_DATASET_FILENAME } from "../constants";
+import { DEFAULT_COLLECTION_FILENAME, DEFAULT_DATASET_FILENAME } from "@/constants";
+
+import Dataset from "./Dataset";
+import { IArrayLoader, ITextureImageLoader } from "./loaders/ILoader";
 import { FilePathResolver, IPathResolver, UrlPathResolver } from "./path_resolvers";
 import { LoadErrorMessage, LoadTroubleshooting, ReportWarningCallback } from "./types";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./utils/analytics";
@@ -17,9 +20,6 @@ import {
   isJson,
   isUrl,
 } from "./utils/url_utils";
-
-import Dataset from "./Dataset";
-import { IArrayLoader, ITextureImageLoader } from "./loaders/ILoader";
 
 export type CollectionData = Map<string, CollectionEntry>;
 

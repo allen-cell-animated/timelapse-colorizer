@@ -1,4 +1,4 @@
-import { UrlParam } from "../../colorizer/utils/url_utils";
+import { UrlParam } from "@/colorizer/utils/url_utils";
 import {
   loadBackdropSliceFromParams,
   loadChannelSliceFromParams,
@@ -31,8 +31,9 @@ import {
   serializeVectorSlice,
   ViewerStore,
   ViewerStoreSerializableState,
-} from "../slices";
-import { SerializedStoreData, Store } from "../types";
+} from "@/state/slices";
+import { SerializedStoreData, Store } from "@/state/types";
+
 import { removeUndefinedProperties } from "./data_validation";
 
 // SERIALIZATION /////////////////////////////////////////////////////////////////////////

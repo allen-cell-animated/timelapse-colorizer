@@ -1,10 +1,11 @@
 import { StateCreator } from "zustand";
 
-import { FeatureThreshold } from "../../colorizer";
-import { getInRangeLUT, validateThresholds } from "../../colorizer/utils/data_utils";
-import { deserializeThresholds, serializeThresholds, UrlParam } from "../../colorizer/utils/url_utils";
-import { SerializedStoreData, SubscribableStore } from "../types";
-import { addDerivedStateSubscriber } from "../utils/store_utils";
+import { FeatureThreshold } from "@/colorizer";
+import { getInRangeLUT, validateThresholds } from "@/colorizer/utils/data_utils";
+import { deserializeThresholds, serializeThresholds, UrlParam } from "@/colorizer/utils/url_utils";
+import { SerializedStoreData, SubscribableStore } from "@/state/types";
+import { addDerivedStateSubscriber } from "@/state/utils/store_utils";
+
 import { CollectionSlice } from "./collection_slice";
 import { DatasetSlice } from "./dataset_slice";
 

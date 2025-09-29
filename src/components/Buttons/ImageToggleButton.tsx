@@ -1,10 +1,10 @@
 import React, { ReactElement, ReactNode } from "react";
 
-import { ImagesIconSVG, ImagesSlashIconSVG } from "../../assets";
-import { VisuallyHidden } from "../../styles/utils";
+import { ImagesIconSVG, ImagesSlashIconSVG } from "@/assets";
+import { TooltipWithSubtitle } from "@/components/Tooltips/TooltipWithSubtitle";
+import { VisuallyHidden } from "@/styles/utils";
 
-import IconButton from "../IconButton";
-import { TooltipWithSubtitle } from "../Tooltips/TooltipWithSubtitle";
+import IconButton from "./IconButton";
 
 export type ToggleImageButtonProps = {
   visible: boolean;

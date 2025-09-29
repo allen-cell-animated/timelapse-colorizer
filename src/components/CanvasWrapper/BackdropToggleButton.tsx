@@ -1,13 +1,12 @@
 import { Radio } from "antd";
 import React, { ReactElement, ReactNode, useContext } from "react";
 
-import { TabType } from "../../colorizer";
-import { useViewerStateStore } from "../../state";
-import { VisuallyHidden } from "../../styles/utils";
-
-import { AppThemeContext } from "../AppStyle";
-import { ImageToggleButton } from "../Buttons/ImageToggleButton";
-import TooltipButtonStyleLink from "../Buttons/TooltipButtonStyleLink";
+import { TabType } from "@/colorizer";
+import { ImageToggleButton } from "@/components/Buttons/ImageToggleButton";
+import TooltipButtonStyleLink from "@/components/Buttons/TooltipButtonStyleLink";
+import { useViewerStateStore } from "@/state";
+import { AppThemeContext } from "@/styles/AppStyle";
+import { VisuallyHidden } from "@/styles/utils";
 
 export default function BackdropToggleButton(): ReactElement {
   const theme = useContext(AppThemeContext);

@@ -1,15 +1,15 @@
 import { StateCreator } from "zustand";
 
-import { FrameLoadResult } from "../../colorizer";
-import { decodeInt, UrlParam } from "../../colorizer/utils/url_utils";
-import { DEFAULT_PLAYBACK_FPS } from "../../constants";
-import type { SerializedStoreData, SubscribableStore } from "../types";
-import { clampWithNanCheck } from "../utils/data_validation";
-import { addDerivedStateSubscriber } from "../utils/store_utils";
-import type { DatasetSlice } from "./dataset_slice";
+import { FrameLoadResult } from "@/colorizer";
+import { IRenderCanvas } from "@/colorizer/IRenderCanvas";
+import TimeControls from "@/colorizer/TimeControls";
+import { decodeInt, UrlParam } from "@/colorizer/utils/url_utils";
+import { DEFAULT_PLAYBACK_FPS } from "@/constants";
+import type { SerializedStoreData, SubscribableStore } from "@/state/types";
+import { clampWithNanCheck } from "@/state/utils/data_validation";
+import { addDerivedStateSubscriber } from "@/state/utils/store_utils";
 
-import { IRenderCanvas } from "../../colorizer/IRenderCanvas";
-import TimeControls from "../../colorizer/TimeControls";
+import type { DatasetSlice } from "./dataset_slice";
 
 export type TimeSliceState = {
   /**

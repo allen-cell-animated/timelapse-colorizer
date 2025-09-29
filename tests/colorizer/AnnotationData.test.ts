@@ -1,17 +1,17 @@
 import { Color } from "three";
 import { describe, expect, it } from "vitest";
 
-import { Dataset, DEFAULT_CATEGORICAL_PALETTE_KEY, KNOWN_CATEGORICAL_PALETTES } from "../../src/colorizer";
-import { MOCK_DATASET } from "../state/ViewerState/constants";
-import { compareRecord } from "../state/ViewerState/utils";
-
+import { Dataset, DEFAULT_CATEGORICAL_PALETTE_KEY, KNOWN_CATEGORICAL_PALETTES } from "@/colorizer";
 import {
   AnnotationData,
   AnnotationMergeMode,
   BOOLEAN_VALUE_FALSE,
   BOOLEAN_VALUE_TRUE,
   LabelType,
-} from "../../src/colorizer/AnnotationData";
+} from "@/colorizer/AnnotationData";
+
+import { MOCK_DATASET } from "../state/ViewerState/constants";
+import { compareRecord } from "../state/ViewerState/utils";
 
 describe("AnnotationData", () => {
   const defaultPalette = KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_KEY)!;

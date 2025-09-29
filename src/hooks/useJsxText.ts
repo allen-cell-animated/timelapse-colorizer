@@ -1,6 +1,6 @@
 import { ReactNode, useCallback, useState } from "react";
 
-import { renderStringArrayAsJsx } from "../utils/formatting";
+import { renderStringArrayAsJsx } from "@/utils/formatting";
 
 /**
  * Convenience state hook for formatting string text as JSX, using

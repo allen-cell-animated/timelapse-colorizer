@@ -2,17 +2,17 @@ import { Card, Radio } from "antd";
 import React, { ReactElement, useMemo } from "react";
 import { Color, ColorRepresentation } from "three";
 
-import { VECTOR_KEY_MOTION_DELTA } from "../../../colorizer/constants";
-import { VectorTooltipMode } from "../../../colorizer/types";
-import { threeToAntColor } from "../../../utils/color_utils";
-import { DEFAULT_OUTLINE_COLOR_PRESETS } from "./constants";
+import { VECTOR_KEY_MOTION_DELTA } from "@/colorizer/constants";
+import { VectorTooltipMode } from "@/colorizer/types";
+import SelectionDropdown from "@/components/Dropdowns/SelectionDropdown";
+import LabeledSlider from "@/components/Inputs/LabeledSlider";
+import WrappedColorPicker from "@/components/Inputs/WrappedColorPicker";
+import { SettingsContainer, SettingsItem } from "@/components/SettingsContainer";
+import { MAX_SETTINGS_SLIDER_WIDTH } from "@/constants";
+import { useViewerStateStore } from "@/state/ViewerState";
+import { threeToAntColor } from "@/utils/color_utils";
 
-import { useViewerStateStore } from "../../../state/ViewerState";
-import SelectionDropdown from "../../Dropdowns/SelectionDropdown";
-import LabeledSlider from "../../Inputs/LabeledSlider";
-import WrappedColorPicker from "../../Inputs/WrappedColorPicker";
-import { SettingsContainer, SettingsItem } from "../../SettingsContainer";
-import { MAX_SLIDER_WIDTH } from "../SettingsTab";
+import { DEFAULT_OUTLINE_COLOR_PRESETS } from "./constants";
 
 const VECTOR_OPTION_MOTION = {
   value: VECTOR_KEY_MOTION_DELTA,
@@ -68,7 +68,7 @@ export default function VectorFieldSettings(): ReactElement {
                 label="Average over # time intervals"
                 htmlFor={VectorSettingsHtmlIds.VECTOR_MOTION_TIME_INTERVALS_SLIDER}
               >
-                <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
+                <div style={{ maxWidth: MAX_SETTINGS_SLIDER_WIDTH, width: "100%" }}>
                   <LabeledSlider
                     id={VectorSettingsHtmlIds.VECTOR_MOTION_TIME_INTERVALS_SLIDER}
                     type="value"
@@ -95,7 +95,7 @@ export default function VectorFieldSettings(): ReactElement {
        * See examples in https://github.com/react-component/slider/issues/393.
        */}
       <SettingsItem label={"Scale factor"} htmlFor={VectorSettingsHtmlIds.VECTOR_SCALE_FACTOR_SLIDER}>
-        <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
+        <div style={{ maxWidth: MAX_SETTINGS_SLIDER_WIDTH, width: "100%" }}>
           <LabeledSlider
             id={VectorSettingsHtmlIds.VECTOR_SCALE_FACTOR_SLIDER}
             disabled={!vectorOptionsEnabled}

@@ -1,7 +1,11 @@
 import { Color } from "three";
 
-import { MAX_FEATURE_CATEGORIES } from "../../constants";
-import { ColorRampData } from "../colors/color_ramps";
+import { BOOLEAN_VALUE_FALSE, BOOLEAN_VALUE_TRUE, LabelData, LabelType } from "@/colorizer/AnnotationData";
+import ColorRamp, { ColorRampType } from "@/colorizer/ColorRamp";
+import { ColorRampData } from "@/colorizer/colors/color_ramps";
+import Dataset, { FeatureType } from "@/colorizer/Dataset";
+import { RenderCanvasStateParams } from "@/colorizer/IRenderCanvas";
+import Track from "@/colorizer/Track";
 import {
   FeatureDataType,
   FeatureThreshold,
@@ -10,14 +14,10 @@ import {
   isThresholdNumeric,
   ThresholdType,
   TrackPathColorMode,
-} from "../types";
-import { packDataTexture } from "./texture_utils";
+} from "@/colorizer/types";
+import { MAX_FEATURE_CATEGORIES } from "@/constants";
 
-import { BOOLEAN_VALUE_FALSE, BOOLEAN_VALUE_TRUE, LabelData, LabelType } from "../AnnotationData";
-import ColorRamp, { ColorRampType } from "../ColorRamp";
-import Dataset, { FeatureType } from "../Dataset";
-import { RenderCanvasStateParams } from "../IRenderCanvas";
-import Track from "../Track";
+import { packDataTexture } from "./texture_utils";
 
 /** Returns whether the two arrays are deeply equal, where arr1[i] === arr2[i] for all i. */
 export function arrayElementsAreEqual<T>(arr1: T[], arr2: T[]): boolean {
