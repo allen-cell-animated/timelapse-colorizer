@@ -35,7 +35,6 @@ export const MAX_SETTINGS_SLIDER_WIDTH = "250px";
  * Extra feature added to the dropdowns representing the frame number.
  * Deprecated because Time is now automatically added as a feature to the dataset.
  */
-
 export const DEPRECATED_SCATTERPLOT_TIME_KEY = "scatterplot_time";
 
 export * from "./url";
