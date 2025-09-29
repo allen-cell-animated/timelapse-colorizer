@@ -4,7 +4,13 @@
   "printWidth": 120,
   "trailingComma": "es5",
   "tabWidth": 2,
-  "importOrder": ["^[./]+.*/[a-z]+[\\w]*$", "^[./].*/[\\w?&]*$", "^[./].*/[\\w_\\-?]*[.][\\w._\\-?&]*$"],
+  "importOrder": [
+    "^node:[\\w]*$",
+    "<THIRD_PARTY_MODULES>",
+    "^@/[a-zA-Z]+[/\\w]*$",
+    "^[./]+.*/[a-z]+[\\w]*$",
+    "^[./].*/[\\w_\\-?]*[.]?[\\w._\\-?&]*$"
+  ],
   "importOrderSeparation": true,
   "importOrderSortSpecifiers": true,
   "importOrderCaseInsensitive": true
