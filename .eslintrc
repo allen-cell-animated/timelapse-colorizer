@@ -30,9 +30,7 @@
       "typescript": {
         "alwaysTryTypes": true
       },
-      "node": {
-        "extensions": [".js", ".jsx", ".ts", ".tsx"]
-      }
+      "node": true
     }
   },
   "overrides": [
@@ -68,7 +66,7 @@
     },
     {
       // Disable restricted imports for test files and config files
-      "files": ["tests/**", "*config.js"],
+      "files": ["tests/**", "*.config.js"],
       "rules": {
         "no-restricted-imports": "off"
       }

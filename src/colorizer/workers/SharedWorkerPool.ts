@@ -1,4 +1,4 @@
-import { Pool,pool } from "workerpool";
+import { Pool, pool } from "workerpool";
 
 import Dataset from "@/colorizer/Dataset";
 import { FeatureArrayType, FeatureDataType } from "@/colorizer/types";

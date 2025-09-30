@@ -1,7 +1,6 @@
 import { StateCreator } from "zustand";
 
-import { FrameLoadResult } from "@/colorizer";
-import { DEFAULT_PLAYBACK_FPS } from "@/colorizer/constants";
+import { DEFAULT_PLAYBACK_FPS, FrameLoadResult } from "@/colorizer";
 import { IRenderCanvas } from "@/colorizer/IRenderCanvas";
 import TimeControls from "@/colorizer/TimeControls";
 import { decodeInt, UrlParam } from "@/colorizer/utils/url_utils";
