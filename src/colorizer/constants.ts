@@ -2,6 +2,9 @@ import { Color } from "three";
 
 import { PlotRangeType, ScatterPlotConfig, VectorConfig, VectorTooltipMode } from "./types";
 
+export const DEFAULT_PLAYBACK_FPS = 10;
+export const MAX_FEATURE_CATEGORIES = 12;
+
 export const FRAME_BACKGROUND_COLOR_DEFAULT = "#ffffff";
 export const CANVAS_BACKGROUND_COLOR_DEFAULT = "#f7f7f7";
 export const OUTLINE_COLOR_DEFAULT = "#ff00ff";
@@ -28,3 +31,14 @@ export const getDefaultScatterPlotConfig = (): ScatterPlotConfig => ({
   yAxis: null,
   rangeType: PlotRangeType.ALL_TIME,
 });
+/**
+ * Default name for a collection descriptor JSON, which provides relative
+ * filepaths to one or more datasets.
+ */
+export const DEFAULT_COLLECTION_FILENAME = "collection.json";
+/**
+ * Default name for the manifest JSON, which provides relative filepaths
+ * to the elements (frames, feature data, centroids, etc.) of this dataset.
+ */
+
+export const DEFAULT_DATASET_FILENAME = "manifest.json";

@@ -1,4 +1,4 @@
-import workerpool from "workerpool";
+import { Pool,pool } from "workerpool";
 
 import Dataset from "@/colorizer/Dataset";
 import { FeatureArrayType, FeatureDataType } from "@/colorizer/types";
@@ -6,13 +6,14 @@ import { DataTextureInfo } from "@/colorizer/utils/texture_utils";
 
 // Vite import directive for worker files! See https://vitejs.dev/guide/features.html#import-with-query-suffixes.
 // @ts-ignore Ignore missing file warning
+// eslint-disable-next-line import/default
 import WorkerUrl from "./worker?url&worker";
 
 export default class SharedWorkerPool {
-  private workerPool: workerpool.Pool;
+  private workerPool: Pool;
 
   constructor() {
-    this.workerPool = workerpool.pool(WorkerUrl, {
+    this.workerPool = pool(WorkerUrl, {
       workerOpts: {
         // Set worker type to undefined (classic) in production to fix a Vite issue where the
         // application crashes when loading a module worker.

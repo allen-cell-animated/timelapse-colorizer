@@ -2,7 +2,7 @@ import { generateUUID } from "three/src/math/MathUtils";
 import { describe, expect, it } from "vitest";
 
 import Collection, { CollectionLoadOptions, CollectionSourceType, DatasetLoadOptions } from "@/colorizer/Collection";
-import { DEFAULT_COLLECTION_FILENAME, DEFAULT_DATASET_FILENAME } from "@/constants";
+import { DEFAULT_COLLECTION_FILENAME, DEFAULT_DATASET_FILENAME } from "@/colorizer/constants";
 
 import { MOCK_DATASET_FEATURE_1, MOCK_DATASET_MANIFEST, MOCK_DATASET_TIMES } from "./state/ViewerState/constants";
 import { ANY_ERROR, makeMockFetchMethod, MockFetchArrayLoader } from "./test_utils";

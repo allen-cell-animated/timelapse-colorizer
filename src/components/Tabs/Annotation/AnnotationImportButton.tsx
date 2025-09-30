@@ -1,6 +1,6 @@
 import { ImportOutlined, UploadOutlined } from "@ant-design/icons";
 import { Modal, Radio, Space, UploadFile } from "antd";
-import React, { ReactElement, useState } from "react";
+import React, { ReactElement, useRef, useState } from "react";
 import styled, { css } from "styled-components";
 
 import { AnnotationData, AnnotationMergeMode, AnnotationParseResult } from "@/colorizer/AnnotationData";
@@ -40,7 +40,7 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
   const [errorText, setErrorText] = useState("");
   const [mergeMode, setMergeMode] = useState(AnnotationMergeMode.APPEND);
 
-  const modalContainerRef = React.useRef<HTMLDivElement>(null);
+  const modalContainerRef = useRef<HTMLDivElement>(null);
 
   const handleFileUpload = (file: File): void => {
     setUploadedFile(null);

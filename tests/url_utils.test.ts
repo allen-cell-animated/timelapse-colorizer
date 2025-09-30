@@ -1,6 +1,7 @@
 import { Color } from "three";
 import { describe, expect, it } from "vitest";
 
+import { MAX_FEATURE_CATEGORIES } from "@/colorizer/constants";
 import { FeatureThreshold, ThresholdType } from "@/colorizer/types";
 import {
   decodeHexAlphaColor,
@@ -12,7 +13,6 @@ import {
   isUrl,
   serializeThresholds,
 } from "@/colorizer/utils/url_utils";
-import { MAX_FEATURE_CATEGORIES } from "@/constants";
 
 function padCategories(categories: boolean[]): boolean[] {
   const result = [...categories];

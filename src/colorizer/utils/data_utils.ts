@@ -3,6 +3,7 @@ import { Color } from "three";
 import { BOOLEAN_VALUE_FALSE, BOOLEAN_VALUE_TRUE, LabelData, LabelType } from "@/colorizer/AnnotationData";
 import ColorRamp, { ColorRampType } from "@/colorizer/ColorRamp";
 import { ColorRampData } from "@/colorizer/colors/color_ramps";
+import { MAX_FEATURE_CATEGORIES } from "@/colorizer/constants";
 import Dataset, { FeatureType } from "@/colorizer/Dataset";
 import { RenderCanvasStateParams } from "@/colorizer/IRenderCanvas";
 import Track from "@/colorizer/Track";
@@ -15,7 +16,6 @@ import {
   ThresholdType,
   TrackPathColorMode,
 } from "@/colorizer/types";
-import { MAX_FEATURE_CATEGORIES } from "@/constants";
 
 import { packDataTexture } from "./texture_utils";
 
@@ -601,4 +601,18 @@ export function getLineUpdateFlags(
     vertexColorNeedsUpdate,
     materialNeedsUpdate,
   };
+}
+/**
+ * Returns a copy of an object where any properties with a value of `undefined`
+ * are not included.
+ */
+
+export function removeUndefinedProperties<T>(object: T): T {
+  const ret = {} as T;
+  for (const key in object) {
+    if (object[key] !== undefined) {
+      ret[key] = object[key];
+    }
+  }
+  return ret;
 }

@@ -3,10 +3,10 @@ import { Slider } from "antd";
 import React, { ReactElement, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 
+import { DEFAULT_PLAYBACK_FPS } from "@/colorizer/constants";
 import IconButton from "@/components/Buttons/IconButton";
 import PlaybackSpeedControl from "@/components/PlaybackSpeedControl";
 import SpinBox from "@/components/SpinBox";
-import { DEFAULT_PLAYBACK_FPS } from "@/constants";
 import { useDebounce } from "@/hooks";
 import { useViewerStateStore } from "@/state";
 import { FlexRowAlignCenter, VisuallyHidden } from "@/styles/utils";

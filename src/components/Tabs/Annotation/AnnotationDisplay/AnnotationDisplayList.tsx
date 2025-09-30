@@ -80,7 +80,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
   const theme = useContext(AppThemeContext);
 
   const selectedTrackId = props.selectedTrack?.trackId;
-  const tooltipContainerRef = React.useRef<HTMLDivElement>(null);
+  const tooltipContainerRef = useRef<HTMLDivElement>(null);
   const [thumbnailHoveredX, setThumbnailHoveredX] = useState<number | null>(null);
   const [thumbnailHoveredTime, setThumbnailHoveredTime] = useState<number | null>(null);
   const lastHoveredX = useRef<number>(0);

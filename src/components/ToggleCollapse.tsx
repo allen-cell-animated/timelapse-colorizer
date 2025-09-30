@@ -1,9 +1,18 @@
 import { CaretDownFilled, CaretUpFilled } from "@ant-design/icons";
 import { Checkbox, Switch } from "antd";
-import React, { PropsWithChildren, ReactElement, ReactNode, useCallback, useContext, useEffect, useState } from "react";
+import React, {
+  PropsWithChildren,
+  ReactElement,
+  ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
+import { removeUndefinedProperties } from "@/colorizer/utils/data_utils";
 import TextButton from "@/components/Buttons/TextButton";
-import { removeUndefinedProperties } from "@/state/utils/data_validation";
 import { AppThemeContext } from "@/styles/AppStyle";
 import { FlexColumn, FlexRowAlignCenter, VisuallyHidden } from "@/styles/utils";
 
@@ -69,7 +78,7 @@ export default function ToggleCollapse(inputProps: PropsWithChildren<ToggleColla
   const theme = useContext(AppThemeContext);
   const [isExpanded, setIsExpanded] = useState(props.toggleChecked ?? true);
   const [isAnimating, setIsAnimating] = useState(false);
-  const contentContainerRef = React.useRef<HTMLDivElement>(null);
+  const contentContainerRef = useRef<HTMLDivElement>(null);
 
   const startAnimating = useCallback(() => {
     setIsAnimating(true);

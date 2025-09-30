@@ -31,11 +31,12 @@ import {
 import type { SerializedStoreData } from "@/state/types";
 import { setValueIfDefined } from "@/state/utils/data_validation";
 
-const OUT_OF_RANGE_DRAW_SETTINGS_DEFAULT: DrawSettings = {
+export const OUT_OF_RANGE_DRAW_SETTINGS_DEFAULT: DrawSettings = {
   color: new Color(OUT_OF_RANGE_COLOR_DEFAULT),
   mode: DrawMode.USE_COLOR,
 };
-const OUTLIER_DRAW_SETTINGS_DEFAULT: DrawSettings = {
+
+export const OUTLIER_DRAW_SETTINGS_DEFAULT: DrawSettings = {
   color: new Color(OUTLIER_COLOR_DEFAULT),
   mode: DrawMode.USE_COLOR,
 };

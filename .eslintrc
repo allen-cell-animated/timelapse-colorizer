@@ -1,5 +1,10 @@
 {
-  "extends": ["eslint:recommended", "plugin:react/recommended"],
+  "extends": [
+    "eslint:recommended",
+    "plugin:react/recommended",
+    "plugin:import/recommended",
+    "plugin:import/typescript"
+  ],
   "env": {
     "es6": true,
     "browser": true,
@@ -15,6 +20,20 @@
     },
     "ecmaVersion": 2018,
     "sourceType": "module"
+  },
+  "settings": {
+    "import/extensions": [".ts", ".tsx", ".js", ".jsx"],
+    "import/parser": {
+      "@typescript-eslint/parser": [".d.ts", ".ts", ".tsx"]
+    },
+    "import/resolver": {
+      "typescript": {
+        "alwaysTryTypes": true
+      },
+      "node": {
+        "extensions": [".js", ".jsx", ".ts", ".tsx"]
+      }
+    }
   },
   "overrides": [
     {
@@ -48,13 +67,23 @@
       }
     },
     {
+      // Disable restricted imports for test files and config files
       "files": ["tests/**", "*config.js"],
       "rules": {
         "no-restricted-imports": "off"
       }
+    },
+    {
+      // Disable `import/no-named-as-default` for imported packages
+      // (currently triggers on imports of styled-components)
+      "files": ["**/*.js", "**/*.ts", "**/*.tsx"],
+      "excludedFiles": ["node_modules/**"],
+      "rules": {
+        "import/no-named-as-default": "off"
+      }
     }
   ],
-  "plugins": ["@typescript-eslint", "simple-import-sort"],
+  "plugins": ["@typescript-eslint", "simple-import-sort", "import"],
   "rules": {
     "comma-style": [1, "last"],
     "curly": [1, "multi-line"],
@@ -116,6 +145,14 @@
       }
     ],
     "simple-import-sort/exports": "warn",
+    "import/no-restricted-paths": [
+      "error",
+      {
+        // Forbid colorizer from importing other code to enforce it being a standalone module
+        "zones": [{ "target": "src/colorizer", "from": "src", "except": ["./colorizer"] }]
+      }
+    ],
+    "import/no-unresolved": "error",
     "space-before-blocks": [1, "always"]
   }
 }

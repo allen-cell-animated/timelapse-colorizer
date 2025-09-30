@@ -1,10 +1,10 @@
 import { StateCreator } from "zustand";
 
 import { FrameLoadResult } from "@/colorizer";
+import { DEFAULT_PLAYBACK_FPS } from "@/colorizer/constants";
 import { IRenderCanvas } from "@/colorizer/IRenderCanvas";
 import TimeControls from "@/colorizer/TimeControls";
 import { decodeInt, UrlParam } from "@/colorizer/utils/url_utils";
-import { DEFAULT_PLAYBACK_FPS } from "@/constants";
 import type { SerializedStoreData, SubscribableStore } from "@/state/types";
 import { clampWithNanCheck } from "@/state/utils/data_validation";
 import { addDerivedStateSubscriber } from "@/state/utils/store_utils";

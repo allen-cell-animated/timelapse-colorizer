@@ -3,8 +3,8 @@ import { Color } from "three";
 import { describe, expect, it } from "vitest";
 
 import { FeatureThreshold, KNOWN_CATEGORICAL_PALETTES, KNOWN_COLOR_RAMPS, ThresholdType } from "@/colorizer";
+import { MAX_FEATURE_CATEGORIES } from "@/colorizer/constants";
 import { UrlParam } from "@/colorizer/utils/url_utils";
-import { MAX_FEATURE_CATEGORIES } from "@/constants";
 import { loadColorRampSliceFromParams, serializeColorRampSlice } from "@/state/slices";
 import { useViewerStateStore } from "@/state/ViewerState";
 

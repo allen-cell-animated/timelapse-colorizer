@@ -5,6 +5,7 @@ import { isThresholdNumeric } from "@/colorizer";
 import ColorRamp, { ColorRampType } from "@/colorizer/ColorRamp";
 import { DEFAULT_CATEGORICAL_PALETTE_KEY, KNOWN_CATEGORICAL_PALETTES } from "@/colorizer/colors/categorical_palettes";
 import { DEFAULT_COLOR_RAMP_KEY, KNOWN_COLOR_RAMPS } from "@/colorizer/colors/color_ramps";
+import { MAX_FEATURE_CATEGORIES } from "@/colorizer/constants";
 import { arrayElementsAreEqual, getColorMap, thresholdMatchFinder } from "@/colorizer/utils/data_utils";
 import {
   decodeBoolean,
@@ -15,7 +16,7 @@ import {
   URL_COLOR_RAMP_REVERSED_SUFFIX,
   UrlParam,
 } from "@/colorizer/utils/url_utils";
-import { COLOR_RAMP_RANGE_DEFAULT, MAX_FEATURE_CATEGORIES } from "@/constants";
+import { COLOR_RAMP_RANGE_DEFAULT } from "@/constants";
 import { SerializedStoreData, SubscribableStore } from "@/state/types";
 import { addDerivedStateSubscriber } from "@/state/utils/store_utils";
 

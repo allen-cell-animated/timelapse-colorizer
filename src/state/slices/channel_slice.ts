@@ -1,21 +1,11 @@
 import { Color } from "three";
 import { StateCreator } from "zustand";
 
-import { ChannelRangePreset } from "@/colorizer/types";
+import { ChannelRangePreset, ChannelSetting } from "@/colorizer/types";
 import { SerializedStoreData, SubscribableStore } from "@/state/types";
 import { addDerivedStateSubscriber } from "@/state/utils/store_utils";
 
 import { DatasetSlice } from "./dataset_slice";
-
-export type ChannelSetting = {
-  visible: boolean;
-  color: Color;
-  opacity: number;
-  min: number;
-  max: number;
-  dataMin: number;
-  dataMax: number;
-};
 
 export type ChannelSliceState = {
   channelSettings: ChannelSetting[];

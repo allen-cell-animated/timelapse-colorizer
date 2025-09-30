@@ -1,7 +1,7 @@
 import React, { ReactElement, useMemo } from "react";
 
+import { DEFAULT_PLAYBACK_FPS } from "@/colorizer/constants";
 import SelectionDropdown from "@/components/Dropdowns/SelectionDropdown";
-import { DEFAULT_PLAYBACK_FPS } from "@/constants";
 
 type PlaybackSpeedControlProps = {
   fps: number;

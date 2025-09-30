@@ -1,6 +1,6 @@
 import { Color } from "three";
 
-import { MAX_FEATURE_CATEGORIES } from "@/constants";
+import { MAX_FEATURE_CATEGORIES } from "@/colorizer/constants";
 
 import { RawColorData } from "./color_ramps";
 

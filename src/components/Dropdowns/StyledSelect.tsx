@@ -1,7 +1,12 @@
 import { ButtonProps } from "antd";
-import React, { ReactElement, useMemo } from "react";
-import Select, { components, DropdownIndicatorProps, GroupBase, StylesConfig } from "react-select";
-import { StateManagerProps } from "react-select/dist/declarations/src/useStateManager";
+import React, { ReactElement, useContext, useMemo } from "react";
+import Select, {
+  components,
+  DropdownIndicatorProps,
+  GroupBase,
+  Props as StateManagerProps,
+  StylesConfig,
+} from "react-select";
 import styled, { css } from "styled-components";
 import { Color } from "three";
 
@@ -289,7 +294,7 @@ export default function AntStyledSelect<
   IsMulti extends boolean = false,
   Group extends GroupBase<SelectItem> = GroupBase<SelectItem>
 >(props: AntStyledSelectProps<IsMulti, Group>): ReactElement {
-  const theme = React.useContext(AppThemeContext);
+  const theme = useContext(AppThemeContext);
   const customStyles = useMemo(() => getCustomStyles(theme, props.width ?? "15vw + 30px"), [theme]);
 
   return (
