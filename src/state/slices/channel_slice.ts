@@ -2,6 +2,7 @@ import { Color } from "three";
 import { StateCreator } from "zustand";
 
 import { ChannelRangePreset } from "../../colorizer/types";
+import { decodeMaybeChannelSetting, encodeChannelSetting, isChannelKey } from "../../colorizer/utils/url_utils";
 import { SerializedStoreData, SubscribableStore } from "../types";
 import { addDerivedStateSubscriber } from "../utils/store_utils";
 import { CollectionSlice } from "./collection_slice";
@@ -129,11 +130,31 @@ export const addChannelDerivedStateSubscribers = (
   );
 };
 
-// TODO: Implement serialization
-export const serializeChannelSlice = (_slice: Partial<ChannelSliceSerializableState>): SerializedStoreData => ({});
+export const serializeChannelSlice = (slice: Partial<ChannelSliceSerializableState>): SerializedStoreData => {
+  const channelSettings = slice.channelSettings;
+  const ret: SerializedStoreData = {};
+  channelSettings?.forEach((setting, index) => {
+    ret[`c${index}`] = encodeChannelSetting(setting);
+  });
+  return ret;
+};
 
 export const selectChannelSliceSerializationDeps = (slice: ChannelSlice): ChannelSliceSerializableState => ({
   channelSettings: slice.channelSettings,
 });
 
-export const loadChannelSliceFromParams = (_slice: ChannelSlice, _params: URLSearchParams): void => {};
+export const loadChannelSliceFromParams = (slice: ChannelSlice, params: URLSearchParams): void => {
+  // Find all params matching channel format
+  const channelSettings: Partial<ChannelSetting>[] = [];
+  for (const [key, value] of params.entries()) {
+    if (isChannelKey(key) && value) {
+      const channelIndex = parseInt(key.slice(1), 10);
+      if (Number.isNaN(channelIndex)) {
+        channelSettings.push({});
+        continue;
+      }
+      const decodedChannel = decodeMaybeChannelSetting(value) ?? {};
+      slice.updateChannelSettings(channelIndex, decodedChannel);
+    }
+  }
+};

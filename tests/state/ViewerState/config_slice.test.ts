@@ -191,12 +191,18 @@ describe("ConfigSlice", () => {
     it("loads basic config settings", () => {
       const { result } = renderHook(() => useViewerStateStore());
       act(() => {
-        loadConfigSliceFromParams(result.current, new URLSearchParams(EXAMPLE_SLICE_1_PARAMS));
+        loadConfigSliceFromParams(
+          result.current,
+          new URLSearchParams(EXAMPLE_SLICE_1_PARAMS as Record<string, string>)
+        );
       });
       compareRecord(result.current, EXAMPLE_SLICE_1);
 
       act(() => {
-        loadConfigSliceFromParams(result.current, new URLSearchParams(EXAMPLE_SLICE_2_PARAMS));
+        loadConfigSliceFromParams(
+          result.current,
+          new URLSearchParams(EXAMPLE_SLICE_2_PARAMS as Record<string, string>)
+        );
       });
       compareRecord(result.current, EXAMPLE_SLICE_2);
     });

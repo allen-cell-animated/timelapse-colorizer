@@ -142,7 +142,7 @@ function Viewer(): ReactElement {
     makeDebouncedCallback(() => {
       if (isInitialDatasetLoaded) {
         const params = serializeViewerState(useViewerStateStore.getState());
-        setSearchParams(params, { replace: true });
+        setSearchParams(params as Record<string, string>, { replace: true });
       }
     }),
     [isInitialDatasetLoaded]

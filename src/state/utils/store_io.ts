@@ -56,7 +56,7 @@ export const selectSerializationDependencies = (state: ViewerStore): Partial<Vie
  * @param params Object containing serializable viewer state parameters.
  * Also includes a `collectionParam` field for the collection URL.
  */
-export const serializeViewerState = (state: Partial<ViewerStoreSerializableState>): Partial<SerializedStoreData> => {
+export const serializeViewerState = (state: Partial<ViewerStoreSerializableState>): SerializedStoreData => {
   // Ordered by approximate importance in the URL
   return removeUndefinedProperties({
     ...serializeCollectionSlice(state),
@@ -67,8 +67,8 @@ export const serializeViewerState = (state: Partial<ViewerStoreSerializableState
     ...serializeConfigSlice(state),
     ...serializeScatterPlotSlice(state),
     ...serializeBackdropSlice(state),
-    ...serializeChannelSlice(state),
     ...serializeVectorSlice(state),
+    ...serializeChannelSlice(state),
   });
 };
 
@@ -116,7 +116,9 @@ export const serializedDataToUrl = (data: SerializedStoreData): string => {
   const params = new URLSearchParams();
   data = removeUndefinedProperties(data);
   for (const [key, value] of Object.entries(data)) {
-    params.set(key, value);
+    if (value) {
+      params.set(key, value);
+    }
   }
   return params.toString();
 };
@@ -145,6 +147,7 @@ export const loadViewerStateFromParams = (store: Store<ViewerStore>, params: URL
   loadScatterPlotSliceFromParams(store.getState(), params);
   loadThresholdSliceFromParams(store.getState(), params);
   loadVectorSliceFromParams(store.getState(), params);
+  loadChannelSliceFromParams(store.getState(), params);
   loadChannelSliceFromParams(store.getState(), params);
 
   // 3. Dependent on dataset slice (track/backdrop/features):

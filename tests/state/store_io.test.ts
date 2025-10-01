@@ -102,7 +102,19 @@ const EXAMPLE_STORE: ViewerStoreSerializableState = {
   scatterYAxis: MockFeatureKeys.FEATURE2,
   scatterRangeType: PlotRangeType.ALL_TIME,
   // TODO: Add mock channel settings
-  channelSettings: [],
+  channelSettings: [
+    { visible: true, color: new Color("#ff0000"), opacity: 1, min: 0, max: 1, dataMin: -5, dataMax: 5 },
+    { visible: false, color: new Color("#00ff00"), opacity: 0, min: 0.3, max: 4.2, dataMin: 0, dataMax: 1 },
+    {
+      visible: true,
+      color: new Color("#0000ff"),
+      opacity: 4 / 255,
+      min: 3500,
+      max: 64231,
+      dataMin: 0,
+      dataMax: 65535,
+    },
+  ],
 };
 
 // Omit key "palette" because it is overridden by key "palette-key"
@@ -147,6 +159,9 @@ const EXAMPLE_STORE_EXPECTED_PARAMS: ExpectedParamType = {
   "scatter-x": MockFeatureKeys.FEATURE3,
   "scatter-y": MockFeatureKeys.FEATURE2,
   "scatter-range": "all",
+  c0: "ven:1,col:ff0000ff,rmp:0:1,rng:-5:5",
+  c1: "ven:0,col:00ff0000,rmp:0.300:4.200,rng:0:1",
+  c2: "ven:1,col:0000ff04,rmp:3500:64231,rng:0:65535",
 };
 
 const EXAMPLE_STORE_EXPECTED_QUERY_STRING =
@@ -157,8 +172,10 @@ const EXAMPLE_STORE_EXPECTED_QUERY_STRING =
   "&edge=1&edge-color=8090a0b0" +
   "&tab=filters&scatter-x=feature3&scatter-y=feature2&scatter-range=all" +
   "&bg=1&bg-brightness=75&bg-sat=50&fg-alpha=25" +
-  "&vc=1&vc-key=_motion_&vc-color=ff00ff&vc-scale=5&vc-tooltip=c&vc-time-int=11";
-
+  "&vc=1&vc-key=_motion_&vc-color=ff00ff&vc-scale=5&vc-tooltip=c&vc-time-int=11" +
+  "&c0=ven%3A1%2Ccol%3Aff0000ff%2Crmp%3A0%3A1%2Crng%3A-5%3A5" +
+  "&c1=ven%3A0%2Ccol%3A00ff0000%2Crmp%3A0.300%3A4.200%2Crng%3A0%3A1" +
+  "&c2=ven%3A1%2Ccol%3A0000ff04%2Crmp%3A3500%3A64231%2Crng%3A0%3A65535";
 describe("serializeViewerState", () => {
   it("handles empty state", () => {
     const state = {};

@@ -7,6 +7,7 @@ import { ChannelRangePreset } from "../../../colorizer";
 import { ChannelSetting } from "../../../state/slices";
 import { FlexColumn, FlexRowAlignCenter } from "../../../styles/utils";
 import { antToThreeColor, threeToAntColorWithAlpha } from "../../../utils/color_utils";
+import { DEFAULT_OUTLINE_COLOR_PRESETS } from "./constants";
 
 import LabeledSlider from "../../Inputs/LabeledSlider";
 import WrappedColorPicker from "../../Inputs/WrappedColorPicker";
@@ -43,6 +44,7 @@ export function ChannelSettingControl(props: ChannelSettingControlProps): ReactE
           const { color, alpha: opacity } = antToThreeColor(antdColor);
           updateSettings({ color, opacity });
         }}
+        presets={DEFAULT_OUTLINE_COLOR_PRESETS}
       />
       <VerticalDivider />
     </>

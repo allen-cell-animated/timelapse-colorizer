@@ -105,4 +105,26 @@ describe("ChannelSlice", () => {
       expect(result.current.channelSettings).toEqual(initialChannelSettings);
     });
   });
+
+  // describe("updateChannelSettings", () => {
+  //   it("can update channels", () => {
+  //     throw new Error("Test not implemented");
+  //   });
+
+  //   it("ignores channels that are out of range", () => {
+  //     throw new Error("Test not implemented");
+  //   });
+  // });
+
+  // describe("serializeChannelSlice", () => {
+  //   it("", () => {
+  //     throw new Error("Test not implemented");
+  //   });
+  // });
+
+  // describe("loadChannelSliceFromParams", () => {
+  //   it("", () => {
+  //     throw new Error("Test not implemented");
+  //   });
+  // });
 });
