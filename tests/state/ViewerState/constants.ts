@@ -59,6 +59,12 @@ export enum MockBackdropKeys {
   BACKDROP2 = "backdrop2",
 }
 
+export enum MockChannelKeys {
+  CHANNEL1 = "channel1",
+  CHANNEL2 = "channel2",
+  CHANNEL3 = "channel3",
+}
+
 export const DEFAULT_INITIAL_FEATURE_KEY = MockFeatureKeys.FEATURE1;
 
 export const MOCK_DATASET_MANIFEST: AnyManifestFile = {
@@ -81,6 +87,28 @@ export const MOCK_DATASET_MANIFEST: AnyManifestFile = {
       frames: ["frame0.png", "frame1.png", "frame2.png", "frame3.png"],
     },
   ],
+  frames3d: {
+    source: "https://some-url.com/frames3d.ome.zarr",
+    segmentationChannel: 0,
+    totalFrames: 4,
+    backdrops: [
+      {
+        source: "https://some-url.com/frames3d.ome.zarr",
+        name: "3D Channel 1",
+        channelIndex: 1,
+      },
+      {
+        source: "https://some-url.com/frames3d.ome.zarr",
+        name: "3D Channel 2",
+        channelIndex: 2,
+      },
+      {
+        source: "https://some-url.com/frames3d.ome.zarr",
+        name: "3D Channel 3",
+        channelIndex: 3,
+      },
+    ],
+  },
   times: "times.json",
   tracks: "tracks.json",
   segIds: "seg_ids.json",

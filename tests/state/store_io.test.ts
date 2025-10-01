@@ -26,13 +26,15 @@ import {
   serializedDataToUrl,
   serializeViewerParams,
 } from "../../src/state/utils/store_io";
-import { sleep } from "../test_utils";
+import { makeMockDataset, sleep } from "../test_utils";
 import {
   MOCK_COLLECTION,
   MOCK_COLLECTION_PATH,
   MOCK_DATASET,
+  MOCK_DATASET_ARRAY_LOADER,
   MOCK_DATASET_DEFAULT_TRACK,
   MOCK_DATASET_KEY,
+  MOCK_DATASET_MANIFEST,
   MockBackdropKeys,
   MockFeatureKeys,
 } from "./ViewerState/constants";
@@ -216,7 +218,12 @@ describe("loadViewerStateFromParams", () => {
     act(() => {
       result.current.setCollection(MOCK_COLLECTION);
     });
-    await setDatasetAsync(result, MOCK_DATASET);
+    // await setDatasetAsync(result, MOCK_DATASET);
+    // TODO: Temporary fixup until channels are serialized. Remove once implemented.
+    await setDatasetAsync(
+      result,
+      await makeMockDataset({ ...MOCK_DATASET_MANIFEST, frames3d: undefined }, MOCK_DATASET_ARRAY_LOADER)
+    );
     await act(async () => {
       loadInitialViewerStateFromParams(useViewerStateStore, params);
       loadViewerStateFromParams(useViewerStateStore, params);

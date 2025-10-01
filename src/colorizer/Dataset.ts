@@ -50,7 +50,7 @@ type BackdropData = {
   frames: string[];
 };
 
-type Backdrop3dData = {
+export type Backdrop3dData = {
   source: string;
   name: string;
   description?: string;
