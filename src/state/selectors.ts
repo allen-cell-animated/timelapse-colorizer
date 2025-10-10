@@ -1,5 +1,5 @@
-import { RenderCanvasStateParams } from "@/colorizer/IRenderCanvas";
-import { ViewerStoreState } from "@/state/slices";
+import { RenderCanvasStateParams } from "src/colorizer/IRenderCanvas";
+import { ViewerStoreState } from "src/state/slices";
 
 export const renderCanvasStateParamsSelector = (state: ViewerStoreState): RenderCanvasStateParams => ({
   dataset: state.dataset,

@@ -1,8 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { computeCorrelations, pearson } from "@/colorizer/utils/correlation";
-
-import { ANY_ERROR } from "./test_utils";
+import { computeCorrelations, pearson } from "src/colorizer/utils/correlation";
+import { ANY_ERROR } from "tests/utils";
 
 describe("pearson", () => {
   it("handles empty arrays", () => {

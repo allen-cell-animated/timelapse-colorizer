@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { FilePathResolver } from "@/colorizer/path_resolvers";
+import { FilePathResolver } from "src/colorizer/path_resolvers";
 
 describe("FilePathResolver", () => {
   describe("resolve", () => {

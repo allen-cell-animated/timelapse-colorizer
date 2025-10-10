@@ -1,11 +1,11 @@
 import React, { ReactElement, ReactNode, useContext, useMemo } from "react";
 
-import { AnnotationParseResult } from "@/colorizer/AnnotationData";
-import ExpandableList from "@/components/ExpandableList";
-import FileInfoCard from "@/components/Inputs/FileInfoCard";
-import { AppThemeContext } from "@/styles/AppStyle";
-import { FlexColumn } from "@/styles/utils";
-import { formatQuantityString, renderStringArrayAsJsx } from "@/utils/formatting";
+import { AnnotationParseResult } from "src/colorizer/AnnotationData";
+import ExpandableList from "src/components/ExpandableList";
+import FileInfoCard from "src/components/Inputs/FileInfoCard";
+import { AppThemeContext } from "src/styles/AppStyle";
+import { FlexColumn } from "src/styles/utils";
+import { formatQuantityString, renderStringArrayAsJsx } from "src/utils/formatting";
 
 type AnnotationFileInfoProps = {
   file: File | null;

@@ -2,12 +2,12 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
-import { getBuildDisplayDateString } from "@/colorizer/utils/math_utils";
-import { BASE_URL, INTERNAL_BUILD, VERSION_NUMBER } from "@/constants";
-import { ErrorPage, LandingPage } from "@/routes";
-import AppStyle from "@/styles/AppStyle";
-import { decodeGitHubPagesUrl, isEncodedPathUrl, tryRemoveHashRouting } from "@/utils/gh_routing";
-import Viewer from "@/Viewer";
+import { getBuildDisplayDateString } from "src/colorizer/utils/math_utils";
+import { BASE_URL, INTERNAL_BUILD, VERSION_NUMBER } from "src/constants";
+import { ErrorPage, LandingPage } from "src/routes";
+import AppStyle from "src/styles/AppStyle";
+import { decodeGitHubPagesUrl, isEncodedPathUrl, tryRemoveHashRouting } from "src/utils/gh_routing";
+import Viewer from "src/Viewer";
 
 // Decode URL path if it was encoded for GitHub pages or uses hash routing.
 const locationUrl = new URL(window.location.toString());

@@ -2,8 +2,8 @@ import { Progress } from "antd";
 import Tooltip from "antd/es/tooltip";
 import React, { ReactElement, useContext, useRef } from "react";
 
-import { TOOLTIP_TRIGGER } from "@/constants";
-import { AppThemeContext } from "@/styles/AppStyle";
+import { TOOLTIP_TRIGGER } from "src/constants";
+import { AppThemeContext } from "src/styles/AppStyle";
 
 type StyledInlineProgressProps = {
   /** An integer percentage, floored and clamped to the [0, 100] range. */

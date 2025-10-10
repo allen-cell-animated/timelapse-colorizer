@@ -1,4 +1,4 @@
-import { formatPath, isAllenPath, isUrl, resolveUrl } from "@/colorizer/utils/url_utils";
+import { formatPath, isAllenPath, isUrl, resolveUrl } from "src/colorizer/utils/url_utils";
 
 import { IPathResolver } from "./IPathResolver";
 

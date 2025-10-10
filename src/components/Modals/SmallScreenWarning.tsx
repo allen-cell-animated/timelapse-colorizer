@@ -3,7 +3,7 @@ import { Button, Checkbox } from "antd";
 import React, { ReactElement, useCallback, useEffect, useState } from "react";
 import { useLocalStorage } from "usehooks-ts";
 
-import { FlexColumn, FlexRow } from "@/styles/utils";
+import { FlexColumn, FlexRow } from "src/styles/utils";
 
 import StyledModal from "./StyledModal";
 

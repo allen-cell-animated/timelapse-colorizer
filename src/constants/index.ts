@@ -1,4 +1,4 @@
-import { DEFAULT_ANNOTATION_LABEL_COLORS } from "@/colorizer/AnnotationData";
+import { DEFAULT_ANNOTATION_LABEL_COLORS } from "src/colorizer/AnnotationData";
 
 export const INTERNAL_BUILD = import.meta.env.VITE_INTERNAL_BUILD === "true";
 export const VERSION_NUMBER = import.meta.env.VITE_APP_VERSION;

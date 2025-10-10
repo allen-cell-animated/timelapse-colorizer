@@ -9,13 +9,13 @@ import {
   DEFAULT_ANNOTATION_LABEL_COLORS,
   LabelOptions,
   LabelType,
-} from "@/colorizer/AnnotationData";
-import WrappedColorPicker from "@/components/Inputs/WrappedColorPicker";
-import { SettingsContainer, SettingsItem } from "@/components/SettingsContainer";
-import { TooltipWithSubtitle } from "@/components/Tooltips/TooltipWithSubtitle";
-import { AppThemeContext, Z_INDEX_POPOVER } from "@/styles/AppStyle";
-import { FlexColumn, FlexRow } from "@/styles/utils";
-import { threeToAntColor } from "@/utils/color_utils";
+} from "src/colorizer/AnnotationData";
+import WrappedColorPicker from "src/components/Inputs/WrappedColorPicker";
+import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
+import { TooltipWithSubtitle } from "src/components/Tooltips/TooltipWithSubtitle";
+import { AppThemeContext, Z_INDEX_POPOVER } from "src/styles/AppStyle";
+import { FlexColumn, FlexRow } from "src/styles/utils";
+import { threeToAntColor } from "src/utils/color_utils";
 
 const DEFAULT_LABEL_COLOR_PRESETS = [
   {

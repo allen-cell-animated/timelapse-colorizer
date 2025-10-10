@@ -2,15 +2,15 @@ import { renderHook } from "@testing-library/react";
 import { act } from "react-dom/test-utils";
 import { describe, expect, it } from "vitest";
 
-import { PlotRangeType } from "@/colorizer";
-import { TIME_FEATURE_KEY } from "@/colorizer/Dataset";
-import { UrlParam } from "@/colorizer/utils/url_utils";
-import { DEPRECATED_SCATTERPLOT_TIME_KEY } from "@/constants";
-import { useViewerStateStore } from "@/state";
-import { loadScatterPlotSliceFromParams, serializeScatterPlotSlice } from "@/state/slices";
+import { PlotRangeType } from "src/colorizer";
+import { TIME_FEATURE_KEY } from "src/colorizer/Dataset";
+import { UrlParam } from "src/colorizer/utils/url_utils";
+import { DEPRECATED_SCATTERPLOT_TIME_KEY } from "src/constants";
+import { useViewerStateStore } from "src/state";
+import { loadScatterPlotSliceFromParams, serializeScatterPlotSlice } from "src/state/slices";
+import { MOCK_DATASET, MockFeatureKeys } from "tests/constants";
+import { ANY_ERROR } from "tests/utils";
 
-import { ANY_ERROR } from "../../test_utils";
-import { MOCK_DATASET, MockFeatureKeys } from "./constants";
 import { setDatasetAsync } from "./utils";
 
 describe("ScatterplotSlice", () => {

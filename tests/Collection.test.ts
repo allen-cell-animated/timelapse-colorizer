@@ -1,11 +1,10 @@
 import { generateUUID } from "three/src/math/MathUtils";
 import { describe, expect, it } from "vitest";
 
-import Collection, { CollectionLoadOptions, CollectionSourceType, DatasetLoadOptions } from "@/colorizer/Collection";
-import { DEFAULT_COLLECTION_FILENAME, DEFAULT_DATASET_FILENAME } from "@/colorizer/constants";
-
-import { MOCK_DATASET_FEATURE_1, MOCK_DATASET_MANIFEST, MOCK_DATASET_TIMES } from "./state/ViewerState/constants";
-import { ANY_ERROR, makeMockFetchMethod, MockFetchArrayLoader } from "./test_utils";
+import Collection, { CollectionLoadOptions, CollectionSourceType, DatasetLoadOptions } from "src/colorizer/Collection";
+import { DEFAULT_COLLECTION_FILENAME, DEFAULT_DATASET_FILENAME } from "src/colorizer/constants";
+import { MOCK_DATASET_FEATURE_1, MOCK_DATASET_MANIFEST, MOCK_DATASET_TIMES } from "tests/constants";
+import { ANY_ERROR, makeMockFetchMethod, MockFetchArrayLoader } from "tests/utils";
 
 const collectionData = new Map([
   ["d1", { path: "https://some-path.json", name: "dataset1" }],

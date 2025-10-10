@@ -1,12 +1,11 @@
 import { Color, ColorRepresentation } from "three";
 import { StateCreator } from "zustand";
 
-import { isThresholdNumeric } from "@/colorizer";
-import ColorRamp, { ColorRampType } from "@/colorizer/ColorRamp";
-import { DEFAULT_CATEGORICAL_PALETTE_KEY, KNOWN_CATEGORICAL_PALETTES } from "@/colorizer/colors/categorical_palettes";
-import { DEFAULT_COLOR_RAMP_KEY, KNOWN_COLOR_RAMPS } from "@/colorizer/colors/color_ramps";
-import { MAX_FEATURE_CATEGORIES } from "@/colorizer/constants";
-import { arrayElementsAreEqual, getColorMap, thresholdMatchFinder } from "@/colorizer/utils/data_utils";
+import { isThresholdNumeric, MAX_FEATURE_CATEGORIES } from "src/colorizer";
+import ColorRamp, { ColorRampType } from "src/colorizer/ColorRamp";
+import { DEFAULT_CATEGORICAL_PALETTE_KEY, KNOWN_CATEGORICAL_PALETTES } from "src/colorizer/colors/categorical_palettes";
+import { DEFAULT_COLOR_RAMP_KEY, KNOWN_COLOR_RAMPS } from "src/colorizer/colors/color_ramps";
+import { arrayElementsAreEqual, getColorMap, thresholdMatchFinder } from "src/colorizer/utils/data_utils";
 import {
   decodeBoolean,
   decodeString,
@@ -15,10 +14,10 @@ import {
   encodeNumber,
   URL_COLOR_RAMP_REVERSED_SUFFIX,
   UrlParam,
-} from "@/colorizer/utils/url_utils";
-import { COLOR_RAMP_RANGE_DEFAULT } from "@/constants";
-import { SerializedStoreData, SubscribableStore } from "@/state/types";
-import { addDerivedStateSubscriber } from "@/state/utils/store_utils";
+} from "src/colorizer/utils/url_utils";
+import { COLOR_RAMP_RANGE_DEFAULT } from "src/constants";
+import { SerializedStoreData, SubscribableStore } from "src/state/types";
+import { addDerivedStateSubscriber } from "src/state/utils/store_utils";
 
 import { DatasetSlice } from "./dataset_slice";
 import { ThresholdSlice } from "./threshold_slice";

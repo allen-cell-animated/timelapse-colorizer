@@ -1,12 +1,12 @@
 import { Color } from "three";
 
-import { BOOLEAN_VALUE_FALSE, BOOLEAN_VALUE_TRUE, LabelData, LabelType } from "@/colorizer/AnnotationData";
-import ColorRamp, { ColorRampType } from "@/colorizer/ColorRamp";
-import { ColorRampData } from "@/colorizer/colors/color_ramps";
-import { MAX_FEATURE_CATEGORIES } from "@/colorizer/constants";
-import Dataset, { FeatureType } from "@/colorizer/Dataset";
-import { RenderCanvasStateParams } from "@/colorizer/IRenderCanvas";
-import Track from "@/colorizer/Track";
+import { BOOLEAN_VALUE_FALSE, BOOLEAN_VALUE_TRUE, LabelData, LabelType } from "src/colorizer/AnnotationData";
+import ColorRamp, { ColorRampType } from "src/colorizer/ColorRamp";
+import { ColorRampData } from "src/colorizer/colors/color_ramps";
+import { MAX_FEATURE_CATEGORIES } from "src/colorizer/constants";
+import Dataset, { FeatureType } from "src/colorizer/Dataset";
+import { RenderCanvasStateParams } from "src/colorizer/IRenderCanvas";
+import Track from "src/colorizer/Track";
 import {
   FeatureDataType,
   FeatureThreshold,
@@ -15,7 +15,7 @@ import {
   isThresholdNumeric,
   ThresholdType,
   TrackPathColorMode,
-} from "@/colorizer/types";
+} from "src/colorizer/types";
 
 import { packDataTexture } from "./texture_utils";
 

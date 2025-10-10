@@ -3,11 +3,11 @@ import { Input } from "antd";
 import React, { ReactElement, useEffect, useState } from "react";
 import styled from "styled-components";
 
-import IconButton from "@/components/Buttons/IconButton";
-import LoadingSpinner from "@/components/LoadingSpinner";
-import PlotWrapper from "@/components/Tabs/TrackPlot/PlotWrapper";
-import { useViewerStateStore } from "@/state";
-import { FlexRowAlignCenter, NoSpinnerContainer } from "@/styles/utils";
+import IconButton from "src/components/Buttons/IconButton";
+import LoadingSpinner from "src/components/LoadingSpinner";
+import PlotWrapper from "src/components/Tabs/TrackPlot/PlotWrapper";
+import { useViewerStateStore } from "src/state";
+import { FlexRowAlignCenter, NoSpinnerContainer } from "src/styles/utils";
 
 const TRACK_SEARCH_ID = "plot-tab-track-search-input";
 

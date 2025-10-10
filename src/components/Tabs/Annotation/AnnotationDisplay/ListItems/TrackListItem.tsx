@@ -1,12 +1,12 @@
 import React, { ReactElement, useContext } from "react";
 import { Color } from "three";
 
-import { Dataset } from "@/colorizer";
-import DropdownItem from "@/components/Dropdowns/DropdownItem";
-import AnnotationTrackThumbnail from "@/components/Tabs/Annotation/AnnotationDisplay/AnnotationTrackThumbnail";
-import { AppThemeContext } from "@/styles/AppStyle";
-import { FlexRowAlignCenter } from "@/styles/utils";
-import { formatQuantityString } from "@/utils/formatting";
+import { Dataset } from "src/colorizer";
+import DropdownItem from "src/components/Dropdowns/DropdownItem";
+import AnnotationTrackThumbnail from "src/components/Tabs/Annotation/AnnotationDisplay/AnnotationTrackThumbnail";
+import { AppThemeContext } from "src/styles/AppStyle";
+import { FlexRowAlignCenter } from "src/styles/utils";
+import { formatQuantityString } from "src/utils/formatting";
 
 type TrackListItemProps = {
   trackId: number;

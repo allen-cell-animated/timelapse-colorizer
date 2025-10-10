@@ -1,6 +1,6 @@
 import { Vector2 } from "three";
 
-import { Canvas2DScaleInfo, CanvasType } from "@/colorizer/types";
+import { Canvas2DScaleInfo, CanvasType } from "src/colorizer/types";
 
 import { FontStyle } from "./types";
 

@@ -65,8 +65,8 @@
       }
     },
     {
-      // Disable restricted imports for test files and config files
-      "files": ["tests/**", "*.config.js"],
+      // Disable restricted imports for config files
+      "files": ["*.config.js", "*.config.ts"],
       "rules": {
         "no-restricted-imports": "off"
       }
@@ -108,7 +108,7 @@
           {
             // Forbid relative imports from outside the current folder
             "group": ["../*", "*config.js"],
-            "message": "Relative imports from outside the current folder are not allowed. Use absolute imports (`@`) instead."
+            "message": "Relative imports from outside the current folder are not allowed. Use absolute imports (`src/`) instead."
           }
         ]
       }
@@ -131,9 +131,9 @@
           // Packages.
           // Things that start with a letter (or digit or underscore), or `@` followed by a letter.
           ["^@?\\w"],
-          // Absolute imports and other imports such as Vue-style `@/foo`.
+          // Absolute imports (`src/`) and other imports such as Vue-style `@/foo`.
           // Anything not matched in another group.
-          ["^"],
+          ["^", "^src/[/\\w]*", "^tests/[/\\w]*"],
           // Relative imports
           // "\\u0000" is added to the end of imported types.
           ["^[.]+.*/[a-zA-Z]+[\\w]*(\\u0000)?$"],

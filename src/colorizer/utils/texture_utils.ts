@@ -1,6 +1,6 @@
 import { DataTexture } from "three";
 
-import { FeatureArrayType, FeatureDataType, featureTypeSpecs } from "@/colorizer/types";
+import { FeatureArrayType, FeatureDataType, featureTypeSpecs } from "src/colorizer/types";
 
 /**
  * Calculate the squarest possible texture that `data` can fit into and return a tuple of `[width, height]`

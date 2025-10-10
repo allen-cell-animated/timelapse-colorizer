@@ -1,12 +1,12 @@
 import { Checkbox } from "antd";
 import React, { ReactElement, ReactNode, useContext, useRef } from "react";
 
-import { TabType } from "@/colorizer";
-import { ImageToggleButton } from "@/components/Buttons/ImageToggleButton";
-import TooltipButtonStyleLink from "@/components/Buttons/TooltipButtonStyleLink";
-import { useViewerStateStore } from "@/state";
-import { AppThemeContext } from "@/styles/AppStyle";
-import { VisuallyHidden } from "@/styles/utils";
+import { TabType } from "src/colorizer";
+import { ImageToggleButton } from "src/components/Buttons/ImageToggleButton";
+import TooltipButtonStyleLink from "src/components/Buttons/TooltipButtonStyleLink";
+import { useViewerStateStore } from "src/state";
+import { AppThemeContext } from "src/styles/AppStyle";
+import { VisuallyHidden } from "src/styles/utils";
 
 /**
  * Icon button that toggles 3D channels, and includes a tooltip that

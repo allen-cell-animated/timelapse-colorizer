@@ -1,14 +1,14 @@
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { FeatureThreshold, ThresholdType } from "@/colorizer";
-import Collection from "@/colorizer/Collection";
-import { validateThresholds } from "@/colorizer/utils/data_utils";
-import { UrlParam } from "@/colorizer/utils/url_utils";
-import { loadThresholdSliceFromParams, serializeThresholdSlice } from "@/state/slices";
-import { useViewerStateStore } from "@/state/ViewerState";
+import { FeatureThreshold, ThresholdType } from "src/colorizer";
+import Collection from "src/colorizer/Collection";
+import { validateThresholds } from "src/colorizer/utils/data_utils";
+import { UrlParam } from "src/colorizer/utils/url_utils";
+import { loadThresholdSliceFromParams, serializeThresholdSlice } from "src/state/slices";
+import { useViewerStateStore } from "src/state/ViewerState";
+import { MOCK_DATASET, MockFeatureKeys } from "tests/constants";
 
-import { MOCK_DATASET, MockFeatureKeys } from "./constants";
 import { setDatasetAsync } from "./utils";
 
 const OUTDATED_THRESHOLDS: FeatureThreshold[] = [

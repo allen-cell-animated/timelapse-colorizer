@@ -3,13 +3,13 @@ import { Button, Tooltip } from "antd";
 import React, { ReactElement } from "react";
 import styled from "styled-components";
 
-import { ChannelRangePreset, ChannelSetting } from "@/colorizer";
-import LabeledSlider from "@/components/Inputs/LabeledSlider";
-import WrappedColorPicker from "@/components/Inputs/WrappedColorPicker";
-import { SettingsContainer, SettingsItem } from "@/components/SettingsContainer";
-import ToggleCollapse from "@/components/ToggleCollapse";
-import { FlexColumn, FlexRowAlignCenter } from "@/styles/utils";
-import { antToThreeColor, threeToAntColorWithAlpha } from "@/utils/color_utils";
+import { ChannelRangePreset, ChannelSetting } from "src/colorizer";
+import LabeledSlider from "src/components/Inputs/LabeledSlider";
+import WrappedColorPicker from "src/components/Inputs/WrappedColorPicker";
+import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
+import ToggleCollapse from "src/components/ToggleCollapse";
+import { FlexColumn, FlexRowAlignCenter } from "src/styles/utils";
+import { antToThreeColor, threeToAntColorWithAlpha } from "src/utils/color_utils";
 
 type ChannelSettingControlProps = {
   name: string;

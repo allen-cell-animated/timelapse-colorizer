@@ -1,5 +1,5 @@
-import { removeUndefinedProperties } from "@/colorizer/utils/data_utils";
-import { UrlParam } from "@/colorizer/utils/url_utils";
+import { removeUndefinedProperties } from "src/colorizer/utils/data_utils";
+import { UrlParam } from "src/colorizer/utils/url_utils";
 import {
   loadBackdropSliceFromParams,
   loadChannelSliceFromParams,
@@ -32,8 +32,8 @@ import {
   serializeVectorSlice,
   ViewerStore,
   ViewerStoreSerializableState,
-} from "@/state/slices";
-import { SerializedStoreData, Store } from "@/state/types";
+} from "src/state/slices";
+import { SerializedStoreData, Store } from "src/state/types";
 
 // SERIALIZATION /////////////////////////////////////////////////////////////////////////
 

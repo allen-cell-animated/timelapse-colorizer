@@ -2,14 +2,14 @@ import { act, renderHook } from "@testing-library/react";
 import { Color } from "three";
 import { describe, expect, it } from "vitest";
 
-import { FeatureThreshold, KNOWN_CATEGORICAL_PALETTES, KNOWN_COLOR_RAMPS, ThresholdType } from "@/colorizer";
-import { MAX_FEATURE_CATEGORIES } from "@/colorizer/constants";
-import { UrlParam } from "@/colorizer/utils/url_utils";
-import { loadColorRampSliceFromParams, serializeColorRampSlice } from "@/state/slices";
-import { useViewerStateStore } from "@/state/ViewerState";
+import { FeatureThreshold, KNOWN_CATEGORICAL_PALETTES, KNOWN_COLOR_RAMPS, ThresholdType } from "src/colorizer";
+import { MAX_FEATURE_CATEGORIES } from "src/colorizer/constants";
+import { UrlParam } from "src/colorizer/utils/url_utils";
+import { loadColorRampSliceFromParams, serializeColorRampSlice } from "src/state/slices";
+import { useViewerStateStore } from "src/state/ViewerState";
+import { MOCK_DATASET, MOCK_FEATURE_DATA, MockFeatureKeys } from "tests/constants";
+import { ANY_ERROR } from "tests/utils";
 
-import { ANY_ERROR } from "../../test_utils";
-import { MOCK_DATASET, MOCK_FEATURE_DATA, MockFeatureKeys } from "./constants";
 import { setDatasetAsync } from "./utils";
 
 describe("useViewerStateStore: ColorRampSlice", () => {

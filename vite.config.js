@@ -50,7 +50,7 @@ export const DEFAULT_CONFIG = {
     ],
   },
   resolve: {
-    alias: [{ find: "@", replacement: resolve(__dirname, "./src") }],
+    alias: [{ find: "src", replacement: resolve(__dirname, "./src") }],
   },
   worker: {
     // Fixes an invalid output format error when building

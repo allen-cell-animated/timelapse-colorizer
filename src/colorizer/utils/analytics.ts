@@ -1,4 +1,4 @@
-import { FeatureType } from "@/colorizer/Dataset";
+import { FeatureType } from "src/colorizer/Dataset";
 
 // Added by Google Tag Manager.
 // Events have an event field (name) and optional payloads of additional fields.

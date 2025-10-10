@@ -1,8 +1,8 @@
 import React, { ReactElement, useContext } from "react";
 
-import { TagIconSVG } from "@/assets";
-import { AppThemeContext } from "@/styles/AppStyle";
-import { FlexColumnAlignCenter, FlexRowAlignCenter } from "@/styles/utils";
+import { TagIconSVG } from "src/assets";
+import { AppThemeContext } from "src/styles/AppStyle";
+import { FlexColumnAlignCenter, FlexRowAlignCenter } from "src/styles/utils";
 
 export default function PlaceholderListItem(): ReactElement {
   const theme = useContext(AppThemeContext);

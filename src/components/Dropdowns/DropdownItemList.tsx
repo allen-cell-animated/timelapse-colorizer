@@ -1,8 +1,8 @@
 import React, { PropsWithChildren, ReactElement } from "react";
 import styled from "styled-components";
 
-import { ScrollShadowContainer, useScrollShadow } from "@/hooks";
-import { FlexColumn } from "@/styles/utils";
+import { ScrollShadowContainer, useScrollShadow } from "src/hooks";
+import { FlexColumn } from "src/styles/utils";
 
 type DropdownItemListProps = {
   maxHeightPx?: number;

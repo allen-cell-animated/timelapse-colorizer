@@ -1,7 +1,7 @@
 import { Color, Vector2 } from "three";
 
-import { ColorRamp, Dataset, Track } from "@/colorizer";
-import Collection from "@/colorizer/Collection";
+import { ColorRamp, Dataset, Track } from "src/colorizer";
+import Collection from "src/colorizer/Collection";
 import {
   CanvasScaleInfo,
   ChannelSetting,
@@ -10,7 +10,7 @@ import {
   FrameLoadResult,
   PixelIdInfo,
   TrackPathColorMode,
-} from "@/colorizer/types";
+} from "src/colorizer/types";
 
 // Standalone type for render canvas state params
 export type RenderCanvasStateParams = {

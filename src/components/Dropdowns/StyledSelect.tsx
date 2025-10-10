@@ -10,8 +10,8 @@ import Select, {
 import styled, { css } from "styled-components";
 import { Color } from "three";
 
-import { DropdownSVG } from "@/assets";
-import { AppTheme, AppThemeContext } from "@/styles/AppStyle";
+import { DropdownSVG } from "src/assets";
+import { AppTheme, AppThemeContext } from "src/styles/AppStyle";
 
 import { SelectItem } from "./types";
 

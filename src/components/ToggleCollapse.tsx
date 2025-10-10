@@ -11,10 +11,10 @@ import React, {
   useState,
 } from "react";
 
-import { removeUndefinedProperties } from "@/colorizer/utils/data_utils";
-import TextButton from "@/components/Buttons/TextButton";
-import { AppThemeContext } from "@/styles/AppStyle";
-import { FlexColumn, FlexRowAlignCenter, VisuallyHidden } from "@/styles/utils";
+import { removeUndefinedProperties } from "src/colorizer/utils/data_utils";
+import TextButton from "src/components/Buttons/TextButton";
+import { AppThemeContext } from "src/styles/AppStyle";
+import { FlexColumn, FlexRowAlignCenter, VisuallyHidden } from "src/styles/utils";
 
 const ANIMATION_DURATION_MS = 150;
 
