@@ -20,6 +20,9 @@ export default defineConfig({
     },
   },
   resolve: {
-    alias: [{ find: "src", replacement: resolve(__dirname, "./src") }],
+    alias: [
+      { find: "src", replacement: resolve(__dirname, "./src") },
+      { find: "tests", replacement: resolve(__dirname, "./tests") },
+    ],
   },
 });

@@ -7,7 +7,7 @@
   "importOrder": [
     "^node:[\\w]*$",
     "<THIRD_PARTY_MODULES>",
-    "^src/[a-zA-Z]+[/\\w]*$",
+    "^(src)|(tests)/[a-zA-Z]+[/\\w]*$",
     "^[./]+.*/[a-zA-Z]+[\\w]*$",
     "^[./].*/[\\w_\\-?]*[.]?[\\w._\\-?&]*$"
   ],

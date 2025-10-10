@@ -9,9 +9,8 @@ import {
   BOOLEAN_VALUE_TRUE,
   LabelType,
 } from "src/colorizer/AnnotationData";
-
-import { MOCK_DATASET } from "../state/ViewerState/constants";
-import { compareRecord } from "../state/ViewerState/utils";
+import { MOCK_DATASET } from "tests/constants";
+import { compareRecord } from "tests/state/ViewerState/utils";
 
 describe("AnnotationData", () => {
   const defaultPalette = KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_KEY)!;

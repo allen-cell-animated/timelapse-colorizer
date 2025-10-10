@@ -7,8 +7,8 @@ import { UrlParam } from "src/colorizer/utils/url_utils";
 import { useViewerStateStore } from "src/state";
 import { loadVectorSliceFromParams, serializeVectorSlice, VectorSlice } from "src/state/slices";
 import { SerializedStoreData } from "src/state/types";
+import { ANY_ERROR } from "tests/utils";
 
-import { ANY_ERROR } from "../../test_utils";
 import { compareRecord } from "./utils";
 
 const EXAMPLE_SLICE_1: Partial<VectorSlice> = {

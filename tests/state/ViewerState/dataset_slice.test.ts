@@ -4,8 +4,6 @@ import { describe, expect, it } from "vitest";
 import { UrlParam } from "src/colorizer/utils/url_utils";
 import { loadDatasetSliceFromParams, serializeDatasetSlice } from "src/state/slices";
 import { useViewerStateStore } from "src/state/ViewerState";
-
-import { ANY_ERROR } from "../../test_utils";
 import {
   DEFAULT_INITIAL_FEATURE_KEY,
   MOCK_DATASET,
@@ -13,7 +11,9 @@ import {
   MOCK_DATASET_WITHOUT_BACKDROP,
   MockBackdropKeys,
   MockFeatureKeys,
-} from "./constants";
+} from "tests/constants";
+import { ANY_ERROR } from "tests/utils";
+
 import { setDatasetAsync } from "./utils";
 
 describe("useViewerStateStore: DatasetSlice", () => {

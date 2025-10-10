@@ -26,8 +26,6 @@ import {
   serializedDataToUrl,
   serializeViewerParams,
 } from "src/state/utils/store_io";
-
-import { sleep } from "../test_utils";
 import {
   MOCK_COLLECTION,
   MOCK_COLLECTION_PATH,
@@ -36,7 +34,9 @@ import {
   MOCK_DATASET_KEY,
   MockBackdropKeys,
   MockFeatureKeys,
-} from "./ViewerState/constants";
+} from "tests/constants";
+import { sleep } from "tests/utils";
+
 import { compareRecord, setDatasetAsync } from "./ViewerState/utils";
 
 const COLOR_RAMP_KEY = Array.from(KNOWN_COLOR_RAMPS.keys())[3];

@@ -9,7 +9,8 @@
     "strict": true,
     "paths": {
       "three/addons/lines/*": ["./node_modules/@types/three/examples/jsm/lines/*"],
-      "src/*": ["./src/*"]
+      "src/*": ["./src/*"],
+      "tests/*": ["./tests/*"]
     },
     "resolveJsonModule": true,
     "isolatedModules": true,

@@ -8,9 +8,9 @@ import { UrlParam } from "src/colorizer/utils/url_utils";
 import { DEPRECATED_SCATTERPLOT_TIME_KEY } from "src/constants";
 import { useViewerStateStore } from "src/state";
 import { loadScatterPlotSliceFromParams, serializeScatterPlotSlice } from "src/state/slices";
+import { MOCK_DATASET, MockFeatureKeys } from "tests/constants";
+import { ANY_ERROR } from "tests/utils";
 
-import { ANY_ERROR } from "../../test_utils";
-import { MOCK_DATASET, MockFeatureKeys } from "./constants";
 import { setDatasetAsync } from "./utils";
 
 describe("ScatterplotSlice", () => {

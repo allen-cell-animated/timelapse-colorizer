@@ -7,8 +7,8 @@ import { validateThresholds } from "src/colorizer/utils/data_utils";
 import { UrlParam } from "src/colorizer/utils/url_utils";
 import { loadThresholdSliceFromParams, serializeThresholdSlice } from "src/state/slices";
 import { useViewerStateStore } from "src/state/ViewerState";
+import { MOCK_DATASET, MockFeatureKeys } from "tests/constants";
 
-import { MOCK_DATASET, MockFeatureKeys } from "./constants";
 import { setDatasetAsync } from "./utils";
 
 const OUTDATED_THRESHOLDS: FeatureThreshold[] = [

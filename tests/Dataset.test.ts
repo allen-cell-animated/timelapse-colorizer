@@ -6,8 +6,7 @@ import { FeatureDataType } from "src/colorizer";
 import Dataset, { FeatureType } from "src/colorizer/Dataset";
 import { AnyManifestFile, ManifestFile } from "src/colorizer/utils/dataset_utils";
 import { MAX_FEATURE_CATEGORIES } from "src/constants";
-
-import { MOCK_DATASET_ARRAY_LOADER_DEFAULT_SOURCE, MOCK_DATASET_MANIFEST } from "./state/ViewerState/constants";
+import { MOCK_DATASET_ARRAY_LOADER_DEFAULT_SOURCE, MOCK_DATASET_MANIFEST } from "tests/constants";
 import {
   ANY_ERROR,
   DEFAULT_DATASET_DIR,
@@ -17,7 +16,7 @@ import {
   MockArrayLoader,
   MockArraySource,
   MockFrameLoader,
-} from "./test_utils";
+} from "tests/utils";
 
 describe("Dataset", () => {
   // eslint-disable-next-line @typescript-eslint/naming-convention

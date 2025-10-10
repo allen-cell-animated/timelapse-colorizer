@@ -5,9 +5,9 @@ import { FrameLoadResult, Track } from "src/colorizer";
 import { UrlParam } from "src/colorizer/utils/url_utils";
 import { useViewerStateStore } from "src/state";
 import { loadTimeSliceFromParams, serializeTimeSlice } from "src/state/slices";
+import { MOCK_DATASET, MOCK_DATASET_WITH_TWO_FRAMES } from "tests/constants";
+import { ANY_ERROR, sleep } from "tests/utils";
 
-import { ANY_ERROR, sleep } from "../../test_utils";
-import { MOCK_DATASET, MOCK_DATASET_WITH_TWO_FRAMES } from "./constants";
 import { clearDatasetAsync, setDatasetAsync } from "./utils";
 
 const TIMEOUT_DURATION_MS = 5;

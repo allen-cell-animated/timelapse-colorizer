@@ -9,8 +9,7 @@ import {
   getLabelTypeFromParsedCsv,
   validateThresholds,
 } from "src/colorizer/utils/data_utils";
-
-import { makeMockDataset } from "./test_utils";
+import { makeMockDataset } from "tests/utils";
 
 describe("data_utils", () => {
   describe("getKeyFromName", () => {

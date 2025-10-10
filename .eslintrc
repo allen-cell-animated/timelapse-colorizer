@@ -48,7 +48,7 @@
       }
     },
     {
-      "files": ["tests/**", "*config.js"],
+      "files": ["*config.js"],
       "rules": {
         "no-restricted-imports": "off"
       }
@@ -106,7 +106,7 @@
           ["^@?\\w"],
           // Absolute imports (`src/`) and other imports such as Vue-style `@/foo`.
           // Anything not matched in another group.
-          ["^", "^src/[/\\w]*"],
+          ["^", "^src/[/\\w]*", "^tests/[/\\w]*"],
           // Relative imports
           // "\\u0000" is added to the end of imported types.
           ["^[.]+.*/[a-zA-Z]+[\\w]*(\\u0000)?$"],

@@ -1,8 +1,7 @@
 import { describe, expect, it, Mock, vi } from "vitest";
 
 import CanvasRecorder, { RecordingOptions } from "src/colorizer/recorders/CanvasRecorder";
-
-import { sleep } from "./test_utils";
+import { sleep } from "tests/utils";
 
 type MockOrReal = Mock<any, any> | (() => Promise<void>);
 type MockOrRealRecording = Mock<any, any> | ((frame: number) => Promise<void>);

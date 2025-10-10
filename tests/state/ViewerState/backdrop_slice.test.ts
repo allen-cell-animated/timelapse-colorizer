@@ -12,9 +12,9 @@ import {
 } from "src/constants";
 import { loadBackdropSliceFromParams, serializeBackdropSlice } from "src/state/slices";
 import { useViewerStateStore } from "src/state/ViewerState";
+import { MOCK_DATASET, MockBackdropKeys } from "tests/constants";
+import { ANY_ERROR } from "tests/utils";
 
-import { ANY_ERROR } from "../../test_utils";
-import { MOCK_DATASET, MockBackdropKeys } from "./constants";
 import { setDatasetAsync } from "./utils";
 
 describe("useViewerStateStore: BackdropSlice", () => {
