@@ -1,4 +1,4 @@
-import { DEFAULT_PLAYBACK_FPS } from "@/constants";
+import { DEFAULT_PLAYBACK_FPS } from "src/constants";
 
 // time / playback controls
 const NO_TIMER_ID = -1;

@@ -7,7 +7,7 @@ import {
   VECTOR_KEY_MOTION_DELTA,
   VectorConfig,
   VectorTooltipMode,
-} from "@/colorizer";
+} from "src/colorizer";
 import {
   decodeBoolean,
   decodeFloat,
@@ -17,11 +17,11 @@ import {
   encodeMaybeColor,
   encodeMaybeNumber,
   UrlParam,
-} from "@/colorizer/utils/url_utils";
-import { getSharedWorkerPool } from "@/colorizer/workers/SharedWorkerPool";
-import type { SerializedStoreData, SubscribableStore } from "@/state/types";
-import { setValueIfDefined, validateFiniteValue } from "@/state/utils/data_validation";
-import { addDerivedStateSubscriber, makeDebouncedCallback } from "@/state/utils/store_utils";
+} from "src/colorizer/utils/url_utils";
+import { getSharedWorkerPool } from "src/colorizer/workers/SharedWorkerPool";
+import type { SerializedStoreData, SubscribableStore } from "src/state/types";
+import { setValueIfDefined, validateFiniteValue } from "src/state/utils/data_validation";
+import { addDerivedStateSubscriber, makeDebouncedCallback } from "src/state/utils/store_utils";
 
 import type { DatasetSlice } from "./dataset_slice";
 

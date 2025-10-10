@@ -1,8 +1,8 @@
 import workerpool from "workerpool";
 
-import Dataset from "@/colorizer/Dataset";
-import { FeatureArrayType, FeatureDataType } from "@/colorizer/types";
-import { DataTextureInfo } from "@/colorizer/utils/texture_utils";
+import Dataset from "src/colorizer/Dataset";
+import { FeatureArrayType, FeatureDataType } from "src/colorizer/types";
+import { DataTextureInfo } from "src/colorizer/utils/texture_utils";
 
 // Vite import directive for worker files! See https://vitejs.dev/guide/features.html#import-with-query-suffixes.
 // @ts-ignore Ignore missing file warning

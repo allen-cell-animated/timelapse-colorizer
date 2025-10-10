@@ -1,4 +1,4 @@
-import { DEFAULT_COLLECTION_FILENAME, DEFAULT_DATASET_FILENAME } from "@/constants";
+import { DEFAULT_COLLECTION_FILENAME, DEFAULT_DATASET_FILENAME } from "src/constants";
 
 import Dataset from "./Dataset";
 import { IArrayLoader, ITextureImageLoader } from "./loaders/ILoader";

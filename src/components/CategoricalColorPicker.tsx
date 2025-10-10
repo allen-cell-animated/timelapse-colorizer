@@ -3,9 +3,9 @@ import React, { ReactElement, useMemo } from "react";
 import styled from "styled-components";
 import { Color, ColorRepresentation } from "three";
 
-import { useViewerStateStore } from "@/state/ViewerState";
-import { FlexRow, FlexRowAlignCenter } from "@/styles/utils";
-import { AntColor } from "@/utils/color_utils";
+import { useViewerStateStore } from "src/state/ViewerState";
+import { FlexRow, FlexRowAlignCenter } from "src/styles/utils";
+import { AntColor } from "src/utils/color_utils";
 
 import WrappedColorPicker from "./Inputs/WrappedColorPicker";
 

@@ -3,13 +3,13 @@ import React, { PropsWithChildren, ReactElement, useCallback } from "react";
 import styled from "styled-components";
 import { useShallow } from "zustand/shallow";
 
-import { AnnotationSelectionMode, PixelIdInfo, VECTOR_KEY_MOTION_DELTA, VectorTooltipMode } from "@/colorizer";
-import { LabelType } from "@/colorizer/AnnotationData";
-import { formatNumber } from "@/colorizer/utils/math_utils";
-import { AnnotationState } from "@/hooks";
-import { selectVectorConfigFromState } from "@/state/slices";
-import { useViewerStateStore } from "@/state/ViewerState";
-import { FlexColumn, FlexRow } from "@/styles/utils";
+import { AnnotationSelectionMode, PixelIdInfo, VECTOR_KEY_MOTION_DELTA, VectorTooltipMode } from "src/colorizer";
+import { LabelType } from "src/colorizer/AnnotationData";
+import { formatNumber } from "src/colorizer/utils/math_utils";
+import { AnnotationState } from "src/hooks";
+import { selectVectorConfigFromState } from "src/state/slices";
+import { useViewerStateStore } from "src/state/ViewerState";
+import { FlexColumn, FlexRow } from "src/styles/utils";
 
 import HoverTooltip from "./HoverTooltip";
 

@@ -1,9 +1,9 @@
 import { StateCreator } from "zustand";
 
-import { Track } from "@/colorizer";
-import Dataset from "@/colorizer/Dataset";
-import { decodeInt, UrlParam } from "@/colorizer/utils/url_utils";
-import { SerializedStoreData } from "@/state/types";
+import { Track } from "src/colorizer";
+import Dataset from "src/colorizer/Dataset";
+import { decodeInt, UrlParam } from "src/colorizer/utils/url_utils";
+import { SerializedStoreData } from "src/state/types";
 
 import { CollectionSlice } from "./collection_slice";
 

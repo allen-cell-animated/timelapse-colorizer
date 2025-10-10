@@ -4,27 +4,27 @@ import { NotificationConfig } from "antd/es/notification/interface";
 import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 
-import { Dataset, LoadTroubleshooting, PixelIdInfo, ReportWarningCallback, TabType } from "@/colorizer";
-import CanvasOverlay from "@/colorizer/CanvasOverlay";
-import Collection from "@/colorizer/Collection";
-import { FeatureType, TIME_FEATURE_KEY } from "@/colorizer/Dataset";
-import { renderCanvasStateParamsSelector } from "@/colorizer/IRenderCanvas";
-import UrlArrayLoader from "@/colorizer/loaders/UrlArrayLoader";
-import { AnalyticsEvent, triggerAnalyticsEvent } from "@/colorizer/utils/analytics";
-import { getSharedWorkerPool } from "@/colorizer/workers/SharedWorkerPool";
-import { useAlertBanner } from "@/components/Banner";
-import { showFailedUrlParseAlert } from "@/components/Banner/alert_templates";
-import TextButton from "@/components/Buttons/TextButton";
-import CanvasWrapper from "@/components/CanvasWrapper";
-import ColorizeControls from "@/components/Controls/ColorizeControls";
-import DatasetFeatureControls from "@/components/Controls/DatasetFeatureControls";
-import PlaybackControls from "@/components/Controls/PlaybackControls";
-import HelpDropdown from "@/components/Dropdowns/HelpDropdown";
-import Export from "@/components/Export";
-import Header from "@/components/Header";
-import LoadDatasetButton from "@/components/LoadDatasetButton";
-import LoadZipModal from "@/components/LoadZipModal";
-import SmallScreenWarning from "@/components/Modals/SmallScreenWarning";
+import { Dataset, LoadTroubleshooting, PixelIdInfo, ReportWarningCallback, TabType } from "src/colorizer";
+import CanvasOverlay from "src/colorizer/CanvasOverlay";
+import Collection from "src/colorizer/Collection";
+import { FeatureType, TIME_FEATURE_KEY } from "src/colorizer/Dataset";
+import { renderCanvasStateParamsSelector } from "src/colorizer/IRenderCanvas";
+import UrlArrayLoader from "src/colorizer/loaders/UrlArrayLoader";
+import { AnalyticsEvent, triggerAnalyticsEvent } from "src/colorizer/utils/analytics";
+import { getSharedWorkerPool } from "src/colorizer/workers/SharedWorkerPool";
+import { useAlertBanner } from "src/components/Banner";
+import { showFailedUrlParseAlert } from "src/components/Banner/alert_templates";
+import TextButton from "src/components/Buttons/TextButton";
+import CanvasWrapper from "src/components/CanvasWrapper";
+import ColorizeControls from "src/components/Controls/ColorizeControls";
+import DatasetFeatureControls from "src/components/Controls/DatasetFeatureControls";
+import PlaybackControls from "src/components/Controls/PlaybackControls";
+import HelpDropdown from "src/components/Dropdowns/HelpDropdown";
+import Export from "src/components/Export";
+import Header from "src/components/Header";
+import LoadDatasetButton from "src/components/LoadDatasetButton";
+import LoadZipModal from "src/components/LoadZipModal";
+import SmallScreenWarning from "src/components/Modals/SmallScreenWarning";
 import {
   AnnotationTab,
   CorrelationPlotTab,
@@ -32,23 +32,23 @@ import {
   PlotTab,
   ScatterPlotTab,
   SettingsTab,
-} from "@/components/Tabs";
-import CanvasHoverTooltip from "@/components/Tooltips/CanvasHoverTooltip";
-import { INTERNAL_BUILD } from "@/constants";
-import { useAnnotations, useConstructor, useRecentCollections } from "@/hooks";
-import { getDifferingProperties } from "@/state/utils/data_validation";
+} from "src/components/Tabs";
+import CanvasHoverTooltip from "src/components/Tooltips/CanvasHoverTooltip";
+import { INTERNAL_BUILD } from "src/constants";
+import { useAnnotations, useConstructor, useRecentCollections } from "src/hooks";
+import { getDifferingProperties } from "src/state/utils/data_validation";
 import {
   loadInitialViewerStateFromParams,
   loadViewerStateFromParams,
   selectSerializationDependencies,
   serializeViewerState,
-} from "@/state/utils/store_io";
-import { makeDebouncedCallback } from "@/state/utils/store_utils";
-import { useViewerStateStore } from "@/state/ViewerState";
-import { AppThemeContext } from "@/styles/AppStyle";
-import { FlexColumn, FlexRowAlignCenter } from "@/styles/utils";
-import { LocationState } from "@/types";
-import { loadInitialCollectionAndDataset } from "@/utils/dataset_load_utils";
+} from "src/state/utils/store_io";
+import { makeDebouncedCallback } from "src/state/utils/store_utils";
+import { useViewerStateStore } from "src/state/ViewerState";
+import { AppThemeContext } from "src/styles/AppStyle";
+import { FlexColumn, FlexRowAlignCenter } from "src/styles/utils";
+import { LocationState } from "src/types";
+import { loadInitialCollectionAndDataset } from "src/utils/dataset_load_utils";
 
 // TODO: Refactor with styled-components
 import styles from "./Viewer.module.css";

@@ -3,11 +3,11 @@ import { AutoComplete, Card } from "antd";
 import React, { ReactElement, useCallback, useContext, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 
-import { LabelType } from "@/colorizer/AnnotationData";
-import IconButton from "@/components/Buttons/IconButton";
-import { AnnotationState } from "@/hooks";
-import { AppThemeContext } from "@/styles/AppStyle";
-import { FlexColumn, FlexRow } from "@/styles/utils";
+import { LabelType } from "src/colorizer/AnnotationData";
+import IconButton from "src/components/Buttons/IconButton";
+import { AnnotationState } from "src/hooks";
+import { AppThemeContext } from "src/styles/AppStyle";
+import { FlexColumn, FlexRow } from "src/styles/utils";
 
 type AnnotationInputPopoverProps = {
   annotationState: AnnotationState;

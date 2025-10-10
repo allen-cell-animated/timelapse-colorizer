@@ -1,9 +1,9 @@
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { UrlParam } from "@/colorizer/utils/url_utils";
-import { loadDatasetSliceFromParams, serializeDatasetSlice } from "@/state/slices";
-import { useViewerStateStore } from "@/state/ViewerState";
+import { UrlParam } from "src/colorizer/utils/url_utils";
+import { loadDatasetSliceFromParams, serializeDatasetSlice } from "src/state/slices";
+import { useViewerStateStore } from "src/state/ViewerState";
 
 import { ANY_ERROR } from "../../test_utils";
 import {

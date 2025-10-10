@@ -1,6 +1,6 @@
 import { Vector2 } from "three";
 
-import Track from "@/colorizer/Track";
+import Track from "src/colorizer/Track";
 
 /**
  * Formats a number as a string decimal, with a maximum number of significant

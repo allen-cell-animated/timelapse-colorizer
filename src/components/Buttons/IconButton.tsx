@@ -2,7 +2,7 @@ import { Button, ConfigProvider } from "antd";
 import React, { PropsWithChildren, ReactElement, useContext } from "react";
 import styled, { css } from "styled-components";
 
-import { AppThemeContext } from "@/styles/AppStyle";
+import { AppThemeContext } from "src/styles/AppStyle";
 
 type IconButtonProps = {
   onClick?: React.MouseEventHandler<HTMLElement>;

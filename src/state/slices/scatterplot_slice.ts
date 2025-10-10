@@ -1,12 +1,12 @@
 import { StateCreator } from "zustand";
 
-import { Dataset } from "@/colorizer";
-import { TIME_FEATURE_KEY } from "@/colorizer/Dataset";
-import { PlotRangeType } from "@/colorizer/types";
-import { decodeScatterPlotRangeType, encodeScatterPlotRangeType, UrlParam } from "@/colorizer/utils/url_utils";
-import { DEPRECATED_SCATTERPLOT_TIME_KEY } from "@/constants";
-import { SerializedStoreData, SubscribableStore } from "@/state/types";
-import { addDerivedStateSubscriber } from "@/state/utils/store_utils";
+import { Dataset } from "src/colorizer";
+import { TIME_FEATURE_KEY } from "src/colorizer/Dataset";
+import { PlotRangeType } from "src/colorizer/types";
+import { decodeScatterPlotRangeType, encodeScatterPlotRangeType, UrlParam } from "src/colorizer/utils/url_utils";
+import { DEPRECATED_SCATTERPLOT_TIME_KEY } from "src/constants";
+import { SerializedStoreData, SubscribableStore } from "src/state/types";
+import { addDerivedStateSubscriber } from "src/state/utils/store_utils";
 
 import { DatasetSlice } from "./dataset_slice";
 

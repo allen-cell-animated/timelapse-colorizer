@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { UrlParam } from "@/colorizer/utils/url_utils";
-import { loadInitialCollectionAndDataset } from "@/utils/dataset_load_utils";
+import { UrlParam } from "src/colorizer/utils/url_utils";
+import { loadInitialCollectionAndDataset } from "src/utils/dataset_load_utils";
 
 import {
   MOCK_COLLECTION,

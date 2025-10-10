@@ -1,7 +1,7 @@
 import Papa from "papaparse";
 import { Color } from "three";
 
-import { removeUndefinedProperties } from "@/state/utils/data_validation";
+import { removeUndefinedProperties } from "src/state/utils/data_validation";
 
 import { DEFAULT_CATEGORICAL_PALETTE_KEY, KNOWN_CATEGORICAL_PALETTES } from "./colors/categorical_palettes";
 import Dataset from "./Dataset";

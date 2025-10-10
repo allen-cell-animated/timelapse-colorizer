@@ -2,15 +2,15 @@ import { Card, Radio } from "antd";
 import React, { ReactElement, useMemo } from "react";
 import { Color, ColorRepresentation } from "three";
 
-import { VECTOR_KEY_MOTION_DELTA } from "@/colorizer/constants";
-import { VectorTooltipMode } from "@/colorizer/types";
-import SelectionDropdown from "@/components/Dropdowns/SelectionDropdown";
-import LabeledSlider from "@/components/Inputs/LabeledSlider";
-import WrappedColorPicker from "@/components/Inputs/WrappedColorPicker";
-import { SettingsContainer, SettingsItem } from "@/components/SettingsContainer";
-import { MAX_SETTINGS_SLIDER_WIDTH } from "@/constants";
-import { useViewerStateStore } from "@/state/ViewerState";
-import { threeToAntColor } from "@/utils/color_utils";
+import { VECTOR_KEY_MOTION_DELTA } from "src/colorizer/constants";
+import { VectorTooltipMode } from "src/colorizer/types";
+import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
+import LabeledSlider from "src/components/Inputs/LabeledSlider";
+import WrappedColorPicker from "src/components/Inputs/WrappedColorPicker";
+import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
+import { MAX_SETTINGS_SLIDER_WIDTH } from "src/constants";
+import { useViewerStateStore } from "src/state/ViewerState";
+import { threeToAntColor } from "src/utils/color_utils";
 
 import { DEFAULT_OUTLINE_COLOR_PRESETS } from "./constants";
 

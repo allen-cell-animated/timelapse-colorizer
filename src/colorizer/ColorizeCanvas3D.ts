@@ -17,7 +17,7 @@ import {
 import { Box3, Color, Matrix4, Quaternion, Vector2, Vector3 } from "three";
 import { clamp, inverseLerp, lerp } from "three/src/math/MathUtils";
 
-import { MAX_FEATURE_CATEGORIES } from "@/constants";
+import { MAX_FEATURE_CATEGORIES } from "src/constants";
 
 import { getPixelRatio } from "./canvas";
 import { ColorRampType } from "./ColorRamp";

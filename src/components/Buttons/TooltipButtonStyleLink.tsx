@@ -1,6 +1,6 @@
 import React, { ReactElement, useContext } from "react";
 
-import { AppThemeContext } from "@/styles/AppStyle";
+import { AppThemeContext } from "src/styles/AppStyle";
 
 import { LinkStyleButton } from "./LinkStyleButton";
 

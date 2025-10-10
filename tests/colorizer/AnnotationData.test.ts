@@ -1,14 +1,14 @@
 import { Color } from "three";
 import { describe, expect, it } from "vitest";
 
-import { Dataset, DEFAULT_CATEGORICAL_PALETTE_KEY, KNOWN_CATEGORICAL_PALETTES } from "@/colorizer";
+import { Dataset, DEFAULT_CATEGORICAL_PALETTE_KEY, KNOWN_CATEGORICAL_PALETTES } from "src/colorizer";
 import {
   AnnotationData,
   AnnotationMergeMode,
   BOOLEAN_VALUE_FALSE,
   BOOLEAN_VALUE_TRUE,
   LabelType,
-} from "@/colorizer/AnnotationData";
+} from "src/colorizer/AnnotationData";
 
 import { MOCK_DATASET } from "../state/ViewerState/constants";
 import { compareRecord } from "../state/ViewerState/utils";

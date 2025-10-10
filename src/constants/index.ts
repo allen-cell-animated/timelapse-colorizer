@@ -1,4 +1,4 @@
-import { DEFAULT_ANNOTATION_LABEL_COLORS } from "@/colorizer/AnnotationData";
+import { DEFAULT_ANNOTATION_LABEL_COLORS } from "src/colorizer/AnnotationData";
 
 export const DEFAULT_PLAYBACK_FPS = 10;
 export const MAX_FEATURE_CATEGORIES = 12;

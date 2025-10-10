@@ -1,11 +1,11 @@
 import workerpool from "workerpool";
 import Transfer from "workerpool/types/transfer";
 
-import { FeatureDataType } from "@/colorizer/types";
-import { computeCorrelations } from "@/colorizer/utils/correlation";
-import { LoadedData, loadFromJsonUrl, loadFromParquetUrl } from "@/colorizer/utils/data_load_utils";
-import { calculateMotionDeltas, constructAllTracksFromData } from "@/colorizer/utils/math_utils";
-import { arrayToDataTextureInfo } from "@/colorizer/utils/texture_utils";
+import { FeatureDataType } from "src/colorizer/types";
+import { computeCorrelations } from "src/colorizer/utils/correlation";
+import { LoadedData, loadFromJsonUrl, loadFromParquetUrl } from "src/colorizer/utils/data_load_utils";
+import { calculateMotionDeltas, constructAllTracksFromData } from "src/colorizer/utils/math_utils";
+import { arrayToDataTextureInfo } from "src/colorizer/utils/texture_utils";
 
 async function loadUrlData(url: string, type: FeatureDataType): Promise<Transfer> {
   let result: LoadedData<typeof type>;

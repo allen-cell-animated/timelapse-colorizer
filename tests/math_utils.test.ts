@@ -7,7 +7,7 @@ import {
   getFrameSizeInScreenPx,
   numberToSciNotation,
   remap,
-} from "@/colorizer/utils/math_utils";
+} from "src/colorizer/utils/math_utils";
 
 const DEFAULT_ZOOM = 1;
 const DEFAULT_CANVAS_RESOLUTION = new Vector2(100, 100);

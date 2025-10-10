@@ -2,10 +2,10 @@ import semver from "semver";
 import { Vector2 } from "three";
 import { describe, expect, it } from "vitest";
 
-import { FeatureDataType } from "@/colorizer";
-import Dataset, { FeatureType } from "@/colorizer/Dataset";
-import { AnyManifestFile, ManifestFile } from "@/colorizer/utils/dataset_utils";
-import { MAX_FEATURE_CATEGORIES } from "@/constants";
+import { FeatureDataType } from "src/colorizer";
+import Dataset, { FeatureType } from "src/colorizer/Dataset";
+import { AnyManifestFile, ManifestFile } from "src/colorizer/utils/dataset_utils";
+import { MAX_FEATURE_CATEGORIES } from "src/constants";
 
 import { MOCK_DATASET_ARRAY_LOADER_DEFAULT_SOURCE, MOCK_DATASET_MANIFEST } from "./state/ViewerState/constants";
 import {

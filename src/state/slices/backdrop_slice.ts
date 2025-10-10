@@ -6,7 +6,7 @@ import {
   encodeMaybeBoolean,
   encodeMaybeNumber,
   UrlParam,
-} from "@/colorizer/utils/url_utils";
+} from "src/colorizer/utils/url_utils";
 import {
   BACKDROP_BRIGHTNESS_DEFAULT,
   BACKDROP_BRIGHTNESS_MAX,
@@ -17,9 +17,9 @@ import {
   BACKDROP_SATURATION_DEFAULT,
   BACKDROP_SATURATION_MAX,
   BACKDROP_SATURATION_MIN,
-} from "@/constants";
-import { SerializedStoreData, SubscribableStore } from "@/state/types";
-import { clampWithNanCheck } from "@/state/utils/data_validation";
+} from "src/constants";
+import { SerializedStoreData, SubscribableStore } from "src/state/types";
+import { clampWithNanCheck } from "src/state/utils/data_validation";
 
 import { DatasetSlice } from "./dataset_slice";
 

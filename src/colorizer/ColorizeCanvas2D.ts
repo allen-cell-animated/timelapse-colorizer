@@ -24,7 +24,7 @@ import { LineSegments2 } from "three/addons/lines/LineSegments2";
 import { LineSegmentsGeometry } from "three/addons/lines/LineSegmentsGeometry";
 import { clamp } from "three/src/math/MathUtils";
 
-import { MAX_FEATURE_CATEGORIES } from "@/constants";
+import { MAX_FEATURE_CATEGORIES } from "src/constants";
 
 import { get2DCanvasScaling } from "./canvas/utils";
 import ColorRamp, { ColorRampType } from "./ColorRamp";

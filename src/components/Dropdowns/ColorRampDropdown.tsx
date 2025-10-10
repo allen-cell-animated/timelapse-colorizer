@@ -11,10 +11,10 @@ import {
   KNOWN_CATEGORICAL_PALETTES,
   KNOWN_COLOR_RAMPS,
   PaletteData,
-} from "@/colorizer";
-import IconButton from "@/components/Buttons/IconButton";
-import { AppThemeContext } from "@/styles/AppStyle";
-import { FlexRowAlignCenter } from "@/styles/utils";
+} from "src/colorizer";
+import IconButton from "src/components/Buttons/IconButton";
+import { AppThemeContext } from "src/styles/AppStyle";
+import { FlexRowAlignCenter } from "src/styles/utils";
 
 import SelectionDropdown from "./SelectionDropdown";
 import { SelectItem } from "./types";

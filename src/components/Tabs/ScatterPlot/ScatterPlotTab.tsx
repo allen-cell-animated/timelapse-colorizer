@@ -4,19 +4,19 @@ import React, { memo, ReactElement, useContext, useEffect, useMemo, useRef, useS
 import styled from "styled-components";
 import { Color, ColorRepresentation } from "three";
 
-import { SwitchIconSVG } from "@/assets";
-import { ColorRampType, Dataset } from "@/colorizer";
-import { TIME_FEATURE_KEY } from "@/colorizer/Dataset";
-import { DrawMode, HexColorString, PlotRangeType } from "@/colorizer/types";
-import { ShowAlertBannerCallback } from "@/components/Banner/hooks";
-import IconButton from "@/components/Buttons/IconButton";
-import SelectionDropdown from "@/components/Dropdowns/SelectionDropdown";
-import { SelectItem } from "@/components/Dropdowns/types";
-import LoadingSpinner from "@/components/LoadingSpinner";
-import { useDebounce } from "@/hooks";
-import { useViewerStateStore } from "@/state/ViewerState";
-import { AppThemeContext } from "@/styles/AppStyle";
-import { FlexRow, FlexRowAlignCenter } from "@/styles/utils";
+import { SwitchIconSVG } from "src/assets";
+import { ColorRampType, Dataset } from "src/colorizer";
+import { TIME_FEATURE_KEY } from "src/colorizer/Dataset";
+import { DrawMode, HexColorString, PlotRangeType } from "src/colorizer/types";
+import { ShowAlertBannerCallback } from "src/components/Banner/hooks";
+import IconButton from "src/components/Buttons/IconButton";
+import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
+import { SelectItem } from "src/components/Dropdowns/types";
+import LoadingSpinner from "src/components/LoadingSpinner";
+import { useDebounce } from "src/hooks";
+import { useViewerStateStore } from "src/state/ViewerState";
+import { AppThemeContext } from "src/styles/AppStyle";
+import { FlexRow, FlexRowAlignCenter } from "src/styles/utils";
 
 import {
   DataArray,

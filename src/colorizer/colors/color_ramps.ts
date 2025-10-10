@@ -1,4 +1,4 @@
-import ColorRamp, { ColorRampType } from "@/colorizer/ColorRamp";
+import ColorRamp, { ColorRampType } from "src/colorizer/ColorRamp";
 
 import { GLASBEY_DARK_COLORS, GLASBEY_DEFAULT_COLORS, GLASBEY_LIGHT_COLORS } from "./glasbey";
 

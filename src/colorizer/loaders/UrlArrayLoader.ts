@@ -1,8 +1,8 @@
 import { DataTexture } from "three";
 
-import { FeatureArrayType, FeatureDataType } from "@/colorizer/types";
-import { infoToDataTexture } from "@/colorizer/utils/texture_utils";
-import SharedWorkerPool from "@/colorizer/workers/SharedWorkerPool";
+import { FeatureArrayType, FeatureDataType } from "src/colorizer/types";
+import { infoToDataTexture } from "src/colorizer/utils/texture_utils";
+import SharedWorkerPool from "src/colorizer/workers/SharedWorkerPool";
 
 import { ArraySource, IArrayLoader } from "./ILoader";
 

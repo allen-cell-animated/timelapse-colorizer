@@ -1,6 +1,6 @@
 import { describe, expect, it, Mock, vi } from "vitest";
 
-import CanvasRecorder, { RecordingOptions } from "@/colorizer/recorders/CanvasRecorder";
+import CanvasRecorder, { RecordingOptions } from "src/colorizer/recorders/CanvasRecorder";
 
 import { sleep } from "./test_utils";
 

@@ -1,8 +1,8 @@
 import React, { ReactElement, ReactNode } from "react";
 
-import { ImagesIconSVG, ImagesSlashIconSVG } from "@/assets";
-import { TooltipWithSubtitle } from "@/components/Tooltips/TooltipWithSubtitle";
-import { VisuallyHidden } from "@/styles/utils";
+import { ImagesIconSVG, ImagesSlashIconSVG } from "src/assets";
+import { TooltipWithSubtitle } from "src/components/Tooltips/TooltipWithSubtitle";
+import { VisuallyHidden } from "src/styles/utils";
 
 import IconButton from "./IconButton";
 
