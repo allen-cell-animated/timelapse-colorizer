@@ -66,23 +66,23 @@ export enum UrlParam {
   VECTOR_TIME_INTERVALS = "vc-time-int",
 }
 
-// Adapted from Vol-E.
-// type Digit = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9";
-
-/**
- * Channels, matching the pattern `c0`, `c1`, etc. corresponding to the index of the channel being configured.
- * The channel parameter should have a value that is a comma-separated list of `key:value` pairs, with keys
- * defined in `ChannelSettingUrlParam`.
- */
-export type ChannelSettingParamKey = `c${number}`;
 export enum ChannelSettingUrlParam {
+  /** Whether the channel is visible. `1` if visible, `0` if not. */
   VISIBLE = "ven",
-  /** Color + opacity */
+  /** Color + opacity, as a 8-character hex string (RRGGBBAA). */
   COLOR = "col",
+  /** Ramp min and max intensity value, as `min:max`. */
   RAMP = "rmp",
-  /** Slider range, determined from data min/max */
+  /** Slider range, determined from data min/max, as `dataMin:dataMax`. */
   RANGE = "rng",
 }
+/**
+ * Channels, matching the pattern `c0`, `c1`, etc. corresponding to the index of
+ * the channel being configured. The channel parameter should have a value that
+ * is a comma-separated list of `key:value` pairs, with keys defined in
+ * `ChannelSettingUrlParam`.
+ */
+export type ChannelSettingParamKey = `c${number}`;
 
 const CHANNEL_STATE_KEY_REGEX = /^c[0-9]+$/;
 export const isChannelKey = (key: string): key is ChannelSettingParamKey => {

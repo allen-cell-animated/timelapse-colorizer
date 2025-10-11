@@ -116,9 +116,8 @@ export const serializedDataToUrl = (data: SerializedStoreData): string => {
   const params = new URLSearchParams();
   data = removeUndefinedProperties(data);
   for (const [key, value] of Object.entries(data)) {
-    if (value) {
-      params.set(key, value);
-    }
+    // Value is always defined after removing undefined properties
+    params.set(key, value!);
   }
   return params.toString();
 };

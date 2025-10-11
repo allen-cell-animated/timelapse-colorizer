@@ -101,7 +101,6 @@ const EXAMPLE_STORE: ViewerStoreSerializableState = {
   scatterXAxis: MockFeatureKeys.FEATURE3,
   scatterYAxis: MockFeatureKeys.FEATURE2,
   scatterRangeType: PlotRangeType.ALL_TIME,
-  // TODO: Add mock channel settings
   channelSettings: [
     { visible: true, color: new Color("#ff0000"), opacity: 1, min: 0, max: 1, dataMin: -5, dataMax: 5 },
     { visible: false, color: new Color("#00ff00"), opacity: 0, min: 0.3, max: 4.2, dataMin: 0, dataMax: 1 },
