@@ -343,8 +343,9 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
   }
 
   /**
-   * Returns the min-max range for a given backdrop channel based on the given range preset.
-   * Returns `null` if the
+   * Returns the min-max range for a given backdrop channel based on the given
+   * range preset. Returns `null` if the preset cannot be calculated (e.g. no
+   * volume is loaded or the backdrop index is invalid).
    */
   public getBackdropChannelRangePreset(backdropIndex: number, preset: ChannelRangePreset): [number, number] | null {
     if (!this.volume || !this.backdropIndexToChannelIndex || !this.isValidBackdropIndex(backdropIndex)) {
