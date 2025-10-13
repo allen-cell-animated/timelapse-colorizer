@@ -606,7 +606,6 @@ export function getLineUpdateFlags(
  * Returns a copy of an object where any properties with a value of `undefined`
  * are not included.
  */
-
 export function removeUndefinedProperties<T>(object: T): T {
   const ret = {} as T;
   for (const key in object) {
