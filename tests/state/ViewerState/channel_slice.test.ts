@@ -225,7 +225,12 @@ describe("ChannelSlice", () => {
       const b = getRandom8BitNumber();
       return {
         visible: Math.random() > 0.5,
-        color: new Color(255 * 255 * r + 255 * g + b),
+        color: new Color(
+          '#' +
+            r.toString(16).padStart(2, '0') +
+            g.toString(16).padStart(2, '0') +
+            b.toString(16).padStart(2, '0')
+        ),
         opacity: getRandom8BitNumber() / 255,
         min: getRandomSerializableNumber(),
         max: getRandomSerializableNumber(),
