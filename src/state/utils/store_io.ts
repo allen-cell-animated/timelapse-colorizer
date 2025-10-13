@@ -147,7 +147,6 @@ export const loadViewerStateFromParams = (store: Store<ViewerStore>, params: URL
   loadThresholdSliceFromParams(store.getState(), params);
   loadVectorSliceFromParams(store.getState(), params);
   loadChannelSliceFromParams(store.getState(), params);
-  loadChannelSliceFromParams(store.getState(), params);
 
   // 3. Dependent on dataset slice (track/backdrop/features):
   loadTimeSliceFromParams(store.getState(), params);

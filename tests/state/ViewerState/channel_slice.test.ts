@@ -32,6 +32,13 @@ const makeDatasetWithNChannels = async (n: number): Promise<Dataset> => {
   return await makeMockDataset(newManifest);
 };
 
+const deepCopyChannelSettings = (settings: ChannelSetting[]): ChannelSetting[] => {
+  return settings.map((s) => ({
+    ...s,
+    color: s.color.clone(),
+  }));
+};
+
 describe("ChannelSlice", () => {
   describe("state subscribers", () => {
     describe("resets channel settings when dataset changes", () => {
@@ -96,7 +103,7 @@ describe("ChannelSlice", () => {
       const dataset = await makeDatasetWithNChannels(1);
       await setDatasetAsync(result, dataset);
 
-      const initialChannelSettings = [...result.current.channelSettings];
+      const initialChannelSettings = deepCopyChannelSettings(result.current.channelSettings);
       expect(initialChannelSettings.length).toBe(1);
       act(() => {
         useViewerStateStore.getState().updateChannelSettings(0, {
@@ -159,7 +166,7 @@ describe("ChannelSlice", () => {
       await setDatasetAsync(result, dataset);
 
       expect(result.current.channelSettings.length).toBe(2);
-      const initialSettings = [...result.current.channelSettings];
+      const initialSettings = deepCopyChannelSettings(result.current.channelSettings);
 
       act(() => {
         useViewerStateStore.getState().updateChannelSettings(3, {
