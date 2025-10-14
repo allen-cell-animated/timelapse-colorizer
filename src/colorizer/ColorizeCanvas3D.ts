@@ -29,7 +29,7 @@ import {
   PixelIdInfo,
   TrackPathColorMode,
 } from "./types";
-import { getBackdropToChannelIndexMap, getVolumeSources } from "./utils/channels";
+import { getRelativeToAbsoluteChannelIndexMap, getVolumeSources } from "./utils/channels";
 import {
   computeTrackLinePointsAndIds,
   computeVertexColorsFromIds,
@@ -74,9 +74,9 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
 
   /**
    * Maps from the local index of a backdrop, as presented in the Dataset and
-   * TFE's UI, to its actual channel index in the Volume.
+   * TFE's UI, to its absolute channel index in the Volume.
    */
-  private backdropIndexToChannelIndex: number[] | null = null;
+  private backdropIndexToAbsoluteChannelIndex: number[] | null = null;
 
   private linePoints: Float32Array;
   private lineIds: number[];
@@ -335,10 +335,10 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
 
   private isValidBackdropIndex(backdropIndex: number): boolean {
     return (
-      this.backdropIndexToChannelIndex !== null &&
+      this.backdropIndexToAbsoluteChannelIndex !== null &&
       backdropIndex >= 0 &&
-      backdropIndex < this.backdropIndexToChannelIndex.length &&
-      this.backdropIndexToChannelIndex[backdropIndex] >= 0
+      backdropIndex < this.backdropIndexToAbsoluteChannelIndex.length &&
+      this.backdropIndexToAbsoluteChannelIndex[backdropIndex] >= 0
     );
   }
 
@@ -348,10 +348,10 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
    * volume is loaded or the backdrop index is invalid).
    */
   public getBackdropChannelRangePreset(backdropIndex: number, preset: ChannelRangePreset): [number, number] | null {
-    if (!this.volume || !this.backdropIndexToChannelIndex || !this.isValidBackdropIndex(backdropIndex)) {
+    if (!this.volume || !this.backdropIndexToAbsoluteChannelIndex || !this.isValidBackdropIndex(backdropIndex)) {
       return null;
     }
-    const channelIndex = this.backdropIndexToChannelIndex[backdropIndex];
+    const channelIndex = this.backdropIndexToAbsoluteChannelIndex[backdropIndex];
     const histogram = this.volume.getHistogram(channelIndex);
     let newMin = 0;
     let newMax = 0;
@@ -389,10 +389,10 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
   }
 
   public getBackdropChannelDataRange(backdropIndex: number): [number, number] | null {
-    if (!this.volume || !this.backdropIndexToChannelIndex || !this.isValidBackdropIndex(backdropIndex)) {
+    if (!this.volume || !this.backdropIndexToAbsoluteChannelIndex || !this.isValidBackdropIndex(backdropIndex)) {
       return null;
     }
-    const channelIndex = this.backdropIndexToChannelIndex[backdropIndex];
+    const channelIndex = this.backdropIndexToAbsoluteChannelIndex[backdropIndex];
     return [this.volume.getChannel(channelIndex).rawMin, this.volume.getChannel(channelIndex).rawMax];
   }
 
@@ -432,9 +432,9 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     if (
       hasPropertyChanged(params, prevParams, ["channelSettings"]) &&
       this.volume &&
-      this.backdropIndexToChannelIndex
+      this.backdropIndexToAbsoluteChannelIndex
     ) {
-      this.updateVolumeChannels(this.volume, params.channelSettings, this.backdropIndexToChannelIndex);
+      this.updateVolumeChannels(this.volume, params.channelSettings, this.backdropIndexToAbsoluteChannelIndex);
       return true;
     }
     return false;
@@ -487,14 +487,14 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
       this.view3d.updateActiveChannels(currentVol);
       this.view3d.updateLuts(currentVol);
 
-      if (this.params && this.backdropIndexToChannelIndex) {
-        this.updateVolumeChannels(volume, this.params.channelSettings, this.backdropIndexToChannelIndex);
+      if (this.params && this.backdropIndexToAbsoluteChannelIndex) {
+        this.updateVolumeChannels(volume, this.params.channelSettings, this.backdropIndexToAbsoluteChannelIndex);
       }
     });
     this.view3d.addVolume(volume);
     this.volume = volume;
 
-    this.backdropIndexToChannelIndex = getBackdropToChannelIndexMap(
+    this.backdropIndexToAbsoluteChannelIndex = getRelativeToAbsoluteChannelIndexMap(
       sources,
       volume.imageInfo.numChannelsPerSource,
       this.params.dataset?.frames3d?.backdrops
@@ -520,7 +520,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     this.view3d.setBoundingBoxColor(volume, [0.5, 0.5, 0.5]);
     this.view3d.resetCamera();
 
-    this.updateVolumeChannels(volume, this.params.channelSettings, this.backdropIndexToChannelIndex);
+    this.updateVolumeChannels(volume, this.params.channelSettings, this.backdropIndexToAbsoluteChannelIndex);
     this.updateLineGeometry(this.linePoints, this.lineColors);
 
     // TODO: Look at gamma/levels setting? Vole-app looks good at levels
