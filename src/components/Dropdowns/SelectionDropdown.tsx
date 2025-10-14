@@ -1,7 +1,7 @@
 import { ButtonProps, Tooltip } from "antd";
 import Fuse from "fuse.js";
 import React, { ReactElement, useCallback, useEffect, useMemo, useState, useTransition } from "react";
-import { components, ControlProps, OptionProps } from "react-select";
+import { components, ControlProps, OptionProps, StylesConfig } from "react-select";
 
 import { useDebounce } from "../../hooks/useDebounce";
 import { FlexRowAlignCenter } from "../../styles/utils";
@@ -9,10 +9,10 @@ import { SelectItem } from "./types";
 
 import StyledSelect from "./StyledSelect";
 
-// TODO: Have the dropdown show a loading indicator after a selection has been made
-// but before the prop value updates. -> this is especially noticeable when slow datasets.
-// Is there a way we can do this using async promises, maybe? If the promise rejects,
-// discard the changed value?
+// TODO: Have the dropdown show a loading indicator after a selection has been
+// made but before the prop value updates. -> this is especially noticeable when
+// loading large datasets. Is there a way we can do this using async promises,
+// maybe? If the promise rejects, discard the changed value?
 
 type SelectionDropdownProps = {
   /** Text label to include with the dropdown. If null or undefined, hides the label. */
@@ -20,7 +20,8 @@ type SelectionDropdownProps = {
   id?: string;
   /** The value of the item that is currently selected. */
   selected: string | SelectItem | undefined;
-  /** An array of SelectItems that describes the item properties (`{value,
+  /**
+   * An array of SelectItems that describes the item properties (`{value,
    * label}`), or an array of strings. Dropdown items will be presented in the
    * provided array order.
    *
@@ -36,19 +37,36 @@ type SelectionDropdownProps = {
   controlTooltipPlacement?: "top" | "bottom" | "left" | "right";
   disabled?: boolean;
   isSearchable?: boolean;
-  /** The type of button to render for the dropdown. See Antd's button types:
-   * https://ant.design/components/button#components-button-demo-basic */
+  /**
+   * The type of button to render for the dropdown. See Antd's button types:
+   * https://ant.design/components/button#components-button-demo-basic
+   */
   buttonType?: ButtonProps["type"] | "outlined";
-  /** Callback that is fired whenever an item in the dropdown is selected.
-   * The callback will be passed the `value` of the selected item. */
+  /**
+   * Callback that is fired whenever an item in the dropdown is selected.
+   * The callback will be passed the `value` of the selected item.
+   */
   onChange: (value: string) => void;
-  /** * If true, shows the label of the currently-selected item as a tooltip
-   * when hovering over the input/selection area. */
+  /**
+   * If true, shows the label of the currently-selected item as a tooltip
+   * when hovering over the input/selection area.
+   */
   showSelectedItemTooltip?: boolean;
-  /** Width of the dropdown. Overrides the default sizing behavior if set. */
-  width?: string | null;
+  /**
+   * Total width of the dropdown button and the label, as a CSS string.
+   * Overrides the default sizing behavior if set.
+   */
+  width?: string;
+  /** Width of the control (button) of the dropdown, as a CSS string. */
+  controlWidth?: string;
+  /**  Width of the dropdown menu, as a CSS string. */
+  menuWidth?: string;
   containerStyle?: React.CSSProperties;
-  controlStyle?: React.CSSProperties;
+  /**
+   * Style overrides for the inner Select component. A dictionary from a field
+   * (control, menu, option, etc.) to a function that returns a style object.
+   */
+  selectStyles?: StylesConfig<SelectItem, false>;
 };
 
 const defaultProps: Partial<SelectionDropdownProps> = {
@@ -105,12 +123,14 @@ function formatAsSelectItems(items: string[] | SelectItem[]): SelectItem[] {
  * Uses react-select internally but mimics the style of Ant Design for
  * consistency.
  *
+ * Children will be rendered to the right of the dropdown.
+ *
  * NOTE: The `items` prop should be memoized to prevent unnecessary re-renders.
  * Without memoization, react-select will re-render dropdown options based on
  * the `items` property on every render, which can cause unexpected or unwanted
  * behavior such as flickering on hover during rapid page updates.
  */
-export default function SelectionDropdown(inputProps: SelectionDropdownProps): ReactElement {
+export default function SelectionDropdown(inputProps: React.PropsWithChildren<SelectionDropdownProps>): ReactElement {
   const props = { ...defaultProps, ...inputProps };
 
   const options = useMemo(() => formatAsSelectItems(props.items), [props.items]);
@@ -199,9 +219,9 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
   const labelId = props.label ? selectId + "-label" : undefined;
 
   return (
-    <FlexRowAlignCenter $gap={6} style={props.containerStyle}>
+    <FlexRowAlignCenter $gap={6} style={{ width: props.width, minWidth: props.width, ...props.containerStyle }}>
       {props.label && (
-        <label htmlFor={selectId}>
+        <label htmlFor={selectId} style={{ whiteSpace: "nowrap" }}>
           <h3 id={labelId}>{props.label}</h3>
         </label>
       )}
@@ -234,9 +254,11 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
             setSearchInput(input);
           });
         }}
-        width={props.width ?? undefined}
-        controlContainerStyle={props.controlStyle}
+        controlWidth={props.controlWidth}
+        menuWidth={props.menuWidth}
+        styles={props.selectStyles}
       />
+      {props.children}
     </FlexRowAlignCenter>
   );
 }
