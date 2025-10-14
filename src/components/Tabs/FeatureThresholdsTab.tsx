@@ -256,9 +256,10 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
     const savedMinMax = featureMinMaxBoundsFallback.current.get(thresholdToKey(item)) || [Number.NaN, Number.NaN];
     const sliderMin = disabled ? savedMinMax[0] : featureData.min;
     const sliderMax = disabled ? savedMinMax[1] : featureData.max;
+    const stepSize = featureData?.type === FeatureType.DISCRETE ? 1 : undefined;
 
     return (
-      <div style={{ width: "calc(100% - 10px)" }}>
+      <div style={{ width: "calc(min(100% - 10px, 500px)", margin: "10px 0 8px 0" }}>
         <LabeledSlider
           type="range"
           min={item.min}
@@ -267,6 +268,7 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
           maxSliderBound={sliderMax}
           onChange={(min, max) => onNumericThresholdChanged(index, min, max)}
           disabled={disabled}
+          step={stepSize}
         />
       </div>
     );
