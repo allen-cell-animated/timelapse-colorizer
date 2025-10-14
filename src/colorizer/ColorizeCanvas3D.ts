@@ -4,6 +4,7 @@ import {
   Light,
   Line3d,
   LoadSpec,
+  Lut,
   RawArrayLoader,
   RENDERMODE_RAYMARCH,
   SKY_LIGHT,
@@ -21,12 +22,14 @@ import { getPixelRatio } from "./canvas";
 import {
   CanvasScaleInfo,
   CanvasType,
+  ChannelRangePreset,
   DrawMode,
   FeatureDataType,
   FrameLoadResult,
   PixelIdInfo,
   TrackPathColorMode,
 } from "./types";
+import { getRelativeToAbsoluteChannelIndexMap, getVolumeSources } from "./utils/channels";
 import {
   computeTrackLinePointsAndIds,
   computeVertexColorsFromIds,
@@ -68,6 +71,12 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
 
   private pendingFrame: number;
   private currentFrame: number;
+
+  /**
+   * Maps from the local index of a backdrop, as presented in the Dataset and
+   * TFE's UI, to its absolute channel index in the Volume.
+   */
+  private backdropIndexToAbsoluteChannelIndex: number[] | null = null;
 
   private linePoints: Float32Array;
   private lineIds: number[];
@@ -268,8 +277,13 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     ) {
       if (this.volume) {
         // Update color ramp for all channels
+        const segChannel = params.dataset?.frames3d?.segmentationChannel ?? 0;
         for (let i = 0; i < this.volume.numChannels; i++) {
-          this.configureColorizeFeature(this.volume, i);
+          if (i === segChannel) {
+            this.configureColorizeFeature(this.volume, i);
+          } else {
+            this.view3d.setChannelColorizeFeature(this.volume, i, null);
+          }
         }
         return true;
       }
@@ -285,7 +299,8 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
           this.volume.cleanup();
           this.volume = null;
         }
-        this.initializingVolumePromise = this.loadNewVolume(params.dataset.frames3d.source);
+        const sources = getVolumeSources(params.dataset.frames3d);
+        this.initializingVolumePromise = this.loadNewVolume(sources);
         this.initializingVolumePromise.then(() => {
           this.setFrame(params.pendingFrame);
         });
@@ -318,6 +333,113 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     return needsRender;
   }
 
+  private isValidBackdropIndex(backdropIndex: number): boolean {
+    return (
+      this.backdropIndexToAbsoluteChannelIndex !== null &&
+      backdropIndex >= 0 &&
+      backdropIndex < this.backdropIndexToAbsoluteChannelIndex.length &&
+      this.backdropIndexToAbsoluteChannelIndex[backdropIndex] >= 0
+    );
+  }
+
+  /**
+   * Returns the min-max range for a given backdrop channel based on the given
+   * range preset. Returns `null` if the preset cannot be calculated (e.g. no
+   * volume is loaded or the backdrop index is invalid).
+   */
+  public getBackdropChannelRangePreset(backdropIndex: number, preset: ChannelRangePreset): [number, number] | null {
+    if (!this.volume || !this.backdropIndexToAbsoluteChannelIndex || !this.isValidBackdropIndex(backdropIndex)) {
+      return null;
+    }
+    const channelIndex = this.backdropIndexToAbsoluteChannelIndex[backdropIndex];
+    const histogram = this.volume.getHistogram(channelIndex);
+    let newMin = 0;
+    let newMax = 0;
+    switch (preset) {
+      case ChannelRangePreset.NONE: {
+        newMin = histogram.getDataMin();
+        newMax = histogram.getDataMax();
+        break;
+      }
+      case ChannelRangePreset.DEFAULT: {
+        // Ramp over 50th to 98th percentile
+        const pct50Bin = histogram.findBinOfPercentile(0.5);
+        const pct98Bin = histogram.findBinOfPercentile(0.983);
+        newMin = histogram.getBinRange(pct50Bin)[0];
+        newMax = histogram.getBinRange(pct98Bin)[1];
+        break;
+      }
+      case ChannelRangePreset.IJ_AUTO: {
+        const [minIJBin, maxIJBin] = histogram.findAutoIJBins();
+        newMin = histogram.getBinRange(minIJBin)[0];
+        newMax = histogram.getBinRange(maxIJBin)[1];
+        break;
+      }
+      case ChannelRangePreset.AUTO_2: {
+        // Ramp over middle 80%
+        const [minBestFitBin, maxBestFitBin] = histogram.findBestFitBins();
+        newMin = histogram.getBinRange(minBestFitBin)[0];
+        newMax = histogram.getBinRange(maxBestFitBin)[1];
+        break;
+      }
+      default:
+        return null;
+    }
+    return [newMin, newMax];
+  }
+
+  public getBackdropChannelDataRange(backdropIndex: number): [number, number] | null {
+    if (!this.volume || !this.backdropIndexToAbsoluteChannelIndex || !this.isValidBackdropIndex(backdropIndex)) {
+      return null;
+    }
+    const channelIndex = this.backdropIndexToAbsoluteChannelIndex[backdropIndex];
+    return [this.volume.getChannel(channelIndex).rawMin, this.volume.getChannel(channelIndex).rawMax];
+  }
+
+  private updateVolumeChannels(
+    volume: Volume,
+    channelSettings: RenderCanvasStateParams["channelSettings"],
+    backdropIndexToChannelIndex: number[]
+  ): void {
+    for (let backdropIdx = 0; backdropIdx < backdropIndexToChannelIndex.length; backdropIdx++) {
+      const settings = channelSettings[backdropIdx];
+      const channelIndex = backdropIndexToChannelIndex[backdropIdx];
+      const colorArr: [number, number, number] = [
+        settings.color.r * 255,
+        settings.color.g * 255,
+        settings.color.b * 255,
+      ];
+      this.view3d.setVolumeChannelOptions(volume, channelIndex, {
+        enabled: settings.visible,
+        color: colorArr,
+        isosurfaceEnabled: false,
+      });
+      const histogram = volume.getHistogram(channelIndex);
+      const minBin = histogram.findFractionalBinOfValue(settings.min);
+      const maxBin = histogram.findFractionalBinOfValue(settings.max);
+      const lut = new Lut().createFromMinMax(minBin, maxBin);
+
+      volume.setLut(channelIndex, lut);
+    }
+    if (volume.isLoaded()) {
+      this.view3d.updateActiveChannels(volume);
+      this.view3d.updateLuts(volume);
+      this.view3d.redraw();
+    }
+  }
+
+  private handleChannelUpdate(prevParams: RenderCanvasStateParams | null, params: RenderCanvasStateParams): boolean {
+    if (
+      hasPropertyChanged(params, prevParams, ["channelSettings"]) &&
+      this.volume &&
+      this.backdropIndexToAbsoluteChannelIndex
+    ) {
+      this.updateVolumeChannels(this.volume, params.channelSettings, this.backdropIndexToAbsoluteChannelIndex);
+      return true;
+    }
+    return false;
+  }
+
   public setParams(params: RenderCanvasStateParams): Promise<void> {
     if (this.params === params) {
       return Promise.resolve();
@@ -328,7 +450,8 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     const didColorRampUpdate = this.handleColorRampUpdate(prevParams, params);
     const didDatasetUpdate = this.handleDatasetUpdate(prevParams, params);
     const didLineUpdate = this.handleLineUpdate(prevParams, params);
-    const needsRender = didColorRampUpdate || didDatasetUpdate || didLineUpdate;
+    const didChannelUpdate = this.handleChannelUpdate(prevParams, params);
+    const needsRender = didColorRampUpdate || didDatasetUpdate || didLineUpdate || didChannelUpdate;
 
     if (needsRender) {
       this.render({ synchronous: false });
@@ -338,31 +461,45 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     return Promise.resolve();
   }
 
-  private async loadNewVolume(path: string | string[]): Promise<Volume> {
+  private async loadNewVolume(sources: string[]): Promise<Volume> {
     if (!this.params) {
       throw new Error("Cannot load volume without parameters.");
     }
     await loaderContext.onOpen();
 
-    console.log("Loading volume from path:", path);
-    this.loader = await loaderContext.createLoader(path);
+    console.log("Loading volume from path:", sources);
+    this.loader = await loaderContext.createLoader(sources);
+    this.loader.syncMultichannelLoading(true);
+
     const loadSpec = new LoadSpec();
     loadSpec.time = this.params.pendingFrame;
+    const segChannel = this.params.dataset?.frames3d?.segmentationChannel ?? 0;
     const volume = await this.loader.createVolume(loadSpec, (v: Volume, channelIndex: number) => {
       const currentVol = v;
 
       this.view3d.onVolumeData(currentVol, [channelIndex]);
-
-      this.configureColorizeFeature(currentVol, channelIndex);
-
+      if (channelIndex === segChannel) {
+        this.view3d.setVolumeChannelEnabled(currentVol, channelIndex, true);
+        this.configureColorizeFeature(currentVol, channelIndex);
+      } else {
+        this.view3d.setVolumeChannelEnabled(currentVol, channelIndex, false);
+      }
       this.view3d.updateActiveChannels(currentVol);
       this.view3d.updateLuts(currentVol);
-      this.view3d.redraw();
+
+      if (this.params && this.backdropIndexToAbsoluteChannelIndex) {
+        this.updateVolumeChannels(volume, this.params.channelSettings, this.backdropIndexToAbsoluteChannelIndex);
+      }
     });
     this.view3d.addVolume(volume);
     this.volume = volume;
 
-    const segChannel = this.params.dataset?.frames3d?.segmentationChannel ?? 0;
+    this.backdropIndexToAbsoluteChannelIndex = getRelativeToAbsoluteChannelIndexMap(
+      sources,
+      volume.imageInfo.numChannelsPerSource,
+      this.params.dataset?.frames3d?.backdrops
+    );
+
     this.view3d.setVolumeChannelEnabled(volume, segChannel, true);
     this.view3d.setVolumeChannelOptions(volume, segChannel, {
       isosurfaceEnabled: false,
@@ -383,6 +520,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     this.view3d.setBoundingBoxColor(volume, [0.5, 0.5, 0.5]);
     this.view3d.resetCamera();
 
+    this.updateVolumeChannels(volume, this.params.channelSettings, this.backdropIndexToAbsoluteChannelIndex);
     this.updateLineGeometry(this.linePoints, this.lineColors);
 
     // TODO: Look at gamma/levels setting? Vole-app looks good at levels

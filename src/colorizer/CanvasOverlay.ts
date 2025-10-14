@@ -25,7 +25,7 @@ import {
 } from "./canvas/elements/annotations";
 import { BaseRenderParams, RenderInfo } from "./canvas/types";
 import { getPixelRatio, toEven } from "./canvas/utils";
-import { CanvasScaleInfo, CanvasType, FrameLoadResult, PixelIdInfo } from "./types";
+import { CanvasScaleInfo, CanvasType, ChannelRangePreset, FrameLoadResult, PixelIdInfo } from "./types";
 import { hasPropertyChanged } from "./utils/data_utils";
 
 import { LabelData } from "./AnnotationData";
@@ -377,6 +377,22 @@ export default class CanvasOverlay implements IRenderCanvas {
     this.selectedLabelIdx = selectedLabelIdx;
     this.rangeStartId = rangeStartId;
     this.render({ renderInnerCanvas: false });
+  }
+
+  // 3D-specific functionality
+
+  public getBackdropChannelRangePreset(backdropIndex: number, preset: ChannelRangePreset): [number, number] | null {
+    if (this.innerCanvasType === CanvasType.CANVAS_3D && this.innerCanvas3d) {
+      return this.innerCanvas3d.getBackdropChannelRangePreset(backdropIndex, preset);
+    }
+    return null;
+  }
+
+  public getBackdropChannelDataRange(backdropIndex: number): [number, number] | null {
+    if (this.innerCanvasType === CanvasType.CANVAS_3D && this.innerCanvas3d) {
+      return this.innerCanvas3d.getBackdropChannelDataRange(backdropIndex);
+    }
+    return null;
   }
 
   // Rendering functions ////////////////////////////
