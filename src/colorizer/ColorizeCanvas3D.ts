@@ -405,9 +405,9 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
       const settings = channelSettings[backdropIdx];
       const channelIndex = backdropIndexToChannelIndex[backdropIdx];
       const colorArr: [number, number, number] = [
-        settings.color.r * 255,
-        settings.color.g * 255,
-        settings.color.b * 255,
+        settings.color.r * 255 * settings.opacity,
+        settings.color.g * 255 * settings.opacity,
+        settings.color.b * 255 * settings.opacity,
       ];
       this.view3d.setVolumeChannelOptions(volume, channelIndex, {
         enabled: settings.visible,
