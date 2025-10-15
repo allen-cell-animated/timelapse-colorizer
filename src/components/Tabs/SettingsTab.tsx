@@ -303,7 +303,7 @@ export default function SettingsTab(): ReactElement {
               items={backdropOptions}
               onChange={(key) => dataset && setBackdropKey(key)}
               disabled={isBackdropOptionsDisabled}
-              width={"280px"}
+              controlWidth={"280px"}
               controlTooltipPlacement="right"
             />
           </SettingsItem>

@@ -388,9 +388,9 @@ export default class CanvasOverlay implements IRenderCanvas {
     return null;
   }
 
-  public getBackdropChannelDataRange(channelIndex: number): [number, number] | null {
+  public getBackdropChannelDataRange(backdropIndex: number): [number, number] | null {
     if (this.innerCanvasType === CanvasType.CANVAS_3D && this.innerCanvas3d) {
-      return this.innerCanvas3d.getBackdropChannelDataRange(channelIndex);
+      return this.innerCanvas3d.getBackdropChannelDataRange(backdropIndex);
     }
     return null;
   }
