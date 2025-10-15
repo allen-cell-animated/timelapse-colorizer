@@ -19,7 +19,7 @@ export type ToggleImageButtonProps = {
  * images), as a reusable component.
  */
 export function ImageToggleButton(props: ToggleImageButtonProps): ReactElement {
-  const divRef = React.useRef<HTMLDivElement>(null);
+  const tooltipContainerRef = React.useRef<HTMLDivElement>(null);
   const tooltipRef = React.useRef<HTMLDivElement>(null);
   const [tooltipOpen, setTooltipOpen] = useState(false);
   const [isHoveringTooltip, setIsHoveringTooltip] = useState(false);
@@ -27,8 +27,8 @@ export function ImageToggleButton(props: ToggleImageButtonProps): ReactElement {
   const tooltipTitle = (props.visible ? "Hide" : "Show") + " " + props.label;
 
   useEffect(() => {
-    const onPointerEnter = () => setIsHoveringTooltip(true);
-    const onPointerLeave = () => setIsHoveringTooltip(false);
+    const onPointerEnter = (): void => setIsHoveringTooltip(true);
+    const onPointerLeave = (): void => setIsHoveringTooltip(false);
     const tooltipDiv = tooltipRef.current;
     if (tooltipDiv) {
       tooltipDiv.addEventListener("pointerenter", onPointerEnter);
@@ -42,7 +42,7 @@ export function ImageToggleButton(props: ToggleImageButtonProps): ReactElement {
     };
   }, [tooltipRef.current]);
 
-  const onOpenChange = (open: boolean) => {
+  const onOpenChange = (open: boolean): void => {
     // Fix a bug where, if the tooltip is open because the inner button is
     // focused (e.g. a user clicked it), clicking on the tooltip's contents
     // would cause the button to lose focus and instantly close the tooltip.
@@ -54,16 +54,16 @@ export function ImageToggleButton(props: ToggleImageButtonProps): ReactElement {
   };
 
   return (
-    <div ref={divRef}>
+    <div ref={tooltipContainerRef}>
       <TooltipWithSubtitle
         title={tooltipTitle}
         placement="right"
         subtitleList={props.tooltipContents}
         trigger={["hover", "focus"]}
-        getPopupContainer={() => divRef.current || document.body}
         onOpenChange={onOpenChange}
         open={tooltipOpen}
         tooltipRef={tooltipRef}
+        getPopupContainer={() => tooltipContainerRef.current || document.body}
       >
         <IconButton
           type={props.visible && !props.disabled ? "primary" : "link"}
