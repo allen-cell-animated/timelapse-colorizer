@@ -319,6 +319,7 @@ export default function SettingsTab(): ReactElement {
                 value={backdropBrightness}
                 onChange={setBackdropBrightness}
                 marks={[100]}
+                step={1}
                 numberFormatter={(value?: number) => `${value}%`}
                 disabled={isBackdropOptionsDisabled}
               />
@@ -337,6 +338,7 @@ export default function SettingsTab(): ReactElement {
                 value={backdropSaturation}
                 onChange={setBackdropSaturation}
                 marks={[100]}
+                step={1}
                 numberFormatter={(value?: number) => `${value}%`}
                 disabled={isBackdropOptionsDisabled}
               />
@@ -355,6 +357,7 @@ export default function SettingsTab(): ReactElement {
                 value={objectOpacity}
                 onChange={setObjectOpacity}
                 marks={[100]}
+                step={1}
                 numberFormatter={(value?: number) => `${value}%`}
               />
             </div>
