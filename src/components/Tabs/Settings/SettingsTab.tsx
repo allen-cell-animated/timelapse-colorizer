@@ -1,13 +1,13 @@
 import { Checkbox, Switch, Tooltip } from "antd";
-import { PresetsItem } from "antd/es/color-picker/interface";
-import React, { ReactElement, useMemo } from "react";
-import { Color, ColorRepresentation } from "three";
+import { type PresetsItem } from "antd/es/color-picker/interface";
+import React, { type ReactElement, useMemo } from "react";
+import { Color, type ColorRepresentation } from "three";
 
 import { OUTLINE_COLOR_DEFAULT } from "src/colorizer/constants";
 import { DrawMode, TrackPathColorMode } from "src/colorizer/types";
 import DropdownWithColorPicker from "src/components/Dropdowns/DropdownWithColorPicker";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
-import { SelectItem } from "src/components/Dropdowns/types";
+import { type SelectItem } from "src/components/Dropdowns/types";
 import LabeledSlider from "src/components/Inputs/LabeledSlider";
 import WrappedColorPicker from "src/components/Inputs/WrappedColorPicker";
 import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";

@@ -1,5 +1,5 @@
 import { Collapse } from "antd";
-import React, { PropsWithChildren, ReactElement, ReactNode } from "react";
+import React, { type PropsWithChildren, type ReactElement, type ReactNode } from "react";
 import styled from "styled-components";
 
 type CustomCollapseProps = {

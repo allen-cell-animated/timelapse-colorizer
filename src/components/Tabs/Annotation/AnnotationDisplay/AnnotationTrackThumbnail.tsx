@@ -1,10 +1,10 @@
-import React, { ReactElement, useCallback, useContext, useEffect, useRef, useState } from "react";
+import React, { type ReactElement, useCallback, useContext, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { Color } from "three";
 
-import { Dataset, Track } from "src/colorizer";
+import { type Dataset, type Track } from "src/colorizer";
 import { getIntervals } from "src/colorizer/utils/data_utils";
-import { AppTheme, AppThemeContext } from "src/styles/AppStyle";
+import { type AppTheme, AppThemeContext } from "src/styles/AppStyle";
 
 const HIGHLIGHT_CANVAS_CLASSNAME = "pulse";
 

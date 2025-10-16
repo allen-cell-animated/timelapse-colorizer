@@ -1,4 +1,4 @@
-import React, { Children, PropsWithChildren, ReactElement, useEffect } from "react";
+import React, { Children, type PropsWithChildren, type ReactElement, useEffect } from "react";
 import styled, { css } from "styled-components";
 
 const SETTINGS_ITEM_CLASS = "settings-item";

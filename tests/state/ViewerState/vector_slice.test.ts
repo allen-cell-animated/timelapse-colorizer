@@ -5,8 +5,8 @@ import { describe, expect, it } from "vitest";
 import { VECTOR_KEY_MOTION_DELTA, VectorTooltipMode } from "src/colorizer";
 import { UrlParam } from "src/colorizer/utils/url_utils";
 import { useViewerStateStore } from "src/state";
-import { loadVectorSliceFromParams, serializeVectorSlice, VectorSlice } from "src/state/slices";
-import { SerializedStoreData } from "src/state/types";
+import { loadVectorSliceFromParams, serializeVectorSlice, type VectorSlice } from "src/state/slices";
+import { type SerializedStoreData } from "src/state/types";
 import { ANY_ERROR } from "tests/utils";
 
 import { compareRecord } from "./utils";

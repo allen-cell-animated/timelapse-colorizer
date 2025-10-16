@@ -2,7 +2,7 @@ import { Color } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "src/colorizer/constants";
 
-import { RawColorData } from "./color_ramps";
+import { type RawColorData } from "./color_ramps";
 
 export type PaletteData = RawColorData & {
   colors: Color[];

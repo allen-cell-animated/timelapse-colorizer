@@ -1,7 +1,7 @@
-import { ReactNode } from "react";
+import { type ReactNode } from "react";
 
-import Collection from "src/colorizer/Collection";
-import { ViewerParams } from "src/state/utils/store_io";
+import type Collection from "src/colorizer/Collection";
+import { type ViewerParams } from "src/state/utils/store_io";
 
 export type DatasetEntry = {
   name: string;

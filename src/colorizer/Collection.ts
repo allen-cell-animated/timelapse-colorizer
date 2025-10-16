@@ -1,20 +1,20 @@
 import { DEFAULT_COLLECTION_FILENAME, DEFAULT_DATASET_FILENAME } from "src/colorizer/constants";
 
 import Dataset from "./Dataset";
-import { IArrayLoader, ITextureImageLoader } from "./loaders/ILoader";
-import { FilePathResolver, IPathResolver, UrlPathResolver } from "./path_resolvers";
-import { LoadErrorMessage, LoadTroubleshooting, ReportWarningCallback } from "./types";
+import { type IArrayLoader, type ITextureImageLoader } from "./loaders/ILoader";
+import { FilePathResolver, type IPathResolver, UrlPathResolver } from "./path_resolvers";
+import { LoadErrorMessage, LoadTroubleshooting, type ReportWarningCallback } from "./types";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./utils/analytics";
 import {
-  CollectionEntry,
-  CollectionFile,
-  CollectionFileMetadata,
+  type CollectionEntry,
+  type CollectionFile,
+  type CollectionFileMetadata,
   updateCollectionVersion,
 } from "./utils/collection_utils";
 import { formatAsBulletList, uncapitalizeFirstLetter } from "./utils/data_utils";
 import {
   DEFAULT_FETCH_TIMEOUT_MS,
-  fetchManifestJson,
+  type fetchManifestJson,
   fetchWithTimeout,
   formatPath,
   isJson,

@@ -1,18 +1,18 @@
 import {
   AREA_LIGHT,
-  ColorizeFeature,
+  type ColorizeFeature,
   Light,
   Line3d,
   LoadSpec,
   Lut,
-  RawArrayLoader,
+  type RawArrayLoader,
   RENDERMODE_RAYMARCH,
   SKY_LIGHT,
-  TiffLoader,
+  type TiffLoader,
   View3d,
-  Volume,
+  type Volume,
   VolumeLoaderContext,
-  WorkerLoader,
+  type WorkerLoader,
 } from "@aics/vole-core";
 import { Box3, Color, Matrix4, Quaternion, Vector2, Vector3 } from "three";
 import { clamp, inverseLerp, lerp } from "three/src/math/MathUtils";
@@ -21,16 +21,16 @@ import { MAX_FEATURE_CATEGORIES } from "src/colorizer/constants";
 
 import { getPixelRatio } from "./canvas";
 import { ColorRampType } from "./ColorRamp";
-import { IInnerRenderCanvas } from "./IInnerRenderCanvas";
-import { RenderCanvasStateParams, RenderOptions } from "./IRenderCanvas";
+import { type IInnerRenderCanvas } from "./IInnerRenderCanvas";
+import { type RenderCanvasStateParams, type RenderOptions } from "./IRenderCanvas";
 import {
-  CanvasScaleInfo,
+  type CanvasScaleInfo,
   CanvasType,
   ChannelRangePreset,
   DrawMode,
   FeatureDataType,
-  FrameLoadResult,
-  PixelIdInfo,
+  type FrameLoadResult,
+  type PixelIdInfo,
   TrackPathColorMode,
 } from "./types";
 import { getBackdropToChannelIndexMap, getVolumeSources } from "./utils/channels";

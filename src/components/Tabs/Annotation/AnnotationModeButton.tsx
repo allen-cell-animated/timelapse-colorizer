@@ -1,6 +1,6 @@
 import { CheckOutlined } from "@ant-design/icons";
 import { Button } from "antd";
-import React, { ReactElement, useContext } from "react";
+import React, { type ReactElement, useContext } from "react";
 import styled, { css } from "styled-components";
 
 import { TagIconSVG } from "src/assets";

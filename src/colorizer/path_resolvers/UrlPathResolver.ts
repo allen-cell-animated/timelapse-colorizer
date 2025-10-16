@@ -1,6 +1,6 @@
 import { resolveUrl } from "src/colorizer/utils/url_utils";
 
-import { IPathResolver } from "./IPathResolver";
+import { type IPathResolver } from "./IPathResolver";
 
 export class UrlPathResolver implements IPathResolver {
   resolve(baseUrl: string, url: string): string {

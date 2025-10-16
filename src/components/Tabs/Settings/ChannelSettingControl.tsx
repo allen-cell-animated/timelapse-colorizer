@@ -1,9 +1,9 @@
 import { SyncOutlined } from "@ant-design/icons";
 import { Button, Tooltip } from "antd";
-import React, { ReactElement } from "react";
+import React, { type ReactElement } from "react";
 import styled from "styled-components";
 
-import { ChannelRangePreset, ChannelSetting } from "src/colorizer";
+import { ChannelRangePreset, type ChannelSetting } from "src/colorizer";
 import LabeledSlider from "src/components/Inputs/LabeledSlider";
 import WrappedColorPicker from "src/components/Inputs/WrappedColorPicker";
 import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";

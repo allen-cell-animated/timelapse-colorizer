@@ -1,14 +1,16 @@
 import { CameraOutlined, CheckCircleOutlined, LockOutlined, UnlockOutlined } from "@ant-design/icons";
-import { App, Button, Card, Checkbox, Input, InputNumber, Radio, RadioChangeEvent, Space, Tooltip } from "antd";
-import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { App, Button, Card, Checkbox, Input, InputNumber, Radio, type RadioChangeEvent, Space, Tooltip } from "antd";
+import React, { type ReactElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import { Vector2 } from "three";
 import { clamp } from "three/src/math/MathUtils";
 
 import { getPixelRatio, toEven } from "src/colorizer/canvas/utils";
-import CanvasOverlay, { ExportOptions } from "src/colorizer/CanvasOverlay";
-import { IRenderCanvas } from "src/colorizer/IRenderCanvas";
-import CanvasRecorder, { RecordingOptions } from "src/colorizer/recorders/CanvasRecorder";
+import type CanvasOverlay from "src/colorizer/CanvasOverlay";
+import {type ExportOptions} from "src/colorizer/CanvasOverlay";
+import { type IRenderCanvas } from "src/colorizer/IRenderCanvas";
+import type CanvasRecorder from "src/colorizer/recorders/CanvasRecorder";
+import {type RecordingOptions} from "src/colorizer/recorders/CanvasRecorder";
 import ImageSequenceRecorder from "src/colorizer/recorders/ImageSequenceRecorder";
 import Mp4VideoRecorder, { VideoBitrate } from "src/colorizer/recorders/Mp4VideoRecorder";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "src/colorizer/utils/analytics";

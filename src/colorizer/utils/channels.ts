@@ -1,4 +1,4 @@
-import { ManifestFile } from "./dataset_utils";
+import { type ManifestFile } from "./dataset_utils";
 
 type Frames3dInfo = NonNullable<ManifestFile["frames3d"]>;
 type BackdropInfo = NonNullable<NonNullable<ManifestFile["frames3d"]>["backdrops"]>;

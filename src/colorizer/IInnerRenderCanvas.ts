@@ -1,6 +1,6 @@
-import { Matrix4 } from "three";
+import { type Matrix4 } from "three";
 
-import { IRenderCanvas } from "./IRenderCanvas";
+import { type IRenderCanvas } from "./IRenderCanvas";
 
 export interface IInnerRenderCanvas extends IRenderCanvas {
   /**

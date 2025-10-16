@@ -1,7 +1,7 @@
 import { useCallback, useMemo,useState } from "react";
 
-import { AnnotationSelectionMode, Dataset } from "src/colorizer";
-import { AnnotationData, AnnotationMergeMode, IAnnotationDataGetters, IAnnotationDataSetters, LabelType } from "src/colorizer/AnnotationData";
+import { AnnotationSelectionMode, type Dataset } from "src/colorizer";
+import { AnnotationData, type AnnotationMergeMode, type IAnnotationDataGetters, type IAnnotationDataSetters, LabelType } from "src/colorizer/AnnotationData";
 
 import { useConstructor } from "./useConstructor";
 import { useShortcutKey } from "./useShortcutKey";

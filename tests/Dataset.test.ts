@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { FeatureDataType } from "src/colorizer";
 import { MAX_FEATURE_CATEGORIES } from "src/colorizer/constants";
 import Dataset, { FeatureType } from "src/colorizer/Dataset";
-import { AnyManifestFile, ManifestFile } from "src/colorizer/utils/dataset_utils";
+import { type AnyManifestFile, type ManifestFile } from "src/colorizer/utils/dataset_utils";
 import { MOCK_DATASET_ARRAY_LOADER_DEFAULT_SOURCE, MOCK_DATASET_MANIFEST } from "tests/constants";
 import {
   ANY_ERROR,

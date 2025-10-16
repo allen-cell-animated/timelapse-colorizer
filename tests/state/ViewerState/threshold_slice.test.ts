@@ -1,8 +1,8 @@
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { FeatureThreshold, ThresholdType } from "src/colorizer";
-import Collection from "src/colorizer/Collection";
+import { type FeatureThreshold, ThresholdType } from "src/colorizer";
+import type Collection from "src/colorizer/Collection";
 import { validateThresholds } from "src/colorizer/utils/data_utils";
 import { UrlParam } from "src/colorizer/utils/url_utils";
 import { loadThresholdSliceFromParams, serializeThresholdSlice } from "src/state/slices";

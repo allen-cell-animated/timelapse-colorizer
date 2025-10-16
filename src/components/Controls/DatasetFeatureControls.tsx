@@ -1,8 +1,8 @@
-import React, { ReactElement, useMemo } from "react";
+import React, { type ReactElement, useMemo } from "react";
 
-import { Dataset } from "src/colorizer";
+import { type Dataset } from "src/colorizer";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
-import { SelectItem } from "src/components/Dropdowns/types";
+import { type SelectItem } from "src/components/Dropdowns/types";
 import GlossaryPanel from "src/components/GlossaryPanel";
 import { useViewerStateStore } from "src/state";
 import { FlexRow } from "src/styles/utils";

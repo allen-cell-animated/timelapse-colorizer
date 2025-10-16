@@ -1,6 +1,6 @@
 import { Vector2 } from "three";
 
-import { LabelData } from "./AnnotationData";
+import { type LabelData } from "./AnnotationData";
 import {
   defaultFooterStyle,
   defaultHeaderStyle,
@@ -8,30 +8,30 @@ import {
   defaultLegendStyle,
   defaultScaleBarStyle,
   defaultTimestampStyle,
-  FooterParams,
-  FooterStyle,
+  type FooterParams,
+  type FooterStyle,
   getFooterRenderer,
   getHeaderRenderer,
-  HeaderStyle,
-  InsetBoxStyle,
-  LegendStyle,
-  ScaleBarStyle,
-  TimestampStyle,
+  type HeaderStyle,
+  type InsetBoxStyle,
+  type LegendStyle,
+  type ScaleBarStyle,
+  type TimestampStyle,
 } from "./canvas/elements";
 import {
-  AnnotationParams,
-  AnnotationStyle,
+  type AnnotationParams,
+  type AnnotationStyle,
   defaultAnnotationStyle,
   getAnnotationRenderer,
 } from "./canvas/elements/annotations";
-import { BaseRenderParams, RenderInfo } from "./canvas/types";
+import { type BaseRenderParams, type RenderInfo } from "./canvas/types";
 import { getPixelRatio, toEven } from "./canvas/utils";
 import ColorizeCanvas2D from "./ColorizeCanvas2D";
 import { ColorizeCanvas3D } from "./ColorizeCanvas3D";
-import Dataset from "./Dataset";
-import { IInnerRenderCanvas } from "./IInnerRenderCanvas";
-import { IRenderCanvas, RenderCanvasStateParams, RenderOptions } from "./IRenderCanvas";
-import { CanvasScaleInfo, CanvasType, ChannelRangePreset, FrameLoadResult, PixelIdInfo } from "./types";
+import type Dataset from "./Dataset";
+import { type IInnerRenderCanvas } from "./IInnerRenderCanvas";
+import { type IRenderCanvas, type RenderCanvasStateParams, type RenderOptions } from "./IRenderCanvas";
+import { type CanvasScaleInfo, CanvasType, type ChannelRangePreset, type FrameLoadResult, type PixelIdInfo } from "./types";
 import { hasPropertyChanged } from "./utils/data_utils";
 
 type OverlayRenderOptions = RenderOptions & {

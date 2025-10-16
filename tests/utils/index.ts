@@ -1,16 +1,16 @@
-import { DataTexture, RGBAFormat, Texture, UnsignedByteType } from "three";
+import { DataTexture, RGBAFormat, type Texture, UnsignedByteType } from "three";
 
 import {
-  ArraySource,
+  type ArraySource,
   Dataset,
-  FeatureArrayType,
-  FeatureDataType,
+  type FeatureArrayType,
+  type FeatureDataType,
   featureTypeSpecs,
-  IArrayLoader,
-  ITextureImageLoader,
+  type IArrayLoader,
+  type ITextureImageLoader,
 } from "src/colorizer";
-import { AnyManifestFile } from "src/colorizer/utils/dataset_utils";
-import { fetchWithTimeout } from "src/colorizer/utils/url_utils";
+import { type AnyManifestFile } from "src/colorizer/utils/dataset_utils";
+import { type fetchWithTimeout } from "src/colorizer/utils/url_utils";
 
 export const ANY_ERROR = /[.]*/;
 export const DEFAULT_DATASET_DIR = "https://some-path/";

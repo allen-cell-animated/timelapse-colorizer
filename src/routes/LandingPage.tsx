@@ -1,17 +1,17 @@
 import { Button, Divider, Tooltip } from "antd";
-import React, { lazy, ReactElement, Suspense } from "react";
+import React, { lazy, type ReactElement, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 
-import { Dataset } from "src/colorizer";
-import Collection from "src/colorizer/Collection";
+import { type Dataset } from "src/colorizer";
+import type Collection from "src/colorizer/Collection";
 import { ButtonStyleLink } from "src/components/Buttons/ButtonStyleLink";
 import HelpDropdown from "src/components/Dropdowns/HelpDropdown";
 import Header from "src/components/Header";
 import LoadDatasetButton from "src/components/LoadDatasetButton";
 import { serializedDataToUrl, serializeViewerParams } from "src/state/utils/store_io";
 import { ExternalLink, FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter, VisuallyHidden } from "src/styles/utils";
-import { DatasetEntry, LocationState, ProjectEntry } from "src/types";
+import { type DatasetEntry, type LocationState, type ProjectEntry } from "src/types";
 
 import { PageRoutes } from "./index";
 import { landingPageContent } from "./LandingPageContent";

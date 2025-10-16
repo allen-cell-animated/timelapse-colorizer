@@ -1,4 +1,4 @@
-import { StateCreator } from "zustand";
+import { type StateCreator } from "zustand";
 
 import {
   decodeBoolean,
@@ -18,10 +18,10 @@ import {
   BACKDROP_SATURATION_MAX,
   BACKDROP_SATURATION_MIN,
 } from "src/constants";
-import { SerializedStoreData, SubscribableStore } from "src/state/types";
+import { type SerializedStoreData, type SubscribableStore } from "src/state/types";
 import { clampWithNanCheck } from "src/state/utils/data_validation";
 
-import { DatasetSlice } from "./dataset_slice";
+import { type DatasetSlice } from "./dataset_slice";
 
 export type BackdropSliceState = {
   backdropVisible: boolean;

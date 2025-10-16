@@ -1,4 +1,4 @@
-import React, { ReactElement, ReactNode } from "react";
+import React, { type ReactElement, type ReactNode } from "react";
 
 import { ImagesIconSVG, ImagesSlashIconSVG } from "src/assets";
 import { TooltipWithSubtitle } from "src/components/Tooltips/TooltipWithSubtitle";

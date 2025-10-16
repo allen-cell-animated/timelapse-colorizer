@@ -1,6 +1,6 @@
 import { formatPath, isAllenPath, isUrl, resolveUrl } from "src/colorizer/utils/url_utils";
 
-import { IPathResolver } from "./IPathResolver";
+import { type IPathResolver } from "./IPathResolver";
 
 /**
  * Creates and manages object URLs for a collection of files, allowing paths to

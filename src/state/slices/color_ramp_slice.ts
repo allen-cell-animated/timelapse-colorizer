@@ -1,5 +1,5 @@
-import { Color, ColorRepresentation } from "three";
-import { StateCreator } from "zustand";
+import { Color, type ColorRepresentation } from "three";
+import { type StateCreator } from "zustand";
 
 import { isThresholdNumeric, MAX_FEATURE_CATEGORIES } from "src/colorizer";
 import ColorRamp, { ColorRampType } from "src/colorizer/ColorRamp";
@@ -16,11 +16,11 @@ import {
   UrlParam,
 } from "src/colorizer/utils/url_utils";
 import { COLOR_RAMP_RANGE_DEFAULT } from "src/constants";
-import { SerializedStoreData, SubscribableStore } from "src/state/types";
+import { type SerializedStoreData, type SubscribableStore } from "src/state/types";
 import { addDerivedStateSubscriber } from "src/state/utils/store_utils";
 
-import { DatasetSlice } from "./dataset_slice";
-import { ThresholdSlice } from "./threshold_slice";
+import { type DatasetSlice } from "./dataset_slice";
+import { type ThresholdSlice } from "./threshold_slice";
 
 export type ColorRampSliceState = {
   colorRampKey: string;

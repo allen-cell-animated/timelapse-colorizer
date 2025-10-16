@@ -1,5 +1,5 @@
-import { ReactNode } from "react";
-import { Color } from "three";
+import { type ReactNode } from "react";
+import { type Color } from "three";
 
 /**
  * A single option in a dropdown. Includes optional display properties.

@@ -1,6 +1,6 @@
-import { NearestFilter, PixelFormat, RGBAIntegerFormat, Texture } from "three";
+import { NearestFilter, type PixelFormat, RGBAIntegerFormat, Texture } from "three";
 
-import { ITextureImageLoader } from "./ILoader";
+import { type ITextureImageLoader } from "./ILoader";
 
 /** Promise-ifies image loading */
 async function loadImageElement(url: string): Promise<HTMLImageElement> {

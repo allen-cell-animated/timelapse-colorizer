@@ -1,15 +1,15 @@
 import { ExportOutlined, MenuOutlined, TableOutlined } from "@ant-design/icons";
 import { Modal, Radio, Tooltip } from "antd";
-import React, { ReactElement, useCallback, useMemo, useRef, useState, useTransition } from "react";
+import React, { type ReactElement, useCallback, useMemo, useRef, useState, useTransition } from "react";
 import { useShallow } from "zustand/shallow";
 
 import { AnnotationSelectionMode } from "src/colorizer";
-import { LabelData, LabelOptions, LabelType } from "src/colorizer/AnnotationData";
+import { type LabelData, type LabelOptions, LabelType } from "src/colorizer/AnnotationData";
 import TextButton from "src/components/Buttons/TextButton";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
-import { SelectItem } from "src/components/Dropdowns/types";
+import { type SelectItem } from "src/components/Dropdowns/types";
 import LoadingSpinner from "src/components/LoadingSpinner";
-import { AnnotationState } from "src/hooks";
+import { type AnnotationState } from "src/hooks";
 import { useViewerStateStore } from "src/state";
 import { Z_INDEX_MODAL } from "src/styles/AppStyle";
 import { StyledRadioGroup } from "src/styles/components";
@@ -17,7 +17,7 @@ import { FlexColumnAlignCenter, FlexRow, VisuallyHidden } from "src/styles/utils
 import { download } from "src/utils/file_io";
 
 import AnnotationDisplayList from "./AnnotationDisplay/AnnotationDisplayList";
-import AnnotationDisplayTable, { TableDataType } from "./AnnotationDisplay/AnnotationDisplayTable";
+import AnnotationDisplayTable, { type TableDataType } from "./AnnotationDisplay/AnnotationDisplayTable";
 import AnnotationImportButton from "./AnnotationImportButton";
 import AnnotationModeButton from "./AnnotationModeButton";
 import CreateLabelForm from "./CreateLabelForm";

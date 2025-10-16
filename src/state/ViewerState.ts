@@ -1,8 +1,8 @@
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 
-import { addStoreStateSubscribers, viewerStateStoreCreator, ViewerStore } from "./slices";
-import { SubscribableStore } from "./types";
+import { addStoreStateSubscribers, viewerStateStoreCreator, type ViewerStore } from "./slices";
+import { type SubscribableStore } from "./types";
 
 /**
  * Hook for accessing the global viewer state store. If used with selectors,

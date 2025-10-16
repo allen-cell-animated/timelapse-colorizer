@@ -1,7 +1,7 @@
-import React, { ReactElement, useContext } from "react";
-import { Color } from "three";
+import React, { type ReactElement, useContext } from "react";
+import { type Color } from "three";
 
-import { Dataset } from "src/colorizer";
+import { type Dataset } from "src/colorizer";
 import DropdownItem from "src/components/Dropdowns/DropdownItem";
 import AnnotationTrackThumbnail from "src/components/Tabs/Annotation/AnnotationDisplay/AnnotationTrackThumbnail";
 import { AppThemeContext } from "src/styles/AppStyle";

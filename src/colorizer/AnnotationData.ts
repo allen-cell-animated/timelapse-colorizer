@@ -2,7 +2,7 @@ import { parse, unparse } from "papaparse";
 import { Color } from "three";
 
 import { DEFAULT_CATEGORICAL_PALETTE_KEY, KNOWN_CATEGORICAL_PALETTES } from "./colors/categorical_palettes";
-import Dataset from "./Dataset";
+import type Dataset from "./Dataset";
 import { cloneLabel, getLabelTypeFromParsedCsv, removeUndefinedProperties } from "./utils/data_utils";
 
 export const CSV_COL_ID = "ID";

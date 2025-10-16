@@ -1,4 +1,6 @@
-import React, { EventHandler, useEffect, useRef, useState } from "react";
+import type React from "react";
+import {type EventHandler} from "react";
+import { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 
 import { useConstructor } from "./useConstructor";

@@ -1,13 +1,13 @@
-import { ButtonProps, Tooltip } from "antd";
+import { type ButtonProps, Tooltip } from "antd";
 import Fuse from "fuse.js";
-import React, { ReactElement, useCallback, useEffect, useMemo, useState, useTransition } from "react";
-import { components, ControlProps, OptionProps } from "react-select";
+import React, { type ReactElement, useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { components, type ControlProps, type OptionProps } from "react-select";
 
 import { useDebounce } from "src/hooks/useDebounce";
 import { FlexRowAlignCenter } from "src/styles/utils";
 
 import StyledSelect from "./StyledSelect";
-import { SelectItem } from "./types";
+import { type SelectItem } from "./types";
 
 // TODO: Have the dropdown show a loading indicator after a selection has been made
 // but before the prop value updates. -> this is especially noticeable when slow datasets.

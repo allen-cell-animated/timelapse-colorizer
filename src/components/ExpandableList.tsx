@@ -1,4 +1,4 @@
-import React, { PropsWithChildren, ReactElement, useEffect, useRef, useState } from "react";
+import React, { type PropsWithChildren, type ReactElement, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 
 import { ScrollShadowContainer, useScrollShadow } from "src/hooks";

@@ -1,10 +1,10 @@
 import { CloseCircleFilled, DeleteOutlined, EditOutlined } from "@ant-design/icons";
 import { Popconfirm, Popover, Radio, Tooltip } from "antd";
-import React, { PropsWithChildren, ReactElement, useContext, useEffect, useRef, useState } from "react";
+import React, { type PropsWithChildren, type ReactElement, useContext, useEffect, useRef, useState } from "react";
 
 import { TagAddIconSVG } from "src/assets";
 import { AnnotationSelectionMode } from "src/colorizer";
-import { LabelData, LabelOptions } from "src/colorizer/AnnotationData";
+import { type LabelData, type LabelOptions } from "src/colorizer/AnnotationData";
 import IconButton from "src/components/Buttons/IconButton";
 import { TooltipWithSubtitle } from "src/components/Tooltips/TooltipWithSubtitle";
 import { AppThemeContext } from "src/styles/AppStyle";

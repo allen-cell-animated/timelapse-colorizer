@@ -1,10 +1,10 @@
-import { DataTexture } from "three";
+import { type DataTexture } from "three";
 
-import { FeatureArrayType, FeatureDataType } from "src/colorizer/types";
+import { type FeatureArrayType, type FeatureDataType } from "src/colorizer/types";
 import { infoToDataTexture } from "src/colorizer/utils/texture_utils";
 import SharedWorkerPool from "src/colorizer/workers/SharedWorkerPool";
 
-import { ArraySource, IArrayLoader } from "./ILoader";
+import { type ArraySource, type IArrayLoader } from "./ILoader";
 
 export class UrlArraySource<T extends FeatureDataType> implements ArraySource<T> {
   array: FeatureArrayType[T];

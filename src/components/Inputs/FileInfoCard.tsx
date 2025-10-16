@@ -1,6 +1,6 @@
 import { CloseOutlined, PaperClipOutlined } from "@ant-design/icons";
 import { Card } from "antd";
-import React, { PropsWithChildren, ReactElement, ReactNode } from "react";
+import React, { type PropsWithChildren, type ReactElement, type ReactNode } from "react";
 
 import IconButton from "src/components/Buttons/IconButton";
 import MessageCard from "src/components/MessageCard";

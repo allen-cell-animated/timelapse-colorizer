@@ -1,6 +1,6 @@
 import { InfoCircleOutlined } from "@ant-design/icons";
 import { Button, Checkbox } from "antd";
-import React, { ReactElement, useCallback, useEffect, useState } from "react";
+import React, { type ReactElement, useCallback, useEffect, useState } from "react";
 import { useLocalStorage } from "usehooks-ts";
 
 import { FlexColumn, FlexRow } from "src/styles/utils";
