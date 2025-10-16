@@ -8,7 +8,7 @@ import {
   type FontStyle,
   type RenderInfo,
 } from "src/colorizer/canvas/types";
-import { type PixelIdInfo } from "src/colorizer/types";
+import type { PixelIdInfo } from "src/colorizer/types";
 
 export type AnnotationParams = BaseRenderParams & {
   visible: boolean;

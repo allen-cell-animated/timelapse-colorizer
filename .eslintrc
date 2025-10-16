@@ -122,6 +122,7 @@
         "fixStyle": "inline-type-imports"
       }
     ],
+    "@typescript-eslint/no-import-type-side-effects": "warn",
     "prefer-const": 1,
     "radix": 1,
     "react/prop-types": 0, // This relies specifically on React PropTypes and ignores other typing methods

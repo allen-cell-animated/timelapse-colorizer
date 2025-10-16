@@ -1,9 +1,9 @@
 import { Tooltip } from "antd";
 import React, { type ReactElement, useContext, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
-import { type Color } from "three";
+import type { Color } from "three";
 
-import { type Dataset, type Track } from "src/colorizer";
+import type { Dataset, Track } from "src/colorizer";
 import { getEmptyLookupInfo, getTrackLookups, type LookupInfo } from "src/colorizer/utils/annotation_utils";
 import { AppThemeContext } from "src/styles/AppStyle";
 import { FlexColumn, FlexRow, FlexRowAlignCenter } from "src/styles/utils";

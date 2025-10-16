@@ -1,6 +1,6 @@
-import { type StateCreator } from "zustand";
+import type { StateCreator } from "zustand";
 
-import { type SubscribableStore } from "src/state/types";
+import type { SubscribableStore } from "src/state/types";
 
 import {
   addBackdropDerivedStateSubscribers,

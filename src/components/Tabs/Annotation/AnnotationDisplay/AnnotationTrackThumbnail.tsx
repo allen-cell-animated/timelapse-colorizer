@@ -2,7 +2,7 @@ import React, { type ReactElement, useCallback, useContext, useEffect, useRef, u
 import styled from "styled-components";
 import { Color } from "three";
 
-import { type Dataset, type Track } from "src/colorizer";
+import type { Dataset, Track } from "src/colorizer";
 import { getIntervals } from "src/colorizer/utils/data_utils";
 import { type AppTheme, AppThemeContext } from "src/styles/AppStyle";
 

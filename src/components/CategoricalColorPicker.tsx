@@ -5,7 +5,7 @@ import { Color, type ColorRepresentation } from "three";
 
 import { useViewerStateStore } from "src/state/ViewerState";
 import { FlexRow, FlexRowAlignCenter } from "src/styles/utils";
-import { type AntColor } from "src/utils/color_utils";
+import type { AntColor } from "src/utils/color_utils";
 
 import WrappedColorPicker from "./Inputs/WrappedColorPicker";
 

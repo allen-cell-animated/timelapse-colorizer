@@ -1,7 +1,7 @@
 import { Transfer, worker } from "workerpool";
 import type TransferType from "workerpool/types/transfer";
 
-import { type FeatureDataType } from "src/colorizer/types";
+import type { FeatureDataType } from "src/colorizer/types";
 import { computeCorrelations } from "src/colorizer/utils/correlation";
 import { type LoadedData, loadFromJsonUrl, loadFromParquetUrl } from "src/colorizer/utils/data_load_utils";
 import { calculateMotionDeltas, constructAllTracksFromData } from "src/colorizer/utils/math_utils";

@@ -1,6 +1,6 @@
 import { shallow } from "zustand/shallow";
 
-import { type SubscribableStore } from "src/state/types";
+import type { SubscribableStore } from "src/state/types";
 
 /**
  * Adds a subscriber that updates a derived (calculated) value in the store

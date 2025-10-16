@@ -1,4 +1,4 @@
-import { type ColorPickerProps, type GetProp } from "antd";
+import type { ColorPickerProps, GetProp } from "antd";
 import { Color } from "three";
 
 export type AntColor = Extract<GetProp<ColorPickerProps, "value">, string | { cleared: any }>;

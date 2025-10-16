@@ -1,15 +1,15 @@
-import { type Color, type Vector2 } from "three";
+import type { Color, Vector2 } from "three";
 
-import { type ColorRamp, type Dataset, type Track } from "src/colorizer";
+import type { ColorRamp, Dataset, Track } from "src/colorizer";
 import type Collection from "src/colorizer/Collection";
-import {
-  type CanvasScaleInfo,
-  type ChannelSetting,
-  type DrawMode,
-  type DrawSettings,
-  type FrameLoadResult,
-  type PixelIdInfo,
-  type TrackPathColorMode,
+import type {
+  CanvasScaleInfo,
+  ChannelSetting,
+  DrawMode,
+  DrawSettings,
+  FrameLoadResult,
+  PixelIdInfo,
+  TrackPathColorMode,
 } from "src/colorizer/types";
 
 // Standalone type for render canvas state params

@@ -7,10 +7,10 @@ import { clamp } from "three/src/math/MathUtils";
 
 import { getPixelRatio, toEven } from "src/colorizer/canvas/utils";
 import type CanvasOverlay from "src/colorizer/CanvasOverlay";
-import {type ExportOptions} from "src/colorizer/CanvasOverlay";
-import { type IRenderCanvas } from "src/colorizer/IRenderCanvas";
+import type {ExportOptions} from "src/colorizer/CanvasOverlay";
+import type { IRenderCanvas } from "src/colorizer/IRenderCanvas";
 import type CanvasRecorder from "src/colorizer/recorders/CanvasRecorder";
-import {type RecordingOptions} from "src/colorizer/recorders/CanvasRecorder";
+import type {RecordingOptions} from "src/colorizer/recorders/CanvasRecorder";
 import ImageSequenceRecorder from "src/colorizer/recorders/ImageSequenceRecorder";
 import Mp4VideoRecorder, { VideoBitrate } from "src/colorizer/recorders/Mp4VideoRecorder";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "src/colorizer/utils/analytics";

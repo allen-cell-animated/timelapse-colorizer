@@ -3,7 +3,7 @@ import { type DataTexture, RGBAFormat, RGBAIntegerFormat, type Texture, Vector2 
 import { MAX_FEATURE_CATEGORIES } from "src/colorizer/constants";
 
 import DataCache from "./DataCache";
-import { type IArrayLoader, type ITextureImageLoader } from "./loaders/ILoader";
+import type { IArrayLoader, ITextureImageLoader } from "./loaders/ILoader";
 import ImageFrameLoader from "./loaders/ImageFrameLoader";
 import UrlArrayLoader from "./loaders/UrlArrayLoader";
 import { type IPathResolver, UrlPathResolver } from "./path_resolvers";

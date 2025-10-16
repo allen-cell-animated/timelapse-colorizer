@@ -1,4 +1,4 @@
-import { type ButtonProps } from "antd";
+import type { ButtonProps } from "antd";
 import React, { type ReactElement, useContext, useMemo } from "react";
 import Select, {
   components,
@@ -8,12 +8,12 @@ import Select, {
   type StylesConfig,
 } from "react-select";
 import styled, { css } from "styled-components";
-import { type Color } from "three";
+import type { Color } from "three";
 
 import { DropdownSVG } from "src/assets";
 import { type AppTheme, AppThemeContext } from "src/styles/AppStyle";
 
-import { type SelectItem } from "./types";
+import type { SelectItem } from "./types";
 
 type AntStyledSelectProps<
   IsMulti extends boolean = false,

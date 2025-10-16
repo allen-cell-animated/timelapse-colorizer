@@ -1,7 +1,7 @@
 import { FeatureDataType } from "src/colorizer";
 import Collection from "src/colorizer/Collection";
-import { type CollectionFile } from "src/colorizer/utils/collection_utils";
-import { type AnyManifestFile, type ManifestFile } from "src/colorizer/utils/dataset_utils";
+import type { CollectionFile } from "src/colorizer/utils/collection_utils";
+import type { AnyManifestFile, ManifestFile } from "src/colorizer/utils/dataset_utils";
 import { DEFAULT_DATASET_DIR, makeMockDataset, MockArrayLoader, MockArraySource } from "tests/utils";
 
 // TODO: Move to /tests/constants.ts so other tests can use these constants

@@ -5,7 +5,7 @@ import styled from "styled-components";
 
 import { LabelType } from "src/colorizer/AnnotationData";
 import IconButton from "src/components/Buttons/IconButton";
-import { type AnnotationState } from "src/hooks";
+import type { AnnotationState } from "src/hooks";
 import { AppThemeContext } from "src/styles/AppStyle";
 import { FlexColumn, FlexRow } from "src/styles/utils";
 

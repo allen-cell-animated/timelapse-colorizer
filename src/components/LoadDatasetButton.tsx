@@ -1,13 +1,13 @@
 import { FolderOpenOutlined, UploadOutlined } from "@ant-design/icons";
 import { Button, Dropdown, Input, type InputRef, type MenuProps, Space, Upload } from "antd";
-import { type MenuItemType } from "antd/es/menu/interface";
+import type { MenuItemType } from "antd/es/menu/interface";
 import React, { type ReactElement, type ReactNode, useCallback, useContext, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { useClickAnyWhere } from "usehooks-ts";
 
-import { type Dataset } from "src/colorizer";
+import type { Dataset } from "src/colorizer";
 import Collection from "src/colorizer/Collection";
-import { type ReportWarningCallback } from "src/colorizer/types";
+import type { ReportWarningCallback } from "src/colorizer/types";
 import { zipToFileMap } from "src/colorizer/utils/data_load_utils";
 import { convertAllenPathToHttps, isAllenPath } from "src/colorizer/utils/url_utils";
 import TextButton from "src/components/Buttons/TextButton";

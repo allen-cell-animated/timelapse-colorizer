@@ -18,7 +18,7 @@ import {
 } from "src/colorizer/types";
 
 import { nanToNull } from "./data_load_utils";
-import { type AnyManifestFile } from "./dataset_utils";
+import type { AnyManifestFile } from "./dataset_utils";
 import { formatNumber } from "./math_utils";
 
 // TODO: This file needs to be split up for easier reading and unit testing.

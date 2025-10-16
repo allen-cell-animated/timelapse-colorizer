@@ -8,7 +8,7 @@ import * as d3 from "d3";
 import React, { memo, type ReactElement, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 
-import { type Dataset } from "src/colorizer";
+import type { Dataset } from "src/colorizer";
 import type SharedWorkerPool from "src/colorizer/workers/SharedWorkerPool";
 import LoadingSpinner from "src/components/LoadingSpinner";
 import { useDebounce } from "src/hooks";

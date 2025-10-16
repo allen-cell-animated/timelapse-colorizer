@@ -1,5 +1,5 @@
 import type Plotly from "plotly.js-dist-min";
-import {type PlotlyHTMLElement} from "plotly.js-dist-min";
+import type {PlotlyHTMLElement} from "plotly.js-dist-min";
 import React, { type ReactElement, useEffect, useMemo, useRef, useState } from "react";
 
 import { type Dataset, Plotting, type Track } from "src/colorizer";

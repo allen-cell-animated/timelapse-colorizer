@@ -1,6 +1,6 @@
 import { Vector2 } from "three";
 
-import { type LabelData } from "./AnnotationData";
+import type { LabelData } from "./AnnotationData";
 import {
   defaultFooterStyle,
   defaultHeaderStyle,
@@ -24,13 +24,13 @@ import {
   defaultAnnotationStyle,
   getAnnotationRenderer,
 } from "./canvas/elements/annotations";
-import { type BaseRenderParams, type RenderInfo } from "./canvas/types";
+import type { BaseRenderParams, RenderInfo } from "./canvas/types";
 import { getPixelRatio, toEven } from "./canvas/utils";
 import ColorizeCanvas2D from "./ColorizeCanvas2D";
 import { ColorizeCanvas3D } from "./ColorizeCanvas3D";
 import type Dataset from "./Dataset";
-import { type IInnerRenderCanvas } from "./IInnerRenderCanvas";
-import { type IRenderCanvas, type RenderCanvasStateParams, type RenderOptions } from "./IRenderCanvas";
+import type { IInnerRenderCanvas } from "./IInnerRenderCanvas";
+import type { IRenderCanvas, RenderCanvasStateParams, RenderOptions } from "./IRenderCanvas";
 import { type CanvasScaleInfo, CanvasType, type ChannelRangePreset, type FrameLoadResult, type PixelIdInfo } from "./types";
 import { hasPropertyChanged } from "./utils/data_utils";
 

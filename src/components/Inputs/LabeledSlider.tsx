@@ -1,5 +1,5 @@
 import { InputNumber, Slider } from "antd";
-import { type SliderBaseProps, type SliderRangeProps, type SliderSingleProps } from "antd/es/slider";
+import type { SliderBaseProps, SliderRangeProps, SliderSingleProps } from "antd/es/slider";
 import React, { type ReactElement, type ReactEventHandler, type ReactNode, useRef } from "react";
 import styled, { css } from "styled-components";
 import { clamp, inverseLerp } from "three/src/math/MathUtils";

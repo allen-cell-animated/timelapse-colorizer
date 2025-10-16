@@ -1,8 +1,8 @@
 import Collection, { type CollectionConfig, type CollectionLoadOptions, type DatasetLoadOptions } from "src/colorizer/Collection";
 import type Dataset from "src/colorizer/Dataset";
-import { type ReportErrorCallback, type ReportLoadProgressCallback, type ReportWarningCallback } from "src/colorizer/types";
+import type { ReportErrorCallback, ReportLoadProgressCallback, ReportWarningCallback } from "src/colorizer/types";
 import { isUrl, UrlParam } from "src/colorizer/utils/url_utils";
-import { type LocationState } from "src/types";
+import type { LocationState } from "src/types";
 
 export const enum LoadResultType {
   SUCCESS,

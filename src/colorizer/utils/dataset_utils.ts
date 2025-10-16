@@ -1,6 +1,6 @@
 // Defines types for working with dataset manifests, and methods for
 // updating manifests from one version to another.
-import { type Spread } from "./type_utils";
+import type { Spread } from "./type_utils";
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 type ManifestFileMetadataV0_0_0 = {

@@ -1,5 +1,5 @@
 import { Color } from "three";
-import { type StateCreator } from "zustand";
+import type { StateCreator } from "zustand";
 
 import {
   getDefaultVectorConfig,

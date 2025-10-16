@@ -2,7 +2,7 @@ import { Alert, type AlertProps, Button, Checkbox } from "antd";
 import React, { type ReactElement, useState } from "react";
 import styled, { css } from "styled-components";
 
-import { type Spread } from "src/colorizer/utils/type_utils";
+import type { Spread } from "src/colorizer/utils/type_utils";
 import { FlexColumn, FlexRowAlignCenter } from "src/styles/utils";
 import { renderStringArrayAsJsx } from "src/utils/formatting";
 

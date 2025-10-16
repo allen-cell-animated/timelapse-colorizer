@@ -2,7 +2,7 @@ import { Vector2 } from "three";
 
 import { type Canvas2DScaleInfo, CanvasType } from "src/colorizer/types";
 
-import { type FontStyle } from "./types";
+import type { FontStyle } from "./types";
 
 export function getTextDimensions(ctx: CanvasRenderingContext2D, text: string, style: FontStyle): Vector2 {
   configureCanvasText(ctx, style);

@@ -7,7 +7,7 @@ import { AnnotationData, AnnotationMergeMode, type AnnotationParseResult } from 
 import TextButton from "src/components/Buttons/TextButton";
 import { StyledUpload } from "src/components/Inputs/StyledUpload";
 import MessageCard from "src/components/MessageCard";
-import { type AnnotationState } from "src/hooks";
+import type { AnnotationState } from "src/hooks";
 import { useViewerStateStore } from "src/state";
 import { FlexColumn } from "src/styles/utils";
 

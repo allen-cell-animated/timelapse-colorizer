@@ -4,7 +4,7 @@ import React, { memo, type ReactElement, useContext, useMemo } from "react";
 import styled from "styled-components";
 
 import { TagIconSVG } from "src/assets";
-import { type Dataset } from "src/colorizer";
+import type { Dataset } from "src/colorizer";
 import IconButton from "src/components/Buttons/IconButton";
 import { AppThemeContext } from "src/styles/AppStyle";
 import { FlexColumnAlignCenter, VisuallyHidden } from "src/styles/utils";

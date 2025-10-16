@@ -1,14 +1,14 @@
-import { type StateCreator } from "zustand";
+import type { StateCreator } from "zustand";
 
-import { type Dataset } from "src/colorizer";
+import type { Dataset } from "src/colorizer";
 import { TIME_FEATURE_KEY } from "src/colorizer/Dataset";
 import { PlotRangeType } from "src/colorizer/types";
 import { decodeScatterPlotRangeType, encodeScatterPlotRangeType, UrlParam } from "src/colorizer/utils/url_utils";
 import { DEPRECATED_SCATTERPLOT_TIME_KEY } from "src/constants";
-import { type SerializedStoreData, type SubscribableStore } from "src/state/types";
+import type { SerializedStoreData, SubscribableStore } from "src/state/types";
 import { addDerivedStateSubscriber } from "src/state/utils/store_utils";
 
-import { type DatasetSlice } from "./dataset_slice";
+import type { DatasetSlice } from "./dataset_slice";
 
 export type ScatterPlotSliceState = {
   scatterXAxis: string | null;

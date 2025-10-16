@@ -1,10 +1,10 @@
 import React, { type ReactElement, useMemo, useRef } from "react";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { FixedSizeList } from "react-window";
-import { type Color } from "three";
+import type { Color } from "three";
 
-import { type Dataset, type Track } from "src/colorizer";
-import { type LookupInfo } from "src/colorizer/utils/annotation_utils";
+import type { Dataset, Track } from "src/colorizer";
+import type { LookupInfo } from "src/colorizer/utils/annotation_utils";
 import { ScrollShadowContainer, useScrollShadow } from "src/hooks";
 
 import PlaceholderListItem from "./ListItems/PlaceholderListItem";

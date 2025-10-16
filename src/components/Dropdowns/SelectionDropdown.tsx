@@ -7,7 +7,7 @@ import { useDebounce } from "src/hooks/useDebounce";
 import { FlexRowAlignCenter } from "src/styles/utils";
 
 import StyledSelect from "./StyledSelect";
-import { type SelectItem } from "./types";
+import type { SelectItem } from "./types";
 
 // TODO: Have the dropdown show a loading indicator after a selection has been made
 // but before the prop value updates. -> this is especially noticeable when slow datasets.

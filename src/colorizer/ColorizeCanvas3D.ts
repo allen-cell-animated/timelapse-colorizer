@@ -21,8 +21,8 @@ import { MAX_FEATURE_CATEGORIES } from "src/colorizer/constants";
 
 import { getPixelRatio } from "./canvas";
 import { ColorRampType } from "./ColorRamp";
-import { type IInnerRenderCanvas } from "./IInnerRenderCanvas";
-import { type RenderCanvasStateParams, type RenderOptions } from "./IRenderCanvas";
+import type { IInnerRenderCanvas } from "./IInnerRenderCanvas";
+import type { RenderCanvasStateParams, RenderOptions } from "./IRenderCanvas";
 import {
   type CanvasScaleInfo,
   CanvasType,

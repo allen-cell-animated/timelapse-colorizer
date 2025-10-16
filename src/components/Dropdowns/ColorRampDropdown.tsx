@@ -2,7 +2,7 @@ import { RetweetOutlined } from "@ant-design/icons";
 import { Tooltip } from "antd";
 import React, { type ReactElement, useContext, useMemo } from "react";
 import styled from "styled-components";
-import { type Color } from "three";
+import type { Color } from "three";
 
 import {
   ColorRamp,
@@ -17,7 +17,7 @@ import { AppThemeContext } from "src/styles/AppStyle";
 import { FlexRowAlignCenter } from "src/styles/utils";
 
 import SelectionDropdown from "./SelectionDropdown";
-import { type SelectItem } from "./types";
+import type { SelectItem } from "./types";
 
 const SELECTED_RAMP_ITEM_KEY = "__selected_ramp__";
 const CUSTOM_PALETTE_ITEM_KEY = "__custom__";

@@ -1,6 +1,6 @@
 import { Color } from "three";
 import { clamp } from "three/src/math/MathUtils";
-import { type StateCreator } from "zustand";
+import type { StateCreator } from "zustand";
 
 import {
   DrawMode,

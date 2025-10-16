@@ -38,8 +38,8 @@ import {
   OUTLINE_COLOR_DEFAULT,
 } from "./constants";
 import type Dataset from "./Dataset";
-import { type IInnerRenderCanvas } from "./IInnerRenderCanvas";
-import { type RenderCanvasStateParams, type RenderOptions } from "./IRenderCanvas";
+import type { IInnerRenderCanvas } from "./IInnerRenderCanvas";
+import type { RenderCanvasStateParams, RenderOptions } from "./IRenderCanvas";
 import {
   type Canvas2DScaleInfo,
   CanvasType,

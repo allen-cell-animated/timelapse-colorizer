@@ -33,7 +33,7 @@ import {
   type ViewerStore,
   type ViewerStoreSerializableState,
 } from "src/state/slices";
-import { type SerializedStoreData, type Store } from "src/state/types";
+import type { SerializedStoreData, Store } from "src/state/types";
 
 // SERIALIZATION /////////////////////////////////////////////////////////////////////////
 

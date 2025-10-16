@@ -4,7 +4,7 @@ import React, { type PropsWithChildren, type ReactElement, useContext, useEffect
 
 import { TagAddIconSVG } from "src/assets";
 import { AnnotationSelectionMode } from "src/colorizer";
-import { type LabelData, type LabelOptions } from "src/colorizer/AnnotationData";
+import type { LabelData, LabelOptions } from "src/colorizer/AnnotationData";
 import IconButton from "src/components/Buttons/IconButton";
 import { TooltipWithSubtitle } from "src/components/Tooltips/TooltipWithSubtitle";
 import { AppThemeContext } from "src/styles/AppStyle";

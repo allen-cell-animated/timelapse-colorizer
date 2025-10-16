@@ -1,5 +1,5 @@
 import { App, type ModalFuncProps, type ModalProps } from "antd";
-import { type useAppProps } from "antd/es/app/context";
+import type { useAppProps } from "antd/es/app/context";
 import Modal from "antd/es/modal/Modal";
 import React, { type PropsWithChildren, type ReactElement, useContext } from "react";
 

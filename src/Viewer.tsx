@@ -1,6 +1,6 @@
 import { CheckCircleOutlined, EllipsisOutlined, ShareAltOutlined } from "@ant-design/icons";
 import { notification, Tabs } from "antd";
-import { type NotificationConfig } from "antd/es/notification/interface";
+import type { NotificationConfig } from "antd/es/notification/interface";
 import React, {
   type ReactElement,
   type ReactNode,
@@ -57,7 +57,7 @@ import { makeDebouncedCallback } from "src/state/utils/store_utils";
 import { useViewerStateStore } from "src/state/ViewerState";
 import { AppThemeContext } from "src/styles/AppStyle";
 import { FlexColumn, FlexRowAlignCenter } from "src/styles/utils";
-import { type LocationState } from "src/types";
+import type { LocationState } from "src/types";
 import { loadInitialCollectionAndDataset } from "src/utils/dataset_load_utils";
 
 // TODO: Refactor with styled-components
