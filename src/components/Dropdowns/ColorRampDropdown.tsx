@@ -12,13 +12,13 @@ import {
   KNOWN_CATEGORICAL_PALETTES,
   KNOWN_COLOR_RAMPS,
   PaletteData,
-} from "../../colorizer";
-import { FlexRowAlignCenter } from "../../styles/utils";
-import { SelectItem } from "./types";
+} from "src/colorizer";
+import IconButton from "src/components/Buttons/IconButton";
+import { AppThemeContext } from "src/styles/AppStyle";
+import { FlexRowAlignCenter } from "src/styles/utils";
 
-import { AppThemeContext } from "../AppStyle";
-import IconButton from "../IconButton";
 import SelectionDropdown from "./SelectionDropdown";
+import { SelectItem } from "./types";
 
 const SELECTED_RAMP_ITEM_KEY = "__selected_ramp__";
 const CUSTOM_PALETTE_ITEM_KEY = "__custom__";

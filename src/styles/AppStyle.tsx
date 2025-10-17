@@ -2,7 +2,7 @@ import { App, ConfigProvider } from "antd";
 import React, { createContext, PropsWithChildren, ReactElement, useState } from "react";
 import styled from "styled-components";
 
-import { latoRegularEot, latoRegularTtf, latoRegularWoff, latoRegularWoff2 } from "../assets";
+import { latoRegularEot, latoRegularTtf, latoRegularWoff, latoRegularWoff2 } from "src/assets";
 
 export const Z_INDEX_TOOLTIP = 2000;
 export const Z_INDEX_POPOVER = 2050;

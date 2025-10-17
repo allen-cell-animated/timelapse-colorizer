@@ -3,7 +3,7 @@ import { useAppProps } from "antd/es/app/context";
 import Modal from "antd/es/modal/Modal";
 import React, { PropsWithChildren, ReactElement, useContext } from "react";
 
-import { DocumentContext } from "../AppStyle";
+import { DocumentContext } from "src/styles/AppStyle";
 
 type AntModalApi = useAppProps["modal"];
 type AntModalApiFunction = AntModalApi["info"];

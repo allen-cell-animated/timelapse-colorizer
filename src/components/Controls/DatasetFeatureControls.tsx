@@ -1,12 +1,11 @@
 import React, { ReactElement, useMemo } from "react";
 
-import { Dataset } from "../../colorizer";
-import { useViewerStateStore } from "../../state";
-import { FlexRow } from "../../styles/utils";
-import { SelectItem } from "../Dropdowns/types";
-
-import SelectionDropdown from "../Dropdowns/SelectionDropdown";
-import GlossaryPanel from "../GlossaryPanel";
+import { Dataset } from "src/colorizer";
+import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
+import { SelectItem } from "src/components/Dropdowns/types";
+import GlossaryPanel from "src/components/GlossaryPanel";
+import { useViewerStateStore } from "src/state";
+import { FlexRow } from "src/styles/utils";
 
 type DatasetFeatureControlsProps = {
   onSelectDataset: (datasetKey: string) => Promise<void>;

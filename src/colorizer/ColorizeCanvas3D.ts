@@ -17,8 +17,12 @@ import {
 import { Box3, Color, Matrix4, Quaternion, Vector2, Vector3 } from "three";
 import { clamp, inverseLerp, lerp } from "three/src/math/MathUtils";
 
-import { MAX_FEATURE_CATEGORIES } from "../constants";
+import { MAX_FEATURE_CATEGORIES } from "src/constants";
+
 import { getPixelRatio } from "./canvas";
+import { ColorRampType } from "./ColorRamp";
+import { IInnerRenderCanvas } from "./IInnerRenderCanvas";
+import { RenderCanvasStateParams, RenderOptions } from "./IRenderCanvas";
 import {
   CanvasScaleInfo,
   CanvasType,
@@ -38,10 +42,6 @@ import {
   hasPropertyChanged,
 } from "./utils/data_utils";
 import { packDataTexture } from "./utils/texture_utils";
-
-import { ColorRampType } from "./ColorRamp";
-import { IInnerRenderCanvas } from "./IInnerRenderCanvas";
-import { RenderCanvasStateParams, RenderOptions } from "./IRenderCanvas";
 
 const CACHE_MAX_SIZE = 1_000_000_000;
 const CONCURRENCY_LIMIT = 8;

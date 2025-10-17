@@ -3,9 +3,9 @@ import React, { ReactElement, useRef } from "react";
 import styled from "styled-components";
 import { Color as ThreeColor } from "three";
 
-import { FlexRowAlignCenter } from "../../styles/utils";
+import WrappedColorPicker from "src/components/Inputs/WrappedColorPicker";
+import { FlexRowAlignCenter } from "src/styles/utils";
 
-import WrappedColorPicker from "../Inputs/WrappedColorPicker";
 import SelectionDropdown from "./SelectionDropdown";
 
 type DropdownWithColorPickerProps = {

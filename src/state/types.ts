@@ -1,6 +1,6 @@
 import { Mutate, StoreApi, UseBoundStore } from "zustand";
 
-import { UrlParam } from "../colorizer/utils/url_utils";
+import { UrlParam } from "src/colorizer/utils/url_utils";
 
 // Note: Zustand's repo maintainer says that 'subscribeWithSelector' is just for
 // compatibility, and the behavior can be replicated without needing the
