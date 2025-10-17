@@ -3,7 +3,8 @@ import { Checkbox, List, Select } from "antd";
 import React, { ReactElement, ReactNode, useMemo, useRef, useState } from "react";
 import styled, { css } from "styled-components";
 
-import { DropdownSVG } from "../../assets";
+import { DropdownSVG } from "src/assets";
+import { FeatureType } from "src/colorizer/Dataset";
 import {
   CategoricalFeatureThreshold,
   FeatureThreshold,
@@ -11,16 +12,14 @@ import {
   isThresholdNumeric,
   NumericFeatureThreshold,
   ThresholdType,
-} from "../../colorizer/types";
-import { thresholdMatchFinder } from "../../colorizer/utils/data_utils";
-import { MAX_FEATURE_CATEGORIES } from "../../constants";
-import { ScrollShadowContainer, useScrollShadow } from "../../hooks";
-import { FlexColumn } from "../../styles/utils";
-
-import { FeatureType } from "../../colorizer/Dataset";
-import { useViewerStateStore } from "../../state/ViewerState";
-import IconButton from "../IconButton";
-import LabeledSlider from "../Inputs/LabeledSlider";
+} from "src/colorizer/types";
+import { thresholdMatchFinder } from "src/colorizer/utils/data_utils";
+import IconButton from "src/components/Buttons/IconButton";
+import LabeledSlider from "src/components/Inputs/LabeledSlider";
+import { MAX_FEATURE_CATEGORIES } from "src/constants";
+import { ScrollShadowContainer, useScrollShadow } from "src/hooks";
+import { useViewerStateStore } from "src/state/ViewerState";
+import { FlexColumn } from "src/styles/utils";
 
 const PanelContainer = styled(FlexColumn)`
   flex-grow: 1;

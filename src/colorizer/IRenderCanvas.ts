@@ -1,6 +1,7 @@
 import { Vector2 } from "three";
 
-import { ViewerStoreState } from "../state/slices";
+import { ViewerStoreState } from "src/state/slices";
+
 import { CanvasScaleInfo, FrameLoadResult, PixelIdInfo } from "./types";
 
 export type RenderCanvasStateParams = Pick<

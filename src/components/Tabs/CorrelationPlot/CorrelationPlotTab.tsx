@@ -8,9 +8,12 @@ import * as d3 from "d3";
 import React, { memo, ReactElement, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 
-import { Dataset } from "../../../colorizer";
-import { useDebounce } from "../../../hooks";
-import { FlexColumnAlignCenter, FlexRowAlignCenter } from "../../../styles/utils";
+import { Dataset } from "src/colorizer";
+import SharedWorkerPool from "src/colorizer/workers/SharedWorkerPool";
+import LoadingSpinner from "src/components/LoadingSpinner";
+import { useDebounce } from "src/hooks";
+import { FlexColumnAlignCenter, FlexRowAlignCenter } from "src/styles/utils";
+
 import {
   areSetsEqual,
   correlationDataToCellDatum,
@@ -23,9 +26,6 @@ import {
   setupMouseInteraction,
   SVG_TEXT_PADDING,
 } from "./correlation_plot_data_utils";
-
-import SharedWorkerPool from "../../../colorizer/workers/SharedWorkerPool";
-import LoadingSpinner from "../../LoadingSpinner";
 
 type CorrelationPlotTabProps = {
   dataset: Dataset | null;

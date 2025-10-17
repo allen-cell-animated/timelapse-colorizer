@@ -3,10 +3,9 @@ import { Button } from "antd";
 import React, { ReactElement, useContext } from "react";
 import styled, { css } from "styled-components";
 
-import { TagIconSVG } from "../../../assets";
-import { FlexRow, FlexRowAlignCenter } from "../../../styles/utils";
-
-import { AppThemeContext } from "../../AppStyle";
+import { TagIconSVG } from "src/assets";
+import { AppThemeContext } from "src/styles/AppStyle";
+import { FlexRow, FlexRowAlignCenter } from "src/styles/utils";
 
 /**
  * Overrides the default button color with a green 'success' color

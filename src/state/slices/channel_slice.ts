@@ -1,9 +1,10 @@
 import { Color } from "three";
 import { StateCreator } from "zustand";
 
-import { ChannelRangePreset } from "../../colorizer/types";
-import { SerializedStoreData, SubscribableStore } from "../types";
-import { addDerivedStateSubscriber } from "../utils/store_utils";
+import { ChannelRangePreset } from "src/colorizer/types";
+import { SerializedStoreData, SubscribableStore } from "src/state/types";
+import { addDerivedStateSubscriber } from "src/state/utils/store_utils";
+
 import { DatasetSlice } from "./dataset_slice";
 
 export type ChannelSetting = {

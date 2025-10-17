@@ -2,8 +2,8 @@ import { waitFor } from "@testing-library/react";
 import { act } from "react-dom/test-utils";
 import { expect } from "vitest";
 
-import { Dataset } from "../../../src/colorizer";
-import { ViewerStore } from "../../../src/state/slices";
+import { Dataset } from "src/colorizer";
+import { ViewerStore } from "src/state/slices";
 
 /**
  * Wrapper around `store.setDataset()`. Allows for async operations to complete

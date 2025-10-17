@@ -2,8 +2,8 @@ import { Button, ButtonProps, Dropdown, theme, Tooltip } from "antd";
 import React, { ReactElement, ReactNode, useEffect, useRef, useState } from "react";
 import styled, { css } from "styled-components";
 
-import { DropdownSVG } from "../../assets";
-import { VisuallyHidden } from "../../styles/utils";
+import { DropdownSVG } from "src/assets";
+import { VisuallyHidden } from "src/styles/utils";
 
 /**
  * A function that returns the contents to be rendered inside the dropdown.

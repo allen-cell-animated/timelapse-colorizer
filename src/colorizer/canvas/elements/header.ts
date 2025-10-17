@@ -8,8 +8,8 @@ import {
   EMPTY_RENDER_INFO,
   FontStyle,
   RenderInfo,
-} from "../types";
-import { configureCanvasText, renderCanvasText } from "../utils";
+} from "src/colorizer/canvas/types";
+import { configureCanvasText, renderCanvasText } from "src/colorizer/canvas/utils";
 
 export type HeaderStyle = ContainerStyle & FontStyle;
 export type HeaderParams = BaseRenderParams & {

@@ -1,10 +1,10 @@
 import { useCallback, useMemo,useState } from "react";
 
-import { AnnotationSelectionMode, Dataset } from "../colorizer";
+import { AnnotationSelectionMode, Dataset } from "src/colorizer";
+import { AnnotationData, AnnotationMergeMode, IAnnotationDataGetters, IAnnotationDataSetters, LabelType } from "src/colorizer/AnnotationData";
+
 import { useConstructor } from "./useConstructor";
 import { useShortcutKey } from "./useShortcutKey";
-
-import { AnnotationData, AnnotationMergeMode, IAnnotationDataGetters, IAnnotationDataSetters, LabelType } from "../colorizer/AnnotationData";
 
 export type AnnotationState = {
   // Viewer state that lives outside the annotation data itself

@@ -2,15 +2,14 @@ import { Button, Tooltip } from "antd";
 import React, { ReactElement } from "react";
 import styled from "styled-components";
 
-import { ChannelRangePreset } from "../../../colorizer";
-import { ChannelSetting } from "../../../state/slices";
-import { FlexColumn, FlexRowAlignCenter, VisuallyHidden } from "../../../styles/utils";
-import { antToThreeColor, threeToAntColorWithAlpha } from "../../../utils/color_utils";
-
-import LabeledSlider from "../../Inputs/LabeledSlider";
-import WrappedColorPicker from "../../Inputs/WrappedColorPicker";
-import { DEFAULT_SETTINGS_LABEL_WIDTH_PX, SettingsContainer, SettingsItem } from "../../SettingsContainer";
-import ToggleCollapse from "../../ToggleCollapse";
+import { ChannelRangePreset } from "src/colorizer";
+import LabeledSlider from "src/components/Inputs/LabeledSlider";
+import WrappedColorPicker from "src/components/Inputs/WrappedColorPicker";
+import { DEFAULT_SETTINGS_LABEL_WIDTH_PX, SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
+import ToggleCollapse from "src/components/ToggleCollapse";
+import { ChannelSetting } from "src/state/slices";
+import { FlexColumn, FlexRowAlignCenter, VisuallyHidden } from "src/styles/utils";
+import { antToThreeColor, threeToAntColorWithAlpha } from "src/utils/color_utils";
 
 const INDENT_PX = 12;
 const RANGE_LABEL_WIDTH_PX = DEFAULT_SETTINGS_LABEL_WIDTH_PX - INDENT_PX * 2;

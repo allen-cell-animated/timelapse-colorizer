@@ -2,19 +2,18 @@ import { UploadOutlined } from "@ant-design/icons";
 import { Button } from "antd";
 import React, { ReactElement, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { zipToFileMap } from "../colorizer/utils/data_load_utils";
-import { useJsxText } from "../hooks/useJsxText";
-import { useViewerStateStore } from "../state";
-import { FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter } from "../styles/utils";
-import { formatQuantityString } from "../utils/formatting";
-
-import Collection from "../colorizer/Collection";
-import { ButtonStyleLink } from "./Buttons/ButtonStyleLink";
-import ExpandableList from "./ExpandableList";
-import FileInfoCard from "./Inputs/FileInfoCard";
-import { StyledUpload } from "./Inputs/StyledUpload";
-import LoadingSpinner from "./LoadingSpinner";
-import StyledModal from "./Modals/StyledModal";
+import Collection from "src/colorizer/Collection";
+import { zipToFileMap } from "src/colorizer/utils/data_load_utils";
+import { ButtonStyleLink } from "src/components/Buttons/ButtonStyleLink";
+import ExpandableList from "src/components/ExpandableList";
+import FileInfoCard from "src/components/Inputs/FileInfoCard";
+import { StyledUpload } from "src/components/Inputs/StyledUpload";
+import LoadingSpinner from "src/components/LoadingSpinner";
+import StyledModal from "src/components/Modals/StyledModal";
+import { useJsxText } from "src/hooks/useJsxText";
+import { useViewerStateStore } from "src/state";
+import { FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter } from "src/styles/utils";
+import { formatQuantityString } from "src/utils/formatting";
 
 type LoadZipModalProps = {
   sourceZipName: string;

@@ -2,11 +2,10 @@ import { CaretDownFilled, CaretUpFilled } from "@ant-design/icons";
 import { Checkbox, Switch } from "antd";
 import React, { PropsWithChildren, ReactElement, ReactNode, useCallback, useContext, useEffect, useState } from "react";
 
-import { removeUndefinedProperties } from "../state/utils/data_validation";
-import { FlexColumn, FlexRowAlignCenter, VisuallyHidden } from "../styles/utils";
-
-import { AppThemeContext } from "./AppStyle";
-import TextButton from "./Buttons/TextButton";
+import TextButton from "src/components/Buttons/TextButton";
+import { removeUndefinedProperties } from "src/state/utils/data_validation";
+import { AppThemeContext } from "src/styles/AppStyle";
+import { FlexColumn, FlexRowAlignCenter, VisuallyHidden } from "src/styles/utils";
 
 const ANIMATION_DURATION_MS = 150;
 

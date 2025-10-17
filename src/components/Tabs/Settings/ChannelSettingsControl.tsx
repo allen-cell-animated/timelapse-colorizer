@@ -2,12 +2,12 @@ import { Checkbox } from "antd";
 import React, { ReactElement, useCallback, useContext, useMemo } from "react";
 import styled from "styled-components";
 
-import { useViewerStateStore } from "../../../state";
-import { FlexColumn } from "../../../styles/utils";
+import { DEFAULT_SETTINGS_LABEL_WIDTH_PX, SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
+import ToggleCollapse from "src/components/ToggleCollapse";
+import { useViewerStateStore } from "src/state";
+import { AppThemeContext } from "src/styles/AppStyle";
+import { FlexColumn } from "src/styles/utils";
 
-import { AppThemeContext } from "../../AppStyle";
-import { DEFAULT_SETTINGS_LABEL_WIDTH_PX, SettingsContainer, SettingsItem } from "../../SettingsContainer";
-import ToggleCollapse from "../../ToggleCollapse";
 import { ChannelSettingControl } from "./ChannelSettingControl";
 
 /** Approximate height of each ChannelSettingControl. */
