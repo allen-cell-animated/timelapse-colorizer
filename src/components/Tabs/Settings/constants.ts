@@ -5,7 +5,7 @@ export const DEFAULT_OUTLINE_COLORS = [
   "#ff00ff",
   "#ff0000",
   "#ff8800",
-  "#ffcf00",
+  "#ffff00",
   "#00ff00",
   "#00ffff",
   "#0048ff",

@@ -147,12 +147,18 @@ describe("VectorSlice", () => {
     it("loads basic vector settings", () => {
       const { result } = renderHook(() => useViewerStateStore());
       act(() => {
-        loadVectorSliceFromParams(result.current, new URLSearchParams(EXAMPLE_SLICE_1_PARAMS));
+        loadVectorSliceFromParams(
+          result.current,
+          new URLSearchParams(EXAMPLE_SLICE_1_PARAMS as Record<string, string>)
+        );
       });
       compareRecord(result.current, EXAMPLE_SLICE_1);
 
       act(() => {
-        loadVectorSliceFromParams(result.current, new URLSearchParams(EXAMPLE_SLICE_2_PARAMS));
+        loadVectorSliceFromParams(
+          result.current,
+          new URLSearchParams(EXAMPLE_SLICE_2_PARAMS as Record<string, string>)
+        );
       });
       compareRecord(result.current, EXAMPLE_SLICE_2);
     });
