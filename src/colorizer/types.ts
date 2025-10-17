@@ -341,3 +341,12 @@ export const enum ChannelRangePreset {
   IJ_AUTO = "ij_auto",
   AUTO_2 = "auto_2",
 }
+export type ChannelSetting = {
+  visible: boolean;
+  color: Color;
+  opacity: number;
+  min: number;
+  max: number;
+  dataMin: number;
+  dataMax: number;
+};

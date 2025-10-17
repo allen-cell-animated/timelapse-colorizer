@@ -35,6 +35,7 @@ const OUT_OF_RANGE_DRAW_SETTINGS_DEFAULT: DrawSettings = {
   color: new Color(OUT_OF_RANGE_COLOR_DEFAULT),
   mode: DrawMode.USE_COLOR,
 };
+
 const OUTLIER_DRAW_SETTINGS_DEFAULT: DrawSettings = {
   color: new Color(OUTLIER_COLOR_DEFAULT),
   mode: DrawMode.USE_COLOR,

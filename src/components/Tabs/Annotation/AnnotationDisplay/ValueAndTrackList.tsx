@@ -1,4 +1,4 @@
-import React, { ReactElement, useMemo } from "react";
+import React, { ReactElement, useMemo, useRef } from "react";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { FixedSizeList } from "react-window";
 import { Color } from "three";
@@ -113,7 +113,7 @@ const listItemRenderer = ({
  */
 export default function ValueAndTrackList(props: ValueAndTrackListProps): ReactElement {
   const { scrollShadowStyle, onScrollHandler, scrollRef } = useScrollShadow();
-  const listRef = React.useRef<FixedSizeList>(null);
+  const listRef = useRef<FixedSizeList>(null);
 
   const itemData = useMemo(() => {
     const { trackIds, trackToIds, valueToTracksToIds } = props.lookupInfo;

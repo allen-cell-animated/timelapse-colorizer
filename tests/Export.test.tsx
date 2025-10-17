@@ -1,6 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { ReactElement } from "react";
-import React from "react";
+import React, { ReactElement } from "react";
 import { Vector2 } from "three";
 import { describe, expect, it, vi } from "vitest";
 

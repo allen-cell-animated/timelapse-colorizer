@@ -1,4 +1,4 @@
-import { DEFAULT_PLAYBACK_FPS } from "src/constants";
+import { DEFAULT_PLAYBACK_FPS } from "src/colorizer/constants";
 
 // time / playback controls
 const NO_TIMER_ID = -1;

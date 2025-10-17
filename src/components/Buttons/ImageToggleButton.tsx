@@ -1,4 +1,4 @@
-import React, { ReactElement, ReactNode, useEffect, useState } from "react";
+import React, { ReactElement, ReactNode, useEffect, useRef, useState } from "react";
 
 import { ImagesIconSVG, ImagesSlashIconSVG } from "src/assets";
 import { TooltipWithSubtitle } from "src/components/Tooltips/TooltipWithSubtitle";
@@ -19,8 +19,8 @@ export type ToggleImageButtonProps = {
  * images), as a reusable component.
  */
 export function ImageToggleButton(props: ToggleImageButtonProps): ReactElement {
-  const tooltipContainerRef = React.useRef<HTMLDivElement>(null);
-  const tooltipRef = React.useRef<HTMLDivElement>(null);
+  const tooltipContainerRef = useRef<HTMLDivElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
   const [tooltipOpen, setTooltipOpen] = useState(false);
   const [isHoveringTooltip, setIsHoveringTooltip] = useState(false);
 

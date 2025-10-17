@@ -1,6 +1,6 @@
 import { ExportOutlined, MenuOutlined, TableOutlined } from "@ant-design/icons";
 import { Modal, Radio, Tooltip } from "antd";
-import React, { ReactElement, useCallback, useMemo, useState, useTransition } from "react";
+import React, { ReactElement, useCallback, useMemo, useRef, useState, useTransition } from "react";
 import { useShallow } from "zustand/shallow";
 
 import { AnnotationSelectionMode } from "src/colorizer";
@@ -54,7 +54,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   const [isColorPickerOpen, setIsColorPickerOpen] = useState(false);
   const [showCreateLabelModal, setShowCreateLabelModal] = useState(false);
 
-  const modalContainerRef = React.useRef<HTMLDivElement>(null);
+  const modalContainerRef = useRef<HTMLDivElement>(null);
 
   const store = useViewerStateStore(
     useShallow((state) => ({

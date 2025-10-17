@@ -9,7 +9,7 @@ import {
   KNOWN_CATEGORICAL_PALETTES,
   KNOWN_COLOR_RAMPS,
 } from "src/colorizer";
-import { MAX_FEATURE_CATEGORIES } from "src/constants";
+import { MAX_FEATURE_CATEGORIES } from "src/colorizer/constants";
 
 describe("Color Ramps", () => {
   it("has the default key in the map of known color ramps", () => {

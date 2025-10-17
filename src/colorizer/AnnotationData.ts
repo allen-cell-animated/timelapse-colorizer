@@ -1,11 +1,9 @@
-import Papa from "papaparse";
+import { parse, unparse } from "papaparse";
 import { Color } from "three";
-
-import { removeUndefinedProperties } from "src/state/utils/data_validation";
 
 import { DEFAULT_CATEGORICAL_PALETTE_KEY, KNOWN_CATEGORICAL_PALETTES } from "./colors/categorical_palettes";
 import Dataset from "./Dataset";
-import { cloneLabel, getLabelTypeFromParsedCsv } from "./utils/data_utils";
+import { cloneLabel, getLabelTypeFromParsedCsv, removeUndefinedProperties } from "./utils/data_utils";
 
 export const CSV_COL_ID = "ID";
 // Column constants for segmentation ID, time, and track are used to validate
@@ -478,7 +476,7 @@ export class AnnotationData implements IAnnotationData {
       unparseableRows = 0,
       invalidIds = 0;
 
-    const result = Papa.parse(csvString, { header: true, skipEmptyLines: true, comments: "#" });
+    const result = parse(csvString, { header: true, skipEmptyLines: true, comments: "#" });
     if (result.errors.length > 0) {
       throw new Error(`Error parsing CSV: ${result.errors.map((e) => e.message).join(", ")}`);
     }
@@ -677,7 +675,7 @@ export class AnnotationData implements IAnnotationData {
       csvRows.push(row);
     }
 
-    const csvString = Papa.unparse(
+    const csvString = unparse(
       { fields: headerRow, data: csvRows },
       { delimiter: delimiter, header: true, escapeFormulae: true }
     );

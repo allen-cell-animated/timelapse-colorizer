@@ -50,10 +50,10 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
   } = props.annotationState;
 
   const [inputValue, setInputValue] = useState("");
-  const anchorRef = React.useRef<HTMLDivElement>(null);
-  const inputContainerRef = React.useRef<HTMLDivElement>(null);
+  const anchorRef = useRef<HTMLDivElement>(null);
+  const inputContainerRef = useRef<HTMLDivElement>(null);
 
-  const originalValueRef = React.useRef<string | null>(null);
+  const originalValueRef = useRef<string | null>(null);
   const lastActiveEditRangeRef = useRef(props.annotationState.activeEditRange);
   const lastLabelIdxRef = useRef(props.annotationState.currentLabelIdx);
   const lastLabelCountRef = useRef(props.annotationState.data.getLabels().length);
