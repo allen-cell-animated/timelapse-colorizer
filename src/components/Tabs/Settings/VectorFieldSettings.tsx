@@ -60,6 +60,7 @@ export default function VectorFieldSettings(): ReactElement {
           items={vectorOptions}
           onChange={setVectorKey}
           controlTooltipPlacement="right"
+          controlWidth={"300px"}
         ></SelectionDropdown>
         {vectorKey === VECTOR_KEY_MOTION_DELTA && vectorOptionsEnabled && (
           <Card style={{ position: "relative", width: "fit-content", marginTop: "10px" }} size="small">
@@ -100,7 +101,7 @@ export default function VectorFieldSettings(): ReactElement {
             id={VectorSettingsHtmlIds.VECTOR_SCALE_FACTOR_SLIDER}
             disabled={!vectorOptionsEnabled}
             type="value"
-            minSliderBound={0}
+            minSliderBound={1}
             maxSliderBound={50}
             minInputBound={0}
             maxInputBound={100}

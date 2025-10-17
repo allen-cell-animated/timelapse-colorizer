@@ -1,4 +1,4 @@
-import { Radio } from "antd";
+import { ConfigProvider, Radio } from "antd";
 import React, { ReactElement, ReactNode, useContext } from "react";
 
 import { TabType } from "src/colorizer";
@@ -35,20 +35,23 @@ export default function BackdropToggleButton(): ReactElement {
   } else {
     // Create a radio button for each backdrop
     backdropTooltipContents.push(
-      <Radio.Group
-        aria-label="Backdrop"
-        value={backdropKey}
-        onChange={(e) => {
-          setBackdropVisible(true);
-          setBackdropKey(e.target.value);
-        }}
-      >
-        {Array.from(backdropData.entries()).map(([key, backdrop]) => (
-          <Radio key={key} value={key} style={{ color: theme.color.text.button }}>
-            {backdrop.name}
-          </Radio>
-        ))}
-      </Radio.Group>
+      <ConfigProvider theme={{ components: { Radio: { colorBgContainer: "transparent" } } }}>
+        <Radio.Group
+          aria-label="Backdrop"
+          value={backdropKey}
+          onChange={(e) => {
+            setBackdropVisible(true);
+            setBackdropKey(e.target.value);
+          }}
+          style={{ padding: "4px 0 4px 6px" }}
+        >
+          {Array.from(backdropData.entries()).map(([key, backdrop]) => (
+            <Radio key={key} value={key} style={{ color: theme.color.text.button }}>
+              {backdrop.name}
+            </Radio>
+          ))}
+        </Radio.Group>
+      </ConfigProvider>
     );
   }
   backdropTooltipContents.push(

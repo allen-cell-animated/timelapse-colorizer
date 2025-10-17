@@ -43,7 +43,7 @@ export default function PlaybackSpeedControl(inputProps: PlaybackSpeedControlPro
 
   return (
     <SelectionDropdown
-      width="80px"
+      controlWidth="80px"
       label={"Speed"}
       selected={sliderValue.toFixed(2)}
       items={dropdownItems}
