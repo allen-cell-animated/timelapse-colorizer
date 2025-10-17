@@ -1,4 +1,4 @@
-import { Checkbox } from "antd";
+import { Checkbox, ConfigProvider } from "antd";
 import React, { ReactElement, ReactNode, useContext, useRef } from "react";
 
 import { TabType } from "../../colorizer";
@@ -36,8 +36,8 @@ export default function ChannelToggleButton(): ReactElement {
   if (!hasChannels) {
     tooltipContents.push(<span key="no-channels">(No channels available)</span>);
   } else {
-    channelData.forEach((channel, index) => {
-      tooltipContents.push(
+    const channelToggles = channelData.map((channel, index) => {
+      return (
         <Checkbox
           key={`channel-checkbox-${index}`}
           checked={channelVisibility[index]}
@@ -49,6 +49,11 @@ export default function ChannelToggleButton(): ReactElement {
         </Checkbox>
       );
     });
+    tooltipContents.push(
+      <ConfigProvider theme={{ components: { Checkbox: { colorBgContainer: "transparent" } } }}>
+        <div style={{ padding: "4px 0 4px 6px" }}>{channelToggles}</div>
+      </ConfigProvider>
+    );
   }
   tooltipContents.push(
     <TooltipButtonStyleLink onClick={() => setOpenTab(TabType.SETTINGS)} key="channel-settings-link">
