@@ -1,11 +1,11 @@
 import { StateCreator } from "zustand";
 
-import { Track } from "../../colorizer";
-import { decodeInt, UrlParam } from "../../colorizer/utils/url_utils";
-import { SerializedStoreData } from "../types";
-import { CollectionSlice } from "./collection_slice";
+import { Track } from "src/colorizer";
+import Dataset from "src/colorizer/Dataset";
+import { decodeInt, UrlParam } from "src/colorizer/utils/url_utils";
+import { SerializedStoreData } from "src/state/types";
 
-import Dataset from "../../colorizer/Dataset";
+import { CollectionSlice } from "./collection_slice";
 
 export type DatasetSliceState = {
   datasetKey: string | null;

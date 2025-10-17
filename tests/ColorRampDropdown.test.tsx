@@ -3,10 +3,9 @@ import React from "react";
 import { Color } from "three";
 import { describe, expect, it, vi } from "vitest";
 
-import { ColorRamp, ColorRampData, ColorRampType, RawColorData } from "../src/colorizer";
-import { ANY_ERROR } from "./test_utils";
-
-import ColorRampDropdown from "../src/components/Dropdowns/ColorRampDropdown";
+import { ColorRamp, ColorRampData, ColorRampType, RawColorData } from "src/colorizer";
+import ColorRampDropdown from "src/components/Dropdowns/ColorRampDropdown";
+import { ANY_ERROR } from "tests/utils";
 
 describe("ColorRampDropdown", () => {
   const defaultPalette = [new Color("#000000"), new Color("#ffffff")];

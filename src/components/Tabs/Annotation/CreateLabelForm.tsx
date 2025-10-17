@@ -2,9 +2,6 @@ import { Button, Checkbox, Input, InputRef, Radio } from "antd";
 import React, { ReactElement, useContext, useEffect, useRef, useState } from "react";
 import { Color, ColorRepresentation } from "three";
 
-import { FlexColumn, FlexRow } from "../../../styles/utils";
-import { threeToAntColor } from "../../../utils/color_utils";
-
 import {
   CSV_COL_ID,
   CSV_COL_TIME,
@@ -12,11 +9,13 @@ import {
   DEFAULT_ANNOTATION_LABEL_COLORS,
   LabelOptions,
   LabelType,
-} from "../../../colorizer/AnnotationData";
-import { AppThemeContext, Z_INDEX_POPOVER } from "../../AppStyle";
-import WrappedColorPicker from "../../Inputs/WrappedColorPicker";
-import { SettingsContainer, SettingsItem } from "../../SettingsContainer";
-import { TooltipWithSubtitle } from "../../Tooltips/TooltipWithSubtitle";
+} from "src/colorizer/AnnotationData";
+import WrappedColorPicker from "src/components/Inputs/WrappedColorPicker";
+import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
+import { TooltipWithSubtitle } from "src/components/Tooltips/TooltipWithSubtitle";
+import { AppThemeContext, Z_INDEX_POPOVER } from "src/styles/AppStyle";
+import { FlexColumn, FlexRow } from "src/styles/utils";
+import { threeToAntColor } from "src/utils/color_utils";
 
 const DEFAULT_LABEL_COLOR_PRESETS = [
   {

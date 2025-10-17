@@ -3,9 +3,9 @@ import AutoSizer from "react-virtualized-auto-sizer";
 import { FixedSizeList } from "react-window";
 import { Color } from "three";
 
-import { Dataset, Track } from "../../../../colorizer";
-import { LookupInfo } from "../../../../colorizer/utils/annotation_utils";
-import { ScrollShadowContainer, useScrollShadow } from "../../../../hooks";
+import { Dataset, Track } from "src/colorizer";
+import { LookupInfo } from "src/colorizer/utils/annotation_utils";
+import { ScrollShadowContainer, useScrollShadow } from "src/hooks";
 
 import PlaceholderListItem from "./ListItems/PlaceholderListItem";
 import TrackListItem from "./ListItems/TrackListItem";

@@ -13,7 +13,7 @@ import {
   OUTLINE_COLOR_DEFAULT,
   TabType,
   TrackPathColorMode,
-} from "../../colorizer";
+} from "src/colorizer";
 import {
   decodeBoolean,
   decodeFloat,
@@ -27,9 +27,9 @@ import {
   parseDrawSettings,
   parseTrackPathMode,
   UrlParam,
-} from "../../colorizer/utils/url_utils";
-import type { SerializedStoreData } from "../types";
-import { setValueIfDefined } from "../utils/data_validation";
+} from "src/colorizer/utils/url_utils";
+import type { SerializedStoreData } from "src/state/types";
+import { setValueIfDefined } from "src/state/utils/data_validation";
 
 const OUT_OF_RANGE_DRAW_SETTINGS_DEFAULT: DrawSettings = {
   color: new Color(OUT_OF_RANGE_COLOR_DEFAULT),

@@ -3,20 +3,20 @@ import React, { lazy, ReactElement, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 
-import { Dataset } from "../colorizer";
-import { serializedDataToUrl, serializeViewerParams } from "../state/utils/store_io";
-import { ExternalLink, FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter, VisuallyHidden } from "../styles/utils";
-import { DatasetEntry, LocationState, ProjectEntry } from "../types";
-import { PageRoutes } from "./index";
+import { Dataset } from "src/colorizer";
+import Collection from "src/colorizer/Collection";
+import { ButtonStyleLink } from "src/components/Buttons/ButtonStyleLink";
+import HelpDropdown from "src/components/Dropdowns/HelpDropdown";
+import Header from "src/components/Header";
+import LoadDatasetButton from "src/components/LoadDatasetButton";
+import { serializedDataToUrl, serializeViewerParams } from "src/state/utils/store_io";
+import { ExternalLink, FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter, VisuallyHidden } from "src/styles/utils";
+import { DatasetEntry, LocationState, ProjectEntry } from "src/types";
 
-import Collection from "../colorizer/Collection";
-import { ButtonStyleLink } from "../components/Buttons/ButtonStyleLink";
-import HelpDropdown from "../components/Dropdowns/HelpDropdown";
-import Header from "../components/Header";
-import LoadDatasetButton from "../components/LoadDatasetButton";
+import { PageRoutes } from "./index";
 import { landingPageContent } from "./LandingPageContent";
 
-const BannerVideo = lazy(() => import("../components/AssetWrappers/BannerVideo"));
+const BannerVideo = lazy(() => import("src/components/AssetWrappers/BannerVideo"));
 
 const Banner = styled(FlexColumnAlignCenter)`
   position: relative;

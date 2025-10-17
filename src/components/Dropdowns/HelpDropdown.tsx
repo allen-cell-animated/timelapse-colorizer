@@ -2,11 +2,11 @@ import { Button } from "antd";
 import React, { ReactElement, useState } from "react";
 import styled, { css } from "styled-components";
 
-import { getBuildDisplayDateString } from "../../colorizer/utils/math_utils";
-import { INTERNAL_BUILD } from "../../constants";
-import { VisuallyHidden } from "../../styles/utils";
+import { getBuildDisplayDateString } from "src/colorizer/utils/math_utils";
+import StyledModal from "src/components/Modals/StyledModal";
+import { INTERNAL_BUILD } from "src/constants";
+import { VisuallyHidden } from "src/styles/utils";
 
-import StyledModal from "../Modals/StyledModal";
 import AccessibleDropdown from "./AccessibleDropdown";
 import DropdownItemList from "./DropdownItemList";
 

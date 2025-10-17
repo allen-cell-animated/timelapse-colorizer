@@ -1,10 +1,15 @@
 import { Color, Vector2 } from "three";
 
-import { formatNumber } from "../../utils/math_utils";
-import { BaseRenderParams, defaultFontStyle, EMPTY_RENDER_INFO, FontStyle, RenderInfo } from "../types";
-import { configureCanvasText, renderCanvasText } from "../utils";
-
-import ColorRamp from "../../ColorRamp";
+import {
+  BaseRenderParams,
+  defaultFontStyle,
+  EMPTY_RENDER_INFO,
+  FontStyle,
+  RenderInfo,
+} from "src/colorizer/canvas/types";
+import { configureCanvasText, renderCanvasText } from "src/colorizer/canvas/utils";
+import ColorRamp from "src/colorizer/ColorRamp";
+import { formatNumber } from "src/colorizer/utils/math_utils";
 
 const MAX_CATEGORIES_PER_COLUMN = 4;
 

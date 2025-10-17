@@ -1,5 +1,6 @@
 import { Vector2 } from "three";
 
+import { LabelData } from "./AnnotationData";
 import {
   defaultFooterStyle,
   defaultHeaderStyle,
@@ -25,15 +26,13 @@ import {
 } from "./canvas/elements/annotations";
 import { BaseRenderParams, RenderInfo } from "./canvas/types";
 import { getPixelRatio, toEven } from "./canvas/utils";
-import { CanvasScaleInfo, CanvasType, ChannelRangePreset, FrameLoadResult, PixelIdInfo } from "./types";
-import { hasPropertyChanged } from "./utils/data_utils";
-
-import { LabelData } from "./AnnotationData";
 import ColorizeCanvas2D from "./ColorizeCanvas2D";
 import { ColorizeCanvas3D } from "./ColorizeCanvas3D";
 import Dataset from "./Dataset";
 import { IInnerRenderCanvas } from "./IInnerRenderCanvas";
 import { IRenderCanvas, RenderCanvasStateParams, RenderOptions } from "./IRenderCanvas";
+import { CanvasScaleInfo, CanvasType, ChannelRangePreset, FrameLoadResult, PixelIdInfo } from "./types";
+import { hasPropertyChanged } from "./utils/data_utils";
 
 type OverlayRenderOptions = RenderOptions & {
   renderInnerCanvas?: boolean;

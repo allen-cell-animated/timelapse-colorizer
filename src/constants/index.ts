@@ -1,4 +1,4 @@
-import { DEFAULT_ANNOTATION_LABEL_COLORS } from "../colorizer/AnnotationData";
+import { DEFAULT_ANNOTATION_LABEL_COLORS } from "src/colorizer/AnnotationData";
 
 export const DEFAULT_PLAYBACK_FPS = 10;
 export const MAX_FEATURE_CATEGORIES = 12;
@@ -28,5 +28,13 @@ export const DEFAULT_LABEL_COLOR_PRESETS = [
 ];
 
 export const TOOLTIP_TRIGGER: ("hover" | "focus")[] = ["hover", "focus"];
+
+export const MAX_SETTINGS_SLIDER_WIDTH = "250px";
+
+/**
+ * Extra feature added to the dropdowns representing the frame number.
+ * Deprecated because Time is now automatically added as a feature to the dataset.
+ */
+export const DEPRECATED_SCATTERPLOT_TIME_KEY = "scatterplot_time";
 
 export * from "./url";

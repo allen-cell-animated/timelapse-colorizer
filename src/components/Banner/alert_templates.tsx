@@ -1,8 +1,8 @@
 import React from "react";
 import { Link } from "react-router-dom";
 
-import { makeGitHubIssueLink } from "../../colorizer/utils/url_utils";
-import { VERSION_NUMBER } from "../../constants";
+import { makeGitHubIssueLink } from "src/colorizer/utils/url_utils";
+import { VERSION_NUMBER } from "src/constants";
 
 import { AlertBannerProps } from "./AlertBanner";
 

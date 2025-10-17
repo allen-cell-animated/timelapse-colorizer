@@ -3,14 +3,14 @@ import React, { ReactElement, useContext, useMemo, useRef, useState } from "reac
 import styled from "styled-components";
 import { Color } from "three";
 
-import { Dataset, Track } from "../../../../colorizer";
-import { getEmptyLookupInfo, getTrackLookups, LookupInfo } from "../../../../colorizer/utils/annotation_utils";
-import { FlexColumn, FlexRow, FlexRowAlignCenter } from "../../../../styles/utils";
-import { formatQuantityString } from "../../../../utils/formatting";
+import { Dataset, Track } from "src/colorizer";
+import { getEmptyLookupInfo, getTrackLookups, LookupInfo } from "src/colorizer/utils/annotation_utils";
+import { AppThemeContext } from "src/styles/AppStyle";
+import { FlexColumn, FlexRow, FlexRowAlignCenter } from "src/styles/utils";
+import { formatQuantityString } from "src/utils/formatting";
 
-import { AppThemeContext } from "../../../AppStyle";
-import AnnotationTrackThumbnail from "../AnnotationTrackThumbnail";
 import AnnotationDisplayTable, { TableDataType } from "./AnnotationDisplayTable";
+import AnnotationTrackThumbnail from "./AnnotationTrackThumbnail";
 import ValueAndTrackList from "./ValueAndTrackList";
 
 type AnnotationDisplayListProps = {
