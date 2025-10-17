@@ -2,11 +2,12 @@ import { act, renderHook } from "@testing-library/react";
 import { Color } from "three";
 import { describe, expect, it } from "vitest";
 
-import { Dataset } from "../../../src/colorizer";
-import { ManifestFile } from "../../../src/colorizer/utils/dataset_utils";
-import { useViewerStateStore } from "../../../src/state";
-import { makeMockDataset } from "../../test_utils";
-import { MOCK_COLLECTION, MOCK_DATASET_MANIFEST } from "./constants";
+import { Dataset } from "src/colorizer";
+import { ManifestFile } from "src/colorizer/utils/dataset_utils";
+import { useViewerStateStore } from "src/state";
+import { MOCK_COLLECTION, MOCK_DATASET_MANIFEST } from "tests/constants";
+import { makeMockDataset } from "tests/utils";
+
 import { setDatasetAsync } from "./utils";
 
 const makeDatasetWithNChannels = async (n: number): Promise<Dataset> => {
