@@ -1,15 +1,15 @@
 import { Tooltip } from "antd";
-import React, { ReactElement, useContext, useMemo, useRef, useState } from "react";
+import React, { type ReactElement, useContext, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
-import { Color } from "three";
+import type { Color } from "three";
 
-import { Dataset, Track } from "src/colorizer";
-import { getEmptyLookupInfo, getTrackLookups, LookupInfo } from "src/colorizer/utils/annotation_utils";
+import type { Dataset, Track } from "src/colorizer";
+import { getEmptyLookupInfo, getTrackLookups, type LookupInfo } from "src/colorizer/utils/annotation_utils";
 import { AppThemeContext } from "src/styles/AppStyle";
 import { FlexColumn, FlexRow, FlexRowAlignCenter } from "src/styles/utils";
 import { formatQuantityString } from "src/utils/formatting";
 
-import AnnotationDisplayTable, { TableDataType } from "./AnnotationDisplayTable";
+import AnnotationDisplayTable, { type TableDataType } from "./AnnotationDisplayTable";
 import AnnotationTrackThumbnail from "./AnnotationTrackThumbnail";
 import ValueAndTrackList from "./ValueAndTrackList";
 

@@ -1,5 +1,5 @@
 import { FilePathResolver } from "./FilePathResolver";
-import { IPathResolver as IPathResolverType } from "./IPathResolver";
+import type { IPathResolver as IPathResolverType } from "./IPathResolver";
 import { UrlPathResolver } from "./UrlPathResolver";
 
 export type IPathResolver = IPathResolverType;

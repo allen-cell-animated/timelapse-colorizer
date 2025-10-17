@@ -1,13 +1,13 @@
-import { Button, Checkbox, Input, InputRef, Radio } from "antd";
-import React, { ReactElement, useContext, useEffect, useRef, useState } from "react";
-import { Color, ColorRepresentation } from "three";
+import { Button, Checkbox, Input, type InputRef, Radio } from "antd";
+import React, { type ReactElement, useContext, useEffect, useRef, useState } from "react";
+import { Color, type ColorRepresentation } from "three";
 
 import {
   CSV_COL_ID,
   CSV_COL_TIME,
   CSV_COL_TRACK,
   DEFAULT_ANNOTATION_LABEL_COLORS,
-  LabelOptions,
+  type LabelOptions,
   LabelType,
 } from "src/colorizer/AnnotationData";
 import WrappedColorPicker from "src/components/Inputs/WrappedColorPicker";

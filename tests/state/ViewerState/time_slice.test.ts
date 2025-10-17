@@ -1,7 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { FrameLoadResult, Track } from "src/colorizer";
+import { type FrameLoadResult, Track } from "src/colorizer";
 import { UrlParam } from "src/colorizer/utils/url_utils";
 import { useViewerStateStore } from "src/state";
 import { loadTimeSliceFromParams, serializeTimeSlice } from "src/state/slices";

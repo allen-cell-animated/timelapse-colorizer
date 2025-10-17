@@ -1,5 +1,5 @@
-import { Button, ButtonProps, Dropdown, theme, Tooltip } from "antd";
-import React, { ReactElement, ReactNode, useEffect, useRef, useState } from "react";
+import { Button, type ButtonProps, Dropdown, theme, Tooltip } from "antd";
+import React, { type ReactElement, type ReactNode, useEffect, useRef, useState } from "react";
 import styled, { css } from "styled-components";
 
 import { DropdownSVG } from "src/assets";

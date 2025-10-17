@@ -1,16 +1,16 @@
 import {
-  Color,
-  DataTexture,
+  type Color,
+  type DataTexture,
   FloatType,
   IntType,
-  PixelFormat,
-  PixelFormatGPU,
+  type PixelFormat,
+  type PixelFormatGPU,
   RedFormat,
   RedIntegerFormat,
-  TextureDataType,
+  type TextureDataType,
   UnsignedByteType,
   UnsignedIntType,
-  Vector2,
+  type Vector2,
 } from "three";
 
 // This file provides a bit of type trickery to allow data loading code to be generic over multiple numeric types.

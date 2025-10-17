@@ -1,9 +1,9 @@
 import { LockOutlined, UnlockOutlined } from "@ant-design/icons";
 import { Tooltip } from "antd";
-import React, { ReactElement, useCallback, useMemo } from "react";
+import React, { type ReactElement, useCallback, useMemo } from "react";
 import { inverseLerp } from "three/src/math/MathUtils";
 
-import { ColorRamp, ColorRampType, isThresholdNumeric } from "src/colorizer";
+import { type ColorRamp, ColorRampType, isThresholdNumeric } from "src/colorizer";
 import { FeatureType } from "src/colorizer/Dataset";
 import { thresholdMatchFinder } from "src/colorizer/utils/data_utils";
 import IconButton from "src/components/Buttons/IconButton";

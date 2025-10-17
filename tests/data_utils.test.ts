@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { LabelType } from "src/colorizer/AnnotationData";
-import { FeatureThreshold, ThresholdType } from "src/colorizer/types";
+import { type FeatureThreshold, ThresholdType } from "src/colorizer/types";
 import {
   buildFrameToGlobalIdLookup,
   getIntervals,

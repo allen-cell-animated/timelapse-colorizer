@@ -1,19 +1,19 @@
 import { Vector2 } from "three";
 
 import {
-  BaseRenderParams,
-  ContainerStyle,
+  type BaseRenderParams,
+  type ContainerStyle,
   defaultContainerStyle,
   defaultFontStyle,
   EMPTY_RENDER_INFO,
-  FontStyle,
-  RenderInfo,
+  type FontStyle,
+  type RenderInfo,
 } from "src/colorizer/canvas/types";
 
-import { getInsetBoxRenderer, InsetBoxStyle } from "./insetBox";
-import { getLegendRenderer, LegendParams, LegendStyle } from "./legend";
-import { getScaleBarRenderer, ScaleBarParams, ScaleBarStyle } from "./scaleBar";
-import { getTimestampRenderer, TimestampParams, TimestampStyle } from "./timestamp";
+import { getInsetBoxRenderer, type InsetBoxStyle } from "./insetBox";
+import { getLegendRenderer, type LegendParams, type LegendStyle } from "./legend";
+import { getScaleBarRenderer, type ScaleBarParams, type ScaleBarStyle } from "./scaleBar";
+import { getTimestampRenderer, type TimestampParams, type TimestampStyle } from "./timestamp";
 
 export type FooterStyle = ContainerStyle & FontStyle;
 

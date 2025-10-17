@@ -6,8 +6,8 @@ import { describe, expect, it } from "vitest";
 import { DrawMode, TabType, TrackPathColorMode } from "src/colorizer";
 import { UrlParam } from "src/colorizer/utils/url_utils";
 import { useViewerStateStore } from "src/state";
-import { ConfigSlice, loadConfigSliceFromParams, serializeConfigSlice } from "src/state/slices";
-import { SerializedStoreData } from "src/state/types";
+import { type ConfigSlice, loadConfigSliceFromParams, serializeConfigSlice } from "src/state/slices";
+import type { SerializedStoreData } from "src/state/types";
 
 import { compareRecord } from "./utils";
 

@@ -1,17 +1,17 @@
 import { CloseOutlined, FilterOutlined, SearchOutlined } from "@ant-design/icons";
 import { Checkbox, List, Select } from "antd";
-import React, { ReactElement, ReactNode, useMemo, useRef, useState } from "react";
+import React, { type ReactElement, type ReactNode, useMemo, useRef, useState } from "react";
 import styled, { css } from "styled-components";
 
 import { DropdownSVG } from "src/assets";
 import { MAX_FEATURE_CATEGORIES } from "src/colorizer/constants";
 import { FeatureType } from "src/colorizer/Dataset";
 import {
-  CategoricalFeatureThreshold,
-  FeatureThreshold,
+  type CategoricalFeatureThreshold,
+  type FeatureThreshold,
   isThresholdCategorical,
   isThresholdNumeric,
-  NumericFeatureThreshold,
+  type NumericFeatureThreshold,
   ThresholdType,
 } from "src/colorizer/types";
 import { thresholdMatchFinder } from "src/colorizer/utils/data_utils";

@@ -1,5 +1,5 @@
 import { Checkbox, ConfigProvider } from "antd";
-import React, { ReactElement, ReactNode, useContext, useRef } from "react";
+import React, { type ReactElement, type ReactNode, useContext, useRef } from "react";
 
 import { TabType } from "src/colorizer";
 import { ImageToggleButton } from "src/components/Buttons/ImageToggleButton";

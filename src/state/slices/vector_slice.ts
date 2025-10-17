@@ -1,12 +1,12 @@
 import { Color } from "three";
-import { StateCreator } from "zustand";
+import type { StateCreator } from "zustand";
 
 import {
   getDefaultVectorConfig,
   isVectorTooltipMode,
   VECTOR_KEY_MOTION_DELTA,
-  VectorConfig,
-  VectorTooltipMode,
+  type VectorConfig,
+  type VectorTooltipMode,
 } from "src/colorizer";
 import {
   decodeBoolean,

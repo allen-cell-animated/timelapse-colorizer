@@ -1,24 +1,24 @@
-import { DataTexture, RGBAFormat, RGBAIntegerFormat, Texture, Vector2 } from "three";
+import { type DataTexture, RGBAFormat, RGBAIntegerFormat, type Texture, Vector2 } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "src/colorizer/constants";
 
 import DataCache from "./DataCache";
-import { IArrayLoader, ITextureImageLoader } from "./loaders/ILoader";
+import type { IArrayLoader, ITextureImageLoader } from "./loaders/ILoader";
 import ImageFrameLoader from "./loaders/ImageFrameLoader";
 import UrlArrayLoader from "./loaders/UrlArrayLoader";
-import { IPathResolver, UrlPathResolver } from "./path_resolvers";
+import { type IPathResolver, UrlPathResolver } from "./path_resolvers";
 import Track from "./Track";
 import {
-  FeatureArrayType,
+  type FeatureArrayType,
   FeatureDataType,
-  GlobalIdLookupInfo,
+  type GlobalIdLookupInfo,
   LoadErrorMessage,
   LoadTroubleshooting,
-  ReportWarningCallback,
+  type ReportWarningCallback,
 } from "./types";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./utils/analytics";
 import { buildFrameToGlobalIdLookup, formatAsBulletList, getKeyFromName } from "./utils/data_utils";
-import { ManifestFile, ManifestFileMetadata, updateManifestVersion } from "./utils/dataset_utils";
+import { type ManifestFile, type ManifestFileMetadata, updateManifestVersion } from "./utils/dataset_utils";
 import { padCentroidsTo3d } from "./utils/math_utils";
 import { packDataTexture } from "./utils/texture_utils";
 import * as urlUtils from "./utils/url_utils";

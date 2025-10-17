@@ -1,6 +1,6 @@
 import { SearchOutlined } from "@ant-design/icons";
 import { Input } from "antd";
-import React, { ReactElement, useEffect, useState } from "react";
+import React, { type ReactElement, useEffect, useState } from "react";
 import styled from "styled-components";
 
 import IconButton from "src/components/Buttons/IconButton";

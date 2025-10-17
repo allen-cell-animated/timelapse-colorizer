@@ -1,7 +1,8 @@
-import Plotly, { PlotlyHTMLElement } from "plotly.js-dist-min";
-import React, { ReactElement, useEffect, useMemo, useRef, useState } from "react";
+import type Plotly from "plotly.js-dist-min";
+import type {PlotlyHTMLElement} from "plotly.js-dist-min";
+import React, { type ReactElement, useEffect, useMemo, useRef, useState } from "react";
 
-import { Dataset, Plotting, Track } from "src/colorizer";
+import { type Dataset, Plotting, type Track } from "src/colorizer";
 import type { TrackPlotLayoutConfig } from "src/colorizer/Plotting";
 
 type PlotWrapperProps = {

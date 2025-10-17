@@ -1,13 +1,13 @@
 import { Vector2 } from "three";
 
 import {
-  BaseRenderParams,
-  ContainerStyle,
+  type BaseRenderParams,
+  type ContainerStyle,
   defaultContainerStyle,
   defaultFontStyle,
   EMPTY_RENDER_INFO,
-  FontStyle,
-  RenderInfo,
+  type FontStyle,
+  type RenderInfo,
 } from "src/colorizer/canvas/types";
 import { configureCanvasText, renderCanvasText } from "src/colorizer/canvas/utils";
 

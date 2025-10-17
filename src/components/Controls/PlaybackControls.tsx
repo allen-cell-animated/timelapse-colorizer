@@ -1,6 +1,6 @@
 import { CaretRightOutlined, PauseOutlined, StepBackwardFilled, StepForwardFilled } from "@ant-design/icons";
 import { Slider } from "antd";
-import React, { ReactElement, useEffect, useRef, useState } from "react";
+import React, { type ReactElement, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 
 import { DEFAULT_PLAYBACK_FPS } from "src/colorizer/constants";

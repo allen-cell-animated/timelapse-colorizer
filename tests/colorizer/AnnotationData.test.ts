@@ -1,7 +1,7 @@
 import { Color } from "three";
 import { describe, expect, it } from "vitest";
 
-import { Dataset, DEFAULT_CATEGORICAL_PALETTE_KEY, KNOWN_CATEGORICAL_PALETTES } from "src/colorizer";
+import { type Dataset, DEFAULT_CATEGORICAL_PALETTE_KEY, KNOWN_CATEGORICAL_PALETTES } from "src/colorizer";
 import {
   AnnotationData,
   AnnotationMergeMode,

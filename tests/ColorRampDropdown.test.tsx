@@ -3,7 +3,7 @@ import React from "react";
 import { Color } from "three";
 import { describe, expect, it, vi } from "vitest";
 
-import { ColorRamp, ColorRampData, ColorRampType, RawColorData } from "src/colorizer";
+import { ColorRamp, type ColorRampData, ColorRampType, type RawColorData } from "src/colorizer";
 import ColorRampDropdown from "src/components/Dropdowns/ColorRampDropdown";
 import { ANY_ERROR } from "tests/utils";
 

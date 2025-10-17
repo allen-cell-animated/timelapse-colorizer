@@ -1,6 +1,6 @@
 import { LoadingOutlined } from "@ant-design/icons";
 import { Progress, Spin } from "antd";
-import React, { PropsWithChildren, ReactElement, ReactNode } from "react";
+import React, { type PropsWithChildren, type ReactElement, type ReactNode } from "react";
 import styled, { css } from "styled-components";
 
 import { useDebounce } from "src/hooks";

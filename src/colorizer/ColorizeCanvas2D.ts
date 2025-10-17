@@ -11,7 +11,7 @@ import {
   RGBAIntegerFormat,
   Scene,
   ShaderMaterial,
-  Texture,
+  type Texture,
   Uniform,
   UnsignedByteType,
   Vector2,
@@ -37,16 +37,16 @@ import {
   OUTLIER_COLOR_DEFAULT,
   OUTLINE_COLOR_DEFAULT,
 } from "./constants";
-import Dataset from "./Dataset";
-import { IInnerRenderCanvas } from "./IInnerRenderCanvas";
-import { RenderCanvasStateParams, RenderOptions } from "./IRenderCanvas";
+import type Dataset from "./Dataset";
+import type { IInnerRenderCanvas } from "./IInnerRenderCanvas";
+import type { RenderCanvasStateParams, RenderOptions } from "./IRenderCanvas";
 import {
-  Canvas2DScaleInfo,
+  type Canvas2DScaleInfo,
   CanvasType,
   DrawMode,
   FeatureDataType,
-  FrameLoadResult,
-  PixelIdInfo,
+  type FrameLoadResult,
+  type PixelIdInfo,
   TrackPathColorMode,
 } from "./types";
 import {

@@ -30,10 +30,10 @@ import {
   serializeThresholdSlice,
   serializeTimeSlice,
   serializeVectorSlice,
-  ViewerStore,
-  ViewerStoreSerializableState,
+  type ViewerStore,
+  type ViewerStoreSerializableState,
 } from "src/state/slices";
-import { SerializedStoreData, Store } from "src/state/types";
+import type { SerializedStoreData, Store } from "src/state/types";
 
 // SERIALIZATION /////////////////////////////////////////////////////////////////////////
 

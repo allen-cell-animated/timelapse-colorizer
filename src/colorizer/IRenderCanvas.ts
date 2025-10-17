@@ -1,8 +1,8 @@
-import { Color, Vector2 } from "three";
+import type { Color, Vector2 } from "three";
 
-import { ColorRamp, Dataset, Track } from "src/colorizer";
-import Collection from "src/colorizer/Collection";
-import {
+import type { ColorRamp, Dataset, Track } from "src/colorizer";
+import type Collection from "src/colorizer/Collection";
+import type {
   CanvasScaleInfo,
   ChannelSetting,
   DrawMode,

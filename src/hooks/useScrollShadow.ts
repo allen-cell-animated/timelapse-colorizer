@@ -1,4 +1,5 @@
-import React, { EventHandler, useEffect, useRef, useState } from "react";
+import type { CSSProperties, EventHandler, MutableRefObject } from "react";
+import { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 
 import { useConstructor } from "./useConstructor";
@@ -66,9 +67,9 @@ export const ScrollShadowContainer = styled.div`
  * ```
  */
 export function useScrollShadow(shadowColor: string = "#00000030"): {
-  scrollShadowStyle: React.CSSProperties;
+  scrollShadowStyle: CSSProperties;
   onScrollHandler: EventHandler<any>;
-  scrollRef: React.MutableRefObject<HTMLDivElement | null>;
+  scrollRef: MutableRefObject<HTMLDivElement | null>;
 } {
   const scrollRef = useRef<HTMLDivElement>(null);
 

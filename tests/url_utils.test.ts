@@ -2,7 +2,7 @@ import { Color } from "three";
 import { describe, expect, it } from "vitest";
 
 import { MAX_FEATURE_CATEGORIES } from "src/colorizer/constants";
-import { FeatureThreshold, ThresholdType } from "src/colorizer/types";
+import { type FeatureThreshold, ThresholdType } from "src/colorizer/types";
 import {
   decodeHexAlphaColor,
   deserializeThresholds,

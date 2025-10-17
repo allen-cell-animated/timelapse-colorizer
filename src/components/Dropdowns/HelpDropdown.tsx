@@ -1,5 +1,5 @@
 import { Button } from "antd";
-import React, { ReactElement, useState } from "react";
+import React, { type ReactElement, useState } from "react";
 import styled, { css } from "styled-components";
 
 import { getBuildDisplayDateString } from "src/colorizer/utils/math_utils";

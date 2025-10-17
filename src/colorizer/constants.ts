@@ -1,6 +1,6 @@
 import { Color } from "three";
 
-import { PlotRangeType, ScatterPlotConfig, VectorConfig, VectorTooltipMode } from "./types";
+import { PlotRangeType, type ScatterPlotConfig, type VectorConfig, VectorTooltipMode } from "./types";
 
 export const DEFAULT_PLAYBACK_FPS = 10;
 export const MAX_FEATURE_CATEGORIES = 12;
