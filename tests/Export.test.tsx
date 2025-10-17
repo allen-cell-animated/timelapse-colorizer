@@ -4,8 +4,8 @@ import React from "react";
 import { Vector2 } from "three";
 import { describe, expect, it, vi } from "vitest";
 
-import CanvasOverlay from "../src/colorizer/CanvasOverlay";
-import Export from "../src/components/Export";
+import CanvasOverlay from "src/colorizer/CanvasOverlay";
+import Export from "src/components/Export";
 
 const mockCanvas = {
   resolution: new Vector2(100, 100),

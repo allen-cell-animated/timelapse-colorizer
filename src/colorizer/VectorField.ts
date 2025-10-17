@@ -10,7 +10,6 @@ import {
 } from "three";
 
 import { OUTLINE_COLOR_DEFAULT } from "./constants";
-
 import Dataset from "./Dataset";
 
 const VERTICES_PER_VECTOR_LINE = 6;

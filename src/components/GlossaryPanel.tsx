@@ -3,11 +3,10 @@ import { Divider, Drawer, Radio, RadioChangeEvent, Tooltip } from "antd";
 import React, { ReactElement, useContext, useMemo, useState } from "react";
 import styled from "styled-components";
 
-import { Dataset } from "../colorizer";
-import { FlexColumn, FlexRowAlignCenter } from "../styles/utils";
-
-import { AppThemeContext } from "./AppStyle";
-import IconButton from "./IconButton";
+import { Dataset } from "src/colorizer";
+import IconButton from "src/components/Buttons/IconButton";
+import { AppThemeContext } from "src/styles/AppStyle";
+import { FlexColumn, FlexRowAlignCenter } from "src/styles/utils";
 
 type GlossaryPanelProps = {
   dataset: Dataset | null;

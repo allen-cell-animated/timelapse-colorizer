@@ -2,12 +2,13 @@ import { act, renderHook } from "@testing-library/react";
 import { Color } from "three";
 import { describe, expect, it } from "vitest";
 
-import { Dataset } from "../../../src/colorizer";
-import { ManifestFile } from "../../../src/colorizer/utils/dataset_utils";
-import { useViewerStateStore } from "../../../src/state";
-import { ChannelSetting, loadChannelSliceFromParams, serializeChannelSlice } from "../../../src/state/slices";
-import { makeMockDataset } from "../../test_utils";
-import { MOCK_COLLECTION, MOCK_DATASET_MANIFEST } from "./constants";
+import { Dataset } from "src/colorizer";
+import { ManifestFile } from "src/colorizer/utils/dataset_utils";
+import { useViewerStateStore } from "src/state";
+import { ChannelSetting, loadChannelSliceFromParams, serializeChannelSlice } from "src/state/slices";
+import { MOCK_COLLECTION, MOCK_DATASET_MANIFEST } from "tests/constants";
+import { makeMockDataset } from "tests/utils";
+
 import { setDatasetAsync } from "./utils";
 
 const makeDatasetWithNChannels = async (n: number): Promise<Dataset> => {
@@ -233,10 +234,7 @@ describe("ChannelSlice", () => {
       return {
         visible: Math.random() > 0.5,
         color: new Color(
-          '#' +
-            r.toString(16).padStart(2, '0') +
-            g.toString(16).padStart(2, '0') +
-            b.toString(16).padStart(2, '0')
+          "#" + r.toString(16).padStart(2, "0") + g.toString(16).padStart(2, "0") + b.toString(16).padStart(2, "0")
         ),
         opacity: getRandom8BitNumber() / 255,
         min: getRandomSerializableNumber(),

@@ -8,9 +8,9 @@ import {
   featureTypeSpecs,
   IArrayLoader,
   ITextureImageLoader,
-} from "../src/colorizer";
-import { AnyManifestFile } from "../src/colorizer/utils/dataset_utils";
-import { fetchWithTimeout } from "../src/colorizer/utils/url_utils";
+} from "src/colorizer";
+import { AnyManifestFile } from "src/colorizer/utils/dataset_utils";
+import { fetchWithTimeout } from "src/colorizer/utils/url_utils";
 
 export const ANY_ERROR = /[.]*/;
 export const DEFAULT_DATASET_DIR = "https://some-path/";

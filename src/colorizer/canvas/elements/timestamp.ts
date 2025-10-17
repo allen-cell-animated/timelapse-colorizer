@@ -1,7 +1,13 @@
 import { Vector2 } from "three";
 
-import { BaseRenderParams, defaultFontStyle, EMPTY_RENDER_INFO, FontStyle, RenderInfo } from "../types";
-import { configureCanvasText, getTextDimensions, renderCanvasText } from "../utils";
+import {
+  BaseRenderParams,
+  defaultFontStyle,
+  EMPTY_RENDER_INFO,
+  FontStyle,
+  RenderInfo,
+} from "src/colorizer/canvas/types";
+import { configureCanvasText, getTextDimensions, renderCanvasText } from "src/colorizer/canvas/utils";
 
 export type TimestampStyle = FontStyle;
 

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { UrlParam } from "../../src/colorizer/utils/url_utils";
-import { loadInitialCollectionAndDataset } from "../../src/utils/dataset_load_utils";
+import { UrlParam } from "src/colorizer/utils/url_utils";
+import { loadInitialCollectionAndDataset } from "src/utils/dataset_load_utils";
 import {
   MOCK_COLLECTION,
   MOCK_COLLECTION_MANIFEST,
@@ -10,8 +10,8 @@ import {
   MOCK_DATASET_KEY,
   MOCK_DATASET_MANIFEST,
   MOCK_DATASET_PATH,
-} from "../state/ViewerState/constants";
-import { makeMockAsyncLoader, makeMockFetchMethod, MockFrameLoader } from "../test_utils";
+} from "tests/constants";
+import { makeMockAsyncLoader, makeMockFetchMethod, MockFrameLoader } from "tests/utils";
 
 describe("loadInitialCollectionAndDataset", () => {
   it("reports missing dataset if no params are provided", async () => {

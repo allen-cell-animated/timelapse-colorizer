@@ -3,16 +3,15 @@ import { Button, Tooltip } from "antd";
 import React, { ReactElement } from "react";
 import styled from "styled-components";
 
-import { ChannelRangePreset } from "../../../colorizer";
-import { ChannelSetting } from "../../../state/slices";
-import { FlexColumn, FlexRowAlignCenter } from "../../../styles/utils";
-import { antToThreeColor, threeToAntColorWithAlpha } from "../../../utils/color_utils";
-import { DEFAULT_OUTLINE_COLOR_PRESETS } from "./constants";
-
-import LabeledSlider from "../../Inputs/LabeledSlider";
-import WrappedColorPicker from "../../Inputs/WrappedColorPicker";
-import { SettingsContainer, SettingsItem } from "../../SettingsContainer";
-import ToggleCollapse from "../../ToggleCollapse";
+import { ChannelRangePreset } from "src/colorizer";
+import LabeledSlider from "src/components/Inputs/LabeledSlider";
+import WrappedColorPicker from "src/components/Inputs/WrappedColorPicker";
+import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
+import { DEFAULT_OUTLINE_COLOR_PRESETS } from "src/components/Tabs/Settings/constants";
+import ToggleCollapse from "src/components/ToggleCollapse";
+import { ChannelSetting } from "src/state/slices";
+import { FlexColumn, FlexRowAlignCenter } from "src/styles/utils";
+import { antToThreeColor, threeToAntColorWithAlpha } from "src/utils/color_utils";
 
 type ChannelSettingControlProps = {
   name: string;

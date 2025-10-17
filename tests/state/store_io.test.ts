@@ -15,18 +15,17 @@ import {
   TrackPathColorMode,
   VECTOR_KEY_MOTION_DELTA,
   VectorTooltipMode,
-} from "../../src/colorizer";
-import { UrlParam } from "../../src/colorizer/utils/url_utils";
-import { useViewerStateStore } from "../../src/state";
-import { ViewerStoreSerializableState } from "../../src/state/slices";
-import { SerializedStoreData } from "../../src/state/types";
+} from "src/colorizer";
+import { UrlParam } from "src/colorizer/utils/url_utils";
+import { useViewerStateStore } from "src/state";
+import { ViewerStoreSerializableState } from "src/state/slices";
+import { SerializedStoreData } from "src/state/types";
 import {
   loadInitialViewerStateFromParams,
   loadViewerStateFromParams,
   serializedDataToUrl,
   serializeViewerParams,
-} from "../../src/state/utils/store_io";
-import { sleep } from "../test_utils";
+} from "src/state/utils/store_io";
 import {
   MOCK_COLLECTION,
   MOCK_COLLECTION_PATH,
@@ -35,7 +34,9 @@ import {
   MOCK_DATASET_KEY,
   MockBackdropKeys,
   MockFeatureKeys,
-} from "./ViewerState/constants";
+} from "tests/constants";
+import { sleep } from "tests/utils";
+
 import { compareRecord, setDatasetAsync } from "./ViewerState/utils";
 
 const COLOR_RAMP_KEY = Array.from(KNOWN_COLOR_RAMPS.keys())[3];

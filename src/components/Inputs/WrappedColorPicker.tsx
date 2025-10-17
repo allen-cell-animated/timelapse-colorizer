@@ -2,9 +2,8 @@ import { Button, ColorPicker, ColorPickerProps } from "antd";
 import React, { ReactElement, useContext, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 
-import { antToThreeColor } from "../../utils/color_utils";
-
-import { AppTheme, AppThemeContext } from "../AppStyle";
+import { AppTheme, AppThemeContext } from "src/styles/AppStyle";
+import { antToThreeColor } from "src/utils/color_utils";
 
 type WrappedColorPickerProps = ColorPickerProps & {
   id?: string;

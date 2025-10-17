@@ -8,7 +8,9 @@
     "moduleResolution": "Node",
     "strict": true,
     "paths": {
-      "three/addons/lines/*": ["./node_modules/@types/three/examples/jsm/lines/*"]
+      "three/addons/lines/*": ["./node_modules/@types/three/examples/jsm/lines/*"],
+      "src/*": ["./src/*"],
+      "tests/*": ["./tests/*"]
     },
     "resolveJsonModule": true,
     "isolatedModules": true,

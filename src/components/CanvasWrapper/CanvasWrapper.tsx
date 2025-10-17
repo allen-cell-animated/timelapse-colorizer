@@ -4,30 +4,30 @@ import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, use
 import styled from "styled-components";
 import { Vector2 } from "three";
 
-import { NoImageSVG, TagIconSVG, TagSlashIconSVG } from "../../assets";
+import { NoImageSVG, TagIconSVG, TagSlashIconSVG } from "src/assets";
+import { LabelData, LabelType } from "src/colorizer/AnnotationData";
+import CanvasOverlay from "src/colorizer/CanvasOverlay";
+import { renderCanvasStateParamsSelector } from "src/colorizer/IRenderCanvas";
 import {
   AnnotationSelectionMode,
   ChannelRangePreset,
   LoadTroubleshooting,
   PixelIdInfo,
   TabType,
-} from "../../colorizer/types";
-import { CANVAS_ASPECT_RATIO } from "../../constants";
-import { AnnotationState } from "../../hooks";
-import { FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter, VisuallyHidden } from "../../styles/utils";
+} from "src/colorizer/types";
+import { AlertBannerProps } from "src/components/Banner";
+import IconButton from "src/components/Buttons/IconButton";
+import TooltipButtonStyleLink from "src/components/Buttons/TooltipButtonStyleLink";
+import LoadingSpinner from "src/components/LoadingSpinner";
+import AnnotationInputPopover from "src/components/Tabs/Annotation/AnnotationInputPopover";
+import { TooltipWithSubtitle } from "src/components/Tooltips/TooltipWithSubtitle";
+import { CANVAS_ASPECT_RATIO } from "src/constants";
+import { AnnotationState } from "src/hooks";
+import { useViewerStateStore } from "src/state/ViewerState";
+import { AppThemeContext } from "src/styles/AppStyle";
+import { FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter, VisuallyHidden } from "src/styles/utils";
 
-import { LabelData, LabelType } from "../../colorizer/AnnotationData";
-import CanvasOverlay from "../../colorizer/CanvasOverlay";
-import { renderCanvasStateParamsSelector } from "../../colorizer/IRenderCanvas";
-import { useViewerStateStore } from "../../state/ViewerState";
-import { AppThemeContext } from "../AppStyle";
-import { AlertBannerProps } from "../Banner";
-import TooltipButtonStyleLink from "../Buttons/TooltipButtonStyleLink";
-import BackdropToggleButton from "../CanvasWrapper/BackdropToggleButton";
-import IconButton from "../IconButton";
-import LoadingSpinner from "../LoadingSpinner";
-import AnnotationInputPopover from "../Tabs/Annotation/AnnotationInputPopover";
-import { TooltipWithSubtitle } from "../Tooltips/TooltipWithSubtitle";
+import BackdropToggleButton from "./BackdropToggleButton";
 import ChannelToggleButton from "./ChannelToggleButton";
 
 /* Minimum distance in either X or Y that mouse should move
