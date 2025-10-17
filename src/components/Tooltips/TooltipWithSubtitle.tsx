@@ -1,19 +1,24 @@
 import { Tooltip, TooltipProps } from "antd";
 import React, { ReactElement, ReactNode } from "react";
 
+type TooltipWithSubtitleProps = TooltipProps & {
+  title: ReactNode;
+  subtitle?: ReactNode;
+  subtitleList?: ReactNode[];
+  tooltipRef?: React.RefObject<HTMLDivElement>;
+};
+
 /**
  * A wrapper around the Ant Design Tooltip that adds support for a subtitle (or
  * list of subtitles) beneath the main tooltip text.
  */
-export function TooltipWithSubtitle(
-  props: TooltipProps & { title: ReactNode; subtitle?: ReactNode; subtitleList?: ReactNode[] }
-): ReactElement {
+export function TooltipWithSubtitle(props: TooltipWithSubtitleProps): ReactElement {
   return (
     <Tooltip
       {...props}
       trigger={["hover", "focus"]}
       title={
-        <>
+        <div ref={props.tooltipRef}>
           <p style={{ margin: 0 }}>{props.title}</p>
           {props.subtitle && <p style={{ margin: 0, fontSize: "12px" }}>{props.subtitle}</p>}
           {props.subtitleList &&
@@ -22,7 +27,7 @@ export function TooltipWithSubtitle(
                 {text}
               </p>
             ))}
-        </>
+        </div>
       }
     >
       {props.children}

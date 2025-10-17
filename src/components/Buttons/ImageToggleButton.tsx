@@ -1,4 +1,4 @@
-import React, { ReactElement, ReactNode } from "react";
+import React, { ReactElement, ReactNode, useEffect, useState } from "react";
 
 import { ImagesIconSVG, ImagesSlashIconSVG } from "../../assets";
 import { VisuallyHidden } from "../../styles/utils";
@@ -19,22 +19,61 @@ export type ToggleImageButtonProps = {
  * images), as a reusable component.
  */
 export function ImageToggleButton(props: ToggleImageButtonProps): ReactElement {
+  const tooltipContainerRef = React.useRef<HTMLDivElement>(null);
+  const tooltipRef = React.useRef<HTMLDivElement>(null);
+  const [tooltipOpen, setTooltipOpen] = useState(false);
+  const [isHoveringTooltip, setIsHoveringTooltip] = useState(false);
+
   const tooltipTitle = (props.visible ? "Hide" : "Show") + " " + props.label;
+
+  useEffect(() => {
+    const onPointerEnter = (): void => setIsHoveringTooltip(true);
+    const onPointerLeave = (): void => setIsHoveringTooltip(false);
+    const tooltipDiv = tooltipRef.current;
+    if (tooltipDiv) {
+      tooltipDiv.addEventListener("pointerenter", onPointerEnter);
+      tooltipDiv.addEventListener("pointerleave", onPointerLeave);
+    }
+    return () => {
+      if (tooltipDiv) {
+        tooltipDiv.removeEventListener("pointerenter", onPointerEnter);
+        tooltipDiv.removeEventListener("pointerleave", onPointerLeave);
+      }
+    };
+  }, [tooltipRef.current]);
+
+  const onOpenChange = (open: boolean): void => {
+    // Fix a bug where, if the tooltip is open because the inner button is
+    // focused (e.g. a user clicked it), clicking on the tooltip's contents
+    // would cause the button to lose focus and instantly close the tooltip.
+    // Instead, we want the tooltip to stay open if the user while the user is
+    // hovering.
+    if (!isHoveringTooltip) {
+      setTooltipOpen(open);
+    }
+  };
+
   return (
-    <TooltipWithSubtitle
-      title={tooltipTitle}
-      placement="right"
-      subtitleList={props.tooltipContents}
-      trigger={["hover", "focus"]}
-    >
-      <IconButton
-        type={props.visible && !props.disabled ? "primary" : "link"}
-        onClick={() => props.setVisible(!props.visible)}
-        disabled={props.disabled}
+    <div ref={tooltipContainerRef}>
+      <TooltipWithSubtitle
+        title={tooltipTitle}
+        placement="right"
+        subtitleList={props.tooltipContents}
+        trigger={["hover", "focus"]}
+        onOpenChange={onOpenChange}
+        open={tooltipOpen}
+        tooltipRef={tooltipRef}
+        getPopupContainer={() => tooltipContainerRef.current || document.body}
       >
-        {props.visible ? <ImagesSlashIconSVG /> : <ImagesIconSVG />}
-        <VisuallyHidden>{tooltipTitle}</VisuallyHidden>
-      </IconButton>
-    </TooltipWithSubtitle>
+        <IconButton
+          type={props.visible && !props.disabled ? "primary" : "link"}
+          onClick={() => props.setVisible(!props.visible)}
+          disabled={props.disabled}
+        >
+          {props.visible ? <ImagesSlashIconSVG /> : <ImagesIconSVG />}
+          <VisuallyHidden>{tooltipTitle}</VisuallyHidden>
+        </IconButton>
+      </TooltipWithSubtitle>
+    </div>
   );
 }
