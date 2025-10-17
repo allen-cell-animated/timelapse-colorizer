@@ -2,15 +2,17 @@ import { Checkbox } from "antd";
 import React, { ReactElement, useCallback, useContext, useMemo } from "react";
 import styled from "styled-components";
 
+import { DEFAULT_SETTINGS_LABEL_WIDTH_PX, SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
 import ToggleCollapse from "src/components/ToggleCollapse";
 import { useViewerStateStore } from "src/state";
 import { AppThemeContext } from "src/styles/AppStyle";
 import { FlexColumn } from "src/styles/utils";
 
-import { ChannelSettingControl, VerticalDivider } from "./ChannelSettingControl";
+import { ChannelSettingControl } from "./ChannelSettingControl";
 
 /** Approximate height of each ChannelSettingControl. */
 const CHANNEL_SETTING_CONTROL_HEIGHT_PX = 120;
+const SHOW_ALL_CHANNELS_CHECKBOX_ID = "channel-settings-control-show-all-channels-checkbox";
 
 const ChannelSettingsContainer = styled(FlexColumn)`
   display: grid;
@@ -18,7 +20,7 @@ const ChannelSettingsContainer = styled(FlexColumn)`
 
   // Align color pickers after channel label names
   // label - color picker - vertical separator - channel toggle - collapse button
-  grid-template-columns: min-content min-content min-content 1fr min-content;
+  grid-template-columns: ${DEFAULT_SETTINGS_LABEL_WIDTH_PX}px min-content min-content 1fr min-content;
 
   & > .toggle-collapse,
   & > .toggle-collapse > .toggle-collapse-content,
@@ -56,8 +58,10 @@ export default function ChannelSettingsControl(): ReactElement {
   const getChannelDataRange = useViewerStateStore((state) => state.getChannelDataRange);
   const applyChannelRange = useViewerStateStore((state) => state.applyChannelRangePreset);
 
-  const areAllChannelsVisible = channelSettings.every((setting) => setting.visible);
-  const areNoChannelsVisible = channelSettings.every((setting) => !setting.visible);
+  const channelData = dataset?.frames3d?.backdrops;
+  const hasChannels = channelData !== undefined && channelSettings.length > 0;
+  const areAllChannelsVisible = hasChannels && channelSettings.every((setting) => setting.visible);
+  const areNoChannelsVisible = hasChannels && channelSettings.every((setting) => !setting.visible);
   const maxChannelControlsHeight = CHANNEL_SETTING_CONTROL_HEIGHT_PX * channelSettings.length + 100;
 
   const handleShowAllChannelsChange = (checked: boolean): void => {
@@ -77,7 +81,7 @@ export default function ChannelSettingsControl(): ReactElement {
   );
 
   const channelSettingElements = useMemo(() => {
-    if (!dataset || !dataset.frames3d || !dataset.frames3d.backdrops) {
+    if (!hasChannels) {
       // Placeholder
       return (
         <div style={{ whiteSpace: "nowrap" }}>
@@ -86,14 +90,9 @@ export default function ChannelSettingsControl(): ReactElement {
       );
     }
 
-    return dataset.frames3d.backdrops.map((backdropData, index) => {
+    return channelData.map((backdropData, index) => {
       const name = backdropData.name || `Channel ${index + 1}`;
       const settings = channelSettings[index];
-      const channelDataRange = getChannelDataRange(index);
-      const syncDisabled =
-        channelDataRange === null ||
-        (channelDataRange[0] === channelSettings[index].dataMin &&
-          channelDataRange[1] === channelSettings[index].dataMax);
       return (
         <ChannelSettingControl
           name={name}
@@ -102,42 +101,38 @@ export default function ChannelSettingsControl(): ReactElement {
           settings={settings}
           updateSettings={(settings) => updateChannelSettings(index, settings)}
           onClickSync={() => syncChannelDataRange(index)}
-          syncDisabled={syncDisabled}
           onClickRangePreset={(preset) => applyChannelRange(index, preset)}
         />
       );
     });
   }, [
+    channelData,
     channelSettings,
-    dataset,
+    hasChannels,
     currentFrame,
-    getChannelDataRange,
     updateChannelSettings,
     syncChannelDataRange,
     applyChannelRange,
   ]);
 
   return (
-    <ToggleCollapse
-      label={"Channels"}
-      postToggleContent={
-        <>
-          <VerticalDivider />
-          <Checkbox
-            checked={areAllChannelsVisible}
-            indeterminate={!areNoChannelsVisible && !areAllChannelsVisible}
-            onChange={(e) => {
-              handleShowAllChannelsChange(e.target.checked);
-            }}
-            disabled={channelSettings.length === 0}
-          >
-            Show all channels
-          </Checkbox>
-        </>
-      }
-      maxContentHeightPx={maxChannelControlsHeight}
-    >
+    <ToggleCollapse label={"Channels"} maxContentHeightPx={maxChannelControlsHeight} contentIndentPx={16}>
       <div style={{ marginRight: "20px", paddingTop: "4px" }}>
+        {hasChannels && (
+          <SettingsContainer style={{ marginBottom: 16 }}>
+            <SettingsItem label={"Show all"} htmlFor={SHOW_ALL_CHANNELS_CHECKBOX_ID}>
+              <Checkbox
+                checked={areAllChannelsVisible}
+                indeterminate={!areNoChannelsVisible && !areAllChannelsVisible}
+                onChange={(e) => {
+                  handleShowAllChannelsChange(e.target.checked);
+                }}
+                disabled={channelSettings.length === 0}
+                id={SHOW_ALL_CHANNELS_CHECKBOX_ID}
+              ></Checkbox>
+            </SettingsItem>
+          </SettingsContainer>
+        )}
         <ChannelSettingsContainer>{channelSettingElements}</ChannelSettingsContainer>
       </div>
     </ToggleCollapse>

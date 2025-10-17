@@ -108,6 +108,8 @@ export default function VectorFieldSettings(): ReactElement {
             value={vectorScaleFactor}
             onChange={setVectorScaleFactor}
             marks={[1]}
+            step={0.5}
+            numberFormatter={(value?: number) => `${value?.toFixed(1)}`}
           />
         </div>
       </SettingsItem>
