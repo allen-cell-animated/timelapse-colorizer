@@ -66,6 +66,7 @@ type DatasetListProps = {
   datasets: DatasetEntry[];
 };
 
+/** Displays a list of datasets with a name, description, and load link. */
 export default function DatasetList(props: DatasetListProps): ReactElement {
   const { datasets } = props;
 
