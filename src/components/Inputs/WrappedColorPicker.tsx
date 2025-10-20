@@ -50,7 +50,7 @@ const ColorPickerContainer = styled.div`
 
     & > .ant-input-number-handler-wrap {
       /* 
-       * Hide the increment/descrement buttons on the number input for opacity,
+       * Hide the increment/decrement buttons on the number input for opacity,
        * since they cover the text.
       */
       visibility: hidden;
