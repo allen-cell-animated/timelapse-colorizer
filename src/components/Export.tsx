@@ -24,6 +24,10 @@ import { AppThemeContext, Z_INDEX_MODAL } from "src/styles/AppStyle";
 import { StyledRadioGroup } from "src/styles/components";
 import { FlexColumn, FlexColumnAlignCenter, FlexRow, FlexRowAlignCenter, VisuallyHidden } from "src/styles/utils";
 
+// Align settings both inside and outside of cards
+const CARD_SETTINGS_INDENT_PX = 5;
+const SETTINGS_INDENT_PX = 18;
+
 const enum ExportHtmlIds {
   FRAME_RANGE_RADIO = "export-modal-frame-range-radio",
   FRAME_RANGE_RADIO_LABEL_ID = "export-modal-frame-range-radio-label",
@@ -663,7 +667,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
 
                 {rangeMode === RangeMode.CUSTOM ? (
                   // Render the custom range input in the radio list if selected
-                  <SettingsContainer indentPx={28}>
+                  <SettingsContainer indentPx={CARD_SETTINGS_INDENT_PX}>
                     <SettingsItem label="Range" htmlFor={ExportHtmlIds.FRAME_CUSTOM_RANGE_INPUT}>
                       <HorizontalDiv>
                         <InputNumber
@@ -695,7 +699,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
                       label="Frame increment"
                       htmlFor={ExportHtmlIds.FRAME_CUSTOM_RANGE_FRAME_INCREMENT_INPUT}
                     >
-                      <FlexRow $gap={6}>
+                      <FlexRow $gap={6} style={{ alignItems: "flex-start" }}>
                         <SpinBox
                           id={ExportHtmlIds.FRAME_CUSTOM_RANGE_FRAME_INCREMENT_INPUT}
                           value={frameIncrement}
@@ -714,7 +718,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
             </MaxWidthRadioGroup>
           </Card>
           <Card size="small" title={"Dimensions"}>
-            <SettingsContainer indentPx={0} gapPx={6}>
+            <SettingsContainer gapPx={6} indentPx={CARD_SETTINGS_INDENT_PX}>
               <SettingsItem
                 label="Frame dimensions"
                 labelStyle={{ marginTop: "2px", height: "min-content" }}
@@ -799,7 +803,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
                   />
                 </div>
               </SettingsItem>
-              <SettingsItem label="Final dimensions" isNonFormComponent={true}>
+              <SettingsItem label="Exported file dimensions" isNonFormComponent={true}>
                 <HintText
                   id={ExportHtmlIds.FINAL_DIMENSIONS_TEXT}
                 >{`${exportDimensions[0]} × ${exportDimensions[1]}`}</HintText>
@@ -807,11 +811,11 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
             </SettingsContainer>
           </Card>
 
-          <SettingsContainer gapPx={6}>
+          <SettingsContainer indentPx={SETTINGS_INDENT_PX} gapPx={6}>
             {recordingMode === RecordingMode.VIDEO_MP4 && (
               <>
                 <SettingsItem label="Frames per second" htmlFor={ExportHtmlIds.FPS_INPUT}>
-                  <FlexRow $gap={6}>
+                  <FlexRow $gap={6} style={{ alignItems: "flex-start", paddingTop: 4 }}>
                     <SpinBox
                       id={ExportHtmlIds.FPS_INPUT}
                       value={fps}
