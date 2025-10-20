@@ -22,7 +22,7 @@ type ToggleCollapseProps = {
   toggleType?: "toggle" | "checkbox";
   onToggleChange?: (checked: boolean) => void;
   toggleDisabled?: boolean;
-  checkboxLabel?: string;
+  checkboxLabel?: ReactNode;
   /**
    * Additional element(s) placed in the same row as the label, before the
    * toggle switch.
@@ -45,6 +45,8 @@ type ToggleCollapseProps = {
    * appears partially clipped.
    */
   maxContentHeightPx?: number;
+  contentPaddingPx?: number;
+  showCollapseButton?: boolean;
 };
 
 const defaultProps: Partial<ToggleCollapseProps> = {
@@ -53,9 +55,11 @@ const defaultProps: Partial<ToggleCollapseProps> = {
   },
   postToggleContent: null,
   scrollIntoViewOnChecked: true,
-  contentIndentPx: 40,
+  contentIndentPx: 16,
+  contentPaddingPx: 8,
   maxContentHeightPx: 2000,
   toggleType: "toggle",
+  showCollapseButton: true,
 };
 
 /**
@@ -140,8 +144,9 @@ export default function ToggleCollapse(inputProps: PropsWithChildren<ToggleColla
           onChange={(e) => onCheckboxChanged(e.target.checked)}
           disabled={props.toggleDisabled}
           id={toggleId}
+          style={{ marginLeft: 2 }}
         >
-          {props.checkboxLabel}
+          <span style={{ whiteSpace: "nowrap" }}>{props.checkboxLabel}</span>
         </Checkbox>
       );
     } else {
@@ -161,7 +166,7 @@ export default function ToggleCollapse(inputProps: PropsWithChildren<ToggleColla
   return (
     <FlexColumn className={"toggle-collapse " + (props.className ?? "")}>
       <FlexRowAlignCenter className={"toggle-collapse-control-row"} style={{ justifyContent: "space-between" }}>
-        <FlexRowAlignCenter $gap={6} className={"toggle-collapse-header"}>
+        <FlexRowAlignCenter $gap={6} className={"toggle-collapse-header"} style={{ marginBottom: 2 }}>
           {!props.toggleDisabled ? (
             <label htmlFor={toggleId} style={{ ...defaultProps.labelStyle, ...props.labelStyle }}>
               {props.label}
@@ -170,18 +175,20 @@ export default function ToggleCollapse(inputProps: PropsWithChildren<ToggleColla
             <span style={{ ...defaultProps.labelStyle, ...props.labelStyle }}>{props.label}</span>
           )}
           {props.preToggleContent}
-          {toggleControl}
+          <div>{toggleControl}</div>
           {props.postToggleContent}
         </FlexRowAlignCenter>
 
-        <TextButton onClick={onClickExpandCollapseButton} style={{ padding: "0 5px" }}>
-          <span style={{ fontSize: theme.font.size.label }}>
-            {isExpanded ? <CaretUpFilled /> : <CaretDownFilled />}
-          </span>
-          <VisuallyHidden>
-            {isExpanded ? "Collapse" : "Expand"} {props.label.toLowerCase() + " settings section"}
-          </VisuallyHidden>
-        </TextButton>
+        {props.showCollapseButton && (
+          <TextButton onClick={onClickExpandCollapseButton} style={{ padding: "0 5px" }}>
+            <span style={{ fontSize: theme.font.size.label }}>
+              {isExpanded ? <CaretUpFilled /> : <CaretDownFilled />}
+            </span>
+            <VisuallyHidden>
+              {isExpanded ? "Collapse" : "Expand"} {props.label.toLowerCase() + " settings section"}
+            </VisuallyHidden>
+          </TextButton>
+        )}
       </FlexRowAlignCenter>
       <div
         className="toggle-collapse-content"
@@ -209,7 +216,7 @@ export default function ToggleCollapse(inputProps: PropsWithChildren<ToggleColla
             transition: `max-height ${heightTransitionDuration} ease-in-out`,
           }}
         >
-          <div style={{ padding: "8px 0" }} ref={contentContainerRef}>
+          <div style={{ padding: `${props.contentPaddingPx}px 0` }} ref={contentContainerRef}>
             {props.children}
           </div>
         </div>
