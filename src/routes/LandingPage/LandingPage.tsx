@@ -9,7 +9,7 @@ import HelpDropdown from "src/components/Dropdowns/HelpDropdown";
 import Header from "src/components/Header";
 import LoadDatasetButton from "src/components/LoadDatasetButton";
 import { PageRoutes } from "src/routes";
-import { FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter, VisuallyHidden } from "src/styles/utils";
+import { ExternalLink, FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter, VisuallyHidden } from "src/styles/utils";
 import { LocationState } from "src/types";
 
 import ProjectList from "./components/ProjectList";
@@ -185,8 +185,22 @@ export default function LandingPage(): ReactElement {
         <ContentContainer style={{ gap: 20 }}>
           <h2 style={{ margin: 0 }}>See how Timelapse Feature Explorer can help in your research and analysis</h2>
           <VideoList videoEntries={LANDING_PAGE_VIDEO_CONTENT}></VideoList>
+          <h2 style={{ margin: 0 }}>Additional resources</h2>
+          <ul style={{ margin: 0 }}>
+            <li style={{ margin: 0 }}>
+              Follow{" "}
+              <ExternalLink
+                href={
+                  "https://github.com/allen-cell-animated/colorizer-data/blob/main/documentation/getting_started_guide/GETTING_STARTED.ipynb"
+                }
+              >
+                our data conversion tutorial on GitHub
+              </ExternalLink>
+            </li>
+          </ul>
         </ContentContainer>
       </TutorialVideoContainer>
+
       <LoadPromptContainer>
         <h2 style={{ margin: 0 }}>Load a dataset below or your own data to get started</h2>
       </LoadPromptContainer>

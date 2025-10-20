@@ -13,7 +13,7 @@ export default function VideoCard(props: VideoCardProps): ReactElement {
 
   //<div style="left: 0; width: 100%; height: 0; position: relative; padding-bottom: 56.25%;"><iframe src="https://www.youtube.com/embed/cip80-n5CN8?rel=0" style="top: 0; left: 0; width: 100%; height: 100%; position: absolute; border: 0;" allowfullscreen scrolling="no" allow="accelerometer *; clipboard-write *; encrypted-media *; gyroscope *; picture-in-picture *; web-share *;" referrerpolicy="strict-origin"></iframe></div>
   return (
-    <FlexColumn key={index} $gap={10}>
+    <FlexColumn key={index} $gap={8}>
       <div>
         <iframe
           title={entry.title}
@@ -27,7 +27,7 @@ export default function VideoCard(props: VideoCardProps): ReactElement {
           referrerPolicy="strict-origin"
         ></iframe>
       </div>
-      <h3 style={{ fontWeight: "600", margin: 0 }}>{entry.title}</h3>
+      <h3 style={{ fontWeight: "600", margin: 0, marginTop: "-4px" }}>{entry.title}</h3>
       <p style={{ margin: 0 }}>{entry.description}</p>
     </FlexColumn>
   );

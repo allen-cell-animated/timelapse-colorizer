@@ -10,8 +10,9 @@ type VideoListProps = {
 
 const VideoListContainer = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(340px, 0.5fr));
   grid-gap: 20px;
+  grid-row-gap: 30px;
 `;
 
 export default function VideoList(props: VideoListProps): ReactElement {
