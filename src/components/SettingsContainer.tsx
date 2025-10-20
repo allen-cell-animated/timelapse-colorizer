@@ -1,7 +1,7 @@
 import React, { Children, PropsWithChildren, ReactElement, useEffect } from "react";
 import styled, { css } from "styled-components";
 
-import { removeUndefinedProperties } from "src/state/utils/data_validation";
+import { removeUndefinedProperties } from "src/colorizer/utils/data_utils";
 
 const SETTINGS_ITEM_CLASS = "settings-item";
 export const DEFAULT_SETTINGS_LABEL_WIDTH_PX = 100;
