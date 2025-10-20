@@ -9,11 +9,12 @@ import HelpDropdown from "src/components/Dropdowns/HelpDropdown";
 import Header from "src/components/Header";
 import LoadDatasetButton from "src/components/LoadDatasetButton";
 import ProjectCard from "src/routes/LandingPage/ProjectCard";
+import VideoList from "src/routes/LandingPage/VideoList";
 import { FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter, VisuallyHidden } from "src/styles/utils";
 import { LocationState } from "src/types";
 
 import { PageRoutes } from "../../routes/index";
-import { landingPageContent } from "./LandingPageContent";
+import { LANDING_PAGE_CONTENT, LANDING_PAGE_VIDEO_CONTENT } from "./LandingPageContent";
 
 const BannerVideo = lazy(() => import("src/components/AssetWrappers/BannerVideo"));
 
@@ -90,9 +91,16 @@ const FeatureHighlightsItem = styled(FlexColumn)`
   }
 `;
 
-const LoadPromptContainer = styled(FlexColumnAlignCenter)`
+const TutorialVideoContainer = styled.div`
+  width: 100%;
   background-color: var(--color-background-alt);
-  margin: 30px 0;
+  padding: 30px 0;
+  margin-top: 30px;
+`;
+
+const LoadPromptContainer = styled(FlexColumnAlignCenter)`
+  background-color: var(--color-background-med);
+  margin: 0 0 30px 0;
   padding: 30px 0;
 
   & > h2 {
@@ -191,13 +199,19 @@ export default function LandingPage(): ReactElement {
         </FeatureHighlightsContainer>
       </ContentContainer>
 
+      <TutorialVideoContainer>
+        <ContentContainer style={{ gap: 20 }}>
+          <h2 style={{ margin: 0 }}>See how Timelapse Feature Explorer can help in your research and analysis</h2>
+          <VideoList videoEntries={LANDING_PAGE_VIDEO_CONTENT}></VideoList>
+        </ContentContainer>
+      </TutorialVideoContainer>
       <LoadPromptContainer>
         <h2 style={{ margin: 0 }}>Load a dataset below or your own data to get started</h2>
       </LoadPromptContainer>
 
       <ContentContainer style={{ paddingBottom: "400px" }}>
         <ProjectList>
-          {landingPageContent.map((project, index) => (
+          {LANDING_PAGE_CONTENT.map((project, index) => (
             <ProjectCard project={project} index={index} />
           ))}
         </ProjectList>
