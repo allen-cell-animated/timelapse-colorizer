@@ -82,8 +82,8 @@ const TRACK_MODE_ITEMS: SelectItem[] = [
   { value: TrackPathColorMode.USE_FEATURE_COLOR.toString(), label: "Feature" },
 ];
 
-export const SETTINGS_INDENT_PX = 0;
 const SETTINGS_GAP_PX = 8;
+
 export default function SettingsTab(): ReactElement {
   // State accessors
   const backdropBrightness = useViewerStateStore((state) => state.backdropBrightness);
@@ -145,7 +145,7 @@ export default function SettingsTab(): ReactElement {
     <FlexColumn $gap={4}>
       <StyledHorizontalRule />
       <ToggleCollapse label="Objects">
-        <SettingsContainer indentPx={SETTINGS_INDENT_PX} gapPx={SETTINGS_GAP_PX}>
+        <SettingsContainer gapPx={SETTINGS_GAP_PX}>
           <SettingsItem label="Highlight" htmlFor={SettingsHtmlIds.HIGHLIGHT_COLOR_PICKER}>
             {/* NOTE: 'Highlight color' is 'outline' internally, and 'Outline color' is 'edge' for legacy reasons. */}
             <WrappedColorPicker
@@ -295,7 +295,7 @@ export default function SettingsTab(): ReactElement {
         toggleChecked={backdropVisible}
         onToggleChange={setBackdropVisible}
       >
-        <SettingsContainer indentPx={SETTINGS_INDENT_PX} gapPx={SETTINGS_GAP_PX}>
+        <SettingsContainer gapPx={SETTINGS_GAP_PX}>
           <SettingsItem label="Backdrop" htmlFor={SettingsHtmlIds.BACKDROP_KEY_SELECT}>
             <SelectionDropdown
               id={SettingsHtmlIds.BACKDROP_KEY_SELECT}
@@ -372,7 +372,7 @@ export default function SettingsTab(): ReactElement {
       <StyledHorizontalRule />
 
       <ToggleCollapse label="Vector arrows" toggleChecked={vectorVisible} onToggleChange={setVectorVisible}>
-        <SettingsContainer indentPx={SETTINGS_INDENT_PX} gapPx={SETTINGS_GAP_PX}>
+        <SettingsContainer gapPx={SETTINGS_GAP_PX}>
           <VectorFieldSettings />
         </SettingsContainer>
       </ToggleCollapse>

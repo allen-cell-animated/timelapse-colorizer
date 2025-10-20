@@ -44,6 +44,7 @@ const StyledColorPickerTrigger = styled(Button)<{ $theme: AppTheme; $open: boole
 
 const ColorPickerContainer = styled.div`
   & .ant-color-picker .ant-color-picker-alpha-input {
+    /* Fixes padding for alpha input. Repeated for specificity. */
     & > .ant-input-number-input-wrap > .ant-input-number-input.ant-input-number-input {
       padding-inline-end: 4px;
     }
