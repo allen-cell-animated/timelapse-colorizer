@@ -4,7 +4,7 @@ import { ThresholdType } from "src/colorizer/types";
 import { ExternalLink } from "src/styles/utils";
 import { ProjectEntry } from "src/types";
 
-export const landingPageContent: ProjectEntry[] = [
+export const LANDING_PAGE_CONTENT: ProjectEntry[] = [
   {
     name: "Tracked hiPSC FOV-nuclei timelapse datasets",
     inReview: false,

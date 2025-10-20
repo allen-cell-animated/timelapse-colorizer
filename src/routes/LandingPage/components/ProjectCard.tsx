@@ -3,10 +3,11 @@ import React, { ReactElement } from "react";
 import styled from "styled-components";
 
 import { ButtonStyleLink } from "src/components/Buttons/ButtonStyleLink";
-import { PageRoutes } from "src/routes";
 import { serializedDataToUrl, serializeViewerParams } from "src/state/utils/store_io";
 import { ExternalLink, FlexRowAlignCenter, VisuallyHidden } from "src/styles/utils";
-import { DatasetEntry, ProjectEntry } from "src/types";
+import { ProjectEntry } from "src/types";
+
+import DatasetList from "./DatasetList";
 
 const ProjectContainer = styled.li`
   display: flex;
@@ -31,19 +32,6 @@ const ProjectContainer = styled.li`
   }
 `;
 
-const DatasetList = styled.ol`
-  padding: 0;
-  width: 100%;
-  display: grid;
-  // Use grid + subgrid to align the title, description, and button for each horizontal
-  // row of cards. repeat is used to tile the layout if the cards wrap to a new line.
-  grid-template-rows: repeat(3, auto);
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-  justify-content: space-around;
-  text-align: start;
-  gap: 0 20px;
-`;
-
 type ProjectCardProps = {
   project: ProjectEntry;
   index: number;
@@ -63,44 +51,6 @@ const InReviewFlag = styled(FlexRowAlignCenter)`
     white-space: nowrap;
   }
 `;
-
-const DatasetCard = styled.li`
-  display: grid;
-  grid-template-rows: subgrid;
-  grid-row: span 3;
-  min-width: 180px;
-  align-items: flex-start;
-  margin-top: 20px;
-
-  & > h3 {
-    display: grid;
-    margin: 0;
-  }
-  & > p {
-    display: grid;
-  }
-  & > a {
-    // -1px left margin gives button visual alignment with text
-    margin: 4px auto 0 -1px;
-    display: grid;
-  }
-`;
-
-// TODO: Should the load buttons be link elements or buttons?
-// Currently both the link and the button inside can be tab-selected.
-const renderDataset = (dataset: DatasetEntry, index: number): ReactElement => {
-  const viewerLink = `${PageRoutes.VIEWER}?${serializedDataToUrl(serializeViewerParams(dataset.loadParams))}`;
-
-  return (
-    <DatasetCard key={index}>
-      <h3>{dataset.name}</h3>
-      <p>{dataset.description}</p>
-      <ButtonStyleLink to={viewerLink}>
-        Load<VisuallyHidden> dataset {dataset.name}</VisuallyHidden>
-      </ButtonStyleLink>
-    </DatasetCard>
-  );
-};
 
 export default function ProjectCard(props: ProjectCardProps): ReactElement {
   const { project, index } = props;
@@ -133,7 +83,7 @@ export default function ProjectCard(props: ProjectCardProps): ReactElement {
   ) : null;
 
   // TODO: Break up list of datasets when too long and hide under collapsible section.
-  const datasetList = project.datasets ? <DatasetList>{project.datasets.map(renderDataset)}</DatasetList> : null;
+  const datasetList = project.datasets ? <DatasetList datasets={project.datasets} /> : null;
 
   return (
     <ProjectContainer key={index}>

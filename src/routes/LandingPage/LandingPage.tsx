@@ -8,12 +8,12 @@ import Collection from "src/colorizer/Collection";
 import HelpDropdown from "src/components/Dropdowns/HelpDropdown";
 import Header from "src/components/Header";
 import LoadDatasetButton from "src/components/LoadDatasetButton";
-import ProjectCard from "src/routes/LandingPage/ProjectCard";
+import { PageRoutes } from "src/routes";
 import { FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter, VisuallyHidden } from "src/styles/utils";
 import { LocationState } from "src/types";
 
-import { PageRoutes } from "../../routes/index";
-import { landingPageContent } from "./LandingPageContent";
+import ProjectList from "./components/ProjectList";
+import { LANDING_PAGE_CONTENT } from "./constants";
 
 const BannerVideo = lazy(() => import("src/components/AssetWrappers/BannerVideo"));
 
@@ -101,24 +101,6 @@ const LoadPromptContainer = styled(FlexColumnAlignCenter)`
   }
 `;
 
-const ProjectList = styled.ul`
-  display: flex;
-  flex-direction: column;
-  gap: 30px;
-  padding: 0;
-  margin-top: 0;
-
-  // Add a pseudo-element line between cards
-  & > li:not(:first-child)::before {
-    content: "";
-    display: block;
-    width: 100%;
-    height: 1px;
-    background-color: var(--color-borders);
-    margin-bottom: 15px;
-  }
-`;
-
 const CookieSettingsButton = styled(Button)`
   color: var(--color-text-secondary);
   &:focus-visible > span,
@@ -196,11 +178,7 @@ export default function LandingPage(): ReactElement {
       </LoadPromptContainer>
 
       <ContentContainer style={{ paddingBottom: "400px" }}>
-        <ProjectList>
-          {landingPageContent.map((project, index) => (
-            <ProjectCard project={project} index={index} />
-          ))}
-        </ProjectList>
+        <ProjectList projects={LANDING_PAGE_CONTENT} />
       </ContentContainer>
 
       <ContentContainer style={{ padding: "0 30px 40px 30px" }}>
