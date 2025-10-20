@@ -1,6 +1,5 @@
-import React, { ReactElement, useContext } from "react";
+import React, { ReactElement } from "react";
 
-import { AppThemeContext } from "src/styles/AppStyle";
 import { FlexColumn } from "src/styles/utils";
 import { VideoEntry } from "src/types";
 
@@ -10,9 +9,9 @@ type VideoCardProps = {
 };
 
 export default function VideoCard(props: VideoCardProps): ReactElement {
-  const theme = useContext(AppThemeContext);
   const { entry, index } = props;
 
+  //<div style="left: 0; width: 100%; height: 0; position: relative; padding-bottom: 56.25%;"><iframe src="https://www.youtube.com/embed/cip80-n5CN8?rel=0" style="top: 0; left: 0; width: 100%; height: 100%; position: absolute; border: 0;" allowfullscreen scrolling="no" allow="accelerometer *; clipboard-write *; encrypted-media *; gyroscope *; picture-in-picture *; web-share *;" referrerpolicy="strict-origin"></iframe></div>
   return (
     <FlexColumn key={index} $gap={10}>
       <div>
@@ -20,7 +19,7 @@ export default function VideoCard(props: VideoCardProps): ReactElement {
           title={entry.title}
           id="ytplayer"
           width="100%"
-          style={{ aspectRatio: "16/9", background: theme.color.layout.backgroundMed }}
+          style={{ aspectRatio: "16/9" }}
           src={entry.videoUrl}
           frameBorder={0}
           allowFullScreen

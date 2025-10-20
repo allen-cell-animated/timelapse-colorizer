@@ -17,9 +17,9 @@ const VideoListContainer = styled.div`
 export default function VideoList(props: VideoListProps): ReactElement {
   return (
     <VideoListContainer>
-      {props.videoEntries.map((videoEntry, index) => (
-        <VideoCard entry={videoEntry} index={index} />
-      ))}
+      {props.videoEntries.map((videoEntry, index) => {
+        return <VideoCard key={index} entry={videoEntry} index={index} />;
+      })}
     </VideoListContainer>
   );
 }
