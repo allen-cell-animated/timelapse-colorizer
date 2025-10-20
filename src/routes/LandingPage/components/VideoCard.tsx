@@ -1,5 +1,6 @@
-import React, { ReactElement } from "react";
+import React, { ReactElement, useContext } from "react";
 
+import { AppThemeContext } from "src/styles/AppStyle";
 import { FlexColumn } from "src/styles/utils";
 import { VideoEntry } from "src/types";
 
@@ -9,6 +10,7 @@ type VideoCardProps = {
 };
 
 export default function VideoCard(props: VideoCardProps): ReactElement {
+  const theme = useContext(AppThemeContext);
   const { entry, index } = props;
 
   return (
@@ -18,7 +20,7 @@ export default function VideoCard(props: VideoCardProps): ReactElement {
           title={entry.title}
           id="ytplayer"
           width="100%"
-          style={{ aspectRatio: "16/9" }}
+          style={{ aspectRatio: "16/9", background: theme.color.layout.backgroundMed }}
           src={entry.videoUrl}
           frameBorder={0}
           allowFullScreen
