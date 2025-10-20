@@ -13,7 +13,7 @@ import { serializedDataToUrl, serializeViewerParams } from "src/state/utils/stor
 import { ExternalLink, FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter, VisuallyHidden } from "src/styles/utils";
 import { DatasetEntry, LocationState, ProjectEntry } from "src/types";
 
-import { PageRoutes } from "./index";
+import { PageRoutes } from "../../routes/index";
 import { landingPageContent } from "./LandingPageContent";
 
 const BannerVideo = lazy(() => import("src/components/AssetWrappers/BannerVideo"));
