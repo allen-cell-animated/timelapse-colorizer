@@ -1,0 +1,41 @@
+name: Create release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      # Adapted from AGAVE.
+      # Since Github actions (currently) doesn't provide a slugged version of the git tag we have to
+      # create it by ourselves. It is then made available to other steps in this job as a step.outputs
+      # variable.
+      - name: Get the version (git tag)
+        id: get_version
+        run: |
+          echo ${GITHUB_REF/refs\/tags\/v/}
+          echo "VERSION=${GITHUB_REF/refs\/tags\/v/}" >> "$GITHUB_OUTPUT"
+
+      - name: Install and build
+        run: npm ci && npm run build
+
+      - name: Rename build folder
+        run: mv dist viewer
+
+      - name: Zip build artifact
+        run: zip -r tfe-${{ steps.get_version.outputs.VERSION }}.zip viewer/*
+
+      - name: Create release
+        # v2.4.1 10/14/25
+        uses: softprops/action-gh-release@6da8fa9354ddfdc4aeace5fc48d7f679b5214090
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          draft: true
+          files: tfe-${{ steps.get_version.outputs.VERSION }}.zip

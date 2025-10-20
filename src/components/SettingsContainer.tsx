@@ -1,7 +1,10 @@
 import React, { Children, PropsWithChildren, ReactElement, useEffect } from "react";
 import styled, { css } from "styled-components";
 
+import { removeUndefinedProperties } from "src/state/utils/data_validation";
+
 const SETTINGS_ITEM_CLASS = "settings-item";
+export const DEFAULT_SETTINGS_LABEL_WIDTH_PX = 100;
 
 type SettingsItemProps = {
   /** A string or ReactElement label, placed inside of a `label` tag.*/
@@ -15,8 +18,10 @@ type SettingsItemProps = {
   isNonFormComponent?: boolean;
 };
 
-const defaultSettingsItemProps = {
-  labelStyle: {},
+const defaultLabelStyle: React.CSSProperties = {
+  color: "var(--color-text-secondary)",
+  lineHeight: 1.25,
+  margin: "3px 0",
 };
 
 /**
@@ -25,7 +30,7 @@ const defaultSettingsItemProps = {
  * If multiple children are provided, the children will be wrapped in a `div` container.
  */
 export function SettingsItem(inputProps: PropsWithChildren<Partial<SettingsItemProps>>): ReactElement {
-  const props = { ...defaultSettingsItemProps, ...inputProps };
+  const props = { ...inputProps }; // Need to copy props to edit children
 
   // Determine if children is a single element or multiple. If multiple, wrap in a div.
   if (Children.count(props.children) !== 1) {
@@ -43,13 +48,13 @@ export function SettingsItem(inputProps: PropsWithChildren<Partial<SettingsItemP
   let labelElement = <div></div>;
   if (props.label && !props.isNonFormComponent) {
     labelElement = (
-      <label style={props.labelStyle} id={props.labelId} htmlFor={props.htmlFor}>
+      <label style={{ ...defaultLabelStyle, ...props.labelStyle }} id={props.labelId} htmlFor={props.htmlFor}>
         {props.label}
       </label>
     );
   } else if (props.label && props.isNonFormComponent) {
     labelElement = (
-      <div style={props.labelStyle} id={props.labelId}>
+      <div style={{ ...defaultLabelStyle, ...props.labelStyle }} id={props.labelId}>
         {props.label}
       </div>
     );
@@ -75,13 +80,13 @@ export function SettingsItem(inputProps: PropsWithChildren<Partial<SettingsItemP
  * ```
  * aligns the label text and the element in grid columns.
  */
-const SettingsDivContainer = styled.div<{ $labelWidth?: string; $gapPx?: number; $indentPx?: number }>`
+const SettingsDivContainer = styled.div<{ $labelWidth: string; $gapPx: number; $indentPx: number }>`
   display: grid;
 
   ${(props) => {
-    const spanWidth = props.$labelWidth ? props.$labelWidth : "fit-content(30%)";
-    const gap = props.$gapPx ? props.$gapPx : 6;
-    const indent = props.$indentPx ? props.$indentPx : 10;
+    const spanWidth = props.$labelWidth;
+    const gap = props.$gapPx;
+    const indent = props.$indentPx;
 
     return css`
       grid-template-columns: ${spanWidth} auto;
@@ -105,7 +110,7 @@ const SettingsDivContainer = styled.div<{ $labelWidth?: string; $gapPx?: number;
       display: grid;
       grid-column: 1;
       align-items: center;
-      text-align: right;
+      text-align: left;
     }
 
     & > :not(:first-child) {
@@ -124,10 +129,10 @@ type SettingsContainerProps = {
   style?: React.CSSProperties;
 };
 
-const defaultSettingsContainerProps: Partial<SettingsContainerProps> = {
-  labelWidth: "fit-content(30%)",
+const defaultSettingsContainerProps = {
+  labelWidth: `${DEFAULT_SETTINGS_LABEL_WIDTH_PX}px`,
   gapPx: 6,
-  indentPx: 10,
+  indentPx: 0,
 };
 
 /**
@@ -156,7 +161,7 @@ const defaultSettingsContainerProps: Partial<SettingsContainerProps> = {
  * ```
  */
 export function SettingsContainer(inputProps: PropsWithChildren<Partial<SettingsContainerProps>>): ReactElement {
-  const props = { ...defaultSettingsContainerProps, ...inputProps };
+  const props = { ...defaultSettingsContainerProps, ...removeUndefinedProperties(inputProps) };
 
   return (
     <SettingsDivContainer

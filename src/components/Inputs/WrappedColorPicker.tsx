@@ -42,6 +42,23 @@ const StyledColorPickerTrigger = styled(Button)<{ $theme: AppTheme; $open: boole
   }
 `;
 
+const ColorPickerContainer = styled.div`
+  & .ant-color-picker .ant-color-picker-alpha-input {
+    /* Fixes padding for alpha input. Repeated for specificity. */
+    & > .ant-input-number-input-wrap > .ant-input-number-input.ant-input-number-input {
+      padding-inline-end: 4px;
+    }
+
+    & > .ant-input-number-handler-wrap {
+      /* 
+       * Hide the increment/decrement buttons on the number input for opacity,
+       * since they cover the text.
+      */
+      visibility: hidden;
+    }
+  }
+`;
+
 // Smaller block inside the trigger that shows the selected color,
 // including a transparent checkerboard pattern.
 const ColorPickerBlock = styled.div<{ $theme: AppTheme }>`
@@ -93,7 +110,7 @@ export default function WrappedColorPicker(props: WrappedColorPickerProps): Reac
   }, [props.value]);
 
   return (
-    <div ref={colorPickerContainerRef} style={props.containerStyle}>
+    <ColorPickerContainer ref={colorPickerContainerRef} style={props.containerStyle}>
       <ColorPicker
         getPopupContainer={() => colorPickerContainerRef.current || document.body}
         {...props}
@@ -108,6 +125,6 @@ export default function WrappedColorPicker(props: WrappedColorPickerProps): Reac
           </ColorPickerBlock>
         </StyledColorPickerTrigger>
       </ColorPicker>
-    </div>
+    </ColorPickerContainer>
   );
 }
