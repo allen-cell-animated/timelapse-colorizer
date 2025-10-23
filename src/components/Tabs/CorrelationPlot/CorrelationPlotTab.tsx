@@ -65,9 +65,9 @@ const PlotDiv = styled.div`
 export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps): ReactElement {
   const [isRendering, setIsRendering] = useState(false);
 
-  const plotDivRef = React.useRef<HTMLDivElement>(null);
-  const legendRef = React.useRef<HTMLDivElement>(null);
-  const tooltipDivRef = React.useRef<HTMLDivElement>(null);
+  const plotDivRef = useRef<HTMLDivElement>(null);
+  const legendRef = useRef<HTMLDivElement>(null);
+  const tooltipDivRef = useRef<HTMLDivElement>(null);
 
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
   const lastRenderedPlotFeatures = useRef<Set<string>>(new Set());

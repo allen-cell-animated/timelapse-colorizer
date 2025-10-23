@@ -103,7 +103,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   // TODO: `isRendering` sometimes doesn't trigger the loading spinner.
   const [isRendering, setIsRendering] = useState(false);
 
-  const plotDivRef = React.useRef<HTMLDivElement>(null);
+  const plotDivRef = useRef<HTMLDivElement>(null);
   const [plotRef, setPlotRef] = useState<Plotly.PlotlyHTMLElement | null>(null);
   useEffect(() => {
     // Mount the plot to the DOM
