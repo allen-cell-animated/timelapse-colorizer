@@ -7,7 +7,6 @@ import { Vector2 } from "three";
 import { NoImageSVG, TagIconSVG, TagSlashIconSVG } from "src/assets";
 import { LabelData, LabelType } from "src/colorizer/AnnotationData";
 import CanvasOverlay from "src/colorizer/CanvasOverlay";
-import { renderCanvasStateParamsSelector } from "src/colorizer/IRenderCanvas";
 import {
   AnnotationSelectionMode,
   ChannelRangePreset,
@@ -23,6 +22,7 @@ import AnnotationInputPopover from "src/components/Tabs/Annotation/AnnotationInp
 import { TooltipWithSubtitle } from "src/components/Tooltips/TooltipWithSubtitle";
 import { CANVAS_ASPECT_RATIO } from "src/constants";
 import { AnnotationState } from "src/hooks";
+import { renderCanvasStateParamsSelector } from "src/state";
 import { useViewerStateStore } from "src/state/ViewerState";
 import { AppThemeContext } from "src/styles/AppStyle";
 import { FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter, VisuallyHidden } from "src/styles/utils";

@@ -23,20 +23,6 @@ export const validateFiniteValue = (value: number, source: string): number => {
 };
 
 /**
- * Returns a copy of an object where any properties with a value of `undefined`
- * are not included.
- */
-export function removeUndefinedProperties<T>(object: T): T {
-  const ret = {} as T;
-  for (const key in object) {
-    if (object[key] !== undefined) {
-      ret[key] = object[key];
-    }
-  }
-  return ret;
-}
-
-/**
  * Returns the set of keys that have differing values between two objects.
  */
 export const getDifferingProperties = <T extends Record<string, any>>(a: Partial<T>, b: Partial<T>): Set<keyof T> => {

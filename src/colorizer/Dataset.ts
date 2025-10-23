@@ -1,6 +1,6 @@
 import { DataTexture, RGBAFormat, RGBAIntegerFormat, Texture, Vector2 } from "three";
 
-import { MAX_FEATURE_CATEGORIES } from "src/constants";
+import { MAX_FEATURE_CATEGORIES } from "src/colorizer/constants";
 
 import DataCache from "./DataCache";
 import { IArrayLoader, ITextureImageLoader } from "./loaders/ILoader";

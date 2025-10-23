@@ -1,8 +1,7 @@
-import React, { useEffect } from "react";
-import { PropsWithChildren, ReactElement } from "react";
+import React, { Children, PropsWithChildren, ReactElement, useEffect } from "react";
 import styled, { css } from "styled-components";
 
-import { removeUndefinedProperties } from "src/state/utils/data_validation";
+import { removeUndefinedProperties } from "src/colorizer/utils/data_utils";
 
 const SETTINGS_ITEM_CLASS = "settings-item";
 export const DEFAULT_SETTINGS_LABEL_WIDTH_PX = 100;
@@ -34,7 +33,7 @@ export function SettingsItem(inputProps: PropsWithChildren<Partial<SettingsItemP
   const props = { ...inputProps }; // Need to copy props to edit children
 
   // Determine if children is a single element or multiple. If multiple, wrap in a div.
-  if (React.Children.count(props.children) !== 1) {
+  if (Children.count(props.children) !== 1) {
     props.children = <div>{props.children}</div>;
   }
 
