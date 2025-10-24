@@ -11,7 +11,7 @@ import {
   RGBAIntegerFormat,
   Scene,
   ShaderMaterial,
-  Texture,
+  type Texture,
   Uniform,
   UnsignedByteType,
   Vector2,
@@ -24,8 +24,6 @@ import { LineSegments2 } from "three/addons/lines/LineSegments2";
 import { LineSegmentsGeometry } from "three/addons/lines/LineSegmentsGeometry";
 import { clamp } from "three/src/math/MathUtils";
 
-import { MAX_FEATURE_CATEGORIES } from "src/constants";
-
 import { get2DCanvasScaling } from "./canvas/utils";
 import ColorRamp, { ColorRampType } from "./ColorRamp";
 import {
@@ -34,20 +32,21 @@ import {
   EDGE_COLOR_DEFAULT,
   FRAME_BACKGROUND_COLOR_DEFAULT,
   INITIAL_TRACK_PATH_BUFFER_SIZE,
+  MAX_FEATURE_CATEGORIES,
   OUT_OF_RANGE_COLOR_DEFAULT,
   OUTLIER_COLOR_DEFAULT,
   OUTLINE_COLOR_DEFAULT,
 } from "./constants";
-import Dataset from "./Dataset";
-import { IInnerRenderCanvas } from "./IInnerRenderCanvas";
-import { RenderCanvasStateParams, RenderOptions } from "./IRenderCanvas";
+import type Dataset from "./Dataset";
+import type { IInnerRenderCanvas } from "./IInnerRenderCanvas";
+import type { RenderCanvasStateParams, RenderOptions } from "./IRenderCanvas";
 import {
-  Canvas2DScaleInfo,
+  type Canvas2DScaleInfo,
   CanvasType,
   DrawMode,
   FeatureDataType,
-  FrameLoadResult,
-  PixelIdInfo,
+  type FrameLoadResult,
+  type PixelIdInfo,
   TrackPathColorMode,
 } from "./types";
 import {

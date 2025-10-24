@@ -1,11 +1,11 @@
-import semver from "semver";
+import { gte as semverGte, lt as semverLt } from "semver";
 import { Vector2 } from "three";
 import { describe, expect, it } from "vitest";
 
 import { FeatureDataType } from "src/colorizer";
+import { MAX_FEATURE_CATEGORIES } from "src/colorizer/constants";
 import Dataset, { FeatureType } from "src/colorizer/Dataset";
-import { AnyManifestFile, ManifestFile } from "src/colorizer/utils/dataset_utils";
-import { MAX_FEATURE_CATEGORIES } from "src/constants";
+import type { AnyManifestFile, ManifestFile } from "src/colorizer/utils/dataset_utils";
 import { MOCK_DATASET_ARRAY_LOADER_DEFAULT_SOURCE, MOCK_DATASET_MANIFEST } from "tests/constants";
 import {
   ANY_ERROR,
@@ -110,7 +110,7 @@ describe("Dataset", () => {
         const dataset = await makeMockDataset(manifest);
 
         // Display labels are only implemented in v1.0.0 and later
-        if (semver.lt(version, "1.0.0")) {
+        if (semverLt(version, "1.0.0")) {
           expect(dataset.getFeatureNameWithUnits("feature1")).to.equal("feature1 (meters)");
           expect(dataset.getFeatureNameWithUnits("feature2")).to.equal("feature2 ((m))");
           expect(dataset.getFeatureNameWithUnits("feature3")).to.equal("feature3 (μm/s)");
@@ -227,7 +227,7 @@ describe("Dataset", () => {
         const dataset = await makeMockDataset(manifest);
 
         // Default metadata should be auto-filled with default values
-        if (semver.lt(version, "1.0.0")) {
+        if (semverLt(version, "1.0.0")) {
           expect(dataset.metadata).to.deep.equal({
             frameDims: {
               width: 0,
@@ -240,7 +240,7 @@ describe("Dataset", () => {
           return;
         }
 
-        if (semver.gte(version, "1.0.0")) {
+        if (semverGte(version, "1.0.0")) {
           expect(dataset.metadata.frameDims).to.deep.equal({
             width: 10,
             height: 11,
@@ -249,7 +249,7 @@ describe("Dataset", () => {
           expect(dataset.metadata.frameDurationSeconds).to.equal(12);
           expect(dataset.metadata.startTimeSeconds).to.equal(13);
         }
-        if (semver.gte(version, "1.1.0")) {
+        if (semverGte(version, "1.1.0")) {
           expect(dataset.metadata.name).to.equal("d_name");
           expect(dataset.metadata.description).to.equal("d_description");
           expect(dataset.metadata.author).to.equal("d_author");

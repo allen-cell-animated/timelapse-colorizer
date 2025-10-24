@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   DrawMode,
-  DrawSettings,
+  type DrawSettings,
   KNOWN_CATEGORICAL_PALETTES,
   KNOWN_COLOR_RAMPS,
   PlotRangeType,
@@ -16,10 +16,10 @@ import {
   VECTOR_KEY_MOTION_DELTA,
   VectorTooltipMode,
 } from "src/colorizer";
-import { UrlParam } from "src/colorizer/utils/url_utils";
+import type { UrlParam } from "src/colorizer/utils/url_utils";
 import { useViewerStateStore } from "src/state";
-import { ViewerStoreSerializableState } from "src/state/slices";
-import { SerializedStoreData } from "src/state/types";
+import type { ViewerStoreSerializableState } from "src/state/slices";
+import type { SerializedStoreData } from "src/state/types";
 import {
   loadInitialViewerStateFromParams,
   loadViewerStateFromParams,

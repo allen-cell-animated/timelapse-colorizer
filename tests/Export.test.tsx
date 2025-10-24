@@ -1,10 +1,9 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { ReactElement } from "react";
-import React from "react";
+import React, { type ReactElement } from "react";
 import { Vector2 } from "three";
 import { describe, expect, it, vi } from "vitest";
 
-import CanvasOverlay from "src/colorizer/CanvasOverlay";
+import type CanvasOverlay from "src/colorizer/CanvasOverlay";
 import Export from "src/components/Export";
 
 const mockCanvas = {

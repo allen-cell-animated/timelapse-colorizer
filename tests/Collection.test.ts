@@ -1,8 +1,12 @@
 import { generateUUID } from "three/src/math/MathUtils";
 import { describe, expect, it } from "vitest";
 
-import Collection, { CollectionLoadOptions, CollectionSourceType, DatasetLoadOptions } from "src/colorizer/Collection";
-import { DEFAULT_COLLECTION_FILENAME, DEFAULT_DATASET_FILENAME } from "src/constants";
+import Collection, {
+  type CollectionLoadOptions,
+  CollectionSourceType,
+  type DatasetLoadOptions,
+} from "src/colorizer/Collection";
+import { DEFAULT_COLLECTION_FILENAME, DEFAULT_DATASET_FILENAME } from "src/colorizer/constants";
 import { MOCK_DATASET_FEATURE_1, MOCK_DATASET_MANIFEST, MOCK_DATASET_TIMES } from "tests/constants";
 import { ANY_ERROR, makeMockFetchMethod, MockFetchArrayLoader } from "tests/utils";
 

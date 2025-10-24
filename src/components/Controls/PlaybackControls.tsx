@@ -1,12 +1,12 @@
 import { CaretRightOutlined, PauseOutlined, StepBackwardFilled, StepForwardFilled } from "@ant-design/icons";
 import { Slider } from "antd";
-import React, { ReactElement, useEffect, useRef, useState } from "react";
+import React, { type ReactElement, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 
+import { DEFAULT_PLAYBACK_FPS } from "src/colorizer/constants";
 import IconButton from "src/components/Buttons/IconButton";
 import PlaybackSpeedControl from "src/components/PlaybackSpeedControl";
 import SpinBox from "src/components/SpinBox";
-import { DEFAULT_PLAYBACK_FPS } from "src/constants";
 import { useDebounce } from "src/hooks";
 import { useViewerStateStore } from "src/state";
 import { FlexRowAlignCenter, VisuallyHidden } from "src/styles/utils";

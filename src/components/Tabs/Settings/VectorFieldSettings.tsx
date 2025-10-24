@@ -1,6 +1,6 @@
 import { Card, Radio } from "antd";
-import React, { ReactElement, useMemo } from "react";
-import { Color, ColorRepresentation } from "three";
+import React, { type ReactElement, useMemo } from "react";
+import { Color, type ColorRepresentation } from "three";
 
 import { VECTOR_KEY_MOTION_DELTA } from "src/colorizer/constants";
 import { VectorTooltipMode } from "src/colorizer/types";
@@ -108,6 +108,8 @@ export default function VectorFieldSettings(): ReactElement {
             value={vectorScaleFactor}
             onChange={setVectorScaleFactor}
             marks={[1]}
+            step={0.5}
+            numberFormatter={(value?: number) => `${value?.toFixed(1)}`}
           />
         </div>
       </SettingsItem>

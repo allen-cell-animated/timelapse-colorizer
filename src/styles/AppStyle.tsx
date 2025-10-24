@@ -1,5 +1,5 @@
 import { App, ConfigProvider } from "antd";
-import React, { createContext, PropsWithChildren, ReactElement, useState } from "react";
+import React, { createContext, type PropsWithChildren, type ReactElement, useState } from "react";
 import styled from "styled-components";
 
 import { latoRegularEot, latoRegularTtf, latoRegularWoff, latoRegularWoff2 } from "src/assets";

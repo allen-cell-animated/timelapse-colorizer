@@ -1,3 +1,4 @@
+import { removeUndefinedProperties } from "src/colorizer/utils/data_utils";
 import { UrlParam } from "src/colorizer/utils/url_utils";
 import {
   loadBackdropSliceFromParams,
@@ -29,12 +30,10 @@ import {
   serializeThresholdSlice,
   serializeTimeSlice,
   serializeVectorSlice,
-  ViewerStore,
-  ViewerStoreSerializableState,
+  type ViewerStore,
+  type ViewerStoreSerializableState,
 } from "src/state/slices";
-import { SerializedStoreData, Store } from "src/state/types";
-
-import { removeUndefinedProperties } from "./data_validation";
+import type { SerializedStoreData, Store } from "src/state/types";
 
 // SERIALIZATION /////////////////////////////////////////////////////////////////////////
 

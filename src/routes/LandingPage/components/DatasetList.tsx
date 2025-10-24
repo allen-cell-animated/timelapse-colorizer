@@ -1,11 +1,11 @@
-import React, { ReactElement } from "react";
+import React, { type ReactElement } from "react";
 import styled from "styled-components";
 
 import { ButtonStyleLink } from "src/components/Buttons/ButtonStyleLink";
 import { PageRoutes } from "src/routes";
 import { serializedDataToUrl, serializeViewerParams } from "src/state/utils/store_io";
 import { VisuallyHidden } from "src/styles/utils";
-import { DatasetEntry } from "src/types";
+import type { DatasetEntry } from "src/types";
 
 const DatasetListContainer = styled.ol`
   padding: 0;
