@@ -2,7 +2,7 @@ import { Color } from "three";
 import type { StateCreator } from "zustand";
 
 import type { Backdrop3dData } from "src/colorizer/Dataset";
-import type { ChannelRangePreset } from "src/colorizer/types";
+import type { ChannelRangePreset, ChannelSetting } from "src/colorizer/types";
 import { decodeMaybeChannelSetting, encodeChannelSetting, isChannelKey } from "src/colorizer/utils/url_utils";
 import type { SerializedStoreData, SubscribableStore } from "src/state/types";
 import { addDerivedStateSubscriber } from "src/state/utils/store_utils";
@@ -41,17 +41,6 @@ function getDefaultChannelSetting(index: number, totalChannels: number, backdrop
     dataMax: backdropData?.max ?? 255,
   };
 }
-
-export type ChannelSetting = {
-  visible: boolean;
-  color: Color;
-  /** Opacity value in a [0, 1] range. */
-  opacity: number;
-  min: number;
-  max: number;
-  dataMin: number;
-  dataMax: number;
-};
 
 export type ChannelSliceState = {
   channelSettings: ChannelSetting[];

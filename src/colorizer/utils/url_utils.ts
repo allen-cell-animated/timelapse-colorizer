@@ -4,6 +4,7 @@ import { Color } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "src/colorizer/constants";
 import {
+  type ChannelSetting,
   type DrawMode,
   type DrawSettings,
   type FeatureThreshold,
@@ -17,7 +18,6 @@ import {
   TrackPathColorMode,
 } from "src/colorizer/types";
 import { removeUndefinedProperties } from "src/colorizer/utils/data_utils";
-import type { ChannelSetting } from "src/state/slices";
 
 import { nanToNull } from "./data_load_utils";
 import type { AnyManifestFile } from "./dataset_utils";
