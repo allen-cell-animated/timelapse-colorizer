@@ -1,10 +1,10 @@
 import { Carousel, ConfigProvider } from "antd";
-import React, { ReactElement, useContext, useEffect, useRef, useState } from "react";
+import React, { type ReactElement, useContext, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 
 import VideoCard from "src/routes/LandingPage/components/VideoCard";
 import { AppThemeContext } from "src/styles/AppStyle";
-import { VideoEntry } from "src/types";
+import type { VideoEntry } from "src/types";
 
 type VideoListProps = {
   videoEntries: VideoEntry[];
@@ -43,7 +43,7 @@ export default function VideoList(props: VideoListProps): ReactElement {
   const [containerWidth, setContainerWidth] = useState<number>(1060);
 
   useEffect(() => {
-    const onWidthChange = () => {
+    const onWidthChange = (): void => {
       if (divContainerRef.current) {
         setContainerWidth(divContainerRef.current.offsetWidth);
       }

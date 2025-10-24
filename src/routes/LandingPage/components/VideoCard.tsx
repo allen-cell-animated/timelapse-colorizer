@@ -1,7 +1,7 @@
-import React, { ReactElement } from "react";
+import React, { type ReactElement } from "react";
 
 import { FlexColumn } from "src/styles/utils";
-import { VideoEntry } from "src/types";
+import type { VideoEntry } from "src/types";
 
 type VideoCardProps = {
   entry: VideoEntry;
