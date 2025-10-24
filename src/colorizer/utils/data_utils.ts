@@ -1,21 +1,23 @@
-import { Color } from "three";
+import type { Color } from "three";
 
-import { BOOLEAN_VALUE_FALSE, BOOLEAN_VALUE_TRUE, LabelData, LabelType } from "src/colorizer/AnnotationData";
-import ColorRamp, { ColorRampType } from "src/colorizer/ColorRamp";
-import { ColorRampData } from "src/colorizer/colors/color_ramps";
-import Dataset, { FeatureType } from "src/colorizer/Dataset";
-import { RenderCanvasStateParams } from "src/colorizer/IRenderCanvas";
-import Track from "src/colorizer/Track";
+import { BOOLEAN_VALUE_FALSE, BOOLEAN_VALUE_TRUE, type LabelData, LabelType } from "src/colorizer/AnnotationData";
+import type ColorRamp from "src/colorizer/ColorRamp";
+import { ColorRampType } from "src/colorizer/ColorRamp";
+import type { ColorRampData } from "src/colorizer/colors/color_ramps";
+import { MAX_FEATURE_CATEGORIES } from "src/colorizer/constants";
+import type Dataset from "src/colorizer/Dataset";
+import { FeatureType } from "src/colorizer/Dataset";
+import type { RenderCanvasStateParams } from "src/colorizer/IRenderCanvas";
+import type Track from "src/colorizer/Track";
 import {
   FeatureDataType,
-  FeatureThreshold,
-  GlobalIdLookupInfo,
+  type FeatureThreshold,
+  type GlobalIdLookupInfo,
   isThresholdCategorical,
   isThresholdNumeric,
   ThresholdType,
   TrackPathColorMode,
 } from "src/colorizer/types";
-import { MAX_FEATURE_CATEGORIES } from "src/constants";
 
 import { packDataTexture } from "./texture_utils";
 
@@ -601,4 +603,17 @@ export function getLineUpdateFlags(
     vertexColorNeedsUpdate,
     materialNeedsUpdate,
   };
+}
+/**
+ * Returns a copy of an object where any properties with a value of `undefined`
+ * are not included.
+ */
+export function removeUndefinedProperties<T>(object: T): T {
+  const ret = {} as T;
+  for (const key in object) {
+    if (object[key] !== undefined) {
+      ret[key] = object[key];
+    }
+  }
+  return ret;
 }

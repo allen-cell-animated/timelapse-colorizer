@@ -1,10 +1,10 @@
-import React, { ReactElement, useMemo } from "react";
+import React, { type ReactElement, useMemo, useRef } from "react";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { FixedSizeList } from "react-window";
-import { Color } from "three";
+import type { Color } from "three";
 
-import { Dataset, Track } from "src/colorizer";
-import { LookupInfo } from "src/colorizer/utils/annotation_utils";
+import type { Dataset, Track } from "src/colorizer";
+import type { LookupInfo } from "src/colorizer/utils/annotation_utils";
 import { ScrollShadowContainer, useScrollShadow } from "src/hooks";
 
 import PlaceholderListItem from "./ListItems/PlaceholderListItem";
@@ -113,7 +113,7 @@ const listItemRenderer = ({
  */
 export default function ValueAndTrackList(props: ValueAndTrackListProps): ReactElement {
   const { scrollShadowStyle, onScrollHandler, scrollRef } = useScrollShadow();
-  const listRef = React.useRef<FixedSizeList>(null);
+  const listRef = useRef<FixedSizeList>(null);
 
   const itemData = useMemo(() => {
     const { trackIds, trackToIds, valueToTracksToIds } = props.lookupInfo;

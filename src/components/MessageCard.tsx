@@ -1,6 +1,6 @@
 import { CheckCircleFilled, CloseCircleFilled, ExclamationCircleFilled, InfoCircleFilled } from "@ant-design/icons";
 import { Card } from "antd";
-import React, { ReactElement, useContext } from "react";
+import React, { type ReactElement, useContext } from "react";
 
 import { AppThemeContext } from "src/styles/AppStyle";
 import { FlexRow } from "src/styles/utils";

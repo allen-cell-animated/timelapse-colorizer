@@ -1,17 +1,17 @@
 import { Button, Tooltip } from "antd";
-import Plotly, { PlotData, PlotMarker } from "plotly.js-dist-min";
-import React, { memo, ReactElement, useContext, useEffect, useMemo, useRef, useState } from "react";
+import Plotly, { type PlotData, type PlotMarker } from "plotly.js-dist-min";
+import React, { memo, type ReactElement, useContext, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
-import { Color, ColorRepresentation } from "three";
+import { Color, type ColorRepresentation } from "three";
 
 import { SwitchIconSVG } from "src/assets";
-import { ColorRampType, Dataset } from "src/colorizer";
+import { ColorRampType, type Dataset } from "src/colorizer";
 import { TIME_FEATURE_KEY } from "src/colorizer/Dataset";
-import { DrawMode, HexColorString, PlotRangeType } from "src/colorizer/types";
-import { ShowAlertBannerCallback } from "src/components/Banner/hooks";
+import { DrawMode, type HexColorString, PlotRangeType } from "src/colorizer/types";
+import type { ShowAlertBannerCallback } from "src/components/Banner/hooks";
 import IconButton from "src/components/Buttons/IconButton";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
-import { SelectItem } from "src/components/Dropdowns/types";
+import type { SelectItem } from "src/components/Dropdowns/types";
 import LoadingSpinner from "src/components/LoadingSpinner";
 import { useDebounce } from "src/hooks";
 import { useViewerStateStore } from "src/state/ViewerState";
@@ -19,7 +19,7 @@ import { AppThemeContext } from "src/styles/AppStyle";
 import { FlexRow, FlexRowAlignCenter } from "src/styles/utils";
 
 import {
-  DataArray,
+  type DataArray,
   drawCrosshair,
   getBucketIndex,
   getHoverTemplate,
@@ -29,7 +29,7 @@ import {
   scaleColorOpacityByMarkerCount,
   splitTraceData,
   subsampleColorRamp,
-  TraceData,
+  type TraceData,
 } from "./scatter_plot_data_utils";
 
 // TODO: Translate into seconds/minutes/hours for datasets where frame duration is known?
@@ -103,7 +103,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   // TODO: `isRendering` sometimes doesn't trigger the loading spinner.
   const [isRendering, setIsRendering] = useState(false);
 
-  const plotDivRef = React.useRef<HTMLDivElement>(null);
+  const plotDivRef = useRef<HTMLDivElement>(null);
   const [plotRef, setPlotRef] = useState<Plotly.PlotlyHTMLElement | null>(null);
   useEffect(() => {
     // Mount the plot to the DOM

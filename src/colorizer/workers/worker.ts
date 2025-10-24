@@ -1,13 +1,13 @@
-import workerpool from "workerpool";
-import Transfer from "workerpool/types/transfer";
+import { Transfer, worker } from "workerpool";
+import type TransferType from "workerpool/types/transfer";
 
-import { FeatureDataType } from "src/colorizer/types";
+import type { FeatureDataType } from "src/colorizer/types";
 import { computeCorrelations } from "src/colorizer/utils/correlation";
-import { LoadedData, loadFromJsonUrl, loadFromParquetUrl } from "src/colorizer/utils/data_load_utils";
+import { type LoadedData, loadFromJsonUrl, loadFromParquetUrl } from "src/colorizer/utils/data_load_utils";
 import { calculateMotionDeltas, constructAllTracksFromData } from "src/colorizer/utils/math_utils";
 import { arrayToDataTextureInfo } from "src/colorizer/utils/texture_utils";
 
-async function loadUrlData(url: string, type: FeatureDataType): Promise<Transfer> {
+async function loadUrlData(url: string, type: FeatureDataType): Promise<TransferType> {
   let result: LoadedData<typeof type>;
   if (url.endsWith(".json")) {
     result = await loadFromJsonUrl(url, type);
@@ -34,7 +34,7 @@ async function loadUrlData(url: string, type: FeatureDataType): Promise<Transfer
   const textureInfo = arrayToDataTextureInfo(data, type);
 
   // `Transfer` is used to transfer the data buffer to the main thread without copying.
-  return new workerpool.Transfer({ min, max, data, textureInfo }, [data.buffer, textureInfo.data.buffer]);
+  return new Transfer({ min, max, data, textureInfo }, [data.buffer, textureInfo.data.buffer]);
 }
 
 async function getCorrelations(features: (Float32Array | Uint32Array)[]): Promise<number[][]> {
@@ -46,13 +46,13 @@ async function getMotionDeltas(
   times: Uint32Array,
   centroids: Uint16Array,
   timeIntervals: number
-): Promise<Transfer> {
+): Promise<TransferType> {
   const tracks = constructAllTracksFromData(trackIds, times, centroids);
   const motionDeltas = calculateMotionDeltas(tracks, timeIntervals);
-  return new workerpool.Transfer(motionDeltas, [motionDeltas.buffer]);
+  return new Transfer(motionDeltas, [motionDeltas.buffer]);
 }
 
-workerpool.worker({
+worker({
   loadUrlData,
   getMotionDeltas,
   getCorrelations,

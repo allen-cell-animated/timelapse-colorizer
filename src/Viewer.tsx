@@ -1,14 +1,29 @@
 import { CheckCircleOutlined, EllipsisOutlined, ShareAltOutlined } from "@ant-design/icons";
 import { notification, Tabs } from "antd";
-import { NotificationConfig } from "antd/es/notification/interface";
-import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import type { NotificationConfig } from "antd/es/notification/interface";
+import React, {
+  type ReactElement,
+  type ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 
-import { Dataset, LoadTroubleshooting, PixelIdInfo, ReportWarningCallback, TabType } from "src/colorizer";
+import {
+  type Dataset,
+  LoadTroubleshooting,
+  type PixelIdInfo,
+  type ReportWarningCallback,
+  TabType,
+} from "src/colorizer";
 import CanvasOverlay from "src/colorizer/CanvasOverlay";
-import Collection from "src/colorizer/Collection";
+import type Collection from "src/colorizer/Collection";
 import { FeatureType, TIME_FEATURE_KEY } from "src/colorizer/Dataset";
-import { renderCanvasStateParamsSelector } from "src/colorizer/IRenderCanvas";
 import UrlArrayLoader from "src/colorizer/loaders/UrlArrayLoader";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "src/colorizer/utils/analytics";
 import { getSharedWorkerPool } from "src/colorizer/workers/SharedWorkerPool";
@@ -36,6 +51,7 @@ import {
 import CanvasHoverTooltip from "src/components/Tooltips/CanvasHoverTooltip";
 import { INTERNAL_BUILD } from "src/constants";
 import { useAnnotations, useConstructor, useRecentCollections } from "src/hooks";
+import { renderCanvasStateParamsSelector } from "src/state";
 import { getDifferingProperties } from "src/state/utils/data_validation";
 import {
   loadInitialViewerStateFromParams,
@@ -47,7 +63,7 @@ import { makeDebouncedCallback } from "src/state/utils/store_utils";
 import { useViewerStateStore } from "src/state/ViewerState";
 import { AppThemeContext } from "src/styles/AppStyle";
 import { FlexColumn, FlexRowAlignCenter } from "src/styles/utils";
-import { LocationState } from "src/types";
+import type { LocationState } from "src/types";
 import { loadInitialCollectionAndDataset } from "src/utils/dataset_load_utils";
 
 // TODO: Refactor with styled-components
@@ -65,7 +81,7 @@ function Viewer(): ReactElement {
   const theme = useContext(AppThemeContext);
   const location = useLocation();
 
-  const [, startTransition] = React.useTransition();
+  const [, startTransition] = useTransition();
 
   const canv = useConstructor((): CanvasOverlay => {
     const stateDeps = renderCanvasStateParamsSelector(useViewerStateStore.getState());

@@ -1,7 +1,7 @@
-import React, { ReactElement } from "react";
+import React, { type ReactElement } from "react";
 import styled from "styled-components";
 
-import { ProjectEntry } from "src/types";
+import type { ProjectEntry } from "src/types";
 
 import ProjectCard from "./ProjectCard";
 

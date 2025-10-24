@@ -1,10 +1,10 @@
 import { CloseOutlined } from "@ant-design/icons";
-import { Table, TableProps } from "antd";
-import React, { memo, ReactElement, useContext, useMemo } from "react";
+import { Table, type TableProps } from "antd";
+import React, { memo, type ReactElement, useContext, useMemo } from "react";
 import styled from "styled-components";
 
 import { TagIconSVG } from "src/assets";
-import { Dataset } from "src/colorizer";
+import type { Dataset } from "src/colorizer";
 import IconButton from "src/components/Buttons/IconButton";
 import { AppThemeContext } from "src/styles/AppStyle";
 import { FlexColumnAlignCenter, VisuallyHidden } from "src/styles/utils";

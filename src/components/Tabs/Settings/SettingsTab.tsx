@@ -1,13 +1,13 @@
-import { Checkbox, Switch, Tooltip } from "antd";
-import { PresetsItem } from "antd/es/color-picker/interface";
-import React, { ReactElement, useMemo } from "react";
-import { Color, ColorRepresentation } from "three";
+import { Checkbox, Tooltip } from "antd";
+import type { PresetsItem } from "antd/es/color-picker/interface";
+import React, { type ReactElement, useMemo } from "react";
+import { Color, type ColorRepresentation } from "three";
 
 import { OUTLINE_COLOR_DEFAULT } from "src/colorizer/constants";
 import { DrawMode, TrackPathColorMode } from "src/colorizer/types";
 import DropdownWithColorPicker from "src/components/Dropdowns/DropdownWithColorPicker";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
-import { SelectItem } from "src/components/Dropdowns/types";
+import type { SelectItem } from "src/components/Dropdowns/types";
 import LabeledSlider from "src/components/Inputs/LabeledSlider";
 import WrappedColorPicker from "src/components/Inputs/WrappedColorPicker";
 import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
@@ -82,8 +82,8 @@ const TRACK_MODE_ITEMS: SelectItem[] = [
   { value: TrackPathColorMode.USE_FEATURE_COLOR.toString(), label: "Feature" },
 ];
 
-export const SETTINGS_INDENT_PX = 24;
 const SETTINGS_GAP_PX = 8;
+
 export default function SettingsTab(): ReactElement {
   // State accessors
   const backdropBrightness = useViewerStateStore((state) => state.backdropBrightness);
@@ -145,7 +145,7 @@ export default function SettingsTab(): ReactElement {
     <FlexColumn $gap={4}>
       <StyledHorizontalRule />
       <ToggleCollapse label="Objects">
-        <SettingsContainer indentPx={SETTINGS_INDENT_PX} gapPx={SETTINGS_GAP_PX}>
+        <SettingsContainer gapPx={SETTINGS_GAP_PX}>
           <SettingsItem label="Highlight" htmlFor={SettingsHtmlIds.HIGHLIGHT_COLOR_PICKER}>
             {/* NOTE: 'Highlight color' is 'outline' internally, and 'Outline color' is 'edge' for legacy reasons. */}
             <WrappedColorPicker
@@ -209,22 +209,21 @@ export default function SettingsTab(): ReactElement {
 
           <SettingsItem label="Scale bar" htmlFor={SettingsHtmlIds.SCALE_BAR_SWITCH} labelStyle={{ marginTop: "1px" }}>
             <div>
-              <Switch
+              <Checkbox
                 id={SettingsHtmlIds.SCALE_BAR_SWITCH}
                 checked={showScaleBar}
-                onChange={setShowScaleBar}
-                size="small"
+                onChange={(e) => setShowScaleBar(e.target.checked)}
                 style={{ paddingTop: "0" }}
               />
             </div>
           </SettingsItem>
           <SettingsItem label="Timestamp" htmlFor={SettingsHtmlIds.TIMESTAMP_SWITCH} labelStyle={{ marginTop: "1px" }}>
             <div>
-              <Switch
+              <Checkbox
                 id={SettingsHtmlIds.TIMESTAMP_SWITCH}
                 checked={showTimestamp}
-                onChange={setShowTimestamp}
-                size="small"
+                onChange={(e) => setShowTimestamp(e.target.checked)}
+                style={{ paddingTop: "0" }}
               />
             </div>
           </SettingsItem>
@@ -233,12 +232,7 @@ export default function SettingsTab(): ReactElement {
 
       <StyledHorizontalRule />
 
-      <ToggleCollapse
-        toggleChecked={showTrackPath}
-        label="Track path"
-        onToggleChange={setShowTrackPath}
-        contentIndentPx={70}
-      >
+      <ToggleCollapse toggleChecked={showTrackPath} label="Track path" onToggleChange={setShowTrackPath}>
         <SettingsContainer gapPx={SETTINGS_GAP_PX}>
           <SettingsItem label="Color" htmlFor={SettingsHtmlIds.TRACK_PATH_COLOR_SELECT}>
             <DropdownWithColorPicker
@@ -301,7 +295,7 @@ export default function SettingsTab(): ReactElement {
         toggleChecked={backdropVisible}
         onToggleChange={setBackdropVisible}
       >
-        <SettingsContainer indentPx={SETTINGS_INDENT_PX} gapPx={SETTINGS_GAP_PX}>
+        <SettingsContainer gapPx={SETTINGS_GAP_PX}>
           <SettingsItem label="Backdrop" htmlFor={SettingsHtmlIds.BACKDROP_KEY_SELECT}>
             <SelectionDropdown
               id={SettingsHtmlIds.BACKDROP_KEY_SELECT}
@@ -325,6 +319,7 @@ export default function SettingsTab(): ReactElement {
                 value={backdropBrightness}
                 onChange={setBackdropBrightness}
                 marks={[100]}
+                step={1}
                 numberFormatter={(value?: number) => `${value}%`}
                 disabled={isBackdropOptionsDisabled}
               />
@@ -343,6 +338,7 @@ export default function SettingsTab(): ReactElement {
                 value={backdropSaturation}
                 onChange={setBackdropSaturation}
                 marks={[100]}
+                step={1}
                 numberFormatter={(value?: number) => `${value}%`}
                 disabled={isBackdropOptionsDisabled}
               />
@@ -361,6 +357,7 @@ export default function SettingsTab(): ReactElement {
                 value={objectOpacity}
                 onChange={setObjectOpacity}
                 marks={[100]}
+                step={1}
                 numberFormatter={(value?: number) => `${value}%`}
               />
             </div>
@@ -374,13 +371,8 @@ export default function SettingsTab(): ReactElement {
 
       <StyledHorizontalRule />
 
-      <ToggleCollapse
-        label="Vector arrows"
-        toggleChecked={vectorVisible}
-        onToggleChange={setVectorVisible}
-        contentIndentPx={46}
-      >
-        <SettingsContainer indentPx={SETTINGS_INDENT_PX} gapPx={SETTINGS_GAP_PX}>
+      <ToggleCollapse label="Vector arrows" toggleChecked={vectorVisible} onToggleChange={setVectorVisible}>
+        <SettingsContainer gapPx={SETTINGS_GAP_PX}>
           <VectorFieldSettings />
         </SettingsContainer>
       </ToggleCollapse>

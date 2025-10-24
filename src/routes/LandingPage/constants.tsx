@@ -2,7 +2,7 @@ import React from "react";
 
 import { ThresholdType } from "src/colorizer/types";
 import { ExternalLink } from "src/styles/utils";
-import { ProjectEntry, VideoEntry } from "src/types";
+import type { ProjectEntry, VideoEntry } from "src/types";
 
 export const LANDING_PAGE_VIDEO_CONTENT: VideoEntry[] = [
   {

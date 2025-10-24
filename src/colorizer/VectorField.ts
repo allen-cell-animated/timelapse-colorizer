@@ -2,15 +2,15 @@ import {
   BufferAttribute,
   BufferGeometry,
   Color,
-  Line,
+  type Line,
   LineBasicMaterial,
   LineSegments,
-  Material,
+  type Material,
   Vector2,
 } from "three";
 
 import { OUTLINE_COLOR_DEFAULT } from "./constants";
-import Dataset from "./Dataset";
+import type Dataset from "./Dataset";
 
 const VERTICES_PER_VECTOR_LINE = 6;
 const VERTEX_LENGTH = 3;

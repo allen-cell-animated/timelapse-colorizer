@@ -1,5 +1,5 @@
 import { Button, ConfigProvider } from "antd";
-import React, { PropsWithChildren, ReactElement, useContext } from "react";
+import React, { type PropsWithChildren, type ReactElement, useContext } from "react";
 import styled, { css } from "styled-components";
 
 import { AppThemeContext } from "src/styles/AppStyle";

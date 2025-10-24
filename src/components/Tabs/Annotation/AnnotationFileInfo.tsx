@@ -1,6 +1,6 @@
-import React, { ReactElement, ReactNode, useContext, useMemo } from "react";
+import React, { type ReactElement, type ReactNode, useContext, useMemo } from "react";
 
-import { AnnotationParseResult } from "src/colorizer/AnnotationData";
+import type { AnnotationParseResult } from "src/colorizer/AnnotationData";
 import ExpandableList from "src/components/ExpandableList";
 import FileInfoCard from "src/components/Inputs/FileInfoCard";
 import { AppThemeContext } from "src/styles/AppStyle";

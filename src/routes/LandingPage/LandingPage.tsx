@@ -1,16 +1,16 @@
 import { Button, Divider } from "antd";
-import React, { lazy, ReactElement, Suspense } from "react";
+import React, { lazy, type ReactElement, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 
-import { Dataset } from "src/colorizer";
-import Collection from "src/colorizer/Collection";
+import type { Dataset } from "src/colorizer";
+import type Collection from "src/colorizer/Collection";
 import HelpDropdown from "src/components/Dropdowns/HelpDropdown";
 import Header from "src/components/Header";
 import LoadDatasetButton from "src/components/LoadDatasetButton";
 import { PageRoutes } from "src/routes";
 import { ExternalLink, FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter, VisuallyHidden } from "src/styles/utils";
-import { LocationState } from "src/types";
+import type { LocationState } from "src/types";
 
 import ProjectList from "./components/ProjectList";
 import VideoList from "./components/VideoList";

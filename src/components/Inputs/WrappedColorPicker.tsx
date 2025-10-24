@@ -1,8 +1,8 @@
-import { Button, ColorPicker, ColorPickerProps } from "antd";
-import React, { ReactElement, useContext, useMemo, useRef, useState } from "react";
+import { Button, ColorPicker, type ColorPickerProps } from "antd";
+import React, { type ReactElement, useContext, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 
-import { AppTheme, AppThemeContext } from "src/styles/AppStyle";
+import { type AppTheme, AppThemeContext } from "src/styles/AppStyle";
 import { antToThreeColor } from "src/utils/color_utils";
 
 type WrappedColorPickerProps = ColorPickerProps & {
@@ -38,6 +38,23 @@ const StyledColorPickerTrigger = styled(Button)<{ $theme: AppTheme; $open: boole
     &:disabled {
       border-color: ${(props) => props.$theme.color.layout.borders};
       background: ${(props) => props.$theme.color.button.backgroundDisabled};
+    }
+  }
+`;
+
+const ColorPickerContainer = styled.div`
+  & .ant-color-picker .ant-color-picker-alpha-input {
+    /* Fixes padding for alpha input. Repeated for specificity. */
+    & > .ant-input-number-input-wrap > .ant-input-number-input.ant-input-number-input {
+      padding-inline-end: 4px;
+    }
+
+    & > .ant-input-number-handler-wrap {
+      /* 
+       * Hide the increment/decrement buttons on the number input for opacity,
+       * since they cover the text.
+      */
+      visibility: hidden;
     }
   }
 `;
@@ -93,7 +110,7 @@ export default function WrappedColorPicker(props: WrappedColorPickerProps): Reac
   }, [props.value]);
 
   return (
-    <div ref={colorPickerContainerRef} style={props.containerStyle}>
+    <ColorPickerContainer ref={colorPickerContainerRef} style={props.containerStyle}>
       <ColorPicker
         getPopupContainer={() => colorPickerContainerRef.current || document.body}
         {...props}
@@ -108,6 +125,6 @@ export default function WrappedColorPicker(props: WrappedColorPickerProps): Reac
           </ColorPickerBlock>
         </StyledColorPickerTrigger>
       </ColorPicker>
-    </div>
+    </ColorPickerContainer>
   );
 }

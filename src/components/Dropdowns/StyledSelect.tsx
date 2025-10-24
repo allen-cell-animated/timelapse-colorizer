@@ -1,15 +1,20 @@
-import { ButtonProps } from "antd";
-import React, { ReactElement, useMemo } from "react";
-import Select, { components, DropdownIndicatorProps, GroupBase, StylesConfig } from "react-select";
-import { StateManagerProps } from "react-select/dist/declarations/src/useStateManager";
+import type { ButtonProps } from "antd";
+import React, { type ReactElement, useContext, useMemo } from "react";
+import Select, {
+  components,
+  type DropdownIndicatorProps,
+  type GroupBase,
+  type Props as StateManagerProps,
+  type StylesConfig,
+} from "react-select";
 import styled, { css } from "styled-components";
-import { Color } from "three";
+import type { Color } from "three";
 
 import { DropdownSVG } from "src/assets";
-import { removeUndefinedProperties } from "src/state/utils/data_validation";
-import { AppTheme, AppThemeContext } from "src/styles/AppStyle";
+import { removeUndefinedProperties } from "src/colorizer/utils/data_utils";
+import { type AppTheme, AppThemeContext } from "src/styles/AppStyle";
 
-import { SelectItem } from "./types";
+import type { SelectItem } from "./types";
 
 type AntStyledSelectProps<
   IsMulti extends boolean = false,
@@ -302,7 +307,7 @@ export default function AntStyledSelect<
   Group extends GroupBase<SelectItem> = GroupBase<SelectItem>
 >(inputProps: AntStyledSelectProps<IsMulti, Group>): ReactElement {
   const props = { ...defaultProps, ...removeUndefinedProperties(inputProps) };
-  const theme = React.useContext(AppThemeContext);
+  const theme = useContext(AppThemeContext);
   const customStyles = useMemo(
     () => getCustomStyles(theme, props.controlWidth, props.menuWidth),
     [theme, props.controlWidth, props.menuWidth]

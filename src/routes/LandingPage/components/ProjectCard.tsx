@@ -1,11 +1,11 @@
 import { Tooltip } from "antd";
-import React, { ReactElement } from "react";
+import React, { type ReactElement } from "react";
 import styled from "styled-components";
 
 import { ButtonStyleLink } from "src/components/Buttons/ButtonStyleLink";
 import { serializedDataToUrl, serializeViewerParams } from "src/state/utils/store_io";
 import { ExternalLink, FlexRowAlignCenter, VisuallyHidden } from "src/styles/utils";
-import { ProjectEntry } from "src/types";
+import type { ProjectEntry } from "src/types";
 
 import DatasetList from "./DatasetList";
 

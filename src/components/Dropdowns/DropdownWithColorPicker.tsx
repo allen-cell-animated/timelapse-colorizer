@@ -1,5 +1,5 @@
-import { PresetsItem } from "antd/es/color-picker/interface";
-import React, { ReactElement, useRef } from "react";
+import type { PresetsItem } from "antd/es/color-picker/interface";
+import React, { type ReactElement, useRef } from "react";
 import styled from "styled-components";
 import { Color as ThreeColor } from "three";
 
