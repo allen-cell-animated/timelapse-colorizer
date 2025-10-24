@@ -4,10 +4,10 @@ import { Color } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "src/colorizer/constants";
 import {
-  DrawMode,
-  DrawSettings,
-  FeatureThreshold,
-  HexColorString,
+  type DrawMode,
+  type DrawSettings,
+  type FeatureThreshold,
+  type HexColorString,
   isDrawMode,
   isThresholdCategorical,
   LoadErrorMessage,
@@ -17,10 +17,10 @@ import {
   TrackPathColorMode,
 } from "src/colorizer/types";
 import { removeUndefinedProperties } from "src/colorizer/utils/data_utils";
-import { ChannelSetting } from "src/state/slices";
+import type { ChannelSetting } from "src/state/slices";
 
 import { nanToNull } from "./data_load_utils";
-import { AnyManifestFile } from "./dataset_utils";
+import type { AnyManifestFile } from "./dataset_utils";
 import { formatNumber } from "./math_utils";
 
 // TODO: This file needs to be split up for easier reading and unit testing.

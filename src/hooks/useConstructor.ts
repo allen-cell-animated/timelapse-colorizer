@@ -1,4 +1,4 @@
-import { MutableRefObject, useRef } from "react";
+import { type MutableRefObject, useRef } from "react";
 
 /**
  * Returns a reference to a constructed value that will not be re-computed

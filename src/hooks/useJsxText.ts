@@ -1,4 +1,4 @@
-import { ReactNode, useCallback, useState } from "react";
+import { type ReactNode, useCallback, useState } from "react";
 
 import { renderStringArrayAsJsx } from "src/utils/formatting";
 

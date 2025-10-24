@@ -1,14 +1,14 @@
 import { Color } from "three";
-import { StateCreator } from "zustand";
+import type { StateCreator } from "zustand";
 
-import { Backdrop3dData } from "src/colorizer/Dataset";
-import { ChannelRangePreset } from "src/colorizer/types";
+import type { Backdrop3dData } from "src/colorizer/Dataset";
+import type { ChannelRangePreset } from "src/colorizer/types";
 import { decodeMaybeChannelSetting, encodeChannelSetting, isChannelKey } from "src/colorizer/utils/url_utils";
-import { SerializedStoreData, SubscribableStore } from "src/state/types";
+import type { SerializedStoreData, SubscribableStore } from "src/state/types";
 import { addDerivedStateSubscriber } from "src/state/utils/store_utils";
 
-import { CollectionSlice } from "./collection_slice";
-import { DatasetSlice } from "./dataset_slice";
+import type { CollectionSlice } from "./collection_slice";
+import type { DatasetSlice } from "./dataset_slice";
 
 const WHITE = new Color(1, 1, 1);
 const MAGENTA = new Color(1, 0, 1);

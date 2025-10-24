@@ -6,7 +6,7 @@ import {
   getBucketIndex,
   splitTraceData,
   subsampleColorRamp,
-  TraceData,
+  type TraceData,
 } from "src/components/Tabs/ScatterPlot/scatter_plot_data_utils";
 
 describe("subsampleColorRamp", () => {

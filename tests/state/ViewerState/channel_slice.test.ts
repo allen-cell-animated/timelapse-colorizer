@@ -2,10 +2,10 @@ import { act, renderHook } from "@testing-library/react";
 import { Color } from "three";
 import { describe, expect, it } from "vitest";
 
-import { Dataset } from "src/colorizer";
-import { ManifestFile } from "src/colorizer/utils/dataset_utils";
+import type { Dataset } from "src/colorizer";
+import type { ManifestFile } from "src/colorizer/utils/dataset_utils";
 import { useViewerStateStore } from "src/state";
-import { ChannelSetting, loadChannelSliceFromParams, serializeChannelSlice } from "src/state/slices";
+import { type ChannelSetting, loadChannelSliceFromParams, serializeChannelSlice } from "src/state/slices";
 import { MOCK_COLLECTION, MOCK_DATASET_MANIFEST } from "tests/constants";
 import { makeMockDataset } from "tests/utils";
 

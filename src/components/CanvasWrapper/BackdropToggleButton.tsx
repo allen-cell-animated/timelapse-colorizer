@@ -1,5 +1,5 @@
 import { ConfigProvider, Radio } from "antd";
-import React, { ReactElement, ReactNode, useContext } from "react";
+import React, { type ReactElement, type ReactNode, useContext } from "react";
 
 import { TabType } from "src/colorizer";
 import { ImageToggleButton } from "src/components/Buttons/ImageToggleButton";

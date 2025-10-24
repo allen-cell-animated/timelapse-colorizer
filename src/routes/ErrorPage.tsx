@@ -1,6 +1,6 @@
 import { Button } from "antd";
-import React, { ReactElement } from "react";
-import { ErrorResponse, Link, useRouteError } from "react-router-dom";
+import React, { type ReactElement } from "react";
+import { type ErrorResponse, Link, useRouteError } from "react-router-dom";
 
 import { AnalyticsEvent, triggerAnalyticsEvent } from "src/colorizer/utils/analytics";
 import Header from "src/components/Header";

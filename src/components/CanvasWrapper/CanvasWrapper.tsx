@@ -1,27 +1,36 @@
 import { HomeOutlined, ZoomInOutlined, ZoomOutOutlined } from "@ant-design/icons";
 import { Tooltip } from "antd";
-import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  type ReactElement,
+  type ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import styled from "styled-components";
 import { Vector2 } from "three";
 
 import { NoImageSVG, TagIconSVG, TagSlashIconSVG } from "src/assets";
-import { LabelData, LabelType } from "src/colorizer/AnnotationData";
-import CanvasOverlay from "src/colorizer/CanvasOverlay";
+import { type LabelData, LabelType } from "src/colorizer/AnnotationData";
+import type CanvasOverlay from "src/colorizer/CanvasOverlay";
 import {
   AnnotationSelectionMode,
-  ChannelRangePreset,
+  type ChannelRangePreset,
   LoadTroubleshooting,
-  PixelIdInfo,
+  type PixelIdInfo,
   TabType,
 } from "src/colorizer/types";
-import { AlertBannerProps } from "src/components/Banner";
+import type { AlertBannerProps } from "src/components/Banner";
 import IconButton from "src/components/Buttons/IconButton";
 import TooltipButtonStyleLink from "src/components/Buttons/TooltipButtonStyleLink";
 import LoadingSpinner from "src/components/LoadingSpinner";
 import AnnotationInputPopover from "src/components/Tabs/Annotation/AnnotationInputPopover";
 import { TooltipWithSubtitle } from "src/components/Tooltips/TooltipWithSubtitle";
 import { CANVAS_ASPECT_RATIO } from "src/constants";
-import { AnnotationState } from "src/hooks";
+import type { AnnotationState } from "src/hooks";
 import { renderCanvasStateParamsSelector } from "src/state";
 import { useViewerStateStore } from "src/state/ViewerState";
 import { AppThemeContext } from "src/styles/AppStyle";

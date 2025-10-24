@@ -1,6 +1,6 @@
-import { DataTexture, Texture } from "three";
+import type { DataTexture, Texture } from "three";
 
-import { FeatureArrayType, FeatureDataType } from "src/colorizer/types";
+import type { FeatureArrayType, FeatureDataType } from "src/colorizer/types";
 
 export interface ArraySource<T extends FeatureDataType> {
   /** Create a `TypedArray` of the specified type from this data source */

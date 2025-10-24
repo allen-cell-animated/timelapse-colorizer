@@ -1,9 +1,9 @@
 import { ReadOutlined } from "@ant-design/icons";
-import { Divider, Drawer, Radio, RadioChangeEvent, Tooltip } from "antd";
-import React, { ReactElement, useContext, useMemo, useState } from "react";
+import { Divider, Drawer, Radio, type RadioChangeEvent, Tooltip } from "antd";
+import React, { type ReactElement, useContext, useMemo, useState } from "react";
 import styled from "styled-components";
 
-import { Dataset } from "src/colorizer";
+import type { Dataset } from "src/colorizer";
 import IconButton from "src/components/Buttons/IconButton";
 import { AppThemeContext } from "src/styles/AppStyle";
 import { FlexColumn, FlexRowAlignCenter } from "src/styles/utils";

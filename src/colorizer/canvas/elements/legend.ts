@@ -1,11 +1,11 @@
 import { Color, Vector2 } from "three";
 
 import {
-  BaseRenderParams,
+  type BaseRenderParams,
   defaultFontStyle,
   EMPTY_RENDER_INFO,
-  FontStyle,
-  RenderInfo,
+  type FontStyle,
+  type RenderInfo,
 } from "src/colorizer/canvas/types";
 import { configureCanvasText, renderCanvasText } from "src/colorizer/canvas/utils";
 import ColorRamp from "src/colorizer/ColorRamp";

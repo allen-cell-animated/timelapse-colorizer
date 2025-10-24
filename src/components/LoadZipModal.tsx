@@ -1,6 +1,6 @@
 import { UploadOutlined } from "@ant-design/icons";
 import { Button } from "antd";
-import React, { ReactElement, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { type ReactElement, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import Collection from "src/colorizer/Collection";
 import { zipToFileMap } from "src/colorizer/utils/data_load_utils";
