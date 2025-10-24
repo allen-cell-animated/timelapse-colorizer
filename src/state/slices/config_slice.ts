@@ -1,10 +1,10 @@
 import { Color } from "three";
 import { clamp } from "three/src/math/MathUtils";
-import { StateCreator } from "zustand";
+import type { StateCreator } from "zustand";
 
 import {
   DrawMode,
-  DrawSettings,
+  type DrawSettings,
   EDGE_COLOR_ALPHA_DEFAULT,
   EDGE_COLOR_DEFAULT,
   isTabType,

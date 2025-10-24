@@ -1,5 +1,5 @@
 import { Button } from "antd";
-import React, { PropsWithChildren, ReactElement } from "react";
+import React, { type PropsWithChildren, type ReactElement } from "react";
 import styled, { css } from "styled-components";
 
 type DropdownItemProps = {

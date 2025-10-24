@@ -1,6 +1,6 @@
 import { Progress } from "antd";
 import Tooltip from "antd/es/tooltip";
-import React, { ReactElement, useContext, useRef } from "react";
+import React, { type ReactElement, useContext, useRef } from "react";
 
 import { TOOLTIP_TRIGGER } from "src/constants";
 import { AppThemeContext } from "src/styles/AppStyle";

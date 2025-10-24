@@ -2,7 +2,7 @@ import { parquetRead } from "hyparquet";
 import { compressors } from "hyparquet-compressors";
 import JSZip from "jszip";
 
-import { FeatureArrayType, FeatureDataType, featureTypeSpecs, ReportLoadProgressCallback } from "src/colorizer/types";
+import { type FeatureArrayType, type FeatureDataType, featureTypeSpecs, type ReportLoadProgressCallback } from "src/colorizer/types";
 
 const isBoolArray = (arr: number[] | boolean[]): arr is boolean[] => typeof arr[0] === "boolean";
 

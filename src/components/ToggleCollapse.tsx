@@ -1,9 +1,9 @@
 import { CaretDownFilled, CaretUpFilled } from "@ant-design/icons";
 import { Checkbox, Switch } from "antd";
 import React, {
-  PropsWithChildren,
-  ReactElement,
-  ReactNode,
+  type PropsWithChildren,
+  type ReactElement,
+  type ReactNode,
   useCallback,
   useContext,
   useEffect,

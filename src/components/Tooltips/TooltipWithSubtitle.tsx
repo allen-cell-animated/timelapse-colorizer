@@ -1,5 +1,5 @@
-import { Tooltip, TooltipProps } from "antd";
-import React, { ReactElement, ReactNode } from "react";
+import { Tooltip, type TooltipProps } from "antd";
+import React, { type ReactElement, type ReactNode } from "react";
 
 type TooltipWithSubtitleProps = TooltipProps & {
   title: ReactNode;

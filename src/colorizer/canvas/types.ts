@@ -1,7 +1,7 @@
 import { Vector2 } from "three";
 
-import Collection from "src/colorizer/Collection";
-import Dataset from "src/colorizer/Dataset";
+import type Collection from "src/colorizer/Collection";
+import type Dataset from "src/colorizer/Dataset";
 
 /**
  * Callback to render an element to the canvas.

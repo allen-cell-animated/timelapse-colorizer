@@ -1,4 +1,4 @@
-import React, { ReactElement, useContext } from "react";
+import React, { type ReactElement, useContext } from "react";
 
 import { TagIconSVG } from "src/assets";
 import { AppThemeContext } from "src/styles/AppStyle";

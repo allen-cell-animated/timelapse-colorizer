@@ -2,7 +2,7 @@ import { act, renderHook } from "@testing-library/react";
 import { Color } from "three";
 import { describe, expect, it } from "vitest";
 
-import { FeatureThreshold, KNOWN_CATEGORICAL_PALETTES, KNOWN_COLOR_RAMPS, ThresholdType } from "src/colorizer";
+import { type FeatureThreshold, KNOWN_CATEGORICAL_PALETTES, KNOWN_COLOR_RAMPS, ThresholdType } from "src/colorizer";
 import { MAX_FEATURE_CATEGORIES } from "src/colorizer/constants";
 import { UrlParam } from "src/colorizer/utils/url_utils";
 import { loadColorRampSliceFromParams, serializeColorRampSlice } from "src/state/slices";

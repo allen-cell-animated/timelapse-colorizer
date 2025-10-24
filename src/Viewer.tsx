@@ -1,9 +1,9 @@
 import { CheckCircleOutlined, EllipsisOutlined, ShareAltOutlined } from "@ant-design/icons";
 import { notification, Tabs } from "antd";
-import { NotificationConfig } from "antd/es/notification/interface";
+import type { NotificationConfig } from "antd/es/notification/interface";
 import React, {
-  ReactElement,
-  ReactNode,
+  type ReactElement,
+  type ReactNode,
   useCallback,
   useContext,
   useEffect,
@@ -14,9 +14,15 @@ import React, {
 } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 
-import { Dataset, LoadTroubleshooting, PixelIdInfo, ReportWarningCallback, TabType } from "src/colorizer";
+import {
+  type Dataset,
+  LoadTroubleshooting,
+  type PixelIdInfo,
+  type ReportWarningCallback,
+  TabType,
+} from "src/colorizer";
 import CanvasOverlay from "src/colorizer/CanvasOverlay";
-import Collection from "src/colorizer/Collection";
+import type Collection from "src/colorizer/Collection";
 import { FeatureType, TIME_FEATURE_KEY } from "src/colorizer/Dataset";
 import UrlArrayLoader from "src/colorizer/loaders/UrlArrayLoader";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "src/colorizer/utils/analytics";
@@ -57,7 +63,7 @@ import { makeDebouncedCallback } from "src/state/utils/store_utils";
 import { useViewerStateStore } from "src/state/ViewerState";
 import { AppThemeContext } from "src/styles/AppStyle";
 import { FlexColumn, FlexRowAlignCenter } from "src/styles/utils";
-import { LocationState } from "src/types";
+import type { LocationState } from "src/types";
 import { loadInitialCollectionAndDataset } from "src/utils/dataset_load_utils";
 
 // TODO: Refactor with styled-components

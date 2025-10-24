@@ -1,12 +1,12 @@
 import { Tag } from "antd";
-import React, { PropsWithChildren, ReactElement, useCallback } from "react";
+import React, { type PropsWithChildren, type ReactElement, useCallback } from "react";
 import styled from "styled-components";
 import { useShallow } from "zustand/shallow";
 
-import { AnnotationSelectionMode, PixelIdInfo, VECTOR_KEY_MOTION_DELTA, VectorTooltipMode } from "src/colorizer";
+import { AnnotationSelectionMode, type PixelIdInfo, VECTOR_KEY_MOTION_DELTA, VectorTooltipMode } from "src/colorizer";
 import { LabelType } from "src/colorizer/AnnotationData";
 import { formatNumber } from "src/colorizer/utils/math_utils";
-import { AnnotationState } from "src/hooks";
+import type { AnnotationState } from "src/hooks";
 import { selectVectorConfigFromState } from "src/state/slices";
 import { useViewerStateStore } from "src/state/ViewerState";
 import { FlexColumn, FlexRow } from "src/styles/utils";

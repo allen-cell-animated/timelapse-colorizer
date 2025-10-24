@@ -1,5 +1,5 @@
 import { Checkbox } from "antd";
-import React, { ReactElement, useCallback, useContext, useMemo } from "react";
+import React, { type ReactElement, useCallback, useContext, useMemo } from "react";
 import styled from "styled-components";
 
 import { DEFAULT_SETTINGS_LABEL_WIDTH_PX, SettingsContainer, SettingsItem } from "src/components/SettingsContainer";

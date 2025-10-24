@@ -1,8 +1,8 @@
-import { StateCreator } from "zustand";
+import type { StateCreator } from "zustand";
 
-import { FrameLoadResult } from "src/colorizer";
+import type { FrameLoadResult } from "src/colorizer";
 import { DEFAULT_PLAYBACK_FPS } from "src/colorizer/constants";
-import { IRenderCanvas } from "src/colorizer/IRenderCanvas";
+import type { IRenderCanvas } from "src/colorizer/IRenderCanvas";
 import TimeControls from "src/colorizer/TimeControls";
 import { decodeInt, UrlParam } from "src/colorizer/utils/url_utils";
 import type { SerializedStoreData, SubscribableStore } from "src/state/types";
