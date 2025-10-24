@@ -14,7 +14,13 @@ import React, {
 } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 
-import { type Dataset, LoadTroubleshooting, type PixelIdInfo, type ReportWarningCallback, TabType } from "src/colorizer";
+import {
+  type Dataset,
+  LoadTroubleshooting,
+  type PixelIdInfo,
+  type ReportWarningCallback,
+  TabType,
+} from "src/colorizer";
 import CanvasOverlay from "src/colorizer/CanvasOverlay";
 import type Collection from "src/colorizer/Collection";
 import { FeatureType, TIME_FEATURE_KEY } from "src/colorizer/Dataset";
