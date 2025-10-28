@@ -64,6 +64,8 @@ export enum UrlParam {
   VECTOR_KEY = "vc-key",
   VECTOR_COLOR = "vc-color",
   VECTOR_SCALE = "vc-scale",
+  VECTOR_SCALE_THICKNESS = "vc-thickness-scaling",
+  VECTOR_THICKNESS = "vc-thickness",
   VECTOR_TOOLTIP_MODE = "vc-tooltip",
   VECTOR_TIME_INTERVALS = "vc-time-int",
 }

@@ -24,6 +24,8 @@ export const getDefaultVectorConfig = (): VectorConfig => ({
   color: new Color(0x000000),
   scaleFactor: 4,
   tooltipMode: VectorTooltipMode.MAGNITUDE,
+  scaleThicknessByMagnitude: false,
+  thickness: 1,
 });
 
 export const getDefaultScatterPlotConfig = (): ScatterPlotConfig => ({

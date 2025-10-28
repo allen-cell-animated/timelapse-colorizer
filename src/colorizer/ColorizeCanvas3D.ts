@@ -53,6 +53,8 @@ const PREFETCH_CONCURRENCY_LIMIT = 3;
 const ZOOM_IN_MULTIPLIER = 0.75;
 const ZOOM_OUT_MULTIPLIER = 1 / ZOOM_IN_MULTIPLIER;
 
+const VECTOR_THICKNESS_BASE_SCALE = 0.001;
+
 const loaderContext = new VolumeLoaderContext(CACHE_MAX_SIZE, CONCURRENCY_LIMIT, PREFETCH_CONCURRENCY_LIMIT);
 
 export class ColorizeCanvas3D implements IInnerRenderCanvas {
@@ -458,10 +460,11 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     }
     const { timeToVectorData } = bucketVectorDataByTime(this.params.dataset, this.params.vectorMotionDeltas);
 
-    // Apply scale factor to deltas.
+    // Apply scale factor to deltas and thickness scaling to magnitudes.
     for (const vectorData of timeToVectorData.values()) {
       for (let i = 0; i < vectorData.deltas.length; i++) {
         vectorData.deltas[i] *= this.params.vectorScaleFactor;
+        vectorData.magnitude[i] *= VECTOR_THICKNESS_BASE_SCALE * this.params.vectorThickness;
       }
     }
 
@@ -471,11 +474,29 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
   }
 
   private handleVectorUpdate(prevParams: RenderCanvasStateParams | null, params: RenderCanvasStateParams): boolean {
-    if (hasPropertyChanged(params, prevParams, ["vectorMotionDeltas", "vectorVisible", "vectorScaleFactor"])) {
-      this.updateVectorData();
-      return true;
+    const hasColorChanged = hasPropertyChanged(params, prevParams, ["vectorColor"]);
+    const hasThicknessScalingModeChanged = hasPropertyChanged(params, prevParams, [
+      "vectorScaleThicknessByMagnitude",
+      "vectorThickness",
+    ]);
+    const hasVectorDataChanged = hasPropertyChanged(params, prevParams, [
+      "vectorMotionDeltas",
+      "vectorVisible",
+      "vectorScaleFactor",
+      "vectorScaleThicknessByMagnitude",
+      "vectorThickness",
+    ]);
+
+    if (hasThicknessScalingModeChanged) {
+      // When thickness scaling is disabled, set a constant thickness.
+      if (!params.vectorScaleThicknessByMagnitude) {
+        this.vectorObject.setThickness(VECTOR_THICKNESS_BASE_SCALE * params.vectorThickness);
+      }
     }
-    return false;
+    if (hasVectorDataChanged) {
+      this.updateVectorData();
+    }
+    return hasColorChanged || hasThicknessScalingModeChanged || hasVectorDataChanged;
   }
 
   public setParams(params: RenderCanvasStateParams): Promise<void> {
@@ -651,13 +672,10 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
       this.vectorObject.setVisible(false);
       return;
     }
-    console.log("Setting vector arrows for frame", this.currentFrame, vectorData);
     this.vectorObject.setVisible(true);
-    this.vectorObject.setArrowData(
-      vectorData.centroids,
-      vectorData.deltas,
-      new Float32Array(this.params.vectorColor.toArray())
-    );
+    this.vectorObject.setColors(new Float32Array(this.params.vectorColor.clone().convertLinearToSRGB().toArray()));
+    const thicknessData = this.params.vectorScaleThicknessByMagnitude ? vectorData.magnitude : undefined;
+    this.vectorObject.setArrowData(vectorData.centroids, vectorData.deltas, thicknessData);
   }
 
   private syncSelectedId(): void {

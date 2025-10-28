@@ -664,14 +664,16 @@ export function bucketVectorDataByTime(
     const ids = timeToIds.get(time)!;
     const centroids = new Float32Array(ids.length * 3);
     const deltas = new Float32Array(ids.length * 3);
+    const magnitude = new Float32Array(ids.length);
     for (let i = 0; i < ids.length; i++) {
       const id = ids[i];
       const centroid = dataset.getCentroid(id)!;
       const delta: [number, number, number] = [vectorData[id * 3], vectorData[id * 3 + 1], vectorData[id * 3 + 2]];
       centroids.set(centroid, i * 3);
       deltas.set(delta, i * 3);
+      magnitude[i] = Math.sqrt(delta[0] * delta[0] + delta[1] * delta[1] + delta[2] * delta[2]);
     }
-    timeToVectorData.set(time, { ids, centroids, deltas });
+    timeToVectorData.set(time, { ids, centroids, deltas, magnitude });
   }
   return { timeToVectorData, totalValidIds };
 }

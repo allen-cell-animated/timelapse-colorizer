@@ -1,4 +1,5 @@
 import { Card, Radio } from "antd";
+import Checkbox from "antd/es/checkbox/Checkbox";
 import React, { type ReactElement, useMemo } from "react";
 import { Color, type ColorRepresentation } from "three";
 
@@ -23,6 +24,8 @@ const enum VectorSettingsHtmlIds {
   SHOW_VECTOR_ARROWS_CHECKBOX = "show-vector-arrows-checkbox",
   VECTOR_KEY_SELECT = "vector-key-select",
   VECTOR_SCALE_FACTOR_SLIDER = "vector-scale-factor-slider",
+  VECTOR_SCALE_THICKNESS_CHECKBOX = "vector-scale-thickness-checkbox",
+  VECTOR_THICKNESS_SLIDER = "vector-thickness-slider",
   VECTOR_COLOR_PICKER = "vector-color-picker",
   VECTOR_MOTION_TIME_INTERVALS_SLIDER = "vector-motion-time-intervals-slider",
   VECTOR_TOOLTIP_MODE_RADIO = "vector-tooltip-mode-radio",
@@ -34,11 +37,15 @@ export default function VectorFieldSettings(): ReactElement {
   const setVectorKey = useViewerStateStore((state) => state.setVectorKey);
   const setVectorMotionTimeIntervals = useViewerStateStore((state) => state.setVectorMotionTimeIntervals);
   const setVectorScaleFactor = useViewerStateStore((state) => state.setVectorScaleFactor);
+  const setVectorScaleThickness = useViewerStateStore((state) => state.setVectorScaleThicknessByMagnitude);
+  const setVectorThickness = useViewerStateStore((state) => state.setVectorThickness);
   const setVectorTooltipMode = useViewerStateStore((state) => state.setVectorTooltipMode);
   const vectorColor = useViewerStateStore((state) => state.vectorColor);
   const vectorKey = useViewerStateStore((state) => state.vectorKey);
   const vectorMotionTimeIntervals = useViewerStateStore((state) => state.vectorMotionTimeIntervals);
   const vectorScaleFactor = useViewerStateStore((state) => state.vectorScaleFactor);
+  const vectorScaleThickness = useViewerStateStore((state) => state.vectorScaleThicknessByMagnitude);
+  const vectorThickness = useViewerStateStore((state) => state.vectorThickness);
   const vectorTooltipMode = useViewerStateStore((state) => state.vectorTooltipMode);
   const vectorVisible = useViewerStateStore((state) => state.vectorVisible);
 
@@ -112,6 +119,34 @@ export default function VectorFieldSettings(): ReactElement {
             numberFormatter={(value?: number) => `${value?.toFixed(1)}`}
           />
         </div>
+      </SettingsItem>
+      <SettingsItem label="Thickness" htmlFor={VectorSettingsHtmlIds.VECTOR_THICKNESS_SLIDER}>
+        <div style={{ maxWidth: MAX_SETTINGS_SLIDER_WIDTH, width: "100%" }}>
+          <LabeledSlider
+            id={VectorSettingsHtmlIds.VECTOR_THICKNESS_SLIDER}
+            type="value"
+            value={vectorThickness}
+            minSliderBound={0.1}
+            maxSliderBound={5}
+            minInputBound={0}
+            maxInputBound={20}
+            step={0.1}
+            marks={[1]}
+            onChange={setVectorThickness}
+            numberFormatter={(value?: number) => `${value?.toFixed(1)}`}
+          ></LabeledSlider>
+        </div>
+      </SettingsItem>
+      <SettingsItem
+        label={"Scale thickness by magnitude"}
+        htmlFor={VectorSettingsHtmlIds.VECTOR_SCALE_THICKNESS_CHECKBOX}
+      >
+        <Checkbox
+          id={VectorSettingsHtmlIds.VECTOR_SCALE_THICKNESS_CHECKBOX}
+          checked={vectorScaleThickness}
+          onChange={(e) => setVectorScaleThickness(e.target.checked)}
+          disabled={!vectorOptionsEnabled}
+        />
       </SettingsItem>
       <SettingsItem label="Arrow color" htmlFor={VectorSettingsHtmlIds.VECTOR_COLOR_PICKER}>
         <WrappedColorPicker
