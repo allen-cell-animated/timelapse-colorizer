@@ -17,6 +17,7 @@ import {
   isThresholdNumeric,
   ThresholdType,
   TrackPathColorMode,
+  VectorData,
 } from "src/colorizer/types";
 
 import { packDataTexture } from "./texture_utils";
@@ -617,12 +618,6 @@ export function removeUndefinedProperties<T>(object: T): T {
   }
   return ret;
 }
-
-type VectorData = {
-  ids: number[];
-  centroids: Float32Array;
-  deltas: Float32Array;
-};
 
 /**
  * Buckets vector data by time for rendering, returning centroids and deltas for

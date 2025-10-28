@@ -209,6 +209,9 @@ export type VectorConfig = {
   tooltipMode: VectorTooltipMode;
 };
 
+/** Vector data for objects at a single time step. */
+export type VectorData = { ids: number[]; centroids: Float32Array; deltas: Float32Array };
+
 // TODO: This should live in the viewer and not in `colorizer`. Same with `url_utils`.
 // CHANGING THESE VALUES CAN POTENTIALLY BREAK URLs. See `url_utils.parseDrawSettings` for parsing logic.
 export enum TabType {

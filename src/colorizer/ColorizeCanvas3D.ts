@@ -9,6 +9,7 @@ import {
   RENDERMODE_RAYMARCH,
   SKY_LIGHT,
   type TiffLoader,
+  VectorArrows3d,
   View3d,
   type Volume,
   VolumeLoaderContext,
@@ -32,9 +33,11 @@ import {
   type FrameLoadResult,
   type PixelIdInfo,
   TrackPathColorMode,
+  VectorData,
 } from "./types";
 import { getRelativeToAbsoluteChannelIndexMap, getVolumeSources } from "./utils/channels";
 import {
+  bucketVectorDataByTime,
   computeTrackLinePointsAndIds,
   computeVertexColorsFromIds,
   getGlobalIdFromSegId,
@@ -88,6 +91,9 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
   private lineOverlayObject: Line3d;
   private lineColors: Float32Array;
 
+  private timeToVectorData: Map<number, VectorData>;
+  private vectorObject: VectorArrows3d;
+
   constructor() {
     this.params = null;
     this.view3d = new View3d();
@@ -102,6 +108,9 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     this.lineIds = [];
     this.lineObject = new Line3d();
     this.lineOverlayObject = new Line3d();
+
+    this.timeToVectorData = new Map();
+    this.vectorObject = new VectorArrows3d();
 
     // TODO: Allow users to control opacity of the overlay line
     this.lineOverlayObject.setOpacity(0.25);
@@ -247,9 +256,9 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     if (!this.params || !this.params.track || !this.params.dataset) {
       return;
     }
-    if (!this.view3d.hasLineObject(this.lineObject)) {
-      this.view3d.addLineObject(this.lineObject);
-      this.view3d.addLineObject(this.lineOverlayObject);
+    if (!this.view3d.hasDrawableObject(this.lineObject)) {
+      this.view3d.addDrawableObject(this.lineObject);
+      this.view3d.addDrawableObject(this.lineOverlayObject);
     }
 
     for (const lineObject of [this.lineObject, this.lineOverlayObject]) {
@@ -440,6 +449,35 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     return false;
   }
 
+  private updateVectorData(): void {
+    if (!this.params || !this.params.dataset || !this.params.vectorMotionDeltas || !this.volume) {
+      return;
+    }
+    if (!this.view3d.hasDrawableObject(this.vectorObject)) {
+      this.view3d.addDrawableObject(this.vectorObject);
+    }
+    const { timeToVectorData } = bucketVectorDataByTime(this.params.dataset, this.params.vectorMotionDeltas);
+
+    // Apply scale factor to deltas.
+    for (const vectorData of timeToVectorData.values()) {
+      for (let i = 0; i < vectorData.deltas.length; i++) {
+        vectorData.deltas[i] *= this.params.vectorScaleFactor;
+      }
+    }
+
+    this.timeToVectorData = timeToVectorData;
+    this.vectorObject.setScale(new Vector3(1, 1, 1).divide(this.volume.physicalSize));
+    this.vectorObject.setTranslation(new Vector3(-0.5, -0.5, -0.5));
+  }
+
+  private handleVectorUpdate(prevParams: RenderCanvasStateParams | null, params: RenderCanvasStateParams): boolean {
+    if (hasPropertyChanged(params, prevParams, ["vectorMotionDeltas", "vectorVisible", "vectorScaleFactor"])) {
+      this.updateVectorData();
+      return true;
+    }
+    return false;
+  }
+
   public setParams(params: RenderCanvasStateParams): Promise<void> {
     if (this.params === params) {
       return Promise.resolve();
@@ -451,7 +489,8 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     const didDatasetUpdate = this.handleDatasetUpdate(prevParams, params);
     const didLineUpdate = this.handleLineUpdate(prevParams, params);
     const didChannelUpdate = this.handleChannelUpdate(prevParams, params);
-    const needsRender = didColorRampUpdate || didDatasetUpdate || didLineUpdate || didChannelUpdate;
+    const didVectorUpdate = this.handleVectorUpdate(prevParams, params);
+    const needsRender = didColorRampUpdate || didDatasetUpdate || didLineUpdate || didChannelUpdate || didVectorUpdate;
 
     if (needsRender) {
       this.render({ synchronous: false });
@@ -606,6 +645,21 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     this.lineOverlayObject.setNumSegmentsVisible(range);
   }
 
+  private syncVectorArrows(): void {
+    const vectorData = this.timeToVectorData.get(this.currentFrame);
+    if (!this.volume || !this.params || !vectorData || !this.params.vectorVisible) {
+      this.vectorObject.setVisible(false);
+      return;
+    }
+    console.log("Setting vector arrows for frame", this.currentFrame, vectorData);
+    this.vectorObject.setVisible(true);
+    this.vectorObject.setArrowData(
+      vectorData.centroids,
+      vectorData.deltas,
+      new Float32Array(this.params.vectorColor.toArray())
+    );
+  }
+
   private syncSelectedId(): void {
     if (!this.volume || !this.params || !this.params.dataset) {
       return;
@@ -617,14 +671,17 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
   render(options?: RenderOptions): void {
     this.syncTrackPathLine();
     this.syncSelectedId();
+    this.syncVectorArrows();
     this.view3d.redraw(options?.synchronous);
   }
 
   dispose(): void {
-    this.view3d.removeLineObject(this.lineObject);
-    this.view3d.removeLineObject(this.lineOverlayObject);
+    this.view3d.removeDrawableObject(this.lineObject);
+    this.view3d.removeDrawableObject(this.lineOverlayObject);
+    this.view3d.removeDrawableObject(this.vectorObject);
     this.lineObject.cleanup();
     this.lineOverlayObject.cleanup();
+    this.vectorObject.cleanup();
     this.view3d.removeAllVolumes();
   }
 
