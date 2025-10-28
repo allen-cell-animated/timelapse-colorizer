@@ -584,6 +584,7 @@ const LINE_MATERIAL_DEPS: (keyof RenderCanvasStateParams)[] = [
   "outlineColor",
   "trackPathWidthPx",
 ];
+const LINE_RENDER_DEPS: (keyof RenderCanvasStateParams)[] = ["showTrackPath"];
 
 export function getLineUpdateFlags(
   prevParams: RenderCanvasStateParams | null,
@@ -592,17 +593,24 @@ export function getLineUpdateFlags(
   geometryNeedsUpdate: boolean;
   vertexColorNeedsUpdate: boolean;
   materialNeedsUpdate: boolean;
+  needsRender: boolean;
 } {
   const geometryNeedsUpdate = hasPropertyChanged(prevParams, params, LINE_GEOMETRY_DEPS);
   const vertexColorNeedsUpdate =
     params.trackPathColorMode === TrackPathColorMode.USE_FEATURE_COLOR &&
     hasPropertyChanged(prevParams, params, LINE_VERTEX_COLOR_DEPS);
   const materialNeedsUpdate = vertexColorNeedsUpdate || hasPropertyChanged(prevParams, params, LINE_MATERIAL_DEPS);
+  const needsRender =
+    hasPropertyChanged(prevParams, params, LINE_RENDER_DEPS) ||
+    geometryNeedsUpdate ||
+    vertexColorNeedsUpdate ||
+    materialNeedsUpdate;
 
   return {
     geometryNeedsUpdate,
     vertexColorNeedsUpdate,
     materialNeedsUpdate,
+    needsRender,
   };
 }
 /**

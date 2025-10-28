@@ -322,8 +322,8 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
   }
 
   private handleLineUpdate(prevParams: RenderCanvasStateParams | null, params: RenderCanvasStateParams): boolean {
-    const { geometryNeedsUpdate, vertexColorNeedsUpdate, materialNeedsUpdate } = getLineUpdateFlags(prevParams, params);
-    let needsRender = false;
+    const flags = getLineUpdateFlags(prevParams, params);
+    const { geometryNeedsUpdate, vertexColorNeedsUpdate, materialNeedsUpdate, needsRender } = flags;
 
     if (geometryNeedsUpdate || vertexColorNeedsUpdate) {
       if (geometryNeedsUpdate && params.dataset && params.track) {
@@ -335,11 +335,9 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
         this.lineColors = computeVertexColorsFromIds(this.lineIds, params);
       }
       this.updateLineGeometry(this.linePoints, this.lineColors);
-      needsRender = true;
     }
     if (materialNeedsUpdate) {
       this.updateLineMaterial();
-      needsRender = true;
     }
     return needsRender;
   }
