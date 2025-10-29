@@ -4,6 +4,7 @@ import { Color } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "src/colorizer/constants";
 import {
+  type ChannelSetting,
   type DrawMode,
   type DrawSettings,
   type FeatureThreshold,
@@ -16,6 +17,7 @@ import {
   ThresholdType,
   TrackPathColorMode,
 } from "src/colorizer/types";
+import { removeUndefinedProperties } from "src/colorizer/utils/data_utils";
 
 import { nanToNull } from "./data_load_utils";
 import type { AnyManifestFile } from "./dataset_utils";
@@ -67,6 +69,29 @@ export enum UrlParam {
   VECTOR_TOOLTIP_MODE = "vc-tooltip",
   VECTOR_TIME_INTERVALS = "vc-time-int",
 }
+
+export enum ChannelSettingUrlParam {
+  /** Whether the channel is visible. `1` if visible, `0` if not. */
+  VISIBLE = "ven",
+  /** Color + opacity, as a 8-character hex string (RRGGBBAA). */
+  COLOR = "col",
+  /** Ramp min and max intensity value, as `min:max`. */
+  RAMP = "rmp",
+  /** Slider range, determined from data min/max, as `dataMin:dataMax`. */
+  RANGE = "rng",
+}
+/**
+ * Channels, matching the pattern `c0`, `c1`, etc. corresponding to the index of
+ * the channel being configured. The channel parameter should have a value that
+ * is a comma-separated list of `key:value` pairs, with keys defined in
+ * `ChannelSettingUrlParam`.
+ */
+export type ChannelSettingParamKey = `c${number}`;
+
+const CHANNEL_STATE_KEY_REGEX = /^c[0-9]+$/;
+export const isChannelKey = (key: string): key is ChannelSettingParamKey => {
+  return CHANNEL_STATE_KEY_REGEX.test(key);
+};
 
 const ALLEN_FILE_PREFIX = "/allen/";
 const ALLEN_PREFIX_TO_HTTPS: Record<string, string> = {
@@ -387,6 +412,59 @@ export function decodeScatterPlotRangeType(rangeString: string | null): PlotRang
     return;
   }
   return urlParamToRangeType[rangeString];
+}
+
+export function encodeChannelSetting(setting: ChannelSetting): string {
+  const colorHex = setting.color.getHexString();
+  const opacityHex = Math.round(setting.opacity * 255)
+    .toString(16)
+    .padStart(2, "0");
+  const rampMin = formatNumber(setting.min, 3);
+  const rampMax = formatNumber(setting.max, 3);
+  const rangeMin = formatNumber(setting.dataMin, 3);
+  const rangeMax = formatNumber(setting.dataMax, 3);
+  let encodedChannel = "";
+  encodedChannel += `${ChannelSettingUrlParam.VISIBLE}:${encodeBoolean(setting.visible)}`;
+  encodedChannel += `,${ChannelSettingUrlParam.COLOR}:${colorHex}${opacityHex}`;
+  encodedChannel += `,${ChannelSettingUrlParam.RAMP}:${rampMin}:${rampMax}`;
+  encodedChannel += `,${ChannelSettingUrlParam.RANGE}:${rangeMin}:${rangeMax}`;
+  return encodedChannel;
+}
+
+export function decodeMaybeChannelSetting(settingString: string | null): Partial<ChannelSetting> | undefined {
+  if (settingString === null) {
+    return undefined;
+  }
+  const settingParts = settingString.split(",");
+  const setting: Partial<ChannelSetting> = {};
+  for (const part of settingParts) {
+    const [key, ...valueParts] = part.split(":");
+    if (key === undefined || valueParts.length === 0) {
+      continue;
+    }
+    switch (key) {
+      case ChannelSettingUrlParam.VISIBLE:
+        setting.visible = decodeBoolean(valueParts[0]);
+        break;
+      case ChannelSettingUrlParam.COLOR: {
+        const { color, alpha } = decodeHexAlphaColor(valueParts[0]) || {};
+        setting.color = color;
+        setting.opacity = alpha;
+        break;
+      }
+      case ChannelSettingUrlParam.RAMP:
+        setting.min = decodeFloat(valueParts[0]);
+        setting.max = decodeFloat(valueParts[1]);
+        break;
+      case ChannelSettingUrlParam.RANGE:
+        setting.dataMin = decodeFloat(valueParts[0]);
+        setting.dataMax = decodeFloat(valueParts[1]);
+        break;
+      default:
+        console.warn(`url_utils.decodeMaybeChannelSetting: Unknown channel setting key: '${key}'`);
+    }
+  }
+  return removeUndefinedProperties(setting);
 }
 
 /**
