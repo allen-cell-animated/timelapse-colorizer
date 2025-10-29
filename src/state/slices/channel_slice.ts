@@ -134,12 +134,10 @@ export const selectChannelSliceSerializationDeps = (slice: ChannelSlice): Channe
 
 export const loadChannelSliceFromParams = (slice: ChannelSlice, params: URLSearchParams): void => {
   // Find all params matching channel format
-  const channelSettings: Partial<ChannelSetting>[] = [];
   for (const [key, value] of params.entries()) {
     if (isChannelKey(key) && value) {
       const channelIndex = parseInt(key.slice(1), 10);
       if (Number.isNaN(channelIndex)) {
-        channelSettings.push({});
         continue;
       }
       const decodedChannel = decodeMaybeChannelSetting(value) ?? {};

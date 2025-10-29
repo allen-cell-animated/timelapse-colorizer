@@ -36,16 +36,14 @@ export function ChannelSettingControl(props: ChannelSettingControlProps): ReactE
   const rangeSliderId = `settings-channel-range-slider-${channelIndex}`;
 
   const collapseLabel = (
-    <>
-      <WrappedColorPicker
-        value={threeToAntColorWithAlpha(settings.color, settings.opacity)}
-        onChange={(antdColor) => {
-          const { color, alpha: opacity } = antToThreeColor(antdColor);
-          updateSettings({ color, opacity });
-        }}
-        presets={DEFAULT_OUTLINE_COLOR_PRESETS}
-      />
-    </>
+    <WrappedColorPicker
+      value={threeToAntColorWithAlpha(settings.color, settings.opacity)}
+      onChange={(antdColor) => {
+        const { color, alpha: opacity } = antToThreeColor(antdColor);
+        updateSettings({ color, opacity });
+      }}
+      presets={DEFAULT_OUTLINE_COLOR_PRESETS}
+    />
   );
 
   return (
