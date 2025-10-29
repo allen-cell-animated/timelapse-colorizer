@@ -13,18 +13,16 @@ export default function VideoCard(props: VideoCardProps): ReactElement {
 
   return (
     <FlexColumn key={index} $gap={8}>
-      <div>
-        <iframe
-          title={entry.title}
-          id="ytplayer"
-          width="100%"
-          style={{ aspectRatio: "16/9", border: 0 }}
-          src={entry.videoUrl}
-          allowFullScreen
-          allow="picture-in-picture *; web-share *;"
-          referrerPolicy="strict-origin"
-        ></iframe>
-      </div>
+      <iframe
+        title={entry.title}
+        id={`ytplayer-${index}`}
+        width="100%"
+        style={{ aspectRatio: "16/9", border: 0 }}
+        src={entry.videoUrl}
+        allowFullScreen
+        allow="picture-in-picture *; web-share *;"
+        referrerPolicy="strict-origin"
+      ></iframe>
       <h3 style={{ fontWeight: "600", margin: 0, marginTop: "-4px" }}>{entry.title}</h3>
       <p style={{ margin: 0 }}>{entry.description}</p>
     </FlexColumn>

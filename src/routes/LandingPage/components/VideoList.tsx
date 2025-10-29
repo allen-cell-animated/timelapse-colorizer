@@ -15,14 +15,6 @@ const StyledCarousel = styled(Carousel)`
     /* Add padding so controls don't overlap text */
     padding-bottom: 20px;
 
-    & .slick-slide > div > div {
-      /* Prevent text selection so scrolling works */
-      user-select: none;
-      -ms-user-select: none;
-      -moz-user-select: none;
-      -webkit-user-select: none;
-    }
-
     /* Add gap between each element */
     & .slick-slide > div > div {
       padding: 0 10px;
@@ -38,10 +30,10 @@ const StyledCarousel = styled(Carousel)`
 
 export default function VideoList(props: VideoListProps): ReactElement {
   const theme = useContext(AppThemeContext);
+
+  // Track container width to adjust number of visible slides
   const divContainerRef = useRef<HTMLDivElement>(null);
-
   const [containerWidth, setContainerWidth] = useState<number>(1060);
-
   useEffect(() => {
     const onWidthChange = (): void => {
       if (divContainerRef.current) {
@@ -55,8 +47,8 @@ export default function VideoList(props: VideoListProps): ReactElement {
     };
   }, []);
 
-  // Adjust number of visible slides based on container width. These breakpoints
-  // were chosen to keep the video thumbnails at a higher resolution.
+  // These breakpoints were chosen to keep high-res thumbnails (YouTube embeds
+  // will switch to a low-res thumbnail if the width is below ~320px).
   let numSlidesToShow;
   if (containerWidth >= 1025) {
     numSlidesToShow = 3;
@@ -83,13 +75,7 @@ export default function VideoList(props: VideoListProps): ReactElement {
           },
         }}
       >
-        <StyledCarousel
-          arrows={true}
-          infinite={false}
-          draggable={true}
-          slidesToShow={numSlidesToShow}
-          style={{ gap: "20px" }}
-        >
+        <StyledCarousel arrows={true} infinite={false} slidesToShow={numSlidesToShow} style={{ gap: "20px" }}>
           {props.videoEntries.map((videoEntry, index) => {
             return <VideoCard key={index} entry={videoEntry} index={index} />;
           })}
