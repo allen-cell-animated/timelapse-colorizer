@@ -53,7 +53,7 @@ const PREFETCH_CONCURRENCY_LIMIT = 3;
 const ZOOM_IN_MULTIPLIER = 0.75;
 const ZOOM_OUT_MULTIPLIER = 1 / ZOOM_IN_MULTIPLIER;
 
-const VECTOR_THICKNESS_BASE_SCALE = 0.001;
+const VECTOR_THICKNESS_BASE_SCALE = 0.002;
 
 const loaderContext = new VolumeLoaderContext(CACHE_MAX_SIZE, CONCURRENCY_LIMIT, PREFETCH_CONCURRENCY_LIMIT);
 
@@ -488,7 +488,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     if (hasThicknessScalingModeChanged) {
       // When thickness scaling is disabled, set a constant thickness.
       if (!params.vectorScaleThicknessByMagnitude) {
-        this.vectorObject.setThickness(VECTOR_THICKNESS_BASE_SCALE * params.vectorThickness);
+        this.vectorObject.setDiameter(VECTOR_THICKNESS_BASE_SCALE * params.vectorThickness);
       }
     }
     if (hasVectorDataChanged) {
