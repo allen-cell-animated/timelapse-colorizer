@@ -12,6 +12,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: "package-lock.json"
+
       # Adapted from AGAVE.
       # Since Github actions (currently) doesn't provide a slugged version of the git tag we have to
       # create it by ourselves. It is then made available to other steps in this job as a step.outputs

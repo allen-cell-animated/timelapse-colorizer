@@ -5,25 +5,31 @@ jobs:
   static-checks:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup node
+        uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 #v6.0.0
         with:
           node-version: "18"
+          cache: "npm"
+          cache-dependency-path: "package-lock.json"
 
-      - run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-      - name: Run Linter
+      - name: Run linter
         run: npm run lint
 
-      - name: Run Typechecker
+      - name: Run typechecker
         # Run type check even if the previous linter step failed
         if: success() || failure()
         run: npm run typeCheck
 
-      - name: Run Tests
+      - name: Run tests
         # Run test even if the previous step(s) failed
         if: success() || failure()
         run: npx vitest run --coverage
 
-      - name: Vitest Coverage Report
+      - name: Vitest coverage report
         uses: davelosert/vitest-coverage-report-action@v2.1.1
