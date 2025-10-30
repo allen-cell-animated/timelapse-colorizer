@@ -12,6 +12,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
+      - name: Setup node
+        uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 #v6.0.0
+        with:
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: "package-lock.json"
+
       # Adapted from AGAVE.
       # Since Github actions (currently) doesn't provide a slugged version of the git tag we have to
       # create it by ourselves. It is then made available to other steps in this job as a step.outputs
@@ -22,8 +29,11 @@ jobs:
           echo ${GITHUB_REF/refs\/tags\/v/}
           echo "VERSION=${GITHUB_REF/refs\/tags\/v/}" >> "$GITHUB_OUTPUT"
 
-      - name: Install and build
-        run: npm ci && npm run build
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
 
       - name: Rename build folder
         run: mv dist viewer
