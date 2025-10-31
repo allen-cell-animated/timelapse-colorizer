@@ -108,7 +108,6 @@ export const createVectorSlice: StateCreator<VectorSlice & DatasetSlice, [], [],
     set({ vectorMotionTimeIntervals: value });
   },
   setVectorColor: (color: Color) => {
-    console.log("Setting vector color to:", color.getHexString());
     set({ vectorColor: color });
   },
   setVectorScaleFactor: (scale: number) =>

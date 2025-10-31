@@ -53,7 +53,6 @@ export default function VectorFieldSettings(): ReactElement {
   const vectorOptions = useMemo(() => [VECTOR_OPTION_MOTION], []);
   const vectorOptionsEnabled = vectorVisible && dataset !== null;
 
-  // TODO: Vector tooltip mode should default to components only when 3D datasets are loaded.
   const is3dDataset = dataset?.has3dFrames() ?? false;
 
   return (

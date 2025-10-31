@@ -17,7 +17,7 @@ import {
   isThresholdNumeric,
   ThresholdType,
   TrackPathColorMode,
-  VectorData,
+  type VectorData,
 } from "src/colorizer/types";
 
 import { packDataTexture } from "./texture_utils";

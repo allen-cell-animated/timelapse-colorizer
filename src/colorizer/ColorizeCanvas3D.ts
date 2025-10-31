@@ -33,7 +33,7 @@ import {
   type FrameLoadResult,
   type PixelIdInfo,
   TrackPathColorMode,
-  VectorData,
+  type VectorData,
 } from "./types";
 import { getRelativeToAbsoluteChannelIndexMap, getVolumeSources } from "./utils/channels";
 import {
@@ -322,8 +322,10 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
   }
 
   private handleLineUpdate(prevParams: RenderCanvasStateParams | null, params: RenderCanvasStateParams): boolean {
-    const flags = getLineUpdateFlags(prevParams, params);
-    const { geometryNeedsUpdate, vertexColorNeedsUpdate, materialNeedsUpdate, needsRender } = flags;
+    const { geometryNeedsUpdate, vertexColorNeedsUpdate, materialNeedsUpdate, needsRender } = getLineUpdateFlags(
+      prevParams,
+      params
+    );
 
     if (geometryNeedsUpdate || vertexColorNeedsUpdate) {
       if (geometryNeedsUpdate && params.dataset && params.track) {
