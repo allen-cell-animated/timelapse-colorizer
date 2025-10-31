@@ -53,6 +53,9 @@ export default function VectorFieldSettings(): ReactElement {
   const vectorOptions = useMemo(() => [VECTOR_OPTION_MOTION], []);
   const vectorOptionsEnabled = vectorVisible && dataset !== null;
 
+  // TODO: Vector tooltip mode should default to components only when 3D datasets are loaded.
+  const is3dDataset = dataset?.has3dFrames() ?? false;
+
   return (
     <>
       <SettingsItem
@@ -134,6 +137,7 @@ export default function VectorFieldSettings(): ReactElement {
             marks={[1]}
             onChange={setVectorThickness}
             numberFormatter={(value?: number) => `${value?.toFixed(1)}`}
+            disabled={!vectorOptionsEnabled || !is3dDataset}
           ></LabeledSlider>
         </div>
       </SettingsItem>
@@ -145,7 +149,7 @@ export default function VectorFieldSettings(): ReactElement {
           id={VectorSettingsHtmlIds.VECTOR_SCALE_THICKNESS_CHECKBOX}
           checked={vectorScaleThickness}
           onChange={(e) => setVectorScaleThickness(e.target.checked)}
-          disabled={!vectorOptionsEnabled}
+          disabled={!vectorOptionsEnabled || !is3dDataset}
         />
       </SettingsItem>
       <SettingsItem label="Arrow color" htmlFor={VectorSettingsHtmlIds.VECTOR_COLOR_PICKER}>
@@ -174,7 +178,7 @@ export default function VectorFieldSettings(): ReactElement {
             id={VectorSettingsHtmlIds.VECTOR_TOOLTIP_MODE_RADIO}
             value={vectorTooltipMode}
             onChange={(e) => setVectorTooltipMode(e.target.value)}
-            disabled={!vectorOptionsEnabled}
+            disabled={!vectorOptionsEnabled || is3dDataset}
           >
             <Radio value={VectorTooltipMode.MAGNITUDE}>Magnitude and angle</Radio>
             <Radio value={VectorTooltipMode.COMPONENTS}>XY components</Radio>

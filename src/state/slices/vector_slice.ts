@@ -6,7 +6,7 @@ import {
   isVectorTooltipMode,
   VECTOR_KEY_MOTION_DELTA,
   type VectorConfig,
-  type VectorTooltipMode,
+  VectorTooltipMode,
 } from "src/colorizer";
 import {
   decodeBoolean,
@@ -41,7 +41,7 @@ export type VectorSliceState = {
 
   // Derived state
   /**
-   * Vector motion deltas for all objects in the dataset, as a flat array of 2D
+   * Vector motion deltas for all objects in the dataset, as a flat array of 3D
    * vector coordinates. Motion deltas are smoothed over
    * `vectorMotionTimeIntervals`.
    *
@@ -136,6 +136,17 @@ export const addVectorDerivedStateSubscribers = (store: SubscribableStore<Vector
       };
       updateMotionDeltas();
     }, 250)
+  );
+
+  // Only allow component tooltip mode if the dataset has 3D frames.
+  addDerivedStateSubscriber(
+    store,
+    (state) => state.dataset,
+    (dataset) => {
+      if (dataset?.has3dFrames) {
+        store.setState({ vectorTooltipMode: VectorTooltipMode.COMPONENTS });
+      }
+    }
   );
 };
 
