@@ -31,7 +31,13 @@ import { ColorizeCanvas3D } from "./ColorizeCanvas3D";
 import type Dataset from "./Dataset";
 import type { IInnerRenderCanvas } from "./IInnerRenderCanvas";
 import type { IRenderCanvas, RenderCanvasStateParams, RenderOptions } from "./IRenderCanvas";
-import { type CanvasScaleInfo, CanvasType, type ChannelRangePreset, type FrameLoadResult, type PixelIdInfo } from "./types";
+import {
+  type CanvasScaleInfo,
+  CanvasType,
+  type ChannelRangePreset,
+  type FrameLoadResult,
+  type PixelIdInfo,
+} from "./types";
 import { hasPropertyChanged } from "./utils/data_utils";
 
 type OverlayRenderOptions = RenderOptions & {
@@ -313,11 +319,14 @@ export default class CanvasOverlay implements IRenderCanvas {
   }
 
   private async updateCanvasType(dataset: Dataset): Promise<void> {
+    // TODO: Change API for this to `setCanvasType`, with the type passed in as
+    // a parameter rather than being read from dataset.
     if (this.innerCanvasType !== CanvasType.CANVAS_3D && dataset.has3dFrames()) {
       this.innerCanvasType = CanvasType.CANVAS_3D;
-      if (!this.innerCanvas3d) {
-        this.innerCanvas3d = new ColorizeCanvas3D();
+      if (this.innerCanvas3d) {
+        this.innerCanvas3d.dispose();
       }
+      this.innerCanvas3d = new ColorizeCanvas3D();
       await this.setCanvas(this.innerCanvas3d);
     } else if (this.innerCanvasType === CanvasType.CANVAS_3D && !dataset.has3dFrames()) {
       this.innerCanvasType = CanvasType.CANVAS_2D;

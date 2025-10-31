@@ -27,6 +27,8 @@ export const renderCanvasStateParamsSelector = (state: ViewerStoreState): Render
   vectorVisible: state.vectorVisible,
   vectorColor: state.vectorColor,
   vectorScaleFactor: state.vectorScaleFactor,
+  vectorScaleThicknessByMagnitude: state.vectorScaleThicknessByMagnitude,
+  vectorThickness: state.vectorThickness,
   backdropKey: state.backdropKey,
   backdropVisible: state.backdropVisible,
   channelSettings: state.channelSettings,

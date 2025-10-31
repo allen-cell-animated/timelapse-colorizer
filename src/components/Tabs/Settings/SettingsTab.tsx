@@ -213,7 +213,6 @@ export default function SettingsTab(): ReactElement {
                 id={SettingsHtmlIds.SCALE_BAR_SWITCH}
                 checked={showScaleBar}
                 onChange={(e) => setShowScaleBar(e.target.checked)}
-                style={{ paddingTop: "0" }}
               />
             </div>
           </SettingsItem>
@@ -223,7 +222,6 @@ export default function SettingsTab(): ReactElement {
                 id={SettingsHtmlIds.TIMESTAMP_SWITCH}
                 checked={showTimestamp}
                 onChange={(e) => setShowTimestamp(e.target.checked)}
-                style={{ paddingTop: "0" }}
               />
             </div>
           </SettingsItem>

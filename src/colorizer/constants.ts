@@ -21,9 +21,11 @@ export const getDefaultVectorConfig = (): VectorConfig => ({
   visible: false,
   key: VECTOR_KEY_MOTION_DELTA,
   timeIntervals: 5,
-  color: new Color(0x000000),
+  color: new Color(0x575757),
   scaleFactor: 4,
   tooltipMode: VectorTooltipMode.MAGNITUDE,
+  scaleThicknessByMagnitude: false,
+  thickness: 1,
 });
 
 export const getDefaultScatterPlotConfig = (): ScatterPlotConfig => ({
