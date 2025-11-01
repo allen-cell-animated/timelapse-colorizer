@@ -3,8 +3,10 @@ import type { StateCreator } from "zustand";
 
 import {
   getDefaultVectorConfig,
+  isVectorColorMode,
   isVectorTooltipMode,
   VECTOR_KEY_MOTION_DELTA,
+  VectorColorMode,
   type VectorConfig,
   VectorTooltipMode,
 } from "src/colorizer";
@@ -29,6 +31,7 @@ export type VectorSliceState = {
   vectorVisible: boolean;
   vectorKey: string;
   vectorColor: Color;
+  vectorColorMode: VectorColorMode;
   vectorScaleFactor: number;
   vectorScaleThicknessByMagnitude: boolean;
   vectorThickness: number;
@@ -56,6 +59,7 @@ export type VectorSliceSerializableState = Pick<
   | "vectorVisible"
   | "vectorKey"
   | "vectorColor"
+  | "vectorColorMode"
   | "vectorScaleFactor"
   | "vectorTooltipMode"
   | "vectorMotionTimeIntervals"
@@ -67,6 +71,7 @@ export type VectorSliceActions = {
   setVectorVisible: (visible: boolean) => void;
   setVectorKey: (key: string) => void;
   setVectorColor: (color: Color) => void;
+  setVectorColorMode: (mode: VectorColorMode) => void;
   setVectorScaleFactor: (scale: number) => void;
   setVectorTooltipMode: (mode: VectorTooltipMode) => void;
   /** Note: Motion intervals are rounded to integers and are clamped to be >= 1. */
@@ -84,6 +89,7 @@ export const createVectorSlice: StateCreator<VectorSlice & DatasetSlice, [], [],
   vectorKey: defaultConfig.key,
   vectorMotionTimeIntervals: defaultConfig.timeIntervals,
   vectorColor: defaultConfig.color,
+  vectorColorMode: VectorColorMode.CUSTOM,
   vectorScaleFactor: defaultConfig.scaleFactor,
   vectorTooltipMode: defaultConfig.tooltipMode,
   vectorThickness: 1,
@@ -109,6 +115,9 @@ export const createVectorSlice: StateCreator<VectorSlice & DatasetSlice, [], [],
   },
   setVectorColor: (color: Color) => {
     set({ vectorColor: color });
+  },
+  setVectorColorMode: (mode: VectorColorMode) => {
+    set({ vectorColorMode: mode });
   },
   setVectorScaleFactor: (scale: number) =>
     set({ vectorScaleFactor: validateFiniteValue(scale, "setVectorScaleFactor") }),
@@ -175,6 +184,7 @@ export const serializeVectorSlice = (slice: Partial<VectorSlice>): SerializedSto
     [UrlParam.SHOW_VECTOR]: encodeMaybeBoolean(slice.vectorVisible),
     [UrlParam.VECTOR_KEY]: slice.vectorKey,
     [UrlParam.VECTOR_COLOR]: encodeMaybeColor(slice.vectorColor),
+    [UrlParam.VECTOR_COLOR_MODE]: slice.vectorColorMode?.toString(),
     [UrlParam.VECTOR_SCALE]: encodeMaybeNumber(slice.vectorScaleFactor),
     [UrlParam.VECTOR_SCALE_THICKNESS]: encodeMaybeBoolean(slice.vectorScaleThicknessByMagnitude),
     [UrlParam.VECTOR_THICKNESS]: encodeMaybeNumber(slice.vectorThickness),
@@ -222,6 +232,11 @@ export function loadVectorSliceFromParams(slice: VectorSlice, params: URLSearchP
   const vectorThickness = decodeFloat(params.get(UrlParam.VECTOR_THICKNESS));
   if (vectorThickness !== undefined && Number.isFinite(vectorThickness)) {
     slice.setVectorThickness(vectorThickness);
+  }
+
+  const vectorColorMode = params.get(UrlParam.VECTOR_COLOR_MODE);
+  if (vectorColorMode && isVectorColorMode(vectorColorMode)) {
+    slice.setVectorColorMode(vectorColorMode);
   }
 
   const vectorTooltipMode = params.get(UrlParam.VECTOR_TOOLTIP_MODE);

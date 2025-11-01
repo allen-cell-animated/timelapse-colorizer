@@ -190,10 +190,19 @@ export type DrawSettings = {
   color: Color;
 };
 
+export enum VectorColorMode {
+  CUSTOM = "c",
+  FEATURE = "f",
+}
+
 export enum VectorTooltipMode {
   MAGNITUDE = "m",
   COMPONENTS = "c",
 }
+
+export const isVectorColorMode = (mode: string): mode is VectorColorMode => {
+  return Object.values(VectorColorMode).includes(mode as VectorColorMode);
+};
 
 export const isVectorTooltipMode = (mode: string): mode is VectorTooltipMode => {
   return Object.values(VectorTooltipMode).includes(mode as VectorTooltipMode);

@@ -8,11 +8,11 @@ import { FlexRowAlignCenter } from "src/styles/utils";
 
 import SelectionDropdown from "./SelectionDropdown";
 
-type DropdownWithColorPickerProps = {
-  selected: string;
-  items: { value: string; label: string }[];
+type DropdownWithColorPickerProps<T extends string = string> = {
+  selected: T;
+  items: { value: T; label: string }[];
   id?: string;
-  onValueChange: (mode: string) => void;
+  onValueChange: (mode: T) => void;
   color: ThreeColor;
   disabled?: boolean;
   showColorPicker?: boolean;
@@ -36,7 +36,9 @@ const HorizontalDiv = styled(FlexRowAlignCenter)`
 /**
  * Reusable convenience dropdown component with an optional color picker.
  */
-export default function DropdownWithColorPicker(propsInput: DropdownWithColorPickerProps): ReactElement {
+export default function DropdownWithColorPicker<T extends string>(
+  propsInput: DropdownWithColorPickerProps<T>
+): ReactElement {
   const props = { ...defaultProps, ...propsInput };
 
   const colorPickerRef = useRef<HTMLParagraphElement>(null);
@@ -54,10 +56,10 @@ export default function DropdownWithColorPicker(propsInput: DropdownWithColorPic
       <SelectionDropdown
         label={null}
         id={props.id}
-        selected={props.selected.toString()}
+        selected={props.selected}
         items={props.items}
         showSelectedItemTooltip={false}
-        onChange={props.onValueChange}
+        onChange={(value) => props.onValueChange(value)}
         disabled={props.disabled}
         controlWidth={"105px"}
       ></SelectionDropdown>

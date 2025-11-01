@@ -14,12 +14,12 @@ import type { SelectItem } from "./types";
 // loading large datasets. Is there a way we can do this using async promises,
 // maybe? If the promise rejects, discard the changed value?
 
-type SelectionDropdownProps = {
+type SelectionDropdownProps<T extends string = string> = {
   /** Text label to include with the dropdown. If null or undefined, hides the label. */
   label?: string | null;
   id?: string;
   /** The value of the item that is currently selected. */
-  selected: string | SelectItem | undefined;
+  selected: T | SelectItem<T> | undefined;
   /**
    * An array of SelectItems that describes the item properties (`{value,
    * label}`), or an array of strings. Dropdown items will be presented in the
@@ -33,7 +33,7 @@ type SelectionDropdownProps = {
    * `items` property on every render, which can cause unexpected or unwanted
    * behavior such as flickering on hover during rapid page updates.
    */
-  items: SelectItem[] | string[];
+  items: SelectItem<T>[] | T[];
   controlTooltipPlacement?: "top" | "bottom" | "left" | "right";
   disabled?: boolean;
   isSearchable?: boolean;
@@ -46,7 +46,7 @@ type SelectionDropdownProps = {
    * Callback that is fired whenever an item in the dropdown is selected.
    * The callback will be passed the `value` of the selected item.
    */
-  onChange: (value: string) => void;
+  onChange: (value: T) => void;
   /**
    * If true, shows the label of the currently-selected item as a tooltip
    * when hovering over the input/selection area.
@@ -106,14 +106,14 @@ const Option = (props: OptionProps<SelectItem>): ReactElement => {
 };
 
 /** Converts an array of strings or SelectItems to an array of SelectItems. */
-function formatAsSelectItems(items: string[] | SelectItem[]): SelectItem[] {
+function formatAsSelectItems<T extends string>(items: T[] | SelectItem<T>[]): SelectItem<T>[] {
   if (items.length === 0) {
     return [];
   }
   if (typeof items[0] === "string") {
-    return (items as string[]).map((item) => ({ value: item, label: item }));
+    return (items as T[]).map((item) => ({ value: item, label: item }));
   }
-  return items as SelectItem[];
+  return items as SelectItem<T>[];
 }
 
 /**
@@ -130,7 +130,9 @@ function formatAsSelectItems(items: string[] | SelectItem[]): SelectItem[] {
  * the `items` property on every render, which can cause unexpected or unwanted
  * behavior such as flickering on hover during rapid page updates.
  */
-export default function SelectionDropdown(inputProps: React.PropsWithChildren<SelectionDropdownProps>): ReactElement {
+export default function SelectionDropdown<T extends string = string>(
+  inputProps: React.PropsWithChildren<SelectionDropdownProps<T>>
+): ReactElement {
   const props = { ...defaultProps, ...inputProps };
 
   const options = useMemo(() => formatAsSelectItems(props.items), [props.items]);
@@ -243,7 +245,7 @@ export default function SelectionDropdown(inputProps: React.PropsWithChildren<Se
         // + the awaited value while waiting for it to resolve.
         onChange={(value) => {
           if (value && value.value) {
-            props.onChange(value.value);
+            props.onChange(value.value as T);
           }
           startTransition(() => {
             setSearchInput("");

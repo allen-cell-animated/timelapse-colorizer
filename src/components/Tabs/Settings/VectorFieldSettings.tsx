@@ -1,19 +1,21 @@
 import { Card, Radio } from "antd";
 import Checkbox from "antd/es/checkbox/Checkbox";
 import React, { type ReactElement, useMemo } from "react";
-import { Color, type ColorRepresentation } from "three";
 
 import { VECTOR_KEY_MOTION_DELTA } from "src/colorizer/constants";
-import { VectorTooltipMode } from "src/colorizer/types";
+import { VectorColorMode, VectorTooltipMode } from "src/colorizer/types";
+import DropdownWithColorPicker from "src/components/Dropdowns/DropdownWithColorPicker";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
+import { SelectItem } from "src/components/Dropdowns/types";
 import LabeledSlider from "src/components/Inputs/LabeledSlider";
-import WrappedColorPicker from "src/components/Inputs/WrappedColorPicker";
 import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
 import { MAX_SETTINGS_SLIDER_WIDTH } from "src/constants";
 import { useViewerStateStore } from "src/state/ViewerState";
-import { threeToAntColor } from "src/utils/color_utils";
 
-import { DEFAULT_OUTLINE_COLOR_PRESETS } from "./constants";
+const VECTOR_COLOR_MODE_ITEMS = [
+  { value: VectorColorMode.CUSTOM, label: "Custom" },
+  { value: VectorColorMode.FEATURE, label: "Feature" },
+] satisfies SelectItem[];
 
 const VECTOR_OPTION_MOTION = {
   value: VECTOR_KEY_MOTION_DELTA,
@@ -34,6 +36,7 @@ const enum VectorSettingsHtmlIds {
 export default function VectorFieldSettings(): ReactElement {
   const dataset = useViewerStateStore((state) => state.dataset);
   const setVectorColor = useViewerStateStore((state) => state.setVectorColor);
+  const setVectorColorMode = useViewerStateStore((state) => state.setVectorColorMode);
   const setVectorKey = useViewerStateStore((state) => state.setVectorKey);
   const setVectorMotionTimeIntervals = useViewerStateStore((state) => state.setVectorMotionTimeIntervals);
   const setVectorScaleFactor = useViewerStateStore((state) => state.setVectorScaleFactor);
@@ -41,6 +44,7 @@ export default function VectorFieldSettings(): ReactElement {
   const setVectorThickness = useViewerStateStore((state) => state.setVectorThickness);
   const setVectorTooltipMode = useViewerStateStore((state) => state.setVectorTooltipMode);
   const vectorColor = useViewerStateStore((state) => state.vectorColor);
+  const vectorColorMode = useViewerStateStore((state) => state.vectorColorMode);
   const vectorKey = useViewerStateStore((state) => state.vectorKey);
   const vectorMotionTimeIntervals = useViewerStateStore((state) => state.vectorMotionTimeIntervals);
   const vectorScaleFactor = useViewerStateStore((state) => state.vectorScaleFactor);
@@ -152,19 +156,18 @@ export default function VectorFieldSettings(): ReactElement {
         />
       </SettingsItem>
       <SettingsItem label="Arrow color" htmlFor={VectorSettingsHtmlIds.VECTOR_COLOR_PICKER}>
-        <WrappedColorPicker
+        <DropdownWithColorPicker
           id={VectorSettingsHtmlIds.VECTOR_COLOR_PICKER}
-          disabled={!vectorOptionsEnabled}
-          disabledAlpha={true}
-          size="small"
-          value={threeToAntColor(vectorColor)}
-          onChange={(_color, hex) => {
-            setVectorColor(new Color(hex as ColorRepresentation));
-          }}
-          presets={DEFAULT_OUTLINE_COLOR_PRESETS}
-        ></WrappedColorPicker>
+          color={vectorColor}
+          onColorChange={setVectorColor}
+          items={VECTOR_COLOR_MODE_ITEMS}
+          selected={vectorColorMode}
+          onValueChange={setVectorColorMode}
+          showColorPicker={vectorColorMode === VectorColorMode.CUSTOM}
+        ></DropdownWithColorPicker>
       </SettingsItem>
-      {/* TODO: Use a fieldset + legend for Radio inputs?
+      {/*
+       * TODO: Use a fieldset + legend for Radio inputs?
        * See https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/input/radio#defining_a_radio_group
        */}
       <SettingsItem
