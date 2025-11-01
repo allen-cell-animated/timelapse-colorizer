@@ -33,11 +33,13 @@ import {
   type FrameLoadResult,
   type PixelIdInfo,
   TrackPathColorMode,
+  VectorColorMode,
   type VectorData,
 } from "./types";
 import { getRelativeToAbsoluteChannelIndexMap, getVolumeSources } from "./utils/channels";
 import {
   bucketVectorDataByTime,
+  COLOR_RAMP_DEPENDENCIES,
   computeTrackLinePointsAndIds,
   computeVertexColorsFromIds,
   getGlobalIdFromSegId,
@@ -94,6 +96,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
   private lineColors: Float32Array;
 
   private timeToVectorData: Map<number, VectorData>;
+  private vectorColorsNeedsUpdate: boolean;
   private vectorObject: VectorArrows3d;
 
   constructor() {
@@ -113,6 +116,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
 
     this.timeToVectorData = new Map();
     this.vectorObject = new VectorArrows3d();
+    this.vectorColorsNeedsUpdate = true;
 
     // TODO: Allow users to control opacity of the overlay line
     this.lineOverlayObject.setOpacity(0.25);
@@ -473,8 +477,24 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     this.vectorObject.setTranslation(new Vector3(-0.5, -0.5, -0.5));
   }
 
+  private updateVectorColor(params: RenderCanvasStateParams): void {
+    if (params.vectorColorMode === VectorColorMode.CUSTOM) {
+      const colorArray = new Float32Array(params.vectorColor.clone().convertLinearToSRGB().toArray());
+      this.vectorObject.setColors(colorArray);
+    } else {
+      // Feature color
+      const ids = Array.from(this.timeToVectorData.get(this.currentFrame)?.ids || []);
+      const colorArray = computeVertexColorsFromIds(ids, params);
+      this.vectorObject.setColors(colorArray);
+    }
+  }
+
   private handleVectorUpdate(prevParams: RenderCanvasStateParams | null, params: RenderCanvasStateParams): boolean {
-    const hasColorChanged = hasPropertyChanged(params, prevParams, ["vectorColor"]);
+    const hasColorChanged = hasPropertyChanged(params, prevParams, [
+      "vectorColor",
+      "vectorColorMode",
+      ...COLOR_RAMP_DEPENDENCIES,
+    ]);
     const hasThicknessScalingModeChanged = hasPropertyChanged(params, prevParams, [
       "vectorScaleThicknessByMagnitude",
       "vectorThickness",
@@ -487,6 +507,9 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
       "vectorThickness",
     ]);
 
+    if (hasColorChanged) {
+      this.vectorColorsNeedsUpdate = true;
+    }
     if (hasThicknessScalingModeChanged) {
       // When thickness scaling is disabled, set a constant thickness.
       if (!params.vectorScaleThicknessByMagnitude) {
@@ -623,6 +646,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
         // This frame request has been superceded by another request
         return null;
       }
+      this.vectorColorsNeedsUpdate = true;
       this.currentFrame = requestedFrame;
       this.pendingFrame = -1;
       this.render({ synchronous: true });
@@ -672,8 +696,12 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
       this.vectorObject.setVisible(false);
       return;
     }
+    if (this.vectorColorsNeedsUpdate) {
+      this.updateVectorColor(this.params);
+      this.vectorColorsNeedsUpdate = false;
+    }
     this.vectorObject.setVisible(true);
-    this.vectorObject.setColors(new Float32Array(this.params.vectorColor.clone().convertLinearToSRGB().toArray()));
+    // this.vectorObject.setColors(new Float32Array(this.params.vectorColor.clone().convertLinearToSRGB().toArray()));
     const thicknessData = this.params.vectorScaleThicknessByMagnitude ? vectorData.magnitude : undefined;
     this.vectorObject.setArrowData(vectorData.centroids, vectorData.deltas, thicknessData);
   }

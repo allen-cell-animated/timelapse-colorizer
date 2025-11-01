@@ -10,6 +10,7 @@ import type {
   FrameLoadResult,
   PixelIdInfo,
   TrackPathColorMode,
+  VectorColorMode,
 } from "src/colorizer/types";
 
 // Standalone type for render canvas state params
@@ -38,6 +39,7 @@ export type RenderCanvasStateParams = {
   vectorMotionDeltas: Float32Array | null;
   vectorVisible: boolean;
   vectorColor: Color;
+  vectorColorMode: VectorColorMode;
   vectorScaleFactor: number;
   vectorScaleThicknessByMagnitude: boolean;
   vectorThickness: number;

@@ -406,6 +406,17 @@ export function cloneLabel(label: LabelData): LabelData {
   };
 }
 
+export const COLOR_RAMP_DEPENDENCIES = [
+  "dataset",
+  "featureKey",
+  "colorRamp",
+  "colorRampRange",
+  "categoricalPaletteRamp",
+  "outOfRangeDrawSettings",
+  "inRangeLUT",
+  "outlierDrawSettings",
+] satisfies (keyof RenderCanvasStateParams)[];
+
 /**
  * Computes the onscreen color for a given object ID based on feature data and
  * other parameters.

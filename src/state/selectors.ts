@@ -26,6 +26,7 @@ export const renderCanvasStateParamsSelector = (state: ViewerStoreState): Render
   vectorMotionDeltas: state.vectorMotionDeltas,
   vectorVisible: state.vectorVisible,
   vectorColor: state.vectorColor,
+  vectorColorMode: state.vectorColorMode,
   vectorScaleFactor: state.vectorScaleFactor,
   vectorScaleThicknessByMagnitude: state.vectorScaleThicknessByMagnitude,
   vectorThickness: state.vectorThickness,
