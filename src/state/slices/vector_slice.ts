@@ -136,17 +136,6 @@ export const addVectorDerivedStateSubscribers = (store: SubscribableStore<Vector
       updateMotionDeltas();
     }, 250)
   );
-
-  // Only allow component tooltip mode if the dataset has 3D frames.
-  addDerivedStateSubscriber(
-    store,
-    (state) => state.dataset,
-    (dataset) => {
-      if (dataset?.has3dFrames) {
-        store.setState({ vectorTooltipMode: VectorTooltipMode.COMPONENTS });
-      }
-    }
-  );
 };
 
 // TODO: Remove this, specific properties can be retrieved directly from the store

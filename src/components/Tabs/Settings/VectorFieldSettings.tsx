@@ -177,7 +177,7 @@ export default function VectorFieldSettings(): ReactElement {
             id={VectorSettingsHtmlIds.VECTOR_TOOLTIP_MODE_RADIO}
             value={vectorTooltipMode}
             onChange={(e) => setVectorTooltipMode(e.target.value)}
-            disabled={!vectorOptionsEnabled || is3dDataset}
+            disabled={!vectorOptionsEnabled}
           >
             <Radio value={VectorTooltipMode.MAGNITUDE}>Magnitude and angle</Radio>
             <Radio value={VectorTooltipMode.COMPONENTS}>XY components</Radio>
