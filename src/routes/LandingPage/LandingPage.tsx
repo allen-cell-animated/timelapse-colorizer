@@ -16,6 +16,8 @@ import ProjectList from "./components/ProjectList";
 import VideoList from "./components/VideoList";
 import { LANDING_PAGE_CONTENT, LANDING_PAGE_VIDEO_CONTENT } from "./constants";
 
+const MAX_CONTENT_WIDTH_PX = 1060;
+
 const BannerVideo = lazy(() => import("src/components/AssetWrappers/BannerVideo"));
 
 const Banner = styled(FlexColumnAlignCenter)`
@@ -27,7 +29,7 @@ const Banner = styled(FlexColumnAlignCenter)`
 `;
 
 const BannerTextContainer = styled(FlexColumn)`
-  max-width: 1060px;
+  max-width: ${MAX_CONTENT_WIDTH_PX}px;
   width: calc(90vw - 40px);
   padding: 30px 0;
 
@@ -65,7 +67,7 @@ const BannerVideoContainer = styled.div`
 `;
 
 const ContentContainer = styled(FlexColumn)`
-  max-width: 1060px;
+  max-width: ${MAX_CONTENT_WIDTH_PX}px;
   width: calc(90vw - 40px);
   margin: auto;
 `;
