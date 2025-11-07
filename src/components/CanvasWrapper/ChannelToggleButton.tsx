@@ -21,7 +21,7 @@ export default function ChannelToggleButton(): ReactElement {
   const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
 
   const channelData = dataset?.frames3d?.backdrops;
-  const hasChannels = channelData !== undefined && channelData.length > 0;
+  const hasChannels = !!channelData && channelData.length > 0;
   const channelVisibility = channelSettings.map((setting) => setting.visible);
   const isAnyChannelVisible = hasChannels && channelSettings.some((setting) => setting.visible);
 
