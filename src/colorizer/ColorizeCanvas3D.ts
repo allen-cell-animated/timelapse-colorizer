@@ -469,6 +469,9 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     }
 
     this.timeToVectorData = timeToVectorData;
+    // TODO: If the physical pixel size of the volume is ever changed in Vol-E,
+    // this would need to be updated. Consider passing callbacks for scale
+    // changes to the VectorArrows3d object.
     this.vectorObject.setScale(new Vector3(1, 1, 1).divide(this.volume.physicalSize));
     this.vectorObject.setTranslation(new Vector3(-0.5, -0.5, -0.5));
   }
