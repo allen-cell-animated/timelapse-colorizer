@@ -107,9 +107,7 @@ export const createVectorSlice: StateCreator<VectorSlice & DatasetSlice, [], [],
     value = Math.max(1, Math.round(value));
     set({ vectorMotionTimeIntervals: value });
   },
-  setVectorColor: (color: Color) => {
-    set({ vectorColor: color });
-  },
+  setVectorColor: (color: Color) => set({ vectorColor: color }),
   setVectorScaleFactor: (scale: number) =>
     set({ vectorScaleFactor: validateFiniteValue(scale, "setVectorScaleFactor") }),
   setVectorScaleThicknessByMagnitude: (value: boolean) => set({ vectorScaleThicknessByMagnitude: value }),

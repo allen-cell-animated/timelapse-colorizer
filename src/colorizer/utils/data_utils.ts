@@ -12,12 +12,12 @@ import type Track from "src/colorizer/Track";
 import {
   FeatureDataType,
   type FeatureThreshold,
+  type FrameVectorData,
   type GlobalIdLookupInfo,
   isThresholdCategorical,
   isThresholdNumeric,
   ThresholdType,
   TrackPathColorMode,
-  type VectorData,
 } from "src/colorizer/types";
 
 import { packDataTexture } from "./texture_utils";
@@ -643,7 +643,7 @@ export function bucketVectorDataByTime(
   dataset: Dataset,
   vectorData: Float32Array
 ): {
-  timeToVectorData: Map<number, VectorData>;
+  timeToVectorData: Map<number, FrameVectorData>;
   totalValidIds: number;
 } {
   // Sort object IDs into buckets by time. Drop any IDs whose vectors are invalid (NaN).
@@ -667,7 +667,7 @@ export function bucketVectorDataByTime(
 
   // For each time, fill in the vertex information (centroid + delta).
   const times = Array.from(timeToIds.keys()).sort((a, b) => a - b);
-  const timeToVectorData: Map<number, VectorData> = new Map();
+  const timeToVectorData: Map<number, FrameVectorData> = new Map();
   for (const time of times) {
     const ids = timeToIds.get(time)!;
     const centroids = new Float32Array(ids.length * 3);

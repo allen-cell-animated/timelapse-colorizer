@@ -31,9 +31,9 @@ import {
   DrawMode,
   FeatureDataType,
   type FrameLoadResult,
+  type FrameVectorData,
   type PixelIdInfo,
   TrackPathColorMode,
-  type VectorData,
 } from "./types";
 import { getRelativeToAbsoluteChannelIndexMap, getVolumeSources } from "./utils/channels";
 import {
@@ -93,7 +93,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
   private lineOverlayObject: Line3d;
   private lineColors: Float32Array;
 
-  private timeToVectorData: Map<number, VectorData>;
+  private timeToVectorData: Map<number, FrameVectorData>;
   private vectorObject: VectorArrows3d;
 
   constructor() {
