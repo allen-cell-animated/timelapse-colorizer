@@ -6,7 +6,7 @@ import {
   isVectorTooltipMode,
   VECTOR_KEY_MOTION_DELTA,
   type VectorConfig,
-  VectorTooltipMode,
+  type VectorTooltipMode,
 } from "src/colorizer";
 import {
   decodeBoolean,
