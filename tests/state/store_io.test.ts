@@ -164,7 +164,7 @@ const EXAMPLE_STORE_EXPECTED_QUERY_STRING =
   "&edge=1&edge-color=8090a0b0" +
   "&tab=filters&scatter-x=feature3&scatter-y=feature2&scatter-range=all" +
   "&bg=1&bg-brightness=75&bg-sat=50&fg-alpha=25" +
-  "&vc=1&vc-key=_motion_&vc-color=ff00ff&vc-scale=5&vc-tooltip=c&vc-time-int=11";
+  "&vc=1&vc-key=_motion_&vc-color=ff00ff&vc-scale=5&vc-thickness-scaling=1&vc-thickness=4.500&vc-tooltip=c&vc-time-int=11";
 
 describe("serializeViewerState", () => {
   it("handles empty state", () => {
