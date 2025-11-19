@@ -56,7 +56,7 @@ export const selectSerializationDependencies = (state: ViewerStore): Partial<Vie
  * @param params Object containing serializable viewer state parameters.
  * Also includes a `collectionParam` field for the collection URL.
  */
-export const serializeViewerState = (state: Partial<ViewerStoreSerializableState>): Partial<SerializedStoreData> => {
+export const serializeViewerState = (state: Partial<ViewerStoreSerializableState>): SerializedStoreData => {
   // Ordered by approximate importance in the URL
   return removeUndefinedProperties({
     ...serializeCollectionSlice(state),
@@ -67,8 +67,8 @@ export const serializeViewerState = (state: Partial<ViewerStoreSerializableState
     ...serializeConfigSlice(state),
     ...serializeScatterPlotSlice(state),
     ...serializeBackdropSlice(state),
-    ...serializeChannelSlice(state),
     ...serializeVectorSlice(state),
+    ...serializeChannelSlice(state),
   });
 };
 
@@ -116,7 +116,8 @@ export const serializedDataToUrl = (data: SerializedStoreData): string => {
   const params = new URLSearchParams();
   data = removeUndefinedProperties(data);
   for (const [key, value] of Object.entries(data)) {
-    params.set(key, value);
+    // Value is always defined after removing undefined properties
+    params.set(key, value!);
   }
   return params.toString();
 };

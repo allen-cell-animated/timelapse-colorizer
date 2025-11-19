@@ -6,6 +6,7 @@ import { ChannelRangePreset, type ChannelSetting } from "src/colorizer";
 import LabeledSlider from "src/components/Inputs/LabeledSlider";
 import WrappedColorPicker from "src/components/Inputs/WrappedColorPicker";
 import { DEFAULT_SETTINGS_LABEL_WIDTH_PX, SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
+import { DEFAULT_OUTLINE_COLOR_PRESETS } from "src/components/Tabs/Settings/constants";
 import ToggleCollapse from "src/components/ToggleCollapse";
 import { FlexColumn, FlexRowAlignCenter, VisuallyHidden } from "src/styles/utils";
 import { antToThreeColor, threeToAntColorWithAlpha } from "src/utils/color_utils";
@@ -41,6 +42,7 @@ export function ChannelSettingControl(props: ChannelSettingControlProps): ReactE
         const { color, alpha: opacity } = antToThreeColor(antdColor);
         updateSettings({ color, opacity });
       }}
+      presets={DEFAULT_OUTLINE_COLOR_PRESETS}
     />
   );
 
