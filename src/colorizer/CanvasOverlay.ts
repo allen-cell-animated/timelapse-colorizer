@@ -323,10 +323,9 @@ export default class CanvasOverlay implements IRenderCanvas {
     // a parameter rather than being read from dataset.
     if (this.innerCanvasType !== CanvasType.CANVAS_3D && dataset.has3dFrames()) {
       this.innerCanvasType = CanvasType.CANVAS_3D;
-      if (this.innerCanvas3d) {
-        this.innerCanvas3d.dispose();
+      if (!this.innerCanvas3d) {
+        this.innerCanvas3d = new ColorizeCanvas3D();
       }
-      this.innerCanvas3d = new ColorizeCanvas3D();
       await this.setCanvas(this.innerCanvas3d);
     } else if (this.innerCanvasType === CanvasType.CANVAS_3D && !dataset.has3dFrames()) {
       this.innerCanvasType = CanvasType.CANVAS_2D;

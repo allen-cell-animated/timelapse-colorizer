@@ -128,6 +128,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
 
     this.getScreenSpaceMatrix = this.getScreenSpaceMatrix.bind(this);
     this.getIdAtPixel = this.getIdAtPixel.bind(this);
+    this.forceUpdate3dObjects = this.forceUpdate3dObjects.bind(this);
   }
 
   // Camera/mouse event handlers
@@ -306,15 +307,28 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     if (hasPropertyChanged(params, prevParams, ["dataset"])) {
       if (params.dataset !== null && params.dataset.has3dFrames() && params.dataset.frames3d) {
         if (this.volume) {
+          // Remove 3D objects so they are not cleaned up with the old volume
+          // and can be reused.
+          this.view3d.removeDrawableObject(this.vectorObject);
+          this.view3d.removeDrawableObject(this.lineObject);
+          this.view3d.removeDrawableObject(this.lineOverlayObject);
+          // Clean up old volume
           this.view3d.removeAllVolumes();
           this.volume.cleanup();
           this.volume = null;
         }
         const sources = getVolumeSources(params.dataset.frames3d);
         this.initializingVolumePromise = this.loadNewVolume(sources);
-        this.initializingVolumePromise.then(() => {
-          this.setFrame(params.pendingFrame);
-        });
+        this.initializingVolumePromise
+          .then(() => {
+            return this.setFrame(params.pendingFrame);
+          })
+          .then(() => {
+            // Reinitialize 3D objects; they will also be added back to the
+            // view3d here.
+            this.forceUpdate3dObjects();
+            this.render();
+          });
         return true;
       }
     }
@@ -451,6 +465,23 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     return false;
   }
 
+  private forceUpdate3dObjects(): void {
+    this.updateLineMaterial();
+    this.updateLineGeometry(this.linePoints, this.lineColors);
+    this.updateVectorData();
+    this.updateVectorThickness();
+  }
+
+  private updateVectorThickness(): void {
+    if (!this.params) {
+      return;
+    }
+    // When thickness scaling is disabled, set a constant thickness.
+    if (!this.params.vectorScaleThicknessByMagnitude) {
+      this.vectorObject.setDiameter(VECTOR_THICKNESS_BASE_SCALE * this.params.vectorThickness);
+    }
+  }
+
   private updateVectorData(): void {
     if (!this.params || !this.params.dataset || !this.params.vectorMotionDeltas || !this.volume) {
       return;
@@ -491,10 +522,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     ]);
 
     if (hasThicknessScalingModeChanged) {
-      // When thickness scaling is disabled, set a constant thickness.
-      if (!params.vectorScaleThicknessByMagnitude) {
-        this.vectorObject.setDiameter(VECTOR_THICKNESS_BASE_SCALE * params.vectorThickness);
-      }
+      this.updateVectorThickness();
     }
     if (hasVectorDataChanged) {
       this.updateVectorData();
@@ -584,7 +612,6 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     this.view3d.resetCamera();
 
     this.updateVolumeChannels(volume, this.params.channelSettings, this.backdropIndexToAbsoluteChannelIndex);
-    this.updateLineGeometry(this.linePoints, this.lineColors);
 
     // TODO: Look at gamma/levels setting? Vole-app looks good at levels
     // 0,75,255
