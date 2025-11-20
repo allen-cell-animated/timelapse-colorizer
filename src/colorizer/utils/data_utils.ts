@@ -12,6 +12,7 @@ import type Track from "src/colorizer/Track";
 import {
   FeatureDataType,
   type FeatureThreshold,
+  type FrameVectorData,
   type GlobalIdLookupInfo,
   isThresholdCategorical,
   isThresholdNumeric,
@@ -583,6 +584,7 @@ const LINE_MATERIAL_DEPS: (keyof RenderCanvasStateParams)[] = [
   "outlineColor",
   "trackPathWidthPx",
 ];
+const LINE_RENDER_DEPS: (keyof RenderCanvasStateParams)[] = ["showTrackPath"];
 
 export function getLineUpdateFlags(
   prevParams: RenderCanvasStateParams | null,
@@ -591,17 +593,24 @@ export function getLineUpdateFlags(
   geometryNeedsUpdate: boolean;
   vertexColorNeedsUpdate: boolean;
   materialNeedsUpdate: boolean;
+  needsRender: boolean;
 } {
   const geometryNeedsUpdate = hasPropertyChanged(prevParams, params, LINE_GEOMETRY_DEPS);
   const vertexColorNeedsUpdate =
     params.trackPathColorMode === TrackPathColorMode.USE_FEATURE_COLOR &&
     hasPropertyChanged(prevParams, params, LINE_VERTEX_COLOR_DEPS);
   const materialNeedsUpdate = vertexColorNeedsUpdate || hasPropertyChanged(prevParams, params, LINE_MATERIAL_DEPS);
+  const needsRender =
+    hasPropertyChanged(prevParams, params, LINE_RENDER_DEPS) ||
+    geometryNeedsUpdate ||
+    vertexColorNeedsUpdate ||
+    materialNeedsUpdate;
 
   return {
     geometryNeedsUpdate,
     vertexColorNeedsUpdate,
     materialNeedsUpdate,
+    needsRender,
   };
 }
 /**
@@ -616,4 +625,63 @@ export function removeUndefinedProperties<T>(object: T): T {
     }
   }
   return ret;
+}
+
+/**
+ * Buckets vector data by time for rendering, returning centroids and deltas for
+ * each time point.
+ * @param dataset The dataset containing object times and centroids.
+ * @param vectorData The deltas for each object ID, as a Float32Array with 3
+ * floats per object (x, y, z), in pixel/voxel coordinate space.
+ * @returns
+ * - `timeToVectorData`: Map from time to an object containing `centroids` and
+ *   `deltas` Float32Arrays. Each array contains 3 floats per vector (x, y, z),
+ *   in pixel/voxel coordinate space.
+ * - `totalValidIds`: Total number of valid vector IDs across all time points.
+ */
+export function bucketVectorDataByTime(
+  dataset: Dataset,
+  vectorData: Float32Array
+): {
+  timeToVectorData: Map<number, FrameVectorData>;
+  totalValidIds: number;
+} {
+  // Sort object IDs into buckets by time. Drop any IDs whose vectors are invalid (NaN).
+  const timeToIds = new Map<number, number[]>();
+  let totalValidIds = 0;
+  for (let i = 0; i < dataset.numObjects; i++) {
+    const time = dataset.getTime(i);
+    const ids = timeToIds.get(time) ?? [];
+    if (
+      Number.isNaN(vectorData[i * 3]) ||
+      Number.isNaN(vectorData[i * 3 + 1]) ||
+      Number.isNaN(vectorData[i * 3 + 2]) ||
+      dataset.getCentroid(i) === undefined
+    ) {
+      continue;
+    }
+    ids.push(i);
+    timeToIds.set(time, ids);
+    totalValidIds++;
+  }
+
+  // For each time, fill in the vertex information (centroid + delta).
+  const times = Array.from(timeToIds.keys()).sort((a, b) => a - b);
+  const timeToVectorData: Map<number, FrameVectorData> = new Map();
+  for (const time of times) {
+    const ids = timeToIds.get(time)!;
+    const centroids = new Float32Array(ids.length * 3);
+    const deltas = new Float32Array(ids.length * 3);
+    const magnitude = new Float32Array(ids.length);
+    for (let i = 0; i < ids.length; i++) {
+      const id = ids[i];
+      const centroid = dataset.getCentroid(id)!;
+      const delta: [number, number, number] = [vectorData[id * 3], vectorData[id * 3 + 1], vectorData[id * 3 + 2]];
+      centroids.set(centroid, i * 3);
+      deltas.set(delta, i * 3);
+      magnitude[i] = Math.sqrt(delta[0] * delta[0] + delta[1] * delta[1] + delta[2] * delta[2]);
+    }
+    timeToVectorData.set(time, { ids, centroids, deltas, magnitude });
+  }
+  return { timeToVectorData, totalValidIds };
 }

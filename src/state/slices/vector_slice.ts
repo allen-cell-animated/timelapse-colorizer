@@ -30,6 +30,8 @@ export type VectorSliceState = {
   vectorKey: string;
   vectorColor: Color;
   vectorScaleFactor: number;
+  vectorScaleThicknessByMagnitude: boolean;
+  vectorThickness: number;
   vectorTooltipMode: VectorTooltipMode;
   /**
    * Number of time intervals to smooth vector motion deltas over when the
@@ -39,7 +41,7 @@ export type VectorSliceState = {
 
   // Derived state
   /**
-   * Vector motion deltas for all objects in the dataset, as a flat array of 2D
+   * Vector motion deltas for all objects in the dataset, as a flat array of 3D
    * vector coordinates. Motion deltas are smoothed over
    * `vectorMotionTimeIntervals`.
    *
@@ -57,6 +59,8 @@ export type VectorSliceSerializableState = Pick<
   | "vectorScaleFactor"
   | "vectorTooltipMode"
   | "vectorMotionTimeIntervals"
+  | "vectorScaleThicknessByMagnitude"
+  | "vectorThickness"
 >;
 
 export type VectorSliceActions = {
@@ -67,6 +71,8 @@ export type VectorSliceActions = {
   setVectorTooltipMode: (mode: VectorTooltipMode) => void;
   /** Note: Motion intervals are rounded to integers and are clamped to be >= 1. */
   setVectorMotionTimeIntervals: (timeIntervals: number) => void;
+  setVectorScaleThicknessByMagnitude: (value: boolean) => void;
+  setVectorThickness: (thickness: number) => void;
 };
 
 export type VectorSlice = VectorSliceState & VectorSliceActions;
@@ -80,6 +86,8 @@ export const createVectorSlice: StateCreator<VectorSlice & DatasetSlice, [], [],
   vectorColor: defaultConfig.color,
   vectorScaleFactor: defaultConfig.scaleFactor,
   vectorTooltipMode: defaultConfig.tooltipMode,
+  vectorThickness: 1,
+  vectorScaleThicknessByMagnitude: defaultConfig.scaleThicknessByMagnitude,
 
   // Derived state
   vectorMotionDeltas: null,
@@ -102,6 +110,9 @@ export const createVectorSlice: StateCreator<VectorSlice & DatasetSlice, [], [],
   setVectorColor: (color: Color) => set({ vectorColor: color }),
   setVectorScaleFactor: (scale: number) =>
     set({ vectorScaleFactor: validateFiniteValue(scale, "setVectorScaleFactor") }),
+  setVectorScaleThicknessByMagnitude: (value: boolean) => set({ vectorScaleThicknessByMagnitude: value }),
+  setVectorThickness: (thickness: number) =>
+    set({ vectorThickness: validateFiniteValue(thickness, "setVectorThickness") }),
   setVectorTooltipMode: (mode: VectorTooltipMode) => set({ vectorTooltipMode: mode }),
 });
 
@@ -125,6 +136,7 @@ export const addVectorDerivedStateSubscribers = (store: SubscribableStore<Vector
   );
 };
 
+// TODO: Remove this, specific properties can be retrieved directly from the store
 /** Selector that returns a VectorConfig object from a store containing vector
  * state.
  * @example
@@ -141,6 +153,8 @@ export const selectVectorConfigFromState = (state: VectorSlice): VectorConfig =>
   color: state.vectorColor,
   scaleFactor: state.vectorScaleFactor,
   tooltipMode: state.vectorTooltipMode,
+  scaleThicknessByMagnitude: state.vectorScaleThicknessByMagnitude,
+  thickness: state.vectorThickness,
 });
 
 export const serializeVectorSlice = (slice: Partial<VectorSlice>): SerializedStoreData => {
@@ -149,6 +163,8 @@ export const serializeVectorSlice = (slice: Partial<VectorSlice>): SerializedSto
     [UrlParam.VECTOR_KEY]: slice.vectorKey,
     [UrlParam.VECTOR_COLOR]: encodeMaybeColor(slice.vectorColor),
     [UrlParam.VECTOR_SCALE]: encodeMaybeNumber(slice.vectorScaleFactor),
+    [UrlParam.VECTOR_SCALE_THICKNESS]: encodeMaybeBoolean(slice.vectorScaleThicknessByMagnitude),
+    [UrlParam.VECTOR_THICKNESS]: encodeMaybeNumber(slice.vectorThickness),
     [UrlParam.VECTOR_TOOLTIP_MODE]: slice.vectorTooltipMode?.toString(),
     [UrlParam.VECTOR_TIME_INTERVALS]: encodeMaybeNumber(slice.vectorMotionTimeIntervals),
   };
@@ -160,6 +176,8 @@ export const selectVectorSliceSerializationDeps = (slice: VectorSlice): Partial<
   vectorKey: slice.vectorKey,
   vectorColor: slice.vectorColor,
   vectorScaleFactor: slice.vectorScaleFactor,
+  vectorScaleThicknessByMagnitude: slice.vectorScaleThicknessByMagnitude,
+  vectorThickness: slice.vectorThickness,
   vectorTooltipMode: slice.vectorTooltipMode,
   vectorMotionTimeIntervals: slice.vectorMotionTimeIntervals,
 });
@@ -181,6 +199,16 @@ export function loadVectorSliceFromParams(slice: VectorSlice, params: URLSearchP
   const vectorScale = decodeFloat(params.get(UrlParam.VECTOR_SCALE));
   if (vectorScale !== undefined && Number.isFinite(vectorScale)) {
     slice.setVectorScaleFactor(vectorScale);
+  }
+
+  const vectorScaleThicknessByMagnitude = decodeBoolean(params.get(UrlParam.VECTOR_SCALE_THICKNESS));
+  if (vectorScaleThicknessByMagnitude !== undefined) {
+    slice.setVectorScaleThicknessByMagnitude(vectorScaleThicknessByMagnitude);
+  }
+
+  const vectorThickness = decodeFloat(params.get(UrlParam.VECTOR_THICKNESS));
+  if (vectorThickness !== undefined && Number.isFinite(vectorThickness)) {
+    slice.setVectorThickness(vectorThickness);
   }
 
   const vectorTooltipMode = params.get(UrlParam.VECTOR_TOOLTIP_MODE);

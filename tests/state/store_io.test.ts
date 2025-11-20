@@ -98,6 +98,8 @@ const EXAMPLE_STORE: ViewerStoreSerializableState = {
   vectorColor: new Color("#ff00ff"),
   vectorScaleFactor: 5,
   vectorTooltipMode: VectorTooltipMode.COMPONENTS,
+  vectorScaleThicknessByMagnitude: true,
+  vectorThickness: 4.5,
   backdropKey: MockBackdropKeys.BACKDROP2,
   scatterXAxis: MockFeatureKeys.FEATURE3,
   scatterYAxis: MockFeatureKeys.FEATURE2,
@@ -155,6 +157,8 @@ const EXAMPLE_STORE_EXPECTED_PARAMS: ExpectedParamType = {
   "vc-scale": "5",
   "vc-tooltip": VectorTooltipMode.COMPONENTS,
   "vc-time-int": "11",
+  "vc-thickness": "4.500",
+  "vc-thickness-scaling": "1",
   "bg-key": MockBackdropKeys.BACKDROP2,
   "scatter-x": MockFeatureKeys.FEATURE3,
   "scatter-y": MockFeatureKeys.FEATURE2,
@@ -172,7 +176,7 @@ const EXAMPLE_STORE_EXPECTED_QUERY_STRING =
   "&edge=1&edge-color=8090a0b0" +
   "&tab=filters&scatter-x=feature3&scatter-y=feature2&scatter-range=all" +
   "&bg=1&bg-brightness=75&bg-sat=50&fg-alpha=25" +
-  "&vc=1&vc-key=_motion_&vc-color=ff00ff&vc-scale=5&vc-tooltip=c&vc-time-int=11" +
+  "&vc=1&vc-key=_motion_&vc-color=ff00ff&vc-scale=5&vc-thickness-scaling=1&vc-thickness=4.500&vc-tooltip=c&vc-time-int=11" +
   "&c0=ven%3A1%2Ccol%3Aff0000ff%2Crmp%3A0%3A1%2Crng%3A-5%3A5" +
   "&c1=ven%3A0%2Ccol%3A00ff0000%2Crmp%3A0.300%3A4.200%2Crng%3A0%3A1" +
   "&c2=ven%3A1%2Ccol%3A0000ff04%2Crmp%3A3500%3A64231%2Crng%3A0%3A65535";

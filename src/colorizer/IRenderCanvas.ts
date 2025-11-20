@@ -39,6 +39,8 @@ export type RenderCanvasStateParams = {
   vectorVisible: boolean;
   vectorColor: Color;
   vectorScaleFactor: number;
+  vectorScaleThicknessByMagnitude: boolean;
+  vectorThickness: number;
   backdropKey: string | null;
   backdropVisible: boolean;
   channelSettings: ChannelSetting[];

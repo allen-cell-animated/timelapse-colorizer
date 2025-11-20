@@ -206,7 +206,17 @@ export type VectorConfig = {
   timeIntervals: number;
   color: Color;
   scaleFactor: number;
+  scaleThicknessByMagnitude: boolean;
+  thickness: number;
   tooltipMode: VectorTooltipMode;
+};
+
+/** Bucketed vector data for objects visible on a single frame. */
+export type FrameVectorData = {
+  ids: number[];
+  centroids: Float32Array;
+  deltas: Float32Array;
+  magnitude: Float32Array;
 };
 
 // TODO: This should live in the viewer and not in `colorizer`. Same with `url_utils`.
