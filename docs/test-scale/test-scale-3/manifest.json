@@ -1,0 +1,66 @@
+{
+  "features": [
+    {
+      "name": "Discrete Feature",
+      "data": "feature_0.parquet",
+      "unit": "",
+      "type": "discrete",
+      "key": "discrete_feature",
+      "min": 0,
+      "max": 1,
+      "description": ""
+    },
+    {
+      "name": "Categorical Feature",
+      "data": "feature_1.parquet",
+      "unit": "",
+      "type": "categorical",
+      "key": "categorical_feature",
+      "min": 0,
+      "max": 1,
+      "description": "",
+      "categories": [
+        "A",
+        "B"
+      ]
+    }
+  ],
+  "outliers": "outliers.parquet",
+  "tracks": "tracks.parquet",
+  "times": "times.parquet",
+  "segIds": "seg_ids.parquet",
+  "centroids": "centroids.parquet",
+  "frames3d": {
+    "source": "file.ome.tif",
+    "segmentationChannel": 0,
+    "totalFrames": 2,
+    "backdrops": [
+      {
+        "name": "Backdrop",
+        "source": "backdrop.ome.tif",
+        "channelIndex": 0,
+        "min": 0,
+        "max": 1
+      }
+    ]
+  },
+  "metadata": {
+    "name": "test-scale-3",
+    "description": null,
+    "author": null,
+    "datasetVersion": null,
+    "dateCreated": "2025-11-21T23:27:49.423228Z",
+    "lastModified": "2025-11-21T23:27:49.423228Z",
+    "revision": 0,
+    "writerVersion": "v1.7.0",
+    "frameDims": {
+      "width": null,
+      "height": null,
+      "units": null
+    },
+    "startingTimeSeconds": 0,
+    "startingFrameNumber": 0,
+    "frameDurationSeconds": 0
+  },
+  "backdrops": []
+}

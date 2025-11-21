@@ -1,0 +1,1 @@
+{"datasets": [{"name": "3x3x3", "path": "test-scale-3"}, {"name": "300x300x300", "path": "test-scale-300"}], "metadata": {"name": null, "description": null, "author": null, "collectionVersion": null, "dateCreated": "2025-11-21T23:27:49.815677Z", "lastModified": "2025-11-21T23:27:54.932133Z", "revision": 1, "writerVersion": "v1.7.0"}}
