@@ -68,6 +68,13 @@ export type Frames3dData = {
   backdrops?: Backdrop3dData[];
 };
 
+type OpenOptions = Partial<{
+  manifestLoader: typeof urlUtils.fetchManifestJson;
+  onLoadStart?: () => void;
+  onLoadComplete?: () => void;
+  reportWarning?: ReportWarningCallback;
+}>;
+
 const defaultMetadata: ManifestFileMetadata = {
   frameDims: {
     width: 0,
@@ -497,6 +504,54 @@ export default class Dataset {
     }
   }
 
+  private resolveAndValidateFrames3d(data: ManifestFile["frames3d"], options: OpenOptions): Frames3dData | undefined {
+    if (!data) {
+      return undefined;
+    }
+    const frameSource = this.resolvePath(data.source);
+    let backdrops: Backdrop3dData[] = [];
+    if (!frameSource) {
+      throw new Error(
+        `Failed to resolve path for 3D frame source '${data.source}'. ${LoadTroubleshooting.CHECK_ZIP_ZARR_DATA}`
+      );
+    }
+    // Validate backdrops
+    if (data.backdrops) {
+      const failedBackdrops: Backdrop3dData[] = [];
+      for (const backdrop of data.backdrops) {
+        const backdropSource = this.resolvePath(backdrop.source);
+        if (!backdropSource) {
+          failedBackdrops.push({ channelIndex: 0, ...backdrop });
+          continue;
+        }
+        backdrops.push({
+          ...backdrop,
+          channelIndex: backdrop.channelIndex ?? 0,
+          source: backdropSource ? backdropSource : backdrop.source,
+        });
+      }
+      if (failedBackdrops.length > 0) {
+        // This will only happen if using a file path resolver (e.g. this file
+        // does not exist in a ZIP file).
+        // TODO: This will fail for Zarrs, which are directories and not files.
+        options.reportWarning?.(
+          "One or more 3D backdrop sources could not be resolved to files, and will not be shown.",
+          [
+            "The following backdrop source(s) could not be resolved:",
+            ...failedBackdrops.map((b) => ` - ${b.source} (${b.name})`),
+            LoadTroubleshooting.CHECK_ZIP_ZARR_DATA,
+          ]
+        );
+      }
+    }
+    return {
+      source: frameSource,
+      segmentationChannel: data.segmentationChannel ?? 0,
+      totalFrames: data.totalFrames ?? 0,
+      backdrops,
+    };
+  }
+
   /**
    * Opens the dataset and loads all necessary files from the manifest.
    * @param options Configuration options for the dataset loader.
@@ -506,14 +561,7 @@ export default class Dataset {
    * - `reportWarning` Called with a string or array of strings to report warnings to the user. These are non-fatal errors.
    * @returns A Promise that resolves when loading completes.
    */
-  public async open(
-    options: Partial<{
-      manifestLoader: typeof urlUtils.fetchManifestJson;
-      onLoadStart?: () => void;
-      onLoadComplete?: () => void;
-      reportWarning?: ReportWarningCallback;
-    }> = {}
-  ): Promise<void> {
+  public async open(options: OpenOptions = {}): Promise<void> {
     if (this.hasOpened) {
       return;
     }
@@ -536,20 +584,7 @@ export default class Dataset {
     const manifest = updateManifestVersion(await options.manifestLoader(resolvedManifestUrl));
 
     this.frameFiles = manifest.frames;
-    const frames3dSrc = manifest.frames3d;
-    if (frames3dSrc && frames3dSrc.source) {
-      const frameSource = this.resolvePath(frames3dSrc.source);
-      if (!frameSource) {
-        throw new Error(`Failed to resolve path for 3D frame source: '${frames3dSrc.source}'`);
-      }
-      this.frames3d = {
-        source: frameSource,
-        segmentationChannel: manifest.frames3d?.segmentationChannel ?? 0,
-        totalFrames: manifest.frames3d?.totalFrames ?? 0,
-        // TODO: Add validation here
-        backdrops: frames3dSrc.backdrops as Backdrop3dData[] | undefined,
-      };
-    }
+    this.frames3d = this.resolveAndValidateFrames3d(manifest.frames3d, options);
     this.outlierFile = manifest.outliers;
     this.metadata = { ...defaultMetadata, ...manifest.metadata };
 

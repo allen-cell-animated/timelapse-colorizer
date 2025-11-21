@@ -322,6 +322,8 @@ export enum LoadTroubleshooting {
   CHECK_ZIP_FORMAT = "Make sure a 'collection.json' or 'manifest.json' file exists in the base directory.",
   CHECK_ZIP_FORMAT_COLLECTION = "A 'collection.json' should exist in the base directory.",
   CHECK_ZIP_FORMAT_MANIFEST = "A 'manifest.json' should exist in the base directory.",
+  CHECK_ZIP_ZARR_DATA = "Please check if the file exists. If this was a Zarr array, note that Zarr data cannot currently be loaded from ZIP archives. " +
+    "Consider opening the dataset locally with the CLI tools provided in colorizer-data; for more details, see Help > Visit GitHub repository.",
 }
 
 export const enum LoadErrorMessage {
