@@ -511,6 +511,15 @@ export default class Dataset {
     const frameSource = this.resolvePath(data.source);
     let backdrops: Backdrop3dData[] = [];
     if (!frameSource) {
+      // This will only happen if using a file path resolver, if this file does
+      // not exist in a ZIP file.
+
+      // TODO: This will fail for Zarrs, which are directories and not files.
+      // Zarrs index from the directory root, which is provided as a Object URL.
+      // However, adding additional paths to the end of an Object URL (e.g.
+      // `/0/0/0`) does not result in a working URL. This means there is no way
+      // to make the current path resolver work without overriding `fetch` in
+      // dependency libraries (vole-core).
       throw new Error(
         `Failed to resolve path for 3D frame source '${data.source}'. ${LoadTroubleshooting.CHECK_ZIP_ZARR_DATA}`
       );
@@ -531,14 +540,11 @@ export default class Dataset {
         });
       }
       if (failedBackdrops.length > 0) {
-        // This will only happen if using a file path resolver (e.g. this file
-        // does not exist in a ZIP file).
-        // TODO: This will fail for Zarrs, which are directories and not files.
         options.reportWarning?.(
           "One or more 3D backdrop sources could not be resolved to files, and will not be shown.",
           [
             "The following backdrop source(s) could not be resolved:",
-            ...failedBackdrops.map((b) => ` - ${b.source} (${b.name})`),
+            ...failedBackdrops.map((b) => `- ${b.source} (${b.name})`),
             LoadTroubleshooting.CHECK_ZIP_ZARR_DATA,
           ]
         );
