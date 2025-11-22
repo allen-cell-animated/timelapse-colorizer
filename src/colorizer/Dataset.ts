@@ -536,7 +536,7 @@ export default class Dataset {
         backdrops.push({
           ...backdrop,
           channelIndex: backdrop.channelIndex ?? 0,
-          source: backdropSource ? backdropSource : backdrop.source,
+          source: backdropSource,
         });
       }
       if (failedBackdrops.length > 0) {
