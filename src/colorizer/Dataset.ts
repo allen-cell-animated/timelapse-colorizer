@@ -514,12 +514,13 @@ export default class Dataset {
       // This will only happen if using a file path resolver, if this file does
       // not exist in a ZIP file.
 
-      // TODO: This will fail for Zarrs, which are directories and not files.
-      // Zarrs index from the directory root, which is provided as a Object URL.
-      // However, adding additional paths to the end of an Object URL (e.g.
-      // `/0/0/0`) does not result in a working URL. This means there is no way
-      // to make the current path resolver work without overriding `fetch` in
-      // dependency libraries (vole-core).
+      // TODO: This will fail for Zarrs, which are directories and not files, so
+      // `resolvePath` will return `null`. Even if `resolvePath` did handle
+      // directories, Zarrs index from the directory root, which is provided as
+      // a Object URL. Adding additional paths to the end of an Object URL (e.g.
+      // TCZYX specifiers for zarrs, like `/0/0/0`) does not result in a working
+      // URL. This means there is no way to make the current path resolver work
+      // without overriding `fetch` in dependency libraries (vole-core).
       throw new Error(
         `Failed to resolve path for 3D frame source '${data.source}'. ${LoadTroubleshooting.CHECK_ZIP_ZARR_DATA}`
       );
