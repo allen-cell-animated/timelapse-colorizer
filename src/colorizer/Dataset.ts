@@ -509,7 +509,7 @@ export default class Dataset {
       return undefined;
     }
     const frameSource = this.resolvePath(data.source);
-    let backdrops: Backdrop3dData[] = [];
+    const backdrops: Backdrop3dData[] = [];
     if (!frameSource) {
       // This will only happen if using a file path resolver, if this file does
       // not exist in a ZIP file.
