@@ -96,7 +96,7 @@ export const isChannelKey = (key: string): key is ChannelSettingParamKey => {
 const ALLEN_FILE_PREFIX = "/allen/";
 const ALLEN_PREFIX_TO_HTTPS: Record<string, string> = {
   // eslint-disable-next-line @typescript-eslint/naming-convention
-  "/allen/aics/": "https://dev-aics-dtp-001.int.allencell.org/",
+  "/allen/aics/": "https://vast-files.int.allencell.org/",
 };
 
 export const DEFAULT_FETCH_TIMEOUT_MS = 2000;
