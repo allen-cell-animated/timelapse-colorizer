@@ -1,4 +1,5 @@
 precision highp usampler2D;
+precision highp int;
 
 uniform usampler2D frame;
 uniform sampler2D featureData;
@@ -46,8 +47,7 @@ const vec4 TRANSPARENT = vec4(0.0, 0.0, 0.0, 0.0);
 /** MUST be synchronized with the DrawMode enum in ColorizeCanvas! */
 const uint DRAW_MODE_HIDE = 0u;
 const uint DRAW_MODE_COLOR = 1u;
-const uint BACKGROUND_ID = 0u;
-const uint MISSING_DATA_ID = 0xFFFFFFFFu;
+const int BACKGROUND_ID = 0;
 const int ID_OFFSET = 1;
 const float OUTLINE_WIDTH_PX = 2.0;
 const float EDGE_WIDTH_PX = 1.0;
@@ -100,7 +100,20 @@ vec4 getFloatFromTex(sampler2D tex, int index) {
   return texelFetch(tex, featurePos, 0);
 }
 
-uint getId(vec2 sUv) {
+/**
+ * Attempts to look up the global ID of the pixel at the given scaled UV
+ * coordinates. 
+ * 
+ * Returns:
+ * - `BACKGROUND_ID` (0) if the pixel corresponds to background.
+ * - Negative values if the segmentation ID has no associated global ID.
+ * - The global ID + 1 (ID_OFFSET) otherwise.
+ * 
+ * Note that IDs are offset by `ID_OFFSET` (`=1`) to reserve `0` for
+ * segmentations that don't have associated data. `ID_OFFSET` MUST be subtracted
+ *  from the ID when accessing data buffers.
+*/
+int getId(vec2 sUv) {
   uint rawId = combineColor(texture(frame, sUv));
   if (rawId == 0u) {
     return BACKGROUND_ID;
@@ -109,9 +122,10 @@ uint getId(vec2 sUv) {
   // Note: IDs are offset by `ID_OFFSET` (`=1`) to reserve `0` for segmentations that don't
   // have associated data. `ID_OFFSET` MUST be subtracted from the ID when accessing
   // data buffers.
-  uint globalId = c.r;
-  if (globalId == 0u) {
-    return MISSING_DATA_ID;
+  int globalId = int(c.r);
+  if (globalId == 0) {
+    // Use negative numbers to denote missing IDs.
+    return -int(rawId);
   }
   return globalId;
 }
@@ -191,7 +205,7 @@ vec4 getObjectColor(vec2 sUv, float opacity) {
   }
 
   // Get the segmentation id at this pixel
-  uint rawId = getId(sUv);
+  int rawId = getId(sUv);
 
   // A segmentation id of 0 represents background
   if (rawId == BACKGROUND_ID) {
@@ -216,7 +230,7 @@ vec4 getObjectColor(vec2 sUv, float opacity) {
   // otherwise color with the color ramp as usual.
   bool isInRange = getUintFromTex(inRangeIds, id).r == 1u;
   bool isOutlier = isinf(featureVal) || outlierVal != 0u;
-  bool isMissingData = (rawId == MISSING_DATA_ID);
+  bool isMissingData = (rawId < 0);
   bool isEdgePixel = (edgeColorAlpha != 0.0) && (id != highlightedId) && (isEdge(sUv, id, EDGE_WIDTH_PX));
 
   // Features outside the filtered/thresholded range will all be treated the same (use `outOfRangeDrawColor`).
