@@ -26,6 +26,7 @@ const EXAMPLE_SLICE_1: Partial<ConfigSlice> = {
   edgeColorAlpha: 128 / 255, // 0x80
   edgeMode: DrawMode.USE_COLOR,
   openTab: TabType.SCATTER_PLOT,
+  interpolate3d: false,
 };
 
 const EXAMPLE_SLICE_1_PARAMS: SerializedStoreData = {
@@ -44,6 +45,7 @@ const EXAMPLE_SLICE_1_PARAMS: SerializedStoreData = {
   [UrlParam.EDGE_COLOR]: "80808080",
   [UrlParam.EDGE_MODE]: "1",
   [UrlParam.OPEN_TAB]: TabType.SCATTER_PLOT,
+  [UrlParam.INTERPOLATE_3D]: "0",
 };
 
 const EXAMPLE_SLICE_2: Partial<ConfigSlice> = {
@@ -61,6 +63,7 @@ const EXAMPLE_SLICE_2: Partial<ConfigSlice> = {
   edgeColorAlpha: 208 / 255, // 0xd0
   edgeMode: DrawMode.HIDE,
   openTab: TabType.SETTINGS,
+  interpolate3d: true,
 };
 
 const EXAMPLE_SLICE_2_PARAMS: SerializedStoreData = {
@@ -79,6 +82,7 @@ const EXAMPLE_SLICE_2_PARAMS: SerializedStoreData = {
   [UrlParam.EDGE_COLOR]: "a0b0c0d0",
   [UrlParam.EDGE_MODE]: DrawMode.HIDE.toString(),
   [UrlParam.OPEN_TAB]: TabType.SETTINGS,
+  [UrlParam.INTERPOLATE_3D]: "1",
 };
 
 describe("ConfigSlice", () => {

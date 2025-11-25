@@ -35,4 +35,5 @@ export const renderCanvasStateParamsSelector = (state: ViewerStoreState): Render
   objectOpacity: state.objectOpacity,
   backdropSaturation: state.backdropSaturation,
   backdropBrightness: state.backdropBrightness,
+  interpolate3d: state.interpolate3d,
 });

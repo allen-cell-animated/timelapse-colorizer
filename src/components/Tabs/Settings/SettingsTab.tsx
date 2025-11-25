@@ -39,6 +39,7 @@ const enum SettingsHtmlIds {
   TRACK_PATH_SHOW_BREAKS_CHECKBOX = "track-path-show-breaks-checkbox",
   SCALE_BAR_SWITCH = "scale-bar-switch",
   TIMESTAMP_SWITCH = "timestamp-switch",
+  INTERPOLATE_3D_SWITCH = "interpolate-3d-switch",
 }
 
 const NO_BACKDROP = {
@@ -94,6 +95,7 @@ export default function SettingsTab(): ReactElement {
   const edgeColor = useViewerStateStore((state) => state.edgeColor);
   const edgeColorAlpha = useViewerStateStore((state) => state.edgeColorAlpha);
   const edgeMode = useViewerStateStore((state) => state.edgeMode);
+  const interpolate3d = useViewerStateStore((state) => state.interpolate3d);
   const objectOpacity = useViewerStateStore((state) => state.objectOpacity);
   const outlierDrawSettings = useViewerStateStore((state) => state.outlierDrawSettings);
   const outlineColor = useViewerStateStore((state) => state.outlineColor);
@@ -104,6 +106,7 @@ export default function SettingsTab(): ReactElement {
   const setBackdropVisible = useViewerStateStore((state) => state.setBackdropVisible);
   const setEdgeColor = useViewerStateStore((state) => state.setEdgeColor);
   const setEdgeMode = useViewerStateStore((state) => state.setEdgeMode);
+  const setInterpolate3d = useViewerStateStore((state) => state.setInterpolate3d);
   const setObjectOpacity = useViewerStateStore((state) => state.setObjectOpacity);
   const setOutlierDrawSettings = useViewerStateStore((state) => state.setOutlierDrawSettings);
   const setOutlineColor = useViewerStateStore((state) => state.setOutlineColor);
@@ -140,6 +143,8 @@ export default function SettingsTab(): ReactElement {
     backdropOptions = [NO_BACKDROP];
     selectedBackdropKey = NO_BACKDROP.value;
   }
+
+  const is3dDataset = dataset?.has3dFrames() ?? true;
 
   return (
     <FlexColumn $gap={4}>
@@ -224,6 +229,23 @@ export default function SettingsTab(): ReactElement {
                 onChange={(e) => setShowTimestamp(e.target.checked)}
               />
             </div>
+          </SettingsItem>
+          <SettingsItem
+            label="Interpolation"
+            htmlFor={SettingsHtmlIds.INTERPOLATE_3D_SWITCH}
+            labelStyle={{ marginTop: "1px" }}
+          >
+            <Tooltip title="Interpolates 3D volume data to reduce pixel artifacts" placement="right">
+              <div style={{ width: "fit-content" }}>
+                <Checkbox
+                  id={SettingsHtmlIds.INTERPOLATE_3D_SWITCH}
+                  checked={interpolate3d}
+                  onChange={(e) => setInterpolate3d(e.target.checked)}
+                  style={{ paddingTop: "0" }}
+                  disabled={!is3dDataset}
+                />
+              </div>
+            </Tooltip>
           </SettingsItem>
         </SettingsContainer>
       </ToggleCollapse>
