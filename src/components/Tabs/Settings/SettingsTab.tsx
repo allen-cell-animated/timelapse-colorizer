@@ -235,7 +235,11 @@ export default function SettingsTab(): ReactElement {
             htmlFor={SettingsHtmlIds.INTERPOLATE_3D_SWITCH}
             labelStyle={{ marginTop: "1px" }}
           >
-            <Tooltip title="Interpolates 3D volume data to reduce pixel artifacts" placement="right">
+            <Tooltip
+              title="Interpolates 3D volume data to reduce pixel artifacts."
+              placement="right"
+              trigger={["focus", "hover"]}
+            >
               <div style={{ width: "fit-content" }}>
                 <Checkbox
                   id={SettingsHtmlIds.INTERPOLATE_3D_SWITCH}
@@ -244,6 +248,7 @@ export default function SettingsTab(): ReactElement {
                   style={{ paddingTop: "0" }}
                   disabled={!is3dDataset}
                 />
+                <VisuallyHidden>Interpolates 3D volume data to reduce pixel artifacts.</VisuallyHidden>
               </div>
             </Tooltip>
           </SettingsItem>
