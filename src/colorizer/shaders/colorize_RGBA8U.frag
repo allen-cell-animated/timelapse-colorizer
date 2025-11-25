@@ -47,7 +47,7 @@ const vec4 TRANSPARENT = vec4(0.0, 0.0, 0.0, 0.0);
 /** MUST be synchronized with the DrawMode enum in ColorizeCanvas! */
 const uint DRAW_MODE_HIDE = 0u;
 const uint DRAW_MODE_COLOR = 1u;
-const int BACKGROUND_ID = 0;
+const uint BACKGROUND_ID = 0u;
 const int ID_OFFSET = 1;
 const float OUTLINE_WIDTH_PX = 2.0;
 const float EDGE_WIDTH_PX = 1.0;
@@ -102,30 +102,23 @@ vec4 getFloatFromTex(sampler2D tex, int index) {
 
 /**
  * Attempts to look up the global ID of the pixel at the given scaled UV
- * coordinates. 
- * 
- * Returns:
- * - `BACKGROUND_ID` (0) if the pixel corresponds to background.
- * - Negative values if the segmentation ID has no associated global ID.
- * - The global ID + 1 (ID_OFFSET) otherwise.
+ * coordinates. If no global ID exists for the segmentation ID at that pixel,
+  * `missingId` is set to true and the raw segmentation ID is returned.
  * 
  * Note that IDs are offset by `ID_OFFSET` (`=1`) to reserve `0` for
  * segmentations that don't have associated data. `ID_OFFSET` MUST be subtracted
- *  from the ID when accessing data buffers.
+ * from the ID when accessing data buffers.
 */
-int getId(vec2 sUv) {
+uint getId(vec2 sUv, out bool missingId) {
   uint rawId = combineColor(texture(frame, sUv));
   if (rawId == 0u) {
     return BACKGROUND_ID;
   }
   uvec4 c = getUintFromTex(segIdToGlobalId, int(rawId - segIdOffset));
-  // Note: IDs are offset by `ID_OFFSET` (`=1`) to reserve `0` for segmentations that don't
-  // have associated data. `ID_OFFSET` MUST be subtracted from the ID when accessing
-  // data buffers.
-  int globalId = int(c.r);
-  if (globalId == 0) {
-    // Use negative numbers to denote missing IDs.
-    return -int(rawId);
+  uint globalId = c.r;
+  if (globalId == 0u) {
+    missingId = true;
+    return rawId;
   }
   return globalId;
 }
@@ -145,17 +138,31 @@ vec4 getCategoricalColor(float featureValue) {
   return getColorRamp(modValue / (width - 1.0));
 }
 
-bool isEdge(vec2 uv, int id, float thickness) {
+bool isEdge(vec2 uv, int id, bool idMissing, float thickness) {
   // step size is equal to 1 onscreen canvas pixel     
   float wStep = 1.0 / float(canvasSizePx.x) * float(canvasToFrameScale.x);
   float hStep = 1.0 / float(canvasSizePx.y) * float(canvasToFrameScale.y);        
   // sample around the pixel to see if we are on an edge
-  int R = int(getId(uv + vec2(thickness * wStep, 0))) - ID_OFFSET;
-  int L = int(getId(uv + vec2(-thickness * wStep, 0))) - ID_OFFSET;
-  int T = int(getId(uv + vec2(0, thickness * hStep))) - ID_OFFSET;
-  int B = int(getId(uv + vec2(0, -thickness * hStep))) - ID_OFFSET;
+
+  bool isRMissing = false;
+  bool isLMissing = false;
+  bool isTMissing = false;
+  bool isBMissing = false;
+  int R = int(getId(uv + vec2(thickness * wStep, 0), isRMissing)) - ID_OFFSET;
+  int L = int(getId(uv + vec2(-thickness * wStep, 0), isLMissing)) - ID_OFFSET;
+  int T = int(getId(uv + vec2(0, thickness * hStep), isTMissing)) - ID_OFFSET;
+  int B = int(getId(uv + vec2(0, -thickness * hStep), isBMissing)) - ID_OFFSET;
   // if any neighbors are not highlightedId then color this as edge
-  return id != -1 && (R != id || L != id || T != id || B != id);
+
+  bool isBackground = id == int(BACKGROUND_ID) - ID_OFFSET;
+  // It's possible for neighboring pixels to return the same ID but actually be
+  // different objects because one is missing data and the ID represents a raw
+  // segmentation ID and not a global ID. Thus, we need to check if neighbors
+  // are missing data when this pixel is not.
+  bool hasDifferentNeighborId = (R != id || L != id || T != id || B != id);
+  bool hasNeighborsMissingData = (isRMissing != idMissing || isLMissing != idMissing || isTMissing != idMissing || isBMissing != idMissing);
+
+  return (!isBackground) && (hasDifferentNeighborId || hasNeighborsMissingData);
 }
 
 vec4 getColorFromDrawMode(uint drawMode, vec3 defaultColor) {
@@ -205,7 +212,8 @@ vec4 getObjectColor(vec2 sUv, float opacity) {
   }
 
   // Get the segmentation id at this pixel
-  int rawId = getId(sUv);
+  bool isMissingData = false;
+  uint rawId = getId(sUv, isMissingData);
 
   // A segmentation id of 0 represents background
   if (rawId == BACKGROUND_ID) {
@@ -215,7 +223,7 @@ vec4 getObjectColor(vec2 sUv, float opacity) {
   int id = int(rawId) - ID_OFFSET;
   // do an outline around highlighted object
   if (id == highlightedId) {
-    if (isEdge(sUv, highlightedId, OUTLINE_WIDTH_PX)) {
+    if (isEdge(sUv, highlightedId, isMissingData, OUTLINE_WIDTH_PX)) {
       // ignore opacity for edge color
       return vec4(outlineColor, 1.0);
     }
@@ -230,8 +238,7 @@ vec4 getObjectColor(vec2 sUv, float opacity) {
   // otherwise color with the color ramp as usual.
   bool isInRange = getUintFromTex(inRangeIds, id).r == 1u;
   bool isOutlier = isinf(featureVal) || outlierVal != 0u;
-  bool isMissingData = (rawId < 0);
-  bool isEdgePixel = (edgeColorAlpha != 0.0) && (id != highlightedId) && (isEdge(sUv, id, EDGE_WIDTH_PX));
+  bool isEdgePixel = (edgeColorAlpha != 0.0) && (id != highlightedId) && (isEdge(sUv, id, isMissingData, EDGE_WIDTH_PX));
 
   // Features outside the filtered/thresholded range will all be treated the same (use `outOfRangeDrawColor`).
   // Features inside the range can either be outliers or standard values, and are colored accordingly.
