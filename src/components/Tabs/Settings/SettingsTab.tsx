@@ -208,7 +208,7 @@ export default function SettingsTab(): ReactElement {
           </SettingsItem>
 
           <SettingsItem label="Scale bar" htmlFor={SettingsHtmlIds.SCALE_BAR_SWITCH} labelStyle={{ marginTop: "1px" }}>
-            <div>
+            <div style={{ width: "fit-content" }}>
               <Checkbox
                 id={SettingsHtmlIds.SCALE_BAR_SWITCH}
                 checked={showScaleBar}
@@ -217,7 +217,7 @@ export default function SettingsTab(): ReactElement {
             </div>
           </SettingsItem>
           <SettingsItem label="Timestamp" htmlFor={SettingsHtmlIds.TIMESTAMP_SWITCH} labelStyle={{ marginTop: "1px" }}>
-            <div>
+            <div style={{ width: "fit-content" }}>
               <Checkbox
                 id={SettingsHtmlIds.TIMESTAMP_SWITCH}
                 checked={showTimestamp}
@@ -268,7 +268,11 @@ export default function SettingsTab(): ReactElement {
             labelStyle={{ height: "min-content" }}
             style={{ marginTop: "-5px" }}
           >
-            <Tooltip title="Show breaks in the track path where the track is not continuous." placement="right">
+            <Tooltip
+              title="Show breaks in the track path where the track is not continuous."
+              placement="right"
+              trigger={["focus", "hover"]}
+            >
               <div style={{ width: "fit-content" }}>
                 <VisuallyHidden>Show breaks in the track path where the track is not continuous.</VisuallyHidden>
                 <Checkbox
