@@ -11,6 +11,7 @@ import type {
   PixelIdInfo,
   TrackPathColorMode,
 } from "src/colorizer/types";
+import { ViewMode } from "src/state/slices";
 
 // Standalone type for render canvas state params
 export type RenderCanvasStateParams = {
@@ -20,6 +21,7 @@ export type RenderCanvasStateParams = {
   pendingFrame: number;
   featureKey: string | null;
   track: Track | null;
+  viewMode: ViewMode;
   showTrackPath: boolean;
   showTrackPathBreaks: boolean;
   colorRamp: ColorRamp;

@@ -10,6 +10,7 @@ import LabeledSlider from "src/components/Inputs/LabeledSlider";
 import WrappedColorPicker from "src/components/Inputs/WrappedColorPicker";
 import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
 import { MAX_SETTINGS_SLIDER_WIDTH } from "src/constants";
+import { ViewMode } from "src/state/slices";
 import { useViewerStateStore } from "src/state/ViewerState";
 import { threeToAntColor } from "src/utils/color_utils";
 
@@ -33,6 +34,7 @@ const enum VectorSettingsHtmlIds {
 
 export default function VectorFieldSettings(): ReactElement {
   const dataset = useViewerStateStore((state) => state.dataset);
+  const viewMode = useViewerStateStore((state) => state.viewMode);
   const setVectorColor = useViewerStateStore((state) => state.setVectorColor);
   const setVectorKey = useViewerStateStore((state) => state.setVectorKey);
   const setVectorMotionTimeIntervals = useViewerStateStore((state) => state.setVectorMotionTimeIntervals);
@@ -53,7 +55,7 @@ export default function VectorFieldSettings(): ReactElement {
   const vectorOptions = useMemo(() => [VECTOR_OPTION_MOTION], []);
   const vectorOptionsEnabled = vectorVisible && dataset !== null;
 
-  const is3dDataset = dataset?.has3dFrames() ?? false;
+  const is3dDataset = viewMode == ViewMode.VIEW_3D;
 
   return (
     <>

@@ -2,10 +2,15 @@ import type { StateCreator } from "zustand";
 
 import type { Track } from "src/colorizer";
 import type Dataset from "src/colorizer/Dataset";
-import { decodeInt, UrlParam } from "src/colorizer/utils/url_utils";
+import { decodeInt, parseViewMode, UrlParam } from "src/colorizer/utils/url_utils";
 import type { SerializedStoreData } from "src/state/types";
 
 import type { CollectionSlice } from "./collection_slice";
+
+export const enum ViewMode {
+  VIEW_2D = "2d",
+  VIEW_3D = "3d",
+}
 
 export type DatasetSliceState = {
   datasetKey: string | null;
@@ -15,11 +20,16 @@ export type DatasetSliceState = {
   /** The key of the backdrop image set in the current dataset. `null` if there
    * is no Dataset loaded or if the dataset does not have backdrops. */
   backdropKey: string | null;
+  /**
+   * Current view mode, either 2D or 3D. Will be automatically switched for
+   * datasets that support only one or the other.
+   */
+  viewMode: ViewMode;
 };
 
 export type DatasetSliceSerializableState = Pick<
   DatasetSliceState,
-  "datasetKey" | "featureKey" | "track" | "backdropKey"
+  "datasetKey" | "featureKey" | "track" | "backdropKey" | "viewMode"
 >;
 
 export type DatasetSliceActions = {
@@ -33,6 +43,7 @@ export type DatasetSliceActions = {
   setTrack: (track: Track) => void;
   clearTrack: () => void;
   setBackdropKey: (key: string) => void;
+  setViewMode: (viewMode: ViewMode) => void;
 };
 
 export type DatasetSlice = DatasetSliceState & DatasetSliceActions;
@@ -43,6 +54,7 @@ export const createDatasetSlice: StateCreator<CollectionSlice & DatasetSlice, []
   featureKey: null,
   track: null,
   backdropKey: null,
+  viewMode: ViewMode.VIEW_2D,
 
   setBackdropKey: (key: string) => {
     const dataset = get().dataset;
@@ -79,6 +91,18 @@ export const createDatasetSlice: StateCreator<CollectionSlice & DatasetSlice, []
   clearTrack: () => {
     set({ track: null });
   },
+  setViewMode: (viewMode: ViewMode) => {
+    const dataset = get().dataset;
+    if (!dataset) {
+      throw new Error("DatasetSlice.setViewMode: Cannot set view mode when no dataset loaded");
+    }
+    if (viewMode == ViewMode.VIEW_3D && !dataset.has3dFrames()) {
+      throw new Error("DatasetSlice.setViewMode: Dataset does not support 3D view mode");
+    } else if (viewMode == ViewMode.VIEW_2D && !dataset.has2dFrames()) {
+      throw new Error("DatasetSlice.setViewMode: Dataset does not support 2D view mode");
+    }
+    set({ viewMode });
+  },
 
   setDataset: (key: string, dataset: Dataset) => {
     // TODO: Clear/dispose of old dataset here?
@@ -98,8 +122,21 @@ export const createDatasetSlice: StateCreator<CollectionSlice & DatasetSlice, []
       backdropKey = dataset.getDefaultBackdropKey();
     }
 
+    // Change view mode if the current mode is not supported by the new dataset
+    let viewMode = ViewMode.VIEW_2D;
+    // Prefer 3D if available
+    if (dataset.has3dFrames()) {
+      viewMode = ViewMode.VIEW_3D;
+    }
+    // TODO: Re-enable when users are given a control for switching modes
+    // if (viewMode === ViewMode.VIEW_3D && !dataset.has3dFrames()) {
+    //   viewMode = ViewMode.VIEW_2D;
+    // } else if (viewMode === ViewMode.VIEW_2D && !dataset.has2dFrames()) {
+    //   viewMode = ViewMode.VIEW_3D;
+    // }
+
     // TODO: Dispose of old dataset?
-    set({ datasetKey: key, dataset, track: null, featureKey, backdropKey });
+    set({ datasetKey: key, dataset, track: null, featureKey, backdropKey, viewMode });
   },
 
   clearDataset: () => set({ datasetKey: null, dataset: null, track: null, featureKey: null, backdropKey: null }),
@@ -119,6 +156,9 @@ export const serializeDatasetSlice = (slice: Partial<DatasetSliceSerializableSta
   if (slice.backdropKey !== undefined && slice.backdropKey !== null) {
     ret[UrlParam.BACKDROP_KEY] = slice.backdropKey;
   }
+  if (slice.viewMode !== undefined) {
+    ret[UrlParam.VIEW_MODE] = slice.viewMode;
+  }
   return ret;
 };
 
@@ -128,6 +168,7 @@ export const selectDatasetSliceSerializationDeps = (slice: DatasetSlice): Datase
   featureKey: slice.featureKey,
   track: slice.track,
   backdropKey: slice.backdropKey,
+  viewMode: slice.viewMode,
 });
 
 export const loadDatasetSliceFromParams = (slice: DatasetSlice, params: URLSearchParams): void => {
@@ -139,6 +180,7 @@ export const loadDatasetSliceFromParams = (slice: DatasetSlice, params: URLSearc
   const featureKeyParam = params.get(UrlParam.FEATURE);
   const trackIdParam = decodeInt(params.get(UrlParam.TRACK));
   const backdropKeyParam = params.get(UrlParam.BACKDROP_KEY);
+  const viewModeParam = parseViewMode(params.get(UrlParam.VIEW_MODE));
 
   if (featureKeyParam !== null) {
     const featureKey = dataset.findFeatureByKeyOrName(featureKeyParam);
@@ -154,5 +196,8 @@ export const loadDatasetSliceFromParams = (slice: DatasetSlice, params: URLSearc
   }
   if (backdropKeyParam !== null && dataset.hasBackdrop(backdropKeyParam)) {
     slice.setBackdropKey(backdropKeyParam);
+  }
+  if (viewModeParam !== undefined) {
+    slice.setViewMode(viewModeParam);
   }
 };
