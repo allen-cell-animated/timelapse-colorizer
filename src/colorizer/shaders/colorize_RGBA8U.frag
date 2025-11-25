@@ -50,6 +50,7 @@ const uint DRAW_MODE_COLOR = 1u;
 const uint RAW_BACKGROUND_ID = 0u;
 const int MISSING_DATA_ID = -1;
 const int ID_OFFSET = 1;
+const int NO_HIGHLIGHT_ID = -1;
 const float OUTLINE_WIDTH_PX = 2.0;
 const float EDGE_WIDTH_PX = 1.0;
 
@@ -206,7 +207,6 @@ vec4 getObjectColor(vec2 sUv, float opacity) {
   // Get the segmentation id at this pixel
   uint rawId;
   int id = getId(sUv, rawId);
-  bool isMissingData = id == MISSING_DATA_ID;
 
   // A raw segmentation id of 0 represents background
   if (rawId == RAW_BACKGROUND_ID) {
@@ -214,7 +214,7 @@ vec4 getObjectColor(vec2 sUv, float opacity) {
   }
 
   // do an outline around highlighted object
-  if (id == highlightedId && !isMissingData) {
+  if (highlightedId != NO_HIGHLIGHT_ID && id == highlightedId) {
     if (isEdge(sUv, rawId, OUTLINE_WIDTH_PX)) {
       // ignore opacity for edge color
       return vec4(outlineColor, 1.0);
@@ -228,6 +228,7 @@ vec4 getObjectColor(vec2 sUv, float opacity) {
 
   // Use the selected draw mode to handle out of range and outlier values;
   // otherwise color with the color ramp as usual.
+  bool isMissingData = id == MISSING_DATA_ID;
   bool isInRange = getUintFromTex(inRangeIds, id).r == 1u;
   bool isOutlier = isinf(featureVal) || outlierVal != 0u;
   bool isEdgePixel = (edgeColorAlpha != 0.0) && (isEdge(sUv, rawId, EDGE_WIDTH_PX));
