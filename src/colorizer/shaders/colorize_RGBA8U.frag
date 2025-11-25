@@ -105,9 +105,10 @@ vec4 getFloatFromTex(sampler2D tex, int index) {
  * Attempts to look up the global ID of the pixel at the given scaled UV
  * coordinates.
  * @param sUv The scaled UV coordinates to look up.
- * @param rawId Output parameter that will contain the raw segmentation ID.
- *     0 indicates the background.
- * @returns The global ID at the given coordinates, or -1 (MISSING_DATA_ID) if
+ * @param rawId Output parameter that will contain the raw segmentation ID
+ *     (e.g. the pixel value in the segmentation image). 0 indicates the
+ *     background.
+ * @returns The global ID at the given coordinates, or -1 (=MISSING_DATA_ID) if
  *     the pixel is background or missing data.
 */
 int getId(vec2 sUv, out uint rawId) {
@@ -116,10 +117,11 @@ int getId(vec2 sUv, out uint rawId) {
     return MISSING_DATA_ID;
   }
   uvec4 c = getUintFromTex(segIdToGlobalId, int(rawId - segIdOffset));
-  uint globalId = c.r; // will be 0 if missing data -> returned as -1 (MISSING_DATA_ID)
-  // Note: IDs are offset by `ID_OFFSET` (`=1`) to reserve `0` for segmentations
-  // that don't have associated data. `ID_OFFSET` MUST be subtracted from the ID
-  // when accessing data buffers.
+  // Note: IDs are offset in `segIdToGlobalId` by `ID_OFFSET=1` to reserve `0`
+  // for segmentations that are missing / have no corresponding global ID data.
+  // `ID_OFFSET` is subtracted here to get the correct ID for accessing data
+  // buffers.
+  uint globalId = c.r; // 0 if missing data
   return int(globalId) - ID_OFFSET;
 }
 
