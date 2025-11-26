@@ -144,12 +144,14 @@ export default function VectorFieldSettings(): ReactElement {
         label={"Scale thickness by magnitude"}
         htmlFor={VectorSettingsHtmlIds.VECTOR_SCALE_THICKNESS_CHECKBOX}
       >
-        <Checkbox
-          id={VectorSettingsHtmlIds.VECTOR_SCALE_THICKNESS_CHECKBOX}
-          checked={vectorScaleThickness}
-          onChange={(e) => setVectorScaleThickness(e.target.checked)}
-          disabled={!vectorOptionsEnabled || !is3dDataset}
-        />
+        <div style={{ width: "fit-content" }}>
+          <Checkbox
+            id={VectorSettingsHtmlIds.VECTOR_SCALE_THICKNESS_CHECKBOX}
+            checked={vectorScaleThickness}
+            onChange={(e) => setVectorScaleThickness(e.target.checked)}
+            disabled={!vectorOptionsEnabled || !is3dDataset}
+          />
+        </div>
       </SettingsItem>
       <SettingsItem label="Arrow color" htmlFor={VectorSettingsHtmlIds.VECTOR_COLOR_PICKER}>
         <WrappedColorPicker
