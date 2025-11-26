@@ -268,11 +268,7 @@ export default function SettingsTab(): ReactElement {
             labelStyle={{ height: "min-content" }}
             style={{ marginTop: "-5px" }}
           >
-            <Tooltip
-              title="Show breaks in the track path where the track is not continuous."
-              placement="right"
-              trigger={["focus", "hover"]}
-            >
+            <Tooltip title="Show breaks in the track path where the track is not continuous." placement="right">
               <div style={{ width: "fit-content" }}>
                 <VisuallyHidden>Show breaks in the track path where the track is not continuous.</VisuallyHidden>
                 <Checkbox
