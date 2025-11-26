@@ -32,7 +32,11 @@ const enum VectorSettingsHtmlIds {
   VECTOR_TOOLTIP_MODE_RADIO = "vector-tooltip-mode-radio",
 }
 
-export default function VectorFieldSettings(): ReactElement {
+type VectorFieldSettingsProps = {
+  isDataset3d: boolean;
+};
+
+export default function VectorFieldSettings(props: VectorFieldSettingsProps): ReactElement {
   const dataset = useViewerStateStore((state) => state.dataset);
   const setVectorColor = useViewerStateStore((state) => state.setVectorColor);
   const setVectorKey = useViewerStateStore((state) => state.setVectorKey);
@@ -126,35 +130,40 @@ export default function VectorFieldSettings(): ReactElement {
             />
           </div>
         </SettingsItem>
-        <SettingsItem label="Thickness" htmlFor={VectorSettingsHtmlIds.VECTOR_THICKNESS_SLIDER}>
-          <div style={{ maxWidth: MAX_SETTINGS_SLIDER_WIDTH, width: "100%" }}>
-            <LabeledSlider
-              id={VectorSettingsHtmlIds.VECTOR_THICKNESS_SLIDER}
-              type="value"
-              value={vectorThickness}
-              minSliderBound={0.1}
-              maxSliderBound={5}
-              minInputBound={0}
-              maxInputBound={20}
-              step={0.1}
-              marks={[1]}
-              onChange={setVectorThickness}
-              numberFormatter={(value?: number) => `${value?.toFixed(1)}`}
-              disabled={!vectorOptionsEnabled || !is3dDataset}
-            ></LabeledSlider>
-          </div>
-        </SettingsItem>
-        <SettingsItem
-          label={"Scale thickness by magnitude"}
-          htmlFor={VectorSettingsHtmlIds.VECTOR_SCALE_THICKNESS_CHECKBOX}
-        >
-          <Checkbox
-            id={VectorSettingsHtmlIds.VECTOR_SCALE_THICKNESS_CHECKBOX}
-            checked={vectorScaleThickness}
-            onChange={(e) => setVectorScaleThickness(e.target.checked)}
-            disabled={!vectorOptionsEnabled || !is3dDataset}
-          />
-        </SettingsItem>
+        {props.isDataset3d && (
+          // 3D-specific vector settings:
+          <>
+            <SettingsItem label="3D thickness" htmlFor={VectorSettingsHtmlIds.VECTOR_THICKNESS_SLIDER}>
+              <div style={{ maxWidth: MAX_SETTINGS_SLIDER_WIDTH, width: "100%" }}>
+                <LabeledSlider
+                  id={VectorSettingsHtmlIds.VECTOR_THICKNESS_SLIDER}
+                  type="value"
+                  value={vectorThickness}
+                  minSliderBound={0.1}
+                  maxSliderBound={5}
+                  minInputBound={0}
+                  maxInputBound={20}
+                  step={0.1}
+                  marks={[1]}
+                  onChange={setVectorThickness}
+                  numberFormatter={(value?: number) => `${value?.toFixed(1)}`}
+                  disabled={!vectorOptionsEnabled || !is3dDataset}
+                ></LabeledSlider>
+              </div>
+            </SettingsItem>
+            <SettingsItem
+              label={"Scale thickness by magnitude"}
+              htmlFor={VectorSettingsHtmlIds.VECTOR_SCALE_THICKNESS_CHECKBOX}
+            >
+              <Checkbox
+                id={VectorSettingsHtmlIds.VECTOR_SCALE_THICKNESS_CHECKBOX}
+                checked={vectorScaleThickness}
+                onChange={(e) => setVectorScaleThickness(e.target.checked)}
+                disabled={!vectorOptionsEnabled || !is3dDataset}
+              />
+            </SettingsItem>
+          </>
+        )}
         <SettingsItem label="Arrow color" htmlFor={VectorSettingsHtmlIds.VECTOR_COLOR_PICKER}>
           <WrappedColorPicker
             id={VectorSettingsHtmlIds.VECTOR_COLOR_PICKER}

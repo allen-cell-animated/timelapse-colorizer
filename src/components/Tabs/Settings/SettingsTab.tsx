@@ -32,7 +32,7 @@ export default function SettingsTab(): ReactElement {
       {isDataset3d ? <ChannelSettingsControl /> : <BackdropSettings />}
       <StyledHorizontalRule />
 
-      <VectorFieldSettings />
+      <VectorFieldSettings isDataset3d={isDataset3d} />
 
       {/* Extra padding to prevent layout shift when toggling open/closed */}
       <div style={{ height: "400px" }}></div>
