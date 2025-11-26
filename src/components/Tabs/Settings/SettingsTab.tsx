@@ -144,7 +144,7 @@ export default function SettingsTab(): ReactElement {
     selectedBackdropKey = NO_BACKDROP.value;
   }
 
-  const is3dDataset = dataset?.has3dFrames() ?? true;
+  const is3dDataset = dataset?.has3dFrames() ?? false;
 
   return (
     <FlexColumn $gap={4}>
