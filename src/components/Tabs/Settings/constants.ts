@@ -17,3 +17,5 @@ export const DEFAULT_OUTLINE_COLOR_PRESETS = [
     colors: DEFAULT_OUTLINE_COLORS,
   },
 ];
+
+export const SETTINGS_GAP_PX = 8;
