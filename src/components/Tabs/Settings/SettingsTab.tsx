@@ -230,28 +230,33 @@ export default function SettingsTab(): ReactElement {
               />
             </div>
           </SettingsItem>
-          <SettingsItem
-            label="Interpolation"
-            htmlFor={SettingsHtmlIds.INTERPOLATE_3D_SWITCH}
-            labelStyle={{ marginTop: "1px" }}
-          >
-            <Tooltip
-              title="Interpolates 3D volume data to reduce pixel artifacts."
-              placement="right"
-              trigger={["focus", "hover"]}
+          {is3dDataset && (
+            <SettingsItem
+              label="Interpolate 3D data"
+              htmlFor={SettingsHtmlIds.INTERPOLATE_3D_SWITCH}
+              labelStyle={{ marginTop: "1px" }}
             >
-              <div style={{ width: "fit-content" }}>
-                <Checkbox
-                  id={SettingsHtmlIds.INTERPOLATE_3D_SWITCH}
-                  checked={interpolate3d}
-                  onChange={(e) => setInterpolate3d(e.target.checked)}
-                  style={{ paddingTop: "0" }}
-                  disabled={!is3dDataset}
-                />
-                <VisuallyHidden>Interpolates 3D volume data to reduce pixel artifacts.</VisuallyHidden>
-              </div>
-            </Tooltip>
-          </SettingsItem>
+              <Tooltip
+                title={
+                  (interpolate3d ? "Turn off " : "Turn on ") +
+                  "interpolation of 3D volume data (reduces pixel artifacts)."
+                }
+                placement="right"
+                trigger={["focus", "hover"]}
+              >
+                <div style={{ width: "fit-content" }}>
+                  <Checkbox
+                    id={SettingsHtmlIds.INTERPOLATE_3D_SWITCH}
+                    checked={interpolate3d}
+                    onChange={(e) => setInterpolate3d(e.target.checked)}
+                    style={{ paddingTop: "0" }}
+                    disabled={!is3dDataset}
+                  />
+                  <VisuallyHidden>Interpolates 3D volume data to reduce pixel artifacts.</VisuallyHidden>
+                </div>
+              </Tooltip>
+            </SettingsItem>
+          )}
         </SettingsContainer>
       </ToggleCollapse>
 
