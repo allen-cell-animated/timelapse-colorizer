@@ -42,6 +42,7 @@ const OUTLIER_DRAW_SETTINGS_DEFAULT: DrawSettings = {
 };
 
 export type ConfigSliceState = {
+  // Viewer settings
   showTrackPath: boolean;
   trackPathColor: Color;
   trackPathColorMode: TrackPathColorMode;
@@ -57,6 +58,12 @@ export type ConfigSliceState = {
   edgeColor: Color;
   edgeColorAlpha: number;
   edgeMode: DrawMode;
+
+  // 3D mode
+  /** Whether to interpolate 3D data. True by default. */
+  interpolate3d: boolean;
+
+  // UI state
   openTab: TabType;
 };
 
@@ -76,6 +83,7 @@ export type ConfigSliceSerializableState = Pick<
   | "edgeColorAlpha"
   | "edgeMode"
   | "openTab"
+  | "interpolate3d"
 >;
 
 export type ConfigSliceActions = {
@@ -94,6 +102,7 @@ export type ConfigSliceActions = {
   setEdgeColor: (edgeColor: Color, alpha: number) => void;
   setEdgeMode: (edgeMode: DrawMode) => void;
   setOpenTab: (openTab: TabType) => void;
+  setInterpolate3d: (interpolate3d: boolean) => void;
 };
 
 export type ConfigSlice = ConfigSliceState & ConfigSliceActions;
@@ -115,6 +124,11 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   edgeColor: new Color(EDGE_COLOR_DEFAULT),
   edgeColorAlpha: EDGE_COLOR_ALPHA_DEFAULT,
   edgeMode: DrawMode.USE_COLOR,
+
+  // 3D mode
+  interpolate3d: true,
+
+  // UI state
   openTab: TabType.TRACK_PLOT,
 
   // Actions
@@ -133,6 +147,7 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   setEdgeColor: (edgeColor, alpha) => set({ edgeColor, edgeColorAlpha: clamp(alpha, 0, 1) }),
   setEdgeMode: (edgeMode) => set({ edgeMode }),
   setOpenTab: (openTab) => set({ openTab }),
+  setInterpolate3d: (interpolate3d) => set({ interpolate3d }),
 });
 
 export const serializeConfigSlice = (slice: Partial<ConfigSliceSerializableState>): SerializedStoreData => {
@@ -153,6 +168,7 @@ export const serializeConfigSlice = (slice: Partial<ConfigSliceSerializableState
     [UrlParam.EDGE_MODE]: slice.edgeMode?.toString(),
     [UrlParam.EDGE_COLOR]: encodeMaybeColorWithAlpha(slice.edgeColor, slice.edgeColorAlpha),
     [UrlParam.OPEN_TAB]: slice.openTab,
+    [UrlParam.INTERPOLATE_3D]: encodeMaybeBoolean(slice.interpolate3d),
   };
 };
 
@@ -172,6 +188,7 @@ export const selectConfigSliceSerializationDeps = (slice: ConfigSlice): ConfigSl
   edgeColor: slice.edgeColor,
   edgeColorAlpha: slice.edgeColorAlpha,
   openTab: slice.openTab,
+  interpolate3d: slice.interpolate3d,
 });
 
 export const loadConfigSliceFromParams = (slice: ConfigSlice, params: URLSearchParams): void => {
@@ -180,6 +197,7 @@ export const loadConfigSliceFromParams = (slice: ConfigSlice, params: URLSearchP
   setValueIfDefined(decodeBoolean(params.get(UrlParam.SHOW_TIMESTAMP)), slice.setShowTimestamp);
   setValueIfDefined(decodeFloat(params.get(UrlParam.PATH_WIDTH)), slice.setTrackPathWidthPx);
   setValueIfDefined(decodeBoolean(params.get(UrlParam.SHOW_PATH_BREAKS)), slice.setShowTrackPathBreaks);
+  setValueIfDefined(decodeBoolean(params.get(UrlParam.INTERPOLATE_3D)), slice.setInterpolate3d);
 
   slice.setOutOfRangeDrawSettings(
     parseDrawSettings(

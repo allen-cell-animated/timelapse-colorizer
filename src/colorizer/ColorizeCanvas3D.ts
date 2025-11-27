@@ -529,6 +529,13 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     }
     return hasColorChanged || hasThicknessScalingModeChanged || hasVectorDataChanged;
   }
+  private handleSettingsUpdate(prevParams: RenderCanvasStateParams | null, params: RenderCanvasStateParams): boolean {
+    if (hasPropertyChanged(params, prevParams, ["interpolate3d"]) && this.volume) {
+      this.view3d.setInterpolationEnabled(this.volume, params.interpolate3d);
+      return true;
+    }
+    return false;
+  }
 
   public setParams(params: RenderCanvasStateParams): Promise<void> {
     if (this.params === params) {
@@ -542,7 +549,14 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     const didLineUpdate = this.handleLineUpdate(prevParams, params);
     const didChannelUpdate = this.handleChannelUpdate(prevParams, params);
     const didVectorUpdate = this.handleVectorUpdate(prevParams, params);
-    const needsRender = didColorRampUpdate || didDatasetUpdate || didLineUpdate || didChannelUpdate || didVectorUpdate;
+    const didSettingsUpdate = this.handleSettingsUpdate(prevParams, params);
+    const needsRender =
+      didColorRampUpdate ||
+      didDatasetUpdate ||
+      didLineUpdate ||
+      didChannelUpdate ||
+      didVectorUpdate ||
+      didSettingsUpdate;
 
     if (needsRender) {
       this.render({ synchronous: false });
@@ -600,7 +614,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
       emissiveColor: [0, 0, 0],
     });
     this.view3d.enablePicking(volume, true, segChannel);
-    this.view3d.setInterpolationEnabled(volume, true);
+    this.view3d.setInterpolationEnabled(volume, this.params.interpolate3d);
 
     this.view3d.updateDensity(volume, 0.5);
     this.view3d.updateExposure(0.6);

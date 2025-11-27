@@ -88,6 +88,7 @@ const EXAMPLE_STORE: ViewerStoreSerializableState = {
   edgeColor: new Color("#8090a0"),
   edgeColorAlpha: 176 / 255, // 0xb0
   edgeMode: DrawMode.USE_COLOR,
+  interpolate3d: true,
   trackPathColor: new Color("#ff0000"),
   trackPathWidthPx: 1.5,
   trackPathColorMode: TrackPathColorMode.USE_CUSTOM_COLOR,
@@ -147,6 +148,7 @@ const EXAMPLE_STORE_EXPECTED_PARAMS: ExpectedParamType = {
   "outline-color": "0000ff",
   "edge-color": "8090a0b0",
   edge: DrawMode.USE_COLOR.toString(),
+  interpolate: "1",
   "path-color": "ff0000",
   "path-width": "1.500",
   "path-mode": TrackPathColorMode.USE_CUSTOM_COLOR.toString(),
@@ -174,7 +176,7 @@ const EXAMPLE_STORE_EXPECTED_QUERY_STRING =
   "&palette-key=matplotlib_paired&filters=f1%3Am%3A0%3A0%2Cf2%3Aum%3ANaN%3ANaN%2Cf3%3Akm%3A0%3A1%2Cf4%3Amm%3A0.501%3A1000.485%2Cf5%3A%3Afff%2Cf6%3A%3A11" +
   "&path=1&path-color=ff0000&path-width=1.500&path-mode=1&path-breaks=1&scalebar=1&timestamp=0&filter-color=ff0000&filter-mode=0&outlier-color=00ff00&outlier-mode=1&outline-color=0000ff" +
   "&edge=1&edge-color=8090a0b0" +
-  "&tab=filters&scatter-x=feature3&scatter-y=feature2&scatter-range=all" +
+  "&tab=filters&interpolate=1&scatter-x=feature3&scatter-y=feature2&scatter-range=all" +
   "&bg=1&bg-brightness=75&bg-sat=50&fg-alpha=25" +
   "&vc=1&vc-key=_motion_&vc-color=ff00ff&vc-scale=5&vc-thickness-scaling=1&vc-thickness=4.500&vc-tooltip=c&vc-time-int=11" +
   "&c0=ven%3A1%2Ccol%3Aff0000ff%2Crmp%3A0%3A1%2Crng%3A-5%3A5" +
