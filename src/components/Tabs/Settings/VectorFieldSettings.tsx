@@ -59,12 +59,9 @@ export default function VectorFieldSettings(props: VectorFieldSettingsProps): Re
   const vectorOptions = useMemo(() => [VECTOR_OPTION_MOTION], []);
   const vectorOptionsEnabled = vectorVisible && dataset !== null;
 
-  const is3dDataset = dataset?.has3dFrames() ?? false;
-
   return (
     <ToggleCollapse label="Vector arrows" toggleChecked={vectorVisible} onToggleChange={setVectorVisible}>
       <SettingsContainer gapPx={SETTINGS_GAP_PX}>
-        {" "}
         <SettingsItem
           label="Vector"
           labelStyle={{ height: "min-content", paddingTop: "2px" }}
@@ -133,7 +130,7 @@ export default function VectorFieldSettings(props: VectorFieldSettingsProps): Re
         {props.isDataset3d && (
           // 3D-specific vector settings:
           <>
-            <SettingsItem label="3D thickness" htmlFor={VectorSettingsHtmlIds.VECTOR_THICKNESS_SLIDER}>
+            <SettingsItem label="Thickness" htmlFor={VectorSettingsHtmlIds.VECTOR_THICKNESS_SLIDER}>
               <div style={{ maxWidth: MAX_SETTINGS_SLIDER_WIDTH, width: "100%" }}>
                 <LabeledSlider
                   id={VectorSettingsHtmlIds.VECTOR_THICKNESS_SLIDER}
@@ -147,7 +144,7 @@ export default function VectorFieldSettings(props: VectorFieldSettingsProps): Re
                   marks={[1]}
                   onChange={setVectorThickness}
                   numberFormatter={(value?: number) => `${value?.toFixed(1)}`}
-                  disabled={!vectorOptionsEnabled || !is3dDataset}
+                  disabled={!vectorOptionsEnabled}
                 ></LabeledSlider>
               </div>
             </SettingsItem>
@@ -159,7 +156,7 @@ export default function VectorFieldSettings(props: VectorFieldSettingsProps): Re
                 id={VectorSettingsHtmlIds.VECTOR_SCALE_THICKNESS_CHECKBOX}
                 checked={vectorScaleThickness}
                 onChange={(e) => setVectorScaleThickness(e.target.checked)}
-                disabled={!vectorOptionsEnabled || !is3dDataset}
+                disabled={!vectorOptionsEnabled}
               />
             </SettingsItem>
           </>
