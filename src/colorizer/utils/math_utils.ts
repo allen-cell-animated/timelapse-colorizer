@@ -185,6 +185,17 @@ export function getBuildDisplayDateString(): string {
   return getDisplayDateString(new Date(Number.parseInt(import.meta.env.VITE_BUILD_TIME_UTC, 10)));
 }
 
+export function applyOutliersToInRangeLut(inRangeLUT: Uint8Array, outliers: Uint8Array): Uint8Array {
+  const updatedLUT = new Uint8Array(inRangeLUT.length);
+  for (let i = 0; i < inRangeLUT.length; i++) {
+    const isInRange = inRangeLUT[i];
+    const isOutlier = outliers[i] ?? 0;
+    updatedLUT[i] = isInRange && !isOutlier ? 1 : 0;
+  }
+  console.log(updatedLUT);
+  return updatedLUT;
+}
+
 type TrackData = {
   ids: number[];
   times: number[];
@@ -220,16 +231,24 @@ export function constructAllTracksFromData(trackIds: Uint32Array, times: Uint32A
  * Returns a lookup from any timepoints `t` in the track to the position delta between the centroid
  * at time `t` and `t-1`. If the track does not exist at timepoint `t-1`, the delta is undefined.
  */
-function timeToMotionDelta(track: Track): { [key: number]: [number, number, number] | undefined } {
+function timeToMotionDelta(
+  track: Track,
+  inRangeLut?: Uint8Array
+): { [key: number]: [number, number, number] | undefined } {
   const deltas: { [key: number]: [number, number, number] | undefined } = {};
 
   // Track IDs are sorted by time, but are not guaranteed to be contiguous.
   // For each time `t`, check if `t-1` exists and then calculate the delta.
   for (let i = 0; i < track.ids.length; i++) {
+    const id = track.ids[i];
+    const prevId = track.ids[i - 1];
+    const idInRange = inRangeLut?.[id] ?? 1;
+    const prevIdInRange = inRangeLut?.[prevId] ?? 1;
     const time = track.times[i];
     const prevTime = track.times[i - 1];
-    if (i === 0 || prevTime !== time - 1) {
+    if (i === 0 || prevTime !== time - 1 || !idInRange || !prevIdInRange) {
       deltas[time] = undefined;
+      continue;
     }
 
     const currentCentroidX = track.centroids[i * 3];
@@ -254,12 +273,18 @@ function timeToMotionDelta(track: Track): { [key: number]: [number, number, numb
  * @param numTimeIntervals The number of time intervals to average over (minimum 1). For an object at time `t`, the motion
  * delta will be calculated over time `t` to `t - numTimeIntervals`. If the object is not present for any or all timepoints
  * in the range, the motion deltas will be `NaN`.
+ * @param inRangeLut An optional lookup table indicating whether each object is in range (=1) at each timepoint or not (=0).
+ * If provided, objects that are out of range will be treated as missing data when calculating motion deltas.
  * @returns one of the following:
  * - an array of motion deltas, with length equal to `dataset.numObjects * 2`. For each object id `i`, the x and y components
  * of its motion delta are stored at indices `2i` and `2i + 1`, respectively. If an object does not exist for the specified number
  * of time intervals, both values will be `NaN`.
  */
-export function calculateMotionDeltas(tracks: Track[], numTimeIntervals: number): Float32Array {
+export function calculateMotionDeltas(
+  tracks: Track[],
+  numTimeIntervals: number,
+  inRangeLut?: Uint8Array
+): Float32Array {
   numTimeIntervals = Math.max(numTimeIntervals, 1);
 
   // Count total objects to allocate the motion deltas array
@@ -270,18 +295,21 @@ export function calculateMotionDeltas(tracks: Track[], numTimeIntervals: number)
   const motionDeltas = new Float32Array(numObjects * 3);
 
   for (const track of tracks) {
-    const timeToDelta = timeToMotionDelta(track);
+    const timeToDelta = timeToMotionDelta(track, inRangeLut);
 
     for (let i = 0; i < track.ids.length; i++) {
       const objectId = track.ids[i];
+      const isInRange = inRangeLut ? inRangeLut[objectId] : 1;
       const timestamp = track.times[i];
 
       // Get all valid deltas for timepoints `t` to `t - numTimesteps`.
       const deltas: [number, number, number][] = [];
-      for (let j = 0; j < numTimeIntervals; j++) {
-        const delta = timeToDelta[timestamp - j];
-        if (delta) {
-          deltas.push(delta);
+      if (isInRange) {
+        for (let j = 0; j < numTimeIntervals; j++) {
+          const delta = timeToDelta[timestamp - j];
+          if (delta) {
+            deltas.push(delta);
+          }
         }
       }
 
