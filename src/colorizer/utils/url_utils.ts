@@ -63,6 +63,7 @@ export enum UrlParam {
   SCATTERPLOT_RANGE_MODE = "scatter-range",
   OPEN_TAB = "tab",
   SHOW_VECTOR = "vc",
+  INTERPOLATE_3D = "interpolate",
   VECTOR_KEY = "vc-key",
   VECTOR_COLOR = "vc-color",
   VECTOR_SCALE = "vc-scale",

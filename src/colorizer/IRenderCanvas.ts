@@ -47,6 +47,7 @@ export type RenderCanvasStateParams = {
   objectOpacity: number;
   backdropSaturation: number;
   backdropBrightness: number;
+  interpolate3d: boolean;
 };
 
 export type RenderOptions = {
