@@ -1,0 +1,100 @@
+import { Checkbox, Tooltip } from "antd";
+import React, { type ReactElement } from "react";
+
+import { TrackPathColorMode } from "src/colorizer";
+import DropdownWithColorPicker from "src/components/Dropdowns/DropdownWithColorPicker";
+import type { SelectItem } from "src/components/Dropdowns/types";
+import LabeledSlider from "src/components/Inputs/LabeledSlider";
+import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
+import ToggleCollapse from "src/components/ToggleCollapse";
+import { MAX_SETTINGS_SLIDER_WIDTH } from "src/constants";
+import { useViewerStateStore } from "src/state";
+import { VisuallyHidden } from "src/styles/utils";
+
+import { DEFAULT_OUTLINE_COLOR_PRESETS, SETTINGS_GAP_PX } from "./constants";
+
+const enum TrackPathSettingsHtmlIds {
+  TRACK_PATH_COLOR_SELECT = "track-path-color-select",
+  TRACK_PATH_WIDTH_SLIDER = "track-path-width-slider",
+  TRACK_PATH_SHOW_BREAKS_CHECKBOX = "track-path-show-breaks-checkbox",
+}
+
+const TRACK_MODE_ITEMS: SelectItem[] = [
+  { value: TrackPathColorMode.USE_OUTLINE_COLOR.toString(), label: "Highlight" },
+  { value: TrackPathColorMode.USE_CUSTOM_COLOR.toString(), label: "Custom" },
+  { value: TrackPathColorMode.USE_FEATURE_COLOR.toString(), label: "Feature" },
+];
+
+export default function TrackPathSettings(): ReactElement {
+  const showTrackPath = useViewerStateStore((state) => state.showTrackPath);
+  const showTrackPathBreaks = useViewerStateStore((state) => state.showTrackPathBreaks);
+  const trackPathColor = useViewerStateStore((state) => state.trackPathColor);
+  const trackPathColorMode = useViewerStateStore((state) => state.trackPathColorMode);
+  const trackPathWidthPx = useViewerStateStore((state) => state.trackPathWidthPx);
+  const setShowTrackPath = useViewerStateStore((state) => state.setShowTrackPath);
+  const setTrackPathColor = useViewerStateStore((state) => state.setTrackPathColor);
+  const setTrackPathColorMode = useViewerStateStore((state) => state.setTrackPathColorMode);
+  const setTrackPathWidthPx = useViewerStateStore((state) => state.setTrackPathWidthPx);
+  const setShowTrackPathBreaks = useViewerStateStore((state) => state.setShowTrackPathBreaks);
+
+  return (
+    <ToggleCollapse toggleChecked={showTrackPath} label="Track path" onToggleChange={setShowTrackPath}>
+      <SettingsContainer gapPx={SETTINGS_GAP_PX}>
+        <SettingsItem label="Color" htmlFor={TrackPathSettingsHtmlIds.TRACK_PATH_COLOR_SELECT}>
+          <DropdownWithColorPicker
+            id={TrackPathSettingsHtmlIds.TRACK_PATH_COLOR_SELECT}
+            selected={trackPathColorMode.toString()}
+            items={TRACK_MODE_ITEMS}
+            onValueChange={(value) => setTrackPathColorMode(Number.parseInt(value, 10) as TrackPathColorMode)}
+            onColorChange={setTrackPathColor}
+            color={trackPathColor}
+            presets={DEFAULT_OUTLINE_COLOR_PRESETS}
+            showColorPicker={trackPathColorMode === TrackPathColorMode.USE_CUSTOM_COLOR}
+          />
+        </SettingsItem>
+        <SettingsItem label="Width" htmlFor={TrackPathSettingsHtmlIds.TRACK_PATH_WIDTH_SLIDER}>
+          <div style={{ maxWidth: MAX_SETTINGS_SLIDER_WIDTH, width: "100%" }}>
+            <LabeledSlider
+              id={TrackPathSettingsHtmlIds.TRACK_PATH_WIDTH_SLIDER}
+              type="value"
+              minSliderBound={1}
+              maxSliderBound={5}
+              minInputBound={0}
+              maxInputBound={100}
+              precision={1}
+              value={trackPathWidthPx}
+              onChange={setTrackPathWidthPx}
+              marks={[1.5]}
+              step={0.1}
+              numberFormatter={(value?: number) => `${value?.toFixed(1)}`}
+            />
+          </div>
+        </SettingsItem>
+        <SettingsItem
+          label={"Show breaks"}
+          htmlFor={TrackPathSettingsHtmlIds.TRACK_PATH_SHOW_BREAKS_CHECKBOX}
+          labelStyle={{ height: "min-content" }}
+          style={{ marginTop: "-5px" }}
+        >
+          <Tooltip
+            title="Show breaks in the track path where the track is not continuous."
+            placement="right"
+            trigger={["focus", "hover"]}
+          >
+            <div style={{ width: "fit-content" }}>
+              <VisuallyHidden>Show breaks in the track path where the track is not continuous.</VisuallyHidden>
+              <Checkbox
+                id={TrackPathSettingsHtmlIds.TRACK_PATH_SHOW_BREAKS_CHECKBOX}
+                type="checkbox"
+                checked={showTrackPathBreaks}
+                onChange={(event) => {
+                  setShowTrackPathBreaks(event.target.checked);
+                }}
+              ></Checkbox>
+            </div>
+          </Tooltip>
+        </SettingsItem>
+      </SettingsContainer>
+    </ToggleCollapse>
+  );
+}
