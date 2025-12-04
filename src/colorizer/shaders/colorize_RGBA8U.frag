@@ -111,7 +111,7 @@ vec4 getFloatFromTex(sampler2D tex, int index) {
  *     background.
  * @returns The global ID at the given coordinates, or -1 (=MISSING_DATA_ID) if
  *     the pixel is background or missing data.
-*/
+ */
 int getId(vec2 sUv, out uint rawId) {
   rawId = combineColor(texture(frame, sUv));
   if (rawId == 0u) {
