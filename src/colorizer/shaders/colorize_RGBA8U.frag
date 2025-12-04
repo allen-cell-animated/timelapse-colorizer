@@ -104,20 +104,20 @@ vec4 getFloatFromTex(sampler2D tex, int index) {
 
 /**
  * Attempts to look up the global ID of the pixel at the given scaled UV
- * coordinates.
+ * coordinates. The global ID can be used to get data about this object from
+ * data buffers like `featureData` and `outlierData`.
  * @param sUv The scaled UV coordinates to look up.
- * @param rawId Output parameter that will contain the raw segmentation ID
- *     (e.g. the pixel value in the segmentation image). 0 indicates the
- *     background.
+ * @param labelId Output parameter that will contain the label ID, the pixel
+ *     value in the segmentation image. 0 indicates the background.
  * @returns The global ID at the given coordinates, or -1 (=MISSING_DATA_ID) if
  *     the pixel is background or missing data.
  */
-int getId(vec2 sUv, out uint rawId) {
-  rawId = combineColor(texture(frame, sUv));
-  if (rawId == 0u) {
+int getGlobalId(vec2 sUv, out uint labelId) {
+  labelId = combineColor(texture(frame, sUv));
+  if (labelId == 0u) {
     return MISSING_DATA_ID;
   }
-  uvec4 c = getUintFromTex(segIdToGlobalId, int(rawId - segIdOffset));
+  uvec4 c = getUintFromTex(segIdToGlobalId, int(labelId - segIdOffset));
   // Note: IDs are offset in `segIdToGlobalId` by `ID_OFFSET=1` to reserve `0`
   // for segmentations that are missing / have no corresponding global ID data.
   // `ID_OFFSET` is subtracted here to get the correct ID for accessing data
@@ -141,21 +141,31 @@ vec4 getCategoricalColor(float featureValue) {
   return getColorRamp(modValue / (width - 1.0));
 }
 
-bool isEdge(vec2 uv, uint rawId, float thicknessPx) {
+/**
+ * Returns true if the pixel at the given coordinates is at the edge of an object.
+ * @param uv The scaled UV coordinates to check.
+ * @param labelId The label ID of the pixel at `uv` (i.e., the pixel value in the
+ *     segmentation image).
+ * @param thicknessPx The thickness in screen pixels to use when checking for edges.
+ * @returns True if the pixel is at the edge of an object.
+ */
+bool isEdge(vec2 uv, uint labelId, float thicknessPx) {
   // step size is equal to thicknessPx onscreen canvas pixels.
   float wStep = thicknessPx / float(canvasSizePx.x) * float(canvasToFrameScale.x);
   float hStep = thicknessPx / float(canvasSizePx.y) * float(canvasToFrameScale.y);        
 
-  // sample around the pixel to see if we are on an edge
-  uint rRawId;
-  uint lRawId;
-  uint tRawId;
-  uint bRawId;
-  getId(uv + vec2(wStep, 0), rRawId);
-  getId(uv + vec2(-wStep, 0), lRawId);
-  getId(uv + vec2(0, hStep), tRawId);
-  getId(uv + vec2(0, -hStep), bRawId);
-  return rRawId != rawId || lRawId != rawId || tRawId != rawId || bRawId != rawId;
+  // Sample around the pixel to see if we are on an edge.
+  // Compare using label IDs (pixels in the segmentation image) because global IDs may be missing
+  // for some objects.
+  uint rLabelId;
+  uint lLabelId;
+  uint tLabelId;
+  uint bLabelId;
+  getGlobalId(uv + vec2(wStep, 0), rLabelId);
+  getGlobalId(uv + vec2(-wStep, 0), lLabelId);
+  getGlobalId(uv + vec2(0, hStep), tLabelId);
+  getGlobalId(uv + vec2(0, -hStep), bLabelId);
+  return rLabelId != labelId || lLabelId != labelId || tLabelId != labelId || bLabelId != labelId;
 }
 
 vec4 getColorFromDrawMode(uint drawMode, vec3 defaultColor) {
@@ -205,17 +215,17 @@ vec4 getObjectColor(vec2 sUv, float opacity) {
   }
 
   // Get the segmentation id at this pixel
-  uint rawId;
-  int id = getId(sUv, rawId);
+  uint labelId;
+  int id = getGlobalId(sUv, labelId);
 
-  // A raw segmentation id of 0 represents background
-  if (rawId == RAW_BACKGROUND_ID) {
+  // A label id of 0 represents background
+  if (labelId == RAW_BACKGROUND_ID) {
     return TRANSPARENT;
   }
 
   // do an outline around highlighted object
   if (highlightedId != NO_HIGHLIGHT_ID && id == highlightedId) {
-    if (isEdge(sUv, rawId, OUTLINE_WIDTH_PX)) {
+    if (isEdge(sUv, labelId, OUTLINE_WIDTH_PX)) {
       // ignore opacity for edge color
       return vec4(outlineColor, 1.0);
     }
@@ -231,7 +241,7 @@ vec4 getObjectColor(vec2 sUv, float opacity) {
   bool isMissingData = id == MISSING_DATA_ID;
   bool isInRange = getUintFromTex(inRangeIds, id).r == 1u;
   bool isOutlier = isinf(featureVal) || outlierVal != 0u;
-  bool isEdgePixel = (edgeColorAlpha != 0.0) && (isEdge(sUv, rawId, EDGE_WIDTH_PX));
+  bool isEdgePixel = (edgeColorAlpha != 0.0) && (isEdge(sUv, labelId, EDGE_WIDTH_PX));
 
   // Features outside the filtered/thresholded range will all be treated the same (use `outOfRangeDrawColor`).
   // Features inside the range can either be outliers or standard values, and are colored accordingly.
