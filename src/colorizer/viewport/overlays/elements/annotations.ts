@@ -8,7 +8,7 @@ import {
   EMPTY_RENDER_INFO,
   type FontStyle,
   type RenderInfo,
-} from "src/colorizer/viewport/canvas/types";
+} from "src/colorizer/viewport/overlays/types";
 
 export type AnnotationParams = BaseRenderParams & {
   visible: boolean;

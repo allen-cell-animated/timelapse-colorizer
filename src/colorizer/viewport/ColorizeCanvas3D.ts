@@ -42,9 +42,9 @@ import {
 } from "src/colorizer/utils/data_utils";
 import { packDataTexture } from "src/colorizer/utils/texture_utils";
 
-import { getPixelRatio } from "./canvas";
 import type { IInnerRenderCanvas } from "./IInnerRenderCanvas";
 import type { RenderCanvasStateParams, RenderOptions } from "./IRenderCanvas";
+import { getPixelRatio } from "./overlays";
 
 const CACHE_MAX_SIZE = 1_000_000_000;
 const CONCURRENCY_LIMIT = 8;

@@ -7,8 +7,8 @@ import {
   EMPTY_RENDER_INFO,
   type FontStyle,
   type RenderInfo,
-} from "src/colorizer/viewport/canvas/types";
-import { configureCanvasText, getPixelRatio, renderCanvasText } from "src/colorizer/viewport/canvas/utils";
+} from "src/colorizer/viewport/overlays/types";
+import { configureCanvasText, getPixelRatio, renderCanvasText } from "src/colorizer/viewport/overlays/utils";
 
 export type ScaleBarStyle = FontStyle & {
   minWidthPx: number;

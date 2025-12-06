@@ -58,9 +58,9 @@ import { convertCanvasOffsetPxToFrameCoords, getFrameSizeInScreenPx } from "src/
 import { packDataTexture } from "src/colorizer/utils/texture_utils";
 import VectorField from "src/colorizer/VectorField";
 
-import { get2DCanvasScaling } from "./canvas/utils";
 import type { IInnerRenderCanvas } from "./IInnerRenderCanvas";
 import type { RenderCanvasStateParams, RenderOptions } from "./IRenderCanvas";
+import { get2DCanvasScaling } from "./utils";
 
 import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
 import vertexShader from "./shaders/colorize.vert";

@@ -11,6 +11,10 @@ import {
 } from "src/colorizer/types";
 import { hasPropertyChanged } from "src/colorizer/utils/data_utils";
 
+import ColorizeCanvas2D from "./ColorizeCanvas2D";
+import { ColorizeCanvas3D } from "./ColorizeCanvas3D";
+import type { IInnerRenderCanvas } from "./IInnerRenderCanvas";
+import type { IRenderCanvas, RenderCanvasStateParams, RenderOptions } from "./IRenderCanvas";
 import {
   defaultFooterStyle,
   defaultHeaderStyle,
@@ -27,19 +31,15 @@ import {
   type LegendStyle,
   type ScaleBarStyle,
   type TimestampStyle,
-} from "./canvas/elements";
+} from "./overlays/elements";
 import {
   type AnnotationParams,
   type AnnotationStyle,
   defaultAnnotationStyle,
   getAnnotationRenderer,
-} from "./canvas/elements/annotations";
-import type { BaseRenderParams, RenderInfo } from "./canvas/types";
-import { getPixelRatio, toEven } from "./canvas/utils";
-import ColorizeCanvas2D from "./ColorizeCanvas2D";
-import { ColorizeCanvas3D } from "./ColorizeCanvas3D";
-import type { IInnerRenderCanvas } from "./IInnerRenderCanvas";
-import type { IRenderCanvas, RenderCanvasStateParams, RenderOptions } from "./IRenderCanvas";
+} from "./overlays/elements/annotations";
+import type { BaseRenderParams, RenderInfo } from "./overlays/types";
+import { getPixelRatio, toEven } from "./overlays/utils";
 
 type OverlayRenderOptions = RenderOptions & {
   renderInnerCanvas?: boolean;
