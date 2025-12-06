@@ -38,8 +38,6 @@ import {
 } from "src/colorizer/constants";
 import type Dataset from "src/colorizer/Dataset";
 import {
-  type Canvas2DScaleInfo,
-  CanvasType,
   DrawMode,
   FeatureDataType,
   type FrameLoadResult,
@@ -57,6 +55,7 @@ import {
 import { convertCanvasOffsetPxToFrameCoords, getFrameSizeInScreenPx } from "src/colorizer/utils/math_utils";
 import { packDataTexture } from "src/colorizer/utils/texture_utils";
 import VectorField from "src/colorizer/VectorField";
+import { type Canvas2DScaleInfo, CanvasType } from "src/colorizer/viewport/types";
 
 import type { IInnerRenderCanvas } from "./IInnerRenderCanvas";
 import type { RenderCanvasStateParams, RenderOptions } from "./IRenderCanvas";

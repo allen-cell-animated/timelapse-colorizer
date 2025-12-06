@@ -21,8 +21,6 @@ import { clamp, inverseLerp, lerp } from "three/src/math/MathUtils";
 import { ColorRampType } from "src/colorizer/ColorRamp";
 import { MAX_FEATURE_CATEGORIES } from "src/colorizer/constants";
 import {
-  type CanvasScaleInfo,
-  CanvasType,
   ChannelRangePreset,
   DrawMode,
   FeatureDataType,
@@ -45,6 +43,7 @@ import { packDataTexture } from "src/colorizer/utils/texture_utils";
 import type { IInnerRenderCanvas } from "./IInnerRenderCanvas";
 import type { RenderCanvasStateParams, RenderOptions } from "./IRenderCanvas";
 import { getPixelRatio } from "./overlays";
+import { type CanvasScaleInfo, CanvasType } from "./types";
 
 const CACHE_MAX_SIZE = 1_000_000_000;
 const CONCURRENCY_LIMIT = 8;

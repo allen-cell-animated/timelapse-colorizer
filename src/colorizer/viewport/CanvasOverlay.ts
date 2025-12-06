@@ -2,13 +2,7 @@ import { Vector2 } from "three";
 
 import type { LabelData } from "src/colorizer/AnnotationData";
 import type Dataset from "src/colorizer/Dataset";
-import {
-  type CanvasScaleInfo,
-  CanvasType,
-  type ChannelRangePreset,
-  type FrameLoadResult,
-  type PixelIdInfo,
-} from "src/colorizer/types";
+import type { ChannelRangePreset, FrameLoadResult, PixelIdInfo } from "src/colorizer/types";
 import { hasPropertyChanged } from "src/colorizer/utils/data_utils";
 
 import ColorizeCanvas2D from "./ColorizeCanvas2D";
@@ -40,6 +34,7 @@ import {
 } from "./overlays/elements/annotations";
 import type { BaseRenderParams, RenderInfo } from "./overlays/types";
 import { getPixelRatio, toEven } from "./overlays/utils";
+import { type CanvasScaleInfo, CanvasType } from "./types";
 
 type OverlayRenderOptions = RenderOptions & {
   renderInnerCanvas?: boolean;

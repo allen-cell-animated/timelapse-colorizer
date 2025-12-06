@@ -1,6 +1,6 @@
 import { Vector2 } from "three";
 
-import { type Canvas2DScaleInfo, CanvasType } from "src/colorizer/types";
+import { type Canvas2DScaleInfo, CanvasType } from "./types";
 
 export function get2DCanvasScaling(
   frameResolution: Vector2,

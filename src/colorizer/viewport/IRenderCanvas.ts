@@ -3,7 +3,6 @@ import type { Color, Vector2 } from "three";
 import type { ColorRamp, Dataset, Track } from "src/colorizer";
 import type Collection from "src/colorizer/Collection";
 import type {
-  CanvasScaleInfo,
   ChannelSetting,
   DrawMode,
   DrawSettings,
@@ -11,6 +10,8 @@ import type {
   PixelIdInfo,
   TrackPathColorMode,
 } from "src/colorizer/types";
+
+import type { CanvasScaleInfo } from "./types";
 
 // Standalone type for render canvas state params
 export type RenderCanvasStateParams = {
@@ -31,10 +32,6 @@ export type RenderCanvasStateParams = {
   edgeMode: DrawMode;
   trackPathColor: Color;
   trackPathWidthPx: number;
-  trackPathPastSteps: number;
-  trackPathFutureSteps: number;
-  trackPathShowAllPastSteps: boolean;
-  trackPathShowAllFutureSteps: boolean;
   trackPathColorMode: TrackPathColorMode;
   outlierDrawSettings: DrawSettings;
   outOfRangeDrawSettings: DrawSettings;
