@@ -2,13 +2,8 @@ import { Color, Vector2 } from "three";
 
 import ColorRamp from "src/colorizer/ColorRamp";
 import { formatNumber } from "src/colorizer/utils/math_utils";
-import {
-  type BaseRenderParams,
-  defaultFontStyle,
-  EMPTY_RENDER_INFO,
-  type FontStyle,
-  type RenderInfo,
-} from "src/colorizer/viewport/overlays/types";
+import { defaultFontStyle, EMPTY_RENDER_INFO } from "src/colorizer/viewport/overlays/constants";
+import type { BaseRenderParams, FontStyle, RenderInfo } from "src/colorizer/viewport/overlays/types";
 import { configureCanvasText, renderCanvasText } from "src/colorizer/viewport/overlays/utils";
 
 const MAX_CATEGORIES_PER_COLUMN = 4;
