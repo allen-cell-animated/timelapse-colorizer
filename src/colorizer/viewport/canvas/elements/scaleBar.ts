@@ -1,14 +1,14 @@
 import { Vector2 } from "three";
 
+import { numberToSciNotation } from "src/colorizer/utils/math_utils";
 import {
   type BaseRenderParams,
   defaultFontStyle,
   EMPTY_RENDER_INFO,
   type FontStyle,
   type RenderInfo,
-} from "src/colorizer/canvas/types";
-import { configureCanvasText, getPixelRatio, renderCanvasText } from "src/colorizer/canvas/utils";
-import { numberToSciNotation } from "src/colorizer/utils/math_utils";
+} from "src/colorizer/viewport/canvas/types";
+import { configureCanvasText, getPixelRatio, renderCanvasText } from "src/colorizer/viewport/canvas/utils";
 
 export type ScaleBarStyle = FontStyle & {
   minWidthPx: number;

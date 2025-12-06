@@ -6,8 +6,8 @@ import {
   EMPTY_RENDER_INFO,
   type FontStyle,
   type RenderInfo,
-} from "src/colorizer/canvas/types";
-import { configureCanvasText, getTextDimensions, renderCanvasText } from "src/colorizer/canvas/utils";
+} from "src/colorizer/viewport/canvas/types";
+import { configureCanvasText, getTextDimensions, renderCanvasText } from "src/colorizer/viewport/canvas/utils";
 
 export type TimestampStyle = FontStyle;
 

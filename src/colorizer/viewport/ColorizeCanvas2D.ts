@@ -24,8 +24,7 @@ import { LineSegments2 } from "three/addons/lines/LineSegments2";
 import { LineSegmentsGeometry } from "three/addons/lines/LineSegmentsGeometry";
 import { clamp } from "three/src/math/MathUtils";
 
-import { get2DCanvasScaling } from "./canvas/utils";
-import ColorRamp, { ColorRampType } from "./ColorRamp";
+import ColorRamp, { ColorRampType } from "src/colorizer/ColorRamp";
 import {
   CANVAS_BACKGROUND_COLOR_DEFAULT,
   EDGE_COLOR_ALPHA_DEFAULT,
@@ -36,10 +35,8 @@ import {
   OUT_OF_RANGE_COLOR_DEFAULT,
   OUTLIER_COLOR_DEFAULT,
   OUTLINE_COLOR_DEFAULT,
-} from "./constants";
-import type Dataset from "./Dataset";
-import type { IInnerRenderCanvas } from "./IInnerRenderCanvas";
-import type { RenderCanvasStateParams, RenderOptions } from "./IRenderCanvas";
+} from "src/colorizer/constants";
+import type Dataset from "src/colorizer/Dataset";
 import {
   type Canvas2DScaleInfo,
   CanvasType,
@@ -48,7 +45,7 @@ import {
   type FrameLoadResult,
   type PixelIdInfo,
   TrackPathColorMode,
-} from "./types";
+} from "src/colorizer/types";
 import {
   computeTrackLinePointsAndIds,
   computeVertexColorsFromIds,
@@ -56,10 +53,14 @@ import {
   getLineUpdateFlags,
   hasPropertyChanged,
   normalizePointsTo2dCanvasSpace,
-} from "./utils/data_utils";
-import { convertCanvasOffsetPxToFrameCoords, getFrameSizeInScreenPx } from "./utils/math_utils";
-import { packDataTexture } from "./utils/texture_utils";
-import VectorField from "./VectorField";
+} from "src/colorizer/utils/data_utils";
+import { convertCanvasOffsetPxToFrameCoords, getFrameSizeInScreenPx } from "src/colorizer/utils/math_utils";
+import { packDataTexture } from "src/colorizer/utils/texture_utils";
+import VectorField from "src/colorizer/VectorField";
+
+import { get2DCanvasScaling } from "./canvas/utils";
+import type { IInnerRenderCanvas } from "./IInnerRenderCanvas";
+import type { RenderCanvasStateParams, RenderOptions } from "./IRenderCanvas";
 
 import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
 import vertexShader from "./shaders/colorize.vert";
