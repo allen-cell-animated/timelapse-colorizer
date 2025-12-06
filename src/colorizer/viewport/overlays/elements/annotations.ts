@@ -1,14 +1,9 @@
 import { type Matrix4, Vector2, Vector3 } from "three";
 
 import { type LabelData, LabelType } from "src/colorizer/AnnotationData";
-import {
-  type BaseRenderParams,
-  defaultFontStyle,
-  EMPTY_RENDER_INFO,
-  type FontStyle,
-  type RenderInfo,
-} from "src/colorizer/canvas/types";
 import type { PixelIdInfo } from "src/colorizer/types";
+import { defaultFontStyle, EMPTY_RENDER_INFO } from "src/colorizer/viewport/overlays/constants";
+import type { BaseRenderParams, FontStyle, RenderInfo } from "src/colorizer/viewport/overlays/types";
 
 export type AnnotationParams = BaseRenderParams & {
   visible: boolean;

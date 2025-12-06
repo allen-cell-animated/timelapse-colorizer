@@ -15,7 +15,6 @@ import { Vector2 } from "three";
 
 import { NoImageSVG, TagIconSVG, TagSlashIconSVG } from "src/assets";
 import { type LabelData, LabelType } from "src/colorizer/AnnotationData";
-import type CanvasOverlay from "src/colorizer/CanvasOverlay";
 import {
   AnnotationSelectionMode,
   type ChannelRangePreset,
@@ -23,6 +22,7 @@ import {
   type PixelIdInfo,
   TabType,
 } from "src/colorizer/types";
+import type CanvasOverlay from "src/colorizer/viewport/CanvasOverlay";
 import type { AlertBannerProps } from "src/components/Banner";
 import IconButton from "src/components/Buttons/IconButton";
 import TooltipButtonStyleLink from "src/components/Buttons/TooltipButtonStyleLink";

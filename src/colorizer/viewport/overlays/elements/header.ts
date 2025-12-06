@@ -1,15 +1,8 @@
 import { Vector2 } from "three";
 
-import {
-  type BaseRenderParams,
-  type ContainerStyle,
-  defaultContainerStyle,
-  defaultFontStyle,
-  EMPTY_RENDER_INFO,
-  type FontStyle,
-  type RenderInfo,
-} from "src/colorizer/canvas/types";
-import { configureCanvasText, renderCanvasText } from "src/colorizer/canvas/utils";
+import { defaultContainerStyle, defaultFontStyle, EMPTY_RENDER_INFO } from "src/colorizer/viewport/overlays/constants";
+import type { BaseRenderParams, ContainerStyle, FontStyle, RenderInfo } from "src/colorizer/viewport/overlays/types";
+import { configureCanvasText, renderCanvasText } from "src/colorizer/viewport/overlays/utils";
 
 export type HeaderStyle = ContainerStyle & FontStyle;
 export type HeaderParams = BaseRenderParams & {

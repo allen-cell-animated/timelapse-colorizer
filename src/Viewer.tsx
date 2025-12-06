@@ -21,11 +21,11 @@ import {
   type ReportWarningCallback,
   TabType,
 } from "src/colorizer";
-import CanvasOverlay from "src/colorizer/CanvasOverlay";
 import type Collection from "src/colorizer/Collection";
 import { FeatureType, TIME_FEATURE_KEY } from "src/colorizer/Dataset";
 import UrlArrayLoader from "src/colorizer/loaders/UrlArrayLoader";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "src/colorizer/utils/analytics";
+import CanvasOverlay from "src/colorizer/viewport/CanvasOverlay";
 import { getSharedWorkerPool } from "src/colorizer/workers/SharedWorkerPool";
 import { useAlertBanner } from "src/components/Banner";
 import { showFailedUrlParseAlert } from "src/components/Banner/alert_templates";
