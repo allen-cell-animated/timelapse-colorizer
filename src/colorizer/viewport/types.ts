@@ -28,10 +28,10 @@ export type Canvas2DScaleInfo = {
   frameToCanvasCoordinates: Vector2;
 
   /**
-   * Offset of the image within the canvas in [-0.5, 0.5] in normalized frame
-   * coordinates. [0, 0] means the image is centered within the canvas and
-   * [-0.5, -0.5] means the top right corner of the frame will be centered in
-   * the canvas view.
+   * Offset of the image within the canvas in normalized frame coordinates
+   * ([-0.5, 0.5] range). [0, 0] means the image is centered within the canvas
+   * and [-0.5, -0.5] means the top right corner of the frame will be centered
+   * in the canvas view.
    */
   panOffset: Vector2;
 };
