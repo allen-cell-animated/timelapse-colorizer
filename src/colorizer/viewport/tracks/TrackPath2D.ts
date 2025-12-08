@@ -3,41 +3,20 @@ import { LineMaterial } from "three/addons/lines/LineMaterial";
 import { LineSegments2 } from "three/addons/lines/LineSegments2";
 import { LineSegmentsGeometry } from "three/addons/lines/LineSegmentsGeometry";
 
-import type ColorRamp from "src/colorizer/ColorRamp";
 import {
   FRAME_BACKGROUND_COLOR_DEFAULT,
   INITIAL_TRACK_PATH_BUFFER_SIZE,
   OUTLINE_COLOR_DEFAULT,
 } from "src/colorizer/constants";
-import type Dataset from "src/colorizer/Dataset";
-import type Track from "src/colorizer/Track";
-import { type DrawSettings, TrackPathColorMode } from "src/colorizer/types";
+import { TrackPathColorMode } from "src/colorizer/types";
 import {
   computeTrackLinePointsAndIds,
   computeVertexColorsFromIds,
   getLineUpdateFlags,
   normalizePointsTo2dCanvasSpace,
 } from "src/colorizer/utils/data_utils";
+import { TrackPathParams } from "src/colorizer/viewport/tracks/types";
 import type { RenderCanvasStateParams } from "src/colorizer/viewport/types";
-
-/** Subset of IRenderCanvasParams */
-export type TrackPathParams = {
-  dataset: Dataset | null;
-  track: Track | null;
-  featureKey: string | null;
-  colorRamp: ColorRamp;
-  colorRampRange: [number, number];
-  categoricalPaletteRamp: ColorRamp;
-  inRangeLUT: Uint8Array;
-  outOfRangeDrawSettings: DrawSettings;
-  outlierDrawSettings: DrawSettings;
-  trackPathColorMode: TrackPathColorMode;
-  outlineColor: Color;
-  trackPathColor: Color;
-  trackPathWidthPx: number;
-  showTrackPath: boolean;
-  showTrackPathBreaks: boolean;
-};
 
 /**
  * Manages the rendering of a 2D track path (trajectory) line on the canvas,

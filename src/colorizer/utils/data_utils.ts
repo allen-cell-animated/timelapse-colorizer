@@ -18,9 +18,11 @@ import {
   ThresholdType,
   TrackPathColorMode,
 } from "src/colorizer/types";
-import type { TrackPathParams } from "src/colorizer/viewport/tracks/TrackPath2D";
+import type { TrackPathParams } from "src/colorizer/viewport/tracks/types";
 
 import { packDataTexture } from "./texture_utils";
+
+// TODO: Move all track path utils into the viewport/tracks directory
 
 /** Returns whether the two arrays are deeply equal, where arr1[i] === arr2[i] for all i. */
 export function arrayElementsAreEqual<T>(arr1: T[], arr2: T[]): boolean {
