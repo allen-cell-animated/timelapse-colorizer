@@ -15,14 +15,14 @@ import {
   getLineUpdateFlags,
   normalizePointsTo2dCanvasSpace,
 } from "src/colorizer/utils/data_utils";
+import { ITrackPath } from "src/colorizer/viewport/tracks/ITrackPath";
 import { TrackPathParams } from "src/colorizer/viewport/tracks/types";
-import type { RenderCanvasStateParams } from "src/colorizer/viewport/types";
 
 /**
  * Manages the rendering of a 2D track path (trajectory) line on the canvas,
  * including geometry, materials, and vertex colors.
  */
-export default class TrackPath2D {
+export default class TrackPath2D implements ITrackPath {
   /** Rendered track line that shows the trajectory of a cell. */
   private line: LineSegments2;
   /** Line used as an outline around the main line during certain coloring modes. */
@@ -126,7 +126,7 @@ export default class TrackPath2D {
     this.bgLine.material.needsUpdate = true;
   }
 
-  public setParams(params: TrackPathParams, prevParams: TrackPathParams | null = null): void {
+  public setParams(params: TrackPathParams, prevParams: TrackPathParams | null = null): boolean {
     this.params = params;
     const { geometryNeedsUpdate, vertexColorNeedsUpdate, materialNeedsUpdate } = getLineUpdateFlags(prevParams, params);
 
@@ -144,18 +144,7 @@ export default class TrackPath2D {
     if (materialNeedsUpdate) {
       this.updateLineMaterial();
     }
-  }
-
-  /**
-   * Updates only the vertex colors based on current parameters, without
-   * recomputing the geometry.
-   */
-  public updateColors(params: RenderCanvasStateParams): void {
-    if (this.lineIds.length === 0) {
-      return;
-    }
-    this.lineColors = computeVertexColorsFromIds(this.lineIds, params);
-    this.updateLineGeometry(this.linePoints, this.lineColors);
+    return geometryNeedsUpdate || vertexColorNeedsUpdate || materialNeedsUpdate;
   }
 
   public setZoom(zoom: number): void {

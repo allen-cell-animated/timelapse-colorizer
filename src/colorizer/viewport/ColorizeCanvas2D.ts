@@ -38,7 +38,12 @@ import { getGlobalIdFromSegId, hasPropertyChanged } from "src/colorizer/utils/da
 import { convertCanvasOffsetPxToFrameCoords, getFrameSizeInScreenPx } from "src/colorizer/utils/math_utils";
 import { packDataTexture } from "src/colorizer/utils/texture_utils";
 import VectorField from "src/colorizer/VectorField";
-import { type Canvas2DScaleInfo, CanvasType , type RenderCanvasStateParams,type RenderOptions  } from "src/colorizer/viewport/types";
+import {
+  type Canvas2DScaleInfo,
+  CanvasType,
+  type RenderCanvasStateParams,
+  type RenderOptions,
+} from "src/colorizer/viewport/types";
 
 import type { IInnerRenderCanvas } from "./IInnerRenderCanvas";
 import TrackPath2D from "./tracks/TrackPath2D";
@@ -491,6 +496,7 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
   public async setParams(params: RenderCanvasStateParams): Promise<void> {
     // TODO: What happens when `setParams` is called again while waiting for a Dataset to load?
     // May cause visual desync where the color ramp/feature data updates before frames load in fully
+    // TODO: For performance, only render if changes were made to params
     if (this.params === params) {
       return;
     }
