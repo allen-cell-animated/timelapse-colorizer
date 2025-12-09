@@ -67,6 +67,10 @@ export type RenderCanvasStateParams = {
   trackPathColor: Color;
   trackPathWidthPx: number;
   trackPathColorMode: TrackPathColorMode;
+  trackPathPastSteps: number;
+  trackPathFutureSteps: number;
+  trackPathShowAllPastSteps: boolean;
+  trackPathShowAllFutureSteps: boolean;
   outlierDrawSettings: DrawSettings;
   outOfRangeDrawSettings: DrawSettings;
   inRangeLUT: Uint8Array;
