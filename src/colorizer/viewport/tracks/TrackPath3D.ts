@@ -1,5 +1,5 @@
 import { Line3d } from "@aics/vole-core";
-import { IDrawableObject } from "@aics/vole-core/es/types/types";
+import type { IDrawableObject } from "@aics/vole-core/es/types/types";
 import { Color, Vector3 } from "three";
 
 import { TrackPathColorMode } from "src/colorizer/types";
@@ -9,8 +9,8 @@ import {
   getLineUpdateFlags,
 } from "src/colorizer/utils/data_utils";
 
-import { ITrackPath } from "./ITrackPath";
-import { TrackPathParams } from "./types";
+import type { ITrackPath } from "./ITrackPath";
+import type { TrackPathParams } from "./types";
 
 /**
  * Manages the rendering of a 3D track path (trajectory) line in the 3D viewport,

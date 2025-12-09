@@ -1,4 +1,4 @@
-import { TrackPathParams } from "src/colorizer/viewport/tracks/types";
+import type { TrackPathParams } from "src/colorizer/viewport/tracks/types";
 
 export interface ITrackPath {
   // TODO: Accept a separate Track argument to support multi-track selection.

@@ -1,4 +1,4 @@
-import { RenderCanvasStateParams } from "src/colorizer/viewport/types";
+import type { RenderCanvasStateParams } from "src/colorizer/viewport/types";
 
 /** Subset of IRenderCanvasParams */
 export type TrackPathParams = Pick<
