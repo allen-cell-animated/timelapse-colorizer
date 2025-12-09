@@ -19,6 +19,8 @@ import {
 import type { ITrackPath } from "./ITrackPath";
 import type { TrackPathParams } from "./types";
 
+const FEATURE_BASE_COLOR = new Color("#ffffff");
+
 /**
  * Manages the rendering of a 2D track path (trajectory) line on the canvas,
  * including geometry, materials, and vertex colors.
@@ -71,7 +73,7 @@ export default class TrackPath2D implements ITrackPath {
   }
 
   /**
-   * Returns the line scene objects that should be added to the scene.
+   * Returns the line objects that should be added to the scene.
    */
   public getSceneObjects(): LineSegments2[] {
     return [this.bgLine, this.line];
@@ -108,21 +110,21 @@ export default class TrackPath2D implements ITrackPath {
     }
     const { trackPathColorMode, outlineColor, trackPathColor, trackPathWidthPx } = this.params;
     const modeToColor = {
-      [TrackPathColorMode.USE_FEATURE_COLOR]: new Color("#ffffff"),
+      [TrackPathColorMode.USE_FEATURE_COLOR]: FEATURE_BASE_COLOR,
       [TrackPathColorMode.USE_OUTLINE_COLOR]: outlineColor,
       [TrackPathColorMode.USE_CUSTOM_COLOR]: trackPathColor,
     };
     const color = modeToColor[trackPathColorMode];
+    const isColoredByFeature = trackPathColorMode === TrackPathColorMode.USE_FEATURE_COLOR;
 
     // Scale line width slightly with zoom.
     const baseLineWidth = trackPathWidthPx + (this.zoomMultiplier - 1.0) * 0.5;
     this.line.material.color = color;
     this.line.material.linewidth = baseLineWidth;
-    this.line.material.vertexColors = trackPathColorMode === TrackPathColorMode.USE_FEATURE_COLOR;
+    this.line.material.vertexColors = isColoredByFeature;
     this.line.material.needsUpdate = true;
 
     // Show line outline only when coloring by feature color
-    const isColoredByFeature = trackPathColorMode === TrackPathColorMode.USE_FEATURE_COLOR;
     this.bgLine.material.linewidth = isColoredByFeature ? baseLineWidth + 2 : 0;
     this.bgLine.material.needsUpdate = true;
   }

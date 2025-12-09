@@ -46,7 +46,7 @@ export type Canvas3DScaleInfo = {
   type: CanvasType.CANVAS_3D;
 };
 
-export type CanvasScaleInfo = Canvas3DScaleInfo | Canvas2DScaleInfo; // Standalone type for render canvas state params
+export type CanvasScaleInfo = Canvas3DScaleInfo | Canvas2DScaleInfo;
 
 export type RenderCanvasStateParams = {
   dataset: Dataset | null;

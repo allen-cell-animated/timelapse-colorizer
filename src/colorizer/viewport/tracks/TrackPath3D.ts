@@ -12,6 +12,8 @@ import {
 import type { ITrackPath } from "./ITrackPath";
 import type { TrackPathParams } from "./types";
 
+const FEATURE_BASE_COLOR = new Color("#ffffff");
+
 /**
  * Manages the rendering of a 3D track path (trajectory) line in the 3D viewport,
  * including geometry, materials, and vertex colors.
@@ -41,19 +43,24 @@ export default class TrackPath3D implements ITrackPath {
     this.lineOverlayObject.setRenderAsOverlay(true);
   }
 
+  public getSceneObjects(): IDrawableObject[] {
+    return [this.lineObject, this.lineOverlayObject];
+  }
+
   private updateLineMaterial(): void {
     if (!this.params) {
       return;
     }
     const { trackPathColorMode, outlineColor, trackPathColor, trackPathWidthPx } = this.params;
     const modeToColor = {
-      [TrackPathColorMode.USE_FEATURE_COLOR]: new Color("#ffffff"),
+      [TrackPathColorMode.USE_FEATURE_COLOR]: FEATURE_BASE_COLOR,
       [TrackPathColorMode.USE_OUTLINE_COLOR]: outlineColor,
       [TrackPathColorMode.USE_CUSTOM_COLOR]: trackPathColor,
     };
     const color = modeToColor[trackPathColorMode];
+    const useVertexColors = trackPathColorMode === TrackPathColorMode.USE_FEATURE_COLOR;
     for (const lineObject of [this.lineObject, this.lineOverlayObject]) {
-      lineObject.setColor(color, trackPathColorMode === TrackPathColorMode.USE_FEATURE_COLOR);
+      lineObject.setColor(color, useVertexColors);
       lineObject.setLineWidth(trackPathWidthPx);
     }
   }
@@ -69,14 +76,9 @@ export default class TrackPath3D implements ITrackPath {
     if (!this.params || !this.params.track || !this.params.dataset) {
       return;
     }
-
     for (const lineObject of [this.lineObject, this.lineOverlayObject]) {
       lineObject.setLineVertexData(points, colors);
     }
-  }
-
-  public getSceneObjects(): IDrawableObject[] {
-    return [this.lineObject, this.lineOverlayObject];
   }
 
   public setParams(params: TrackPathParams, prevParams: TrackPathParams | null): boolean {

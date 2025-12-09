@@ -472,7 +472,6 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
 
     const didColorRampUpdate = this.handleColorRampUpdate(prevParams, params);
     const didDatasetUpdate = this.handleDatasetUpdate(prevParams, params);
-    // const didLineUpdate = this.handleLineUpdate(prevParams, params);
     const didLineUpdate = this.trackPath.setParams(params, prevParams);
     const didChannelUpdate = this.handleChannelUpdate(prevParams, params);
     const didVectorUpdate = this.handleVectorUpdate(prevParams, params);
