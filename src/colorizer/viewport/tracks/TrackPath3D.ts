@@ -8,9 +8,14 @@ import {
   computeVertexColorsFromIds,
   getLineUpdateFlags,
 } from "src/colorizer/utils/data_utils";
-import { ITrackPath } from "src/colorizer/viewport/tracks/ITrackPath";
-import { TrackPathParams } from "src/colorizer/viewport/tracks/types";
 
+import { ITrackPath } from "./ITrackPath";
+import { TrackPathParams } from "./types";
+
+/**
+ * Manages the rendering of a 3D track path (trajectory) line in the 3D viewport,
+ * including geometry, materials, and vertex colors.
+ */
 export default class TrackPath3D implements ITrackPath {
   private params: TrackPathParams | null = null;
 

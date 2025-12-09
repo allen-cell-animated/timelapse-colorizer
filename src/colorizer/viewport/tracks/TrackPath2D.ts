@@ -15,8 +15,9 @@ import {
   getLineUpdateFlags,
   normalizePointsTo2dCanvasSpace,
 } from "src/colorizer/utils/data_utils";
-import { ITrackPath } from "src/colorizer/viewport/tracks/ITrackPath";
-import { TrackPathParams } from "src/colorizer/viewport/tracks/types";
+
+import { ITrackPath } from "./ITrackPath";
+import { TrackPathParams } from "./types";
 
 /**
  * Manages the rendering of a 2D track path (trajectory) line on the canvas,

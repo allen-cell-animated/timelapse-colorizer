@@ -74,9 +74,10 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
    */
   private backdropIndexToAbsoluteChannelIndex: number[] | null = null;
 
+  private trackPath: TrackPath3D;
+
   private timeToVectorData: Map<number, FrameVectorData>;
   private vectorObject: VectorArrows3d;
-  private trackPath: TrackPath3D;
 
   constructor() {
     this.params = null;
