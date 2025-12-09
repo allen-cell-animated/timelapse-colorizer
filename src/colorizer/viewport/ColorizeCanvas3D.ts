@@ -620,9 +620,6 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
 
   private syncTrackPathLine(): void {
     this.trackPath.syncWithFrame(this.currentFrame);
-    if (this.volume) {
-      this.trackPath.setVolumePhysicalSize(this.volume.physicalSize);
-    }
   }
 
   private syncVectorArrows(): void {
