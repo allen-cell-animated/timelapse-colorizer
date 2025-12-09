@@ -20,6 +20,7 @@ const FEATURE_BASE_COLOR = new Color("#ffffff");
  */
 export default class TrackPath3D implements ITrackPath {
   private params: TrackPathParams | null = null;
+  private volumePhysicalSize: Vector3 | null = null;
 
   private linePoints: Float32Array;
   private lineIds: number[];
@@ -66,10 +67,14 @@ export default class TrackPath3D implements ITrackPath {
   }
 
   public setVolumePhysicalSize(volumePhysicalSize: Vector3): void {
+    if (this.volumePhysicalSize && this.volumePhysicalSize.equals(volumePhysicalSize)) {
+      return;
+    }
     for (const lineObject of [this.lineObject, this.lineOverlayObject]) {
       lineObject.setScale(new Vector3(1, 1, 1).divide(volumePhysicalSize));
       lineObject.setTranslation(new Vector3(-0.5, -0.5, -0.5));
     }
+    this.volumePhysicalSize = volumePhysicalSize;
   }
 
   private updateLineGeometry(points: Float32Array, colors: Float32Array): void {
