@@ -138,6 +138,7 @@ export default class Dataset {
   public trackIds?: Uint32Array | null;
   public times?: Uint32Array | null;
   private cachedTracks: Map<number, Track | null>;
+  private maxTrackLength: number | null;
 
   public centroidsFile?: string;
   public centroids?: Uint16Array | null;
@@ -183,6 +184,7 @@ export default class Dataset {
     this.arrayLoader = options.arrayLoader || new UrlArrayLoader();
     this.features = new Map();
     this.cachedTracks = new Map();
+    this.maxTrackLength = null
     this.metadata = defaultMetadata;
 
     this.getSegmentationId = this.getSegmentationId.bind(this);
@@ -818,6 +820,31 @@ export default class Dataset {
     }
     this.cachedTracks.set(trackId, track);
     return track;
+  }
+
+  public getMaxTrackLength(): number {
+    if (this.maxTrackLength !== null) {
+      return this.maxTrackLength;
+    }
+    const trackToMinMaxTime: Map<number, [number, number]> = new Map();
+    if (this.trackIds && this.times) {
+      for (let i = 0; i < this.trackIds.length; i++) {
+        const time = this.times[i];
+        const trackId = this.trackIds[i];
+        if (!trackToMinMaxTime.has(trackId)) {
+          trackToMinMaxTime.set(trackId, [time, time]);
+        } else {
+          const [minTime, maxTime] = trackToMinMaxTime.get(trackId)!;
+          trackToMinMaxTime.set(trackId, [Math.min(minTime, time), Math.max(maxTime, time)]);
+        }
+      }
+    }
+    let maxLength = 0;
+    for (const [minTime, maxTime] of trackToMinMaxTime.values()) {
+      maxLength = Math.max(maxLength, maxTime - minTime);
+    }
+    this.maxTrackLength = maxLength;
+    return maxLength;
   }
 
   /*

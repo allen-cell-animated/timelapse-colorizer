@@ -1,5 +1,6 @@
 import { Checkbox, Tooltip } from "antd";
 import React, { type ReactElement } from "react";
+import styled from "styled-components";
 
 import { TrackPathColorMode } from "src/colorizer";
 import DropdownWithColorPicker from "src/components/Dropdowns/DropdownWithColorPicker";
@@ -9,7 +10,7 @@ import { SettingsContainer, SettingsItem } from "src/components/SettingsContaine
 import ToggleCollapse from "src/components/ToggleCollapse";
 import { MAX_SETTINGS_SLIDER_WIDTH } from "src/constants";
 import { useViewerStateStore } from "src/state";
-import { VisuallyHidden } from "src/styles/utils";
+import { FlexColumn, FlexRowAlignCenter, VisuallyHidden } from "src/styles/utils";
 
 import { DEFAULT_OUTLINE_COLOR_PRESETS, SETTINGS_GAP_PX } from "./constants";
 
@@ -17,6 +18,8 @@ const enum TrackPathSettingsHtmlIds {
   TRACK_PATH_COLOR_SELECT = "track-path-color-select",
   TRACK_PATH_WIDTH_SLIDER = "track-path-width-slider",
   TRACK_PATH_SHOW_BREAKS_CHECKBOX = "track-path-show-breaks-checkbox",
+  TRACK_PATH_PAST_STEPS_SLIDER = "track-path-past-steps-slider",
+  TRACK_PATH_FUTURE_STEPS_SLIDER = "track-path-future-steps-slider",
 }
 
 const TRACK_MODE_ITEMS: SelectItem[] = [
@@ -25,17 +28,55 @@ const TRACK_MODE_ITEMS: SelectItem[] = [
   { value: TrackPathColorMode.USE_FEATURE_COLOR.toString(), label: "Feature" },
 ];
 
+const PastFutureLabels = styled(FlexRowAlignCenter)`
+  position: relative;
+  top: 8px;
+  justify-content: center;
+  width: calc(100% + 5px);
+  gap: 5px;
+  & p {
+    font-size: var(--font-size-label-small);
+  }
+`;
+
 export default function TrackPathSettings(): ReactElement {
+  const dataset = useViewerStateStore((state) => state.dataset);
+  const track = useViewerStateStore((state) => state.track);
+  const maxTrackLength = dataset?.getMaxTrackLength() ?? 1;
+  const trackStepMax = track ? track.duration() : maxTrackLength;
+
   const showTrackPath = useViewerStateStore((state) => state.showTrackPath);
   const showTrackPathBreaks = useViewerStateStore((state) => state.showTrackPathBreaks);
   const trackPathColor = useViewerStateStore((state) => state.trackPathColor);
   const trackPathColorMode = useViewerStateStore((state) => state.trackPathColorMode);
   const trackPathWidthPx = useViewerStateStore((state) => state.trackPathWidthPx);
+  const trackPathPastSteps = useViewerStateStore((state) => state.trackPathPastSteps);
+  const trackPathFutureSteps = useViewerStateStore((state) => state.trackPathFutureSteps);
   const setShowTrackPath = useViewerStateStore((state) => state.setShowTrackPath);
   const setTrackPathColor = useViewerStateStore((state) => state.setTrackPathColor);
   const setTrackPathColorMode = useViewerStateStore((state) => state.setTrackPathColorMode);
   const setTrackPathWidthPx = useViewerStateStore((state) => state.setTrackPathWidthPx);
   const setShowTrackPathBreaks = useViewerStateStore((state) => state.setShowTrackPathBreaks);
+  const setTrackPathPastSteps = useViewerStateStore((state) => state.setTrackPathPastSteps);
+  const setTrackPathFutureSteps = useViewerStateStore((state) => state.setTrackPathFutureSteps);
+
+  const handlePastStepsChange = (value: number) => {
+    // value == trackStepMax => set to Infinity to show full past track
+    if (value == trackStepMax) {
+      setTrackPathPastSteps(Infinity);
+    } else {
+      setTrackPathPastSteps(Math.max(0, value));
+    }
+  };
+
+  const handleFutureStepsChange = (value: number) => {
+    // value == trackStepMax => set to Infinity to show full future track
+    if (value == trackStepMax) {
+      setTrackPathFutureSteps(Infinity);
+    } else {
+      setTrackPathFutureSteps(Math.max(0, value));
+    }
+  };
 
   return (
     <ToggleCollapse toggleChecked={showTrackPath} label="Track path" onToggleChange={setShowTrackPath}>
@@ -70,11 +111,59 @@ export default function TrackPathSettings(): ReactElement {
             />
           </div>
         </SettingsItem>
+        <SettingsItem label="Past/future steps" htmlFor={TrackPathSettingsHtmlIds.TRACK_PATH_PAST_STEPS_SLIDER}>
+          <FlexColumn style={{ alignItems: "flex-start", width: "fit-content" }}>
+            <PastFutureLabels>
+              <p>Past</p>
+              <p>|</p>
+              <p>Future</p>
+            </PastFutureLabels>
+            <FlexRowAlignCenter>
+              <div style={{ maxWidth: MAX_SETTINGS_SLIDER_WIDTH, width: "100%" }}>
+                <LabeledSlider
+                  id={TrackPathSettingsHtmlIds.TRACK_PATH_PAST_STEPS_SLIDER}
+                  type="value"
+                  minSliderBound={0}
+                  maxSliderBound={trackStepMax}
+                  maxSliderLabel={`${trackStepMax}+`}
+                  minInputBound={0}
+                  maxInputBound={10000}
+                  value={trackPathPastSteps}
+                  onChange={handlePastStepsChange}
+                  step={1}
+                  reverse={true}
+                />
+              </div>
+              <div
+                style={{
+                  maxWidth: MAX_SETTINGS_SLIDER_WIDTH,
+                  width: "100%",
+                  position: "relative",
+                  height: "var(--button-height)",
+                  marginLeft: "10px",
+                }}
+              >
+                <LabeledSlider
+                  id={TrackPathSettingsHtmlIds.TRACK_PATH_FUTURE_STEPS_SLIDER}
+                  type="value"
+                  minSliderBound={0}
+                  maxSliderBound={trackStepMax}
+                  maxSliderLabel={`${trackStepMax}+`}
+                  minInputBound={0}
+                  maxInputBound={10000}
+                  value={trackPathFutureSteps}
+                  onChange={handleFutureStepsChange}
+                  step={1}
+                  inputPosition="right"
+                />
+              </div>
+            </FlexRowAlignCenter>
+          </FlexColumn>
+        </SettingsItem>
         <SettingsItem
           label={"Show breaks"}
           htmlFor={TrackPathSettingsHtmlIds.TRACK_PATH_SHOW_BREAKS_CHECKBOX}
           labelStyle={{ height: "min-content" }}
-          style={{ marginTop: "-5px" }}
         >
           <Tooltip
             title="Show breaks in the track path where the track is not continuous."

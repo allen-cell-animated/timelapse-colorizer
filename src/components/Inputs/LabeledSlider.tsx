@@ -12,6 +12,7 @@ type BaseLabeledSliderProps = {
   id?: string;
   type: "range" | "value";
   disabled?: boolean;
+  reverse?: boolean;
 
   /** The lower bound for the slider. If undefined, uses Number.NaN. */
   minSliderBound?: number;
@@ -21,6 +22,10 @@ type BaseLabeledSliderProps = {
   minInputBound?: number;
   /** The upper bound for the numeric input. If undefined, uses MAX_SAFE_INTEGER. */
   maxInputBound?: number;
+  /** Overrides the default label text for the minimum slider value. */
+  minSliderLabel?: string;
+  /** Overrides the default label text for the maximum slider value. */
+  maxSliderLabel?: string;
   /**
    * The step size for the slider. If undefined, sets the step size to include
    * at least `MINIMUM_SLIDER_STEPS` (300) steps between the min and max.
@@ -57,6 +62,7 @@ type LabeledValueSliderProps = BaseLabeledSliderProps & {
   type: "value";
   value: number;
   onChange: (value: number) => void;
+  inputPosition?: "left" | "right";
 };
 
 type LabeledSliderProps = LabeledRangeSliderProps | LabeledValueSliderProps;
@@ -67,6 +73,9 @@ const defaultProps: Partial<LabeledSliderProps> = {
   maxInputBound: Number.MAX_SAFE_INTEGER,
   minSliderBound: Number.NaN,
   maxSliderBound: Number.NaN,
+  minSliderLabel: undefined,
+  maxSliderLabel: undefined,
+  reverse: false,
   maxDecimalsToDisplay: 3,
   marks: undefined,
   showMidpoint: false,
@@ -246,8 +255,18 @@ export default function LabeledSlider(inputProps: LabeledSliderProps): ReactElem
   const numberFormatter = props.numberFormatter ? props.numberFormatter : defaultNumberFormatter;
 
   // Use a placeholder if the min/max bounds are undefined
-  const minSliderLabel = Number.isNaN(props.minSliderBound) ? "--" : numberFormatter(props.minSliderBound);
-  const maxSliderLabel = Number.isNaN(props.maxSliderBound) ? "--" : numberFormatter(props.maxSliderBound);
+  const minSliderLabel =
+    props.minSliderLabel !== undefined
+      ? props.minSliderLabel
+      : Number.isNaN(props.minSliderBound)
+      ? "--"
+      : numberFormatter(props.minSliderBound);
+  const maxSliderLabel =
+    props.maxSliderLabel !== undefined
+      ? props.maxSliderLabel
+      : Number.isNaN(props.maxSliderBound)
+      ? "--"
+      : numberFormatter(props.maxSliderBound);
 
   // Slider Props
   const stepSize = props.step ?? Math.min(1, (props.maxSliderBound - props.minSliderBound) / MINIMUM_SLIDER_STEPS);
@@ -264,6 +283,7 @@ export default function LabeledSlider(inputProps: LabeledSliderProps): ReactElem
       open: props.disabled ? false : undefined, // Hide tooltip when disabled
     },
     styles: props.sliderStyles,
+    reverse: props.reverse,
   };
   const valueSliderProps: SliderSingleProps = {
     value: props.type === "value" ? props.value : undefined,
@@ -285,7 +305,9 @@ export default function LabeledSlider(inputProps: LabeledSliderProps): ReactElem
     style: { width: "87px" },
     type: "number",
     precision: props.precision,
+    placeholder: "All",
   };
+  const reversePosition = props.type === "value" && props.inputPosition === "right";
 
   type InputNumberProps = Partial<Parameters<typeof InputNumber>[0]>;
   const valueInputNumberProps: InputNumberProps = {
@@ -308,7 +330,7 @@ export default function LabeledSlider(inputProps: LabeledSliderProps): ReactElem
   };
 
   return (
-    <ComponentContainer>
+    <ComponentContainer style={{ flexDirection: reversePosition ? "row-reverse" : "row" }}>
       {
         // Conditionally render either min or value input
         props.type === "value" ? (
@@ -319,8 +341,8 @@ export default function LabeledSlider(inputProps: LabeledSliderProps): ReactElem
       }
       <SliderContainer>
         <Slider {...sharedSliderProps} {...(props.type === "value" ? valueSliderProps : rangeSliderProps)} />
-        <SliderLabel $disabled={props.disabled}>{minSliderLabel}</SliderLabel>
-        <SliderLabel $disabled={props.disabled}>{maxSliderLabel}</SliderLabel>
+        <SliderLabel $disabled={props.disabled}>{props.reverse ? maxSliderLabel : minSliderLabel}</SliderLabel>
+        <SliderLabel $disabled={props.disabled}>{props.reverse ? minSliderLabel : maxSliderLabel}</SliderLabel>
       </SliderContainer>
       {props.type === "range" && <InputNumber {...sharedInputNumberProps} {...maxInputNumberProps} />}
     </ComponentContainer>
