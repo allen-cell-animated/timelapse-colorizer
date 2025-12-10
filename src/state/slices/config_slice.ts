@@ -52,6 +52,8 @@ export type ConfigSliceState = {
   showTrackPathBreaks: boolean;
   trackPathFutureSteps: number;
   trackPathPastSteps: number;
+  showAllTrackPathFutureSteps: boolean;
+  showAllTrackPathPastSteps: boolean;
 
   showScaleBar: boolean;
   showTimestamp: boolean;
@@ -80,6 +82,8 @@ export type ConfigSliceSerializableState = Pick<
   | "trackPathWidthPx"
   | "showTrackPathBreaks"
   | "trackPathFutureSteps"
+  | "showAllTrackPathFutureSteps"
+  | "showAllTrackPathPastSteps"
   | "trackPathPastSteps"
   | "showScaleBar"
   | "showTimestamp"
@@ -101,6 +105,8 @@ export type ConfigSliceActions = {
   setShowTrackPathBreaks: (showTrackPathDiscontinuities: boolean) => void;
   setTrackPathFutureSteps: (trackPathFutureSteps: number) => void;
   setTrackPathPastSteps: (trackPathPastSteps: number) => void;
+  setShowAllTrackPathFutureSteps: (showAllTrackPathFutureSteps: boolean) => void;
+  setShowAllTrackPathPastSteps: (showAllTrackPathPastSteps: boolean) => void;
   setShowScaleBar: (showScaleBar: boolean) => void;
   setShowTimestamp: (showTimestamp: boolean) => void;
   setShowLegendDuringExport: (showLegendDuringExport: boolean) => void;
@@ -124,7 +130,9 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   trackPathColorMode: TrackPathColorMode.USE_OUTLINE_COLOR,
   showTrackPathBreaks: false,
   trackPathFutureSteps: 0,
-  trackPathPastSteps: Infinity,
+  trackPathPastSteps: 0,
+  showAllTrackPathFutureSteps: false,
+  showAllTrackPathPastSteps: true,
   showScaleBar: true,
   showTimestamp: true,
   showLegendDuringExport: true,
@@ -150,6 +158,9 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   setShowTrackPathBreaks: (showTrackPathDiscontinuities) => set({ showTrackPathBreaks: showTrackPathDiscontinuities }),
   setTrackPathFutureSteps: (trackPathFutureSteps) => set({ trackPathFutureSteps: Math.floor(trackPathFutureSteps) }),
   setTrackPathPastSteps: (trackPathPastSteps) => set({ trackPathPastSteps: Math.floor(trackPathPastSteps) }),
+  setShowAllTrackPathFutureSteps: (showAllTrackPathFutureSteps) =>
+    set({ showAllTrackPathFutureSteps }),
+  setShowAllTrackPathPastSteps: (showAllTrackPathPastSteps) => set({ showAllTrackPathPastSteps }),
 
   setShowScaleBar: (showScaleBar) => set({ showScaleBar }),
   setShowTimestamp: (showTimestamp) => set({ showTimestamp }),
@@ -197,6 +208,8 @@ export const selectConfigSliceSerializationDeps = (slice: ConfigSlice): ConfigSl
   showTimestamp: slice.showTimestamp,
   trackPathFutureSteps: slice.trackPathFutureSteps,
   trackPathPastSteps: slice.trackPathPastSteps,
+  showAllTrackPathFutureSteps: slice.showAllTrackPathFutureSteps,
+  showAllTrackPathPastSteps: slice.showAllTrackPathPastSteps,
   outOfRangeDrawSettings: slice.outOfRangeDrawSettings,
   outlierDrawSettings: slice.outlierDrawSettings,
   outlineColor: slice.outlineColor,

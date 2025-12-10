@@ -18,4 +18,8 @@ export type TrackPathParams = Pick<
   | "trackPathWidthPx"
   | "showTrackPath"
   | "showTrackPathBreaks"
+  | "trackPathPastSteps"
+  | "trackPathFutureSteps"
+  | "showAllTrackPathPastSteps"
+  | "showAllTrackPathFutureSteps"
 >;
