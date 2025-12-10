@@ -130,7 +130,7 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   trackPathColorMode: TrackPathColorMode.USE_OUTLINE_COLOR,
   showTrackPathBreaks: false,
   trackPathFutureSteps: 0,
-  trackPathPastSteps: 0,
+  trackPathPastSteps: 25,
   showAllTrackPathFutureSteps: false,
   showAllTrackPathPastSteps: true,
   showScaleBar: true,
