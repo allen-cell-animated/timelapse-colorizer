@@ -52,8 +52,6 @@ export type ConfigSliceState = {
   showTrackPathBreaks: boolean;
   trackPathFutureSteps: number;
   trackPathPastSteps: number;
-  trackPathShowAllFutureSteps: boolean;
-  trackPathShowAllPastSteps: boolean;
 
   showScaleBar: boolean;
   showTimestamp: boolean;
@@ -83,8 +81,6 @@ export type ConfigSliceSerializableState = Pick<
   | "showTrackPathBreaks"
   | "trackPathFutureSteps"
   | "trackPathPastSteps"
-  | "trackPathShowAllFutureSteps"
-  | "trackPathShowAllPastSteps"
   | "showScaleBar"
   | "showTimestamp"
   | "outOfRangeDrawSettings"
@@ -105,8 +101,6 @@ export type ConfigSliceActions = {
   setShowTrackPathBreaks: (showTrackPathDiscontinuities: boolean) => void;
   setTrackPathFutureSteps: (trackPathFutureSteps: number) => void;
   setTrackPathPastSteps: (trackPathPastSteps: number) => void;
-  setTrackPathShowAllFutureSteps: (trackPathShowAllFutureSteps: boolean) => void;
-  setTrackPathShowAllPastSteps: (trackPathShowAllPastSteps: boolean) => void;
   setShowScaleBar: (showScaleBar: boolean) => void;
   setShowTimestamp: (showTimestamp: boolean) => void;
   setShowLegendDuringExport: (showLegendDuringExport: boolean) => void;
@@ -130,9 +124,7 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   trackPathColorMode: TrackPathColorMode.USE_OUTLINE_COLOR,
   showTrackPathBreaks: false,
   trackPathFutureSteps: 0,
-  trackPathPastSteps: 300,
-  trackPathShowAllFutureSteps: false,
-  trackPathShowAllPastSteps: true,
+  trackPathPastSteps: Infinity,
   showScaleBar: true,
   showTimestamp: true,
   showLegendDuringExport: true,
@@ -158,8 +150,6 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   setShowTrackPathBreaks: (showTrackPathDiscontinuities) => set({ showTrackPathBreaks: showTrackPathDiscontinuities }),
   setTrackPathFutureSteps: (trackPathFutureSteps) => set({ trackPathFutureSteps: Math.floor(trackPathFutureSteps) }),
   setTrackPathPastSteps: (trackPathPastSteps) => set({ trackPathPastSteps: Math.floor(trackPathPastSteps) }),
-  setTrackPathShowAllFutureSteps: (trackPathShowAllFutureSteps) => set({ trackPathShowAllFutureSteps }),
-  setTrackPathShowAllPastSteps: (trackPathShowAllPastSteps) => set({ trackPathShowAllPastSteps }),
 
   setShowScaleBar: (showScaleBar) => set({ showScaleBar }),
   setShowTimestamp: (showTimestamp) => set({ showTimestamp }),
@@ -207,8 +197,6 @@ export const selectConfigSliceSerializationDeps = (slice: ConfigSlice): ConfigSl
   showTimestamp: slice.showTimestamp,
   trackPathFutureSteps: slice.trackPathFutureSteps,
   trackPathPastSteps: slice.trackPathPastSteps,
-  trackPathShowAllFutureSteps: slice.trackPathShowAllFutureSteps,
-  trackPathShowAllPastSteps: slice.trackPathShowAllPastSteps,
   outOfRangeDrawSettings: slice.outOfRangeDrawSettings,
   outlierDrawSettings: slice.outlierDrawSettings,
   outlineColor: slice.outlineColor,
@@ -227,8 +215,7 @@ export const loadConfigSliceFromParams = (slice: ConfigSlice, params: URLSearchP
   setValueIfDefined(decodeBoolean(params.get(UrlParam.SHOW_PATH_BREAKS)), slice.setShowTrackPathBreaks);
   setValueIfDefined(decodeBoolean(params.get(UrlParam.INTERPOLATE_3D)), slice.setInterpolate3d);
 
-  // TODO: track path future/past steps and show all future/past steps -> should
-  // be able to represent as one URL param.
+  // TODO: track path future/past steps
 
   slice.setOutOfRangeDrawSettings(
     parseDrawSettings(

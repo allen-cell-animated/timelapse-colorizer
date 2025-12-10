@@ -22,8 +22,6 @@ export const renderCanvasStateParamsSelector = (state: ViewerStoreState): Render
   trackPathColorMode: state.trackPathColorMode,
   trackPathPastSteps: state.trackPathPastSteps,
   trackPathFutureSteps: state.trackPathFutureSteps,
-  trackPathShowAllPastSteps: state.trackPathShowAllPastSteps,
-  trackPathShowAllFutureSteps: state.trackPathShowAllFutureSteps,
   outlierDrawSettings: state.outlierDrawSettings,
   outOfRangeDrawSettings: state.outOfRangeDrawSettings,
   inRangeLUT: state.inRangeLUT,
