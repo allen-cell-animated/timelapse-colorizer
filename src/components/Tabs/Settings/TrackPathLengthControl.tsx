@@ -31,8 +31,13 @@ const PastFutureLabels = styled(FlexRowAlignCenter)`
 export default function TrackPathLengthControl(props: TrackPathLengthControlProps): ReactElement {
   const dataset = useViewerStateStore((state) => state.dataset);
   const track = useViewerStateStore((state) => state.track);
+  const currentFrame = useViewerStateStore((state) => state.currentFrame);
+
   const maxTrackLength = dataset?.getMaxTrackLength() ?? 1;
-  const trackStepMax = track ? track.duration() : maxTrackLength;
+  const trackStepMax = maxTrackLength;
+
+  const futureAvailableSteps = track ? track.duration() - (currentFrame - track.startTime()) - 1 : 0;
+  const pastAvailableSteps = track ? currentFrame - track.startTime() : 0;
 
   const trackPathPastSteps = useViewerStateStore((state) => state.trackPathPastSteps);
   const trackPathFutureSteps = useViewerStateStore((state) => state.trackPathFutureSteps);
@@ -89,6 +94,7 @@ export default function TrackPathLengthControl(props: TrackPathLengthControlProp
             reverse={true}
             inputPlaceholder="All"
             tooltipFormatter={pathLengthTooltipFormatter}
+            marks={track ? [pastAvailableSteps] : undefined}
           />
         </div>
         <div
@@ -113,6 +119,7 @@ export default function TrackPathLengthControl(props: TrackPathLengthControlProp
             inputPosition="right"
             inputPlaceholder="All"
             tooltipFormatter={pathLengthTooltipFormatter}
+            marks={track ? [futureAvailableSteps] : undefined}
           />
         </div>
       </FlexRowAlignCenter>
