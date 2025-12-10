@@ -26,6 +26,7 @@ type BaseLabeledSliderProps = {
   minSliderLabel?: string;
   /** Overrides the default label text for the maximum slider value. */
   maxSliderLabel?: string;
+  inputPlaceholder?: string;
   /**
    * The step size for the slider. If undefined, sets the step size to include
    * at least `MINIMUM_SLIDER_STEPS` (300) steps between the min and max.
@@ -44,6 +45,7 @@ type BaseLabeledSliderProps = {
    * and the text labels under the slider endpoints. If undefined, formats
    * numbers to `maxDecimalsToDisplay` decimal places.
    */
+  tooltipFormatter?: (value?: number) => React.ReactNode;
   numberFormatter?: (value?: number) => React.ReactNode;
   sliderStyles?: SliderBaseProps["styles"];
 };
@@ -279,7 +281,7 @@ export default function LabeledSlider(inputProps: LabeledSliderProps): ReactElem
     // Show formatted decimals in tooltip
     // TODO: Is this better than showing the precise value?
     tooltip: {
-      formatter: numberFormatter,
+      formatter: props.tooltipFormatter ?? numberFormatter,
       open: props.disabled ? false : undefined, // Hide tooltip when disabled
     },
     styles: props.sliderStyles,
@@ -305,7 +307,7 @@ export default function LabeledSlider(inputProps: LabeledSliderProps): ReactElem
     style: { width: "87px" },
     type: "number",
     precision: props.precision,
-    placeholder: "All",
+    placeholder: props.inputPlaceholder,
   };
   const reversePosition = props.type === "value" && props.inputPosition === "right";
 

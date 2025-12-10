@@ -1,5 +1,5 @@
 import { Checkbox, Tooltip } from "antd";
-import React, { type ReactElement } from "react";
+import React, { type ReactElement, ReactNode } from "react";
 import styled from "styled-components";
 
 import { TrackPathColorMode } from "src/colorizer";
@@ -29,13 +29,16 @@ const TRACK_MODE_ITEMS: SelectItem[] = [
 ];
 
 const PastFutureLabels = styled(FlexRowAlignCenter)`
-  position: relative;
-  top: 8px;
+  position: absolute;
+  top: -10px;
   justify-content: center;
-  width: calc(100% + 5px);
+  width: calc(100%);
+  // Fudge number to get the labels centered between the sliders
+  padding-left: 6px;
   gap: 5px;
   & p {
     font-size: var(--font-size-label-small);
+    color: var(--color-text-secondary);
   }
 `;
 
@@ -78,6 +81,15 @@ export default function TrackPathSettings(): ReactElement {
     }
   };
 
+  const pathLengthTooltipFormatter = (value?: number): ReactNode => {
+    if (value === undefined) {
+      return null;
+    } else if (value === trackStepMax) {
+      return "All";
+    }
+    return value.toString();
+  };
+
   return (
     <ToggleCollapse toggleChecked={showTrackPath} label="Track path" onToggleChange={setShowTrackPath}>
       <SettingsContainer gapPx={SETTINGS_GAP_PX}>
@@ -111,8 +123,13 @@ export default function TrackPathSettings(): ReactElement {
             />
           </div>
         </SettingsItem>
-        <SettingsItem label="Past/future steps" htmlFor={TrackPathSettingsHtmlIds.TRACK_PATH_PAST_STEPS_SLIDER}>
-          <FlexColumn style={{ alignItems: "flex-start", width: "fit-content" }}>
+
+        <SettingsItem
+          label="Path length"
+          htmlFor={TrackPathSettingsHtmlIds.TRACK_PATH_PAST_STEPS_SLIDER}
+          style={{ marginTop: 10 }}
+        >
+          <FlexColumn style={{ alignItems: "flex-start", width: "fit-content", position: "relative" }}>
             <PastFutureLabels>
               <p>Past</p>
               <p>|</p>
@@ -125,13 +142,15 @@ export default function TrackPathSettings(): ReactElement {
                   type="value"
                   minSliderBound={0}
                   maxSliderBound={trackStepMax}
-                  maxSliderLabel={`${trackStepMax}+`}
+                  maxSliderLabel={`${trackStepMax - 1}`}
                   minInputBound={0}
                   maxInputBound={10000}
                   value={trackPathPastSteps}
                   onChange={handlePastStepsChange}
                   step={1}
                   reverse={true}
+                  inputPlaceholder="All"
+                  tooltipFormatter={pathLengthTooltipFormatter}
                 />
               </div>
               <div
@@ -148,18 +167,21 @@ export default function TrackPathSettings(): ReactElement {
                   type="value"
                   minSliderBound={0}
                   maxSliderBound={trackStepMax}
-                  maxSliderLabel={`${trackStepMax}+`}
+                  maxSliderLabel={`${trackStepMax - 1}`}
                   minInputBound={0}
                   maxInputBound={10000}
                   value={trackPathFutureSteps}
                   onChange={handleFutureStepsChange}
                   step={1}
                   inputPosition="right"
+                  inputPlaceholder="All"
+                  tooltipFormatter={pathLengthTooltipFormatter}
                 />
               </div>
             </FlexRowAlignCenter>
           </FlexColumn>
         </SettingsItem>
+
         <SettingsItem
           label={"Show breaks"}
           htmlFor={TrackPathSettingsHtmlIds.TRACK_PATH_SHOW_BREAKS_CHECKBOX}
