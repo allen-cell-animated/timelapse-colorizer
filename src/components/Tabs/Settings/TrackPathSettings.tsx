@@ -49,7 +49,7 @@ export default function TrackPathSettings(): ReactElement {
   const setShowAllTrackPathPastSteps = useViewerStateStore((state) => state.setShowAllTrackPathPastSteps);
   const setShowAllTrackPathFutureSteps = useViewerStateStore((state) => state.setShowAllTrackPathFutureSteps);
 
-  const maxTrackPathSteps = useMemo(() => (dataset?.getMaxTrackLength() ?? 0) - 1, [dataset]);
+  const maxTrackPathSteps = useMemo(() => dataset?.getMaxTrackLength() ?? 0, [dataset]);
 
   return (
     <ToggleCollapse toggleChecked={showTrackPath} label="Track path" onToggleChange={setShowTrackPath}>

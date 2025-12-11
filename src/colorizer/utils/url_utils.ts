@@ -282,8 +282,13 @@ export function deserializeThresholds(thresholds: string | null): FeatureThresho
   }, [] as FeatureThreshold[]);
 }
 
-export function serializeTrackPathSteps(pastSteps?: number, futureSteps?: number, showAllPastSteps?: boolean, showAllFutureSteps?: boolean): string | undefined {
-  if (pastSteps === undefined || futureSteps === undefined ) {
+export function serializeTrackPathSteps(
+  pastSteps?: number,
+  futureSteps?: number,
+  showAllPastSteps?: boolean,
+  showAllFutureSteps?: boolean
+): string | undefined {
+  if (pastSteps === undefined || futureSteps === undefined) {
     return undefined;
   }
   const pastString = pastSteps + (showAllPastSteps ? URL_PATH_SHOW_ALL_SUFFIX : "");
@@ -291,7 +296,9 @@ export function serializeTrackPathSteps(pastSteps?: number, futureSteps?: number
   return `${pastString},${futureString}`;
 }
 
-export function deserializeTrackPathSteps(stepsString: string | null): { pastSteps: number; futureSteps: number; showAllPastSteps: boolean; showAllFutureSteps: boolean } | undefined {
+export function deserializeTrackPathSteps(
+  stepsString: string | null
+): { pastSteps: number; futureSteps: number; showAllPastSteps: boolean; showAllFutureSteps: boolean } | undefined {
   if (!stepsString || !TRACK_PATH_STEPS_REGEX.test(stepsString)) {
     return;
   }

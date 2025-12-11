@@ -844,7 +844,7 @@ export default class Dataset {
     }
     let maxLength = 0;
     for (const [minTime, maxTime] of trackToMinMaxTime.values()) {
-      maxLength = Math.max(maxLength, maxTime - minTime);
+      maxLength = Math.max(maxLength, maxTime - minTime + 1);
     }
     this.maxTrackLength = maxLength;
     return maxLength;
