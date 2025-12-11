@@ -44,9 +44,7 @@ const OUTLIER_DRAW_SETTINGS_DEFAULT: DrawSettings = {
 };
 
 export type ConfigSliceState = {
-  // Viewer settings
-
-  // Tracks
+  // Track settings
   showTrackPath: boolean;
   trackPathColor: Color;
   trackPathColorMode: TrackPathColorMode;
@@ -57,20 +55,23 @@ export type ConfigSliceState = {
   showAllTrackPathFutureSteps: boolean;
   showAllTrackPathPastSteps: boolean;
 
+  // Viewport settings
   showScaleBar: boolean;
   showTimestamp: boolean;
+  /** Whether to interpolate 3D data. True by default. */
+  interpolate3d: boolean;
+
+  // Export settings
   showLegendDuringExport: boolean;
   showHeaderDuringExport: boolean;
+
+  // Object settings
   outOfRangeDrawSettings: DrawSettings;
   outlierDrawSettings: DrawSettings;
   outlineColor: Color;
   edgeColor: Color;
   edgeColorAlpha: number;
   edgeMode: DrawMode;
-
-  // 3D mode
-  /** Whether to interpolate 3D data. True by default. */
-  interpolate3d: boolean;
 
   // UI state
   openTab: TabType;
@@ -158,10 +159,11 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   setTrackPathWidthPx: (trackPathWidthPx) => set({ trackPathWidthPx: clamp(trackPathWidthPx, 0, 100) }),
   setTrackPathColorMode: (trackPathColorMode) => set({ trackPathColorMode }),
   setShowTrackPathBreaks: (showTrackPathDiscontinuities) => set({ showTrackPathBreaks: showTrackPathDiscontinuities }),
-  setTrackPathFutureSteps: (trackPathFutureSteps) => set({ trackPathFutureSteps: Math.max(0, Math.round(trackPathFutureSteps)) }),
-  setTrackPathPastSteps: (trackPathPastSteps) => set({ trackPathPastSteps: Math.max(0, Math.round(trackPathPastSteps)) }),
-  setShowAllTrackPathFutureSteps: (showAllTrackPathFutureSteps) =>
-    set({ showAllTrackPathFutureSteps }),
+  setTrackPathFutureSteps: (trackPathFutureSteps) =>
+    set({ trackPathFutureSteps: Math.max(0, Math.round(trackPathFutureSteps)) }),
+  setTrackPathPastSteps: (trackPathPastSteps) =>
+    set({ trackPathPastSteps: Math.max(0, Math.round(trackPathPastSteps)) }),
+  setShowAllTrackPathFutureSteps: (showAllTrackPathFutureSteps) => set({ showAllTrackPathFutureSteps }),
   setShowAllTrackPathPastSteps: (showAllTrackPathPastSteps) => set({ showAllTrackPathPastSteps }),
 
   setShowScaleBar: (showScaleBar) => set({ showScaleBar }),
@@ -185,10 +187,10 @@ export const serializeConfigSlice = (slice: Partial<ConfigSliceSerializableState
     [UrlParam.PATH_COLOR_MODE]: slice.trackPathColorMode?.toString(),
     [UrlParam.SHOW_PATH_BREAKS]: encodeMaybeBoolean(slice.showTrackPathBreaks),
     [UrlParam.PATH_STEPS]: serializeTrackPathSteps(
-      slice.trackPathPastSteps ,
-      slice.trackPathFutureSteps ,
-      slice.showAllTrackPathPastSteps ?? false,
-      slice.showAllTrackPathFutureSteps ?? false
+      slice.trackPathPastSteps,
+      slice.trackPathFutureSteps,
+      slice.showAllTrackPathPastSteps,
+      slice.showAllTrackPathFutureSteps
     ),
     [UrlParam.SHOW_SCALEBAR]: encodeMaybeBoolean(slice.showScaleBar),
     [UrlParam.SHOW_TIMESTAMP]: encodeMaybeBoolean(slice.showTimestamp),
@@ -235,8 +237,6 @@ export const loadConfigSliceFromParams = (slice: ConfigSlice, params: URLSearchP
   setValueIfDefined(decodeFloat(params.get(UrlParam.PATH_WIDTH)), slice.setTrackPathWidthPx);
   setValueIfDefined(decodeBoolean(params.get(UrlParam.SHOW_PATH_BREAKS)), slice.setShowTrackPathBreaks);
   setValueIfDefined(decodeBoolean(params.get(UrlParam.INTERPOLATE_3D)), slice.setInterpolate3d);
-
-  // TODO: track path future/past steps
 
   slice.setOutOfRangeDrawSettings(
     parseDrawSettings(

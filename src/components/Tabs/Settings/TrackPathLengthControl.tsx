@@ -15,8 +15,8 @@ type TrackPathLengthControlProps = {
 };
 
 /**
- * Control for adjusting the length of track paths shown in the viewer, and a
- * toggle to show all steps.
+ * Paired numeric input box and checkbox for adjusting the length of track paths
+ * shown in the viewer, with some built-in UI logic for "show all".
  */
 export default function TrackPathLengthControl(props: TrackPathLengthControlProps): ReactElement {
   const divRef = React.useRef<HTMLDivElement>(null);
