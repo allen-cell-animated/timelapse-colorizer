@@ -619,7 +619,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
   }
 
   private syncTrackPathLine(): void {
-    this.trackPath.syncWithFrame(this.currentFrame);
+    this.trackPath.updateVisibleRange(this.currentFrame);
   }
 
   private syncVectorArrows(): void {

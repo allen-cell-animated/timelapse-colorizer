@@ -1,6 +1,6 @@
 import type { RenderCanvasStateParams } from "src/colorizer/viewport/types";
 
-/** Subset of IRenderCanvasParams */
+/** Subset of RenderCanvasParams */
 export type TrackPathParams = Pick<
   RenderCanvasStateParams,
   | "dataset"

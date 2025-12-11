@@ -723,7 +723,7 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
   // RENDERING /////////////////////////////////////////////////////////////////////////////
 
   private syncTrackPathLine(): void {
-    this.trackPath.syncWithFrame(this.currentFrame);
+    this.trackPath.updateVisibleRange(this.currentFrame);
   }
 
   private syncHighlightedId(): void {
