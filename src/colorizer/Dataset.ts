@@ -184,7 +184,7 @@ export default class Dataset {
     this.arrayLoader = options.arrayLoader || new UrlArrayLoader();
     this.features = new Map();
     this.cachedTracks = new Map();
-    this.maxTrackLength = null
+    this.maxTrackLength = null;
     this.metadata = defaultMetadata;
 
     this.getSegmentationId = this.getSegmentationId.bind(this);

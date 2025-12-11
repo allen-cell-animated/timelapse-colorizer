@@ -1,5 +1,5 @@
 import Checkbox from "antd/es/checkbox/Checkbox";
-import React, { ReactElement } from "react";
+import React, { type ReactElement } from "react";
 
 import SpinBox from "src/components/SpinBox";
 import { FlexRowAlignCenter } from "src/styles/utils";
