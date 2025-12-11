@@ -98,6 +98,8 @@ export const isChannelKey = (key: string): key is ChannelSettingParamKey => {
   return CHANNEL_STATE_KEY_REGEX.test(key);
 };
 
+const TRACK_PATH_STEPS_REGEX = /^(\d+)!?,(\d+)!?$/;
+
 const ALLEN_FILE_PREFIX = "/allen/";
 const ALLEN_PREFIX_TO_HTTPS: Record<string, string> = {
   // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -290,7 +292,7 @@ export function serializeTrackPathSteps(pastSteps?: number, futureSteps?: number
 }
 
 export function deserializeTrackPathSteps(stepsString: string | null): { pastSteps: number; futureSteps: number; showAllPastSteps: boolean; showAllFutureSteps: boolean } | undefined {
-  if (!stepsString || !stepsString.includes(",")) {
+  if (!stepsString || !TRACK_PATH_STEPS_REGEX.test(stepsString)) {
     return;
   }
   const [pastString, futureString] = stepsString.split(",");
