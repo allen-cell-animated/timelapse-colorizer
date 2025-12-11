@@ -16,7 +16,6 @@ import {
   normalizePointsTo2dCanvasSpace,
 } from "src/colorizer/utils/data_utils";
 
-import type { ITrackPath } from "./ITrackPath";
 import type { TrackPathParams } from "./types";
 
 const FEATURE_BASE_COLOR = new Color("#ffffff");
@@ -25,7 +24,7 @@ const FEATURE_BASE_COLOR = new Color("#ffffff");
  * Manages the rendering of a 2D track path (trajectory) line on the canvas,
  * including geometry, materials, and vertex colors.
  */
-export default class TrackPath2D implements ITrackPath {
+export default class TrackPath2D {
   /** Rendered track line that shows the trajectory of a cell. */
   private line: LineSegments2;
   /** Line used as an outline around the main line during certain coloring modes. */
@@ -129,6 +128,10 @@ export default class TrackPath2D implements ITrackPath {
     this.bgLine.material.needsUpdate = true;
   }
 
+  /**
+   * Sets parameters for the track path rendering. Returns true if a re-render
+   * is needed.
+   */
   public setParams(params: TrackPathParams, prevParams: TrackPathParams | null = null): boolean {
     this.params = params;
     const { geometryNeedsUpdate, vertexColorNeedsUpdate, materialNeedsUpdate } = getLineUpdateFlags(prevParams, params);
@@ -171,7 +174,7 @@ export default class TrackPath2D implements ITrackPath {
    * the current frame.
    * @param currentFrame The current frame index.
    */
-  public syncWithFrame(currentFrame: number): void {
+  public updateVisibleRange(currentFrame: number): void {
     const track = this.params?.track;
     // Show nothing if track doesn't exist or doesn't have centroid data
     if (!track || !track.centroids || !this.params?.showTrackPath) {

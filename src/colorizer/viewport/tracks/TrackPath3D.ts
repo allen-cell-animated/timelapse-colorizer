@@ -9,7 +9,6 @@ import {
   getLineUpdateFlags,
 } from "src/colorizer/utils/data_utils";
 
-import type { ITrackPath } from "./ITrackPath";
 import type { TrackPathParams } from "./types";
 
 const FEATURE_BASE_COLOR = new Color("#ffffff");
@@ -18,7 +17,7 @@ const FEATURE_BASE_COLOR = new Color("#ffffff");
  * Manages the rendering of a 3D track path (trajectory) line in the 3D viewport,
  * including geometry, materials, and vertex colors.
  */
-export default class TrackPath3D implements ITrackPath {
+export default class TrackPath3D {
   private params: TrackPathParams | null = null;
   private volumePhysicalSize: Vector3 | null = null;
 
@@ -86,6 +85,10 @@ export default class TrackPath3D implements ITrackPath {
     }
   }
 
+  /**
+   * Sets parameters for the track path rendering. Returns true if a re-render
+   * is needed.
+   */
   public setParams(params: TrackPathParams, prevParams: TrackPathParams | null): boolean {
     const { geometryNeedsUpdate, vertexColorNeedsUpdate, materialNeedsUpdate, needsRender } = getLineUpdateFlags(
       prevParams,
@@ -115,7 +118,12 @@ export default class TrackPath3D implements ITrackPath {
     this.updateLineGeometry(this.linePoints, this.lineColors);
   }
 
-  public syncWithFrame(currentFrame: number): void {
+  /**
+   * Updates the visible range of the track path line to show the path up to
+   * the current frame.
+   * @param currentFrame The current frame index.
+   */
+  public updateVisibleRange(currentFrame: number): void {
     // Show nothing if track doesn't exist
     if (!this.params || !this.params.track || !this.params.showTrackPath) {
       this.lineObject.setNumSegmentsVisible(0);
@@ -133,6 +141,9 @@ export default class TrackPath3D implements ITrackPath {
     this.lineOverlayObject.setNumSegmentsVisible(range);
   }
 
+  /**
+   * Disposes of the line resources.
+   */
   dispose(): void {
     this.lineObject.cleanup();
     this.lineOverlayObject.cleanup();
