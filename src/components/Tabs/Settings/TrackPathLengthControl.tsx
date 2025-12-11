@@ -1,6 +1,6 @@
 import { Tooltip } from "antd";
 import Checkbox from "antd/es/checkbox/Checkbox";
-import React, { type ReactElement } from "react";
+import React, { type ReactElement, useRef } from "react";
 
 import SpinBox from "src/components/SpinBox";
 import { FlexRowAlignCenter } from "src/styles/utils";
@@ -19,7 +19,7 @@ type TrackPathLengthControlProps = {
  * shown in the viewer, with some built-in UI logic for "show all".
  */
 export default function TrackPathLengthControl(props: TrackPathLengthControlProps): ReactElement {
-  const divRef = React.useRef<HTMLDivElement>(null);
+  const divRef = useRef<HTMLDivElement>(null);
   return (
     <FlexRowAlignCenter $gap={8} ref={divRef}>
       <Tooltip
