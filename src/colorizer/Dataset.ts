@@ -822,6 +822,9 @@ export default class Dataset {
     return track;
   }
 
+  /**
+   * Gets the maximum duration of any track in the dataset.
+   */
   public getMaxTrackLength(): number {
     if (this.maxTrackLength !== null) {
       return this.maxTrackLength;
