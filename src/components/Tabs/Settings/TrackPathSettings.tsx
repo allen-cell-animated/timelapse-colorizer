@@ -8,7 +8,7 @@ import LabeledSlider from "src/components/Inputs/LabeledSlider";
 import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
 import TrackPathLengthControl from "src/components/Tabs/Settings/TrackPathLengthControl";
 import ToggleCollapse from "src/components/ToggleCollapse";
-import { MAX_SETTINGS_SLIDER_WIDTH } from "src/constants";
+import { INTERNAL_BUILD, MAX_SETTINGS_SLIDER_WIDTH } from "src/constants";
 import { useViewerStateStore } from "src/state";
 import { VisuallyHidden } from "src/styles/utils";
 
@@ -82,32 +82,40 @@ export default function TrackPathSettings(): ReactElement {
           </div>
         </SettingsItem>
 
-        <SettingsItem
-          label="Past steps"
-          htmlFor={TrackPathSettingsHtmlIds.TRACK_PATH_PAST_STEPS_SLIDER}
-          style={{ marginTop: 4 }}
-        >
-          <TrackPathLengthControl
-            id={TrackPathSettingsHtmlIds.TRACK_PATH_PAST_STEPS_SLIDER}
-            value={trackPathPastSteps}
-            onValueChanged={setTrackPathPastSteps}
-            showAllChecked={showAllTrackPathPastSteps}
-            onShowAllChanged={setShowAllTrackPathPastSteps}
-          />
-        </SettingsItem>
-        <SettingsItem
-          label="Future steps"
-          htmlFor={TrackPathSettingsHtmlIds.TRACK_PATH_FUTURE_STEPS_SLIDER}
-          style={{ marginTop: 4 }}
-        >
-          <TrackPathLengthControl
-            id={TrackPathSettingsHtmlIds.TRACK_PATH_FUTURE_STEPS_SLIDER}
-            value={trackPathFutureSteps}
-            onValueChanged={setTrackPathFutureSteps}
-            showAllChecked={showAllTrackPathFutureSteps}
-            onShowAllChanged={setShowAllTrackPathFutureSteps}
-          />
-        </SettingsItem>
+        {
+          // Locked behind an internal build flag for now since the track path
+          // does not respond to updates yet.
+          INTERNAL_BUILD && (
+            <>
+              <SettingsItem
+                label="Past steps"
+                htmlFor={TrackPathSettingsHtmlIds.TRACK_PATH_PAST_STEPS_SLIDER}
+                style={{ marginTop: 4 }}
+              >
+                <TrackPathLengthControl
+                  id={TrackPathSettingsHtmlIds.TRACK_PATH_PAST_STEPS_SLIDER}
+                  value={trackPathPastSteps}
+                  onValueChanged={setTrackPathPastSteps}
+                  showAllChecked={showAllTrackPathPastSteps}
+                  onShowAllChanged={setShowAllTrackPathPastSteps}
+                />
+              </SettingsItem>
+              <SettingsItem
+                label="Future steps"
+                htmlFor={TrackPathSettingsHtmlIds.TRACK_PATH_FUTURE_STEPS_SLIDER}
+                style={{ marginTop: 4 }}
+              >
+                <TrackPathLengthControl
+                  id={TrackPathSettingsHtmlIds.TRACK_PATH_FUTURE_STEPS_SLIDER}
+                  value={trackPathFutureSteps}
+                  onValueChanged={setTrackPathFutureSteps}
+                  showAllChecked={showAllTrackPathFutureSteps}
+                  onShowAllChanged={setShowAllTrackPathFutureSteps}
+                />
+              </SettingsItem>
+            </>
+          )
+        }
 
         <SettingsItem
           label={"Show breaks"}
