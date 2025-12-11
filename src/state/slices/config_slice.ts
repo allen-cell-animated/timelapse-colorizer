@@ -19,6 +19,7 @@ import {
   decodeFloat,
   decodeHexAlphaColor,
   decodeHexColor,
+  deserializeTrackPathSteps,
   encodeMaybeBoolean,
   encodeMaybeColor,
   encodeMaybeColorWithAlpha,
@@ -26,6 +27,7 @@ import {
   parseDrawMode,
   parseDrawSettings,
   parseTrackPathMode,
+  serializeTrackPathSteps,
   UrlParam,
 } from "src/colorizer/utils/url_utils";
 import type { SerializedStoreData } from "src/state/types";
@@ -156,8 +158,8 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   setTrackPathWidthPx: (trackPathWidthPx) => set({ trackPathWidthPx: clamp(trackPathWidthPx, 0, 100) }),
   setTrackPathColorMode: (trackPathColorMode) => set({ trackPathColorMode }),
   setShowTrackPathBreaks: (showTrackPathDiscontinuities) => set({ showTrackPathBreaks: showTrackPathDiscontinuities }),
-  setTrackPathFutureSteps: (trackPathFutureSteps) => set({ trackPathFutureSteps: Math.floor(trackPathFutureSteps) }),
-  setTrackPathPastSteps: (trackPathPastSteps) => set({ trackPathPastSteps: Math.floor(trackPathPastSteps) }),
+  setTrackPathFutureSteps: (trackPathFutureSteps) => set({ trackPathFutureSteps: Math.max(0, Math.round(trackPathFutureSteps)) }),
+  setTrackPathPastSteps: (trackPathPastSteps) => set({ trackPathPastSteps: Math.max(0, Math.round(trackPathPastSteps)) }),
   setShowAllTrackPathFutureSteps: (showAllTrackPathFutureSteps) =>
     set({ showAllTrackPathFutureSteps }),
   setShowAllTrackPathPastSteps: (showAllTrackPathPastSteps) => set({ showAllTrackPathPastSteps }),
@@ -182,6 +184,12 @@ export const serializeConfigSlice = (slice: Partial<ConfigSliceSerializableState
     [UrlParam.PATH_WIDTH]: encodeMaybeNumber(slice.trackPathWidthPx),
     [UrlParam.PATH_COLOR_MODE]: slice.trackPathColorMode?.toString(),
     [UrlParam.SHOW_PATH_BREAKS]: encodeMaybeBoolean(slice.showTrackPathBreaks),
+    [UrlParam.PATH_STEPS]: serializeTrackPathSteps(
+      slice.trackPathPastSteps ,
+      slice.trackPathFutureSteps ,
+      slice.showAllTrackPathPastSteps ?? false,
+      slice.showAllTrackPathFutureSteps ?? false
+    ),
     [UrlParam.SHOW_SCALEBAR]: encodeMaybeBoolean(slice.showScaleBar),
     [UrlParam.SHOW_TIMESTAMP]: encodeMaybeBoolean(slice.showTimestamp),
     // Export settings are currently not serialized.
@@ -256,6 +264,14 @@ export const loadConfigSliceFromParams = (slice: ConfigSlice, params: URLSearchP
   if (trackPathColorModeParam !== undefined) {
     slice.setTrackPathColorMode(trackPathColorModeParam);
   }
+  const trackPathStepsParam = deserializeTrackPathSteps(params.get(UrlParam.PATH_STEPS));
+  if (trackPathStepsParam) {
+    slice.setTrackPathPastSteps(trackPathStepsParam.pastSteps);
+    slice.setTrackPathFutureSteps(trackPathStepsParam.futureSteps);
+    slice.setShowAllTrackPathPastSteps(trackPathStepsParam.showAllPastSteps);
+    slice.setShowAllTrackPathFutureSteps(trackPathStepsParam.showAllFutureSteps);
+  }
+
   const edgeColorParam = decodeHexAlphaColor(params.get(UrlParam.EDGE_COLOR));
   if (edgeColorParam) {
     slice.setEdgeColor(edgeColorParam.color, clamp(edgeColorParam.alpha, 0, 1));

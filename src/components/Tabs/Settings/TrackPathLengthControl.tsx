@@ -13,8 +13,8 @@ type TrackPathLengthControlProps = {
 };
 
 /**
- * Control for adjusting the length of track paths shown in the viewer. Shown
- * as two sliders extending left and right from a center point.
+ * Control for adjusting the length of track paths shown in the viewer, and a
+ * toggle to show all steps.
  */
 export default function TrackPathLengthControl(props: TrackPathLengthControlProps): ReactElement {
   return (
@@ -24,6 +24,7 @@ export default function TrackPathLengthControl(props: TrackPathLengthControlProp
         onChange={props.onValueChanged}
         id={props.id}
         disabled={props.showAllChecked}
+        min={0}
       ></SpinBox>
       <FlexRowAlignCenter style={{ height: "100%" }}>
         <Checkbox checked={props.showAllChecked} onChange={(e) => props.onShowAllChanged(e.target.checked)}>
