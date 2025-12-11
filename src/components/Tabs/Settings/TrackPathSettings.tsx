@@ -1,5 +1,5 @@
 import { Checkbox, Tooltip } from "antd";
-import React, { type ReactElement } from "react";
+import React, { type ReactElement, useMemo } from "react";
 
 import { TrackPathColorMode } from "src/colorizer";
 import DropdownWithColorPicker from "src/components/Dropdowns/DropdownWithColorPicker";
@@ -29,6 +29,7 @@ const TRACK_MODE_ITEMS: SelectItem[] = [
 ];
 
 export default function TrackPathSettings(): ReactElement {
+  const dataset = useViewerStateStore((state) => state.dataset);
   const showTrackPath = useViewerStateStore((state) => state.showTrackPath);
   const showTrackPathBreaks = useViewerStateStore((state) => state.showTrackPathBreaks);
   const trackPathColor = useViewerStateStore((state) => state.trackPathColor);
@@ -47,6 +48,8 @@ export default function TrackPathSettings(): ReactElement {
   const setTrackPathFutureSteps = useViewerStateStore((state) => state.setTrackPathFutureSteps);
   const setShowAllTrackPathPastSteps = useViewerStateStore((state) => state.setShowAllTrackPathPastSteps);
   const setShowAllTrackPathFutureSteps = useViewerStateStore((state) => state.setShowAllTrackPathFutureSteps);
+
+  const maxTrackPathSteps = useMemo(() => (dataset?.getMaxTrackLength() ?? 0) - 1, [dataset]);
 
   return (
     <ToggleCollapse toggleChecked={showTrackPath} label="Track path" onToggleChange={setShowTrackPath}>
@@ -95,6 +98,7 @@ export default function TrackPathSettings(): ReactElement {
                 <TrackPathLengthControl
                   id={TrackPathSettingsHtmlIds.TRACK_PATH_PAST_STEPS_SLIDER}
                   value={trackPathPastSteps}
+                  showAllValue={maxTrackPathSteps}
                   onValueChanged={setTrackPathPastSteps}
                   showAllChecked={showAllTrackPathPastSteps}
                   onShowAllChanged={setShowAllTrackPathPastSteps}
@@ -108,6 +112,7 @@ export default function TrackPathSettings(): ReactElement {
                 <TrackPathLengthControl
                   id={TrackPathSettingsHtmlIds.TRACK_PATH_FUTURE_STEPS_SLIDER}
                   value={trackPathFutureSteps}
+                  showAllValue={maxTrackPathSteps}
                   onValueChanged={setTrackPathFutureSteps}
                   showAllChecked={showAllTrackPathFutureSteps}
                   onShowAllChanged={setShowAllTrackPathFutureSteps}
