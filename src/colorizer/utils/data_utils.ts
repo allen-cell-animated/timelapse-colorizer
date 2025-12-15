@@ -18,9 +18,11 @@ import {
   ThresholdType,
   TrackPathColorMode,
 } from "src/colorizer/types";
-import type { RenderCanvasStateParams } from "src/colorizer/viewport/IRenderCanvas";
+import type { TrackPathParams } from "src/colorizer/viewport/tracks/types";
 
 import { packDataTexture } from "./texture_utils";
+
+// TODO: Move all track path utils into the viewport/tracks directory
 
 /** Returns whether the two arrays are deeply equal, where arr1[i] === arr2[i] for all i. */
 export function arrayElementsAreEqual<T>(arr1: T[], arr2: T[]): boolean {
@@ -415,7 +417,7 @@ export function cloneLabel(label: LabelData): LabelData {
  * @returns The color for the given object ID, using the rules in the main
  * viewport shader.
  */
-export function computeColorFromId(id: number, params: RenderCanvasStateParams): Color {
+export function computeColorFromId(id: number, params: TrackPathParams): Color {
   const {
     dataset,
     featureKey,
@@ -463,7 +465,7 @@ export function computeColorFromId(id: number, params: RenderCanvasStateParams):
  * B: colors[i * 3 + 2]
  * ```
  */
-export function computeVertexColorsFromIds(ids: number[], params: RenderCanvasStateParams): Float32Array {
+export function computeVertexColorsFromIds(ids: number[], params: TrackPathParams): Float32Array {
   // Especially for discontinuous lines, IDs may be repeated. Cache results to
   // avoid repeat computation.
   const idToColor = new Map<number, [number, number, number]>();
@@ -565,8 +567,8 @@ export function normalizePointsTo2dCanvasSpace(points: Float32Array, dataset: Da
   return points;
 }
 
-const LINE_GEOMETRY_DEPS: (keyof RenderCanvasStateParams)[] = ["dataset", "track", "showTrackPathBreaks"];
-const LINE_VERTEX_COLOR_DEPS: (keyof RenderCanvasStateParams)[] = [
+const LINE_GEOMETRY_DEPS: (keyof TrackPathParams)[] = ["dataset", "track", "showTrackPathBreaks"];
+const LINE_VERTEX_COLOR_DEPS: (keyof TrackPathParams)[] = [
   ...LINE_GEOMETRY_DEPS,
   "trackPathColorMode",
   "featureKey",
@@ -578,17 +580,17 @@ const LINE_VERTEX_COLOR_DEPS: (keyof RenderCanvasStateParams)[] = [
   "outlierDrawSettings",
   "showTrackPath",
 ];
-const LINE_MATERIAL_DEPS: (keyof RenderCanvasStateParams)[] = [
+const LINE_MATERIAL_DEPS: (keyof TrackPathParams)[] = [
   "trackPathColorMode",
   "trackPathColor",
   "outlineColor",
   "trackPathWidthPx",
 ];
-const LINE_RENDER_DEPS: (keyof RenderCanvasStateParams)[] = ["showTrackPath"];
+const LINE_RENDER_DEPS: (keyof TrackPathParams)[] = ["showTrackPath"];
 
 export function getLineUpdateFlags(
-  prevParams: RenderCanvasStateParams | null,
-  params: RenderCanvasStateParams
+  prevParams: TrackPathParams | null,
+  params: TrackPathParams
 ): {
   geometryNeedsUpdate: boolean;
   vertexColorNeedsUpdate: boolean;

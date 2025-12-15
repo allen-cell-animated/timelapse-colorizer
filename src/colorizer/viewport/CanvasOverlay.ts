@@ -8,7 +8,7 @@ import { hasPropertyChanged } from "src/colorizer/utils/data_utils";
 import ColorizeCanvas2D from "./ColorizeCanvas2D";
 import { ColorizeCanvas3D } from "./ColorizeCanvas3D";
 import type { IInnerRenderCanvas } from "./IInnerRenderCanvas";
-import type { IRenderCanvas, RenderCanvasStateParams, RenderOptions } from "./IRenderCanvas";
+import { IRenderCanvas } from "./IRenderCanvas";
 import {
   defaultFooterStyle,
   defaultHeaderStyle,
@@ -34,7 +34,7 @@ import {
 } from "./overlays/elements/annotations";
 import type { BaseRenderParams, RenderInfo } from "./overlays/types";
 import { getPixelRatio, toEven } from "./overlays/utils";
-import { type CanvasScaleInfo, CanvasType } from "./types";
+import { type CanvasScaleInfo, CanvasType, type RenderCanvasStateParams, type RenderOptions } from "./types";
 
 type OverlayRenderOptions = RenderOptions & {
   renderInnerCanvas?: boolean;

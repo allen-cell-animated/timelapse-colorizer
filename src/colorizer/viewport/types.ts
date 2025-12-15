@@ -1,4 +1,10 @@
-import type { Vector2 } from "three";
+import type { Color, Vector2 } from "three";
+
+import type Collection from "src/colorizer/Collection";
+import type ColorRamp from "src/colorizer/ColorRamp";
+import type Dataset from "src/colorizer/Dataset";
+import type Track from "src/colorizer/Track";
+import type { ChannelSetting, DrawMode, DrawSettings, TrackPathColorMode } from "src/colorizer/types";
 
 export const enum CanvasType {
   CANVAS_2D = "2D",
@@ -41,3 +47,45 @@ export type Canvas3DScaleInfo = {
 };
 
 export type CanvasScaleInfo = Canvas3DScaleInfo | Canvas2DScaleInfo;
+
+export type RenderCanvasStateParams = {
+  dataset: Dataset | null;
+  collection: Collection | null;
+  datasetKey: string | null;
+  pendingFrame: number;
+  featureKey: string | null;
+  track: Track | null;
+  showTrackPath: boolean;
+  showTrackPathBreaks: boolean;
+  colorRamp: ColorRamp;
+  colorRampRange: [number, number];
+  categoricalPaletteRamp: ColorRamp;
+  outlineColor: Color;
+  edgeColor: Color;
+  edgeColorAlpha: number;
+  edgeMode: DrawMode;
+  trackPathColor: Color;
+  trackPathWidthPx: number;
+  trackPathColorMode: TrackPathColorMode;
+  outlierDrawSettings: DrawSettings;
+  outOfRangeDrawSettings: DrawSettings;
+  inRangeLUT: Uint8Array;
+  vectorMotionDeltas: Float32Array | null;
+  vectorVisible: boolean;
+  vectorColor: Color;
+  vectorScaleFactor: number;
+  vectorScaleThicknessByMagnitude: boolean;
+  vectorThickness: number;
+  backdropKey: string | null;
+  backdropVisible: boolean;
+  channelSettings: ChannelSetting[];
+  objectOpacity: number;
+  backdropSaturation: number;
+  backdropBrightness: number;
+  interpolate3d: boolean;
+};
+
+export type RenderOptions = {
+  /** If true, renders synchronously. */
+  synchronous?: boolean;
+};
