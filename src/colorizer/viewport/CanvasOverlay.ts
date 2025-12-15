@@ -8,7 +8,7 @@ import { hasPropertyChanged } from "src/colorizer/utils/data_utils";
 import ColorizeCanvas2D from "./ColorizeCanvas2D";
 import { ColorizeCanvas3D } from "./ColorizeCanvas3D";
 import type { IInnerRenderCanvas } from "./IInnerRenderCanvas";
-import type { IRenderCanvas } from "./IRenderCanvas";
+import { IRenderCanvas } from "./IRenderCanvas";
 import {
   defaultFooterStyle,
   defaultHeaderStyle,
