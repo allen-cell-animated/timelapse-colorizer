@@ -1,4 +1,4 @@
-import { Vector2 } from "three";
+import type { Vector2 } from "three";
 
 import type Collection from "src/colorizer/Collection";
 import type Dataset from "src/colorizer/Dataset";
@@ -21,8 +21,6 @@ export type RenderInfo = {
   render: RenderCallback;
 };
 
-export const EMPTY_RENDER_INFO: RenderInfo = { sizePx: new Vector2(0, 0), render: () => {} };
-
 export type BaseRenderParams = {
   collection: Collection | null;
   dataset: Dataset | null;
@@ -44,18 +42,4 @@ export type ContainerStyle = {
   paddingPx: Vector2;
   fill: string;
   stroke: string;
-};
-
-export const defaultFontStyle: FontStyle = {
-  fontColor: "black",
-  fontSizePx: 14,
-  fontFamily: "Lato",
-  fontWeight: "400",
-};
-
-export const defaultContainerStyle: ContainerStyle = {
-  marginPx: new Vector2(0, 0),
-  paddingPx: new Vector2(0, 0),
-  fill: "rgba(255, 255, 255, 1.0)",
-  stroke: "rgba(203, 203, 204, 1.0)",
 };

@@ -18,15 +18,9 @@ import {
 import { Box3, Color, Matrix4, Quaternion, Vector2, Vector3 } from "three";
 import { clamp, inverseLerp, lerp } from "three/src/math/MathUtils";
 
+import { ColorRampType } from "src/colorizer/ColorRamp";
 import { MAX_FEATURE_CATEGORIES } from "src/colorizer/constants";
-
-import { getPixelRatio } from "./canvas";
-import { ColorRampType } from "./ColorRamp";
-import type { IInnerRenderCanvas } from "./IInnerRenderCanvas";
-import type { RenderCanvasStateParams, RenderOptions } from "./IRenderCanvas";
 import {
-  type CanvasScaleInfo,
-  CanvasType,
   ChannelRangePreset,
   DrawMode,
   FeatureDataType,
@@ -34,8 +28,8 @@ import {
   type FrameVectorData,
   type PixelIdInfo,
   TrackPathColorMode,
-} from "./types";
-import { getRelativeToAbsoluteChannelIndexMap, getVolumeSources } from "./utils/channels";
+} from "src/colorizer/types";
+import { getRelativeToAbsoluteChannelIndexMap, getVolumeSources } from "src/colorizer/utils/channels";
 import {
   bucketVectorDataByTime,
   computeTrackLinePointsAndIds,
@@ -43,8 +37,13 @@ import {
   getGlobalIdFromSegId,
   getLineUpdateFlags,
   hasPropertyChanged,
-} from "./utils/data_utils";
-import { packDataTexture } from "./utils/texture_utils";
+} from "src/colorizer/utils/data_utils";
+import { packDataTexture } from "src/colorizer/utils/texture_utils";
+
+import type { IInnerRenderCanvas } from "./IInnerRenderCanvas";
+import type { RenderCanvasStateParams, RenderOptions } from "./IRenderCanvas";
+import { getPixelRatio } from "./overlays";
+import { type CanvasScaleInfo, CanvasType } from "./types";
 
 const CACHE_MAX_SIZE = 1_000_000_000;
 const CONCURRENCY_LIMIT = 8;

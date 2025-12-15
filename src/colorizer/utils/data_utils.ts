@@ -7,7 +7,6 @@ import type { ColorRampData } from "src/colorizer/colors/color_ramps";
 import { MAX_FEATURE_CATEGORIES } from "src/colorizer/constants";
 import type Dataset from "src/colorizer/Dataset";
 import { FeatureType } from "src/colorizer/Dataset";
-import type { RenderCanvasStateParams } from "src/colorizer/IRenderCanvas";
 import type Track from "src/colorizer/Track";
 import {
   FeatureDataType,
@@ -19,6 +18,7 @@ import {
   ThresholdType,
   TrackPathColorMode,
 } from "src/colorizer/types";
+import type { RenderCanvasStateParams } from "src/colorizer/viewport/IRenderCanvas";
 
 import { packDataTexture } from "./texture_utils";
 
