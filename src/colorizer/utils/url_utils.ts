@@ -26,6 +26,7 @@ import { formatNumber } from "./math_utils";
 // TODO: This file needs to be split up for easier reading and unit testing.
 
 export const URL_COLOR_RAMP_REVERSED_SUFFIX = "!";
+export const URL_PATH_SHOW_ALL_SUFFIX = "!";
 export enum UrlParam {
   COLLECTION = "collection",
   DATASET = "dataset",
@@ -55,6 +56,7 @@ export enum UrlParam {
   PATH_WIDTH = "path-width",
   PATH_COLOR_MODE = "path-mode",
   SHOW_PATH_BREAKS = "path-breaks",
+  PATH_STEPS = "path-steps",
   SHOW_SCALEBAR = "scalebar",
   SHOW_TIMESTAMP = "timestamp",
   KEEP_RANGE = "keep-range",
@@ -95,6 +97,8 @@ const CHANNEL_STATE_KEY_REGEX = /^c[0-9]+$/;
 export const isChannelKey = (key: string): key is ChannelSettingParamKey => {
   return CHANNEL_STATE_KEY_REGEX.test(key);
 };
+
+const TRACK_PATH_STEPS_REGEX = /^(\d+)!?,(\d+)!?$/;
 
 const ALLEN_FILE_PREFIX = "/allen/";
 const ALLEN_PREFIX_TO_HTTPS: Record<string, string> = {
@@ -276,6 +280,42 @@ export function deserializeThresholds(thresholds: string | null): FeatureThresho
     }
     return acc;
   }, [] as FeatureThreshold[]);
+}
+
+export function serializeTrackPathSteps(
+  pastSteps?: number,
+  futureSteps?: number,
+  showAllPastSteps?: boolean,
+  showAllFutureSteps?: boolean
+): string | undefined {
+  if (pastSteps === undefined || futureSteps === undefined) {
+    return undefined;
+  }
+  const pastString = pastSteps + (showAllPastSteps ? URL_PATH_SHOW_ALL_SUFFIX : "");
+  const futureString = futureSteps + (showAllFutureSteps ? URL_PATH_SHOW_ALL_SUFFIX : "");
+  return `${pastString},${futureString}`;
+}
+
+export function deserializeTrackPathSteps(
+  stepsString: string | null
+): { pastSteps: number; futureSteps: number; showAllPastSteps: boolean; showAllFutureSteps: boolean } | undefined {
+  if (!stepsString || !TRACK_PATH_STEPS_REGEX.test(stepsString)) {
+    return;
+  }
+  const [pastString, futureString] = stepsString.split(",");
+  let pastSteps = 0;
+  let futureSteps = 0;
+  let showAllPastSteps = false;
+  let showAllFutureSteps = false;
+  if (pastString) {
+    showAllPastSteps = pastString.endsWith(URL_PATH_SHOW_ALL_SUFFIX);
+    pastSteps = parseInt(showAllPastSteps ? pastString.slice(0, -1) : pastString, 10);
+  }
+  if (futureString) {
+    showAllFutureSteps = futureString.endsWith(URL_PATH_SHOW_ALL_SUFFIX);
+    futureSteps = parseInt(showAllFutureSteps ? futureString.slice(0, -1) : futureString, 10);
+  }
+  return { pastSteps, futureSteps, showAllPastSteps, showAllFutureSteps };
 }
 
 export function encodeColor(value: Color): string {

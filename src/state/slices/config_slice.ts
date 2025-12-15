@@ -19,6 +19,7 @@ import {
   decodeFloat,
   decodeHexAlphaColor,
   decodeHexColor,
+  deserializeTrackPathSteps,
   encodeMaybeBoolean,
   encodeMaybeColor,
   encodeMaybeColorWithAlpha,
@@ -26,6 +27,7 @@ import {
   parseDrawMode,
   parseDrawSettings,
   parseTrackPathMode,
+  serializeTrackPathSteps,
   UrlParam,
 } from "src/colorizer/utils/url_utils";
 import type { SerializedStoreData } from "src/state/types";
@@ -42,26 +44,34 @@ const OUTLIER_DRAW_SETTINGS_DEFAULT: DrawSettings = {
 };
 
 export type ConfigSliceState = {
-  // Viewer settings
+  // Track settings
   showTrackPath: boolean;
   trackPathColor: Color;
   trackPathColorMode: TrackPathColorMode;
   trackPathWidthPx: number;
   showTrackPathBreaks: boolean;
+  trackPathFutureSteps: number;
+  trackPathPastSteps: number;
+  showAllTrackPathFutureSteps: boolean;
+  showAllTrackPathPastSteps: boolean;
+
+  // Viewport settings
   showScaleBar: boolean;
   showTimestamp: boolean;
+  /** Whether to interpolate 3D data. True by default. */
+  interpolate3d: boolean;
+
+  // Export settings
   showLegendDuringExport: boolean;
   showHeaderDuringExport: boolean;
+
+  // Object settings
   outOfRangeDrawSettings: DrawSettings;
   outlierDrawSettings: DrawSettings;
   outlineColor: Color;
   edgeColor: Color;
   edgeColorAlpha: number;
   edgeMode: DrawMode;
-
-  // 3D mode
-  /** Whether to interpolate 3D data. True by default. */
-  interpolate3d: boolean;
 
   // UI state
   openTab: TabType;
@@ -74,6 +84,10 @@ export type ConfigSliceSerializableState = Pick<
   | "trackPathColorMode"
   | "trackPathWidthPx"
   | "showTrackPathBreaks"
+  | "trackPathFutureSteps"
+  | "showAllTrackPathFutureSteps"
+  | "showAllTrackPathPastSteps"
+  | "trackPathPastSteps"
   | "showScaleBar"
   | "showTimestamp"
   | "outOfRangeDrawSettings"
@@ -92,6 +106,10 @@ export type ConfigSliceActions = {
   setTrackPathWidthPx: (trackPathWidthPx: number) => void;
   setTrackPathColorMode: (trackPathColorMode: TrackPathColorMode) => void;
   setShowTrackPathBreaks: (showTrackPathDiscontinuities: boolean) => void;
+  setTrackPathFutureSteps: (trackPathFutureSteps: number) => void;
+  setTrackPathPastSteps: (trackPathPastSteps: number) => void;
+  setShowAllTrackPathFutureSteps: (showAllTrackPathFutureSteps: boolean) => void;
+  setShowAllTrackPathPastSteps: (showAllTrackPathPastSteps: boolean) => void;
   setShowScaleBar: (showScaleBar: boolean) => void;
   setShowTimestamp: (showTimestamp: boolean) => void;
   setShowLegendDuringExport: (showLegendDuringExport: boolean) => void;
@@ -114,6 +132,10 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   trackPathWidthPx: 1.5,
   trackPathColorMode: TrackPathColorMode.USE_OUTLINE_COLOR,
   showTrackPathBreaks: false,
+  trackPathFutureSteps: 0,
+  trackPathPastSteps: 25,
+  showAllTrackPathFutureSteps: false,
+  showAllTrackPathPastSteps: true,
   showScaleBar: true,
   showTimestamp: true,
   showLegendDuringExport: true,
@@ -137,6 +159,13 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   setTrackPathWidthPx: (trackPathWidthPx) => set({ trackPathWidthPx: clamp(trackPathWidthPx, 0, 100) }),
   setTrackPathColorMode: (trackPathColorMode) => set({ trackPathColorMode }),
   setShowTrackPathBreaks: (showTrackPathDiscontinuities) => set({ showTrackPathBreaks: showTrackPathDiscontinuities }),
+  setTrackPathFutureSteps: (trackPathFutureSteps) =>
+    set({ trackPathFutureSteps: Math.max(0, Math.round(trackPathFutureSteps)) }),
+  setTrackPathPastSteps: (trackPathPastSteps) =>
+    set({ trackPathPastSteps: Math.max(0, Math.round(trackPathPastSteps)) }),
+  setShowAllTrackPathFutureSteps: (showAllTrackPathFutureSteps) => set({ showAllTrackPathFutureSteps }),
+  setShowAllTrackPathPastSteps: (showAllTrackPathPastSteps) => set({ showAllTrackPathPastSteps }),
+
   setShowScaleBar: (showScaleBar) => set({ showScaleBar }),
   setShowTimestamp: (showTimestamp) => set({ showTimestamp }),
   setShowLegendDuringExport: (showLegendDuringExport) => set({ showLegendDuringExport }),
@@ -157,6 +186,12 @@ export const serializeConfigSlice = (slice: Partial<ConfigSliceSerializableState
     [UrlParam.PATH_WIDTH]: encodeMaybeNumber(slice.trackPathWidthPx),
     [UrlParam.PATH_COLOR_MODE]: slice.trackPathColorMode?.toString(),
     [UrlParam.SHOW_PATH_BREAKS]: encodeMaybeBoolean(slice.showTrackPathBreaks),
+    [UrlParam.PATH_STEPS]: serializeTrackPathSteps(
+      slice.trackPathPastSteps,
+      slice.trackPathFutureSteps,
+      slice.showAllTrackPathPastSteps,
+      slice.showAllTrackPathFutureSteps
+    ),
     [UrlParam.SHOW_SCALEBAR]: encodeMaybeBoolean(slice.showScaleBar),
     [UrlParam.SHOW_TIMESTAMP]: encodeMaybeBoolean(slice.showTimestamp),
     // Export settings are currently not serialized.
@@ -181,6 +216,10 @@ export const selectConfigSliceSerializationDeps = (slice: ConfigSlice): ConfigSl
   showTrackPathBreaks: slice.showTrackPathBreaks,
   showScaleBar: slice.showScaleBar,
   showTimestamp: slice.showTimestamp,
+  trackPathFutureSteps: slice.trackPathFutureSteps,
+  trackPathPastSteps: slice.trackPathPastSteps,
+  showAllTrackPathFutureSteps: slice.showAllTrackPathFutureSteps,
+  showAllTrackPathPastSteps: slice.showAllTrackPathPastSteps,
   outOfRangeDrawSettings: slice.outOfRangeDrawSettings,
   outlierDrawSettings: slice.outlierDrawSettings,
   outlineColor: slice.outlineColor,
@@ -225,6 +264,14 @@ export const loadConfigSliceFromParams = (slice: ConfigSlice, params: URLSearchP
   if (trackPathColorModeParam !== undefined) {
     slice.setTrackPathColorMode(trackPathColorModeParam);
   }
+  const trackPathStepsParam = deserializeTrackPathSteps(params.get(UrlParam.PATH_STEPS));
+  if (trackPathStepsParam) {
+    slice.setTrackPathPastSteps(trackPathStepsParam.pastSteps);
+    slice.setTrackPathFutureSteps(trackPathStepsParam.futureSteps);
+    slice.setShowAllTrackPathPastSteps(trackPathStepsParam.showAllPastSteps);
+    slice.setShowAllTrackPathFutureSteps(trackPathStepsParam.showAllFutureSteps);
+  }
+
   const edgeColorParam = decodeHexAlphaColor(params.get(UrlParam.EDGE_COLOR));
   if (edgeColorParam) {
     slice.setEdgeColor(edgeColorParam.color, clamp(edgeColorParam.alpha, 0, 1));
