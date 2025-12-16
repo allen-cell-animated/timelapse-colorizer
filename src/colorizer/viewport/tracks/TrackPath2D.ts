@@ -1,4 +1,4 @@
-import { Color, type Vector2 } from "three";
+import { Color, Vector2 } from "three";
 import { LineSegments2 } from "three/addons/lines/LineSegments2";
 import { LineSegmentsGeometry } from "three/addons/lines/LineSegmentsGeometry";
 
@@ -12,7 +12,6 @@ import {
   computeTrackLinePointsAndIds,
   computeVertexColorsFromIds,
   getLineUpdateFlags,
-  normalizePointsTo2dCanvasSpace,
 } from "src/colorizer/utils/data_utils";
 import CustomLineMaterial from "src/colorizer/viewport/tracks/CustomLineMaterial";
 
@@ -32,11 +31,15 @@ export default class TrackPath2D {
 
   /** Object IDs corresponding to each vertex in track line. */
   private lineIds: number[];
+  /** Vertex positions for the track line, in pixel frame coordinates. */
   private linePoints: Float32Array;
   private lineColors: Float32Array;
   private lineBufferSize: number;
 
   private zoomMultiplier: number;
+  private frameToCanvasScale: Vector2;
+  /** XY offset of the frame, in normalized frame coordinates. [-0.5, 0.5] range. */
+  private panOffset: Vector2;
 
   private params: TrackPathParams | null = null;
 
@@ -69,6 +72,8 @@ export default class TrackPath2D {
     this.line.renderOrder = 1;
 
     this.zoomMultiplier = 1.0;
+    this.frameToCanvasScale = new Vector2(1, 1);
+    this.panOffset = new Vector2(0, 0);
   }
 
   /**
@@ -140,7 +145,7 @@ export default class TrackPath2D {
       if (geometryNeedsUpdate && params.dataset && params.track) {
         const { ids, points } = computeTrackLinePointsAndIds(params.dataset, params.track, params.showTrackPathBreaks);
         this.lineIds = ids;
-        this.linePoints = normalizePointsTo2dCanvasSpace(points, params.dataset);
+        this.linePoints = points;
       }
       if (vertexColorNeedsUpdate) {
         this.lineColors = computeVertexColorsFromIds(this.lineIds, this.params);
@@ -158,15 +163,32 @@ export default class TrackPath2D {
     this.updateLineMaterial();
   }
 
-  public setPositionAndScale(panOffset: Vector2, frameToCanvasCoordinates: Vector2): void {
-    this.line.scale.set(frameToCanvasCoordinates.x, frameToCanvasCoordinates.y, 1);
+  private updateLineScale(): void {
+    const frameResolution = this.params?.dataset?.frameResolution || new Vector2(1, 1);
+    // Normalize points (which are in pixel/voxel coordinates) to 2D canvas
+    // space in a [0, 2] range (will be normalized to [-1, 1] after applying
+    // position offset), then scale based on zoom level.
+    this.line.scale.set(
+      (2 / frameResolution.x) * this.frameToCanvasScale.x,
+      -(2 / frameResolution.y) * this.frameToCanvasScale.y,
+      0
+    );
+    // Normalize and apply panning offset (in a [-0.5, 0.5] range) and correct
+    // the normalization performed in scaling step above from [0, 2] to [-1, 1].
+    // Apply scaling so the offset is in canvas coordinates.
     this.line.position.set(
-      2 * panOffset.x * frameToCanvasCoordinates.x,
-      2 * panOffset.y * frameToCanvasCoordinates.y,
+      (2 * this.panOffset.x - 1) * this.frameToCanvasScale.x,
+      (2 * this.panOffset.y + 1) * this.frameToCanvasScale.y,
       0
     );
     this.bgLine.scale.copy(this.line.scale);
     this.bgLine.position.copy(this.line.position);
+  }
+
+  public setPositionAndScale(panOffset: Vector2, frameToCanvasCoordinates: Vector2): void {
+    this.panOffset = panOffset;
+    this.frameToCanvasScale = frameToCanvasCoordinates;
+    this.updateLineScale();
   }
 
   /**
