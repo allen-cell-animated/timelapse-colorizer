@@ -3,13 +3,17 @@ import { LineMaterial, LineMaterialParameters } from "three/addons/lines/LineMat
 
 import vertexShader from "./track.vert";
 
+/**
+ * Replacement for LineMaterial with custom vertex shader to support
+ * hiding/culling of line segments via the `minInstance` uniform.
+ */
 export default class CustomLineMaterial extends LineMaterial {
   /**
    * Constructs a new line segments geometry.
    */
   constructor(params?: LineMaterialParameters) {
     super(params);
-    // Reassign vertex shader
+
     this.vertexShader = vertexShader;
     this.uniforms = UniformsUtils.merge([
       this.uniforms,

@@ -1,3 +1,6 @@
+// Adapted from three.js LineMaterial and modified to add minInstance uniform.
+// See https://github.com/mrdoob/three.js/blob/master/examples/jsm/lines/LineMaterial.js
+
 #include <common>
 #include <color_pars_vertex>
 #include <fog_pars_vertex>
@@ -7,7 +10,7 @@
 uniform float linewidth;
 uniform vec2 resolution;
 
-// CHANGES FROM ORIGINAL TRACK VERTEX SHADER 
+// CHANGED FROM ORIGINAL 
 // -----------------------------
 uniform int minInstance;
 // -----------------------------
@@ -41,7 +44,8 @@ varying float vLineDistance;
 #endif
 
 void trimSegment(const in vec4 start, inout vec4 end) {
-  // trim end segment so it terminates between the camera plane and the near plane
+  // trim end segment so it terminates between the camera plane and the near
+  // plane
   // conservative estimate of the near plane
   float a = projectionMatrix[2][2]; // 3nd entry in 3th column
   float b = projectionMatrix[3][2]; // 3nd entry in 4th column
@@ -52,9 +56,9 @@ void trimSegment(const in vec4 start, inout vec4 end) {
 
 void main() {
 
-  // CHANGES FROM ORIGINAL TRACK VERTEX SHADER 
+  // CHANGED FROM ORIGINAL
   // -----------------------------
-  // cull vertices below min instance
+  // cull instances below min instance
   if (gl_InstanceID < minInstance) {
     gl_Position = vec4(0.0, 0.0, 0.0, 0.0);
     return;
@@ -83,10 +87,11 @@ void main() {
   vUv = uv;
   #endif
 
-	// special case for perspective projection, and segments that terminate either in, or behind, the camera plane
-	// clearly the gpu firmware has a way of addressing this issue when projecting into ndc space
-	// but we need to perform ndc-space calculations in the shader, so we must address this issue directly
-	// perhaps there is a more elegant solution -- WestLangley
+	// special case for perspective projection, and segments that terminate either
+	// in, or behind, the camera plane. clearly the gpu firmware has a way of
+	// addressing this issue when projecting into ndc space, but we need to
+	// perform ndc-space calculations in the shader, so we must address this issue
+	// directly. perhaps there is a more elegant solution -- WestLangley
 
   bool perspective = (projectionMatrix[2][3] == -1.0); // 4th entry in the 3rd column
 
@@ -162,7 +167,8 @@ void main() {
   }
   // adjust for linewidth
   offset *= linewidth;
-  // adjust for clip-space to screen-space conversion // maybe resolution should be based on viewport ...
+  // adjust for clip-space to screen-space conversion 
+  // maybe resolution should be based on viewport ...
   offset /= resolution.y;
   // select end
   vec4 clip = (position.y < 0.5) ? clipStart : clipEnd;
