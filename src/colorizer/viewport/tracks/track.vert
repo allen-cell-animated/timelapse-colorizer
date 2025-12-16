@@ -9,7 +9,7 @@ uniform vec2 resolution;
 
 // CHANGES FROM ORIGINAL TRACK VERTEX SHADER 
 // -----------------------------
-uniform uint minInstance;
+uniform int minInstance;
 // -----------------------------
 
 attribute vec3 instanceStart;
@@ -55,7 +55,7 @@ void main() {
   // CHANGES FROM ORIGINAL TRACK VERTEX SHADER 
   // -----------------------------
   // cull vertices below min instance
-  if (uint(gl_InstanceID) < minInstance) {
+  if (gl_InstanceID < minInstance) {
     gl_Position = vec4(0.0, 0.0, 0.0, 0.0);
     return;
   }
