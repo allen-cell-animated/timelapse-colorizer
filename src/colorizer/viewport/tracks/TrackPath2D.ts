@@ -15,6 +15,7 @@ import {
   getLineUpdateFlags,
   normalizePointsTo2dCanvasSpace,
 } from "src/colorizer/utils/data_utils";
+import CustomLineMaterial from "src/colorizer/viewport/tracks/CustomLineMaterial";
 
 import type { TrackPathParams } from "./types";
 
@@ -48,11 +49,11 @@ export default class TrackPath2D {
 
     const lineGeometry = new LineSegmentsGeometry();
     lineGeometry.setPositions(this.linePoints);
-    const lineMaterial = new LineMaterial({
+    const lineMaterial = new CustomLineMaterial({
       color: OUTLINE_COLOR_DEFAULT,
       linewidth: 1.0,
     });
-    const bgLineMaterial = new LineMaterial({
+    const bgLineMaterial = new CustomLineMaterial({
       color: FRAME_BACKGROUND_COLOR_DEFAULT,
       linewidth: 2.0,
     });
