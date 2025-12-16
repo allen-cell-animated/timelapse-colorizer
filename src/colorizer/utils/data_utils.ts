@@ -586,7 +586,13 @@ const LINE_MATERIAL_DEPS: (keyof TrackPathParams)[] = [
   "outlineColor",
   "trackPathWidthPx",
 ];
-const LINE_RENDER_DEPS: (keyof TrackPathParams)[] = ["showTrackPath"];
+const LINE_RENDER_DEPS: (keyof TrackPathParams)[] = [
+  "showTrackPath",
+  "trackPathPastSteps",
+  "trackPathFutureSteps",
+  "showAllTrackPathPastSteps",
+  "showAllTrackPathFutureSteps",
+];
 
 export function getLineUpdateFlags(
   prevParams: TrackPathParams | null,

@@ -1,5 +1,4 @@
 import { Color, type Vector2 } from "three";
-import { LineMaterial } from "three/addons/lines/LineMaterial";
 import { LineSegments2 } from "three/addons/lines/LineSegments2";
 import { LineSegmentsGeometry } from "three/addons/lines/LineSegmentsGeometry";
 
@@ -183,15 +182,25 @@ export default class TrackPath2D {
       return;
     }
 
-    // Show path up to current frame
-    let range = currentFrame - track.startTime();
+    const trackSteps = currentFrame - track.startTime();
+    let endingInstance;
+    let startingInstance;
 
-    if (range >= track.duration() || range < 0) {
-      // Hide track if we are outside the track range
-      range = 0;
+    if (this.params.showAllTrackPathPastSteps) {
+      startingInstance = 0;
+    } else {
+      startingInstance = Math.max(0, trackSteps - this.params.trackPathPastSteps);
     }
 
-    this.line.geometry.instanceCount = Math.max(0, range);
+    if (this.params.showAllTrackPathFutureSteps) {
+      endingInstance = track.duration();
+    } else {
+      endingInstance = Math.min(trackSteps + this.params.trackPathFutureSteps, track.duration());
+    }
+
+    (this.line.material as CustomLineMaterial).minInstance = startingInstance;
+    (this.bgLine.material as CustomLineMaterial).minInstance = startingInstance;
+    this.line.geometry.instanceCount = Math.max(0, endingInstance);
   }
 
   /**

@@ -14,8 +14,13 @@ export default class CustomLineMaterial extends LineMaterial {
     this.uniforms = UniformsUtils.merge([
       this.uniforms,
       {
-        minInstance: { value: 10 },
+        minInstance: { value: 0 },
       },
     ]);
+    this.uniformsNeedUpdate = true;
+  }
+
+  set minInstance(value: number) {
+    this.uniforms.minInstance.value = value;
   }
 }
