@@ -203,26 +203,35 @@ export default class TrackPath2D {
       this.line.geometry.instanceCount = 0;
       return;
     }
-    // // Show nothing if the current frame is outside the track time range
-    // if (currentFrame < track.startTime() || currentFrame > track.startTime() + track.duration()) {
-    //   this.line.geometry.instanceCount = 0;
-    //   return;
-    // }
 
-    const trackSteps = currentFrame - track.startTime();
+    const trackStepIdx = currentFrame - track.startTime();
     let endingInstance;
     let startingInstance;
 
     if (this.params.showAllTrackPathPastSteps) {
       startingInstance = 0;
     } else {
-      startingInstance = Math.max(0, trackSteps - this.params.trackPathPastSteps);
+      startingInstance = Math.max(0, trackStepIdx - this.params.trackPathPastSteps);
     }
 
     if (this.params.showAllTrackPathFutureSteps) {
       endingInstance = track.duration();
     } else {
-      endingInstance = Math.min(trackSteps + this.params.trackPathFutureSteps, track.duration());
+      endingInstance = Math.min(trackStepIdx + this.params.trackPathFutureSteps, track.duration());
+    }
+
+    // Check if the path should be hidden entirely because it is outside of the
+    // range. This happens when all past paths are shown and the track has ended,
+    // or if all future paths are shown and the track has not yet started.
+
+    // TODO: Add a flag that allows users to persist the full track path when
+    // out of range.
+    if (this.params.showAllTrackPathPastSteps && trackStepIdx >= track.duration()) {
+      startingInstance = 0;
+      endingInstance = 0;
+    } else if (this.params.showAllTrackPathPastSteps && trackStepIdx < 0) {
+      startingInstance = 0;
+      endingInstance = 0;
     }
 
     (this.line.material as SubrangeLineMaterial).minInstance = startingInstance;
