@@ -13,7 +13,7 @@ import {
   computeVertexColorsFromIds,
   getLineUpdateFlags,
 } from "src/colorizer/utils/data_utils";
-import CustomLineMaterial from "src/colorizer/viewport/tracks/CustomLineMaterial";
+import SubrangeLineMaterial from "src/colorizer/viewport/tracks/SubrangeLineMaterial";
 
 import type { TrackPathParams } from "./types";
 
@@ -51,11 +51,11 @@ export default class TrackPath2D {
 
     const lineGeometry = new LineSegmentsGeometry();
     lineGeometry.setPositions(this.linePoints);
-    const lineMaterial = new CustomLineMaterial({
+    const lineMaterial = new SubrangeLineMaterial({
       color: OUTLINE_COLOR_DEFAULT,
       linewidth: 1.0,
     });
-    const bgLineMaterial = new CustomLineMaterial({
+    const bgLineMaterial = new SubrangeLineMaterial({
       color: FRAME_BACKGROUND_COLOR_DEFAULT,
       linewidth: 2.0,
     });
@@ -173,9 +173,9 @@ export default class TrackPath2D {
       -(2 / frameResolution.y) * this.frameToCanvasScale.y,
       0
     );
-    // Normalize and apply panning offset (in a [-0.5, 0.5] range) and correct
-    // the normalization performed in scaling step above from [0, 2] to [-1, 1].
-    // Apply scaling so the offset is in canvas coordinates.
+    // Normalize and apply panning offset (from a [-0.5, 0.5] to a [-1, 1]
+    // range) and correct the normalization performed in scaling step above from
+    // [0, 2] to [-1, 1]. Apply scaling so the offset is in canvas coordinates.
     this.line.position.set(
       (2 * this.panOffset.x - 1) * this.frameToCanvasScale.x,
       (2 * this.panOffset.y + 1) * this.frameToCanvasScale.y,
@@ -203,6 +203,11 @@ export default class TrackPath2D {
       this.line.geometry.instanceCount = 0;
       return;
     }
+    // // Show nothing if the current frame is outside the track time range
+    // if (currentFrame < track.startTime() || currentFrame > track.startTime() + track.duration()) {
+    //   this.line.geometry.instanceCount = 0;
+    //   return;
+    // }
 
     const trackSteps = currentFrame - track.startTime();
     let endingInstance;
@@ -220,8 +225,8 @@ export default class TrackPath2D {
       endingInstance = Math.min(trackSteps + this.params.trackPathFutureSteps, track.duration());
     }
 
-    (this.line.material as CustomLineMaterial).minInstance = startingInstance;
-    (this.bgLine.material as CustomLineMaterial).minInstance = startingInstance;
+    (this.line.material as SubrangeLineMaterial).minInstance = startingInstance;
+    (this.bgLine.material as SubrangeLineMaterial).minInstance = startingInstance;
     this.line.geometry.instanceCount = Math.max(0, endingInstance);
   }
 
