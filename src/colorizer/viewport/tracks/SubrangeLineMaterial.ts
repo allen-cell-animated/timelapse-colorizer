@@ -13,9 +13,6 @@ type SubrangeLineMaterialParameters = LineMaterialParameters & {
  * and the `minInstance` uniform to control the visible range.
  */
 export default class SubrangeLineMaterial extends LineMaterial {
-  /**
-   * Constructs a new line segments geometry.
-   */
   constructor(params?: SubrangeLineMaterialParameters) {
     super(params);
 
@@ -30,9 +27,9 @@ export default class SubrangeLineMaterial extends LineMaterial {
   }
 
   /**
-   * The minimum instance index to render. Instances below this index will not
-   * be visible. Use with `instanceCount` on the geometry to show a subrange of
-   * line segments.
+   * The minimum instance index to render, inclusive. Instances below this index
+   * will not be visible. Use with `instanceCount` on the geometry to show a
+   * subrange of line segments.
    */
   set minInstance(value: number) {
     this.uniforms.minInstance.value = value;
