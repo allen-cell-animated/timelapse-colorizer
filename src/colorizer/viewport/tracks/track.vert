@@ -25,15 +25,12 @@ attribute vec3 instanceColorEnd;
 varying vec4 worldPos;
 varying vec3 worldStart;
 varying vec3 worldEnd;
-
 #ifdef USE_DASH
 varying vec2 vUv;
 #endif
 
 #else
-
 varying vec2 vUv;
-
 #endif
 
 #ifdef USE_DASH
@@ -69,7 +66,7 @@ void main() {
   vColor.xyz = (position.y < 0.5) ? instanceColorStart : instanceColorEnd;
   #endif
 
-	#ifdef USE_DASH
+  #ifdef USE_DASH
   vLineDistance = (position.y < 0.5) ? dashScale * instanceDistanceStart : dashScale * instanceDistanceEnd;
   vUv = uv;
   #endif
@@ -83,15 +80,15 @@ void main() {
   #ifdef WORLD_UNITS
   worldStart = start.xyz;
   worldEnd = end.xyz;
-	#else
+  #else
   vUv = uv;
   #endif
 
-	// special case for perspective projection, and segments that terminate either
-	// in, or behind, the camera plane. clearly the gpu firmware has a way of
-	// addressing this issue when projecting into ndc space, but we need to
-	// perform ndc-space calculations in the shader, so we must address this issue
-	// directly. perhaps there is a more elegant solution -- WestLangley
+  // special case for perspective projection, and segments that terminate either
+  // in, or behind, the camera plane. clearly the gpu firmware has a way of
+  // addressing this issue when projecting into ndc space, but we need to
+  // perform ndc-space calculations in the shader, so we must address this issue
+  // directly. perhaps there is a more elegant solution -- WestLangley
 
   bool perspective = (projectionMatrix[2][3] == -1.0); // 4th entry in the 3rd column
 
@@ -129,14 +126,14 @@ void main() {
   float hw = linewidth * 0.5;
   worldPos.xyz += position.x < 0.0 ? hw * worldUp : -hw * worldUp;
 
-	// don't extend the line if we're rendering dashes because we
-	// won't be rendering the endcaps
-	#ifndef USE_DASH
-	// cap extension
+  // don't extend the line if we're rendering dashes because we
+  // won't be rendering the endcaps
+  #ifndef USE_DASH
+  // cap extension
   worldPos.xyz += position.y < 0.5 ? -hw * worldDir : hw * worldDir;
-	// add width to the box
+  // add width to the box
   worldPos.xyz += worldFwd * hw;
-	// endcaps
+  // endcaps
   if (position.y > 1.0 || position.y < 0.0) {
     worldPos.xyz -= worldFwd * 2.0 * hw;
   }
@@ -181,7 +178,7 @@ void main() {
 
   vec4 mvPosition = (position.y < 0.5) ? start : end; // this is an approximation
 
-	#include <logdepthbuf_vertex>
-	#include <clipping_planes_vertex>
-	#include <fog_vertex>
+  #include <logdepthbuf_vertex>
+  #include <clipping_planes_vertex>
+  #include <fog_vertex>
 }
