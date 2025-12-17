@@ -165,16 +165,16 @@ export default class TrackPath2D {
 
   private updateLineScale(): void {
     const frameResolution = this.params?.dataset?.frameResolution || new Vector2(1, 1);
-    // Normalize points (which are in pixel/voxel coordinates) to 2D canvas
-    // space in a [0, 2] range (will be normalized to [-1, 1] after applying
-    // position offset), then scale based on zoom level.
+    // Normalize points which are in pixel/voxel coordinates to 2D canvas
+    // space in a [0, 2] range, flip the Y axis, and scale based on zoom level.
+    // Range will be adjusted to [-1, 1] in the position update below.
     this.line.scale.set(
       (2 / frameResolution.x) * this.frameToCanvasScale.x,
       -(2 / frameResolution.y) * this.frameToCanvasScale.y,
       0
     );
     // Normalize and apply panning offset (from a [-0.5, 0.5] to a [-1, 1]
-    // range) and correct the normalization performed in scaling step above from
+    // range) and correct the normalization performed in scaling step from
     // [0, 2] to [-1, 1]. Apply scaling so the offset is in canvas coordinates.
     this.line.position.set(
       (2 * this.panOffset.x - 1) * this.frameToCanvasScale.x,
@@ -223,7 +223,6 @@ export default class TrackPath2D {
     // Check if the path should be hidden entirely because it is outside of the
     // range. This happens when all past paths are shown and the track has ended,
     // or if all future paths are shown and the track has not yet started.
-
     // TODO: Add a flag that allows users to persist the full track path when
     // out of range.
     if (this.params.showAllTrackPathPastSteps && trackStepIdx >= track.duration()) {
