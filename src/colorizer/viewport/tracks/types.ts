@@ -27,4 +27,5 @@ export type TrackPathParams = {
   trackPathFutureSteps: number;
   showAllTrackPathPastSteps: boolean;
   showAllTrackPathFutureSteps: boolean;
+  persistTrackPathWhenOutOfRange: boolean;
 };

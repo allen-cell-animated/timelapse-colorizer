@@ -223,14 +223,13 @@ export default class TrackPath2D {
     // Check if the path should be hidden entirely because it is outside of the
     // range. This happens when all past paths are shown and the track has ended,
     // or if all future paths are shown and the track has not yet started.
-    // TODO: Add a flag that allows users to persist the full track path when
-    // out of range.
-    if (this.params.showAllTrackPathPastSteps && trackStepIdx >= track.duration()) {
-      startingInstance = 0;
-      endingInstance = 0;
-    } else if (this.params.showAllTrackPathPastSteps && trackStepIdx < 0) {
-      startingInstance = 0;
-      endingInstance = 0;
+    if (!this.params.persistTrackPathWhenOutOfRange) {
+      const isVisiblePastEnd = this.params.showAllTrackPathPastSteps && trackStepIdx >= track.duration();
+      const isVisibleBeforeStart = this.params.showAllTrackPathFutureSteps && trackStepIdx < 0;
+      if (isVisiblePastEnd || isVisibleBeforeStart) {
+        startingInstance = 0;
+        endingInstance = 0;
+      }
     }
 
     (this.line.material as SubrangeLineMaterial).minInstance = startingInstance;
