@@ -127,7 +127,7 @@ export default function TrackPathSettings(): ReactElement {
                 style={{ marginTop: 4 }}
               >
                 <Tooltip
-                  title="When showing all past or future steps, keep the track path visible even when the current time is outside the track's range."
+                  title="Keep the track path visible when showing all past or future steps, even when the current time is outside the track's range."
                   placement="right"
                   trigger={["focus", "hover"]}
                 >

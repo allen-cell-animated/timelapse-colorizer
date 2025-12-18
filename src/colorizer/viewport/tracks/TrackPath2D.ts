@@ -224,10 +224,9 @@ export default class TrackPath2D {
     // range. This happens when all past paths are shown and the track has ended,
     // or if all future paths are shown and the track has not yet started.
     if (!this.params.persistTrackPathWhenOutOfRange) {
-      if (this.params.showAllTrackPathPastSteps && trackStepIdx >= track.duration()) {
-        startingInstance = 0;
-        endingInstance = 0;
-      } else if (this.params.showAllTrackPathPastSteps && trackStepIdx < 0) {
+      const isVisiblePastEnd = this.params.showAllTrackPathPastSteps && trackStepIdx >= track.duration();
+      const isVisibleBeforeStart = this.params.showAllTrackPathFutureSteps && trackStepIdx < 0;
+      if (isVisiblePastEnd || isVisibleBeforeStart) {
         startingInstance = 0;
         endingInstance = 0;
       }
