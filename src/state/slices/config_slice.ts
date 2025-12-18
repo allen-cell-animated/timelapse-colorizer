@@ -55,6 +55,12 @@ export type ConfigSliceState = {
   showAllTrackPathFutureSteps: boolean;
   showAllTrackPathPastSteps: boolean;
 
+  /**
+   * Whether track paths should be shown when all past/future steps are enabled,
+   * but the current timestamp is outside the range of the track.
+   */
+  persistTrackPathWhenOutOfRange: boolean;
+
   // Viewport settings
   showScaleBar: boolean;
   showTimestamp: boolean;
@@ -88,6 +94,7 @@ export type ConfigSliceSerializableState = Pick<
   | "showAllTrackPathFutureSteps"
   | "showAllTrackPathPastSteps"
   | "trackPathPastSteps"
+  | "persistTrackPathWhenOutOfRange"
   | "showScaleBar"
   | "showTimestamp"
   | "outOfRangeDrawSettings"
@@ -110,6 +117,7 @@ export type ConfigSliceActions = {
   setTrackPathPastSteps: (trackPathPastSteps: number) => void;
   setShowAllTrackPathFutureSteps: (showAllTrackPathFutureSteps: boolean) => void;
   setShowAllTrackPathPastSteps: (showAllTrackPathPastSteps: boolean) => void;
+  setPersistTrackPathWhenOutOfRange: (persistTrackPathWhenOutOfRange: boolean) => void;
   setShowScaleBar: (showScaleBar: boolean) => void;
   setShowTimestamp: (showTimestamp: boolean) => void;
   setShowLegendDuringExport: (showLegendDuringExport: boolean) => void;
@@ -136,6 +144,7 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   trackPathPastSteps: 25,
   showAllTrackPathFutureSteps: false,
   showAllTrackPathPastSteps: true,
+  persistTrackPathWhenOutOfRange: false,
   showScaleBar: true,
   showTimestamp: true,
   showLegendDuringExport: true,
@@ -165,6 +174,7 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
     set({ trackPathPastSteps: Math.max(0, Math.round(trackPathPastSteps)) }),
   setShowAllTrackPathFutureSteps: (showAllTrackPathFutureSteps) => set({ showAllTrackPathFutureSteps }),
   setShowAllTrackPathPastSteps: (showAllTrackPathPastSteps) => set({ showAllTrackPathPastSteps }),
+  setPersistTrackPathWhenOutOfRange: (persistTrackPathWhenOutOfRange) => set({ persistTrackPathWhenOutOfRange }),
 
   setShowScaleBar: (showScaleBar) => set({ showScaleBar }),
   setShowTimestamp: (showTimestamp) => set({ showTimestamp }),
@@ -192,6 +202,7 @@ export const serializeConfigSlice = (slice: Partial<ConfigSliceSerializableState
       slice.showAllTrackPathPastSteps,
       slice.showAllTrackPathFutureSteps
     ),
+    [UrlParam.PATH_PERSIST_OUT_OF_RANGE]: encodeMaybeBoolean(slice.persistTrackPathWhenOutOfRange),
     [UrlParam.SHOW_SCALEBAR]: encodeMaybeBoolean(slice.showScaleBar),
     [UrlParam.SHOW_TIMESTAMP]: encodeMaybeBoolean(slice.showTimestamp),
     // Export settings are currently not serialized.
@@ -220,6 +231,7 @@ export const selectConfigSliceSerializationDeps = (slice: ConfigSlice): ConfigSl
   trackPathPastSteps: slice.trackPathPastSteps,
   showAllTrackPathFutureSteps: slice.showAllTrackPathFutureSteps,
   showAllTrackPathPastSteps: slice.showAllTrackPathPastSteps,
+  persistTrackPathWhenOutOfRange: slice.persistTrackPathWhenOutOfRange,
   outOfRangeDrawSettings: slice.outOfRangeDrawSettings,
   outlierDrawSettings: slice.outlierDrawSettings,
   outlineColor: slice.outlineColor,
@@ -236,6 +248,10 @@ export const loadConfigSliceFromParams = (slice: ConfigSlice, params: URLSearchP
   setValueIfDefined(decodeBoolean(params.get(UrlParam.SHOW_TIMESTAMP)), slice.setShowTimestamp);
   setValueIfDefined(decodeFloat(params.get(UrlParam.PATH_WIDTH)), slice.setTrackPathWidthPx);
   setValueIfDefined(decodeBoolean(params.get(UrlParam.SHOW_PATH_BREAKS)), slice.setShowTrackPathBreaks);
+  setValueIfDefined(
+    decodeBoolean(params.get(UrlParam.PATH_PERSIST_OUT_OF_RANGE)),
+    slice.setPersistTrackPathWhenOutOfRange
+  );
   setValueIfDefined(decodeBoolean(params.get(UrlParam.INTERPOLATE_3D)), slice.setInterpolate3d);
 
   slice.setOutOfRangeDrawSettings(
