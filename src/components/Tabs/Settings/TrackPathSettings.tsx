@@ -124,14 +124,13 @@ export default function TrackPathSettings(): ReactElement {
               <SettingsItem
                 label="Persist when out of range"
                 htmlFor={TrackPathSettingsHtmlIds.TRACK_PATH_PERSIST_OUT_OF_RANGE_CHECKBOX}
-                style={{ marginTop: 4 }}
               >
                 <Tooltip
                   title="Keep the track path visible when showing all past or future steps, even when the current time is outside the track's range."
                   placement="right"
                   trigger={["focus", "hover"]}
                 >
-                  <div style={{ width: "fit-content" }}>
+                  <div style={{ width: "fit-content", paddingTop: 2 }}>
                     <Checkbox
                       id={TrackPathSettingsHtmlIds.TRACK_PATH_PERSIST_OUT_OF_RANGE_CHECKBOX}
                       type="checkbox"
