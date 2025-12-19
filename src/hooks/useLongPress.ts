@@ -60,15 +60,14 @@ const useLongPress = (
   }, []);
 
   useEffect(() => {
-    if (!ref.current) {
+    const buttonEl = ref.current;
+    if (!buttonEl) {
       return;
     }
-    ref.current.addEventListener("mousedown", onMouseDown);
+    buttonEl.addEventListener("mousedown", onMouseDown);
     window.addEventListener("mouseup", onMouseUp);
     return () => {
-      if (ref.current) {
-        ref.current.removeEventListener("mousedown", onMouseDown);
-      }
+      buttonEl.removeEventListener("mousedown", onMouseDown);
       window.removeEventListener("mouseup", onMouseUp);
     };
   }, [ref, onMouseDown, onMouseUp]);
