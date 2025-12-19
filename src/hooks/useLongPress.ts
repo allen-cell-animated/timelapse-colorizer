@@ -1,4 +1,4 @@
-import { type RefObject, useEffect, useRef } from "react";
+import { type RefObject, useCallback, useEffect, useRef } from "react";
 
 /**
  * Adds long-press handling to buttons. When the button is pressed and held for
@@ -21,6 +21,7 @@ const useLongPress = (
   initialDelayMs = 500,
   repeatDelayMs = 40
 ): void => {
+  const isHeld = useRef(false);
   const onHeldCallbackRef = useRef(onHeld);
   const onReleasedCallbackRef = useRef(onReleased);
   const initialTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -29,20 +30,21 @@ const useLongPress = (
   onHeldCallbackRef.current = onHeld;
   onReleasedCallbackRef.current = onReleased;
 
-  const triggerOnHeld = (): void => {
-    onHeldCallbackRef.current();
+  const triggerOnHeld = useCallback((): void => {
+    onHeld();
     repeatIntervalRef.current = setInterval(() => {
       onHeldCallbackRef.current();
     }, repeatDelayMs);
-  };
+  }, [repeatDelayMs]);
 
-  const onMouseDown = (): void => {
+  const onMouseDown = useCallback((): void => {
     initialTimeoutRef.current = setTimeout(() => {
       triggerOnHeld();
     }, initialDelayMs);
-  };
+    isHeld.current = true;
+  }, [initialDelayMs, triggerOnHeld]);
 
-  const onMouseUp = (): void => {
+  const onMouseUp = useCallback((): void => {
     if (initialTimeoutRef.current) {
       clearTimeout(initialTimeoutRef.current);
       initialTimeoutRef.current = null;
@@ -51,10 +53,11 @@ const useLongPress = (
       clearInterval(repeatIntervalRef.current);
       repeatIntervalRef.current = null;
     }
-    if (onReleasedCallbackRef.current) {
+    if (isHeld.current && onReleasedCallbackRef.current) {
       onReleasedCallbackRef.current();
     }
-  };
+    isHeld.current = false;
+  }, []);
 
   useEffect(() => {
     if (!ref.current) {
@@ -68,7 +71,7 @@ const useLongPress = (
       }
       window.removeEventListener("mouseup", onMouseUp);
     };
-  }, [ref, initialDelayMs, repeatDelayMs]);
+  }, [ref, onMouseDown, onMouseUp]);
 };
 
 export { useLongPress };
