@@ -866,7 +866,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
   const makeControlBar = (menuItems: SelectItem[]): ReactElement => {
     return (
-      <FlexRow>
+      <FlexRow $gap={6}>
         <FlexRowAlignCenter $gap={6} style={{ flexWrap: "wrap", width: "100%" }}>
           <SelectionDropdown
             label={"X"}
