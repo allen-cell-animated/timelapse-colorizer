@@ -14,7 +14,7 @@ import { useViewerStateStore } from "src/state";
 import { Z_INDEX_MODAL } from "src/styles/AppStyle";
 import { StyledRadioGroup } from "src/styles/components";
 import { FlexColumnAlignCenter, FlexRow, VisuallyHidden } from "src/styles/utils";
-import { download } from "src/utils/file_io";
+import { downloadCsv } from "src/utils/file_io";
 
 import AnnotationDisplayList from "./AnnotationDisplay/AnnotationDisplayList";
 import AnnotationDisplayTable, { type TableDataType } from "./AnnotationDisplay/AnnotationDisplayTable";
@@ -241,7 +241,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
               onClick={() => {
                 const csvData = props.annotationState.data.toCsv(store.dataset!);
                 const name = datasetKey ?? "annotations";
-                download(`${name}-annotations.csv`, "data:text/csv;charset=utf-8," + encodeURIComponent(csvData));
+                downloadCsv(`${name}-annotations.csv`, csvData);
               }}
               disabled={!hasAnnotations}
             >

@@ -45,3 +45,13 @@ export const DEFAULT_COLLECTION_FILENAME = "collection.json";
  * to the elements (frames, feature data, centroids, etc.) of this dataset.
  */
 export const DEFAULT_DATASET_FILENAME = "manifest.json";
+
+export const CSV_COL_ID = "ID";
+// Column constants for segmentation ID, time, and track are used to validate
+// data when parsing CSV files and check for mismatches with the current
+// dataset.
+export const CSV_COL_SEG_ID = "Label";
+export const CSV_COL_TIME = "Frame";
+export const CSV_COL_TRACK = "Track";
+export const CSV_COL_FILTERED = "Filtered";
+export const CSV_COL_OUTLIER = "Outlier";

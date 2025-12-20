@@ -14,3 +14,7 @@ export function download(filename: string, href: string): void {
 
   document.body.removeChild(anchor);
 }
+
+export function downloadCsv(filename: string, csvContent: string): void {
+  download(filename, "data:text/csv;charset=utf-8," + encodeURIComponent(csvContent));
+}
