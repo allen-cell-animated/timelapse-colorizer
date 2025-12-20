@@ -877,7 +877,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
             items={menuItems}
             onChange={setXAxis}
             controlWidth="100%"
-            containerStyle={{ flexGrow: 1 }}
+            containerStyle={{ flexGrow: 1, flexBasis: "200px", flexShrink: 1 }}
           />
           <Tooltip title="Swap axes" trigger={["hover", "focus"]}>
             <IconButton
@@ -897,7 +897,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
             items={menuItems}
             onChange={setYAxis}
             controlWidth="100%"
-            containerStyle={{ flexGrow: 1 }}
+            containerStyle={{ flexGrow: 1, flexBasis: "200px", flexShrink: 1 }}
           />
           <div style={{ marginLeft: "10px" }}>
             <SelectionDropdown
