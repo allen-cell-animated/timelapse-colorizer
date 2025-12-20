@@ -1,4 +1,4 @@
-import { DownloadOutlined } from "@ant-design/icons";
+import { ExportOutlined } from "@ant-design/icons";
 import { Button, Tooltip } from "antd";
 import Plotly, { type PlotData, type PlotMarker } from "plotly.js-dist-min";
 import React, { memo, type ReactElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
@@ -866,38 +866,52 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
   const makeControlBar = (menuItems: SelectItem[]): ReactElement => {
     return (
-      <FlexRowAlignCenter $gap={6} style={{ flexWrap: "wrap" }}>
-        <SelectionDropdown label={"X"} selected={xAxisFeatureKey || ""} items={menuItems} onChange={setXAxis} />
-        <Tooltip title="Swap axes" trigger={["hover", "focus"]}>
-          <IconButton
-            onClick={() => {
-              const temp = xAxisFeatureKey;
-              setXAxis(yAxisFeatureKey);
-              setYAxis(temp);
-            }}
-            type="link"
-          >
-            <SwitchIconSVG />
-          </IconButton>
-        </Tooltip>
-        <SelectionDropdown label={"Y"} selected={yAxisFeatureKey || ""} items={menuItems} onChange={setYAxis} />
-
-        <div style={{ marginLeft: "10px" }}>
+      <FlexRow>
+        <FlexRowAlignCenter $gap={6} style={{ flexWrap: "wrap", width: "100%" }}>
           <SelectionDropdown
-            label={"Show objects from"}
-            selected={rangeType}
-            items={PLOT_RANGE_SELECT_ITEMS}
-            controlWidth={"120px"}
-            onChange={(value: string) => setRangeType(value as PlotRangeType)}
-            showSelectedItemTooltip={false}
-          ></SelectionDropdown>
-        </div>
-
+            label={"X"}
+            selected={xAxisFeatureKey || ""}
+            items={menuItems}
+            onChange={setXAxis}
+            controlWidth="100%"
+            containerStyle={{ flexGrow: 1 }}
+          />
+          <Tooltip title="Swap axes" trigger={["hover", "focus"]}>
+            <IconButton
+              onClick={() => {
+                const temp = xAxisFeatureKey;
+                setXAxis(yAxisFeatureKey);
+                setYAxis(temp);
+              }}
+              type="link"
+            >
+              <SwitchIconSVG />
+            </IconButton>
+          </Tooltip>
+          <SelectionDropdown
+            label={"Y"}
+            selected={yAxisFeatureKey || ""}
+            items={menuItems}
+            onChange={setYAxis}
+            controlWidth="100%"
+            containerStyle={{ flexGrow: 1 }}
+          />
+          <div style={{ marginLeft: "10px" }}>
+            <SelectionDropdown
+              label={"Show objects from"}
+              selected={rangeType}
+              items={PLOT_RANGE_SELECT_ITEMS}
+              controlWidth={"120px"}
+              onChange={(value: string) => setRangeType(value as PlotRangeType)}
+              showSelectedItemTooltip={false}
+            ></SelectionDropdown>
+          </div>
+        </FlexRowAlignCenter>
         <TextButton onClick={downloadScatterPlotCsv}>
-          <DownloadOutlined style={{ marginRight: "2px" }} />
-          Download CSV
+          <ExportOutlined style={{ marginRight: "2px" }} />
+          Export CSV
         </TextButton>
-      </FlexRowAlignCenter>
+      </FlexRow>
     );
   };
 
