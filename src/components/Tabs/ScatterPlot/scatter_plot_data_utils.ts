@@ -1,8 +1,20 @@
+import { unparse } from "papaparse";
 import type Plotly from "plotly.js-dist-min";
-import type {PlotData} from "plotly.js-dist-min";
+import type { PlotData } from "plotly.js-dist-min";
 import type { Color } from "three";
 
-import type { ColorRamp, Dataset, HexColorString } from "src/colorizer";
+import {
+  type ColorRamp,
+  CSV_COL_FILTERED,
+  CSV_COL_ID,
+  CSV_COL_OUTLIER,
+  CSV_COL_SEG_ID,
+  CSV_COL_TIME_LABELED,
+  CSV_COL_TRACK,
+  type Dataset,
+  type HexColorString,
+} from "src/colorizer";
+import { FeatureData } from "src/colorizer/Dataset";
 import { remap } from "src/colorizer/utils/math_utils";
 
 export type DataArray = Uint32Array | Float32Array | number[];
@@ -192,4 +204,51 @@ export function drawCrosshair(x: number, y: number): Partial<PlotData>[] {
     },
   };
   return [crosshairBg, crosshair];
+}
+
+export function getScatterplotDataAsCsv(
+  dataset: Dataset,
+  objectIds: number[],
+  inRangeLUT: Uint8Array,
+  featureKeys: string[],
+  delimiter: string = ","
+): string {
+  for (const featureKey of featureKeys) {
+    if (!dataset.hasFeatureKey(featureKey)) {
+      throw new Error(`Cannot generate CSV data: Missing feature data for key '${featureKey}'.`);
+    }
+  }
+  const allFeatureData = featureKeys.map((featureKey) => dataset.getFeatureData(featureKey)) as FeatureData[];
+  const featureNames = featureKeys.map((featureKey) => dataset.getFeatureNameWithUnits(featureKey));
+  const headerRow = [
+    CSV_COL_ID,
+    CSV_COL_SEG_ID,
+    CSV_COL_TRACK,
+    CSV_COL_TIME_LABELED,
+    ...featureNames,
+    CSV_COL_OUTLIER,
+    CSV_COL_FILTERED,
+  ];
+
+  const csvRows: (string | number)[][] = [];
+  for (const id of objectIds) {
+    const segId = dataset.getSegmentationId(id);
+    const track = dataset.getTrackId(id);
+    const time = dataset.getTime(id);
+    const outlier = dataset.outliers && dataset.outliers[id] ? "true" : "false";
+    const filtered = inRangeLUT[id] ? "true" : "false";
+    const row: (string | number)[] = [id, segId, track, time];
+    for (const featureData of allFeatureData) {
+      const value = featureData.data[id];
+      row.push(value);
+    }
+    row.push(outlier, filtered);
+    csvRows.push(row);
+  }
+
+  const csvString = unparse(
+    { fields: headerRow, data: csvRows },
+    { delimiter: delimiter, header: true, escapeFormulae: true }
+  );
+  return csvString;
 }

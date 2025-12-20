@@ -52,6 +52,7 @@ export const CSV_COL_ID = "ID";
 // dataset.
 export const CSV_COL_SEG_ID = "Label";
 export const CSV_COL_TIME = "Frame";
+export const CSV_COL_TIME_LABELED = "Time (frames)";
 export const CSV_COL_TRACK = "Track";
 export const CSV_COL_FILTERED = "Filtered";
 export const CSV_COL_OUTLIER = "Outlier";

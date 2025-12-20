@@ -1,6 +1,7 @@
+import { DownloadOutlined } from "@ant-design/icons";
 import { Button, Tooltip } from "antd";
 import Plotly, { type PlotData, type PlotMarker } from "plotly.js-dist-min";
-import React, { memo, type ReactElement, useContext, useEffect, useMemo, useRef, useState } from "react";
+import React, { memo, type ReactElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import { Color, type ColorRepresentation } from "three";
 
@@ -10,6 +11,7 @@ import { TIME_FEATURE_KEY } from "src/colorizer/Dataset";
 import { DrawMode, type HexColorString, PlotRangeType } from "src/colorizer/types";
 import type { ShowAlertBannerCallback } from "src/components/Banner/hooks";
 import IconButton from "src/components/Buttons/IconButton";
+import TextButton from "src/components/Buttons/TextButton";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import type { SelectItem } from "src/components/Dropdowns/types";
 import LoadingSpinner from "src/components/LoadingSpinner";
@@ -17,12 +19,14 @@ import { useDebounce } from "src/hooks";
 import { useViewerStateStore } from "src/state/ViewerState";
 import { AppThemeContext } from "src/styles/AppStyle";
 import { FlexRow, FlexRowAlignCenter } from "src/styles/utils";
+import { downloadCsv } from "src/utils/file_io";
 
 import {
   type DataArray,
   drawCrosshair,
   getBucketIndex,
   getHoverTemplate,
+  getScatterplotDataAsCsv,
   isHistogramEvent,
   makeEmptyTraceData,
   makeLineTrace,
@@ -94,6 +98,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const dataset = useDebounce(rawDataset, 500);
   const categoricalPalette = useDebounce(rawCategoricalPalette, 100);
   const [colorRampMin, colorRampMax] = useDebounce(rawColorRampRange, 100);
+
+  const plottedIds = useRef<Set<number>>(new Set());
 
   const isDebouncePending =
     dataset !== rawDataset || colorRampMin !== rawColorRampRange[0] || colorRampMax !== rawColorRampRange[1];
@@ -662,6 +668,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     }
     const { xData, yData, segIds, objectIds, trackIds } = result;
 
+    plottedIds.current = new Set(objectIds);
+
     let markerBaseColor = undefined;
     if (rangeType === PlotRangeType.ALL_TIME && selectedTrack) {
       // Use a light grey for other markers when a track is selected.
@@ -730,6 +738,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         }
       );
       traces.push(...trackTraces);
+      plottedIds.current = new Set([...plottedIds.current, ...trackData.objectIds]);
     }
 
     // Render currently selected object as an extra crosshair trace.
@@ -836,6 +845,18 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   // Component Rendering
   //////////////////////////////////
 
+  const downloadScatterPlotCsv = useCallback(() => {
+    if (!dataset || !xAxisFeatureKey || !yAxisFeatureKey || !selectedFeatureKey) {
+      return;
+    }
+    const featureSet = new Set([xAxisFeatureKey, yAxisFeatureKey, selectedFeatureKey]);
+    featureSet.delete(TIME_FEATURE_KEY);
+    const features = Array.from(featureSet);
+
+    const csvString = getScatterplotDataAsCsv(dataset, Array.from(plottedIds.current), inRangeLUT, features);
+    downloadCsv("scatterplot.csv", csvString);
+  }, [dataset, xAxisFeatureKey, yAxisFeatureKey, selectedFeatureKey, inRangeLUT]);
+
   const menuItems = useMemo((): SelectItem[] => {
     const featureKeys = dataset ? dataset.featureKeys : [];
     return featureKeys.map((key: string) => {
@@ -871,6 +892,11 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
             showSelectedItemTooltip={false}
           ></SelectionDropdown>
         </div>
+
+        <TextButton onClick={downloadScatterPlotCsv}>
+          <DownloadOutlined style={{ marginRight: "2px" }} />
+          Download CSV
+        </TextButton>
       </FlexRowAlignCenter>
     );
   };
