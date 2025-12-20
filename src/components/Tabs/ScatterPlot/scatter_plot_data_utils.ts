@@ -9,7 +9,7 @@ import {
   CSV_COL_ID,
   CSV_COL_OUTLIER,
   CSV_COL_SEG_ID,
-  CSV_COL_TIME_LABELED,
+  CSV_COL_TIME_WITH_UNITS,
   CSV_COL_TRACK,
   type Dataset,
   type HexColorString,
@@ -224,7 +224,7 @@ export function getScatterplotDataAsCsv(
     CSV_COL_ID,
     CSV_COL_SEG_ID,
     CSV_COL_TRACK,
-    CSV_COL_TIME_LABELED,
+    CSV_COL_TIME_WITH_UNITS,
     ...featureNames,
     CSV_COL_OUTLIER,
     CSV_COL_FILTERED,
@@ -235,8 +235,8 @@ export function getScatterplotDataAsCsv(
     const segId = dataset.getSegmentationId(id);
     const track = dataset.getTrackId(id);
     const time = dataset.getTime(id);
-    const outlier = dataset.outliers && dataset.outliers[id] ? "true" : "false";
-    const filtered = inRangeLUT[id] ? "true" : "false";
+    const outlier = dataset.outliers && dataset.outliers[id] === 1 ? "true" : "false";
+    const filtered = inRangeLUT[id] === 1 ? "true" : "false";
     const row: (string | number)[] = [id, segId, track, time];
     for (const featureData of allFeatureData) {
       let value: string | number = featureData.data[id];

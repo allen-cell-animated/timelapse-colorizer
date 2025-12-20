@@ -851,9 +851,10 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       return;
     }
     const featureSet = new Set([xAxisFeatureKey, yAxisFeatureKey, selectedFeatureKey]);
+    // Remove time as a feature axis if present, since it's included already as
+    // a metadata column in the CSV.
     featureSet.delete(TIME_FEATURE_KEY);
     const features = Array.from(featureSet);
-
     const csvString = getScatterplotDataAsCsv(dataset, Array.from(plottedIds.current), inRangeLUT, features);
     const name = datasetKey ? `${datasetKey}-scatterplot.csv` : "scatterplot.csv";
     downloadCsv(name, csvString);
