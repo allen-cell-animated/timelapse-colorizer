@@ -240,8 +240,8 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
             <TextButton
               onClick={() => {
                 const csvData = props.annotationState.data.toCsv(store.dataset!);
-                const name = datasetKey ?? "annotations";
-                downloadCsv(`${name}-annotations.csv`, csvData);
+                const name = datasetKey ? `${datasetKey}-annotations.csv` : "annotations.csv";
+                downloadCsv(name, csvData);
               }}
               disabled={!hasAnnotations}
             >

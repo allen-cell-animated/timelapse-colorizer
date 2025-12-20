@@ -92,6 +92,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const yAxisFeatureKey = useViewerStateStore((state) => state.scatterYAxis);
 
   // Debounce changes to the dataset to prevent noticeably blocking the UI thread with a re-render.
+  const datasetKey = useViewerStateStore((state) => state.datasetKey);
   const rawDataset = useViewerStateStore((state) => state.dataset);
   const rawCategoricalPalette = useViewerStateStore((state) => state.categoricalPalette);
   const rawColorRampRange = useViewerStateStore((state) => state.colorRampRange);
@@ -854,8 +855,9 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     const features = Array.from(featureSet);
 
     const csvString = getScatterplotDataAsCsv(dataset, Array.from(plottedIds.current), inRangeLUT, features);
-    downloadCsv("scatterplot.csv", csvString);
-  }, [dataset, xAxisFeatureKey, yAxisFeatureKey, selectedFeatureKey, inRangeLUT]);
+    const name = datasetKey ? `${datasetKey}-scatterplot.csv` : "scatterplot.csv";
+    downloadCsv(name, csvString);
+  }, [dataset, datasetKey, xAxisFeatureKey, yAxisFeatureKey, selectedFeatureKey, inRangeLUT]);
 
   const menuItems = useMemo((): SelectItem[] => {
     const featureKeys = dataset ? dataset.featureKeys : [];
