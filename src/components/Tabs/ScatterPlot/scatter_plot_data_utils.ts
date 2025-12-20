@@ -14,7 +14,7 @@ import {
   type Dataset,
   type HexColorString,
 } from "src/colorizer";
-import type { FeatureData } from "src/colorizer/Dataset";
+import { type FeatureData, FeatureType } from "src/colorizer/Dataset";
 import { remap } from "src/colorizer/utils/math_utils";
 
 export type DataArray = Uint32Array | Float32Array | number[];
@@ -239,7 +239,11 @@ export function getScatterplotDataAsCsv(
     const filtered = inRangeLUT[id] ? "true" : "false";
     const row: (string | number)[] = [id, segId, track, time];
     for (const featureData of allFeatureData) {
-      const value = featureData.data[id];
+      let value: string | number = featureData.data[id];
+      // Parse categorical data back into original string labels
+      if (featureData.type === FeatureType.CATEGORICAL && featureData.categories) {
+        value = featureData.categories[value] ?? "";
+      }
       row.push(value);
     }
     row.push(outlier, filtered);
