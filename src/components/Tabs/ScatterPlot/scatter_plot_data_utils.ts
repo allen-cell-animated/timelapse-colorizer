@@ -14,7 +14,7 @@ import {
   type Dataset,
   type HexColorString,
 } from "src/colorizer";
-import { FeatureData } from "src/colorizer/Dataset";
+import type { FeatureData } from "src/colorizer/Dataset";
 import { remap } from "src/colorizer/utils/math_utils";
 
 export type DataArray = Uint32Array | Float32Array | number[];
