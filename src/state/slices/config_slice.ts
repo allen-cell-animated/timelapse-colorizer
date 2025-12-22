@@ -218,8 +218,9 @@ export const serializeConfigSlice = (slice: Partial<ConfigSliceSerializableState
     [UrlParam.SHOW_PATH]: encodeMaybeBoolean(slice.showTrackPath),
     [UrlParam.PATH_COLOR]: encodeMaybeColor(slice.trackPathColor),
     [UrlParam.PATH_WIDTH]: encodeMaybeNumber(slice.trackPathWidthPx),
-    [UrlParam.PATH_COLOR_RAMP]:
-      slice.trackPathColorRampKey + (slice.trackPathIsColorRampReversed ? URL_COLOR_RAMP_REVERSED_SUFFIX : ""),
+    [UrlParam.PATH_COLOR_RAMP]: slice.trackPathColorRampKey
+      ? slice.trackPathColorRampKey + (slice.trackPathIsColorRampReversed ? URL_COLOR_RAMP_REVERSED_SUFFIX : "")
+      : undefined,
     [UrlParam.PATH_COLOR_MODE]: slice.trackPathColorMode?.toString(),
     [UrlParam.SHOW_PATH_BREAKS]: encodeMaybeBoolean(slice.showTrackPathBreaks),
     [UrlParam.PATH_STEPS]: serializeTrackPathSteps(
