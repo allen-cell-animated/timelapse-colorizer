@@ -29,11 +29,10 @@ type DropdownWithColorPickerProps = {
 
   // Color ramp picker
   showColorRamp?: boolean;
-  selectedRamp?: string;
+  selectedRampKey?: string;
   colorRampsToDisplay?: string[];
   onRampChange?: (colorRampKey: string, reversed: boolean) => void;
   isRampReversed?: boolean;
-  onRampReverseChange?: (reversed: boolean) => void;
   mirrorRamp?: boolean;
 };
 
@@ -41,11 +40,10 @@ const defaultProps: Partial<DropdownWithColorPickerProps> = {
   disabled: false,
   showColorPicker: true,
   showColorRamp: false,
-  selectedRamp: DEFAULT_COLOR_RAMP_KEY,
+  selectedRampKey: DEFAULT_COLOR_RAMP_KEY,
   colorRampsToDisplay: [...DISPLAY_COLOR_RAMP_KEYS],
   onRampChange: () => {},
   isRampReversed: false,
-  onRampReverseChange: () => {},
 };
 
 const HorizontalDiv = styled(FlexRowAlignCenter)`
@@ -93,8 +91,9 @@ export default function DropdownWithColorPicker(propsInput: DropdownWithColorPic
           }}
         >
           <ColorRampDropdown
-            selectedRamp={props.selectedRamp!}
+            selectedRamp={props.selectedRampKey!}
             onChangeRamp={props.onRampChange!}
+            reversed={props.isRampReversed!}
             colorRampsToDisplay={props.colorRampsToDisplay ?? []}
             id={props.id + "_ramp_dropdown"}
             mirror={props.mirrorRamp}

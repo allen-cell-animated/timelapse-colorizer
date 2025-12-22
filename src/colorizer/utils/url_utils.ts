@@ -53,6 +53,7 @@ export enum UrlParam {
   EDGE_MODE = "edge",
   SHOW_PATH = "path",
   PATH_COLOR = "path-color",
+  PATH_COLOR_RAMP = "path-ramp",
   PATH_WIDTH = "path-width",
   PATH_COLOR_MODE = "path-mode",
   SHOW_PATH_BREAKS = "path-breaks",
@@ -416,7 +417,10 @@ export function parseDrawSettings(
 export function parseTrackPathMode(mode: string | null): TrackPathColorMode | undefined {
   const modeInt = parseInt(mode || "-1", 10);
   const isTrackPathColorMode =
-    modeInt === TrackPathColorMode.USE_CUSTOM_COLOR || modeInt === TrackPathColorMode.USE_OUTLINE_COLOR;
+    modeInt === TrackPathColorMode.USE_CUSTOM_COLOR ||
+    modeInt === TrackPathColorMode.USE_OUTLINE_COLOR ||
+    modeInt === TrackPathColorMode.USE_FEATURE_COLOR ||
+    modeInt === TrackPathColorMode.USE_COLOR_MAP;
   return mode && isTrackPathColorMode ? (modeInt as TrackPathColorMode) : undefined;
 }
 

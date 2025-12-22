@@ -1,12 +1,7 @@
 import { Checkbox, Tooltip } from "antd";
 import React, { type ReactElement, useMemo } from "react";
 
-import {
-  DEFAULT_DIVERGING_COLOR_RAMP_KEY,
-  DISPLAY_COLOR_RAMP_DIVERGING_KEYS,
-  DISPLAY_COLOR_RAMP_LINEAR_KEYS,
-  TrackPathColorMode,
-} from "src/colorizer";
+import { DISPLAY_COLOR_RAMP_DIVERGING_KEYS, DISPLAY_COLOR_RAMP_LINEAR_KEYS, TrackPathColorMode } from "src/colorizer";
 import DropdownWithColorPicker from "src/components/Dropdowns/DropdownWithColorPicker";
 import type { SelectItem } from "src/components/Dropdowns/types";
 import LabeledSlider from "src/components/Inputs/LabeledSlider";
@@ -44,6 +39,8 @@ export default function TrackPathSettings(): ReactElement {
   const showTrackPath = useViewerStateStore((state) => state.showTrackPath);
   const showTrackPathBreaks = useViewerStateStore((state) => state.showTrackPathBreaks);
   const trackPathColor = useViewerStateStore((state) => state.trackPathColor);
+  const trackPathColorRampKey = useViewerStateStore((state) => state.trackPathColorRampKey);
+  const trackPathIsColorRampReversed = useViewerStateStore((state) => state.trackPathIsColorRampReversed);
   const trackPathColorMode = useViewerStateStore((state) => state.trackPathColorMode);
   const trackPathWidthPx = useViewerStateStore((state) => state.trackPathWidthPx);
   const trackPathPastSteps = useViewerStateStore((state) => state.trackPathPastSteps);
@@ -53,6 +50,8 @@ export default function TrackPathSettings(): ReactElement {
   const persistTrackPathWhenOutOfRange = useViewerStateStore((state) => state.persistTrackPathWhenOutOfRange);
   const setShowTrackPath = useViewerStateStore((state) => state.setShowTrackPath);
   const setTrackPathColor = useViewerStateStore((state) => state.setTrackPathColor);
+  const setTrackPathColorRampKey = useViewerStateStore((state) => state.setTrackPathColorRampKey);
+  const setTrackPathIsColorRampReversed = useViewerStateStore((state) => state.setTrackPathIsColorRampReversed);
   const setTrackPathColorMode = useViewerStateStore((state) => state.setTrackPathColorMode);
   const setTrackPathWidthPx = useViewerStateStore((state) => state.setTrackPathWidthPx);
   const setShowTrackPathBreaks = useViewerStateStore((state) => state.setShowTrackPathBreaks);
@@ -77,12 +76,14 @@ export default function TrackPathSettings(): ReactElement {
             color={trackPathColor}
             presets={DEFAULT_OUTLINE_COLOR_PRESETS}
             showColorPicker={trackPathColorMode === TrackPathColorMode.USE_CUSTOM_COLOR}
+            isRampReversed={trackPathIsColorRampReversed}
             showColorRamp={trackPathColorMode === TrackPathColorMode.USE_COLOR_MAP}
-            selectedRamp={DEFAULT_DIVERGING_COLOR_RAMP_KEY}
+            selectedRampKey={trackPathColorRampKey}
             colorRampsToDisplay={COLOR_RAMP_KEYS_TO_DISPLAY}
-            onRampChange={() => {}}
-            isRampReversed={true}
-            onRampReverseChange={() => {}}
+            onRampChange={(key, reversed) => {
+              setTrackPathColorRampKey(key);
+              setTrackPathIsColorRampReversed(reversed);
+            }}
             mirrorRamp={true}
           />
         </SettingsItem>
