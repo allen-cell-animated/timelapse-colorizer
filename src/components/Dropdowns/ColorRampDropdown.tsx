@@ -9,6 +9,8 @@ import {
   ColorRamp,
   type ColorRampData,
   ColorRampType,
+  DEFAULT_CATEGORICAL_PALETTE_KEY,
+  DISPLAY_CATEGORICAL_PALETTE_KEYS,
   KNOWN_CATEGORICAL_PALETTES,
   KNOWN_COLOR_RAMPS,
   type PaletteData,
@@ -148,11 +150,11 @@ type ColorRampSelectionProps = {
    */
   knownColorRamps?: Map<string, ColorRampData>;
 
-  selectedPalette: Color[];
-  selectedPaletteKey: string | null;
-  onChangePalette: (newPalette: Color[]) => void;
-  numCategories: number;
-  categoricalPalettesToDisplay: string[];
+  selectedPalette?: Color[];
+  selectedPaletteKey?: string | null;
+  onChangePalette?: (newPalette: Color[]) => void;
+  numCategories?: number;
+  categoricalPalettesToDisplay?: string[];
   knownCategoricalPalettes?: Map<string, PaletteData>;
 
   /** If true, shows the categorical palettes and selected palette instead of
@@ -169,6 +171,10 @@ const defaultProps: Partial<ColorRampSelectionProps> = {
   disabled: false,
   useCategoricalPalettes: false,
   knownCategoricalPalettes: KNOWN_CATEGORICAL_PALETTES,
+  selectedPalette: KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_KEY)!.colors,
+  selectedPaletteKey: DEFAULT_CATEGORICAL_PALETTE_KEY,
+  numCategories: 5,
+  categoricalPalettesToDisplay: DISPLAY_CATEGORICAL_PALETTE_KEYS,
 };
 
 export default function ColorRampSelection(inputProps: ColorRampSelectionProps): ReactElement {
