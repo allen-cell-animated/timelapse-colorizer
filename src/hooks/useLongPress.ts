@@ -6,7 +6,7 @@ import { type RefObject, useCallback, useEffect, useRef } from "react";
  * then be called on repeat every `repeatDelay` milliseconds until the button is
  * released, and then the optional `onReleased` callback will be called.
  *
- * @param ref HTML button element ref
+ * @param buttonRef HTML button element ref
  * @param onHeld Callback to be called when the button is held down.
  * @param onReleased Optional callback to be called when the button is released.
  * @param initialDelayMs Initial delay in milliseconds before onHeld is called.
@@ -15,7 +15,7 @@ import { type RefObject, useCallback, useEffect, useRef } from "react";
  * calls. Default is 40ms.
  */
 const useLongPress = (
-  ref: RefObject<HTMLButtonElement>,
+  buttonRef: RefObject<HTMLButtonElement>,
   onHeld: () => void,
   onReleased?: () => void,
   initialDelayMs = 500,
@@ -27,16 +27,33 @@ const useLongPress = (
   const initialTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const repeatIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Use refs to avoid recreating event handlers in case onHeld/onReleased are
+  // not memoized (recreated each render).
   onHeldCallbackRef.current = onHeld;
   onReleasedCallbackRef.current = onReleased;
 
+  /**
+   * Called the first time the button is held down, and initiates the repeat
+   * interval.
+   */
   const triggerOnHeld = useCallback((): void => {
-    onHeld();
+    onHeldCallbackRef.current();
     repeatIntervalRef.current = setInterval(() => {
       onHeldCallbackRef.current();
     }, repeatDelayMs);
   }, [repeatDelayMs]);
 
+  /** If repeatDelayMs changes, reset the interval with the new delay. */
+  useEffect(() => {
+    if (repeatIntervalRef.current !== null) {
+      clearInterval(repeatIntervalRef.current);
+      repeatIntervalRef.current = setInterval(() => {
+        onHeldCallbackRef.current();
+      }, repeatDelayMs);
+    }
+  }, [repeatDelayMs]);
+
+  /** Start initial timeout. */
   const onMouseDown = useCallback((): void => {
     initialTimeoutRef.current = setTimeout(() => {
       triggerOnHeld();
@@ -44,6 +61,7 @@ const useLongPress = (
     isHeld.current = true;
   }, [initialDelayMs, triggerOnHeld]);
 
+  /** Cancel timeout + intervals, call onReleased if button held. */
   const onMouseUp = useCallback((): void => {
     if (initialTimeoutRef.current) {
       clearTimeout(initialTimeoutRef.current);
@@ -60,7 +78,7 @@ const useLongPress = (
   }, []);
 
   useEffect(() => {
-    const buttonEl = ref.current;
+    const buttonEl = buttonRef.current;
     if (!buttonEl) {
       return;
     }
@@ -70,7 +88,7 @@ const useLongPress = (
       buttonEl.removeEventListener("mousedown", onMouseDown);
       window.removeEventListener("mouseup", onMouseUp);
     };
-  }, [ref, onMouseDown, onMouseUp]);
+  }, [buttonRef.current, onMouseDown, onMouseUp]);
 };
 
 export { useLongPress };

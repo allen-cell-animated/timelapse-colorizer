@@ -48,31 +48,21 @@ export default function SpinBox(propsInput: SpinBoxProps): ReactElement {
    */
   const [inputValue, setInputValue] = useState(props.value);
 
+  // Handle long press interactions with the two spinbox buttons. Pressing and
+  // holding the buttons will continuously increment/decrement the input value,
+  // but won't call onChange until the button is released.
   const incrementButtonRef = useRef<HTMLButtonElement>(null);
   const decrementButtonRef = useRef<HTMLButtonElement>(null);
 
-  const adjustInputValue = useCallback(
-    (delta: number): void => {
-      setInputValue((prevValue) => Math.max(props.min, Math.min(props.max, prevValue + delta)));
-    },
-    [props.min, props.max]
-  );
+  const incrementValue = useCallback((): void => {
+    setInputValue((prevValue) => Math.max(props.min, Math.min(props.max, prevValue + 1)));
+  }, [props.min, props.max]);
+  const decrementValue = useCallback((): void => {
+    setInputValue((prevValue) => Math.max(props.min, Math.min(props.max, prevValue - 1)));
+  }, [props.min, props.max]);
 
-  /**
-   * Handle long press interactions with the two spinbox buttons. Pressing and
-   * holding the buttons will continuously increment/decrement the input value,
-   * but won't call onChange until the button is released.
-   */
-  useLongPress(
-    incrementButtonRef,
-    () => adjustInputValue(1),
-    () => props.onChange(inputValue)
-  );
-  useLongPress(
-    decrementButtonRef,
-    () => adjustInputValue(-1),
-    () => props.onChange(inputValue)
-  );
+  useLongPress(incrementButtonRef, incrementValue, () => props.onChange(inputValue));
+  useLongPress(decrementButtonRef, decrementValue, () => props.onChange(inputValue));
 
   // If the prop value changes, reset the input value to it.
   useEffect(() => {
