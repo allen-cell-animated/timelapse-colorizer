@@ -85,6 +85,7 @@ export default function TrackPathSettings(): ReactElement {
               setTrackPathIsColorRampReversed(reversed);
             }}
             mirrorRamp={true}
+            disabled={dataset === null}
           />
         </SettingsItem>
         <SettingsItem label="Width" htmlFor={TrackPathSettingsHtmlIds.TRACK_PATH_WIDTH_SLIDER}>

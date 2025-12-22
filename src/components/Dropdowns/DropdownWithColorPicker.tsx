@@ -97,6 +97,7 @@ export default function DropdownWithColorPicker(propsInput: DropdownWithColorPic
             colorRampsToDisplay={props.colorRampsToDisplay ?? []}
             id={props.id + "_ramp_dropdown"}
             mirror={props.mirrorRamp}
+            disabled={props.disabled}
           ></ColorRampDropdown>
         </div>
         <WrappedColorPicker
