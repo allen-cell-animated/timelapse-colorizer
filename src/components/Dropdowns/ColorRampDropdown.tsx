@@ -139,7 +139,16 @@ const DropdownStyleContainer = styled.div<{ $categorical: boolean }>`
 `;
 
 type ColorRampSelectionProps = {
+  // Config
+  id: string | undefined;
+  label?: string;
+  disabled?: boolean;
+  colorRampToImageUrl?: (colorRamp: ColorRamp) => string;
+
+  // Color ramp
   selectedRamp: string;
+  reversed?: boolean;
+  mirror?: boolean;
   onChangeRamp: (colorRampKey: string, reversed: boolean) => void;
   /** The keys of the color ramps to display, in order. */
   colorRampsToDisplay: string[];
@@ -150,20 +159,16 @@ type ColorRampSelectionProps = {
    */
   knownColorRamps?: Map<string, ColorRampData>;
 
+  // Categorical palette selection
+  /** If true, shows the categorical palettes and selected palette instead of
+   * the color ramps. */
+  useCategoricalPalettes?: boolean;
   selectedPalette?: Color[];
   selectedPaletteKey?: string | null;
   onChangePalette?: (newPalette: Color[]) => void;
   numCategories?: number;
   categoricalPalettesToDisplay?: string[];
   knownCategoricalPalettes?: Map<string, PaletteData>;
-
-  /** If true, shows the categorical palettes and selected palette instead of
-   * the color ramps. */
-  useCategoricalPalettes?: boolean;
-  disabled?: boolean;
-  reversed?: boolean;
-  id: string | undefined;
-  label?: string;
 };
 
 const defaultProps: Partial<ColorRampSelectionProps> = {
@@ -198,6 +203,7 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
         image: rampData.colorRamp
           .createGradientCanvas(gradientWidthPx, theme.controls.height, {
             reverse: rampData.reverseByDefault,
+            mirror: props.mirror,
           })
           .toDataURL(),
         tooltip: rampData.name,
@@ -243,8 +249,10 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
       selectedRamp = new ColorRamp(visibleColors, ColorRampType.CATEGORICAL);
     }
     const gradientWidthPx = DROPDOWN_MENU_WIDTH_PX - 2 * borderWidthPx;
-    return selectedRamp.createGradientCanvas(gradientWidthPx, theme.controls.height).toDataURL();
-  }, [props.selectedRamp, props.reversed]);
+    return selectedRamp
+      .createGradientCanvas(gradientWidthPx, theme.controls.height, { mirror: props.mirror })
+      .toDataURL();
+  }, [props.selectedRamp, props.reversed, props.mirror]);
 
   const showAsReversed = props.reversed !== !!selectedRampData.reverseByDefault;
   const selectedRampItem = {

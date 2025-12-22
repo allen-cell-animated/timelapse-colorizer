@@ -18,6 +18,11 @@ export enum ColorRampType {
 export type GradientCanvasOptions = {
   vertical?: boolean;
   reverse?: boolean;
+  /**
+   * If true, linear ramps will be drawn with a mirrored gradient. Has no effect
+   * on diverging, cyclical, or categorical ramps.
+   */
+  mirror?: boolean;
 };
 
 const DISPLAY_GRADIENT_MAX_STOPS = 24;
@@ -66,13 +71,25 @@ export default class ColorRamp {
     return gradient;
   }
 
-  /** Creates a canvas filled in with this color ramp, to present as an option in a menu e.g. */
+  /**
+   * Creates an HTML canvas filled in with this color ramp (e.g. to present as
+   * an option in a menu)
+   */
   public createGradientCanvas(width: number, height: number, options?: GradientCanvasOptions): HTMLCanvasElement {
     const canvas = document.createElement("canvas");
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext("2d")!;
-    const colorStops = options?.reverse ? [...this.colorStops].reverse() : this.colorStops;
+    let colorStops = options?.reverse ? [...this.colorStops].reverse() : this.colorStops;
+
+    if (options?.mirror && this.type === ColorRampType.LINEAR) {
+      const reversedColorStops: Color[] = [];
+      // Skip first color stop to avoid duplication in the middle
+      for (let i = this.colorStops.length - 2; i >= 0; i--) {
+        reversedColorStops.push(colorStops[i]);
+      }
+      colorStops = [...colorStops, ...reversedColorStops];
+    }
 
     if (colorStops.length < 2) {
       ctx.fillStyle = `#${colorStops[0].getHexString()}`;

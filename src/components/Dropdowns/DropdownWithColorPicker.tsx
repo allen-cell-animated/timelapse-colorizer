@@ -3,11 +3,7 @@ import React, { type ReactElement, useRef } from "react";
 import styled from "styled-components";
 import { Color as ThreeColor } from "three";
 
-import {
-  DEFAULT_COLOR_RAMP_KEY,
-  DISPLAY_COLOR_RAMP_DIVERGING_KEYS,
-  DISPLAY_COLOR_RAMP_LINEAR_KEYS,
-} from "src/colorizer";
+import { DEFAULT_COLOR_RAMP_KEY, DISPLAY_COLOR_RAMP_KEYS } from "src/colorizer";
 import ColorRampDropdown from "src/components/Dropdowns/ColorRampDropdown";
 import WrappedColorPicker from "src/components/Inputs/WrappedColorPicker";
 import { FlexRowAlignCenter } from "src/styles/utils";
@@ -34,9 +30,11 @@ type DropdownWithColorPickerProps = {
   // Color ramp picker
   showColorRamp?: boolean;
   selectedRamp?: string;
+  colorRampsToDisplay?: string[];
   onRampChange?: (colorRampKey: string, reversed: boolean) => void;
   isRampReversed?: boolean;
   onRampReverseChange?: (reversed: boolean) => void;
+  mirrorRamp?: boolean;
 };
 
 const defaultProps: Partial<DropdownWithColorPickerProps> = {
@@ -44,6 +42,7 @@ const defaultProps: Partial<DropdownWithColorPickerProps> = {
   showColorPicker: true,
   showColorRamp: false,
   selectedRamp: DEFAULT_COLOR_RAMP_KEY,
+  colorRampsToDisplay: [...DISPLAY_COLOR_RAMP_KEYS],
   onRampChange: () => {},
   isRampReversed: false,
   onRampReverseChange: () => {},
@@ -96,8 +95,9 @@ export default function DropdownWithColorPicker(propsInput: DropdownWithColorPic
           <ColorRampDropdown
             selectedRamp={props.selectedRamp!}
             onChangeRamp={props.onRampChange!}
-            colorRampsToDisplay={[...DISPLAY_COLOR_RAMP_LINEAR_KEYS, ...DISPLAY_COLOR_RAMP_DIVERGING_KEYS]}
-            id={undefined}
+            colorRampsToDisplay={props.colorRampsToDisplay ?? []}
+            id={props.id + "_ramp_dropdown"}
+            mirror={props.mirrorRamp}
           ></ColorRampDropdown>
         </div>
         <WrappedColorPicker
