@@ -846,8 +846,11 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   // Component Rendering
   //////////////////////////////////
 
+  const canDownloadScatterPlotCsv =
+    dataset !== null && xAxisFeatureKey !== null && yAxisFeatureKey !== null && selectedFeatureKey !== null;
+
   const downloadScatterPlotCsv = useCallback(() => {
-    if (!dataset || !xAxisFeatureKey || !yAxisFeatureKey || !selectedFeatureKey) {
+    if (!canDownloadScatterPlotCsv) {
       return;
     }
     const featureSet = new Set([xAxisFeatureKey, yAxisFeatureKey, selectedFeatureKey]);
@@ -858,7 +861,15 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     const csvString = getScatterplotDataAsCsv(dataset, Array.from(plottedIds.current), inRangeLUT, features);
     const name = datasetKey ? `${datasetKey}-scatterplot.csv` : "scatterplot.csv";
     downloadCsv(name, csvString);
-  }, [dataset, datasetKey, xAxisFeatureKey, yAxisFeatureKey, selectedFeatureKey, inRangeLUT]);
+  }, [
+    dataset,
+    datasetKey,
+    xAxisFeatureKey,
+    yAxisFeatureKey,
+    selectedFeatureKey,
+    canDownloadScatterPlotCsv,
+    inRangeLUT,
+  ]);
 
   const menuItems = useMemo((): SelectItem[] => {
     const featureKeys = dataset ? dataset.featureKeys : [];
@@ -910,7 +921,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
             ></SelectionDropdown>
           </div>
         </FlexRowAlignCenter>
-        <TextButton onClick={downloadScatterPlotCsv}>
+        <TextButton onClick={downloadScatterPlotCsv} disabled={!canDownloadScatterPlotCsv}>
           <ExportOutlined style={{ marginRight: "2px" }} />
           Export CSV
         </TextButton>
