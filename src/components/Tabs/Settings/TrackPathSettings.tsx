@@ -1,7 +1,12 @@
 import { Checkbox, Tooltip } from "antd";
 import React, { type ReactElement, useMemo } from "react";
 
-import { TrackPathColorMode } from "src/colorizer";
+import {
+  DEFAULT_DIVERGING_COLOR_RAMP_KEY,
+  DISPLAY_COLOR_RAMP_DIVERGING_KEYS,
+  DISPLAY_COLOR_RAMP_LINEAR_KEYS,
+  TrackPathColorMode,
+} from "src/colorizer";
 import DropdownWithColorPicker from "src/components/Dropdowns/DropdownWithColorPicker";
 import type { SelectItem } from "src/components/Dropdowns/types";
 import LabeledSlider from "src/components/Inputs/LabeledSlider";
@@ -13,6 +18,8 @@ import { useViewerStateStore } from "src/state";
 import { VisuallyHidden } from "src/styles/utils";
 
 import { DEFAULT_OUTLINE_COLOR_PRESETS, SETTINGS_GAP_PX } from "./constants";
+
+const COLOR_RAMP_KEYS_TO_DISPLAY = [...DISPLAY_COLOR_RAMP_DIVERGING_KEYS, ...DISPLAY_COLOR_RAMP_LINEAR_KEYS];
 
 const enum TrackPathSettingsHtmlIds {
   TRACK_PATH_COLOR_SELECT = "track-path-color-select",
@@ -28,6 +35,9 @@ const TRACK_MODE_ITEMS: SelectItem[] = [
   { value: TrackPathColorMode.USE_CUSTOM_COLOR.toString(), label: "Custom" },
   { value: TrackPathColorMode.USE_FEATURE_COLOR.toString(), label: "Feature" },
 ];
+if (INTERNAL_BUILD) {
+  TRACK_MODE_ITEMS.push({ value: TrackPathColorMode.USE_COLOR_MAP.toString(), label: "Colormap" });
+}
 
 export default function TrackPathSettings(): ReactElement {
   const dataset = useViewerStateStore((state) => state.dataset);
@@ -67,6 +77,13 @@ export default function TrackPathSettings(): ReactElement {
             color={trackPathColor}
             presets={DEFAULT_OUTLINE_COLOR_PRESETS}
             showColorPicker={trackPathColorMode === TrackPathColorMode.USE_CUSTOM_COLOR}
+            showColorRamp={trackPathColorMode === TrackPathColorMode.USE_COLOR_MAP}
+            selectedRamp={DEFAULT_DIVERGING_COLOR_RAMP_KEY}
+            colorRampsToDisplay={COLOR_RAMP_KEYS_TO_DISPLAY}
+            onRampChange={() => {}}
+            isRampReversed={true}
+            onRampReverseChange={() => {}}
+            mirrorRamp={true}
           />
         </SettingsItem>
         <SettingsItem label="Width" htmlFor={TrackPathSettingsHtmlIds.TRACK_PATH_WIDTH_SLIDER}>
