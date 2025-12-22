@@ -6,7 +6,6 @@ import type { Color } from "three";
 import {
   type ColorRamp,
   CSV_COL_FILTERED,
-  CSV_COL_ID,
   CSV_COL_OUTLIER,
   CSV_COL_SEG_ID,
   CSV_COL_TIME_WITH_UNITS,
@@ -221,7 +220,6 @@ export function getScatterplotDataAsCsv(
   const allFeatureData = featureKeys.map((featureKey) => dataset.getFeatureData(featureKey)) as FeatureData[];
   const featureNames = featureKeys.map((featureKey) => dataset.getFeatureNameWithUnits(featureKey));
   const headerRow = [
-    CSV_COL_ID,
     CSV_COL_SEG_ID,
     CSV_COL_TRACK,
     CSV_COL_TIME_WITH_UNITS,
@@ -237,7 +235,7 @@ export function getScatterplotDataAsCsv(
     const time = dataset.getTime(id);
     const outlier = dataset.outliers && dataset.outliers[id] === 1 ? "true" : "false";
     const filtered = inRangeLUT[id] === 1 ? "true" : "false";
-    const row: (string | number)[] = [id, segId, track, time];
+    const row: (string | number)[] = [segId, track, time];
     for (const featureData of allFeatureData) {
       let value: string | number = featureData.data[id];
       // Parse categorical data back into original string labels
