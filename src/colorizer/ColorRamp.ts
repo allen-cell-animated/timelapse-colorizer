@@ -1,8 +1,17 @@
-import { Color, type ColorRepresentation, DataTexture, FloatType, LinearFilter, NearestFilter, RGBAFormat } from "three";
+import {
+  Color,
+  type ColorRepresentation,
+  DataTexture,
+  FloatType,
+  LinearFilter,
+  NearestFilter,
+  RGBAFormat,
+} from "three";
 
 export enum ColorRampType {
   LINEAR,
   DIVERGING,
+  CYCLICAL,
   CATEGORICAL,
 }
 
