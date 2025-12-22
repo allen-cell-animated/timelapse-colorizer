@@ -11,7 +11,7 @@ import { FlexRowAlignCenter } from "src/styles/utils";
 import SelectionDropdown from "./SelectionDropdown";
 
 type DropdownWithColorPickerProps = {
-  id?: string;
+  id: string;
   disabled?: boolean;
 
   // Dropdown
@@ -91,16 +91,17 @@ export default function DropdownWithColorPicker(propsInput: DropdownWithColorPic
           }}
         >
           <ColorRampDropdown
-            selectedRamp={props.selectedRampKey!}
-            onChangeRamp={props.onRampChange!}
-            reversed={props.isRampReversed!}
+            selectedRamp={props.selectedRampKey ?? DEFAULT_COLOR_RAMP_KEY}
+            onChangeRamp={props.onRampChange ?? (() => {})}
+            reversed={props.isRampReversed ?? false}
             colorRampsToDisplay={props.colorRampsToDisplay ?? []}
-            id={props.id + "_ramp_dropdown"}
+            id={props.id + "_ramp_picker"}
             mirror={props.mirrorRamp}
             disabled={props.disabled}
           ></ColorRampDropdown>
         </div>
         <WrappedColorPicker
+          id={props.id + "_color_picker"}
           containerStyle={{
             visibility: props.showColorPicker ? "visible" : "hidden",
             opacity: props.showColorPicker ? "1" : "0",

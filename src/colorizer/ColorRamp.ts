@@ -85,7 +85,7 @@ export default class ColorRamp {
     if (options?.mirror && this.type === ColorRampType.LINEAR) {
       const reversedColorStops: Color[] = [];
       // Skip first color stop to avoid duplication in the middle
-      for (let i = this.colorStops.length - 2; i >= 0; i--) {
+      for (let i = colorStops.length - 2; i >= 0; i--) {
         reversedColorStops.push(colorStops[i]);
       }
       colorStops = [...colorStops, ...reversedColorStops];

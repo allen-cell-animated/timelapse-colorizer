@@ -69,23 +69,26 @@ export default function TrackPathSettings(): ReactElement {
         <SettingsItem label="Color" htmlFor={TrackPathSettingsHtmlIds.TRACK_PATH_COLOR_SELECT}>
           <DropdownWithColorPicker
             id={TrackPathSettingsHtmlIds.TRACK_PATH_COLOR_SELECT}
+            disabled={dataset === null}
+            // Dropdown
             selected={trackPathColorMode.toString()}
             items={TRACK_MODE_ITEMS}
             onValueChange={(value) => setTrackPathColorMode(Number.parseInt(value, 10) as TrackPathColorMode)}
-            onColorChange={setTrackPathColor}
-            color={trackPathColor}
-            presets={DEFAULT_OUTLINE_COLOR_PRESETS}
+            // Color picker
             showColorPicker={trackPathColorMode === TrackPathColorMode.USE_CUSTOM_COLOR}
-            isRampReversed={trackPathIsColorRampReversed}
+            color={trackPathColor}
+            onColorChange={setTrackPathColor}
+            presets={DEFAULT_OUTLINE_COLOR_PRESETS}
+            // Ramp picker
             showColorRamp={trackPathColorMode === TrackPathColorMode.USE_COLOR_MAP}
             selectedRampKey={trackPathColorRampKey}
-            colorRampsToDisplay={COLOR_RAMP_KEYS_TO_DISPLAY}
+            isRampReversed={trackPathIsColorRampReversed}
             onRampChange={(key, reversed) => {
               setTrackPathColorRampKey(key);
               setTrackPathIsColorRampReversed(reversed);
             }}
+            colorRampsToDisplay={COLOR_RAMP_KEYS_TO_DISPLAY}
             mirrorRamp={true}
-            disabled={dataset === null}
           />
         </SettingsItem>
         <SettingsItem label="Width" htmlFor={TrackPathSettingsHtmlIds.TRACK_PATH_WIDTH_SLIDER}>
