@@ -56,10 +56,16 @@ void trimSegment(const in vec4 start, inout vec4 end) {
 }
 
 void main() {
+  // CHANGED FROM ORIGINAL
+  // -----------------------------
   #ifdef USE_COLOR
   if (useColorRamp) {
-    int vertexIdx = 1 - gl_VertexID + gl_InstanceID;
-    float t = (float(vertexIdx) - colorRampVertexOffset) / colorRampVertexScale + 0.5;
+    // int vertexIdx = 1 - gl_VertexID + gl_InstanceID;
+    int vertexIdx = gl_InstanceID + 1;
+    if (gl_VertexID > 3) {
+      vertexIdx -= 1;
+    }
+    float t = (float(vertexIdx) - colorRampVertexOffset) / colorRampVertexScale * 0.5 + 0.5;
     t = clamp(t, 0.0, 1.0);
     vColor.xyz = texture(colorRamp, vec2(t, 0.5)).xyz;
   } else {
@@ -67,8 +73,6 @@ void main() {
   }
   #endif
 
-  // CHANGED FROM ORIGINAL
-  // -----------------------------
   // cull instances below min instance
   if (gl_InstanceID < minInstance) {
     gl_Position = vec4(0.0, 0.0, 0.0, 0.0);

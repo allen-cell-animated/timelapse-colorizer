@@ -137,7 +137,7 @@ export default class TrackPath2D {
     }
 
     // Show line outline only when coloring by feature color or color ramp
-    this.bgLine.material.linewidth = isColoredByFeature || isColoredByRamp ? baseLineWidth + 2 : 0;
+    this.bgLine.material.linewidth = isColoredByFeature ? baseLineWidth + 2 : 0;
     this.bgLine.material.needsUpdate = true;
   }
 
@@ -249,8 +249,7 @@ export default class TrackPath2D {
 
     // Update color ramp related logic
     const pastSteps = this.params.showAllTrackPathPastSteps ? track.duration() : this.params.trackPathPastSteps;
-    const futureSteps =
-      pastSteps + (this.params.showAllTrackPathFutureSteps ? track.duration() : this.params.trackPathFutureSteps);
+    const futureSteps = this.params.showAllTrackPathFutureSteps ? track.duration() : this.params.trackPathFutureSteps;
     this.line.material.colorRampVertexOffset = trackStepIdx;
     this.line.material.colorRampVertexScale = Math.max(pastSteps, futureSteps);
 
