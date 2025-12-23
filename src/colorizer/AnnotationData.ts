@@ -2,16 +2,9 @@ import { parse, unparse } from "papaparse";
 import { Color } from "three";
 
 import { DEFAULT_CATEGORICAL_PALETTE_KEY, KNOWN_CATEGORICAL_PALETTES } from "./colors/categorical_palettes";
+import { CSV_COL_ID, CSV_COL_SEG_ID, CSV_COL_TIME, CSV_COL_TRACK } from "./constants";
 import type Dataset from "./Dataset";
 import { cloneLabel, getLabelTypeFromParsedCsv, removeUndefinedProperties } from "./utils/data_utils";
-
-export const CSV_COL_ID = "ID";
-// Column constants for segmentation ID, time, and track are used to validate
-// data when parsing CSV files and check for mismatches with the current
-// dataset.
-export const CSV_COL_SEG_ID = "Label";
-export const CSV_COL_TIME = "Frame";
-export const CSV_COL_TRACK = "Track";
 
 export const BOOLEAN_VALUE_TRUE = "true";
 export const BOOLEAN_VALUE_FALSE = "false";
