@@ -128,16 +128,15 @@ export default class TrackPath2D {
     this.line.material.color = color;
     this.line.material.linewidth = baseLineWidth;
     this.line.material.vertexColors = isColoredByFeature || isColoredByRamp;
-    this.line.material.needsUpdate = true;
 
-    if (this.line.material instanceof SubrangeLineMaterial) {
-      // This is always true but used to make TypeScript happy
-      this.line.material.useColorRamp = isColoredByRamp;
-      this.line.material.colorRamp = trackPathColorRamp.texture;
-    }
+    // Apply color ramp
+    (this.line.material as SubrangeLineMaterial).useColorRamp = isColoredByRamp;
+    (this.line.material as SubrangeLineMaterial).colorRamp = trackPathColorRamp.textureLinearSRGB;
 
     // Show line outline only when coloring by feature color or color ramp
     this.bgLine.material.linewidth = isColoredByFeature ? baseLineWidth + 2 : 0;
+
+    this.line.material.needsUpdate = true;
     this.bgLine.material.needsUpdate = true;
   }
 
