@@ -61,8 +61,9 @@ void main() {
   #ifdef USE_COLOR
   if (useColorRamp) {
     // Determine the vertex index in the original line, using the current
-    // instance ID and vertex ID. THREE's line segments have four vertices,
-    // where the first four are at the start of the line.
+    // instance ID and vertex ID. THREE's line segments have 8 vertices, where
+    // the first 4 are at the start of the line segment and the last 4 are at
+    // the end (determined experimentally).
     int lineVertexIdx = gl_InstanceID + 1;
     if (gl_VertexID >= 4) {
       lineVertexIdx -= 1;
@@ -77,7 +78,7 @@ void main() {
   }
   #endif
 
-  // cull instances below min instance
+  // Cull instances below min instance
   if (gl_InstanceID < minInstance) {
     gl_Position = vec4(0.0, 0.0, 0.0, 0.0);
     return;
