@@ -53,28 +53,33 @@ export function thresholdMatchFinder(featureKey: string, unit: string): (thresho
 }
 
 /**
- * Convenience method for getting a single ramp from a map of strings to ramps, optionally reversing it.
+ * Convenience method for getting a single ramp from a map of strings to ramps,
+ * optionally reversing it. Always returns a new ColorRamp instance that should
+ * be disposed of (call `.dispose()` when no longer needed).
  */
 export function getColorMap(
-  colorRampData: Map<string, ColorRampData>,
+  colorRampDataMap: Map<string, ColorRampData>,
   key: string,
-  reversed = false,
-  mirrored = false
+  options: {
+    reversed?: boolean;
+    mirrored?: boolean;
+  } = {}
 ): ColorRamp {
-  let colorRamp = colorRampData.get(key)?.colorRamp;
-  if (!colorRamp) {
+  const colorRampData = colorRampDataMap.get(key);
+  if (!colorRampData) {
     throw new Error("Could not find data for color ramp '" + key + "'");
   }
-  if (reversed) {
-    colorRamp = colorRamp.reverse();
+  let colorStops = [...colorRampData.colorStops];
+  if (options.reversed) {
+    colorStops.reverse();
   }
-  if (mirrored && colorRamp.type === ColorRampType.LINEAR) {
+  if (options.mirrored && colorRampData.type === ColorRampType.LINEAR) {
     // Reverse + remove color at the beginning so the color stop isn't repeated
-    const reversedColorStops = colorRamp.colorStops.toReversed();
+    const reversedColorStops = colorStops.toReversed();
     reversedColorStops.shift();
-    colorRamp = new ColorRamp([...colorRamp.colorStops, ...reversedColorStops], colorRamp.type);
+    colorStops = [...colorStops, ...reversedColorStops];
   }
-  return colorRamp;
+  return new ColorRamp(colorStops, colorRampData.type);
 }
 
 /**
@@ -608,6 +613,11 @@ export function getLineUpdateFlags(
     (params.trackPathColorMode === TrackPathColorMode.USE_COLOR_MAP ||
       params.trackPathColorMode === TrackPathColorMode.USE_FEATURE_COLOR) &&
     hasPropertyChanged(prevParams, params, LINE_VERTEX_COLOR_DEPS);
+  console.log(
+    "hasPropertyChanged for color ramp",
+    hasPropertyChanged(prevParams, params, ["trackPathColorRamp"]),
+    params.trackPathColorRamp
+  );
   const materialNeedsUpdate = vertexColorNeedsUpdate || hasPropertyChanged(prevParams, params, LINE_MATERIAL_DEPS);
   const needsRender =
     hasPropertyChanged(prevParams, params, LINE_RENDER_DEPS) ||

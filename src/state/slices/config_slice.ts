@@ -54,6 +54,7 @@ export type ConfigSliceState = {
   showTrackPath: boolean;
   trackPathColor: Color;
   trackPathColorRampKey: string;
+  /** Derived from the track path color ramp key and reversed state. */
   trackPathColorRamp: ColorRamp;
   trackPathIsColorRampReversed: boolean;
   trackPathColorMode: TrackPathColorMode;
@@ -148,9 +149,10 @@ export const addConfigDerivedStateSubscribers = (store: SubscribableStore<Config
   addDerivedStateSubscriber(
     store,
     (state) => [state.trackPathColorRampKey, state.trackPathIsColorRampReversed],
-    ([key, reversed]) => ({
-      trackPathColorRamp: getColorMap(KNOWN_COLOR_RAMPS, key, reversed, true),
-    })
+    ([key, reversed]) => {
+      store.getState().trackPathColorRamp.dispose();
+      return { trackPathColorRamp: getColorMap(KNOWN_COLOR_RAMPS, key, { reversed, mirrored: true }) };
+    }
   );
 };
 
