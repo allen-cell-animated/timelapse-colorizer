@@ -13,6 +13,10 @@ uniform vec2 resolution;
 // CHANGED FROM ORIGINAL 
 // -----------------------------
 uniform int minInstance;
+uniform bool useColorRamp;
+uniform sampler2D colorRamp;
+uniform float colorRampVertexScale;
+uniform float colorRampVertexOffset;
 // -----------------------------
 
 attribute vec3 instanceStart;
@@ -52,6 +56,16 @@ void trimSegment(const in vec4 start, inout vec4 end) {
 }
 
 void main() {
+  #ifdef USE_COLOR
+  if (useColorRamp) {
+    int vertexIdx = 1 - gl_VertexID + gl_InstanceID;
+    float t = (float(vertexIdx) - colorRampVertexOffset) / colorRampVertexScale + 0.5;
+    t = clamp(t, 0.0, 1.0);
+    vColor.xyz = texture(colorRamp, vec2(t, 0.5)).xyz;
+  } else {
+    vColor.xyz = (position.y < 0.5) ? instanceColorStart : instanceColorEnd;
+  }
+  #endif
 
   // CHANGED FROM ORIGINAL
   // -----------------------------
@@ -61,10 +75,6 @@ void main() {
     return;
   }
   // -----------------------------
-
-  #ifdef USE_COLOR
-  vColor.xyz = (position.y < 0.5) ? instanceColorStart : instanceColorEnd;
-  #endif
 
   #ifdef USE_DASH
   vLineDistance = (position.y < 0.5) ? dashScale * instanceDistanceStart : dashScale * instanceDistanceEnd;

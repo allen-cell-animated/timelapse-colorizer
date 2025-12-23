@@ -1,5 +1,7 @@
-import { UniformsUtils } from "three";
+import { Texture, UniformsUtils } from "three";
 import { LineMaterial, type LineMaterialParameters } from "three/addons/lines/LineMaterial";
+
+import ColorRamp from "src/colorizer/ColorRamp";
 
 import vertexShader from "./track.vert";
 
@@ -16,11 +18,17 @@ export default class SubrangeLineMaterial extends LineMaterial {
   constructor(params?: SubrangeLineMaterialParameters) {
     super(params);
 
+    const emptyColorRamp = new ColorRamp(["#aaa", "#fff"]).texture;
+
     this.vertexShader = vertexShader;
     this.uniforms = UniformsUtils.merge([
       this.uniforms,
       {
         minInstance: { value: params?.minInstance ?? 0 },
+        useColorRamp: { value: false },
+        colorRamp: { value: emptyColorRamp },
+        colorRampVertexScale: { value: 1 },
+        colorRampVertexOffset: { value: 0 },
       },
     ]);
     this.uniformsNeedUpdate = true;
@@ -33,5 +41,21 @@ export default class SubrangeLineMaterial extends LineMaterial {
    */
   set minInstance(value: number) {
     this.uniforms.minInstance.value = value;
+  }
+
+  set useColorRamp(value: boolean) {
+    this.uniforms.useColorRamp.value = value;
+  }
+
+  set colorRamp(value: Texture) {
+    this.uniforms.colorRamp.value = value;
+  }
+
+  set colorRampVertexScale(value: number) {
+    this.uniforms.colorRampVertexScale.value = value;
+  }
+
+  set colorRampVertexOffset(value: number) {
+    this.uniforms.colorRampVertexOffset.value = value;
   }
 }

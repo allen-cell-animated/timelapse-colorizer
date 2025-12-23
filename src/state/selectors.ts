@@ -10,6 +10,7 @@ export const renderCanvasStateParamsSelector = (state: ViewerStoreState): Render
   track: state.track,
   showTrackPath: state.showTrackPath,
   showTrackPathBreaks: state.showTrackPathBreaks,
+  trackPathColorRamp: state.trackPathColorRamp,
   colorRamp: state.colorRamp,
   colorRampRange: state.colorRampRange,
   categoricalPaletteRamp: state.categoricalPaletteRamp,

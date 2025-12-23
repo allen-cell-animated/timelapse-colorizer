@@ -112,7 +112,7 @@ export default class TrackPath2D {
     if (!this.params) {
       return;
     }
-    const { trackPathColorMode, outlineColor, trackPathColor, trackPathWidthPx } = this.params;
+    const { trackPathColorMode, trackPathColorRamp, outlineColor, trackPathColor, trackPathWidthPx } = this.params;
     const modeToColor = {
       [TrackPathColorMode.USE_FEATURE_COLOR]: FEATURE_BASE_COLOR,
       [TrackPathColorMode.USE_OUTLINE_COLOR]: outlineColor,
@@ -121,16 +121,23 @@ export default class TrackPath2D {
     };
     const color = modeToColor[trackPathColorMode];
     const isColoredByFeature = trackPathColorMode === TrackPathColorMode.USE_FEATURE_COLOR;
+    const isColoredByRamp = trackPathColorMode === TrackPathColorMode.USE_COLOR_MAP;
 
     // Scale line width slightly with zoom.
     const baseLineWidth = trackPathWidthPx + (this.zoomMultiplier - 1.0) * 0.5;
     this.line.material.color = color;
     this.line.material.linewidth = baseLineWidth;
-    this.line.material.vertexColors = isColoredByFeature;
+    this.line.material.vertexColors = isColoredByFeature || isColoredByRamp;
     this.line.material.needsUpdate = true;
 
-    // Show line outline only when coloring by feature color
-    this.bgLine.material.linewidth = isColoredByFeature ? baseLineWidth + 2 : 0;
+    if (this.line.material instanceof SubrangeLineMaterial) {
+      // This is always true but used to make TypeScript happy
+      this.line.material.useColorRamp = isColoredByRamp;
+      this.line.material.colorRamp = trackPathColorRamp.texture;
+    }
+
+    // Show line outline only when coloring by feature color or color ramp
+    this.bgLine.material.linewidth = isColoredByFeature || isColoredByRamp ? baseLineWidth + 2 : 0;
     this.bgLine.material.needsUpdate = true;
   }
 
@@ -233,8 +240,22 @@ export default class TrackPath2D {
       }
     }
 
-    (this.line.material as SubrangeLineMaterial).minInstance = startingInstance;
-    (this.bgLine.material as SubrangeLineMaterial).minInstance = startingInstance;
+    if (
+      !(this.line.material instanceof SubrangeLineMaterial) ||
+      !(this.bgLine.material instanceof SubrangeLineMaterial)
+    ) {
+      return;
+    }
+
+    // Update color ramp related logic
+    const pastSteps = this.params.showAllTrackPathPastSteps ? track.duration() : this.params.trackPathPastSteps;
+    const futureSteps =
+      pastSteps + (this.params.showAllTrackPathFutureSteps ? track.duration() : this.params.trackPathFutureSteps);
+    this.line.material.colorRampVertexOffset = trackStepIdx;
+    this.line.material.colorRampVertexScale = Math.max(pastSteps, futureSteps);
+
+    this.line.material.minInstance = startingInstance;
+    this.bgLine.material.minInstance = startingInstance;
     this.line.geometry.instanceCount = Math.max(0, endingInstance);
   }
 

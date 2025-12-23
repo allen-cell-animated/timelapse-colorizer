@@ -1,7 +1,7 @@
 import type { Color } from "three";
 
 import { BOOLEAN_VALUE_FALSE, BOOLEAN_VALUE_TRUE, type LabelData, LabelType } from "src/colorizer/AnnotationData";
-import type ColorRamp from "src/colorizer/ColorRamp";
+import ColorRamp from "src/colorizer/ColorRamp";
 import { ColorRampType } from "src/colorizer/ColorRamp";
 import type { ColorRampData } from "src/colorizer/colors/color_ramps";
 import { MAX_FEATURE_CATEGORIES } from "src/colorizer/constants";
@@ -55,12 +55,26 @@ export function thresholdMatchFinder(featureKey: string, unit: string): (thresho
 /**
  * Convenience method for getting a single ramp from a map of strings to ramps, optionally reversing it.
  */
-export function getColorMap(colorRampData: Map<string, ColorRampData>, key: string, reversed = false): ColorRamp {
-  const colorRamp = colorRampData.get(key)?.colorRamp;
+export function getColorMap(
+  colorRampData: Map<string, ColorRampData>,
+  key: string,
+  reversed = false,
+  mirrored = false
+): ColorRamp {
+  let colorRamp = colorRampData.get(key)?.colorRamp;
   if (!colorRamp) {
     throw new Error("Could not find data for color ramp '" + key + "'");
   }
-  return colorRamp && reversed ? colorRamp.reverse() : colorRamp;
+  if (reversed) {
+    colorRamp = colorRamp.reverse();
+  }
+  if (mirrored && colorRamp.type === ColorRampType.LINEAR) {
+    // Reverse + remove color at the beginning so the color stop isn't repeated
+    const reversedColorStops = colorRamp.colorStops.toReversed();
+    reversedColorStops.shift();
+    colorRamp = new ColorRamp([...colorRamp.colorStops, ...reversedColorStops], colorRamp.type);
+  }
+  return colorRamp;
 }
 
 /**
@@ -567,6 +581,7 @@ const LINE_VERTEX_COLOR_DEPS: (keyof TrackPathParams)[] = [
 const LINE_MATERIAL_DEPS: (keyof TrackPathParams)[] = [
   "trackPathColorMode",
   "trackPathColor",
+  "trackPathColorRamp",
   "outlineColor",
   "trackPathWidthPx",
 ];

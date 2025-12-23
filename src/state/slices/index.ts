@@ -29,7 +29,13 @@ import {
   type ColorRampSliceState,
   createColorRampSlice,
 } from "./color_ramp_slice";
-import { type ConfigSliceActions, type ConfigSliceSerializableState, type ConfigSliceState, createConfigSlice } from "./config_slice";
+import {
+  addConfigDerivedStateSubscribers,
+  type ConfigSliceActions,
+  type ConfigSliceSerializableState,
+  type ConfigSliceState,
+  createConfigSlice,
+} from "./config_slice";
 import {
   createDatasetSlice,
   type DatasetSliceActions,
@@ -143,6 +149,7 @@ export const addStoreStateSubscribers = (store: SubscribableStore<ViewerStore>):
   addBackdropDerivedStateSubscribers(store);
   addChannelDerivedStateSubscribers(store);
   addColorRampDerivedStateSubscribers(store);
+  addConfigDerivedStateSubscribers(store);
   addScatterPlotSliceDerivedStateSubscribers(store);
   addThresholdDerivedStateSubscribers(store);
   addTimeDerivedStateSubscribers(store);
