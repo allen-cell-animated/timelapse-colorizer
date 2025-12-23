@@ -1,4 +1,4 @@
-import { Texture, UniformsUtils } from "three";
+import { type Texture, UniformsUtils } from "three";
 import { LineMaterial, type LineMaterialParameters } from "three/addons/lines/LineMaterial";
 
 import ColorRamp from "src/colorizer/ColorRamp";

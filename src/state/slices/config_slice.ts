@@ -3,7 +3,7 @@ import { clamp } from "three/src/math/MathUtils";
 import type { StateCreator } from "zustand";
 
 import {
-  ColorRamp,
+  type ColorRamp,
   DEFAULT_DIVERGING_COLOR_RAMP_KEY,
   DrawMode,
   type DrawSettings,
