@@ -60,15 +60,19 @@ void main() {
   // -----------------------------
   #ifdef USE_COLOR
   if (useColorRamp) {
-    // int vertexIdx = 1 - gl_VertexID + gl_InstanceID;
-    int vertexIdx = gl_InstanceID + 1;
-    if (gl_VertexID > 3) {
-      vertexIdx -= 1;
+    // Determine the vertex index in the original line, using the current
+    // instance ID and vertex ID. THREE's line segments have four vertices,
+    // where the first four are at the start of the line.
+    int lineVertexIdx = gl_InstanceID + 1;
+    if (gl_VertexID >= 4) {
+      lineVertexIdx -= 1;
     }
-    float t = (float(vertexIdx) - colorRampVertexOffset) / colorRampVertexScale * 0.5 + 0.5;
+    // Map the vertex index to the range [0, 1] for color ramp lookup.
+    float t = (float(lineVertexIdx) - colorRampVertexOffset) / colorRampVertexScale * 0.5 + 0.5;
     t = clamp(t, 0.0, 1.0);
     vColor.xyz = texture(colorRamp, vec2(t, 0.5)).xyz;
   } else {
+    // Original default color behavior
     vColor.xyz = (position.y < 0.5) ? instanceColorStart : instanceColorEnd;
   }
   #endif
