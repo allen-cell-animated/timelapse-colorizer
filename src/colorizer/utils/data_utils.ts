@@ -590,7 +590,8 @@ export function getLineUpdateFlags(
 } {
   const geometryNeedsUpdate = hasPropertyChanged(prevParams, params, LINE_GEOMETRY_DEPS);
   const vertexColorNeedsUpdate =
-    params.trackPathColorMode === TrackPathColorMode.USE_FEATURE_COLOR &&
+    (params.trackPathColorMode === TrackPathColorMode.USE_COLOR_MAP ||
+      params.trackPathColorMode === TrackPathColorMode.USE_FEATURE_COLOR) &&
     hasPropertyChanged(prevParams, params, LINE_VERTEX_COLOR_DEPS);
   const materialNeedsUpdate = vertexColorNeedsUpdate || hasPropertyChanged(prevParams, params, LINE_MATERIAL_DEPS);
   const needsRender =
