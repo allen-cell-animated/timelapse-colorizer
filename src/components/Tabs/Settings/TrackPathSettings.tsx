@@ -80,6 +80,8 @@ export default function TrackPathSettings(): ReactElement {
             onColorChange={setTrackPathColor}
             presets={DEFAULT_OUTLINE_COLOR_PRESETS}
             // Ramp picker
+            // TODO: Ramp picker is clipped by the containing scrollable div. Consider moving
+            // it to a containing element outside of the clip group?
             showColorRamp={trackPathColorMode === TrackPathColorMode.USE_COLOR_MAP}
             selectedRampKey={trackPathColorRampKey}
             isRampReversed={trackPathIsColorRampReversed}
