@@ -237,6 +237,7 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
     throw new Error(`Selected color ramp name '${props.selectedRamp}' is invalid.`);
   }
   const rampImgSrc = useMemo(() => {
+    // TODO: Dispose of color ramps created here.
     let selectedRamp = selectedRampData.colorRamp;
     if (props.reversed) {
       selectedRamp = selectedRamp.reverse();

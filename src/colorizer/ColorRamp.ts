@@ -29,12 +29,16 @@ const DISPLAY_GRADIENT_MAX_STOPS = 24;
 
 export default class ColorRamp {
   public readonly colorStops: Color[];
-  public readonly texture: DataTexture;
+  private textureSRGB: DataTexture;
+  private textureLinear: DataTexture;
   public readonly type: ColorRampType;
 
   constructor(colorStops: ColorRepresentation[], type: ColorRampType = ColorRampType.LINEAR) {
+    this.type = type;
     this.colorStops = colorStops.map((color) => new Color(color));
-    const dataArr = this.colorStops.flatMap((col) => {
+
+    // Save color data in both sRGB and LinearSRGB formats.
+    const sRGBDataArr = this.colorStops.flatMap((col) => {
       // Must convert from LinearSRGB to sRGB color space before getting the RGB
       // components since WebGL (canvas, etc.) expects sRGB, but Three stores
       // color data using LinearSRGB by default. See
@@ -42,17 +46,40 @@ export default class ColorRamp {
       const srgbCol = col.clone().convertLinearToSRGB();
       return [srgbCol.r, srgbCol.g, srgbCol.b, 1];
     });
-    this.texture = new DataTexture(new Float32Array(dataArr), this.colorStops.length, 1, RGBAFormat, FloatType);
-    this.type = type;
-    if (this.type === ColorRampType.CATEGORICAL) {
-      this.texture.minFilter = NearestFilter;
-      this.texture.magFilter = NearestFilter;
-    } else {
-      this.texture.minFilter = LinearFilter;
-      this.texture.magFilter = LinearFilter;
+    const linearSRGBDataArr = this.colorStops.flatMap((col) => {
+      return [col.r, col.g, col.b, 1];
+    });
+
+    const numStops = this.colorStops.length;
+    this.textureLinear = new DataTexture(new Float32Array(linearSRGBDataArr), numStops, 1, RGBAFormat, FloatType);
+    this.textureSRGB = new DataTexture(new Float32Array(sRGBDataArr), numStops, 1, RGBAFormat, FloatType);
+    for (const texture of [this.textureLinear, this.textureSRGB]) {
+      if (this.type === ColorRampType.CATEGORICAL) {
+        texture.minFilter = NearestFilter;
+        texture.magFilter = NearestFilter;
+      } else {
+        texture.minFilter = LinearFilter;
+        texture.magFilter = LinearFilter;
+      }
+      texture.internalFormat = "RGBA32F";
+      texture.needsUpdate = true;
     }
-    this.texture.internalFormat = "RGBA32F";
-    this.texture.needsUpdate = true;
+  }
+
+  /**
+   * Returns the texture for this color ramp in SRGB color space. Use for any
+   * color assignment where the results will be directly shown onscreen.
+   */
+  public get texture(): DataTexture {
+    return this.textureSRGB;
+  }
+
+  /**
+   * Returns the texture for this color ramp in LinearSRGB color space. Use when
+   * performing color computation or interpolation in shaders.
+   */
+  public get textureLinearSRGB(): DataTexture {
+    return this.textureLinear;
   }
 
   public static linearGradientFromColors(
@@ -115,7 +142,8 @@ export default class ColorRamp {
   }
 
   public dispose(): void {
-    this.texture.dispose();
+    this.textureSRGB.dispose();
+    this.textureLinear.dispose();
   }
 
   /**

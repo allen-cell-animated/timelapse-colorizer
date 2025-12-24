@@ -1,8 +1,7 @@
 import type { Color } from "three";
 
 import { BOOLEAN_VALUE_FALSE, BOOLEAN_VALUE_TRUE, type LabelData, LabelType } from "src/colorizer/AnnotationData";
-import type ColorRamp from "src/colorizer/ColorRamp";
-import { ColorRampType } from "src/colorizer/ColorRamp";
+import ColorRamp, { ColorRampType } from "src/colorizer/ColorRamp";
 import type { ColorRampData } from "src/colorizer/colors/color_ramps";
 import { MAX_FEATURE_CATEGORIES } from "src/colorizer/constants";
 import type Dataset from "src/colorizer/Dataset";
@@ -53,14 +52,33 @@ export function thresholdMatchFinder(featureKey: string, unit: string): (thresho
 }
 
 /**
- * Convenience method for getting a single ramp from a map of strings to ramps, optionally reversing it.
+ * Convenience method for getting a single ramp from a map of strings to ramps,
+ * optionally reversing it. Always returns a new ColorRamp instance that should
+ * be disposed of (call `.dispose()` when no longer needed).
  */
-export function getColorMap(colorRampData: Map<string, ColorRampData>, key: string, reversed = false): ColorRamp {
-  const colorRamp = colorRampData.get(key)?.colorRamp;
-  if (!colorRamp) {
+export function getColorMap(
+  colorRampDataMap: Map<string, ColorRampData>,
+  key: string,
+  options: {
+    reversed?: boolean;
+    mirrored?: boolean;
+  } = {}
+): ColorRamp {
+  const colorRampData = colorRampDataMap.get(key);
+  if (!colorRampData) {
     throw new Error("Could not find data for color ramp '" + key + "'");
   }
-  return colorRamp && reversed ? colorRamp.reverse() : colorRamp;
+  let colorStops = [...colorRampData.colorStops];
+  if (options.reversed) {
+    colorStops.reverse();
+  }
+  if (options.mirrored && colorRampData.type === ColorRampType.LINEAR) {
+    // Reverse + remove color at the beginning so the color stop isn't repeated
+    const reversedColorStops = colorStops.toReversed();
+    reversedColorStops.shift();
+    colorStops = [...colorStops, ...reversedColorStops];
+  }
+  return new ColorRamp(colorStops, colorRampData.type);
 }
 
 /**
@@ -567,6 +585,7 @@ const LINE_VERTEX_COLOR_DEPS: (keyof TrackPathParams)[] = [
 const LINE_MATERIAL_DEPS: (keyof TrackPathParams)[] = [
   "trackPathColorMode",
   "trackPathColor",
+  "trackPathColorRamp",
   "outlineColor",
   "trackPathWidthPx",
 ];
@@ -593,6 +612,11 @@ export function getLineUpdateFlags(
     (params.trackPathColorMode === TrackPathColorMode.USE_COLOR_MAP ||
       params.trackPathColorMode === TrackPathColorMode.USE_FEATURE_COLOR) &&
     hasPropertyChanged(prevParams, params, LINE_VERTEX_COLOR_DEPS);
+  console.log(
+    "hasPropertyChanged for color ramp",
+    hasPropertyChanged(prevParams, params, ["trackPathColorRamp"]),
+    params.trackPathColorRamp
+  );
   const materialNeedsUpdate = vertexColorNeedsUpdate || hasPropertyChanged(prevParams, params, LINE_MATERIAL_DEPS);
   const needsRender =
     hasPropertyChanged(prevParams, params, LINE_RENDER_DEPS) ||
