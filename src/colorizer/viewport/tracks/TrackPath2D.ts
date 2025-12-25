@@ -1,5 +1,4 @@
-import { Color, type Vector2 } from "three";
-import { LineMaterial } from "three/addons/lines/LineMaterial";
+import { Color, Vector2 } from "three";
 import { LineSegments2 } from "three/addons/lines/LineSegments2";
 import { LineSegmentsGeometry } from "three/addons/lines/LineSegmentsGeometry";
 
@@ -13,8 +12,8 @@ import {
   computeTrackLinePointsAndIds,
   computeVertexColorsFromIds,
   getLineUpdateFlags,
-  normalizePointsTo2dCanvasSpace,
 } from "src/colorizer/utils/data_utils";
+import SubrangeLineMaterial from "src/colorizer/viewport/tracks/SubrangeLineMaterial";
 
 import type { TrackPathParams } from "./types";
 
@@ -32,11 +31,15 @@ export default class TrackPath2D {
 
   /** Object IDs corresponding to each vertex in track line. */
   private lineIds: number[];
+  /** Vertex positions for the track line, in pixel frame coordinates. */
   private linePoints: Float32Array;
   private lineColors: Float32Array;
   private lineBufferSize: number;
 
   private zoomMultiplier: number;
+  private frameToCanvasScale: Vector2;
+  /** XY offset of the frame, in normalized frame coordinates. [-0.5, 0.5] range. */
+  private panOffset: Vector2;
 
   private params: TrackPathParams | null = null;
 
@@ -48,11 +51,11 @@ export default class TrackPath2D {
 
     const lineGeometry = new LineSegmentsGeometry();
     lineGeometry.setPositions(this.linePoints);
-    const lineMaterial = new LineMaterial({
+    const lineMaterial = new SubrangeLineMaterial({
       color: OUTLINE_COLOR_DEFAULT,
       linewidth: 1.0,
     });
-    const bgLineMaterial = new LineMaterial({
+    const bgLineMaterial = new SubrangeLineMaterial({
       color: FRAME_BACKGROUND_COLOR_DEFAULT,
       linewidth: 2.0,
     });
@@ -69,6 +72,8 @@ export default class TrackPath2D {
     this.line.renderOrder = 1;
 
     this.zoomMultiplier = 1.0;
+    this.frameToCanvasScale = new Vector2(1, 1);
+    this.panOffset = new Vector2(0, 0);
   }
 
   /**
@@ -140,7 +145,7 @@ export default class TrackPath2D {
       if (geometryNeedsUpdate && params.dataset && params.track) {
         const { ids, points } = computeTrackLinePointsAndIds(params.dataset, params.track, params.showTrackPathBreaks);
         this.lineIds = ids;
-        this.linePoints = normalizePointsTo2dCanvasSpace(points, params.dataset);
+        this.linePoints = points;
       }
       if (vertexColorNeedsUpdate) {
         this.lineColors = computeVertexColorsFromIds(this.lineIds, this.params);
@@ -158,15 +163,32 @@ export default class TrackPath2D {
     this.updateLineMaterial();
   }
 
-  public setPositionAndScale(panOffset: Vector2, frameToCanvasCoordinates: Vector2): void {
-    this.line.scale.set(frameToCanvasCoordinates.x, frameToCanvasCoordinates.y, 1);
+  private updateLineScale(): void {
+    const frameResolution = this.params?.dataset?.frameResolution || new Vector2(1, 1);
+    // Normalize points which are in pixel/voxel coordinates to 2D canvas
+    // space in a [0, 2] range, flip the Y axis, and scale based on zoom level.
+    // Range will be adjusted to [-1, 1] in the position update below.
+    this.line.scale.set(
+      (2 / frameResolution.x) * this.frameToCanvasScale.x,
+      -(2 / frameResolution.y) * this.frameToCanvasScale.y,
+      0
+    );
+    // Normalize and apply panning offset (from a [-0.5, 0.5] to a [-1, 1]
+    // range) and correct the normalization performed in scaling step from
+    // [0, 2] to [-1, 1]. Apply scaling so the offset is in canvas coordinates.
     this.line.position.set(
-      2 * panOffset.x * frameToCanvasCoordinates.x,
-      2 * panOffset.y * frameToCanvasCoordinates.y,
+      (2 * this.panOffset.x - 1) * this.frameToCanvasScale.x,
+      (2 * this.panOffset.y + 1) * this.frameToCanvasScale.y,
       0
     );
     this.bgLine.scale.copy(this.line.scale);
     this.bgLine.position.copy(this.line.position);
+  }
+
+  public setPositionAndScale(panOffset: Vector2, frameToCanvasCoordinates: Vector2): void {
+    this.panOffset = panOffset;
+    this.frameToCanvasScale = frameToCanvasCoordinates;
+    this.updateLineScale();
   }
 
   /**
@@ -182,15 +204,38 @@ export default class TrackPath2D {
       return;
     }
 
-    // Show path up to current frame
-    let range = currentFrame - track.startTime();
+    const trackStepIdx = currentFrame - track.startTime();
+    let endingInstance;
+    let startingInstance;
 
-    if (range >= track.duration() || range < 0) {
-      // Hide track if we are outside the track range
-      range = 0;
+    if (this.params.showAllTrackPathPastSteps) {
+      startingInstance = 0;
+    } else {
+      startingInstance = Math.max(0, trackStepIdx - this.params.trackPathPastSteps);
     }
 
-    this.line.geometry.instanceCount = Math.max(0, range);
+    if (this.params.showAllTrackPathFutureSteps) {
+      endingInstance = track.duration();
+    } else {
+      endingInstance = Math.min(trackStepIdx + this.params.trackPathFutureSteps, track.duration());
+    }
+
+    // Check if the path should be hidden entirely because it is outside of the
+    // range. This happens when all past paths are shown and the track has ended,
+    // or if all future paths are shown and the track has not yet started.
+    // TODO: Add a flag that allows users to persist the full track path when
+    // out of range.
+    if (this.params.showAllTrackPathPastSteps && trackStepIdx >= track.duration()) {
+      startingInstance = 0;
+      endingInstance = 0;
+    } else if (this.params.showAllTrackPathPastSteps && trackStepIdx < 0) {
+      startingInstance = 0;
+      endingInstance = 0;
+    }
+
+    (this.line.material as SubrangeLineMaterial).minInstance = startingInstance;
+    (this.bgLine.material as SubrangeLineMaterial).minInstance = startingInstance;
+    this.line.geometry.instanceCount = Math.max(0, endingInstance);
   }
 
   /**
