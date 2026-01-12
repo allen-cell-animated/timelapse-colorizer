@@ -51,10 +51,19 @@ export default class SubrangeLineMaterial extends LineMaterial {
     this.uniforms.colorRamp.value = value;
   }
 
+  /** The number of vertices that the color ramp spans. */
   set colorRampVertexScale(value: number) {
     this.uniforms.colorRampVertexScale.value = value;
   }
 
+  /**
+   * The vertex index that will be assigned the middle of the color ramp. Vertex
+   * indices start at 0 for the first vertex in the line segments geometry.
+   *
+   * For example, if the color ramp spans 10 vertices, setting
+   * `colorRampVertexOffset` to 5 will center the color ramp on the 5th vertex,
+   * with the starting color at vertex 0 and the ending color at vertex 10.
+   */
   set colorRampVertexOffset(value: number) {
     this.uniforms.colorRampVertexOffset.value = value;
   }

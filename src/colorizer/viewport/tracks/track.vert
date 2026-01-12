@@ -15,7 +15,9 @@ uniform vec2 resolution;
 uniform int minInstance;
 uniform bool useColorRamp;
 uniform sampler2D colorRamp;
+/** The number of vertices that the color ramp spans. */
 uniform float colorRampVertexScale;
+/** The vertex index that will be assigned the middle of the color ramp. */
 uniform float colorRampVertexOffset;
 // -----------------------------
 
@@ -69,7 +71,7 @@ void main() {
       lineVertexIdx -= 1;
     }
     // Map the vertex index to the range [0, 1] for color ramp lookup.
-    float t = (float(lineVertexIdx) - colorRampVertexOffset) / colorRampVertexScale * 0.5 + 0.5;
+    float t = (float(lineVertexIdx) - colorRampVertexOffset) / colorRampVertexScale + 0.5;
     t = clamp(t, 0.0, 1.0);
     vColor.xyz = texture(colorRamp, vec2(t, 0.5)).xyz;
   } else {

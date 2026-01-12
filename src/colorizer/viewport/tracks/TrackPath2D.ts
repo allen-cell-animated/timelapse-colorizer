@@ -250,7 +250,7 @@ export default class TrackPath2D {
     const pastSteps = this.params.showAllTrackPathPastSteps ? track.duration() : this.params.trackPathPastSteps;
     const futureSteps = this.params.showAllTrackPathFutureSteps ? track.duration() : this.params.trackPathFutureSteps;
     this.line.material.colorRampVertexOffset = trackStepIdx;
-    this.line.material.colorRampVertexScale = Math.max(pastSteps, futureSteps);
+    this.line.material.colorRampVertexScale = Math.max(pastSteps, futureSteps) * 2;
 
     this.line.material.minInstance = startingInstance;
     this.bgLine.material.minInstance = startingInstance;
