@@ -133,7 +133,7 @@ export default class TrackPath2D {
     (this.line.material as SubrangeLineMaterial).useColorRamp = isColoredByRamp;
     (this.line.material as SubrangeLineMaterial).colorRamp = trackPathColorRamp.textureLinearSRGB;
 
-    // Show line outline only when coloring by feature color or color ramp
+    // Show line outline only when coloring by feature color
     this.bgLine.material.linewidth = isColoredByFeature ? baseLineWidth + 2 : 0;
 
     this.line.material.needsUpdate = true;
