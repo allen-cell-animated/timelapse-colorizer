@@ -75,7 +75,7 @@ export function getColorMap(
   if (options.mirrored && colorRampData.type === ColorRampType.LINEAR) {
     // Reverse + remove color at the beginning so the color stop isn't repeated
     // ex: 123 => 12321 (3 is not repeated)
-    const reversedColorStops = colorStops.toReversed();
+    const reversedColorStops = [...colorStops].reverse();
     reversedColorStops.shift();
     colorStops = [...colorStops, ...reversedColorStops];
   }

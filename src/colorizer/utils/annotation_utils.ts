@@ -43,7 +43,7 @@ export function getTrackLookups(
 
   // Reverse the order of IDs so that the most recently added IDs are at the
   // front of the list.
-  const idsReversed = ids.toReversed();
+  const idsReversed = [...ids].reverse();
   for (const id of idsReversed) {
     const trackId = dataset.getTrackId(id);
     const trackIdString = trackId.toString();
