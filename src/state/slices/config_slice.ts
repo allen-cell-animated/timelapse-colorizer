@@ -164,7 +164,7 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   trackPathColor: new Color(OUTLINE_COLOR_DEFAULT),
   trackPathWidthPx: 1.5,
   trackPathColorRampKey: DEFAULT_DIVERGING_COLOR_RAMP_KEY,
-  trackPathColorRamp: KNOWN_COLOR_RAMPS.get(DEFAULT_DIVERGING_COLOR_RAMP_KEY)?.colorRamp!,
+  trackPathColorRamp: getColorMap(KNOWN_COLOR_RAMPS, DEFAULT_DIVERGING_COLOR_RAMP_KEY, { mirrored: true }),
   trackPathIsColorRampReversed: false,
   trackPathColorMode: TrackPathColorMode.USE_OUTLINE_COLOR,
   showTrackPathBreaks: false,

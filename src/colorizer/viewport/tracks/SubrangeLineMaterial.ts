@@ -9,6 +9,8 @@ type SubrangeLineMaterialParameters = LineMaterialParameters & {
   minInstance?: number;
 };
 
+const DEFAULT_COLOR_RAMP_TEXTURE = new ColorRamp(["#aaa", "#fff"]).texture;
+
 /**
  * Replacement for LineMaterial with custom vertex shader to support showing
  * only a subrange of line segments. Use with `instanceCount` on the geometry
@@ -18,7 +20,7 @@ export default class SubrangeLineMaterial extends LineMaterial {
   constructor(params?: SubrangeLineMaterialParameters) {
     super(params);
 
-    const emptyColorRamp = new ColorRamp(["#aaa", "#fff"]).texture;
+    const emptyColorRamp = DEFAULT_COLOR_RAMP_TEXTURE;
 
     this.vertexShader = vertexShader;
     this.uniforms = UniformsUtils.merge([
