@@ -53,8 +53,8 @@ export function thresholdMatchFinder(featureKey: string, unit: string): (thresho
 
 /**
  * Convenience method for getting a single ramp from a map of strings to ramps,
- * optionally reversing it. Always returns a new ColorRamp instance that should
- * be disposed of (call `.dispose()` when no longer needed).
+ * optionally reversing or mirroring it. Always returns a *new* ColorRamp
+ * instance that should be disposed of when no longer needed.
  */
 export function getColorMap(
   colorRampDataMap: Map<string, ColorRampData>,
@@ -74,6 +74,7 @@ export function getColorMap(
   }
   if (options.mirrored && colorRampData.type === ColorRampType.LINEAR) {
     // Reverse + remove color at the beginning so the color stop isn't repeated
+    // ex: 123 => 12321 (3 is not repeated)
     const reversedColorStops = colorStops.toReversed();
     reversedColorStops.shift();
     colorStops = [...colorStops, ...reversedColorStops];
@@ -612,11 +613,6 @@ export function getLineUpdateFlags(
     (params.trackPathColorMode === TrackPathColorMode.USE_COLOR_MAP ||
       params.trackPathColorMode === TrackPathColorMode.USE_FEATURE_COLOR) &&
     hasPropertyChanged(prevParams, params, LINE_VERTEX_COLOR_DEPS);
-  console.log(
-    "hasPropertyChanged for color ramp",
-    hasPropertyChanged(prevParams, params, ["trackPathColorRamp"]),
-    params.trackPathColorRamp
-  );
   const materialNeedsUpdate = vertexColorNeedsUpdate || hasPropertyChanged(prevParams, params, LINE_MATERIAL_DEPS);
   const needsRender =
     hasPropertyChanged(prevParams, params, LINE_RENDER_DEPS) ||
