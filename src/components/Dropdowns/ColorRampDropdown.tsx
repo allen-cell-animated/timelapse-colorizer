@@ -219,10 +219,12 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
       const visibleColors = paletteData.colors.slice(0, Math.max(1, props.numCategories));
       const colorRamp = new ColorRamp(visibleColors, ColorRampType.CATEGORICAL);
       const gradientWidthPx = DROPDOWN_MENU_WIDTH_PX - 2 * DROPDOWN_CATEGORICAL_BORDER_PX;
+      const dataUrl = colorRamp.createGradientCanvas(gradientWidthPx, theme.controls.height).toDataURL();
+      colorRamp.dispose();
       return {
         value: key,
         label: paletteData.name,
-        image: colorRamp.createGradientCanvas(gradientWidthPx, theme.controls.height).toDataURL(),
+        image: dataUrl,
         tooltip: paletteData.name,
       };
     });
@@ -237,7 +239,6 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
     throw new Error(`Selected color ramp name '${props.selectedRamp}' is invalid.`);
   }
   const rampImgSrc = useMemo(() => {
-    // TODO: Dispose of color ramps created here.
     let selectedRamp = selectedRampData.colorRamp;
     if (props.reversed) {
       selectedRamp = selectedRamp.reverse();
@@ -247,12 +248,15 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
       borderWidthPx = DROPDOWN_CATEGORICAL_BORDER_PX;
       // Clamp number of colors due to smaller dropdown size
       const visibleColors = selectedRamp.colorStops.slice(0, DROPDOWN_CONTROL_MAX_COLORS);
+      selectedRamp.dispose();
       selectedRamp = new ColorRamp(visibleColors, ColorRampType.CATEGORICAL);
     }
     const gradientWidthPx = DROPDOWN_MENU_WIDTH_PX - 2 * borderWidthPx;
-    return selectedRamp
+    const dataUrl = selectedRamp
       .createGradientCanvas(gradientWidthPx, theme.controls.height, { mirror: props.mirror })
       .toDataURL();
+    selectedRamp.dispose();
+    return dataUrl;
   }, [props.selectedRamp, props.reversed, props.mirror]);
 
   const showAsReversed = props.reversed !== !!selectedRampData.reverseByDefault;
@@ -267,9 +271,11 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
     const visibleColorCount = clamp(props.numCategories, 1, DROPDOWN_CONTROL_MAX_COLORS);
     const visibleColors = props.selectedPalette.slice(0, visibleColorCount);
     const colorRamp = new ColorRamp(visibleColors, ColorRampType.CATEGORICAL);
-    return colorRamp
+    const dataUrl = colorRamp
       .createGradientCanvas(DROPDOWN_MENU_WIDTH_PX - DROPDOWN_CATEGORICAL_BORDER_PX, theme.controls.height)
       .toDataURL();
+    colorRamp.dispose();
+    return dataUrl;
   }, [props.useCategoricalPalettes, props.numCategories, props.selectedPalette]);
 
   // Check if palette colors match an existing one; otherwise, mark it as being
