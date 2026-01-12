@@ -6,7 +6,7 @@ import { Color as ThreeColor } from "three";
 import { DEFAULT_COLOR_RAMP_KEY, DISPLAY_COLOR_RAMP_KEYS } from "src/colorizer";
 import ColorRampDropdown from "src/components/Dropdowns/ColorRampDropdown";
 import WrappedColorPicker from "src/components/Inputs/WrappedColorPicker";
-import { FlexRowAlignCenter } from "src/styles/utils";
+import { FlexRow, FlexRowAlignCenter } from "src/styles/utils";
 
 import SelectionDropdown from "./SelectionDropdown";
 
@@ -80,10 +80,13 @@ export default function DropdownWithColorPicker(propsInput: DropdownWithColorPic
         disabled={props.disabled}
         controlWidth={"105px"}
       ></SelectionDropdown>
-      <div style={{ position: "relative" }}>
+      <FlexRow style={{ position: "relative" }} $gap={6}>
         <div
           style={{
-            position: "absolute",
+            // Normally, both ramp + color picker occupy the same position next
+            // to the dropdown. If *both* are shown, place them in relative
+            // position so they don't overlap.
+            position: props.showColorPicker && props.showColorRamp ? "relative" : "absolute",
             visibility: props.showColorRamp ? "visible" : "hidden",
             opacity: props.showColorRamp ? "1" : "0",
             // Copied from Ant transition styles
@@ -121,7 +124,7 @@ export default function DropdownWithColorPicker(propsInput: DropdownWithColorPic
           }}
           disabled={props.disabled}
         />
-      </div>
+      </FlexRow>
     </HorizontalDiv>
   );
 }
