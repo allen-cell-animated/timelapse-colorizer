@@ -148,14 +148,14 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   // Access state properties
   const pendingFrame = useViewerStateStore((state) => state.pendingFrame);
   const currentFrame = useViewerStateStore((state) => state.currentFrame);
-  const clearTrack = useViewerStateStore((state) => state.clearTrack);
   const collection = useViewerStateStore((state) => state.collection);
   const dataset = useViewerStateStore((state) => state.dataset);
   const updateChannelSettings = useViewerStateStore((state) => state.updateChannelSettings);
   const setGetChannelDataRangeCallback = useViewerStateStore((state) => state.setGetChannelDataRangeCallback);
   const setApplyChannelRangePresetCallback = useViewerStateStore((state) => state.setApplyChannelRangePresetCallback);
   const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
-  const setTrack = useViewerStateStore((state) => state.setTrack);
+  const clearTracks = useViewerStateStore((state) => state.clearTracks);
+  const addTrack = useViewerStateStore((state) => state.addTrack);
   const showScaleBar = useViewerStateStore((state) => state.showScaleBar);
   const showTimestamp = useViewerStateStore((state) => state.showTimestamp);
   const frameLoadResult = useViewerStateStore((state) => state.frameLoadResult);
@@ -381,18 +381,18 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       const info = canv.getIdAtPixel(event.offsetX, event.offsetY);
       // Reset track input
       if (dataset === null || info === null || info.globalId === undefined) {
-        clearTrack();
+        clearTracks();
       } else {
         const trackId = dataset.getTrackId(info.globalId);
         const newTrack = dataset.getTrack(trackId);
         if (newTrack) {
-          setTrack(newTrack);
+          addTrack(newTrack);
         }
       }
       props.onClickId(info);
       updateCanvasCursor(event.offsetX, event.offsetY);
     },
-    [canv, dataset, props.onClickId, setTrack, clearTrack, updateCanvasCursor]
+    [canv, dataset, props.onClickId, addTrack, clearTracks, updateCanvasCursor]
   );
 
   // Mouse event handlers
@@ -578,7 +578,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             )}
             {shouldShowReuseValueHotkey && (
               <FlexRowAlignCenter $gap={6}>
-                <HotkeyText>Ctrl</HotkeyText>
+                <HotkeyText>Alt</HotkeyText>
                 hold to reuse last value
               </FlexRowAlignCenter>
             )}

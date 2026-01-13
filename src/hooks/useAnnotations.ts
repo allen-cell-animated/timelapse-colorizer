@@ -73,7 +73,7 @@ export const useAnnotations = (): AnnotationState => {
   const [baseSelectionMode, setBaseSelectionMode] = useState<AnnotationSelectionMode>(AnnotationSelectionMode.TIME);
 
   const isSelectRangeHotkeyPressed = useShortcutKey("Shift");
-  const isReuseValueHotkeyPressed = useShortcutKey("Control");
+  const isReuseValueHotkeyPressed = useShortcutKey("Alt");
 
   const [lastClickedId, setLastClickedId] = useState<number | null>(null);
   const [rangeStartId, setRangeStartId] = useState<number | null>(null);
