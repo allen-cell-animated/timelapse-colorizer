@@ -86,6 +86,7 @@ export * from "./dataset_slice";
 export * from "./scatterplot_slice";
 export * from "./threshold_slice";
 export * from "./time_slice";
+export * from "./track_slice";
 export * from "./vector_slice";
 
 export type ViewerStoreState = BackdropSliceState &
