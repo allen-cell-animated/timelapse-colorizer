@@ -30,7 +30,7 @@ import LoadingSpinner from "src/components/LoadingSpinner";
 import AnnotationInputPopover from "src/components/Tabs/Annotation/AnnotationInputPopover";
 import { TooltipWithSubtitle } from "src/components/Tooltips/TooltipWithSubtitle";
 import { CANVAS_ASPECT_RATIO } from "src/constants";
-import type { AnnotationState } from "src/hooks";
+import { type AnnotationState, useShortcutKey } from "src/hooks";
 import { renderCanvasStateParamsSelector } from "src/state";
 import { useViewerStateStore } from "src/state/ViewerState";
 import { AppThemeContext } from "src/styles/AppStyle";
@@ -169,6 +169,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   const isFrameLoading = pendingFrame !== currentFrame;
   const loadProgress = props.loading ? props.loadingProgress : null;
+
+  const isMultiTrackSelectHotkeyPressed = useShortcutKey("Control");
 
   // Add subscriber so canvas parameters are updated when the state changes.
   useEffect(() => {
@@ -381,18 +383,24 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       const info = canv.getIdAtPixel(event.offsetX, event.offsetY);
       // Reset track input
       if (dataset === null || info === null || info.globalId === undefined) {
-        clearTracks();
+        if (!isMultiTrackSelectHotkeyPressed) {
+          // Ignore if multi-select hotkey is pressed
+          clearTracks();
+        }
       } else {
         const trackId = dataset.getTrackId(info.globalId);
         const newTrack = dataset.getTrack(trackId);
         if (newTrack) {
+          if (!isMultiTrackSelectHotkeyPressed) {
+            clearTracks();
+          }
           addTrack(newTrack);
         }
       }
       props.onClickId(info);
       updateCanvasCursor(event.offsetX, event.offsetY);
     },
-    [canv, dataset, props.onClickId, addTrack, clearTracks, updateCanvasCursor]
+    [canv, dataset, props.onClickId, addTrack, clearTracks, updateCanvasCursor, isMultiTrackSelectHotkeyPressed]
   );
 
   // Mouse event handlers
