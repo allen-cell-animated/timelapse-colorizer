@@ -247,8 +247,9 @@ export default class TrackPath2D {
     }
 
     // Update color ramp related logic
-    const pastSteps = this.params.showAllTrackPathPastSteps ? track.duration() : this.params.trackPathPastSteps;
-    const futureSteps = this.params.showAllTrackPathFutureSteps ? track.duration() : this.params.trackPathFutureSteps;
+    const maxTrackLength = this.params.dataset?.getMaxTrackLength() || track.duration();
+    const pastSteps = this.params.showAllTrackPathPastSteps ? maxTrackLength : this.params.trackPathPastSteps;
+    const futureSteps = this.params.showAllTrackPathFutureSteps ? maxTrackLength : this.params.trackPathFutureSteps;
     this.line.material.colorRampVertexOffset = trackStepIdx;
     this.line.material.colorRampVertexScale = Math.max(pastSteps, futureSteps) * 2;
 
