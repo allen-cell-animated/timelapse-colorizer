@@ -156,6 +156,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
   const clearTracks = useViewerStateStore((state) => state.clearTracks);
   const addTrack = useViewerStateStore((state) => state.addTrack);
+  const tracks = useViewerStateStore((state) => state.tracks);
+  const removeTrack = useViewerStateStore((state) => state.removeTrack);
   const showScaleBar = useViewerStateStore((state) => state.showScaleBar);
   const showTimestamp = useViewerStateStore((state) => state.showTimestamp);
   const frameLoadResult = useViewerStateStore((state) => state.frameLoadResult);
@@ -394,13 +396,24 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
           if (!isMultiTrackSelectHotkeyPressed) {
             clearTracks();
           }
-          addTrack(newTrack);
+          // Remove track if it's already selected, otherwise add it
+          tracks.has(trackId) ? removeTrack(trackId) : addTrack(newTrack);
         }
       }
       props.onClickId(info);
       updateCanvasCursor(event.offsetX, event.offsetY);
     },
-    [canv, dataset, props.onClickId, addTrack, clearTracks, updateCanvasCursor, isMultiTrackSelectHotkeyPressed]
+    [
+      canv,
+      dataset,
+      props.onClickId,
+      addTrack,
+      clearTracks,
+      tracks,
+      removeTrack,
+      updateCanvasCursor,
+      isMultiTrackSelectHotkeyPressed,
+    ]
   );
 
   // Mouse event handlers
