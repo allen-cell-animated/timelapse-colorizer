@@ -51,7 +51,7 @@ export default class TrackPath3D {
     if (!this.params) {
       return;
     }
-    const { trackPathColorMode, outlineColor, trackPathColor, trackPathWidthPx } = this.params;
+    const { trackPathColorMode, trackPathColorRamp, outlineColor, trackPathColor, trackPathWidthPx } = this.params;
     const modeToColor = {
       [TrackPathColorMode.USE_FEATURE_COLOR]: FEATURE_BASE_COLOR,
       [TrackPathColorMode.USE_OUTLINE_COLOR]: outlineColor,
@@ -60,8 +60,10 @@ export default class TrackPath3D {
     };
     const color = modeToColor[trackPathColorMode];
     const useVertexColors = trackPathColorMode === TrackPathColorMode.USE_FEATURE_COLOR;
+    const useColorRamp = trackPathColorMode === TrackPathColorMode.USE_COLOR_MAP;
     for (const lineObject of [this.lineObject, this.lineOverlayObject]) {
-      lineObject.setColor(color, useVertexColors);
+      lineObject.setColor(color, useVertexColors || useColorRamp);
+      lineObject.setColorRamp(trackPathColorRamp.textureLinearSRGB, useColorRamp);
       lineObject.setLineWidth(trackPathWidthPx);
     }
   }
@@ -127,19 +129,49 @@ export default class TrackPath3D {
   public updateVisibleRange(currentFrame: number): void {
     // Show nothing if track doesn't exist
     if (!this.params || !this.params.track || !this.params.showTrackPath) {
-      this.lineObject.setNumSegmentsVisible(0);
-      this.lineOverlayObject.setNumSegmentsVisible(0);
+      this.lineObject.setVisibleSegmentsRange(0, 0);
+      this.lineOverlayObject.setVisibleSegmentsRange(0, 0);
       return;
     }
-    // Show path up to current frame
     const track = this.params.track;
-    let range = currentFrame - track.startTime();
-    if (range > track.duration() || range < 0) {
-      // Hide track if we are outside the track range
-      range = 0;
+    const trackStepIdx = currentFrame - track.startTime();
+    let endingInstance;
+    let startingInstance;
+
+    if (this.params.showAllTrackPathPastSteps) {
+      startingInstance = 0;
+    } else {
+      startingInstance = Math.max(0, trackStepIdx - this.params.trackPathPastSteps);
     }
-    this.lineObject.setNumSegmentsVisible(range);
-    this.lineOverlayObject.setNumSegmentsVisible(range);
+
+    if (this.params.showAllTrackPathFutureSteps) {
+      endingInstance = track.duration();
+    } else {
+      endingInstance = Math.min(trackStepIdx + this.params.trackPathFutureSteps, track.duration());
+    }
+
+    // Check if the path should be hidden entirely because it is outside of the
+    // range. This happens when all past paths are shown and the track has ended,
+    // or if all future paths are shown and the track has not yet started.
+    if (!this.params.persistTrackPathWhenOutOfRange) {
+      const isVisiblePastEnd = this.params.showAllTrackPathPastSteps && trackStepIdx >= track.duration();
+      const isVisibleBeforeStart = this.params.showAllTrackPathFutureSteps && trackStepIdx < 0;
+      if (isVisiblePastEnd || isVisibleBeforeStart) {
+        startingInstance = 0;
+        endingInstance = 0;
+      }
+    }
+
+    // Update color ramp related logic
+    const pastSteps = this.params.showAllTrackPathPastSteps ? track.duration() : this.params.trackPathPastSteps;
+    const futureSteps = this.params.showAllTrackPathFutureSteps ? track.duration() : this.params.trackPathFutureSteps;
+
+    const rampScale = Math.max(pastSteps, futureSteps) * 2;
+    const rampOffset = trackStepIdx;
+    this.lineObject.setColorRampScale(rampScale, rampOffset);
+    this.lineOverlayObject.setColorRampScale(rampScale, rampOffset);
+    this.lineObject.setVisibleSegmentsRange(startingInstance, Math.max(0, endingInstance));
+    this.lineOverlayObject.setVisibleSegmentsRange(startingInstance, Math.max(0, endingInstance));
   }
 
   /**
