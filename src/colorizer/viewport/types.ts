@@ -74,6 +74,7 @@ export type RenderCanvasStateParams = {
   outlierDrawSettings: DrawSettings;
   outOfRangeDrawSettings: DrawSettings;
   inRangeLUT: Uint8Array;
+  isSelectedLut: Uint8Array;
   vectorMotionDeltas: Float32Array | null;
   vectorVisible: boolean;
   vectorColor: Color;

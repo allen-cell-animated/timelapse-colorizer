@@ -31,6 +31,11 @@ export type TrackSliceActions = {
 
 export type TrackSlice = TrackSliceState & TrackSliceActions;
 
+function getDefaultTrack(tracks: Map<number, Track>): Track | null {
+  const trackValues = Array.from(tracks.values());
+  return trackValues[trackValues.length - 1] ?? null;
+}
+
 export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (set, get) => ({
   tracks: new Map<number, Track>(),
   track: null,
@@ -40,22 +45,31 @@ export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (s
     set((state) => {
       const newTracks = new Map(state.tracks);
       newTracks.set(track.trackId, track);
-      const trackValues = Array.from(newTracks.values());
-      const defaultTrack = trackValues[trackValues.length - 1] ?? null;
-      return { tracks: newTracks, track: defaultTrack };
+      const newSelectedLut = state.isSelectedLut.slice();
+      for (const id of track.ids) {
+        newSelectedLut[id] = 1;
+      }
+      return { tracks: newTracks, track: getDefaultTrack(newTracks), isSelectedLut: newSelectedLut };
     });
   },
   removeTrack: (trackId: number) => {
     set((state) => {
       const newTracks = new Map(state.tracks);
+      const track = newTracks.get(trackId);
+      if (!track) {
+        return {};
+      }
       newTracks.delete(trackId);
-      const trackValues = Array.from(newTracks.values());
-      const defaultTrack = trackValues[trackValues.length - 1] ?? null;
-      return { tracks: newTracks, track: defaultTrack };
+      const newSelectedLut = state.isSelectedLut.slice();
+      for (const id of track.ids) {
+        newSelectedLut[id] = 0;
+      }
+      return { tracks: newTracks, track: getDefaultTrack(newTracks), isSelectedLut: newSelectedLut };
     });
   },
   clearTracks: () => {
-    set({ tracks: new Map<number, Track>(), track: null });
+    const newSelectedLut = new Uint8Array(get().isSelectedLut.length);
+    set({ tracks: new Map<number, Track>(), track: null, isSelectedLut: newSelectedLut });
   },
 
   // Deprecated -- to be removed once no code uses single selected track

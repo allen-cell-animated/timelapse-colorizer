@@ -74,6 +74,7 @@ type ColorizeUniformTypes = {
   featureData: Texture;
   outlierData: Texture;
   inRangeIds: Texture;
+  selectedIds: Texture;
   /** LUT mapping from segmentation ID (raw pixel value) to the global ID. */
   segIdToGlobalId: DataTexture;
   segIdOffset: number;
@@ -94,7 +95,6 @@ type ColorizeUniformTypes = {
   outlineColor: Color;
   edgeColor: Color;
   edgeColorAlpha: number;
-  highlightedId: number;
   hideOutOfRange: boolean;
   outlierDrawMode: number;
   outOfRangeDrawMode: number;
@@ -114,6 +114,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
   const emptyFeature = packDataTexture([0], FeatureDataType.F32);
   const emptyOutliers = packDataTexture([0], FeatureDataType.U8);
   const emptyInRangeIds = packDataTexture([0], FeatureDataType.U8);
+  const emptyIsSelectedIds = packDataTexture([0], FeatureDataType.U8);
   const emptyColorRamp = new ColorRamp(["#aaa", "#fff"]).texture;
   return {
     panOffset: new Uniform(new Vector2(0, 0)),
@@ -123,6 +124,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
     featureData: new Uniform(emptyFeature),
     outlierData: new Uniform(emptyOutliers),
     inRangeIds: new Uniform(emptyInRangeIds),
+    selectedIds: new Uniform(emptyIsSelectedIds),
     segIdToGlobalId: new Uniform(emptySegIdToGlobalId),
     segIdOffset: new Uniform(0),
     overlay: new Uniform(emptyOverlay),
@@ -133,7 +135,6 @@ const getDefaultUniforms = (): ColorizeUniforms => {
     featureColorRampMin: new Uniform(0),
     featureColorRampMax: new Uniform(1),
     colorRamp: new Uniform(emptyColorRamp),
-    highlightedId: new Uniform(-1),
     hideOutOfRange: new Uniform(false),
     backgroundColor: new Uniform(new Color(FRAME_BACKGROUND_COLOR_DEFAULT)),
     outlineColor: new Uniform(new Color(OUTLINE_COLOR_DEFAULT)),
@@ -596,6 +597,11 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
       }
     }
 
+    if (hasPropertyChanged(params, prevParams, ["isSelectedLut"])) {
+      console.log("Updating isSelectedLut texture");
+      this.setUniform("selectedIds", packDataTexture(Array.from(params.isSelectedLut), FeatureDataType.U8));
+    }
+
     this.render();
     await Promise.all(promises);
     return;
@@ -726,18 +732,8 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     this.trackPath.updateVisibleRange(this.currentFrame);
   }
 
-  private syncHighlightedId(): void {
-    // Hide highlight if no track is selected
-    if (!this.params?.track) {
-      this.setUniform("highlightedId", -1);
-      return;
-    }
-    this.setUniform("highlightedId", this.params?.track.getIdAtTime(this.currentFrame));
-  }
-
   public render(_options?: RenderOptions): void {
     this.checkPixelRatio();
-    this.syncHighlightedId();
     this.syncTrackPathLine();
 
     this.renderer.render(this.scene, this.camera);
