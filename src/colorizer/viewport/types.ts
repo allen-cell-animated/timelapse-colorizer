@@ -54,7 +54,9 @@ export type RenderCanvasStateParams = {
   datasetKey: string | null;
   pendingFrame: number;
   featureKey: string | null;
+  /** @deprecated will be removed in a future update */
   track: Track | null;
+  tracks: Map<number, Track>;
   showTrackPath: boolean;
   showTrackPathBreaks: boolean;
   colorRamp: ColorRamp;

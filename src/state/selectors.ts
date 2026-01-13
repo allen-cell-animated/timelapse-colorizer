@@ -8,6 +8,7 @@ export const renderCanvasStateParamsSelector = (state: ViewerStoreState): Render
   featureKey: state.featureKey,
   pendingFrame: state.pendingFrame,
   track: state.track,
+  tracks: state.tracks,
   isSelectedLut: state.isSelectedLut,
   showTrackPath: state.showTrackPath,
   showTrackPathBreaks: state.showTrackPathBreaks,
