@@ -394,6 +394,13 @@ export function decodeInt(value: string | null): number | undefined {
   return value === null ? undefined : parseInt(value, 10);
 }
 
+export function decodeTracks(value: string | null): number[] | undefined {
+  if (value === null) {
+    return undefined;
+  }
+  return value.split(",").map((trackIdStr) => parseInt(trackIdStr, 10));
+}
+
 export function parseDrawMode(mode: string | null): DrawMode | undefined {
   const modeInt = parseInt(mode || "-1", 10);
   return mode && isDrawMode(modeInt) ? modeInt : undefined;

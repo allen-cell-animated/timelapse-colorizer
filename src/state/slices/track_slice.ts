@@ -1,7 +1,7 @@
 import { StateCreator } from "zustand";
 
 import { Track } from "src/colorizer";
-import { decodeInt, UrlParam } from "src/colorizer/utils/url_utils";
+import { decodeTracks, UrlParam } from "src/colorizer/utils/url_utils";
 import { DatasetSlice } from "src/state/slices/dataset_slice";
 
 import { SerializedStoreData, SubscribableStore } from "../types";
@@ -9,14 +9,14 @@ import { addDerivedStateSubscriber } from "../utils/store_utils";
 
 export type TrackSliceState = {
   tracks: Map<number, Track>;
-  /** @deprecated */
-  track: Track | null;
 
   /** Derived values */
+  /** @deprecated */
+  track: Track | null;
   isSelectedLut: Uint8Array;
 };
 
-export type TrackSliceSerializableState = Pick<TrackSliceState, "track" | "tracks">;
+export type TrackSliceSerializableState = Pick<TrackSliceState, "tracks">;
 
 export type TrackSliceActions = {
   addTrack: (track: Track) => void;
@@ -102,14 +102,13 @@ export const addTrackDerivedStateSubscribers = (store: SubscribableStore<TrackSl
 export const serializeTrackSlice = (slice: Partial<TrackSliceSerializableState>): SerializedStoreData => {
   const ret: SerializedStoreData = {};
 
-  if (slice.track) {
-    ret[UrlParam.TRACK] = slice.track.trackId.toString();
+  if (slice.tracks && slice.tracks.size > 0) {
+    ret[UrlParam.TRACK] = Array.from(slice.tracks.keys()).join(",");
   }
   return ret;
 };
 
 export const selectTrackSliceSerializationDeps = (slice: TrackSlice): TrackSliceSerializableState => ({
-  track: slice.track,
   tracks: slice.tracks,
 });
 
@@ -118,11 +117,14 @@ export const loadTrackSliceFromParams = (slice: TrackSlice & DatasetSlice, param
   if (!dataset) {
     return;
   }
-  const trackIdParam = decodeInt(params.get(UrlParam.TRACK));
-  if (trackIdParam !== undefined) {
-    const track = dataset.getTrack(trackIdParam);
-    if (track) {
-      slice.setTrack(track);
+  const trackIdsParam = decodeTracks(params.get(UrlParam.TRACK));
+  if (trackIdsParam !== undefined) {
+    for (const trackId of trackIdsParam) {
+      const track = dataset.getTrack(trackId);
+      if (track) {
+        // TODO: If there are many tracks, this may incur a large number of state updates.
+        slice.addTrack(track);
+      }
     }
   }
 };
