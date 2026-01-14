@@ -187,5 +187,43 @@ describe("useViewerStateStore: TrackSlice", () => {
       expect(result.current.tracks.get(MOCK_DATASET_TRACK_2.trackId)).toBe(MOCK_DATASET_TRACK_2);
       expect(result.current.tracks.get(MOCK_DATASET_DEFAULT_TRACK.trackId)).toBe(MOCK_DATASET_DEFAULT_TRACK);
     });
+
+    it("handles non-integer tracks", async () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      const params = new URLSearchParams();
+      params.set(UrlParam.TRACK, "bad-track-value(notint)");
+      await setDatasetAsync(result, MOCK_DATASET);
+      act(() => {
+        loadTrackSliceFromParams(result.current, params);
+      });
+      expect(result.current.tracks.size).toBe(0);
+
+      params.set(UrlParam.TRACK, "NaN");
+      act(() => {
+        loadTrackSliceFromParams(result.current, params);
+      });
+      expect(result.current.tracks.size).toBe(0);
+
+      params.set(UrlParam.TRACK, "19.434");
+      act(() => {
+        loadTrackSliceFromParams(result.current, params);
+      });
+      expect(result.current.tracks.size).toBe(0);
+    });
+
+    it("ignores track IDs that are not in the dataset", async () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      await setDatasetAsync(result, MOCK_DATASET);
+      act(() => {
+        loadTrackSliceFromParams(
+          result.current,
+          new URLSearchParams({
+            [UrlParam.TRACK]: `999,${MOCK_DATASET_DEFAULT_TRACK.trackId},888`,
+          })
+        );
+      });
+      expect(result.current.tracks.size).toBe(1);
+      expect(result.current.tracks.get(MOCK_DATASET_DEFAULT_TRACK.trackId)).toBe(MOCK_DATASET_DEFAULT_TRACK);
+    });
   });
 });
