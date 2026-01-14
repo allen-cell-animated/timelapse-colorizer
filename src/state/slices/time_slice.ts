@@ -166,8 +166,8 @@ export const loadTimeSliceFromParams = (state: TimeSlice & TrackSlice, params: U
   const time = decodeInt(params.get(UrlParam.TIME));
   if (time !== undefined && Number.isFinite(time)) {
     state.setFrame(time);
-  } else if (state.tracks !== null) {
-    let minTime = Number.POSITIVE_INFINITY;
+  } else if (state.tracks.size > 0) {
+    let minTime = Number.MAX_SAFE_INTEGER;
     for (const track of state.tracks.values()) {
       minTime = Math.min(minTime, track.startTime());
     }

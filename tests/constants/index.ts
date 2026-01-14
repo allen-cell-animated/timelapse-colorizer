@@ -164,6 +164,8 @@ export const MOCK_DATASET_WITHOUT_BACKDROP = await makeMockDataset({
 });
 
 export const MOCK_DATASET_DEFAULT_TRACK = MOCK_DATASET.getTrack(0)!;
+export const MOCK_DATASET_TRACK_1 = MOCK_DATASET.getTrack(1)!;
+export const MOCK_DATASET_TRACK_2 = MOCK_DATASET.getTrack(2)!;
 
 export const MOCK_DATASET_KEY = "some-dataset";
 export const MOCK_COLLECTION_PATH = "https://some-url.com/collection.json";
