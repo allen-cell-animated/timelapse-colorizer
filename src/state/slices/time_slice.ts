@@ -5,6 +5,7 @@ import { DEFAULT_PLAYBACK_FPS } from "src/colorizer/constants";
 import TimeControls from "src/colorizer/TimeControls";
 import { decodeInt, UrlParam } from "src/colorizer/utils/url_utils";
 import type { IRenderCanvas } from "src/colorizer/viewport/IRenderCanvas";
+import type { TrackSlice } from "src/state/slices/track_slice";
 import type { SerializedStoreData, SubscribableStore } from "src/state/types";
 import { clampWithNanCheck } from "src/state/utils/data_validation";
 import { addDerivedStateSubscriber } from "src/state/utils/store_utils";
@@ -159,13 +160,17 @@ export const selectTimeSliceSerializationDeps = (slice: TimeSlice): TimeSliceSer
   currentFrame: slice.currentFrame,
 });
 
-export const loadTimeSliceFromParams = (state: TimeSlice & DatasetSlice, params: URLSearchParams): void => {
+export const loadTimeSliceFromParams = (state: TimeSlice & TrackSlice, params: URLSearchParams): void => {
   // Load time from URL. If no time is set but a track is, set the time to the
   // start of the track.
   const time = decodeInt(params.get(UrlParam.TIME));
   if (time !== undefined && Number.isFinite(time)) {
     state.setFrame(time);
-  } else if (state.track !== null) {
-    state.setFrame(state.track.startTime());
+  } else if (state.tracks !== null) {
+    let minTime = Number.POSITIVE_INFINITY;
+    for (const track of state.tracks.values()) {
+      minTime = Math.min(minTime, track.startTime());
+    }
+    state.setFrame(minTime);
   }
 };

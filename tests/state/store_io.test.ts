@@ -48,7 +48,7 @@ const EXAMPLE_STORE: ViewerStoreSerializableState = {
   sourceZipName: null,
   datasetKey: MOCK_DATASET_KEY,
   featureKey: MockFeatureKeys.FEATURE1,
-  track: MOCK_DATASET_DEFAULT_TRACK,
+  tracks: new Map([[0, MOCK_DATASET_DEFAULT_TRACK]]),
   currentFrame: 2,
   thresholds: [
     { featureKey: "f1", unit: "m", type: ThresholdType.NUMERIC, min: 0, max: 0 },
