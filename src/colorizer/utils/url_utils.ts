@@ -398,7 +398,10 @@ export function decodeTracks(value: string | null): number[] | undefined {
   if (value === null) {
     return undefined;
   }
-  return value.split(",").map((trackIdStr) => parseInt(trackIdStr, 10));
+  return value
+    .split(",")
+    .map((trackIdStr) => parseInt(trackIdStr, 10))
+    .filter((trackId) => !Number.isNaN(trackId));
 }
 
 export function parseDrawMode(mode: string | null): DrawMode | undefined {
