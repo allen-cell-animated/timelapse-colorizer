@@ -131,6 +131,7 @@ export const MOCK_DATASET_MANIFEST: AnyManifestFile = {
 export const MOCK_DATASET_TIMES = [0, 0, 0, 1, 1, 1, 2, 2, 3];
 export const MOCK_DATASET_SEG_IDS = [0, 1, 2, 3, 4, 5, 6, 7, 8];
 export const MOCK_DATASET_TRACKS = [0, 1, 2, 0, 1, 2, 0, 1, 2];
+export const MOCK_DATASET_TRACKS_ALT = [0, 1, 2, 0, 1, 2, 3, 4, 5];
 export const MOCK_DATASET_FEATURE_1 = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];
 export const MOCK_DATASET_FEATURE_2 = [0, 10, 20, 30, 40, 50, 60, 70, 80];
 export const MOCK_DATASET_FEATURE_3 = [0, 0, 0, 1, 1, 1, 2, 2, 2];
@@ -140,6 +141,7 @@ export const makeMockDatasetArrayLoader = (basePath: string): Record<string, Moc
   [basePath + "times.json"]: new MockArraySource(FeatureDataType.U32, new Uint32Array(MOCK_DATASET_TIMES)),
   [basePath + "seg_ids.json"]: new MockArraySource(FeatureDataType.U32, new Uint32Array(MOCK_DATASET_SEG_IDS)),
   [basePath + "tracks.json"]: new MockArraySource(FeatureDataType.U32, new Uint32Array(MOCK_DATASET_TRACKS)),
+  [basePath + "tracks_alt.json"]: new MockArraySource(FeatureDataType.U32, new Uint32Array(MOCK_DATASET_TRACKS_ALT)),
   [basePath + "feature1.json"]: new MockArraySource(FeatureDataType.F32, new Float32Array(MOCK_DATASET_FEATURE_1)),
   [basePath + "feature2.json"]: new MockArraySource(FeatureDataType.F32, new Float32Array(MOCK_DATASET_FEATURE_2)),
   [basePath + "feature3.json"]: new MockArraySource(FeatureDataType.F32, new Float32Array(MOCK_DATASET_FEATURE_3)),
@@ -152,16 +154,30 @@ export const MOCK_DATASET_ARRAY_LOADER = new MockArrayLoader(MOCK_DATASET_ARRAY_
 
 export const MOCK_DATASET = await makeMockDataset(MOCK_DATASET_MANIFEST, MOCK_DATASET_ARRAY_LOADER);
 
-export const MOCK_DATASET_WITH_TWO_FRAMES = await makeMockDataset({
-  ...MOCK_DATASET_MANIFEST,
-  frames: ["frame0.png", "frame1.png"],
-  backdrops: [],
-});
+export const MOCK_DATASET_WITH_TWO_FRAMES = await makeMockDataset(
+  {
+    ...MOCK_DATASET_MANIFEST,
+    frames: ["frame0.png", "frame1.png"],
+    backdrops: [],
+  },
+  MOCK_DATASET_ARRAY_LOADER
+);
 
-export const MOCK_DATASET_WITHOUT_BACKDROP = await makeMockDataset({
-  ...MOCK_DATASET_MANIFEST,
-  backdrops: [],
-});
+export const MOCK_DATASET_WITHOUT_BACKDROP = await makeMockDataset(
+  {
+    ...MOCK_DATASET_MANIFEST,
+    backdrops: undefined,
+  },
+  MOCK_DATASET_ARRAY_LOADER
+);
+
+export const MOCK_DATASET_WITH_ALT_TRACKS = await makeMockDataset(
+  {
+    ...MOCK_DATASET_MANIFEST,
+    tracks: "tracks_alt.json",
+  },
+  MOCK_DATASET_ARRAY_LOADER
+);
 
 export const MOCK_DATASET_DEFAULT_TRACK = MOCK_DATASET.getTrack(0)!;
 export const MOCK_DATASET_TRACK_1 = MOCK_DATASET.getTrack(1)!;

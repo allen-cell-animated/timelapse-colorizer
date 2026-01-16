@@ -9,6 +9,7 @@ import {
   MOCK_DATASET_DEFAULT_TRACK,
   MOCK_DATASET_TRACK_1,
   MOCK_DATASET_TRACK_2,
+  MOCK_DATASET_WITH_ALT_TRACKS,
   MOCK_DATASET_WITHOUT_BACKDROP,
 } from "tests/constants";
 
@@ -16,7 +17,7 @@ import { setDatasetAsync } from "./utils";
 
 describe("useViewerStateStore: TrackSlice", () => {
   describe("state subscribers", () => {
-    it("clears selected tracks when dataset is changed", async () => {
+    it("does not clear selected tracks when datasets are identical", async () => {
       const { result } = renderHook(() => useViewerStateStore());
       await setDatasetAsync(result, MOCK_DATASET);
       act(() => {
@@ -24,6 +25,17 @@ describe("useViewerStateStore: TrackSlice", () => {
       });
       expect(result.current.tracks.size).toBe(1);
       await setDatasetAsync(result, MOCK_DATASET_WITHOUT_BACKDROP);
+      expect(result.current.tracks.size).toBe(1);
+    });
+
+    it("clears selected tracks when dataset is changed", async () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      await setDatasetAsync(result, MOCK_DATASET);
+      act(() => {
+        result.current.addTrack(MOCK_DATASET_DEFAULT_TRACK);
+      });
+      expect(result.current.tracks.size).toBe(1);
+      await setDatasetAsync(result, MOCK_DATASET_WITH_ALT_TRACKS);
       expect(result.current.tracks.size).toBe(0);
     });
 

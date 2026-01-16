@@ -1,6 +1,7 @@
 import type { StateCreator } from "zustand";
 
 import type { Track } from "src/colorizer";
+import { arrayElementsAreEqual } from "src/colorizer/utils/data_utils";
 import { decodeTracks, UrlParam } from "src/colorizer/utils/url_utils";
 import type { DatasetSlice } from "src/state/slices/dataset_slice";
 import type { SerializedStoreData, SubscribableStore } from "src/state/types";
@@ -35,6 +36,15 @@ function getDefaultTrack(tracks: Map<number, Track>): Track | null {
   return trackValues[trackValues.length - 1] ?? null;
 }
 
+/** Returns a new copy of the selection LUT with the given track applied or removed. */
+function applyTrackToSelectionLut(lut: Uint8Array, track: Track, selected: boolean): Uint8Array {
+  const newLut = lut.slice();
+  for (const id of track.ids) {
+    newLut[id] = selected ? 1 : 0;
+  }
+  return newLut;
+}
+
 export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (set, get) => ({
   tracks: new Map<number, Track>(),
   track: null,
@@ -42,12 +52,11 @@ export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (s
 
   addTrack: (track: Track) => {
     set((state) => {
+      // Note: Object references must be changed here to trigger state updates, so the
+      // Map and LUT are copied.
       const newTracks = new Map(state.tracks);
       newTracks.set(track.trackId, track);
-      const newSelectedLut = state.isSelectedLut.slice();
-      for (const id of track.ids) {
-        newSelectedLut[id] = 1;
-      }
+      const newSelectedLut = applyTrackToSelectionLut(state.isSelectedLut, track, true);
       return { tracks: newTracks, track: getDefaultTrack(newTracks), isSelectedLut: newSelectedLut };
     });
   },
@@ -59,10 +68,7 @@ export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (s
         return {};
       }
       newTracks.delete(trackId);
-      const newSelectedLut = state.isSelectedLut.slice();
-      for (const id of track.ids) {
-        newSelectedLut[id] = 0;
-      }
+      const newSelectedLut = applyTrackToSelectionLut(state.isSelectedLut, track, false);
       return { tracks: newTracks, track: getDefaultTrack(newTracks), isSelectedLut: newSelectedLut };
     });
   },
@@ -81,19 +87,42 @@ export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (s
 });
 
 export const addTrackDerivedStateSubscribers = (store: SubscribableStore<TrackSlice & DatasetSlice>): void => {
-  // TODO: Auto-populate isSelectedLut based on selected track(s)
-  // TODO: Clear tracks when dataset changes if tracks are not in the new dataset
+  // When the dataset changes, clear tracks if they are no longer valid.
   addDerivedStateSubscriber(
     store,
     (state) => ({
       dataset: state.dataset,
     }),
     ({ dataset }) => {
-      store.getState().clearTracks();
-      // Update selected LUT length
-      return {
-        isSelectedLut: new Uint8Array(dataset?.numObjects ?? 0),
-      };
+      let tracksNeedReset = true;
+      if (dataset) {
+        tracksNeedReset = false;
+        // Check if the number of objects has changed.
+        if (store.getState().isSelectedLut.length !== dataset.numObjects) {
+          tracksNeedReset = true;
+        }
+        // Check if tracks are different in the dataset.
+        for (const [trackId, track] of store.getState().tracks.entries()) {
+          const newTrack = dataset.getTrack(trackId);
+          if (!newTrack) {
+            tracksNeedReset = true;
+            break;
+          }
+          if (!arrayElementsAreEqual(track.ids, newTrack.ids)) {
+            tracksNeedReset = true;
+            break;
+          }
+        }
+      }
+      if (tracksNeedReset) {
+        store.getState().clearTracks();
+        return {
+          isSelectedLut: new Uint8Array(dataset?.numObjects ?? 0),
+        };
+      } else {
+        // Keep existing tracks.
+        return {};
+      }
     }
   );
 };
