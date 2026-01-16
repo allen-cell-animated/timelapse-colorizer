@@ -19,13 +19,26 @@ export type TrackSliceState = {
 export type TrackSliceSerializableState = Pick<TrackSliceState, "tracks">;
 
 export type TrackSliceActions = {
-  addTrack: (track: Track) => void;
-  removeTrack: (trackId: number) => void;
+  /**
+   * Adds one or more tracks to the current track selection.
+   * @param tracks The track or array of tracks to add.
+   */
+  addTracks: (tracks: Track | Track[]) => void;
+  /** Removes one or more tracks from the current  trackselection. */
+  removeTracks: (trackIds: number | number[]) => void;
+  /** Removes all tracks from the current selection. */
   clearTracks: () => void;
 
-  /** @deprecated */
+  /**
+   * Legacy method used when only a single track could be selected
+   * at a time.
+   * @deprecated will be removed in future updates. Use `addTracks` instead.
+   */
   setTrack: (track: Track) => void;
-  /** @deprecated */
+  /**
+   * Legacy method used when only a single track could be selected at a time.
+   * @deprecated will be removed in future updates. Use `clearTracks` instead.
+   */
   clearTrack: () => void;
 };
 
@@ -36,13 +49,11 @@ function getDefaultTrack(tracks: Map<number, Track>): Track | null {
   return trackValues[trackValues.length - 1] ?? null;
 }
 
-/** Returns a new copy of the selection LUT with the given track applied or removed. */
-function applyTrackToSelectionLut(lut: Uint8Array, track: Track, selected: boolean): Uint8Array {
-  const newLut = lut.slice();
+/** Marks a track as selected/deselected in the provided LUT. */
+function applyTrackToSelectionLut(lut: Uint8Array, track: Track, selected: boolean): void {
   for (const id of track.ids) {
-    newLut[id] = selected ? 1 : 0;
+    lut[id] = selected ? 1 : 0;
   }
-  return newLut;
 }
 
 export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (set, get) => ({
@@ -50,25 +61,33 @@ export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (s
   track: null,
   isSelectedLut: new Uint8Array(0),
 
-  addTrack: (track: Track) => {
+  addTracks: (tracks: Track | Track[]) => {
     set((state) => {
-      // Note: Object references must be changed here to trigger state updates, so the
-      // Map and LUT are copied.
+      // Note: Object references must be changed here to trigger state updates,
+      // so the Map and LUT are copied.
+      tracks = Array.isArray(tracks) ? tracks : [tracks];
       const newTracks = new Map(state.tracks);
-      newTracks.set(track.trackId, track);
-      const newSelectedLut = applyTrackToSelectionLut(state.isSelectedLut, track, true);
+      const newSelectedLut = state.isSelectedLut.slice();
+      for (const track of tracks) {
+        newTracks.set(track.trackId, track);
+        applyTrackToSelectionLut(newSelectedLut, track, true);
+      }
       return { tracks: newTracks, track: getDefaultTrack(newTracks), isSelectedLut: newSelectedLut };
     });
   },
-  removeTrack: (trackId: number) => {
+  removeTracks: (trackIds: number | number[]) => {
     set((state) => {
+      trackIds = Array.isArray(trackIds) ? trackIds : [trackIds];
       const newTracks = new Map(state.tracks);
-      const track = newTracks.get(trackId);
-      if (!track) {
-        return {};
+      const newSelectedLut = state.isSelectedLut.slice();
+      for (const trackId of trackIds) {
+        const track = newTracks.get(trackId);
+        if (!track) {
+          return {};
+        }
+        newTracks.delete(trackId);
+        applyTrackToSelectionLut(newSelectedLut, track, false);
       }
-      newTracks.delete(trackId);
-      const newSelectedLut = applyTrackToSelectionLut(state.isSelectedLut, track, false);
       return { tracks: newTracks, track: getDefaultTrack(newTracks), isSelectedLut: newSelectedLut };
     });
   },
@@ -79,7 +98,7 @@ export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (s
 
   // Deprecated -- to be removed once no code uses single selected track
   setTrack: (track: Track) => {
-    get().addTrack(track);
+    get().addTracks(track);
   },
   clearTrack: () => {
     get().clearTracks();
@@ -147,12 +166,13 @@ export const loadTrackSliceFromParams = (slice: TrackSlice & DatasetSlice, param
   }
   const trackIdsParam = decodeTracks(params.get(UrlParam.TRACK));
   if (trackIdsParam !== undefined) {
+    const validatedTracks: Track[] = [];
     for (const trackId of trackIdsParam) {
       const track = dataset.getTrack(trackId);
       if (track) {
-        // TODO: If there are many tracks, this may incur a large number of state updates.
-        slice.addTrack(track);
+        validatedTracks.push(track);
       }
     }
+    slice.addTracks(validatedTracks);
   }
 };

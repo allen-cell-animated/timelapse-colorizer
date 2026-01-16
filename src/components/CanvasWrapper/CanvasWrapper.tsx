@@ -155,9 +155,9 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const setApplyChannelRangePresetCallback = useViewerStateStore((state) => state.setApplyChannelRangePresetCallback);
   const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
   const clearTracks = useViewerStateStore((state) => state.clearTracks);
-  const addTrack = useViewerStateStore((state) => state.addTrack);
+  const addTracks = useViewerStateStore((state) => state.addTracks);
   const tracks = useViewerStateStore((state) => state.tracks);
-  const removeTrack = useViewerStateStore((state) => state.removeTrack);
+  const removeTracks = useViewerStateStore((state) => state.removeTracks);
   const showScaleBar = useViewerStateStore((state) => state.showScaleBar);
   const showTimestamp = useViewerStateStore((state) => state.showTimestamp);
   const frameLoadResult = useViewerStateStore((state) => state.frameLoadResult);
@@ -395,11 +395,11 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         if (newTrack) {
           if (isMultiTrackSelectHotkeyPressed) {
             // Toggle selection of clicked track.
-            tracks.has(trackId) ? removeTrack(trackId) : addTrack(newTrack);
+            tracks.has(trackId) ? removeTracks(trackId) : addTracks(newTrack);
           } else {
             // Select only the clicked track.
             clearTracks();
-            addTrack(newTrack);
+            addTracks(newTrack);
           }
         }
       }
@@ -410,10 +410,10 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       canv,
       dataset,
       props.onClickId,
-      addTrack,
+      addTracks,
       clearTracks,
       tracks,
-      removeTrack,
+      removeTracks,
       updateCanvasCursor,
       isMultiTrackSelectHotkeyPressed,
     ]

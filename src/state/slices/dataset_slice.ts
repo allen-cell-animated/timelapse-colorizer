@@ -63,8 +63,6 @@ export const createDatasetSlice: StateCreator<CollectionSlice & DatasetSlice, []
   },
 
   setDataset: (key: string, dataset: Dataset) => {
-    // TODO: Clear/dispose of old dataset here?
-
     ///// Validate dataset-dependent state values /////
 
     // Use new dataset's default feature key if current key is not present
@@ -80,7 +78,6 @@ export const createDatasetSlice: StateCreator<CollectionSlice & DatasetSlice, []
       backdropKey = dataset.getDefaultBackdropKey();
     }
 
-    // TODO: Dispose of old dataset?
     set({ datasetKey: key, dataset, featureKey, backdropKey });
   },
 
