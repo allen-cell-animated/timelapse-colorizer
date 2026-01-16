@@ -106,7 +106,9 @@ export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (s
 });
 
 export const addTrackDerivedStateSubscribers = (store: SubscribableStore<TrackSlice & DatasetSlice>): void => {
-  // When the dataset changes, clear tracks if they are no longer valid.
+  // When the dataset changes, clear tracks if the dataset has a different
+  // number of objects or if the selected tracks are not present in the new
+  // dataset.
   addDerivedStateSubscriber(
     store,
     (state) => ({
@@ -127,7 +129,7 @@ export const addTrackDerivedStateSubscribers = (store: SubscribableStore<TrackSl
             tracksNeedReset = true;
             break;
           }
-          if (!arrayElementsAreEqual(track.ids, newTrack.ids)) {
+          if (!arrayElementsAreEqual(track.ids, newTrack.ids) || !arrayElementsAreEqual(track.times, newTrack.times)) {
             tracksNeedReset = true;
             break;
           }
@@ -139,7 +141,7 @@ export const addTrackDerivedStateSubscribers = (store: SubscribableStore<TrackSl
           isSelectedLut: new Uint8Array(dataset?.numObjects ?? 0),
         };
       } else {
-        // Keep existing tracks.
+        // Do nothing; keep existing tracks.
         return {};
       }
     }
@@ -148,7 +150,6 @@ export const addTrackDerivedStateSubscribers = (store: SubscribableStore<TrackSl
 
 export const serializeTrackSlice = (slice: Partial<TrackSliceSerializableState>): SerializedStoreData => {
   const ret: SerializedStoreData = {};
-
   if (slice.tracks && slice.tracks.size > 0) {
     ret[UrlParam.TRACK] = Array.from(slice.tracks.keys()).join(",");
   }

@@ -64,7 +64,7 @@ describe("useViewerStateStore: TrackSlice", () => {
       const { result } = renderHook(() => useViewerStateStore());
       await setDatasetAsync(result, MOCK_DATASET);
       act(() => {
-        result.current.addTracks([MOCK_DATASET_DEFAULT_TRACK]);
+        result.current.addTracks(MOCK_DATASET_DEFAULT_TRACK);
       });
       expect(result.current.tracks.size).toBe(1);
       expect(result.current.tracks.get(MOCK_DATASET_DEFAULT_TRACK.trackId)).toBe(MOCK_DATASET_DEFAULT_TRACK);
@@ -76,7 +76,7 @@ describe("useViewerStateStore: TrackSlice", () => {
       const { result } = renderHook(() => useViewerStateStore());
       await setDatasetAsync(result, MOCK_DATASET);
       act(() => {
-        result.current.addTracks([MOCK_DATASET_DEFAULT_TRACK]);
+        result.current.addTracks(MOCK_DATASET_DEFAULT_TRACK);
         result.current.addTracks([MOCK_DATASET_DEFAULT_TRACK, MOCK_DATASET_DEFAULT_TRACK]);
       });
       expect(result.current.tracks.size).toBe(1);
@@ -101,8 +101,8 @@ describe("useViewerStateStore: TrackSlice", () => {
       const { result } = renderHook(() => useViewerStateStore());
       await setDatasetAsync(result, MOCK_DATASET);
       act(() => {
-        result.current.addTracks([MOCK_DATASET_DEFAULT_TRACK]);
-        result.current.removeTracks([MOCK_DATASET_DEFAULT_TRACK.trackId]);
+        result.current.addTracks(MOCK_DATASET_DEFAULT_TRACK);
+        result.current.removeTracks(MOCK_DATASET_DEFAULT_TRACK.trackId);
       });
       expect(result.current.tracks.size).toBe(0);
       expect(result.current.isSelectedLut).deep.equals(new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0, 0]));
@@ -112,7 +112,7 @@ describe("useViewerStateStore: TrackSlice", () => {
       const { result } = renderHook(() => useViewerStateStore());
       await setDatasetAsync(result, MOCK_DATASET);
       act(() => {
-        result.current.removeTracks([15]);
+        result.current.removeTracks(1_000_000);
       });
       expect(result.current.tracks.size).toBe(0);
     });
@@ -121,8 +121,7 @@ describe("useViewerStateStore: TrackSlice", () => {
       const { result } = renderHook(() => useViewerStateStore());
       await setDatasetAsync(result, MOCK_DATASET);
       act(() => {
-        result.current.addTracks([MOCK_DATASET_DEFAULT_TRACK]);
-        result.current.addTracks([MOCK_DATASET_TRACK_1]);
+        result.current.addTracks([MOCK_DATASET_DEFAULT_TRACK, MOCK_DATASET_TRACK_1]);
         result.current.clearTracks();
       });
       expect(result.current.tracks.size).toBe(0);

@@ -383,9 +383,9 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     async (event: MouseEvent): Promise<void> => {
       setLastClickPosition([event.offsetX, event.offsetY]);
       const info = canv.getIdAtPixel(event.offsetX, event.offsetY);
-      // Reset track input
       if (dataset === null || info === null || info.globalId === undefined) {
-        // Ignore background clicks when multi-select hotkey is pressed.
+        // Clear track selection when the background is clicked (except when
+        // multi-select hotkey is pressed).
         if (!isMultiTrackSelectHotkeyPressed) {
           clearTracks();
         }
@@ -394,7 +394,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         const newTrack = dataset.getTrack(trackId);
         if (newTrack) {
           if (isMultiTrackSelectHotkeyPressed) {
-            // Toggle selection of clicked track.
+            // Toggle selection of clicked track during multi-select mode.
             tracks.has(trackId) ? removeTracks(trackId) : addTracks(newTrack);
           } else {
             // Select only the clicked track.
