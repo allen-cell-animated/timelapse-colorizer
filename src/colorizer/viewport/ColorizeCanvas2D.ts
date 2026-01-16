@@ -422,7 +422,6 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     this.setUniform("canvasToFrameScale", canvasToFrameCoordinates);
 
     this.trackPaths.forEach((trackPath) => trackPath.setPositionAndScale(this.panOffset, frameToCanvasCoordinates));
-    // this.trackPath.setPositionAndScale(this.panOffset, frameToCanvasCoordinates);
     this.vectorField.setPosition(this.panOffset, frameToCanvasCoordinates);
     this.vectorField.setScale(frameToCanvasCoordinates, this.canvasResolution || new Vector2(1, 1));
   }
@@ -502,14 +501,16 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
       // possible.
       const prevTracks = new Set(prevParams ? prevParams.tracks.keys() : []);
       const newTracks = new Set(params.tracks.keys());
+      const allTracks = new Set([...prevTracks, ...newTracks]);
 
       const removedTrackIds: number[] = [];
       const addedTrackIds: number[] = [];
-      for (const trackId of prevTracks) {
-        !newTracks.has(trackId) && removedTrackIds.push(trackId);
-      }
-      for (const trackId of newTracks) {
-        !prevTracks.has(trackId) && addedTrackIds.push(trackId);
+      for (const trackId of allTracks) {
+        if (prevTracks.has(trackId) && !newTracks.has(trackId)) {
+          removedTrackIds.push(trackId);
+        } else if (!prevTracks.has(trackId) && newTracks.has(trackId)) {
+          addedTrackIds.push(trackId);
+        }
       }
 
       // Remove unused TrackPath2D objects
