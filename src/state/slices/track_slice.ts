@@ -98,6 +98,7 @@ export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (s
 
   // Deprecated -- to be removed once no code uses single selected track
   setTrack: (track: Track) => {
+    get().clearTracks();
     get().addTracks(track);
   },
   clearTrack: () => {
