@@ -39,10 +39,10 @@ export default function ShortcutKeyModal(props: ShortcutKeyModalProps): ReactEle
               <HotkeyText>Left click</HotkeyText> select track
             </FlexRowAlignCenter>
             <FlexRowAlignCenter $gap={6}>
-              <HotkeyText>Ctrl</HotkeyText> + <HotkeyText>Left click</HotkeyText> select multiple tracks
+              <HotkeyText>Ctrl</HotkeyText> <HotkeyText>Left click</HotkeyText> select multiple tracks
             </FlexRowAlignCenter>
             <FlexRowAlignCenter $gap={6}>
-              <HotkeyText>Ctrl</HotkeyText> + <HotkeyText>Scroll wheel</HotkeyText> zoom viewport (also trackpad pinch)
+              <HotkeyText>Ctrl</HotkeyText> <HotkeyText>Scroll wheel</HotkeyText> zoom viewport (also trackpad pinch)
             </FlexRowAlignCenter>
             <FlexRowAlignCenter $gap={6}>
               <HotkeyText>Click + drag</HotkeyText> pan viewport
