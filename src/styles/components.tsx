@@ -28,8 +28,10 @@ export const StyledHorizontalRule = styled.hr`
 `;
 
 export const HotkeyText = styled.span`
-  padding: 1px 4px;
+  padding: 0px 4px;
   border-radius: 4px;
   background-color: var(--color-viewport-overlay-background);
   border: 1px solid var(--color-viewport-overlay-outline);
+  min-width: 12px;
+  text-align: center;
 `;
