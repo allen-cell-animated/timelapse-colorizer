@@ -1,13 +1,13 @@
 import { CaretRightOutlined, PauseOutlined, StepBackwardFilled, StepForwardFilled } from "@ant-design/icons";
 import { Slider } from "antd";
-import React, { type ReactElement, useEffect, useRef, useState } from "react";
+import React, { type ReactElement, useCallback, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 
 import { DEFAULT_PLAYBACK_FPS } from "src/colorizer/constants";
 import IconButton from "src/components/Buttons/IconButton";
 import PlaybackSpeedControl from "src/components/PlaybackSpeedControl";
 import SpinBox from "src/components/SpinBox";
-import { useDebounce } from "src/hooks";
+import { useDebounce, useShortcutKey } from "src/hooks";
 import { useViewerStateStore } from "src/state";
 import { FlexRowAlignCenter, VisuallyHidden } from "src/styles/utils";
 
@@ -105,24 +105,18 @@ export default function PlaybackControls(props: PlaybackControlProps): ReactElem
   }, [isScrubbingDuringPlayback, frameInput]);
 
   //// Keyboard Controls ////
-  // TODO: Make this a hook?
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent): void => {
-      if (e.target instanceof HTMLInputElement) {
-        return;
-      }
-      if (e.key === "ArrowLeft" || e.key === "Left") {
-        timeControls.advanceFrame(-1);
-      } else if (e.key === "ArrowRight" || e.key === "Right") {
-        timeControls.advanceFrame(1);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
+  const advanceFrameCallback = useCallback(() => {
+    timeControls.advanceFrame(1);
   }, [timeControls]);
+  const advanceFrameBackwardCallback = useCallback(() => {
+    timeControls.advanceFrame(-1);
+  }, [timeControls]);
+  const togglePlayPauseCallback = useCallback(() => {
+    timeControls.isPlaying() ? timeControls.pause() : timeControls.play();
+  }, [timeControls]);
+  useShortcutKey(["ArrowLeft", "Left"], advanceFrameBackwardCallback);
+  useShortcutKey(["ArrowRight", "Right"], advanceFrameCallback);
+  useShortcutKey([" ", "Spacebar"], togglePlayPauseCallback);
 
   // Continue to show the pause icon if the user interrupted playback to
   // manipulate the time slider, so it doesn't flicker between play/pause

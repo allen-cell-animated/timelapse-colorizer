@@ -1,18 +1,33 @@
 // TODO: Replace with a shortcut key library like https://www.npmjs.com/package/hotkeys-js
 import { useEffect, useState } from "react";
 
-export function useShortcutKey(key: string): boolean {
-  const [isPressed, setIsPressed] = useState(false);
+export function useShortcutKey(
+  key: string | string[],
+  onPress?: (e: KeyboardEvent) => void,
+  onRelease?: (e: KeyboardEvent) => void
+): boolean {
+  // TODO: Currently, this adds new event listeners for every use of
+  // useShortcutKey. Can we have a single global listener instead?
 
+  const [isPressed, setIsPressed] = useState(false);
+  const keys = Array.isArray(key) ? key : [key];
   useEffect(() => {
-    const onKeyDown = ({ key: pressedKey }: KeyboardEvent): void => {
-      if (pressedKey === key) {
+    const onKeyDown = (e: KeyboardEvent): void => {
+      if (e.target instanceof HTMLInputElement) {
+        return;
+      }
+      if (keys.includes(e.key)) {
         setIsPressed(true);
+        onPress?.(e);
       }
     };
-    const onKeyUp = ({ key: pressedKey }: KeyboardEvent): void => {
-      if (pressedKey === key) {
+    const onKeyUp = (e: KeyboardEvent): void => {
+      if (e.target instanceof HTMLInputElement) {
+        return;
+      }
+      if (keys.includes(e.key)) {
         setIsPressed(false);
+        onRelease?.(e);
       }
     };
 
@@ -22,7 +37,7 @@ export function useShortcutKey(key: string): boolean {
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
     };
-  }, []);
+  }, [key, onPress, onRelease]);
 
   return isPressed;
 }
