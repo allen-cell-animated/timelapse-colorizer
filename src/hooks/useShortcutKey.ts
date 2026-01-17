@@ -1,6 +1,17 @@
 // TODO: Replace with a shortcut key library like https://www.npmjs.com/package/hotkeys-js
 import { useEffect, useState } from "react";
 
+/**
+ * Hook to listen for and handle shortcut key presses. Shortcut keys are ignored
+ * if the user is currently focused on an input element.
+ * @param key Keycode or array of keycode to listen for, as defined by
+ * KeyboardEvent.key. See
+ * https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key#value and
+ * https://developer.mozilla.org/en-US/docs/Web/API/UI_Events/Keyboard_event_key_values.
+ * @param onPress Callback function to execute when the key is pressed down.
+ * @param onRelease Callback function to execute when the key is released.
+ * @returns a boolean indicating whether the key is currently pressed.
+ */
 export function useShortcutKey(
   key: string | string[],
   onPress?: (e: KeyboardEvent) => void,
