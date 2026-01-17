@@ -3,6 +3,7 @@ import React, { type ReactElement, useState } from "react";
 import styled, { css } from "styled-components";
 
 import { getBuildDisplayDateString } from "src/colorizer/utils/math_utils";
+import ShortcutKeyModal from "src/components/Modals/ShortcutKeyModal";
 import StyledModal from "src/components/Modals/StyledModal";
 import { INTERNAL_BUILD } from "src/constants";
 import { VisuallyHidden } from "src/styles/utils";
@@ -44,6 +45,7 @@ const StyledButton = styled(Button)`
 
 export default function HelpDropdown(): ReactElement {
   const [showVersionModal, setShowVersionModal] = useState(false);
+  const [showShortcutKeyModal, setShowShortcutKeyModal] = useState(false);
 
   const dropdownContent = (
     <DropdownItemList>
@@ -67,6 +69,9 @@ export default function HelpDropdown(): ReactElement {
         Report an issue
         <VisuallyHidden>(opens in new tab)</VisuallyHidden>
       </StyledLink>
+      <StyledButton type="text" onClick={() => setShowShortcutKeyModal(true)}>
+        Keyboard shortcuts
+      </StyledButton>
       <StyledButton type="text" onClick={() => setShowVersionModal(true)}>
         Version info
       </StyledButton>
@@ -96,6 +101,7 @@ export default function HelpDropdown(): ReactElement {
           </p>
         )}
       </StyledModal>
+      <ShortcutKeyModal open={showShortcutKeyModal} setOpen={setShowShortcutKeyModal} />
     </div>
   );
 }

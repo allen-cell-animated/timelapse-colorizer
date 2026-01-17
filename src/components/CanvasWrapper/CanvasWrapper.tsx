@@ -34,6 +34,7 @@ import { type AnnotationState, useShortcutKey } from "src/hooks";
 import { renderCanvasStateParamsSelector } from "src/state";
 import { useViewerStateStore } from "src/state/ViewerState";
 import { AppThemeContext } from "src/styles/AppStyle";
+import { HotkeyText } from "src/styles/components";
 import { FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter, VisuallyHidden } from "src/styles/utils";
 
 import BackdropToggleButton from "./BackdropToggleButton";
@@ -96,13 +97,6 @@ const AnnotationModeContainer = styled(FlexColumn)`
   border-radius: 4px;
   pointer-events: none;
   gap: 6px;
-`;
-
-const HotkeyText = styled.div`
-  padding: 1px 4px;
-  border-radius: 4px;
-  background-color: var(--color-viewport-overlay-background);
-  border: 1px solid var(--color-viewport-overlay-outline);
 `;
 
 type CanvasWrapperProps = {
