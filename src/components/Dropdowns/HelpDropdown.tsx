@@ -49,8 +49,8 @@ export default function HelpDropdown(): ReactElement {
   const [showShortcutKeyModal, setShowShortcutKeyModal] = useState(false);
 
   const toggleShortcutKeyModal = useCallback((): void => {
-    setShowShortcutKeyModal(!showShortcutKeyModal);
-  }, [showShortcutKeyModal]);
+    setShowShortcutKeyModal((prev) => !prev);
+  }, []);
   useShortcutKey("?", toggleShortcutKeyModal);
 
   const dropdownContent = (
