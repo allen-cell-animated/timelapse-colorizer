@@ -29,7 +29,7 @@ import TooltipButtonStyleLink from "src/components/Buttons/TooltipButtonStyleLin
 import LoadingSpinner from "src/components/LoadingSpinner";
 import AnnotationInputPopover from "src/components/Tabs/Annotation/AnnotationInputPopover";
 import { TooltipWithSubtitle } from "src/components/Tooltips/TooltipWithSubtitle";
-import { CANVAS_ASPECT_RATIO } from "src/constants";
+import { CANVAS_ASPECT_RATIO, ShortcutKeycode, ShortcutKeyDisplayName } from "src/constants";
 import { type AnnotationState, useShortcutKey } from "src/hooks";
 import { renderCanvasStateParamsSelector } from "src/state";
 import { useViewerStateStore } from "src/state/ViewerState";
@@ -172,7 +172,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const isFrameLoading = pendingFrame !== currentFrame;
   const loadProgress = props.loading ? props.loadingProgress : null;
 
-  const isMultiTrackSelectHotkeyPressed = useShortcutKey("Control");
+  const isMultiTrackSelectHotkeyPressed = useShortcutKey(ShortcutKeycode.MULTI_TRACK_SELECT);
 
   // Add subscriber so canvas parameters are updated when the state changes.
   useEffect(() => {
@@ -383,9 +383,9 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     async (event: MouseEvent): Promise<void> => {
       setLastClickPosition([event.offsetX, event.offsetY]);
       const info = canv.getIdAtPixel(event.offsetX, event.offsetY);
-      if (dataset === null || info === null || info.globalId === undefined) {
-        // Clear track selection when the background is clicked (except when
-        // multi-select hotkey is pressed).
+      if (dataset === null || info?.globalId === undefined) {
+        // If multi-track selection is enabled, do nothing.
+        // Otherwise, clear track selection when the background is clicked.
         if (!isMultiTrackSelectHotkeyPressed) {
           clearTracks();
         }
@@ -597,12 +597,13 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             </span>
             {shouldShowRangeSelectionHotkey && (
               <FlexRowAlignCenter $gap={6}>
-                <HotkeyText>Shift</HotkeyText> hold to select range
+                <HotkeyText>{ShortcutKeyDisplayName[ShortcutKeycode.ANNOTATION_SELECT_RANGE]}</HotkeyText> hold to
+                select range
               </FlexRowAlignCenter>
             )}
             {shouldShowReuseValueHotkey && (
               <FlexRowAlignCenter $gap={6}>
-                <HotkeyText>Alt</HotkeyText>
+                <HotkeyText>{ShortcutKeyDisplayName[ShortcutKeycode.ANNOTATION_REUSE_VALUE]}</HotkeyText>
                 hold to reuse last value
               </FlexRowAlignCenter>
             )}
