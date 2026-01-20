@@ -116,7 +116,7 @@ export default function PlaybackControls(props: PlaybackControlProps): ReactElem
   }, [timeControls]);
   useShortcutKey(["ArrowLeft", "Left"], advanceFrameBackwardCallback);
   useShortcutKey(["ArrowRight", "Right"], advanceFrameCallback);
-  useShortcutKey([" ", "Spacebar"], togglePlayPauseCallback);
+  useShortcutKey([" "], togglePlayPauseCallback);
 
   // Continue to show the pause icon if the user interrupted playback to
   // manipulate the time slider, so it doesn't flicker between play/pause
