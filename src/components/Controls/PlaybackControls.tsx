@@ -105,17 +105,11 @@ export default function PlaybackControls(props: PlaybackControlProps): ReactElem
   }, [isScrubbingDuringPlayback, frameInput]);
 
   //// Keyboard Controls ////
-  const advanceFrameCallback = useCallback(() => {
-    timeControls.advanceFrame(1);
-  }, [timeControls]);
-  const advanceFrameBackwardCallback = useCallback(() => {
-    timeControls.advanceFrame(-1);
-  }, [timeControls]);
   const togglePlayPauseCallback = useCallback(() => {
     timeControls.isPlaying() ? timeControls.pause() : timeControls.play();
   }, [timeControls]);
-  useShortcutKey(["ArrowLeft", "Left"], advanceFrameBackwardCallback);
-  useShortcutKey(["ArrowRight", "Right"], advanceFrameCallback);
+  useShortcutKey(["ArrowLeft", "Left"], () => timeControls.advanceFrame(-1));
+  useShortcutKey(["ArrowRight", "Right"], () => timeControls.advanceFrame(1));
   useShortcutKey([" "], togglePlayPauseCallback);
 
   // Continue to show the pause icon if the user interrupted playback to
