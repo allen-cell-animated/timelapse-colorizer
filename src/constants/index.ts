@@ -33,3 +33,15 @@ export const MAX_SETTINGS_SLIDER_WIDTH = "250px";
  * Deprecated because Time is now automatically added as a feature to the dataset.
  */
 export const DEPRECATED_SCATTERPLOT_TIME_KEY = "scatterplot_time";
+
+export const enum ShortcutKeycode {
+  MULTI_TRACK_SELECT = "Control",
+  ANNOTATION_REUSE_VALUE = "Alt",
+  ANNOTATION_SELECT_RANGE = "Shift",
+}
+
+export const ShortcutKeyDisplayName: Record<ShortcutKeycode, string> = {
+  [ShortcutKeycode.MULTI_TRACK_SELECT]: "Ctrl",
+  [ShortcutKeycode.ANNOTATION_REUSE_VALUE]: "Alt (⌥)",
+  [ShortcutKeycode.ANNOTATION_SELECT_RANGE]: "Shift",
+};
