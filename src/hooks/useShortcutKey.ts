@@ -1,6 +1,44 @@
 // TODO: Replace with a shortcut key library like https://www.npmjs.com/package/react-hotkeys-hook
 import { useEffect, useRef, useState } from "react";
 
+/** Global singleton map containing all the  */
+const globalIsPressed = new Map<string, boolean>();
+
+type KeyInput = string | readonly string[] | readonly (readonly string[])[];
+
+function isKeyCombinationPressed(key: KeyInput, currentKey: string, isPressed: Map<string, boolean>): boolean {
+  let keycodeAliases: readonly (readonly string[])[];
+  if (Array.isArray(key)) {
+    if (Array.isArray(key[0])) {
+      // Array of arrays represents multiple alternate keycode aliases
+      keycodeAliases = key as string[][];
+    } else {
+      // Array represents combination of keycodes
+      keycodeAliases = [key as string[]];
+    }
+  } else {
+    keycodeAliases = [[key]];
+  }
+
+  for (const keycodeCombination of keycodeAliases) {
+    let areAllKeysPressed = true;
+    const triggerKey = keycodeCombination[keycodeCombination.length - 1];
+    if (currentKey !== triggerKey) {
+      continue;
+    }
+    for (const key of keycodeCombination) {
+      if (!isPressed.get(key)) {
+        areAllKeysPressed = false;
+        break;
+      }
+    }
+    if (areAllKeysPressed) {
+      return true;
+    }
+  }
+  return false;
+}
+
 /**
  * Hook to listen for and handle shortcut key presses. Shortcut keys are ignored
  * if the user is currently focused on an input element.
@@ -13,7 +51,7 @@ import { useEffect, useRef, useState } from "react";
  * @returns a boolean indicating whether the key is currently pressed.
  */
 export function useShortcutKey(
-  key: string | string[],
+  key: KeyInput,
   onPress?: (e: KeyboardEvent) => void,
   onRelease?: (e: KeyboardEvent) => void
 ): boolean {
@@ -36,16 +74,15 @@ export function useShortcutKey(
       ) {
         return;
       }
-      if (keys.includes(e.key)) {
+      globalIsPressed.set(e.key, true);
+      if (isKeyCombinationPressed(key, e.key, globalIsPressed)) {
         setIsPressed(true);
         onPressCallbackRef.current?.(e);
       }
     };
     const onKeyUp = (e: KeyboardEvent): void => {
-      if (e.target instanceof HTMLInputElement) {
-        return;
-      }
-      if (keys.includes(e.key)) {
+      globalIsPressed.set(e.key, false);
+      if (!isKeyCombinationPressed(key, e.key, globalIsPressed)) {
         setIsPressed(false);
         onReleaseCallbackRef.current?.(e);
       }

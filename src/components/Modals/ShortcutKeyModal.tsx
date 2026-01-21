@@ -3,6 +3,7 @@ import React, { type ReactElement } from "react";
 import styled from "styled-components";
 
 import StyledModal from "src/components/Modals/StyledModal";
+import { getShortcutDisplayText, ShortcutKeycode } from "src/constants";
 import { HotkeyText } from "src/styles/components";
 import { FlexColumn, FlexRowAlignCenter } from "src/styles/utils";
 
@@ -30,16 +31,18 @@ export default function ShortcutKeyModal(props: ShortcutKeyModalProps): ReactEle
         <ShortcutCard size="small" title="Viewport">
           <FlexColumn $gap={10}>
             <FlexRowAlignCenter $gap={6}>
-              <HotkeyText>←</HotkeyText> <HotkeyText>→</HotkeyText> step frame
+              <HotkeyText>{getShortcutDisplayText(ShortcutKeycode.playback.stepBack)}</HotkeyText>{" "}
+              <HotkeyText>{getShortcutDisplayText(ShortcutKeycode.playback.stepForward)}</HotkeyText> step frame
             </FlexRowAlignCenter>
             <FlexRowAlignCenter $gap={6}>
-              <HotkeyText>Space</HotkeyText> play / pause
+              <HotkeyText>{getShortcutDisplayText(ShortcutKeycode.playback.toggle)}</HotkeyText> play / pause
             </FlexRowAlignCenter>
             <FlexRowAlignCenter $gap={6}>
               <HotkeyText>Left click</HotkeyText> select track
             </FlexRowAlignCenter>
             <FlexRowAlignCenter $gap={6}>
-              <HotkeyText>Ctrl</HotkeyText> <HotkeyText>Left click</HotkeyText> select multiple tracks
+              <HotkeyText>{getShortcutDisplayText(ShortcutKeycode.viewport.multiTrackSelect)}</HotkeyText>{" "}
+              <HotkeyText>Left click</HotkeyText> select multiple tracks
             </FlexRowAlignCenter>
             <FlexRowAlignCenter $gap={6}>
               <HotkeyText>Ctrl</HotkeyText> <HotkeyText>Scroll wheel</HotkeyText> zoom viewport (also trackpad pinch)
@@ -51,18 +54,21 @@ export default function ShortcutKeyModal(props: ShortcutKeyModalProps): ReactEle
         </ShortcutCard>
         <ShortcutCard size="small" title="Annotation">
           <FlexColumn $gap={10}>
+            {/* TODO: Add a shortcut key for enabling annotations */}
             <FlexRowAlignCenter $gap={6}>
-              {/* TODO: Add a shortcut key for enabling annotations? */}
-              <HotkeyText>Shift</HotkeyText> hold to select range
+              <HotkeyText>{getShortcutDisplayText(ShortcutKeycode.annotation.selectRange)}</HotkeyText> hold to select
+              range
             </FlexRowAlignCenter>
             <FlexRowAlignCenter $gap={6}>
-              <HotkeyText>Alt</HotkeyText> hold to reuse last integer value
+              <HotkeyText>{getShortcutDisplayText(ShortcutKeycode.annotation.reuseValue)}</HotkeyText> hold to reuse
+              last integer value
             </FlexRowAlignCenter>
           </FlexColumn>
         </ShortcutCard>
         <ShortcutCard size="small" title="Navigation">
           <FlexRowAlignCenter $gap={6}>
-            <HotkeyText>?</HotkeyText> show this menu
+            <HotkeyText>{getShortcutDisplayText(ShortcutKeycode.navigation.showShortcutMenu)}</HotkeyText> show this
+            menu
           </FlexRowAlignCenter>
         </ShortcutCard>
       </FlexColumn>

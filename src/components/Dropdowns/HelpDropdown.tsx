@@ -5,7 +5,7 @@ import styled, { css } from "styled-components";
 import { getBuildDisplayDateString } from "src/colorizer/utils/math_utils";
 import ShortcutKeyModal from "src/components/Modals/ShortcutKeyModal";
 import StyledModal from "src/components/Modals/StyledModal";
-import { INTERNAL_BUILD } from "src/constants";
+import { INTERNAL_BUILD, ShortcutKeycode } from "src/constants";
 import { useShortcutKey } from "src/hooks";
 import { VisuallyHidden } from "src/styles/utils";
 
@@ -51,7 +51,7 @@ export default function HelpDropdown(): ReactElement {
   const toggleShortcutKeyModal = useCallback((): void => {
     setShowShortcutKeyModal((prev) => !prev);
   }, []);
-  useShortcutKey("?", toggleShortcutKeyModal);
+  useShortcutKey(ShortcutKeycode.navigation.showShortcutMenu, toggleShortcutKeyModal);
 
   const dropdownContent = (
     <DropdownItemList>

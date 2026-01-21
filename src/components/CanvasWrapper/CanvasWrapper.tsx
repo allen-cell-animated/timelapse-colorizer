@@ -29,7 +29,7 @@ import TooltipButtonStyleLink from "src/components/Buttons/TooltipButtonStyleLin
 import LoadingSpinner from "src/components/LoadingSpinner";
 import AnnotationInputPopover from "src/components/Tabs/Annotation/AnnotationInputPopover";
 import { TooltipWithSubtitle } from "src/components/Tooltips/TooltipWithSubtitle";
-import { CANVAS_ASPECT_RATIO, ShortcutKeycode, ShortcutKeyDisplayName } from "src/constants";
+import { CANVAS_ASPECT_RATIO, getShortcutDisplayText, ShortcutKeycode } from "src/constants";
 import { type AnnotationState, useShortcutKey } from "src/hooks";
 import { renderCanvasStateParamsSelector } from "src/state";
 import { useViewerStateStore } from "src/state/ViewerState";
@@ -166,7 +166,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const isFrameLoading = pendingFrame !== currentFrame;
   const loadProgress = props.loading ? props.loadingProgress : null;
 
-  const isMultiTrackSelectHotkeyPressed = useShortcutKey(ShortcutKeycode.MULTI_TRACK_SELECT);
+  const isMultiTrackSelectHotkeyPressed = useShortcutKey(ShortcutKeycode.viewport.multiTrackSelect);
 
   // Add subscriber so canvas parameters are updated when the state changes.
   useEffect(() => {
@@ -591,13 +591,13 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             </span>
             {shouldShowRangeSelectionHotkey && (
               <FlexRowAlignCenter $gap={6}>
-                <HotkeyText>{ShortcutKeyDisplayName[ShortcutKeycode.ANNOTATION_SELECT_RANGE]}</HotkeyText> hold to
-                select range
+                <HotkeyText>{getShortcutDisplayText(ShortcutKeycode.annotation.selectRange)}</HotkeyText> hold to select
+                range
               </FlexRowAlignCenter>
             )}
             {shouldShowReuseValueHotkey && (
               <FlexRowAlignCenter $gap={6}>
-                <HotkeyText>{ShortcutKeyDisplayName[ShortcutKeycode.ANNOTATION_REUSE_VALUE]}</HotkeyText>
+                <HotkeyText>{getShortcutDisplayText(ShortcutKeycode.annotation.reuseValue)}</HotkeyText>
                 hold to reuse last value
               </FlexRowAlignCenter>
             )}
