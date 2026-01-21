@@ -63,10 +63,11 @@ export function useShortcutKey(
   onReleaseCallbackRef.current = onRelease;
 
   const [isPressed, setIsPressed] = useState(false);
-  const keys = Array.isArray(key) ? key : [key];
+  const isPressedRef = useRef(isPressed);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent): void => {
+      globalIsPressed.set(e.key, true);
       if (
         e.target instanceof HTMLInputElement ||
         e.target instanceof HTMLTextAreaElement ||
@@ -74,16 +75,17 @@ export function useShortcutKey(
       ) {
         return;
       }
-      globalIsPressed.set(e.key, true);
       if (isKeyCombinationPressed(key, e.key, globalIsPressed)) {
         setIsPressed(true);
+        isPressedRef.current = true;
         onPressCallbackRef.current?.(e);
       }
     };
     const onKeyUp = (e: KeyboardEvent): void => {
       globalIsPressed.set(e.key, false);
-      if (!isKeyCombinationPressed(key, e.key, globalIsPressed)) {
+      if (isPressedRef.current && !isKeyCombinationPressed(key, e.key, globalIsPressed)) {
         setIsPressed(false);
+        isPressedRef.current = false;
         onReleaseCallbackRef.current?.(e);
       }
     };
