@@ -67,3 +67,18 @@ export function renderStringArrayAsJsx(items: string[] | string | undefined): Re
 export function formatQuantityString(quantity: number, singular: string, plural: string): string {
   return `${quantity} ${quantity === 1 ? singular : plural}`;
 }
+
+/**
+ * Inserts the provided separator element between each element in the array and returns
+ * as a new array.
+ */
+export function insertBetweenElements(elements: ReactElement[], separator: ReactElement): ReactElement[] {
+  const elementList: ReactElement[] = [];
+  for (let i = 0; i < elements.length; i++) {
+    elementList.push(elements[i]);
+    if (i < elements.length - 1) {
+      elementList.push(separator);
+    }
+  }
+  return elementList;
+}

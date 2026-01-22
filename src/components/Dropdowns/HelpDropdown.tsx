@@ -1,12 +1,12 @@
 import { Button } from "antd";
 import React, { type ReactElement, useCallback, useState } from "react";
+import { useHotkeys } from "react-hotkeys-hook";
 import styled, { css } from "styled-components";
 
 import { getBuildDisplayDateString } from "src/colorizer/utils/math_utils";
 import ShortcutKeyModal from "src/components/Modals/ShortcutKeyModal";
 import StyledModal from "src/components/Modals/StyledModal";
-import { INTERNAL_BUILD, ShortcutKeycode } from "src/constants";
-import { useShortcutKey } from "src/hooks";
+import { INTERNAL_BUILD, ShortcutKeys } from "src/constants";
 import { VisuallyHidden } from "src/styles/utils";
 
 import AccessibleDropdown from "./AccessibleDropdown";
@@ -51,7 +51,7 @@ export default function HelpDropdown(): ReactElement {
   const toggleShortcutKeyModal = useCallback((): void => {
     setShowShortcutKeyModal((prev) => !prev);
   }, []);
-  useShortcutKey(ShortcutKeycode.navigation.showShortcutMenu, toggleShortcutKeyModal);
+  useHotkeys(ShortcutKeys.navigation.showShortcutMenu.keycode, toggleShortcutKeyModal, { useKey: true });
 
   const dropdownContent = (
     <DropdownItemList>

@@ -6,4 +6,3 @@ export { useJsxText } from "./useJsxText";
 export type { RecentCollection } from "./useRecentCollections";
 export { useRecentCollections } from "./useRecentCollections";
 export { ScrollShadowContainer, useScrollShadow } from "./useScrollShadow";
-export { useShortcutKey } from "./useShortcutKey";

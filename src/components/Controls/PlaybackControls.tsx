@@ -1,14 +1,15 @@
 import { CaretRightOutlined, PauseOutlined, StepBackwardFilled, StepForwardFilled } from "@ant-design/icons";
 import { Slider } from "antd";
 import React, { type ReactElement, useCallback, useEffect, useRef, useState } from "react";
+import { useHotkeys } from "react-hotkeys-hook";
 import styled from "styled-components";
 
 import { DEFAULT_PLAYBACK_FPS } from "src/colorizer/constants";
 import IconButton from "src/components/Buttons/IconButton";
 import PlaybackSpeedControl from "src/components/PlaybackSpeedControl";
 import SpinBox from "src/components/SpinBox";
-import { ShortcutKeycode } from "src/constants";
-import { useDebounce, useShortcutKey } from "src/hooks";
+import { ShortcutKeys } from "src/constants";
+import { useDebounce } from "src/hooks";
 import { useViewerStateStore } from "src/state";
 import { FlexRowAlignCenter, VisuallyHidden } from "src/styles/utils";
 
@@ -109,9 +110,9 @@ export default function PlaybackControls(props: PlaybackControlProps): ReactElem
   const togglePlayPauseCallback = useCallback(() => {
     timeControls.isPlaying() ? timeControls.pause() : timeControls.play();
   }, [timeControls]);
-  useShortcutKey(ShortcutKeycode.playback.stepBack, () => timeControls.advanceFrame(-1));
-  useShortcutKey(ShortcutKeycode.playback.stepForward, () => timeControls.advanceFrame(1));
-  useShortcutKey(ShortcutKeycode.playback.toggle, togglePlayPauseCallback);
+  useHotkeys(ShortcutKeys.viewport.stepFrameBackward.keycode, () => timeControls.advanceFrame(-1));
+  useHotkeys(ShortcutKeys.viewport.stepFrameForward.keycode, () => timeControls.advanceFrame(1));
+  useHotkeys(ShortcutKeys.viewport.togglePlayback.keycode, togglePlayPauseCallback);
 
   // Continue to show the pause icon if the user interrupted playback to
   // manipulate the time slider, so it doesn't flicker between play/pause
