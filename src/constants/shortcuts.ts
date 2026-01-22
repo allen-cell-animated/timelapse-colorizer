@@ -1,3 +1,53 @@
+export type ShortcutKeyInfo = {
+  name: string;
+  keycode: string;
+  keycodeDisplay?: string | string[];
+};
+
+export const ShortcutKeys: Record<string, Record<string, ShortcutKeyInfo>> = {
+  viewport: {
+    stepFrameForward: {
+      name: "Step frame forward",
+      keycode: "right",
+    },
+    stepFrameBackward: {
+      name: "Step frame backwards",
+      keycode: "left",
+    },
+    togglePlayback: {
+      name: "Toggle playback",
+      keycode: "space",
+    },
+    select: {
+      name: "Select track",
+      keycode: "",
+      keycodeDisplay: "Left click",
+    },
+    multiTrackSelect: {
+      name: "Select multiple tracks",
+      keycode: "control, meta",
+      keycodeDisplay: ["Ctrl + Left click", "Command (⌘) + Left click"],
+    },
+    zoomViewport: {
+      name: "Zoom viewport",
+      keycode: "",
+      keycodeDisplay: "Ctrl + Scroll wheel",
+    },
+    panViewport: {
+      name: "Pan viewport",
+      keycode: "",
+      keycodeDisplay: "Left click drag",
+    },
+  },
+  annotation: {
+    reuseValue: { name: "Reuse last integer value", keycode: "alt, option" },
+    selectRange: { name: "Select range", keycode: "shift" },
+  },
+  navigation: {
+    showShortcutMenu: { name: "Show this menu", keycode: "?" },
+  },
+} as const;
+
 /**
  * Shortcut keycodes used throughout TFE. Shortcuts can be:
  *   - A single keycode string, e.g. " " for spacebar.

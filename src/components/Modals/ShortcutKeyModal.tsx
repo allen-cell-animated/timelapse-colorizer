@@ -2,8 +2,9 @@ import { Button, Card } from "antd";
 import React, { type ReactElement } from "react";
 import styled from "styled-components";
 
+import ShortcutKeyDisplay from "src/components/Modals/ShortcutKeyCard";
 import StyledModal from "src/components/Modals/StyledModal";
-import { getShortcutDisplayText, ShortcutKeycode } from "src/constants";
+import { getShortcutDisplayText, ShortcutKeycode, ShortcutKeys } from "src/constants";
 import { HotkeyText } from "src/styles/components";
 import { FlexColumn, FlexRowAlignCenter } from "src/styles/utils";
 
@@ -28,6 +29,9 @@ export default function ShortcutKeyModal(props: ShortcutKeyModalProps): ReactEle
       footer={<Button onClick={() => props.setOpen(false)}>Close</Button>}
     >
       <FlexColumn $gap={10}>
+        <ShortcutKeyDisplay shortcutKeys={ShortcutKeys.viewport} title="Viewport" />
+        <ShortcutKeyDisplay shortcutKeys={ShortcutKeys.annotation} title="Annotation" />
+        <ShortcutKeyDisplay shortcutKeys={ShortcutKeys.navigation} title="Navigation" />
         <ShortcutCard size="small" title="Viewport">
           <FlexColumn $gap={10}>
             <FlexRowAlignCenter $gap={6}>
