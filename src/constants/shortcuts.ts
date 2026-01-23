@@ -58,7 +58,7 @@ export const ShortcutKeys = {
     },
   },
   annotation: {
-    reuseValue: { name: "Reuse last value", keycode: "alt, option" },
+    reuseValue: { name: "Reuse last value", keycode: "alt,option" },
     selectRange: { name: "Select range", keycode: "shift" },
   },
   navigation: {
