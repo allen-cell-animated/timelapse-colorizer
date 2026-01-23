@@ -58,6 +58,8 @@ export const ShortcutKeys = {
     },
   },
   annotation: {
+    // TODO: Alt is used for other shortcuts in Chrome (by default, it focuses the menu bar when released).
+    // Is there another modifier key that works better?
     reuseValue: { name: "Reuse last integer value", keycode: "alt,option", keycodeDisplay: "Alt" },
     selectRange: { name: "Select range", keycode: "shift", keycodeDisplay: "Shift" },
   },

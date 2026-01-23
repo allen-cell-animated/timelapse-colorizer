@@ -10,12 +10,9 @@ import { areAnyHotkeysPressed } from "src/utils/user_input";
  * @returns True if the hotkey is currently held, false otherwise.
  */
 export const useIsHotkeyHeld = (hotkey: string | string[]): boolean => {
-  // Slight hack here. The hook uses `useHotkeys` to trigger state updates on
-  // keydown and keyup events, but uses `areAnyHotkeysPressed` (which is a
-  // wrapper around `isHotkeyPressed`) to get the current state of the hotkeys.
-  const [, setIsHotkeyPressed] = useState(false);
-  useHotkeys(hotkey, () => setIsHotkeyPressed(true), { keydown: true });
-  useHotkeys(hotkey, () => setIsHotkeyPressed(false), { keyup: true });
+  const [isHotkeyHeld, setIsHotkeyHeld] = useState(areAnyHotkeysPressed(hotkey));
+  useHotkeys(hotkey, () => setIsHotkeyHeld(true), { keydown: true });
+  useHotkeys(hotkey, () => setIsHotkeyHeld(false), { keyup: true });
 
-  return areAnyHotkeysPressed(hotkey);
+  return isHotkeyHeld;
 };
