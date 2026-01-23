@@ -107,11 +107,22 @@ export default function PlaybackControls(props: PlaybackControlProps): ReactElem
   }, [isScrubbingDuringPlayback, frameInput]);
 
   //// Keyboard Controls ////
-  const togglePlayPauseCallback = useCallback(() => {
+  const togglePlayPauseCallback = useCallback((event: KeyboardEvent) => {
+    // Space keypresses on buttons should be ignored for toggling playback.
+    if (event.target instanceof HTMLButtonElement) {
+      return;
+    }
     timeControls.isPlaying() ? timeControls.pause() : timeControls.play();
   }, [timeControls]);
-  useHotkeys(ShortcutKeys.viewport.stepFrameBackward.keycode, () => timeControls.advanceFrame(-1));
-  useHotkeys(ShortcutKeys.viewport.stepFrameForward.keycode, () => timeControls.advanceFrame(1));
+  const handleStepFrame = useCallback((event: KeyboardEvent, direction: number) => {
+    // Tabs are navigated with arrow keys; ignore events originating from them.
+    if (event.target instanceof HTMLDivElement && event.target.role === "tab") {
+      return;
+    }
+    timeControls.advanceFrame(direction);
+  }, [timeControls]);
+  useHotkeys(ShortcutKeys.viewport.stepFrameBackward.keycode, (event) => handleStepFrame(event, -1));
+  useHotkeys(ShortcutKeys.viewport.stepFrameForward.keycode, (event) => handleStepFrame(event, 1));
   useHotkeys(ShortcutKeys.viewport.togglePlayback.keycode, togglePlayPauseCallback);
 
   // Continue to show the pause icon if the user interrupted playback to
