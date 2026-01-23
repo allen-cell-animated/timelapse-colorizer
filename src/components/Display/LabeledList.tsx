@@ -1,5 +1,5 @@
 import { Card } from "antd";
-import React, { PropsWithChildren, ReactElement } from "react";
+import React, { type PropsWithChildren, type ReactElement } from "react";
 import styled from "styled-components";
 
 import { FlexColumn } from "src/styles/utils";

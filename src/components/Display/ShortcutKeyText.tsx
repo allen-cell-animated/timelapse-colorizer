@@ -1,4 +1,4 @@
-import React, { type ReactElement, ReactNode } from "react";
+import React, { type ReactElement, type ReactNode } from "react";
 
 import type { ShortcutKeyInfo } from "src/constants";
 import { HotkeyText } from "src/styles/components";
