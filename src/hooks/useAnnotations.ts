@@ -9,7 +9,7 @@ import {
   LabelType,
 } from "src/colorizer/AnnotationData";
 import { ShortcutKeys } from "src/constants";
-import { useIsHotkeyHeld } from "src/hooks/isHotkeyHeld";
+import { useIsHotkeyHeld } from "src/hooks";
 
 import { useConstructor } from "./useConstructor";
 
