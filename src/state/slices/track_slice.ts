@@ -28,8 +28,13 @@ export type TrackSliceActions = {
   removeTracks: (trackIds: number | number[]) => void;
   /** Toggles the selection state of a track. */
   toggleTrack: (track: Track) => void;
-  /** Removes all tracks from the current selection. */
-  clearTracks: () => void;
+  /**
+   * Removes all tracks from the current selection. 
+   * @param newLut For internal use when the dataset changes. Optional new
+   * selection LUT to use; if not provided, uses a zero-filled LUT of the same
+   * size as the current one to reset it.
+  */
+  clearTracks: (newLut?: Uint8Array) => void;
 
   /**
    * Legacy method used when only a single track could be selected
@@ -100,10 +105,10 @@ export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (s
       return {};
     });
   },
-  clearTracks: () => {
+  clearTracks: (newLut?: Uint8Array) => {
     // Fill the selection LUT with zeros; because we also need to make a copy
     // of it to trigger relevant state updates, create a new Uint8Array to replace it.
-    const newSelectedLut = new Uint8Array(get().isSelectedLut.length);
+    const newSelectedLut = newLut ?? new Uint8Array(get().isSelectedLut.length);
     set({ tracks: new Map<number, Track>(), track: null, isSelectedLut: newSelectedLut });
   },
 
@@ -148,14 +153,10 @@ export const addTrackDerivedStateSubscribers = (store: SubscribableStore<TrackSl
         }
       }
       if (tracksNeedReset) {
-        store.getState().clearTracks();
-        return {
-          isSelectedLut: new Uint8Array(dataset?.numObjects ?? 0),
-        };
-      } else {
-        // Do nothing; keep existing tracks.
-        return {};
+        const newLut = new Uint8Array(dataset?.numObjects ?? 0)
+        store.getState().clearTracks(newLut);
       }
+      return {};
     }
   );
 };
