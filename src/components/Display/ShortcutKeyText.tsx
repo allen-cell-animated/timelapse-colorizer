@@ -1,4 +1,4 @@
-import React, { type ReactElement } from "react";
+import React, { type ReactElement, ReactNode } from "react";
 
 import type { ShortcutKeyInfo } from "src/constants";
 import { HotkeyText } from "src/styles/components";
@@ -42,12 +42,19 @@ export default function ShortcutKeyText(props: ShortcutKeyDisplayProps): ReactEl
   } else {
     keycodeArray = [];
   }
+  let hotkeyElements: ReactNode = keycodeArray.map(toHotkeyDisplay);
+  if (props.inline) {
+    hotkeyElements = insertBetweenElements(hotkeyElements, <span>/</span>);
+  }
 
   return (
-    <FlexRow style={{ justifyContent: "space-between", width: "100%" }}>
+    <FlexRow style={{ justifyContent: "space-between", width: "100%" }} $gap={12}>
       <FlexRow style={{ marginTop: 1 }}>{name}</FlexRow>
-      <FlexColumn $gap={4} style={{ justifyContent: "flex-end", alignItems: "flex-end" }}>
-        {keycodeArray.map(toHotkeyDisplay)}
+      <FlexColumn
+        $gap={4}
+        style={{ justifyContent: "flex-end", alignItems: "flex-end", flexDirection: props.inline ? "row" : "column" }}
+      >
+        {hotkeyElements}
       </FlexColumn>
     </FlexRow>
   );

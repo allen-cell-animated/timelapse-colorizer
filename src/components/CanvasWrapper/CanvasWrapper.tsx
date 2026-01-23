@@ -26,6 +26,7 @@ import type CanvasOverlay from "src/colorizer/viewport/CanvasOverlay";
 import type { AlertBannerProps } from "src/components/Banner";
 import IconButton from "src/components/Buttons/IconButton";
 import TooltipButtonStyleLink from "src/components/Buttons/TooltipButtonStyleLink";
+import LabeledList from "src/components/Display/LabeledList";
 import ShortcutKeyText from "src/components/Display/ShortcutKeyText";
 import LoadingSpinner from "src/components/LoadingSpinner";
 import AnnotationInputPopover from "src/components/Tabs/Annotation/AnnotationInputPopover";
@@ -91,13 +92,8 @@ const AnnotationModeContainer = styled(FlexColumn)`
   position: absolute;
   top: 10px;
   left: 10px;
-  background-color: var(--color-viewport-overlay-background);
-  border: 1px solid var(--color-viewport-overlay-outline);
   z-index: 100;
-  padding: 8px 8px;
-  border-radius: 4px;
   pointer-events: none;
-  gap: 6px;
 `;
 
 type CanvasWrapperProps = {
@@ -577,11 +573,12 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         // TODO: Make the hotkey text change styling if the hotkey is pressed?
         props.annotationState.isAnnotationModeEnabled && (
           <AnnotationModeContainer>
-            <span style={{ marginLeft: "2px" }}>
-              <b>Annotation editing in progress...</b>
-            </span>
-            {shouldShowRangeSelectionHotkey && <ShortcutKeyText shortcutKey={ShortcutKeys.annotation.selectRange} />}
-            {shouldShowReuseValueHotkey && <ShortcutKeyText shortcutKey={ShortcutKeys.annotation.reuseValue} />}
+            <LabeledList title="Annotation shortcuts">
+              {shouldShowRangeSelectionHotkey && <ShortcutKeyText shortcutKey={ShortcutKeys.annotation.selectRange} />}
+              {shouldShowReuseValueHotkey && (
+                <ShortcutKeyText shortcutKey={ShortcutKeys.annotation.reuseValue} inline={true} />
+              )}
+            </LabeledList>
           </AnnotationModeContainer>
         )
       }

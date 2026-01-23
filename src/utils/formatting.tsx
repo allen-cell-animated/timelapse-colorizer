@@ -77,7 +77,7 @@ export function insertBetweenElements(elements: ReactNode | ReactNode[], separat
     return elements;
   }
   const elementList: ReactNode[] = [];
-  const elementsArray = Array.isArray(elements) ? elements : [elements];
+  const elementsArray = (Array.isArray(elements) ? elements : [elements]).filter((el) => !!el);
   for (let i = 0; i < elementsArray.length; i++) {
     elementList.push(elementsArray[i]);
     if (i < elementsArray.length - 1) {
