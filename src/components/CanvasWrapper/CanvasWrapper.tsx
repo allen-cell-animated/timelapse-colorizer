@@ -14,6 +14,7 @@ import styled from "styled-components";
 import { Vector2 } from "three";
 
 import { NoImageSVG, TagIconSVG, TagSlashIconSVG } from "src/assets";
+import type { Dataset } from "src/colorizer";
 import { type LabelData, LabelType } from "src/colorizer/AnnotationData";
 import {
   AnnotationSelectionMode,
@@ -147,8 +148,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
   const clearTracks = useViewerStateStore((state) => state.clearTracks);
   const addTracks = useViewerStateStore((state) => state.addTracks);
-  const tracks = useViewerStateStore((state) => state.tracks);
-  const removeTracks = useViewerStateStore((state) => state.removeTracks);
   const toggleTrack = useViewerStateStore((state) => state.toggleTrack);
   const showScaleBar = useViewerStateStore((state) => state.showScaleBar);
   const showTimestamp = useViewerStateStore((state) => state.showTimestamp);
@@ -368,36 +367,53 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     ]
   );
 
+  const handleBackgroundClicked = useCallback((): void => {
+    const isMultiTrackSelectHotkeyPressed = areAnyHotkeysPressed(ShortcutKeys.viewport.multiTrackSelect.keycode);
+    if (isMultiTrackSelectHotkeyPressed) {
+      // Ignore background clicks during multi-track selection.
+      return;
+    }
+    clearTracks();
+  }, [clearTracks]);
+
+  const handleObjectClicked = useCallback(
+    (dataset: Dataset, globalId: number) => {
+      const trackId = dataset.getTrackId(globalId);
+      const newTrack = dataset.getTrack(trackId);
+      const isMultiTrackSelectHotkeyPressed = areAnyHotkeysPressed(ShortcutKeys.viewport.multiTrackSelect.keycode);
+      if (newTrack) {
+        if (isMultiTrackSelectHotkeyPressed) {
+          // Toggle selection of clicked track during multi-select mode.
+          toggleTrack(newTrack);
+        } else {
+          // Select only the clicked track.
+          clearTracks();
+          addTracks(newTrack);
+        }
+      }
+    },
+    [toggleTrack, clearTracks, addTracks]
+  );
+
   /** Report clicked tracks via the passed callback. */
   const handleClick = useCallback(
     async (event: MouseEvent): Promise<void> => {
       setLastClickPosition([event.offsetX, event.offsetY]);
-      const isMultiTrackSelectHotkeyPressed = areAnyHotkeysPressed(ShortcutKeys.viewport.multiTrackSelect.keycode);
-      const info = canv.getIdAtPixel(event.offsetX, event.offsetY);
-      if (dataset === null || info?.globalId === undefined) {
-        // If multi-track selection is enabled, do nothing.
-        // Otherwise, clear track selection when the background is clicked.
-        if (!isMultiTrackSelectHotkeyPressed) {
-          clearTracks();
-        }
-      } else {
-        const trackId = dataset.getTrackId(info.globalId);
-        const newTrack = dataset.getTrack(trackId);
-        if (newTrack) {
-          if (isMultiTrackSelectHotkeyPressed) {
-            // Toggle selection of clicked track during multi-select mode.
-            toggleTrack(newTrack);
-          } else {
-            // Select only the clicked track.
-            clearTracks();
-            addTracks(newTrack);
-          }
-        }
-      }
-      props.onClickId(info);
       updateCanvasCursor(event.offsetX, event.offsetY);
+      const info = canv.getIdAtPixel(event.offsetX, event.offsetY);
+      props.onClickId(info);
+
+      // Update track selection based on clicked object
+      if (dataset === null) {
+        clearTracks();
+      } else if (info?.globalId !== undefined) {
+        handleObjectClicked(dataset, info.globalId);
+      } else {
+        // User clicked on background or on a cell with no data.
+        handleBackgroundClicked();
+      }
     },
-    [canv, dataset, props.onClickId, addTracks, clearTracks, tracks, removeTracks, updateCanvasCursor]
+    [canv, dataset, props.onClickId, clearTracks, handleObjectClicked, handleBackgroundClicked]
   );
 
   // Mouse event handlers
