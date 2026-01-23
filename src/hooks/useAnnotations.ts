@@ -1,8 +1,14 @@
-import { useCallback, useMemo,useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { isHotkeyPressed } from "react-hotkeys-hook";
 
 import { AnnotationSelectionMode, type Dataset } from "src/colorizer";
-import { AnnotationData, type AnnotationMergeMode, type IAnnotationDataGetters, type IAnnotationDataSetters, LabelType } from "src/colorizer/AnnotationData";
+import {
+  AnnotationData,
+  type AnnotationMergeMode,
+  type IAnnotationDataGetters,
+  type IAnnotationDataSetters,
+  LabelType,
+} from "src/colorizer/AnnotationData";
 import { ShortcutKeys } from "src/constants";
 
 import { useConstructor } from "./useConstructor";
@@ -15,7 +21,7 @@ export type AnnotationState = {
   setIsAnnotationModeEnabled: (enabled: boolean) => void;
   visible: boolean;
   setVisibility: (visible: boolean) => void;
-  /** 
+  /**
    * Current selection mode. This is typically the `baseSelectionMode`, but it
    * may be temporarily overridden by user hotkeys.
    */
@@ -23,17 +29,17 @@ export type AnnotationState = {
   /** User-selected selection mode. */
   baseSelectionMode: AnnotationSelectionMode;
   setBaseSelectionMode: (mode: AnnotationSelectionMode) => void;
-  /** 
+  /**
    * The ID of the last clicked object. `null` if the user clicked on the
-   * background. 
+   * background.
    */
   lastClickedId: number | null;
-  /** 
+  /**
    * The ID of the last object that can serve as the start of a range selection.
    * `null` if there is no range start selected.
    */
   rangeStartId: number | null;
-  /** 
+  /**
    * The range of values that should currently be editable. Value is non-null
    * when a user interacts with an annotation in order to edit it.
    */
@@ -64,7 +70,9 @@ export type AnnotationState = {
 // attempting to synchronize updates between the annotation data and the UI,
 // which can be handled by zustand.
 export const useAnnotations = (): AnnotationState => {
-  const annotationDataRef = useConstructor(() => {return new AnnotationData();});
+  const annotationDataRef = useConstructor(() => {
+    return new AnnotationData();
+  });
   const annotationData = annotationDataRef.current;
 
   const [currentLabelIdx, _setCurrentLabelIdx] = useState<number | null>(null);
@@ -83,7 +91,7 @@ export const useAnnotations = (): AnnotationState => {
    * If a user clicks on an object again that is one of the endpoints of this
    * range, any operations will be applied to the entire range. Cleared when
    * another object is clicked.
-  */
+   */
   const [lastEditedRange, setLastEditedRange] = useState<number[] | null>(null);
   const [activeEditRange, setActiveEditRange] = useState<number[] | null>(null);
 
@@ -144,11 +152,11 @@ export const useAnnotations = (): AnnotationState => {
   };
 
   const wrapFunctionInUpdate = <F extends (...args: any[]) => void>(fn: F): F => {
-    return <F>function (...args: any[]) {
+    return ((...args: any[]) => {
       const result = fn(...args);
       setDataUpdateCounter((value) => value + 1);
       return result;
-    };
+    }) as F;
   };
 
   const onDeleteLabel = (labelIdx: number): void => {
@@ -247,7 +255,7 @@ export const useAnnotations = (): AnnotationState => {
         } else if (isLabeled) {
           // If clicking on a range that is already labeled, initiate editing of the label value for that range
           setActiveEditRange(range);
-        }  else {
+        } else {
           annotationData.setLabelValueOnIds(currentLabelIdx, range, defaultValue);
           setActiveEditRange(null);
         }
@@ -269,7 +277,7 @@ export const useAnnotations = (): AnnotationState => {
         default:
           toggleRange([id]);
       }
-      if (idRange !== null ) {
+      if (idRange !== null) {
         setRangeStartId(null);
       } else {
         setRangeStartId(id);
@@ -294,7 +302,7 @@ export const useAnnotations = (): AnnotationState => {
     if (mergedData.getLabels().length > 0) {
       // Update selected label index to make sure it's still valid
       if (currentLabelIdx === null) {
-        setCurrentLabelIdx(0);   
+        setCurrentLabelIdx(0);
       } else if (currentLabelIdx >= mergedData.getLabels().length) {
         setCurrentLabelIdx(mergedData.getLabels().length - 1);
       }

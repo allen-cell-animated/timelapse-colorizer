@@ -29,11 +29,11 @@ export type TrackSliceActions = {
   /** Toggles the selection state of a track. */
   toggleTrack: (track: Track) => void;
   /**
-   * Removes all tracks from the current selection. 
+   * Removes all tracks from the current selection.
    * @param newLut For internal use when the dataset changes. Optional new
    * selection LUT to use; if not provided, uses a zero-filled LUT of the same
    * size as the current one to reset it.
-  */
+   */
   clearTracks: (newLut?: Uint8Array) => void;
 
   /**
@@ -153,7 +153,7 @@ export const addTrackDerivedStateSubscribers = (store: SubscribableStore<TrackSl
         }
       }
       if (tracksNeedReset) {
-        const newLut = new Uint8Array(dataset?.numObjects ?? 0)
+        const newLut = new Uint8Array(dataset?.numObjects ?? 0);
         store.getState().clearTracks(newLut);
       }
       return {};
