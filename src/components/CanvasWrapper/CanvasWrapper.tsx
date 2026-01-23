@@ -29,12 +29,13 @@ import TooltipButtonStyleLink from "src/components/Buttons/TooltipButtonStyleLin
 import LoadingSpinner from "src/components/LoadingSpinner";
 import AnnotationInputPopover from "src/components/Tabs/Annotation/AnnotationInputPopover";
 import { TooltipWithSubtitle } from "src/components/Tooltips/TooltipWithSubtitle";
-import { CANVAS_ASPECT_RATIO, ShortcutKeycode, ShortcutKeyDisplayName } from "src/constants";
-import { type AnnotationState, useShortcutKey } from "src/hooks";
+import { CANVAS_ASPECT_RATIO, ShortcutKeys } from "src/constants";
+import type { AnnotationState } from "src/hooks";
 import { renderCanvasStateParamsSelector } from "src/state";
 import { useViewerStateStore } from "src/state/ViewerState";
 import { AppThemeContext } from "src/styles/AppStyle";
 import { FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter, VisuallyHidden } from "src/styles/utils";
+import { areAnyHotkeysPressed } from "src/utils/user_input";
 
 import BackdropToggleButton from "./BackdropToggleButton";
 import ChannelToggleButton from "./ChannelToggleButton";
@@ -172,8 +173,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   const isFrameLoading = pendingFrame !== currentFrame;
   const loadProgress = props.loading ? props.loadingProgress : null;
-
-  const isMultiTrackSelectHotkeyPressed = useShortcutKey(ShortcutKeycode.MULTI_TRACK_SELECT);
 
   // Add subscriber so canvas parameters are updated when the state changes.
   useEffect(() => {
@@ -383,6 +382,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const handleClick = useCallback(
     async (event: MouseEvent): Promise<void> => {
       setLastClickPosition([event.offsetX, event.offsetY]);
+      const isMultiTrackSelectHotkeyPressed = areAnyHotkeysPressed(ShortcutKeys.viewport.multiTrackSelect.keycode);
       const info = canv.getIdAtPixel(event.offsetX, event.offsetY);
       if (dataset === null || info?.globalId === undefined) {
         // If multi-track selection is enabled, do nothing.
@@ -407,17 +407,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       props.onClickId(info);
       updateCanvasCursor(event.offsetX, event.offsetY);
     },
-    [
-      canv,
-      dataset,
-      props.onClickId,
-      addTracks,
-      clearTracks,
-      tracks,
-      removeTracks,
-      updateCanvasCursor,
-      isMultiTrackSelectHotkeyPressed,
-    ]
+    [canv, dataset, props.onClickId, addTracks, clearTracks, tracks, removeTracks, updateCanvasCursor]
   );
 
   // Mouse event handlers
@@ -598,13 +588,12 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             </span>
             {shouldShowRangeSelectionHotkey && (
               <FlexRowAlignCenter $gap={6}>
-                <HotkeyText>{ShortcutKeyDisplayName[ShortcutKeycode.ANNOTATION_SELECT_RANGE]}</HotkeyText> hold to
-                select range
+                <HotkeyText>{ShortcutKeys.annotation.selectRange.keycodeDisplay}</HotkeyText> hold to select range
               </FlexRowAlignCenter>
             )}
             {shouldShowReuseValueHotkey && (
               <FlexRowAlignCenter $gap={6}>
-                <HotkeyText>{ShortcutKeyDisplayName[ShortcutKeycode.ANNOTATION_REUSE_VALUE]}</HotkeyText>
+                <HotkeyText>{ShortcutKeys.annotation.reuseValue.keycodeDisplay}</HotkeyText>
                 hold to reuse last value
               </FlexRowAlignCenter>
             )}

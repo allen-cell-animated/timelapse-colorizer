@@ -1,11 +1,11 @@
 import { useCallback, useMemo,useState } from "react";
+import { isHotkeyPressed } from "react-hotkeys-hook";
 
 import { AnnotationSelectionMode, type Dataset } from "src/colorizer";
 import { AnnotationData, type AnnotationMergeMode, type IAnnotationDataGetters, type IAnnotationDataSetters, LabelType } from "src/colorizer/AnnotationData";
+import { ShortcutKeys } from "src/constants";
 
 import { useConstructor } from "./useConstructor";
-import { useShortcutKey } from "./useShortcutKey";
-import { ShortcutKeycode } from "src/constants";
 
 export type AnnotationState = {
   // Viewer state that lives outside the annotation data itself
@@ -73,8 +73,8 @@ export const useAnnotations = (): AnnotationState => {
 
   const [baseSelectionMode, setBaseSelectionMode] = useState<AnnotationSelectionMode>(AnnotationSelectionMode.TIME);
 
-  const isSelectRangeHotkeyPressed = useShortcutKey(ShortcutKeycode.ANNOTATION_SELECT_RANGE);
-  const isReuseValueHotkeyPressed = useShortcutKey(ShortcutKeycode.ANNOTATION_REUSE_VALUE);
+  const isSelectRangeHotkeyPressed = isHotkeyPressed(ShortcutKeys.annotation.selectRange.keycode);
+  const isReuseValueHotkeyPressed = isHotkeyPressed(ShortcutKeys.annotation.reuseValue.keycode);
 
   const [lastClickedId, setLastClickedId] = useState<number | null>(null);
   const [rangeStartId, setRangeStartId] = useState<number | null>(null);
