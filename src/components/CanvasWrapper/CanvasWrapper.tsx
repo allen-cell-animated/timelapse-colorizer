@@ -26,6 +26,7 @@ import type CanvasOverlay from "src/colorizer/viewport/CanvasOverlay";
 import type { AlertBannerProps } from "src/components/Banner";
 import IconButton from "src/components/Buttons/IconButton";
 import TooltipButtonStyleLink from "src/components/Buttons/TooltipButtonStyleLink";
+import ShortcutKeyText from "src/components/Display/ShortcutKeyText";
 import LoadingSpinner from "src/components/LoadingSpinner";
 import AnnotationInputPopover from "src/components/Tabs/Annotation/AnnotationInputPopover";
 import { TooltipWithSubtitle } from "src/components/Tooltips/TooltipWithSubtitle";
@@ -34,7 +35,7 @@ import type { AnnotationState } from "src/hooks";
 import { renderCanvasStateParamsSelector } from "src/state";
 import { useViewerStateStore } from "src/state/ViewerState";
 import { AppThemeContext } from "src/styles/AppStyle";
-import { FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter, VisuallyHidden } from "src/styles/utils";
+import { FlexColumn, FlexColumnAlignCenter, VisuallyHidden } from "src/styles/utils";
 import { areAnyHotkeysPressed } from "src/utils/user_input";
 
 import BackdropToggleButton from "./BackdropToggleButton";
@@ -97,13 +98,6 @@ const AnnotationModeContainer = styled(FlexColumn)`
   border-radius: 4px;
   pointer-events: none;
   gap: 6px;
-`;
-
-const HotkeyText = styled.div`
-  padding: 1px 4px;
-  border-radius: 4px;
-  background-color: var(--color-viewport-overlay-background);
-  border: 1px solid var(--color-viewport-overlay-outline);
 `;
 
 type CanvasWrapperProps = {
@@ -586,17 +580,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             <span style={{ marginLeft: "2px" }}>
               <b>Annotation editing in progress...</b>
             </span>
-            {shouldShowRangeSelectionHotkey && (
-              <FlexRowAlignCenter $gap={6}>
-                <HotkeyText>{ShortcutKeys.annotation.selectRange.keycodeDisplay}</HotkeyText> hold to select range
-              </FlexRowAlignCenter>
-            )}
-            {shouldShowReuseValueHotkey && (
-              <FlexRowAlignCenter $gap={6}>
-                <HotkeyText>{ShortcutKeys.annotation.reuseValue.keycodeDisplay}</HotkeyText>
-                hold to reuse last value
-              </FlexRowAlignCenter>
-            )}
+            {shouldShowRangeSelectionHotkey && <ShortcutKeyText shortcutKey={ShortcutKeys.annotation.selectRange} />}
+            {shouldShowReuseValueHotkey && <ShortcutKeyText shortcutKey={ShortcutKeys.annotation.reuseValue} />}
           </AnnotationModeContainer>
         )
       }

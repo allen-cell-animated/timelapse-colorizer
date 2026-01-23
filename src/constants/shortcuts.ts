@@ -14,7 +14,7 @@ export type ShortcutKeyInfo = {
    * "a>b" => triggers when a and b are pressed in sequence.
    * ```
    */
-  keycode: string | null;
+  keycode: string | string[] | null;
   /**
    * Display string(s) for the shortcut key. If not provided, `keycode` will
    * be used instead.
@@ -43,7 +43,7 @@ export const ShortcutKeys = {
     },
     multiTrackSelect: {
       name: "Select multiple tracks",
-      keycode: "ctrl,meta",
+      keycode: ["ctrl", "meta"],
       keycodeDisplay: ["Ctrl + Left click", "Command (⌘) + Left click"],
     },
     zoomViewport: {
@@ -58,7 +58,10 @@ export const ShortcutKeys = {
     },
   },
   annotation: {
-    reuseValue: { name: "Reuse last integer value", keycode: "alt, option", keycodeDisplay: "Alt" },
-    selectRange: { name: "Select range", keycode: "shift", keycodeDisplay: "Shift" },
+    reuseValue: { name: "Reuse last integer value", keycode: "alt, option" },
+    selectRange: { name: "Select range", keycode: "shift" },
+  },
+  navigation: {
+    showShortcutMenu: { name: "Show this menu", keycode: ["shift+slash", "?"], keycodeDisplay: "?" },
   },
 } as const satisfies Record<string, Record<string, ShortcutKeyInfo>>;
