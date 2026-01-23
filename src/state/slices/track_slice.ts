@@ -24,8 +24,10 @@ export type TrackSliceActions = {
    * @param tracks The track or array of tracks to add.
    */
   addTracks: (tracks: Track | Track[]) => void;
-  /** Removes one or more tracks from the current  trackselection. */
+  /** Removes one or more tracks from the current track selection. */
   removeTracks: (trackIds: number | number[]) => void;
+  /** Toggles the selection state of a track. */
+  toggleTrack: (track: Track) => void;
   /** Removes all tracks from the current selection. */
   clearTracks: () => void;
 
@@ -89,6 +91,13 @@ export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (s
         applyTrackToSelectionLut(newSelectedLut, track, false);
       }
       return { tracks: newTracks, track: getDefaultTrack(newTracks), isSelectedLut: newSelectedLut };
+    });
+  },
+  toggleTrack: (track: Track) => {
+    set((state) => {
+      const hasTrack = state.tracks.has(track.trackId);
+      hasTrack ? state.removeTracks(track.trackId) : state.addTracks(track);
+      return {};
     });
   },
   clearTracks: () => {
