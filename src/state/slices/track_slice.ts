@@ -85,7 +85,7 @@ export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (s
       for (const trackId of trackIds) {
         const track = newTracks.get(trackId);
         if (!track) {
-          return {};
+          continue;
         }
         newTracks.delete(trackId);
         applyTrackToSelectionLut(newSelectedLut, track, false);
@@ -101,6 +101,8 @@ export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (s
     });
   },
   clearTracks: () => {
+    // Fill the selection LUT with zeros; because we also need to make a copy
+    // of it to trigger relevant state updates, create a new Uint8Array to replace it.
     const newSelectedLut = new Uint8Array(get().isSelectedLut.length);
     set({ tracks: new Map<number, Track>(), track: null, isSelectedLut: newSelectedLut });
   },
