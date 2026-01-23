@@ -58,7 +58,7 @@ export const ShortcutKeys = {
     },
   },
   annotation: {
-    reuseValue: { name: "Reuse last integer value", keycode: "alt, option", keycodeDisplay: "Alt" },
+    reuseValue: { name: "Reuse last integer value", keycode: "alt,option", keycodeDisplay: "Alt" },
     selectRange: { name: "Select range", keycode: "shift", keycodeDisplay: "Shift" },
   },
 } as const satisfies Record<string, Record<string, ShortcutKeyInfo>>;
