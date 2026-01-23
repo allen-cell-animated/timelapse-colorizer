@@ -22,6 +22,7 @@ import { FlexRow, FlexRowAlignCenter } from "src/styles/utils";
 import { downloadCsv } from "src/utils/file_io";
 
 import {
+  AxisFilter,
   type DataArray,
   drawCrosshair,
   getBucketIndex,
@@ -90,6 +91,9 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const setYAxis = useViewerStateStore((state) => state.setScatterYAxis);
   const xAxisFeatureKey = useViewerStateStore((state) => state.scatterXAxis);
   const yAxisFeatureKey = useViewerStateStore((state) => state.scatterYAxis);
+
+  const xAxisPlotRange = useRef<[number, number]>([-Infinity, Infinity]);
+  const yAxisPlotRange = useRef<[number, number]>([-Infinity, Infinity]);
 
   // Debounce changes to the dataset to prevent noticeably blocking the UI thread with a re-render.
   const datasetKey = useViewerStateStore((state) => state.datasetKey);
@@ -193,7 +197,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   }, [hasConfigChanged]);
 
   //////////////////////////////////
-  // Click Handlers
+  // Event Handlers
   //////////////////////////////////
 
   // Add click event listeners to the plot. When clicking a point, find the track and jump to
@@ -229,6 +233,34 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       plotRef?.removeAllListeners("plotly_click");
     };
   }, [plotRef, dataset, setTrack, setFrame]);
+
+  // Sync axis ranges on relayout events (zoom)
+  useEffect(() => {
+    const onRelayout = (eventData: Plotly.PlotRelayoutEvent): void => {
+      if (eventData["xaxis.range[0]"] !== undefined) {
+        xAxisPlotRange.current[0] = eventData["xaxis.range[0]"];
+      }
+      if (eventData["xaxis.range[1]"] !== undefined) {
+        xAxisPlotRange.current[1] = eventData["xaxis.range[1]"];
+      }
+      if (eventData["xaxis.autorange"]) {
+        xAxisPlotRange.current = [-Infinity, Infinity];
+      }
+      if (eventData["yaxis.range[0]"] !== undefined) {
+        yAxisPlotRange.current[0] = eventData["yaxis.range[0]"];
+      }
+      if (eventData["yaxis.range[1]"] !== undefined) {
+        yAxisPlotRange.current[1] = eventData["yaxis.range[1]"];
+      }
+      if (eventData["yaxis.autorange"]) {
+        yAxisPlotRange.current = [-Infinity, Infinity];
+      }
+    };
+    plotRef?.on("plotly_relayout", onRelayout);
+    return () => {
+      plotRef?.removeAllListeners("plotly_relayout");
+    };
+  }, [plotRef]);
 
   //////////////////////////////////
   // Helper Methods
@@ -798,12 +830,12 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
     if (forceRelayout || shouldPlotUiReset()) {
       uiRevision.current += 1;
-      // @ts-ignore. TODO: Update once the plotly types are updated.
-      layout.uirevision = uiRevision.current;
-    } else {
-      // @ts-ignore. TODO: Update once the plotly types are updated.
-      layout.uirevision = uiRevision.current;
+      // Reset axis ranges because zoom will be reset.
+      xAxisPlotRange.current = [-Infinity, Infinity];
+      yAxisPlotRange.current = [-Infinity, Infinity];
     }
+    // @ts-ignore. TODO: Update once the plotly types are updated.
+    layout.uirevision = uiRevision.current;
 
     try {
       Plotly.react(plotDivRef.current, traces, layout, PLOTLY_CONFIG).then(() => {
@@ -858,7 +890,17 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     // a metadata column in the CSV.
     featureSet.delete(TIME_FEATURE_KEY);
     const features = Array.from(featureSet);
-    const csvString = getScatterplotDataAsCsv(dataset, Array.from(plottedIds.current), inRangeLUT, features);
+    const axisFilters: AxisFilter[] = [
+      { featureKey: xAxisFeatureKey, range: xAxisPlotRange.current },
+      { featureKey: yAxisFeatureKey, range: yAxisPlotRange.current },
+    ];
+    const csvString = getScatterplotDataAsCsv(
+      dataset,
+      Array.from(plottedIds.current),
+      inRangeLUT,
+      features,
+      axisFilters
+    );
     const name = datasetKey ? `${datasetKey}-scatterplot.csv` : "scatterplot.csv";
     downloadCsv(name, csvString);
   }, [

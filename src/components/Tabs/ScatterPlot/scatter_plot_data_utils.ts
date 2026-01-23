@@ -28,6 +28,11 @@ export type TraceData = {
   marker: Partial<Plotly.PlotMarker>;
 };
 
+export type AxisFilter = {
+  featureKey: string;
+  range: [number, number];
+};
+
 /**
  * Sample a color ramp at evenly-spaced points, returning the resulting array of colors.
  * @param {ColorRampData} colorRamp The gradient to sample.
@@ -210,6 +215,7 @@ export function getScatterplotDataAsCsv(
   objectIds: number[],
   inRangeLUT: Uint8Array,
   featureKeys: string[],
+  axisFilters: AxisFilter[] = [],
   delimiter: string = ","
 ): string {
   for (const featureKey of featureKeys) {
@@ -227,6 +233,10 @@ export function getScatterplotDataAsCsv(
     CSV_COL_OUTLIER,
     CSV_COL_FILTERED,
   ];
+  const featureToRangeFilter: Map<string, [number, number]> = new Map();
+  for (const axisFilter of axisFilters) {
+    featureToRangeFilter.set(axisFilter.featureKey, axisFilter.range);
+  }
 
   const csvRows: (string | number)[][] = [];
   for (const id of objectIds) {
@@ -236,13 +246,24 @@ export function getScatterplotDataAsCsv(
     const outlier = dataset.outliers && dataset.outliers[id] === 1 ? "true" : "false";
     const filtered = inRangeLUT[id] === 1 ? "true" : "false";
     const row: (string | number)[] = [segId, track, time];
+    let skipRow = false;
     for (const featureData of allFeatureData) {
       let value: string | number = featureData.data[id];
+      // Apply axis filters to exclude points that are outside of the selected
+      // range.
+      const range = featureToRangeFilter.get(featureData.key);
+      if (range && (value < range[0] || value > range[1])) {
+        skipRow = true;
+        break;
+      }
       // Parse categorical data back into original string labels
       if (featureData.type === FeatureType.CATEGORICAL && featureData.categories) {
         value = featureData.categories[value] ?? "";
       }
       row.push(value);
+    }
+    if (skipRow) {
+      continue;
     }
     row.push(outlier, filtered);
     csvRows.push(row);
