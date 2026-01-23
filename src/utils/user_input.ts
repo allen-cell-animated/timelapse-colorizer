@@ -5,6 +5,6 @@ import { isHotkeyPressed } from "react-hotkeys-hook";
  * Wrapper around `isHotkeyPressed` to handle multiple alternate keycodes.
  */
 export function areAnyHotkeysPressed(keycodes: string | string[]): boolean {
-  keycodes = Array.isArray(keycodes) ? keycodes : [keycodes];
+  keycodes = Array.isArray(keycodes) ? keycodes : keycodes.split(",").map((kc) => kc.trim());
   return keycodes.some((keycode) => isHotkeyPressed(keycode, "+"));
 }
