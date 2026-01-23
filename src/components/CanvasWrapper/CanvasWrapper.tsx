@@ -153,6 +153,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const addTracks = useViewerStateStore((state) => state.addTracks);
   const tracks = useViewerStateStore((state) => state.tracks);
   const removeTracks = useViewerStateStore((state) => state.removeTracks);
+  const toggleTrack = useViewerStateStore((state) => state.toggleTrack);
   const showScaleBar = useViewerStateStore((state) => state.showScaleBar);
   const showTimestamp = useViewerStateStore((state) => state.showTimestamp);
   const frameLoadResult = useViewerStateStore((state) => state.frameLoadResult);
@@ -389,7 +390,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         if (newTrack) {
           if (isMultiTrackSelectHotkeyPressed) {
             // Toggle selection of clicked track during multi-select mode.
-            tracks.has(trackId) ? removeTracks(trackId) : addTracks(newTrack);
+            toggleTrack(newTrack);
           } else {
             // Select only the clicked track.
             clearTracks();
