@@ -551,22 +551,6 @@ export function computeTrackLinePointsAndIds(
   return { ids, points };
 }
 
-/**
- * Normalizes 3D centroids to 2D canvas space in-place, where the X and Y coordinates are
- * in the range [-1, 1] and the Z coordinate is always zero.
- */
-export function normalizePointsTo2dCanvasSpace(points: Float32Array, dataset: Dataset): Float32Array {
-  // TODO: This normalization step may be unnecessary if we do it during the
-  // line scaling step.
-  for (let i = 0; i < points.length; i += 3) {
-    points[i + 0] = (points[i + 0] / dataset.frameResolution.x) * 2.0 - 1.0;
-    points[i + 1] = -((points[i + 1] / dataset.frameResolution.y) * 2.0 - 1.0);
-    // Z coordinate is always zero for 2D canvas space
-    points[i + 2] = 0;
-  }
-  return points;
-}
-
 const LINE_GEOMETRY_DEPS: (keyof TrackPathParams)[] = ["dataset", "track", "showTrackPathBreaks"];
 const LINE_VERTEX_COLOR_DEPS: (keyof TrackPathParams)[] = [
   ...LINE_GEOMETRY_DEPS,
@@ -586,7 +570,15 @@ const LINE_MATERIAL_DEPS: (keyof TrackPathParams)[] = [
   "outlineColor",
   "trackPathWidthPx",
 ];
-const LINE_RENDER_DEPS: (keyof TrackPathParams)[] = ["showTrackPath"];
+
+/** Dependencies that will trigger a re-render of the track path on change. */
+const LINE_RENDER_DEPS: (keyof TrackPathParams)[] = [
+  "showTrackPath",
+  "trackPathPastSteps",
+  "trackPathFutureSteps",
+  "showAllTrackPathPastSteps",
+  "showAllTrackPathFutureSteps",
+];
 
 export function getLineUpdateFlags(
   prevParams: TrackPathParams | null,
