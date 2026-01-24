@@ -570,6 +570,8 @@ const LINE_MATERIAL_DEPS: (keyof TrackPathParams)[] = [
   "outlineColor",
   "trackPathWidthPx",
 ];
+
+/** Dependencies that will trigger a re-render of the track path on change. */
 const LINE_RENDER_DEPS: (keyof TrackPathParams)[] = [
   "showTrackPath",
   "trackPathPastSteps",
