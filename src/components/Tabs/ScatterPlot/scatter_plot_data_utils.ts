@@ -13,7 +13,7 @@ import {
   type Dataset,
   type HexColorString,
 } from "src/colorizer";
-import { type FeatureData, FeatureType } from "src/colorizer/Dataset";
+import { type FeatureData, FeatureType, TIME_FEATURE_KEY, TRACK_FEATURE_KEY } from "src/colorizer/Dataset";
 import { remap } from "src/colorizer/utils/math_utils";
 
 export type DataArray = Uint32Array | Float32Array | number[];
@@ -210,6 +210,14 @@ export function drawCrosshair(x: number, y: number): Partial<PlotData>[] {
   return [crosshairBg, crosshair];
 }
 
+function isValueOutOfRange(value: number, key: string, featureToRangeFilter: Map<string, [number, number]>): boolean {
+  const range = featureToRangeFilter.get(key);
+  if (range) {
+    return value < range[0] || value > range[1];
+  }
+  return false;
+}
+
 export function getScatterplotDataAsCsv(
   dataset: Dataset,
   objectIds: number[],
@@ -243,14 +251,21 @@ export function getScatterplotDataAsCsv(
     const segId = dataset.getSegmentationId(id);
     const track = dataset.getTrackId(id);
     const time = dataset.getTime(id);
-    const outlier = dataset.outliers && dataset.outliers[id] === 1 ? "true" : "false";
-    const filtered = inRangeLUT[id] === 1 ? "true" : "false";
+
+    // Check if track or time are being filtered on
+    let skipRow =
+      isValueOutOfRange(track, TRACK_FEATURE_KEY, featureToRangeFilter) ||
+      isValueOutOfRange(time, TIME_FEATURE_KEY, featureToRangeFilter);
+    if (skipRow) {
+      continue;
+    }
+
     const row: (string | number)[] = [segId, track, time];
-    let skipRow = false;
     for (const featureData of allFeatureData) {
       let value: string | number = featureData.data[id];
       // Apply axis filters to exclude points that are outside of the selected
       // range.
+      skipRow = isValueOutOfRange(value as number, featureData.key, featureToRangeFilter);
       const range = featureToRangeFilter.get(featureData.key);
       if (range && (value < range[0] || value > range[1])) {
         skipRow = true;
@@ -265,6 +280,9 @@ export function getScatterplotDataAsCsv(
     if (skipRow) {
       continue;
     }
+    // Sort outliers and filtered status after feature columns
+    const outlier = dataset.outliers && dataset.outliers[id] === 1 ? "true" : "false";
+    const filtered = inRangeLUT[id] === 1 ? "true" : "false";
     row.push(outlier, filtered);
     csvRows.push(row);
   }
