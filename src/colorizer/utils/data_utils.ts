@@ -578,6 +578,7 @@ const LINE_RENDER_DEPS: (keyof TrackPathParams)[] = [
   "trackPathFutureSteps",
   "showAllTrackPathPastSteps",
   "showAllTrackPathFutureSteps",
+  "persistTrackPathWhenOutOfRange",
 ];
 
 export function getLineUpdateFlags(

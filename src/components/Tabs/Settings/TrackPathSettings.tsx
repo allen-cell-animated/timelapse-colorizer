@@ -20,6 +20,7 @@ const enum TrackPathSettingsHtmlIds {
   TRACK_PATH_SHOW_BREAKS_CHECKBOX = "track-path-show-breaks-checkbox",
   TRACK_PATH_PAST_STEPS_SLIDER = "track-path-past-steps-slider",
   TRACK_PATH_FUTURE_STEPS_SLIDER = "track-path-future-steps-slider",
+  TRACK_PATH_PERSIST_OUT_OF_RANGE_CHECKBOX = "track-path-persist-out-of-range-checkbox",
 }
 
 const TRACK_MODE_ITEMS: SelectItem[] = [
@@ -39,6 +40,7 @@ export default function TrackPathSettings(): ReactElement {
   const trackPathFutureSteps = useViewerStateStore((state) => state.trackPathFutureSteps);
   const showAllTrackPathPastSteps = useViewerStateStore((state) => state.showAllTrackPathPastSteps);
   const showAllTrackPathFutureSteps = useViewerStateStore((state) => state.showAllTrackPathFutureSteps);
+  const persistTrackPathWhenOutOfRange = useViewerStateStore((state) => state.persistTrackPathWhenOutOfRange);
   const setShowTrackPath = useViewerStateStore((state) => state.setShowTrackPath);
   const setTrackPathColor = useViewerStateStore((state) => state.setTrackPathColor);
   const setTrackPathColorMode = useViewerStateStore((state) => state.setTrackPathColorMode);
@@ -48,6 +50,7 @@ export default function TrackPathSettings(): ReactElement {
   const setTrackPathFutureSteps = useViewerStateStore((state) => state.setTrackPathFutureSteps);
   const setShowAllTrackPathPastSteps = useViewerStateStore((state) => state.setShowAllTrackPathPastSteps);
   const setShowAllTrackPathFutureSteps = useViewerStateStore((state) => state.setShowAllTrackPathFutureSteps);
+  const setPersistTrackPathWhenOutOfRange = useViewerStateStore((state) => state.setPersistTrackPathWhenOutOfRange);
 
   const maxTrackPathSteps = useMemo(() => dataset?.getMaxTrackLength() ?? 0, [dataset]);
 
@@ -117,6 +120,28 @@ export default function TrackPathSettings(): ReactElement {
                   showAllChecked={showAllTrackPathFutureSteps}
                   onShowAllChanged={setShowAllTrackPathFutureSteps}
                 />
+              </SettingsItem>
+              <SettingsItem
+                label="Persist when out of range"
+                htmlFor={TrackPathSettingsHtmlIds.TRACK_PATH_PERSIST_OUT_OF_RANGE_CHECKBOX}
+              >
+                <Tooltip
+                  title="Keep the track path visible when showing all past or future steps, even when the current time is outside the track's range."
+                  placement="right"
+                  trigger={["focus", "hover"]}
+                >
+                  <div style={{ width: "fit-content", paddingTop: 2 }}>
+                    <Checkbox
+                      id={TrackPathSettingsHtmlIds.TRACK_PATH_PERSIST_OUT_OF_RANGE_CHECKBOX}
+                      type="checkbox"
+                      checked={persistTrackPathWhenOutOfRange}
+                      onChange={(event) => {
+                        setPersistTrackPathWhenOutOfRange(event.target.checked);
+                      }}
+                      disabled={!(showAllTrackPathPastSteps || showAllTrackPathFutureSteps)}
+                    ></Checkbox>
+                  </div>
+                </Tooltip>
               </SettingsItem>
             </>
           )
