@@ -1,7 +1,7 @@
 {
   "name": "timelapse-colorizer",
   "private": true,
-  "version": "1.8.2",
+  "version": "1.9.1",
   "type": "module",
   "scripts": {
     "start": "vite",
