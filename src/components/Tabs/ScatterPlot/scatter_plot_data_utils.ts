@@ -265,9 +265,7 @@ export function getScatterplotDataAsCsv(
       let value: string | number = featureData.data[id];
       // Apply axis filters to exclude points that are outside of the selected
       // range.
-      skipRow = isValueOutOfRange(value as number, featureData.key, featureToRangeFilter);
-      const range = featureToRangeFilter.get(featureData.key);
-      if (range && (value < range[0] || value > range[1])) {
+      if (isValueOutOfRange(value as number, featureData.key, featureToRangeFilter)) {
         skipRow = true;
         break;
       }
