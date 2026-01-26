@@ -1,4 +1,4 @@
-import { type RefObject, useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 /**
  * Adds long-press handling to buttons. When the button is pressed and held for
@@ -6,7 +6,7 @@ import { type RefObject, useCallback, useEffect, useRef } from "react";
  * then be called on repeat every `repeatDelay` milliseconds until the button is
  * released, and then the optional `onReleased` callback will be called.
  *
- * @param buttonRef HTML button element ref
+ * @param element HTML element to attach long-press handling to.
  * @param onHeld Callback to be called when the button is held down.
  * @param onReleased Optional callback to be called when the button is released.
  * @param initialDelayMs Initial delay in milliseconds before onHeld is called.
@@ -15,7 +15,7 @@ import { type RefObject, useCallback, useEffect, useRef } from "react";
  * calls. Default is 40ms.
  */
 const useLongPress = (
-  buttonRef: RefObject<HTMLButtonElement>,
+  element: HTMLElement | null,
   onHeld: () => void,
   onReleased?: () => void,
   initialDelayMs = 500,
@@ -78,17 +78,16 @@ const useLongPress = (
   }, []);
 
   useEffect(() => {
-    const buttonEl = buttonRef.current;
-    if (!buttonEl) {
+    if (!element) {
       return;
     }
-    buttonEl.addEventListener("mousedown", onMouseDown);
+    element.addEventListener("mousedown", onMouseDown);
     window.addEventListener("mouseup", onMouseUp);
     return () => {
-      buttonEl.removeEventListener("mousedown", onMouseDown);
+      element.removeEventListener("mousedown", onMouseDown);
       window.removeEventListener("mouseup", onMouseUp);
     };
-  }, [buttonRef.current, onMouseDown, onMouseUp]);
+  }, [element, onMouseDown, onMouseUp]);
 };
 
 export { useLongPress };

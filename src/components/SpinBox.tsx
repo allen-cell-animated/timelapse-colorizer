@@ -61,8 +61,8 @@ export default function SpinBox(propsInput: SpinBoxProps): ReactElement {
     setInputValue((prevValue) => Math.max(props.min, Math.min(props.max, prevValue - 1)));
   }, [props.min, props.max]);
 
-  useLongPress(incrementButtonRef, incrementValue, () => props.onChange(inputValue));
-  useLongPress(decrementButtonRef, decrementValue, () => props.onChange(inputValue));
+  useLongPress(incrementButtonRef.current, incrementValue, () => props.onChange(inputValue));
+  useLongPress(decrementButtonRef.current, decrementValue, () => props.onChange(inputValue));
 
   // If the prop value changes, reset the input value to it.
   useEffect(() => {
