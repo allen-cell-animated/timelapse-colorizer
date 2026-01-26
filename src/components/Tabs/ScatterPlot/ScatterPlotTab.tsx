@@ -95,6 +95,13 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const xAxisPlotRange = useRef<[number, number]>([-Infinity, Infinity]);
   const yAxisPlotRange = useRef<[number, number]>([-Infinity, Infinity]);
 
+  const resetXAxisPlotRange = useCallback((): void => {
+    xAxisPlotRange.current = [-Infinity, Infinity];
+  }, []);
+  const resetYAxisPlotRange = useCallback((): void => {
+    yAxisPlotRange.current = [-Infinity, Infinity];
+  }, []);
+
   // Debounce changes to the dataset to prevent noticeably blocking the UI thread with a re-render.
   const datasetKey = useViewerStateStore((state) => state.datasetKey);
   const rawDataset = useViewerStateStore((state) => state.dataset);
@@ -237,30 +244,28 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   // Sync axis ranges on relayout events (zoom)
   useEffect(() => {
     const onRelayout = (eventData: Plotly.PlotRelayoutEvent): void => {
-      if (eventData["xaxis.range[0]"] !== undefined) {
-        xAxisPlotRange.current[0] = eventData["xaxis.range[0]"];
-      }
-      if (eventData["xaxis.range[1]"] !== undefined) {
-        xAxisPlotRange.current[1] = eventData["xaxis.range[1]"];
-      }
       if (eventData["xaxis.autorange"]) {
-        xAxisPlotRange.current = [-Infinity, Infinity];
-      }
-      if (eventData["yaxis.range[0]"] !== undefined) {
-        yAxisPlotRange.current[0] = eventData["yaxis.range[0]"];
-      }
-      if (eventData["yaxis.range[1]"] !== undefined) {
-        yAxisPlotRange.current[1] = eventData["yaxis.range[1]"];
+        resetXAxisPlotRange();
+      } else {
+        const xRange0 = eventData["xaxis.range[0]"] ?? xAxisPlotRange.current[0];
+        const xRange1 = eventData["xaxis.range[1]"] ?? xAxisPlotRange.current[1];
+        xAxisPlotRange.current[0] = Math.min(xRange0, xRange1);
+        xAxisPlotRange.current[1] = Math.max(xRange0, xRange1);
       }
       if (eventData["yaxis.autorange"]) {
-        yAxisPlotRange.current = [-Infinity, Infinity];
+        resetYAxisPlotRange();
+      } else {
+        const yRange0 = eventData["yaxis.range[0]"] ?? yAxisPlotRange.current[0];
+        const yRange1 = eventData["yaxis.range[1]"] ?? yAxisPlotRange.current[1];
+        yAxisPlotRange.current[0] = Math.min(yRange0, yRange1);
+        yAxisPlotRange.current[1] = Math.max(yRange0, yRange1);
       }
     };
     plotRef?.on("plotly_relayout", onRelayout);
     return () => {
       plotRef?.removeAllListeners("plotly_relayout");
     };
-  }, [plotRef]);
+  }, [plotRef, resetXAxisPlotRange, resetYAxisPlotRange]);
 
   //////////////////////////////////
   // Helper Methods
@@ -682,6 +687,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     colorRamp,
     inRangeLUT,
     categoricalPalette,
+    resetXAxisPlotRange,
+    resetYAxisPlotRange,
   ];
 
   const renderPlot = (forceRelayout: boolean = false): void => {
@@ -831,8 +838,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     if (forceRelayout || shouldPlotUiReset()) {
       uiRevision.current += 1;
       // Reset axis ranges because zoom will be reset.
-      xAxisPlotRange.current = [-Infinity, Infinity];
-      yAxisPlotRange.current = [-Infinity, Infinity];
+      resetXAxisPlotRange();
+      resetYAxisPlotRange();
     }
     // @ts-ignore. TODO: Update once the plotly types are updated.
     layout.uirevision = uiRevision.current;
