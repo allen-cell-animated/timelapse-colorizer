@@ -1,4 +1,4 @@
-import React, { type KeyboardEvent, type ReactElement, useCallback, useEffect, useRef, useState } from "react";
+import React, { type KeyboardEvent, type ReactElement, useCallback, useEffect, useState } from "react";
 
 import { SpinBoxHandleDownSVG, SpinBoxHandleUpSVG } from "src/assets";
 import { useLongPress } from "src/hooks";
@@ -47,12 +47,6 @@ export default function SpinBox(propsInput: SpinBoxProps): ReactElement {
    * and onChange will be called.
    */
   const [inputValue, setInputValue] = useState(props.value);
-
-  // Handle long press interactions with the two spinbox buttons. Pressing and
-  // holding the buttons will continuously increment/decrement the input value,
-  // but won't call onChange to finalize the value until the button is released.
-  const incrementButtonRef = useRef<HTMLButtonElement>(null);
-  const decrementButtonRef = useRef<HTMLButtonElement>(null);
 
   const incrementValue = useCallback((): void => {
     setInputValue((prevValue) => Math.max(props.min, Math.min(props.max, prevValue + 1)));
@@ -141,22 +135,10 @@ export default function SpinBox(propsInput: SpinBoxProps): ReactElement {
       ></input>
       <div className={styles.spinButtons + " " + (props.disabled ? styles.disabled : "")}>
         {/** Tab index -1 prevents spin handles from being selected via tab navigation */}
-        <button
-          ref={incrementButtonRef}
-          tabIndex={-1}
-          onClick={() => adjustValue(1)}
-          disabled={props.disabled}
-          {...incrementButtonProps}
-        >
+        <button tabIndex={-1} onClick={() => adjustValue(1)} disabled={props.disabled} {...incrementButtonProps}>
           <SpinBoxHandleUpSVG />
         </button>
-        <button
-          ref={decrementButtonRef}
-          tabIndex={-1}
-          onClick={() => adjustValue(-1)}
-          disabled={props.disabled}
-          {...decrementButtonProps}
-        >
+        <button tabIndex={-1} onClick={() => adjustValue(-1)} disabled={props.disabled} {...decrementButtonProps}>
           <SpinBoxHandleDownSVG />
         </button>
       </div>
