@@ -1,4 +1,4 @@
-import { MouseEventHandler, useCallback, useEffect, useRef } from "react";
+import { type MouseEventHandler, useCallback, useEffect, useRef } from "react";
 
 /**
  * Returns mouse handler methods for long-press left-click interactions on
