@@ -252,7 +252,7 @@ export function getScatterplotDataAsCsv(
     const track = dataset.getTrackId(id);
     const time = dataset.getTime(id);
 
-    // Check if track or time are being filtered on
+    // Check if track or time are excluded by filters
     let skipRow =
       isValueOutOfRange(track, TRACK_FEATURE_KEY, featureToRangeFilter) ||
       isValueOutOfRange(time, TIME_FEATURE_KEY, featureToRangeFilter);
@@ -263,8 +263,7 @@ export function getScatterplotDataAsCsv(
     const row: (string | number)[] = [segId, track, time];
     for (const featureData of allFeatureData) {
       let value: string | number = featureData.data[id];
-      // Apply axis filters to exclude points that are outside of the selected
-      // range.
+      // Apply axis filters to exclude points that are outside range.
       if (isValueOutOfRange(value as number, featureData.key, featureToRangeFilter)) {
         skipRow = true;
         break;
