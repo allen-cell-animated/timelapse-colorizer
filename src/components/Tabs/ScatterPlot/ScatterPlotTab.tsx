@@ -22,7 +22,6 @@ import { FlexRow, FlexRowAlignCenter } from "src/styles/utils";
 import { downloadCsv } from "src/utils/file_io";
 
 import {
-  AxisFilter,
   type DataArray,
   drawCrosshair,
   getBucketIndex,
@@ -897,17 +896,11 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     // a metadata column in the CSV.
     featureSet.delete(TIME_FEATURE_KEY);
     const features = Array.from(featureSet);
-    const axisFilters: AxisFilter[] = [
-      { featureKey: xAxisFeatureKey, range: xAxisPlotRange.current },
-      { featureKey: yAxisFeatureKey, range: yAxisPlotRange.current },
-    ];
-    const csvString = getScatterplotDataAsCsv(
-      dataset,
-      Array.from(plottedIds.current),
-      inRangeLUT,
-      features,
-      axisFilters
-    );
+    const filters = new Map([
+      [xAxisFeatureKey, xAxisPlotRange.current],
+      [yAxisFeatureKey, yAxisPlotRange.current],
+    ]);
+    const csvString = getScatterplotDataAsCsv(dataset, Array.from(plottedIds.current), inRangeLUT, features, filters);
     const name = datasetKey ? `${datasetKey}-scatterplot.csv` : "scatterplot.csv";
     downloadCsv(name, csvString);
   }, [

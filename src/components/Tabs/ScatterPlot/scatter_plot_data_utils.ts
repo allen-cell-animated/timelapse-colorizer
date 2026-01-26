@@ -28,11 +28,6 @@ export type TraceData = {
   marker: Partial<Plotly.PlotMarker>;
 };
 
-export type AxisFilter = {
-  featureKey: string;
-  range: [number, number];
-};
-
 /**
  * Sample a color ramp at evenly-spaced points, returning the resulting array of colors.
  * @param {ColorRampData} colorRamp The gradient to sample.
@@ -210,8 +205,7 @@ export function drawCrosshair(x: number, y: number): Partial<PlotData>[] {
   return [crosshairBg, crosshair];
 }
 
-function isValueOutOfRange(value: number, key: string, featureToRangeFilter: Map<string, [number, number]>): boolean {
-  const range = featureToRangeFilter.get(key);
+function isValueOutOfRange(value: number, range?: [number, number]): boolean {
   if (range) {
     return value < range[0] || value > range[1];
   }
@@ -223,7 +217,7 @@ export function getScatterplotDataAsCsv(
   objectIds: number[],
   inRangeLUT: Uint8Array,
   featureKeys: string[],
-  axisFilters: AxisFilter[] = [],
+  featureToRangeFilter: Map<string, [number, number]> = new Map(),
   delimiter: string = ","
 ): string {
   for (const featureKey of featureKeys) {
@@ -241,10 +235,6 @@ export function getScatterplotDataAsCsv(
     CSV_COL_OUTLIER,
     CSV_COL_FILTERED,
   ];
-  const featureToRangeFilter: Map<string, [number, number]> = new Map();
-  for (const axisFilter of axisFilters) {
-    featureToRangeFilter.set(axisFilter.featureKey, axisFilter.range);
-  }
 
   const csvRows: (string | number)[][] = [];
   for (const id of objectIds) {
@@ -254,8 +244,8 @@ export function getScatterplotDataAsCsv(
 
     // Check if track or time are excluded by filters
     let skipRow =
-      isValueOutOfRange(track, TRACK_FEATURE_KEY, featureToRangeFilter) ||
-      isValueOutOfRange(time, TIME_FEATURE_KEY, featureToRangeFilter);
+      isValueOutOfRange(track, featureToRangeFilter.get(TRACK_FEATURE_KEY)) ||
+      isValueOutOfRange(time, featureToRangeFilter.get(TIME_FEATURE_KEY));
     if (skipRow) {
       continue;
     }
@@ -264,7 +254,7 @@ export function getScatterplotDataAsCsv(
     for (const featureData of allFeatureData) {
       let value: string | number = featureData.data[id];
       // Apply axis filters to exclude points that are outside range.
-      if (isValueOutOfRange(value as number, featureData.key, featureToRangeFilter)) {
+      if (isValueOutOfRange(value as number, featureToRangeFilter.get(featureData.key))) {
         skipRow = true;
         break;
       }
