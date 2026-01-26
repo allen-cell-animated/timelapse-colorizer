@@ -207,6 +207,7 @@ export function drawCrosshair(x: number, y: number): Partial<PlotData>[] {
 
 function isValueOutOfRange(value: number, range?: [number, number]): boolean {
   if (range) {
+    // Check if value outside of range (range is treated as inclusive)
     return value < range[0] || value > range[1];
   }
   return false;
