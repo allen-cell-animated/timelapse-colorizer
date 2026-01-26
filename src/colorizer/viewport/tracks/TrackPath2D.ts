@@ -117,6 +117,7 @@ export default class TrackPath2D {
       [TrackPathColorMode.USE_FEATURE_COLOR]: FEATURE_BASE_COLOR,
       [TrackPathColorMode.USE_OUTLINE_COLOR]: outlineColor,
       [TrackPathColorMode.USE_CUSTOM_COLOR]: trackPathColor,
+      [TrackPathColorMode.USE_COLOR_MAP]: FEATURE_BASE_COLOR,
     };
     const color = modeToColor[trackPathColorMode];
     const isColoredByFeature = trackPathColorMode === TrackPathColorMode.USE_FEATURE_COLOR;
