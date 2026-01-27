@@ -1,5 +1,4 @@
 import { useCallback, useMemo, useState } from "react";
-import { isHotkeyPressed } from "react-hotkeys-hook";
 
 import { AnnotationSelectionMode, type Dataset } from "src/colorizer";
 import {
@@ -10,6 +9,7 @@ import {
   LabelType,
 } from "src/colorizer/AnnotationData";
 import { SHORTCUT_KEYS } from "src/constants";
+import { useIsHotkeyHeld } from "src/hooks";
 
 import { useConstructor } from "./useConstructor";
 
@@ -81,8 +81,8 @@ export const useAnnotations = (): AnnotationState => {
 
   const [baseSelectionMode, setBaseSelectionMode] = useState<AnnotationSelectionMode>(AnnotationSelectionMode.TIME);
 
-  const isSelectRangeHotkeyPressed = isHotkeyPressed(SHORTCUT_KEYS.annotation.selectRange.keycode);
-  const isReuseValueHotkeyPressed = isHotkeyPressed(SHORTCUT_KEYS.annotation.reuseValue.keycode);
+  const isSelectRangeHotkeyPressed = useIsHotkeyHeld(SHORTCUT_KEYS.annotation.selectRange.keycode);
+  const isReuseValueHotkeyPressed = useIsHotkeyHeld(SHORTCUT_KEYS.annotation.reuseValue.keycode);
 
   const [lastClickedId, setLastClickedId] = useState<number | null>(null);
   const [rangeStartId, setRangeStartId] = useState<number | null>(null);
