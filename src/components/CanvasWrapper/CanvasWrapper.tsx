@@ -32,7 +32,7 @@ import ShortcutKeyText from "src/components/Display/ShortcutKeyText";
 import LoadingSpinner from "src/components/LoadingSpinner";
 import AnnotationInputPopover from "src/components/Tabs/Annotation/AnnotationInputPopover";
 import { TooltipWithSubtitle } from "src/components/Tooltips/TooltipWithSubtitle";
-import { CANVAS_ASPECT_RATIO, ShortcutKeys } from "src/constants";
+import { CANVAS_ASPECT_RATIO, SHORTCUT_KEYS } from "src/constants";
 import type { AnnotationState } from "src/hooks";
 import { renderCanvasStateParamsSelector } from "src/state";
 import { useViewerStateStore } from "src/state/ViewerState";
@@ -368,7 +368,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   );
 
   const handleBackgroundClicked = useCallback((): void => {
-    const isMultiTrackSelectHotkeyPressed = areAnyHotkeysPressed(ShortcutKeys.viewport.multiTrackSelect.keycode);
+    const isMultiTrackSelectHotkeyPressed = areAnyHotkeysPressed(SHORTCUT_KEYS.viewport.multiTrackSelect.keycode);
     if (isMultiTrackSelectHotkeyPressed) {
       // Ignore background clicks during multi-track selection.
       return;
@@ -380,7 +380,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     (dataset: Dataset, globalId: number) => {
       const trackId = dataset.getTrackId(globalId);
       const newTrack = dataset.getTrack(trackId);
-      const isMultiTrackSelectHotkeyPressed = areAnyHotkeysPressed(ShortcutKeys.viewport.multiTrackSelect.keycode);
+      const isMultiTrackSelectHotkeyPressed = areAnyHotkeysPressed(SHORTCUT_KEYS.viewport.multiTrackSelect.keycode);
       if (newTrack) {
         if (isMultiTrackSelectHotkeyPressed) {
           // Toggle selection of clicked track during multi-select mode.
@@ -590,9 +590,9 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         props.annotationState.isAnnotationModeEnabled && (
           <AnnotationModeContainer>
             <LabeledList title="Annotation shortcuts">
-              {shouldShowRangeSelectionHotkey && <ShortcutKeyText shortcutKey={ShortcutKeys.annotation.selectRange} />}
+              {shouldShowRangeSelectionHotkey && <ShortcutKeyText shortcutKey={SHORTCUT_KEYS.annotation.selectRange} />}
               {shouldShowReuseValueHotkey && (
-                <ShortcutKeyText shortcutKey={ShortcutKeys.annotation.reuseValue} inline={true} />
+                <ShortcutKeyText shortcutKey={SHORTCUT_KEYS.annotation.reuseValue} inline={true} />
               )}
             </LabeledList>
           </AnnotationModeContainer>

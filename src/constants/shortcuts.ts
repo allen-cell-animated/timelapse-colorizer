@@ -22,14 +22,14 @@ export type ShortcutKeyInfo = {
   keycodeDisplay?: string | string[];
 };
 
-export const ShortcutKeys = {
+export const SHORTCUT_KEYS = {
   viewport: {
     stepFrameForward: {
       name: "Step frame forward",
       keycode: "right",
     },
     stepFrameBackward: {
-      name: "Step frame backwards",
+      name: "Step frame backward",
       keycode: "left",
     },
     togglePlayback: {

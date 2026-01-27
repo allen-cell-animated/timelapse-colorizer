@@ -8,7 +8,7 @@ import { DEFAULT_PLAYBACK_FPS } from "src/colorizer/constants";
 import IconButton from "src/components/Buttons/IconButton";
 import PlaybackSpeedControl from "src/components/PlaybackSpeedControl";
 import SpinBox from "src/components/SpinBox";
-import { ShortcutKeys } from "src/constants";
+import { SHORTCUT_KEYS } from "src/constants";
 import { useDebounce } from "src/hooks";
 import { useViewerStateStore } from "src/state";
 import { FlexRowAlignCenter, VisuallyHidden } from "src/styles/utils";
@@ -107,23 +107,29 @@ export default function PlaybackControls(props: PlaybackControlProps): ReactElem
   }, [isScrubbingDuringPlayback, frameInput]);
 
   //// Keyboard Controls ////
-  const togglePlayPauseCallback = useCallback((event: KeyboardEvent) => {
-    // Space keypresses on buttons should be ignored for toggling playback.
-    if (event.target instanceof HTMLButtonElement) {
-      return;
-    }
-    timeControls.isPlaying() ? timeControls.pause() : timeControls.play();
-  }, [timeControls]);
-  const handleStepFrame = useCallback((event: KeyboardEvent, direction: number) => {
-    // Tabs are navigated with arrow keys; ignore events originating from them.
-    if (event.target instanceof HTMLDivElement && event.target.role === "tab") {
-      return;
-    }
-    timeControls.advanceFrame(direction);
-  }, [timeControls]);
-  useHotkeys(ShortcutKeys.viewport.stepFrameBackward.keycode, (event) => handleStepFrame(event, -1));
-  useHotkeys(ShortcutKeys.viewport.stepFrameForward.keycode, (event) => handleStepFrame(event, 1));
-  useHotkeys(ShortcutKeys.viewport.togglePlayback.keycode, togglePlayPauseCallback);
+  const togglePlayPauseCallback = useCallback(
+    (event: KeyboardEvent) => {
+      // Space keypresses on buttons should be ignored for toggling playback.
+      if (event.target instanceof HTMLButtonElement) {
+        return;
+      }
+      timeControls.isPlaying() ? timeControls.pause() : timeControls.play();
+    },
+    [timeControls]
+  );
+  const handleStepFrame = useCallback(
+    (event: KeyboardEvent, direction: number) => {
+      // Tabs are navigated with arrow keys; ignore events originating from them.
+      if (event.target instanceof HTMLDivElement && event.target.role === "tab") {
+        return;
+      }
+      timeControls.advanceFrame(direction);
+    },
+    [timeControls]
+  );
+  useHotkeys(SHORTCUT_KEYS.viewport.stepFrameBackward.keycode, (event) => handleStepFrame(event, -1));
+  useHotkeys(SHORTCUT_KEYS.viewport.stepFrameForward.keycode, (event) => handleStepFrame(event, 1));
+  useHotkeys(SHORTCUT_KEYS.viewport.togglePlayback.keycode, togglePlayPauseCallback);
 
   // Continue to show the pause icon if the user interrupted playback to
   // manipulate the time slider, so it doesn't flicker between play/pause

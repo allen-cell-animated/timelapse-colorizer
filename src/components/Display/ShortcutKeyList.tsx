@@ -9,6 +9,9 @@ type ShortcutKeyCardProps = {
   title: string;
 };
 
+/**
+ * Displays a list of keyboard shortcuts under a labeled title.
+ */
 export default function ShortcutKeyList(props: ShortcutKeyCardProps): ReactElement {
   const shortcutKeyElements = Object.values(props.shortcutKeys).map((shortcutKey) => (
     <ShortcutKeyText key={shortcutKey.name} shortcutKey={shortcutKey} />

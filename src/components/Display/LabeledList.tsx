@@ -35,6 +35,10 @@ type LabeledListProps = {
 };
 const defaultProps: Partial<LabeledListProps> = {};
 
+/**
+ * Styled card component that displays a list of items under a header. Items are
+ * separated by a horizontal rule.
+ */
 export default function LabeledList(inputProps: PropsWithChildren<LabeledListProps>): ReactElement {
   const props = { ...defaultProps, ...inputProps } as PropsWithChildren<Required<LabeledListProps>>;
   return (
