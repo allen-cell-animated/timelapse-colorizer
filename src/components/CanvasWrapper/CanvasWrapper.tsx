@@ -592,8 +592,9 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   return (
     <CanvasContainer ref={containerRef} $annotationModeEnabled={props.annotationState.isAnnotationModeEnabled}>
       {
-        // TODO: Fade out annotation mode modal if mouse approaches top left corner?
-        // TODO: Make the hotkey text change styling if the hotkey is pressed?
+        // TODO: Fade out annotation mode modal if mouse approaches top left
+        // corner? (This would require mouse position to be a state variable,
+        // might cause too many re-renders)
         props.annotationState.isAnnotationModeEnabled && (
           <AnnotationModeContainer>
             <ShortcutKeyList
