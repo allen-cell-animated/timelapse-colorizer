@@ -72,7 +72,10 @@ export function formatQuantityString(quantity: number, singular: string, plural:
  * Inserts the provided separator element between each element in the array and returns
  * as a new array.
  */
-export function insertBetweenElements(elements: ReactNode | ReactNode[], separator: ReactElement): ReactNode {
+export function insertBetweenElements(
+  elements: ReactNode | ReactNode[],
+  separator: ReactElement | ((index: number) => ReactElement)
+): ReactNode {
   if (!elements) {
     return elements;
   }
@@ -81,7 +84,7 @@ export function insertBetweenElements(elements: ReactNode | ReactNode[], separat
   for (let i = 0; i < elementsArray.length; i++) {
     elementList.push(elementsArray[i]);
     if (i < elementsArray.length - 1) {
-      elementList.push(separator);
+      elementList.push(typeof separator === "function" ? separator(2 * i + 1) : separator);
     }
   }
   return elementList;

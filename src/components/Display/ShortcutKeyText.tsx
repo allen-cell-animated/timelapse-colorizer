@@ -37,11 +37,11 @@ function toHotkeyDisplay(key: string): ReactElement {
   // Ex: "ctrl+shift+a" will be split into KeyCharacter elements with a "+"
   // character between each.
   const keys = key.split("+").map((k) => k.trim());
-  const hotkeyElements = keys.map((k) => {
+  const hotkeyElements = keys.map((k, index) => {
     const hotkeyDisplayName = keycodeToDisplay[k.toLowerCase()] || capitalizeFirstLetter(k);
-    return <KeyCharacter>{hotkeyDisplayName}</KeyCharacter>;
+    return <KeyCharacter key={2 * index}>{hotkeyDisplayName}</KeyCharacter>;
   });
-  const elements = insertBetweenElements(hotkeyElements, <span>+</span>);
+  const elements = insertBetweenElements(hotkeyElements, (index) => <span key={index}>+</span>);
   return <FlexRowAlignCenter $gap={4}>{elements}</FlexRowAlignCenter>;
 }
 
