@@ -5,6 +5,7 @@ import ShortcutKeyList from "src/components/Display/ShortcutKeyList";
 import StyledModal from "src/components/Modals/StyledModal";
 import type { ShortcutKeyInfo } from "src/constants";
 import { FlexColumn } from "src/styles/utils";
+import { capitalizeFirstLetter } from "src/utils/formatting";
 
 type ShortcutKeyModalProps = {
   open: boolean;
@@ -17,8 +18,9 @@ export default function ShortcutKeyModal(props: ShortcutKeyModalProps): ReactEle
     () =>
       Object.entries(props.shortcuts).map(([sectionName, shortcutKeyRecord]) => {
         const shortcutKeys = Object.values(shortcutKeyRecord);
-        const capitalizedName = sectionName.charAt(0).toUpperCase() + sectionName.slice(1);
-        return <ShortcutKeyList key={sectionName} shortcutKeys={shortcutKeys} title={capitalizedName} />;
+        return (
+          <ShortcutKeyList key={sectionName} shortcutKeys={shortcutKeys} title={capitalizeFirstLetter(sectionName)} />
+        );
       }),
     [props.shortcuts]
   );
