@@ -7,8 +7,8 @@ import { insertBetweenElements } from "src/utils/formatting";
 
 const ListCard = styled(Card)`
   --padding-y: 6px;
-  --padding-x-start: 10px;
-  --padding-x-end: 6px;
+  --padding-x-start: 12px;
+  --padding-x-end: 12px;
   --total-padding-x: calc(var(--padding-x-start) + var(--padding-x-end));
   background-color: var(--color-viewport-overlay-background);
 
