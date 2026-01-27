@@ -27,8 +27,7 @@ import type CanvasOverlay from "src/colorizer/viewport/CanvasOverlay";
 import type { AlertBannerProps } from "src/components/Banner";
 import IconButton from "src/components/Buttons/IconButton";
 import TooltipButtonStyleLink from "src/components/Buttons/TooltipButtonStyleLink";
-import LabeledList from "src/components/Display/LabeledList";
-import ShortcutKeyText from "src/components/Display/ShortcutKeyText";
+import ShortcutKeyList from "src/components/Display/ShortcutKeyList";
 import LoadingSpinner from "src/components/LoadingSpinner";
 import AnnotationInputPopover from "src/components/Tabs/Annotation/AnnotationInputPopover";
 import { TooltipWithSubtitle } from "src/components/Tooltips/TooltipWithSubtitle";
@@ -579,8 +578,16 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     </TooltipButtonStyleLink>
   );
   const labelData: LabelData | undefined = labels[props.annotationState.currentLabelIdx ?? 0];
+
   const shouldShowRangeSelectionHotkey = props.annotationState.baseSelectionMode !== AnnotationSelectionMode.RANGE;
   const shouldShowReuseValueHotkey = labelData?.options.type === LabelType.INTEGER && labelData?.options.autoIncrement;
+  let annotationShortcutKeys = [];
+  if (shouldShowRangeSelectionHotkey) {
+    annotationShortcutKeys.push(SHORTCUT_KEYS.annotation.selectRange);
+  }
+  if (shouldShowReuseValueHotkey) {
+    annotationShortcutKeys.push(SHORTCUT_KEYS.annotation.reuseValue);
+  }
 
   return (
     <CanvasContainer ref={containerRef} $annotationModeEnabled={props.annotationState.isAnnotationModeEnabled}>
@@ -589,12 +596,11 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         // TODO: Make the hotkey text change styling if the hotkey is pressed?
         props.annotationState.isAnnotationModeEnabled && (
           <AnnotationModeContainer>
-            <LabeledList title="Annotation shortcuts">
-              {shouldShowRangeSelectionHotkey && <ShortcutKeyText shortcutKey={SHORTCUT_KEYS.annotation.selectRange} />}
-              {shouldShowReuseValueHotkey && (
-                <ShortcutKeyText shortcutKey={SHORTCUT_KEYS.annotation.reuseValue} inline={true} />
-              )}
-            </LabeledList>
+            <ShortcutKeyList
+              title="Annotation editing in progress..."
+              shortcutKeys={annotationShortcutKeys}
+              inline={true}
+            />
           </AnnotationModeContainer>
         )
       }

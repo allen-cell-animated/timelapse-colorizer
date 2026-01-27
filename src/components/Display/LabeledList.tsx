@@ -41,9 +41,10 @@ const defaultProps: Partial<LabeledListProps> = {};
  */
 export default function LabeledList(inputProps: PropsWithChildren<LabeledListProps>): ReactElement {
   const props = { ...defaultProps, ...inputProps } as PropsWithChildren<Required<LabeledListProps>>;
+
   return (
     <ListCard title={props.title} size="small">
-      <FlexColumn $gap={6}>{props.children && insertBetweenElements(props.children, <hr />)}</FlexColumn>
+      <FlexColumn $gap={6}>{insertBetweenElements(props.children, <hr />)}</FlexColumn>
     </ListCard>
   );
 }
