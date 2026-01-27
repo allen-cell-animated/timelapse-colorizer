@@ -11,6 +11,7 @@ export type ShortcutKeyInfo = {
    * "a" => triggers on "a" key press.
    * "ctrl+shift+a" => triggers on "Ctrl + Shift + A" key press.
    * "a,b" => triggers on either "a" or "b" key press.
+   * ["a", "b"] => triggers on either "a" or "b" key press.
    * "a>b" => triggers when a and b are pressed in sequence.
    * ```
    */
@@ -43,7 +44,7 @@ export const SHORTCUT_KEYS = {
     },
     multiTrackSelect: {
       name: "Select multiple tracks",
-      keycode: ["ctrl", "meta"],
+      keycode: "ctrl,meta",
       keycodeDisplay: ["Ctrl + Left click", "Command (⌘) + Left click"],
     },
     zoomViewport: {
@@ -64,6 +65,6 @@ export const SHORTCUT_KEYS = {
     selectRange: { name: "Select range", keycode: "shift" },
   },
   navigation: {
-    showShortcutMenu: { name: "Show keyboard shortcuts", keycode: ["shift+slash", "?"], keycodeDisplay: "?" },
+    showShortcutMenu: { name: "Show keyboard shortcuts", keycode: "shift+slash,?", keycodeDisplay: "?" },
   },
 } as const satisfies Record<string, Record<string, ShortcutKeyInfo>>;

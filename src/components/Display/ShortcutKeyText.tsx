@@ -17,6 +17,7 @@ const keycodeToDisplay: Record<string, string> = {
   space: "Space",
 };
 
+/** Adds a rounded box around a key, to style it like a keyboard key. */
 export const KeyCharacter = styled.span`
   padding: 0px 4px;
   border-radius: 4px;
@@ -33,30 +34,31 @@ type ShortcutKeyDisplayProps = {
 
 /** Converts a hotkey string into a formatted React element with styled keys. */
 function toHotkeyDisplay(key: string): ReactElement {
-  // Ex: "ctrl+shift+a" will be split into HotkeyText elements
+  // Ex: "ctrl+shift+a" will be split into KeyCharacter elements with a "+"
+  // character between each.
   const keys = key.split("+").map((k) => k.trim());
-  const hotkeyElements = keys.map((k, index) => {
+  const hotkeyElements = keys.map((k) => {
     const hotkeyDisplayName = keycodeToDisplay[k.toLowerCase()] || capitalizeFirstLetter(k);
-    return <KeyCharacter key={2 * index}>{hotkeyDisplayName}</KeyCharacter>;
+    return <KeyCharacter>{hotkeyDisplayName}</KeyCharacter>;
   });
   const elements = insertBetweenElements(hotkeyElements, <span>+</span>);
   return <FlexRowAlignCenter $gap={4}>{elements}</FlexRowAlignCenter>;
 }
 
 /**
- * Displays the name and hotkeys of a single keyboard shortcut.
+ * Displays the name and hotkey(s) of a keyboard shortcut.
  *
- * Hotkeys involving multiple keys will be displayed with plus signs between
- * keys. If a shortcut has multiple alternative hotkeys, they can be displayed
- * either inline (separated by slashes, set `inline={true}`) or stacked
- * vertically.
+ * Hotkeys involving multiple keys that are pressed at once will be displayed
+ * with plus signs between keys. If a shortcut has multiple alternative hotkeys,
+ * they can be displayed either stacked vertically or inline (set
+ * `inline={true}`) .
  */
 export default function ShortcutKeyText(props: ShortcutKeyDisplayProps): ReactElement {
   const { shortcutKey, inline } = props;
   const { name, keycode, keycodeDisplay } = shortcutKey;
 
   const hotkeyElements: ReactNode = useMemo(() => {
-    // Get hotkeys to display-- the `keycodeDisplay` property overrides automatic
+    // Get hotkeys to display; the `keycodeDisplay` property overrides automatic
     // `keycode` parsing.
     let keycodeArray: string[];
     if (keycodeDisplay) {
@@ -79,6 +81,7 @@ export default function ShortcutKeyText(props: ShortcutKeyDisplayProps): ReactEl
       <FlexRow style={{ marginTop: 1 }}>{name}</FlexRow>
       <FlexColumn
         $gap={4}
+        // Change to row if inline
         style={{ justifyContent: "flex-end", alignItems: "flex-end", flexDirection: props.inline ? "row" : "column" }}
       >
         {hotkeyElements}

@@ -1,4 +1,4 @@
-import React, { type ReactElement } from "react";
+import React, { type ReactElement, useMemo } from "react";
 
 import LabeledList from "src/components/Display/LabeledList";
 import ShortcutKeyText from "src/components/Display/ShortcutKeyText";
@@ -14,13 +14,13 @@ type ShortcutKeyListProps = {
  * Displays a list of keyboard shortcuts under a labeled title.
  */
 export default function ShortcutKeyList(props: ShortcutKeyListProps): ReactElement {
-  const shortcutKeyElements = props.shortcutKeys.map((shortcutKey) => (
-    <ShortcutKeyText key={shortcutKey.name} shortcutKey={shortcutKey} inline={props.inline} />
-  ));
-  const isShortcutKeysEmpty = shortcutKeyElements.length === 0;
+  const shortcutKeyElements = useMemo(
+    () =>
+      props.shortcutKeys.map((shortcutKey) => (
+        <ShortcutKeyText key={shortcutKey.name} shortcutKey={shortcutKey} inline={props.inline} />
+      )),
+    [props.shortcutKeys, props.inline]
+  );
 
-  if (isShortcutKeysEmpty) {
-    return <LabeledList title={props.title}></LabeledList>;
-  }
   return <LabeledList title={props.title}>{shortcutKeyElements}</LabeledList>;
 }
