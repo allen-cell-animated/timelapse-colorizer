@@ -59,10 +59,10 @@ export const SHORTCUT_KEYS = {
     },
   },
   annotation: {
+    selectRange: { name: "Select range", keycode: "shift" },
     // TODO: Alt is used for other shortcuts in Chrome (by default, it focuses the menu bar when released).
     // Is there another modifier key that works better?
     reuseValue: { name: "Reuse last value", keycode: "alt,option" },
-    selectRange: { name: "Select range", keycode: "shift" },
   },
   navigation: {
     showShortcutMenu: { name: "Show keyboard shortcuts", keycode: "shift+slash,?", keycodeDisplay: "?" },
