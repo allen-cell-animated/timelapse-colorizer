@@ -579,9 +579,9 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   );
   const labelData: LabelData | undefined = labels[props.annotationState.currentLabelIdx ?? 0];
 
+  const annotationShortcutKeys = [];
   const shouldShowRangeSelectionHotkey = props.annotationState.baseSelectionMode !== AnnotationSelectionMode.RANGE;
   const shouldShowReuseValueHotkey = labelData?.options.type === LabelType.INTEGER && labelData?.options.autoIncrement;
-  let annotationShortcutKeys = [];
   if (shouldShowRangeSelectionHotkey) {
     annotationShortcutKeys.push(SHORTCUT_KEYS.annotation.selectRange);
   }

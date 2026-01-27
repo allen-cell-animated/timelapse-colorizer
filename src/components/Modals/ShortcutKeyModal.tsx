@@ -3,7 +3,7 @@ import React, { type ReactElement, useMemo } from "react";
 
 import ShortcutKeyList from "src/components/Display/ShortcutKeyList";
 import StyledModal from "src/components/Modals/StyledModal";
-import { ShortcutKeyInfo } from "src/constants";
+import type { ShortcutKeyInfo } from "src/constants";
 import { FlexColumn } from "src/styles/utils";
 
 type ShortcutKeyModalProps = {
