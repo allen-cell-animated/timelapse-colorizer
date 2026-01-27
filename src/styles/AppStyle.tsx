@@ -73,6 +73,7 @@ const theme = {
     layout: {
       background: palette.gray0,
       backgroundAlt: palette.gray7,
+      backgroundMed: palette.gray15,
       tabBackground: palette.gray5,
       dividers: palette.gray15,
       borders: palette.gray20,
@@ -190,6 +191,7 @@ const CssContainer = styled.div`
   /* Layout */
   --color-background-alt: ${theme.color.layout.backgroundAlt};
   --color-background: ${theme.color.layout.background};
+  --color-background-med: ${theme.color.layout.backgroundMed};
   --color-dividers: ${theme.color.layout.dividers};
   --color-borders: ${theme.color.layout.borders};
   --color-modal-overlay: ${theme.color.layout.modalOverlay};

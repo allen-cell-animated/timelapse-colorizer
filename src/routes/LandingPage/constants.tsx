@@ -2,7 +2,35 @@ import React from "react";
 
 import { ThresholdType } from "src/colorizer/types";
 import { ExternalLink } from "src/styles/utils";
-import type { ProjectEntry } from "src/types";
+import type { ProjectEntry, VideoEntry } from "src/types";
+
+export const LANDING_PAGE_VIDEO_CONTENT: VideoEntry[] = [
+  {
+    title: "Loading your own data",
+    description: "Learn how to convert and load 2D or 3D timelapse data.",
+    videoUrl: "https://www.youtube.com/embed/b7lbcyyG8is?rel=0",
+  },
+  {
+    title: "Explore your data",
+    description: "Zoom, pan, and apply colormaps to observe patterns and trends with fast, responsive playback.",
+    videoUrl: "https://www.youtube.com/embed/tSAhyacKtJE?rel=0",
+  },
+  {
+    title: "Plot anything",
+    description: "Use integrated plots to understand dynamics in one track-- or all of them.",
+    videoUrl: "https://www.youtube.com/embed/AmeZL-70cQs?rel=0",
+  },
+  {
+    title: "Annotate everything",
+    description: "Label segmentations or flag errors in a few clicks, then export to update your data.",
+    videoUrl: "https://www.youtube.com/embed/HDx55-07bfA?rel=0",
+  },
+  {
+    title: "Share with anyone",
+    description: "Save videos and images in seconds, or share a link to give to collaborators.",
+    videoUrl: "https://www.youtube.com/embed/CdiCGbnEp8U?rel=0",
+  },
+];
 
 export const LANDING_PAGE_CONTENT: ProjectEntry[] = [
   {

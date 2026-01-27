@@ -9,11 +9,12 @@ import HelpDropdown from "src/components/Dropdowns/HelpDropdown";
 import Header from "src/components/Header";
 import LoadDatasetButton from "src/components/LoadDatasetButton";
 import { PageRoutes } from "src/routes";
-import { FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter, VisuallyHidden } from "src/styles/utils";
+import { ExternalLink, FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter, VisuallyHidden } from "src/styles/utils";
 import type { LocationState } from "src/types";
 
 import ProjectList from "./components/ProjectList";
-import { LANDING_PAGE_CONTENT } from "./constants";
+import VideoList from "./components/VideoList";
+import { LANDING_PAGE_CONTENT, LANDING_PAGE_VIDEO_CONTENT } from "./constants";
 
 const BannerVideo = lazy(() => import("src/components/AssetWrappers/BannerVideo"));
 
@@ -90,9 +91,16 @@ const FeatureHighlightsItem = styled(FlexColumn)`
   }
 `;
 
-const LoadPromptContainer = styled(FlexColumnAlignCenter)`
+const TutorialVideoContainer = styled.div`
+  width: 100%;
   background-color: var(--color-background-alt);
-  margin: 30px 0;
+  padding: 30px 0;
+  margin-top: 30px;
+`;
+
+const LoadPromptContainer = styled(FlexColumnAlignCenter)`
+  background-color: var(--color-background-med);
+  margin: 0 0 30px 0;
   padding: 30px 0;
 
   & > h2 {
@@ -172,6 +180,26 @@ export default function LandingPage(): ReactElement {
           </FeatureHighlightsItem>
         </FeatureHighlightsContainer>
       </ContentContainer>
+
+      <TutorialVideoContainer>
+        <ContentContainer style={{ gap: 20 }}>
+          <h2 style={{ margin: 0 }}>See how Timelapse Feature Explorer can help in your research and analysis</h2>
+          <VideoList videoEntries={LANDING_PAGE_VIDEO_CONTENT}></VideoList>
+          <h2 style={{ margin: 0 }}>Additional resources</h2>
+          <ul style={{ margin: 0 }}>
+            <li style={{ margin: 0 }}>
+              Follow{" "}
+              <ExternalLink
+                href={
+                  "https://github.com/allen-cell-animated/colorizer-data/blob/main/documentation/getting_started_guide/GETTING_STARTED.ipynb"
+                }
+              >
+                our data conversion tutorial on GitHub
+              </ExternalLink>
+            </li>
+          </ul>
+        </ContentContainer>
+      </TutorialVideoContainer>
 
       <LoadPromptContainer>
         <h2 style={{ margin: 0 }}>Load a dataset below or your own data to get started</h2>
