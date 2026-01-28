@@ -129,6 +129,9 @@ export default class Plotting {
       yaxis: {
         title: dataset.getFeatureNameWithUnits(featureKey),
       },
+      xaxis: {
+        title: dataset.getFeatureNameWithUnits(TIME_FEATURE_KEY),
+      },
       shapes: [
         {
           ...LINE_SPEC,
