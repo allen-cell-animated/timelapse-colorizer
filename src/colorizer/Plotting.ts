@@ -1,5 +1,6 @@
 import Plotly from "plotly.js-dist-min";
 
+import { DEFAULT_CATEGORICAL_PALETTE_KEY, KNOWN_CATEGORICAL_PALETTES } from "src/colorizer/colors/categorical_palettes";
 import { getHoverTemplate } from "src/components/Tabs/ScatterPlot/scatter_plot_data_utils";
 
 import type Dataset from "./Dataset";
@@ -22,6 +23,8 @@ const LINE_SPEC: Partial<Plotly.Shape> = {
     dash: "dot",
   },
 };
+
+const DEFAULT_LINE_PALETTE = KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_KEY)!.colorStops;
 
 // TODO: Color the plot with the current color ramp?
 // TODO: Style the crosshair like the one in the Scatterplot?
@@ -100,7 +103,7 @@ export default class Plotting {
     if (dataset === null || featureKey === null) {
       return;
     }
-    const traces: Partial<Plotly.PlotData>[] = Array.from(tracks.values()).map((track) => {
+    const traces: Partial<Plotly.PlotData>[] = Array.from(tracks.values()).map((track, index) => {
       const plotinfo = dataset.buildTrackFeaturePlot(track, featureKey);
       const segIds = track.ids.map((id) => dataset.getSegmentationId(id));
       const customData = segIds.map((segId) => {
@@ -115,6 +118,9 @@ export default class Plotting {
         name: `Track ${track.trackId}`,
         customdata: customData,
         hovertemplate: getHoverTemplate(dataset, TIME_FEATURE_KEY, featureKey),
+        line: {
+          color: DEFAULT_LINE_PALETTE[index % DEFAULT_LINE_PALETTE.length],
+        },
       };
     });
 
