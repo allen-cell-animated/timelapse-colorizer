@@ -35,7 +35,7 @@ export default function PlotTab(props: PlotTabProps): ReactElement {
   const dataset = useViewerStateStore((state) => state.dataset);
   const featureKey = useViewerStateStore((state) => state.featureKey);
   const pendingFrame = useViewerStateStore((state) => state.pendingFrame);
-  const selectedTrack = useViewerStateStore((state) => state.track);
+  const tracks = useViewerStateStore((state) => state.tracks);
   const setFrame = useViewerStateStore((state) => state.setFrame);
   const setTrack = useViewerStateStore((state) => state.setTrack);
 
@@ -104,7 +104,7 @@ export default function PlotTab(props: PlotTabProps): ReactElement {
             frame={currentFrame}
             dataset={dataset}
             featureKey={featureKey}
-            selectedTrack={selectedTrack}
+            tracks={tracks}
           />
         </LoadingSpinner>
       </div>

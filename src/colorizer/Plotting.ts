@@ -68,11 +68,9 @@ export type TrackPlotLayoutConfig = {
 export default class Plotting {
   private parentRef: HTMLElement;
   private dataset: Dataset | null;
-  private trace: Plotly.Data | null;
 
   constructor(parentRef: HTMLElement) {
     this.dataset = null;
-    this.trace = null;
     this.parentRef = parentRef;
     const layout: Partial<Plotly.Layout> = {
       xaxis: {
@@ -94,20 +92,23 @@ export default class Plotting {
     this.dataset = dataset;
   }
 
-  plot(track: Track, featureKey: string | null, time: number): void {
-    if (this.dataset === null || featureKey === null) {
+  plot(tracks: Map<number, Track>, featureKey: string | null, time: number): void {
+    const dataset = this.dataset;
+    if (dataset === null || featureKey === null) {
       return;
     }
-    const plotinfo = this.dataset?.buildTrackFeaturePlot(track, featureKey);
-    this.trace = {
-      x: plotinfo.domain,
-      y: plotinfo.range,
-      type: "scatter",
-    };
+    const traces: Plotly.Data[] = Array.from(tracks.values()).map((track) => {
+      const plotinfo = dataset.buildTrackFeaturePlot(track, featureKey);
+      return {
+        x: plotinfo.domain,
+        y: plotinfo.range,
+        type: "scatter",
+      };
+    });
 
     const layout: Partial<Plotly.Layout> = {
       yaxis: {
-        title: this.dataset.getFeatureNameWithUnits(featureKey),
+        title: dataset.getFeatureNameWithUnits(featureKey),
       },
       shapes: [
         {
@@ -116,10 +117,11 @@ export default class Plotting {
           x1: time,
         },
       ],
-      title: "track " + track.trackId,
+      // title: "track " + track.trackId,
+      title: "track ",
     };
 
-    Plotly.react(this.parentRef, [this.trace], layout, CONFIG);
+    Plotly.react(this.parentRef, traces, layout, CONFIG);
   }
 
   updateLayout(config: TrackPlotLayoutConfig): void {
