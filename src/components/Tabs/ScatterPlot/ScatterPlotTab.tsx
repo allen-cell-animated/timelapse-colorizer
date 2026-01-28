@@ -6,7 +6,7 @@ import styled from "styled-components";
 import { Color, type ColorRepresentation } from "three";
 
 import { SwitchIconSVG } from "src/assets";
-import { ColorRampType, type Dataset } from "src/colorizer";
+import { ColorRampType, type Dataset, Track } from "src/colorizer";
 import { TIME_FEATURE_KEY } from "src/colorizer/Dataset";
 import { DrawMode, type HexColorString, PlotRangeType } from "src/colorizer/types";
 import type { ShowAlertBannerCallback } from "src/components/Banner/hooks";
@@ -81,7 +81,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const outOfRangeDrawSettings = useViewerStateStore((state) => state.outOfRangeDrawSettings);
   const rangeType = useViewerStateStore((state) => state.scatterRangeType);
   const selectedFeatureKey = useViewerStateStore((state) => state.featureKey);
-  const selectedTrack = useViewerStateStore((state) => state.track);
+  const tracks = useViewerStateStore((state) => state.tracks);
   const setFrame = useViewerStateStore((state) => state.setFrame);
   const setRangeType = useViewerStateStore((state) => state.setScatterRangeType);
   const setTrack = useViewerStateStore((state) => state.setTrack);
@@ -304,7 +304,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const filterDataByRange = (
     rawXData: DataArray,
     rawYData: DataArray,
-    range: PlotRangeType
+    range: PlotRangeType,
+    track?: Track
   ):
     | undefined
     | {
@@ -340,17 +341,17 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       }
     } else if (range === PlotRangeType.CURRENT_TRACK) {
       // Filter data to only show the current track.
-      if (!selectedTrack) {
+      if (!track) {
         return { xData: [], yData: [], objectIds: [], segIds: [], trackIds: [] };
       }
-      for (let i = 0; i < selectedTrack.ids.length; i++) {
-        const id = selectedTrack.ids[i];
+      for (let i = 0; i < track.ids.length; i++) {
+        const id = track.ids[i];
         xData.push(rawXData[id]);
         yData.push(rawYData[id]);
       }
-      objectIds = Array.from(selectedTrack.ids);
-      segIds = objectIds.map(dataset.getSegmentationId);
-      trackIds = Array(selectedTrack.ids.length).fill(selectedTrack.trackId);
+      objectIds.push(...track.ids);
+      segIds.push(...objectIds.map(dataset.getSegmentationId));
+      trackIds.push(...Array(track.ids.length).fill(track.trackId));
     } else {
       // All time
       objectIds = [...rawXData.keys()];
@@ -452,18 +453,21 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
   // TODO: Move to `scatter_plot_data_utils.ts`
   /**
-   * Applies coloring to point traces in a scatterplot. Does this by splitting the data into multiple traces each with a solid
-   * color, which is much faster than using Plotly's native color ramping. Also enforces a maximum number of points
-   * per trace, which significantly speeds up Plotly renders.
+   * Applies coloring to point traces in a scatterplot. Does this by splitting
+   * the data into multiple traces each with a solid color, which is much faster
+   * than using Plotly's native color ramping. Also enforces a maximum number of
+   * points per trace, which significantly speeds up Plotly renders.
    *
    * @param xData
    * @param yData
    * @param objectIds
    * @param trackIds
-   * @param markerConfig Additional marker configuration to apply to all points. By default,
-   * markers are size 4.
-   * @param {Color | undefined} overrideColor When defined, uses a base color for all points, instead of
-   * calculating based on the color ramp or palette.
+   * @param markerConfig Additional marker configuration to apply to all points.
+   * By default, markers are size 4.
+   * @param {Color | undefined} overrideColor When defined, uses a base color
+   * for all points, instead of calculating based on the color ramp or palette.
+   * @param allowHover Whether to allow hover tooltips on the points, true by
+   * default. When false, hover info is disabled.
    */
   const colorizeScatterplotPoints = (
     xData: DataArray,
@@ -637,7 +641,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     yAxisFeatureKey,
     rangeType,
     currentFrame,
-    selectedTrack,
+    tracks,
     isVisible,
     isPlaying,
     plotDivRef.current,
@@ -671,7 +675,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     plottedIds.current = new Set(objectIds);
 
     let markerBaseColor = undefined;
-    if (rangeType === PlotRangeType.ALL_TIME && selectedTrack) {
+    if (rangeType === PlotRangeType.ALL_TIME && tracks.size > 0) {
       // Use a light grey for other markers when a track is selected.
       markerBaseColor = new Color("#dddddd");
     }
@@ -688,7 +692,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       {},
       markerBaseColor,
       // disable hover for all points other than the track when one is selected
-      selectedTrack === null || rangeType !== PlotRangeType.ALL_TIME
+      tracks.size === 0 || rangeType !== PlotRangeType.ALL_TIME
     );
 
     const xHistogram: Partial<Plotly.PlotData> = {
@@ -714,36 +718,38 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     traces.push(yHistogram);
 
     // Render current track as an extra trace.
-    const trackData = filterDataByRange(rawXData, rawYData, PlotRangeType.CURRENT_TRACK);
-    if (trackData && rangeType !== PlotRangeType.CURRENT_FRAME) {
-      // Render an extra trace for lines connecting the points in the current track when time is a feature.
-      if (isUsingTime) {
-        traces.push(
-          makeLineTrace(trackData.xData, trackData.yData, trackData.objectIds, trackData.segIds, trackData.trackIds)
-        );
-      }
-      // Render track points
-      const outOfRangeOutlineColor = outOfRangeDrawSettings.color.clone().multiplyScalar(0.8);
-      const trackTraces = colorizeScatterplotPoints(
-        trackData.xData,
-        trackData.yData,
-        trackData.objectIds,
-        trackData.segIds,
-        trackData.trackIds,
-        {
-          outOfRange: {
-            color: theme.color.layout.background,
-            line: { width: 1, color: "#" + outOfRangeOutlineColor.getHexString() + "40" },
-          },
+    for (const track of tracks.values()) {
+      const trackData = filterDataByRange(rawXData, rawYData, PlotRangeType.CURRENT_TRACK, track);
+      if (trackData && rangeType !== PlotRangeType.CURRENT_FRAME) {
+        // Render an extra trace for lines connecting the points in the current track when time is a feature.
+        if (isUsingTime) {
+          traces.push(
+            makeLineTrace(trackData.xData, trackData.yData, trackData.objectIds, trackData.segIds, trackData.trackIds)
+          );
         }
-      );
-      traces.push(...trackTraces);
-      plottedIds.current = new Set([...plottedIds.current, ...trackData.objectIds]);
+        // Connect track points as a line trace.
+        const outOfRangeOutlineColor = outOfRangeDrawSettings.color.clone().multiplyScalar(0.8);
+        const trackTraces = colorizeScatterplotPoints(
+          trackData.xData,
+          trackData.yData,
+          trackData.objectIds,
+          trackData.segIds,
+          trackData.trackIds,
+          {
+            outOfRange: {
+              color: theme.color.layout.background,
+              line: { width: 1, color: "#" + outOfRangeOutlineColor.getHexString() + "40" },
+            },
+          }
+        );
+        traces.push(...trackTraces);
+        plottedIds.current = new Set([...plottedIds.current, ...trackData.objectIds]);
+      }
     }
 
-    // Render currently selected object as an extra crosshair trace.
-    if (selectedTrack) {
-      const currentObjectId = selectedTrack.getIdAtTime(currentFrame);
+    // Render track points
+    for (const track of tracks.values()) {
+      const currentObjectId = track.getIdAtTime(currentFrame);
       if (currentObjectId !== -1) {
         traces.push(...drawCrosshair(rawXData[currentObjectId], rawYData[currentObjectId]));
         traces.push(
@@ -752,7 +758,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
             [rawYData[currentObjectId]],
             [currentObjectId],
             [dataset.getSegmentationId(currentObjectId)],
-            [selectedTrack.trackId],
+            [track.trackId],
             { size: 4 }
           )
         );
@@ -936,9 +942,9 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
             setIsRendering(true);
             clearTrack();
           }}
-          disabled={selectedTrack === null}
+          disabled={tracks.size === 0}
         >
-          Clear Track
+          Clear Tracks
         </Button>
 
         <Button
