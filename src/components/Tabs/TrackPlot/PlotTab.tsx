@@ -69,7 +69,10 @@ export default function PlotTab(props: PlotTabProps): ReactElement {
     // TODO: Show error text if track is not found?
     if (track) {
       addTracks(track);
-      setFrame(track.times[0]);
+      // Check if track exists at the current frame; if not, jump to the first frame of the track.
+      if (!track.times.includes(currentFrame)) {
+        setFrame(track.times[0]);
+      }
     }
   };
 
