@@ -73,7 +73,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   // ^ Memo prevents re-rendering if the props haven't changed.
   const theme = useContext(AppThemeContext);
 
-  const clearTrack = useViewerStateStore((state) => state.clearTrack);
   const colorRamp = useViewerStateStore((state) => state.colorRamp);
   const currentFrame = useViewerStateStore((state) => state.currentFrame);
   const inRangeLUT = useViewerStateStore((state) => state.inRangeLUT);
@@ -82,9 +81,11 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const rangeType = useViewerStateStore((state) => state.scatterRangeType);
   const selectedFeatureKey = useViewerStateStore((state) => state.featureKey);
   const tracks = useViewerStateStore((state) => state.tracks);
+  const addTracks = useViewerStateStore((state) => state.addTracks);
+  const clearTracks = useViewerStateStore((state) => state.clearTracks);
   const setFrame = useViewerStateStore((state) => state.setFrame);
   const setRangeType = useViewerStateStore((state) => state.setScatterRangeType);
-  const setTrack = useViewerStateStore((state) => state.setTrack);
+  const toggleTrack = useViewerStateStore((state) => state.toggleTrack);
   const setXAxis = useViewerStateStore((state) => state.setScatterXAxis);
   const setYAxis = useViewerStateStore((state) => state.setScatterYAxis);
   const xAxisFeatureKey = useViewerStateStore((state) => state.scatterXAxis);
@@ -150,7 +151,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       // click event occurs.
       emptyClickTimeout.current = window.setTimeout(() => {
         if (currentRangeType.current !== PlotRangeType.CURRENT_TRACK) {
-          clearTrack();
+          console.log("Clearing tracks due to empty plot click");
+          clearTracks();
         }
       }, PLOTLY_CLICK_TIMEOUT_MS);
     };
@@ -161,7 +163,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     return () => {
       xyPlotDiv?.removeEventListener("click", onClick);
     };
-  }, [plotDivRef.current, clearTrack]);
+  }, [plotDivRef.current, clearTracks]);
 
   // Trigger render spinner when playback starts, but only if the render is being delayed.
   // If a render is allowed to happen (such as in the current-track- or current-frame-only
@@ -219,7 +221,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       }
       const frame = dataset.times ? dataset.times[objectId] : track.times[0];
       setFrame(frame).then(() => {
-        setTrack(track);
+        addTracks(track);
       });
     };
 
@@ -227,7 +229,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     return () => {
       plotRef?.removeAllListeners("plotly_click");
     };
-  }, [plotRef, dataset, setTrack, setFrame]);
+  }, [plotRef, dataset, clearTracks, toggleTrack, addTracks, setFrame]);
 
   //////////////////////////////////
   // Helper Methods
@@ -698,7 +700,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     const xHistogram: Partial<Plotly.PlotData> = {
       x: xData,
       name: "x density",
-      marker: { color: theme.color.themeLight, line: { color: theme.color.themeDark, width: 1 } },
+      marker: { color: theme.color.plots.histogram, line: { color: theme.color.plots.histogramOutline, width: 1 } },
       yaxis: "y2",
       type: "histogram",
       // @ts-ignore. TODO: Update once the plotly types are updated.
@@ -707,7 +709,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     const yHistogram: Partial<PlotData> = {
       y: yData,
       name: "y density",
-      marker: { color: theme.color.themeLight, line: { color: theme.color.themeDark, width: 1 } },
+      marker: { color: theme.color.plots.histogram, line: { color: theme.color.plots.histogramOutline, width: 1 } },
       xaxis: "x2",
       type: "histogram",
       // @ts-ignore. TODO: Update once the plotly types are updated.
@@ -940,7 +942,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         <Button
           onClick={() => {
             setIsRendering(true);
-            clearTrack();
+            clearTracks();
           }}
           disabled={tracks.size === 0}
         >
@@ -967,7 +969,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         <LoadingSpinner loading={isRendering || isDebouncePending} style={{ marginTop: "10px" }}>
           {makePlotButtons()}
           <ScatterPlotContainer
-            style={{ width: "100%", height: "475px", padding: "5px" }}
+            style={{ width: "calc(min(100%, 650px))", aspectRatio: "6.5 / 6", padding: "5px" }}
             ref={plotDivRef}
           ></ScatterPlotContainer>
         </LoadingSpinner>
