@@ -44,8 +44,10 @@ export default function PlotTab(props: PlotTabProps): ReactElement {
   // Sync track searchbox with selected track
   useEffect(() => {
     const unsubscribe = useViewerStateStore.subscribe(
-      (state) => [state.track],
-      ([track]) => {
+      (state) => [state.tracks],
+      ([tracks]) => {
+        const trackIds = Array.from(tracks.keys());
+        const track = tracks.get(trackIds[trackIds.length - 1]);
         if (track) {
           setFindTrackInput(track.trackId.toString());
         } else {
