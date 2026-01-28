@@ -112,13 +112,13 @@ export default class Plotting {
         y: plotinfo.range,
         ids: track.ids.map((id) => id.toString()),
         type: "scatter",
-        name: `track ${track.trackId}`,
+        name: `Track ${track.trackId}`,
         customdata: customData,
         hovertemplate: getHoverTemplate(dataset, TIME_FEATURE_KEY, featureKey),
       };
     });
 
-    const title = tracks.size === 1 ? `track ${Array.from(tracks.keys())[0]}` : "tracks";
+    const title = tracks.size === 1 ? `Track ${Array.from(tracks.keys())[0]}` : tracks.size + " tracks selected";
     const layout: Partial<Plotly.Layout> = {
       yaxis: {
         title: dataset.getFeatureNameWithUnits(featureKey),
