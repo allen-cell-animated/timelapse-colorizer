@@ -1,6 +1,9 @@
 import Plotly from "plotly.js-dist-min";
 
+import { getHoverTemplate } from "src/components/Tabs/ScatterPlot/scatter_plot_data_utils";
+
 import type Dataset from "./Dataset";
+import { TIME_FEATURE_KEY } from "./Dataset";
 import type Track from "./Track";
 
 const LINE_OPACITY = 0.5;
@@ -81,7 +84,7 @@ export default class Plotting {
       },
       title: "No track selected",
       width: 600,
-      height: 400,
+      height: 650,
     };
 
     Plotly.newPlot(this.parentRef, [], layout, CONFIG);
@@ -97,15 +100,25 @@ export default class Plotting {
     if (dataset === null || featureKey === null) {
       return;
     }
-    const traces: Plotly.Data[] = Array.from(tracks.values()).map((track) => {
+    const traces: Partial<Plotly.PlotData>[] = Array.from(tracks.values()).map((track) => {
       const plotinfo = dataset.buildTrackFeaturePlot(track, featureKey);
+      const segIds = track.ids.map((id) => dataset.getSegmentationId(id));
+      const customData = segIds.map((segId) => {
+        return [track.trackId.toString(), segId.toString()];
+      });
+
       return {
         x: plotinfo.domain,
         y: plotinfo.range,
+        ids: track.ids.map((id) => id.toString()),
         type: "scatter",
+        name: `track ${track.trackId}`,
+        customdata: customData,
+        hovertemplate: getHoverTemplate(dataset, TIME_FEATURE_KEY, featureKey),
       };
     });
 
+    const title = tracks.size === 1 ? `track ${Array.from(tracks.keys())[0]}` : "tracks";
     const layout: Partial<Plotly.Layout> = {
       yaxis: {
         title: dataset.getFeatureNameWithUnits(featureKey),
@@ -117,8 +130,7 @@ export default class Plotting {
           x1: time,
         },
       ],
-      // title: "track " + track.trackId,
-      title: "track ",
+      title,
     };
 
     Plotly.react(this.parentRef, traces, layout, CONFIG);

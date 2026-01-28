@@ -105,11 +105,12 @@ export default function PlotWrapper(inputProps: PlotWrapperProps): ReactElement 
         return;
       }
       // TODO: Include object ID as customdata
-      const time = eventData.points[0].x;
-      if (time) {
-        // const objectId = props.selectedTrack?.getIdAtTime(time as number);
-        // objectId && setHoveredObjectId(objectId);
+      const point = eventData.points[0];
+      const objectId = Number.parseInt(point.data.ids[point.pointNumber], 10);
+      if (isNaN(objectId)) {
+        return;
       }
+      objectId && setHoveredObjectId(objectId);
     };
 
     const onHoverExit = (): void => {
