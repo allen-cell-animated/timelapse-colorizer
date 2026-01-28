@@ -151,7 +151,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       // click event occurs.
       emptyClickTimeout.current = window.setTimeout(() => {
         if (currentRangeType.current !== PlotRangeType.CURRENT_TRACK) {
-          console.log("Clearing tracks due to empty plot click");
           clearTracks();
         }
       }, PLOTLY_CLICK_TIMEOUT_MS);
@@ -386,12 +385,12 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     histogramTrace: Partial<PlotData>;
   } => {
     let scatterPlotAxis: Partial<Plotly.LayoutAxis> = {
-      domain: [0, 0.8],
+      domain: [0, 0.85],
       showgrid: false,
       zeroline: true,
     };
     const histogramAxis: Partial<Plotly.LayoutAxis> = {
-      domain: [0.85, 1],
+      domain: [0.9, 1],
       showgrid: false,
       zeroline: true,
       hoverformat: "f",
@@ -969,7 +968,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         <LoadingSpinner loading={isRendering || isDebouncePending} style={{ marginTop: "10px" }}>
           {makePlotButtons()}
           <ScatterPlotContainer
-            style={{ width: "calc(min(100%, 650px))", aspectRatio: "6.5 / 6", padding: "5px" }}
+            style={{ width: "calc(min(100%, 680px))", aspectRatio: "7 / 6", padding: "5px" }}
             ref={plotDivRef}
           ></ScatterPlotContainer>
         </LoadingSpinner>
