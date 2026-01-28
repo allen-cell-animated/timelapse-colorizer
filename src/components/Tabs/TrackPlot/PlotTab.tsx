@@ -37,7 +37,7 @@ export default function PlotTab(props: PlotTabProps): ReactElement {
   const pendingFrame = useViewerStateStore((state) => state.pendingFrame);
   const tracks = useViewerStateStore((state) => state.tracks);
   const setFrame = useViewerStateStore((state) => state.setFrame);
-  const setTrack = useViewerStateStore((state) => state.setTrack);
+  const addTracks = useViewerStateStore((state) => state.addTracks);
 
   const [findTrackInput, setFindTrackInput] = useState("");
 
@@ -66,7 +66,7 @@ export default function PlotTab(props: PlotTabProps): ReactElement {
     const track = dataset.getTrack(trackId);
     // TODO: Show error text if track is not found?
     if (track) {
-      setTrack(track);
+      addTracks(track);
       setFrame(track.times[0]);
     }
   };
