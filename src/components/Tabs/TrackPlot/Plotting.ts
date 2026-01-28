@@ -104,6 +104,7 @@ export default class Plotting {
     }
     const traces: Partial<Plotly.PlotData>[] = Array.from(tracks.values()).map((track, index) => {
       const plotinfo = dataset.buildTrackFeaturePlot(track, featureKey);
+      // Add segmentation ID + track ID to customdata for hovertemplate
       const segIds = track.ids.map((id) => dataset.getSegmentationId(id));
       const customData = segIds.map((segId) => {
         return [track.trackId.toString(), segId.toString()];
