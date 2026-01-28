@@ -64,6 +64,7 @@ const ScatterPlotContainer = styled.div`
     // Remove Plotly border
     border: 0px solid transparent !important;
   }
+  margin: 0 auto;
 `;
 
 /**
