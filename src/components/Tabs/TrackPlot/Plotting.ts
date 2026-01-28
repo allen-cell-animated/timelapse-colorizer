@@ -1,11 +1,10 @@
 import Plotly from "plotly.js-dist-min";
 
 import { DEFAULT_CATEGORICAL_PALETTE_KEY, KNOWN_CATEGORICAL_PALETTES } from "src/colorizer/colors/categorical_palettes";
-import { getHoverTemplate } from "src/components/Tabs/ScatterPlot/scatter_plot_data_utils";
-
-import type Dataset from "./Dataset";
-import { TIME_FEATURE_KEY } from "./Dataset";
-import type Track from "./Track";
+import type Dataset from "src/colorizer/Dataset";
+import { TIME_FEATURE_KEY } from "src/colorizer/Dataset";
+import type Track from "src/colorizer/Track";
+import { getHoverTemplate } from "src/utils/scatter_plot_data_utils";
 
 const LINE_OPACITY = 0.5;
 const LINE_COLOR = "rgb(25, 25, 25)";
