@@ -6,7 +6,7 @@ import styled from "styled-components";
 import { Color, type ColorRepresentation } from "three";
 
 import { SwitchIconSVG } from "src/assets";
-import { ColorRampType, type Dataset, Track } from "src/colorizer";
+import { ColorRampType, type Dataset, type Track } from "src/colorizer";
 import { TIME_FEATURE_KEY } from "src/colorizer/Dataset";
 import { DrawMode, type HexColorString, PlotRangeType } from "src/colorizer/types";
 import type { ShowAlertBannerCallback } from "src/components/Banner/hooks";
