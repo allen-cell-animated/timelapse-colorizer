@@ -76,11 +76,6 @@ export default function ShareUrlButton(props: ShareUrlButtonProps): ReactElement
   let icon = <ExclamationCircleFilled />;
   const warningContents: ReactNode[] = [];
 
-  // If on local instance of TFE AND datset IS local, warn that dataset cannot be shared -> link to docs FAQ
-  // If on local instance of TFE AND dataset IS NOT local, provide link to public TFE.
-  // If dataset is local => warn that dataset cannot be shared -> link to docs FAQ
-  // If on internal, warn that dataset may not be accessible to external users -> link to docs FAQ
-
   const faqLink = (
     <span>
       For more help, see our{" "}
