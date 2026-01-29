@@ -17,7 +17,7 @@ Examples of hosting services include:
 Your institution may have its own hosting solution for internal-only data.
 
 <details>
-<summary><b>[🔍 Instructions for Allen Institute users]</b></summary>
+<summary><b>[🏢 Instructions for Allen Institute users]</b></summary>
 
 ---
 
