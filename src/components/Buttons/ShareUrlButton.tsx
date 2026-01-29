@@ -59,6 +59,19 @@ export default function ShareUrlButton(props: ShareUrlButtonProps): ReactElement
     });
   };
 
+  const handleOpenChange = (open: boolean): void => {
+    if (!open) {
+      setIsOpen(false);
+      return;
+    }
+    const canShareNormally = !isLocalTfeInstance && !hasLocalUrls && !hasInternalUrls;
+    if (canShareNormally) {
+      copyUrlAndShowNotification();
+    } else {
+      setIsOpen(true);
+    }
+  };
+
   let warningTitle = "Shared URL may fail to load";
   let icon = <ExclamationCircleFilled />;
   const warningContents: ReactNode[] = [];
@@ -71,7 +84,7 @@ export default function ShareUrlButton(props: ShareUrlButtonProps): ReactElement
   const faqLink = (
     <span>
       For more help, see our{" "}
-      <ExternalLink href="https://github.com/allen-cell-animated/timelapse-colorizer/tree/main/README.md">
+      <ExternalLink href="https://github.com/allen-cell-animated/timelapse-colorizer/blob/doc/dataset-sharing/docs/FAQ.md#q-how-do-i-share-local-datasets">
         FAQ documentation.
       </ExternalLink>
     </span>
@@ -115,7 +128,7 @@ export default function ShareUrlButton(props: ShareUrlButtonProps): ReactElement
         icon={icon}
         okText="Copy URL"
         open={isOpen}
-        onOpenChange={(open) => setIsOpen(open)}
+        onOpenChange={handleOpenChange}
         style={{ marginRight: "10px" }}
         placement="bottomRight"
       >
