@@ -39,7 +39,7 @@ export function renderStringArrayAsJsx(items: ReactNode[] | string[] | string | 
 
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
-    if (typeof item === "string" && item.startsWith("- ")) {
+    if (typeof item === "string" && item.trim().startsWith("- ")) {
       currListElements.push(<li key={currListElements.length}>{item.trim().substring(2)}</li>);
     } else {
       if (currListElements.length > 0) {
