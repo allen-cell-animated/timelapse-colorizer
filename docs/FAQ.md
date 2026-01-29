@@ -2,13 +2,11 @@
 
 ## Sharing datasets
 
-### Q: How do I share my datasets from a local instance of Timelapse Feature Explorer?
+### Q: How do I share local datasets?
 
-A: You'll need to ensure both the instance of Timelapse Feature Explorer you are using and the dataset itself can be accessed by your collaborators.
+A: Datasets are usually opened locally when using the `tfe-open` CLI command from [`colorizer_data`](https://github.com/allen-cell-animated/colorizer-data), which allows you to view local data. However, local datasets can't be accessed by other users.
 
-Timelapse Feature Explorer can be run locally to view local files (e.g. with the `tfe-open` command from `colorizer_data`). This works great for quick exploration of your data, but other users will not be able to access the dataset.
-
-You will need to move your dataset to a location that other computers can access over HTTPS. This is often done with a hosting server or cloud storage service.
+To share your dataset, you will need to move it and any files it may need (e.g. segmentation or image files) to a location that other computers can access over HTTPS. This is often done with a hosting server or a cloud storage service.
 
 Examples of hosting services include:
 
@@ -23,25 +21,26 @@ Your institution may have its own hosting solution for internal-only data.
 
 ---
 
-Files located on the VAST filesystem can be shared with other users internally. Users must be connected to the Allen Institute network to access it.
+Files located on VAST can be shared with other users internally. Users must be connected to the Allen Institute network to access them.
 
-1. If needed, rerun the dataset conversion to output to the VAST filesystem. Your segmentations/images must also be located on VAST for the dataset to be loaded correctly.
+1. If needed, rerun the dataset conversion to output to a folder on VAST. Your segmentations and/or images must also be located on VAST for the dataset to be loaded.
 2. Copy the path to your dataset folder on VAST. The path should start with `/allen/aics/` and the directory must contain either a `collection.json` or `manifest.json` file.
-3. Follow the steps below, using the VAST path as the URL to your dataset folder.
+3. Follow the steps below, using the path as the URL to your dataset folder.
 
 ---
 
 </details>
-<br/>
 
 To open and share your dataset:
 
 1. Copy the URL to your TFE dataset folder. The folder should contain a `collection.json` or `manifest.json` file.
 2. Go to the public version of Timelapse Feature Explorer at [https://timelapse.allencell.org/](https://timelapse.allencell.org/).
 3. Press **Load** in the top right corner to open the load menu.
-4. Paste the URL to your dataset folder, and click the **Load** button.
+4. Paste the URL to your dataset, and click the **Load** button.
 5. Once the dataset loads, click **Share** to copy a shareable link to your dataset in Timelapse Feature Explorer.
 
-### Q: How do I share datasets that are located on VAST with external collaborators?
+### Q: How do I share datasets located on VAST with external collaborators?
 
-Allen Institute users can share datasets located on the VAST filesystem with external collaborators by first copying the dataset to a publicly accessible hosting service (e.g., Amazon S3, Google Cloud Storage). Once the dataset is hosted externally, follow the steps outlined above to load and share the dataset using Timelapse Feature Explorer.
+Datasets will need to be moved to a publicly accessible hosting service or server before they can be shared with external collaborators (e.g., Amazon S3, Google Cloud Storage).
+
+Once the dataset is hosted externally, follow the steps outlined above to load and share the dataset in Timelapse Feature Explorer.
