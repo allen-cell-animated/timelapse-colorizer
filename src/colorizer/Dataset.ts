@@ -90,7 +90,7 @@ const MAX_CACHED_BACKDROPS_BYTES = 500_000_000; // 500 MB
 
 export default class Dataset {
   private frameLoader: ITextureImageLoader;
-  private frameFiles?: string[];
+  public frameFiles?: string[];
   private frames: DataCache<number, Texture> | null;
   private frameDimensions: Vector2 | null;
 

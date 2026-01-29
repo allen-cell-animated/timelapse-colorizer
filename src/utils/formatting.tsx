@@ -22,7 +22,7 @@ export const RenderedStringContainer = styled.div`
  * will be wrapped in a unordered list (`ul`) element.
  * - Otherwise, the item is wrapped in a `p` element.
  */
-export function renderStringArrayAsJsx(items: string[] | string | undefined): ReactElement | undefined {
+export function renderStringArrayAsJsx(items: ReactNode[] | string[] | string | undefined): ReactElement | undefined {
   if (!items || items.length === 0) {
     return undefined;
   }
@@ -38,15 +38,19 @@ export function renderStringArrayAsJsx(items: string[] | string | undefined): Re
   let currListElements: ReactNode[] = [];
 
   for (let i = 0; i < items.length; i++) {
-    const item = items[i].trim();
-    if (item.startsWith("- ")) {
-      currListElements.push(<li key={currListElements.length}>{item.substring(2)}</li>);
+    const item = items[i];
+    if (typeof item === "string" && item.startsWith("- ")) {
+      currListElements.push(<li key={currListElements.length}>{item.trim().substring(2)}</li>);
     } else {
       if (currListElements.length > 0) {
         elements.push(<ul key={i - 1}>{currListElements}</ul>);
         currListElements = [];
       }
-      elements.push(<p key={i}>{item}</p>);
+      if (typeof item === "string") {
+        elements.push(<p key={i}>{item}</p>);
+      } else {
+        elements.push(item);
+      }
     }
   }
 
