@@ -21,10 +21,10 @@ Your institution may have its own hosting solution for internal-only data.
 
 ---
 
-Files located on VAST can be shared with other users internally. Users must be connected to the Allen Institute network to access them.
+Files located on the internal filesystem (VAST) can be shared with other internal users. Users must be connected to the Allen Institute network to access them.
 
-1. If needed, rerun the dataset conversion to output to a folder on VAST. Your segmentations and/or images must also be located on VAST for the dataset to be loaded.
-2. Copy the path to your dataset folder on VAST. The path should start with `/allen/aics/` and the directory must contain either a `collection.json` or `manifest.json` file.
+1. If needed, rerun dataset conversion to output to a folder on the internal filesystem. Your segmentations and/or images must also be on the filesystem or another network-accessible location.
+2. Copy the path to your dataset folder.
 3. Follow the steps below, using the path as the URL to your dataset folder.
 
 ---
@@ -33,13 +33,13 @@ Files located on VAST can be shared with other users internally. Users must be c
 
 To open and share your dataset:
 
-1. Copy the URL to your TFE dataset folder. The folder should contain a `collection.json` or `manifest.json` file.
+1. Copy the HTTPS URL of your TFE dataset folder (ex: `https://example.com/dataset/tfe`). The folder should contain a `collection.json` or `manifest.json` file.
 2. Go to the public version of Timelapse Feature Explorer at [https://timelapse.allencell.org/](https://timelapse.allencell.org/).
 3. Press **Load** in the top right corner to open the load menu.
 4. Paste the URL to your dataset, and click the **Load** button.
 5. Once the dataset loads, click **Share** to copy a shareable link to your dataset in Timelapse Feature Explorer.
 
-### Q: How do I share datasets located on VAST with external collaborators?
+### Q: How do I share datasets located on an internal system with external collaborators?
 
 Datasets will need to be moved to a publicly accessible hosting service or server before they can be shared with external collaborators (e.g., Amazon S3, Google Cloud Storage).
 
