@@ -1,5 +1,5 @@
 import { generateUUID } from "three/src/math/MathUtils";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import Collection, {
   type CollectionLoadOptions,
@@ -261,6 +261,8 @@ describe("Collection", () => {
     });
 
     it("can load a single dataset from a file map", async () => {
+      const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
       const collection = await Collection.loadFromAmbiguousFile("", MOCK_DATASET_FILEMAP, COLLECTION_LOAD_CONFIG);
 
       expect(collection).to.be.instanceOf(Collection);
@@ -270,16 +272,24 @@ describe("Collection", () => {
       expect(collection.sourcePath).to.be.null;
       expect(collection.sourceType).toEqual(CollectionSourceType.ZIP_FILE);
       collection.dispose();
+
+      consoleWarnSpy.mockRestore();
     });
 
     it("throws an error if no manifest files exist", async () => {
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
       const fileMap = {};
       await expect(Collection.loadFromAmbiguousFile("", fileMap, COLLECTION_LOAD_CONFIG)).rejects.toThrowError(
         ANY_ERROR
       );
+
+      consoleErrorSpy.mockRestore();
     });
 
     it("throws an error if Collection manifest is malformed", async () => {
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
       const fileMap = {
         // eslint-disable-next-line
         "collection.json": new File([`{"some-property": "value"}`], "collection.json"),
@@ -287,9 +297,14 @@ describe("Collection", () => {
       await expect(
         Collection.loadFromAmbiguousFile("collection.json", fileMap, COLLECTION_LOAD_CONFIG)
       ).rejects.toThrowError(ANY_ERROR);
+
+      consoleErrorSpy.mockRestore();
     });
 
     it("throws an error if dataset manifest is malformed", async () => {
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
       const fileMap = {
         ...MOCK_DATASET_FILEMAP,
         // eslint-disable-next-line
@@ -298,6 +313,9 @@ describe("Collection", () => {
       await expect(Collection.loadFromAmbiguousFile("", fileMap, COLLECTION_LOAD_CONFIG)).rejects.toThrowError(
         ANY_ERROR
       );
+
+      consoleErrorSpy.mockRestore();
+      consoleWarnSpy.mockRestore();
     });
   });
 });
