@@ -13,14 +13,17 @@ export const RenderedStringContainer = styled.div`
 `;
 
 /**
- * Renders a text string array as JSX react elements, handling formatting for lists and paragraph text.
- * @param items List of string text items to render.
+ * Renders a string array as JSX react elements, handling formatting for lists and paragraph text.
+ * @param items List of string text items (or ReactNode elements) to render.
  * @param containerStyle optional CSS properties object that will be applied to the container div.
  * @returns A list of one or more text elements, wrapped in a styling div.
+ *
  * String items will be returned as one of the following:
  * - If it starts with "- ", the item will be rendered as a list item (`li`) element. Groups of `li` elements
  * will be wrapped in a unordered list (`ul`) element.
  * - Otherwise, the item is wrapped in a `p` element.
+ *
+ * Non-string items will be returned as-is.
  */
 export function renderStringArrayAsJsx(items: ReactNode[] | string[] | string | undefined): ReactElement | undefined {
   if (!items || items.length === 0) {

@@ -1,7 +1,7 @@
 import { CheckCircleOutlined, ExclamationCircleFilled, InfoCircleFilled, ShareAltOutlined } from "@ant-design/icons";
 import { Popconfirm } from "antd";
-import { NotificationInstance } from "antd/es/notification/interface";
-import React, { ReactElement, ReactNode, useContext, useRef, useState } from "react";
+import type { NotificationInstance } from "antd/es/notification/interface";
+import React, { type ReactElement, type ReactNode, useContext, useRef, useState } from "react";
 
 import { ALLEN_FILE_PREFIX, PUBLIC_TFE_URL, VAST_FILES_URL } from "src/colorizer/utils/url_utils";
 import { ButtonStyleLink } from "src/components/Buttons/ButtonStyleLink";
