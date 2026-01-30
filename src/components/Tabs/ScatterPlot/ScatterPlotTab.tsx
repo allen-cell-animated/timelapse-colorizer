@@ -388,12 +388,12 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     let scatterPlotAxis: Partial<Plotly.LayoutAxis> = {
       domain: [0, 0.85],
       showgrid: false,
+      showline: true,
       zeroline: true,
     };
     const histogramAxis: Partial<Plotly.LayoutAxis> = {
       domain: [0.9, 1],
       showgrid: false,
-      zeroline: true,
       hoverformat: "f",
     };
     const newHistogramTrace = { ...histogramTrace };
@@ -401,15 +401,18 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     let min = dataset?.getFeatureData(featureKey)?.min || 0;
     let max = dataset?.getFeatureData(featureKey)?.max || 0;
 
+    if (min < (max - min) / 20) {
+      // If min is within 5% of zero, snap it to zero
+      min = 0;
+    }
     if (dataset && dataset.isFeatureCategorical(featureKey)) {
       // Add extra padding for categories so they're nicely centered
       min -= 0.5;
       max += 0.5;
     } else {
-      // Add a little padding to the min/max so points aren't cut off by the edge of the plot.
+      // Add a little padding to the max so points aren't cut off by the edge of the plot.
       // (ideally this would be a pixel padding, but plotly doesn't support that.)
-      min -= (max - min) / 10;
-      max += (max - min) / 10;
+      max += (max - min) / 100;
     }
     scatterPlotAxis.range = [min, max];
 
@@ -776,6 +779,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       yAxisFeatureKey,
       yHistogram
     );
+    console.log("Rendered scatter plot axes:", scatterPlotXAxis, scatterPlotYAxis);
 
     scatterPlotXAxis.title = dataset.getFeatureNameWithUnits(xAxisFeatureKey);
     // Due to limited space in the Y-axis, hide categorical feature names.
