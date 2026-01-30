@@ -229,7 +229,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     return () => {
       plotRef?.removeAllListeners("plotly_click");
     };
-  }, [plotRef, dataset, clearTracks, addTracks, setFrame]);
+  }, [plotRef, dataset, addTracks, setFrame]);
 
   //////////////////////////////////
   // Helper Methods
@@ -293,15 +293,20 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   };
 
   /**
-   * Reduces the given data to only show the selected range (frame, track, or all data points).
+   * Reduces the given data to only show the selected range (frame, track, or
+   * all data points).
    * @param rawXData raw data for the X-axis feature
    * @param rawYData raw data for the Y-axis feature.
+   * @param range The range type to filter the data by.
+   * @param track Required if `range` is `PlotRangeType.CURRENT_TRACK`. The
+   * track to filter data by.
    * @returns One of the following:
    *   - `undefined` if the data could not be filtered.
    *   - An object with the following arrays:
    *     - `xData`: The filtered x data.
    *     - `yData`: The filtered y data.
-   *     - `objectIds`: The object IDs corresponding to the index of the filtered data.
+   *     - `objectIds`: The object IDs corresponding to the index of the
+   *       filtered data.
    */
   const filterDataByRange = (
     rawXData: DataArray,
@@ -351,9 +356,9 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         xData.push(rawXData[id]);
         yData.push(rawYData[id]);
       }
-      objectIds.push(...track.ids);
-      segIds.push(...objectIds.map(dataset.getSegmentationId));
-      trackIds.push(...Array(track.ids.length).fill(track.trackId));
+      objectIds = Array.from(track.ids);
+      segIds = objectIds.map(dataset.getSegmentationId);
+      trackIds = Array(track.ids.length).fill(track.trackId);
     } else {
       // All time
       objectIds = [...rawXData.keys()];
@@ -401,7 +406,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     let min = dataset?.getFeatureData(featureKey)?.min || 0;
     let max = dataset?.getFeatureData(featureKey)?.max || 0;
 
-    if (min < (max - min) / 20) {
+    if (0 < min && min < (max - min) / 20) {
       // If min is within 5% of zero, snap it to zero
       min = 0;
     }
@@ -779,7 +784,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       yAxisFeatureKey,
       yHistogram
     );
-    console.log("Rendered scatter plot axes:", scatterPlotXAxis, scatterPlotYAxis);
 
     scatterPlotXAxis.title = dataset.getFeatureNameWithUnits(xAxisFeatureKey);
     // Due to limited space in the Y-axis, hide categorical feature names.
