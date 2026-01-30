@@ -51,6 +51,12 @@ export function renderStringArrayAsJsx(items: ReactNode[] | string[] | string | 
       }
       if (typeof item === "string") {
         elements.push(<p key={i}>{item}</p>);
+      } else if (React.isValidElement(item)) {
+        if (item.key == null) {
+          elements.push(React.cloneElement(item, { key: i }));
+        } else {
+          elements.push(item);
+        }
       } else {
         elements.push(item);
       }
