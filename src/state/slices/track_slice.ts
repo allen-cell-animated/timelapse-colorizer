@@ -100,7 +100,7 @@ export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (s
       const newSelectedLut = state.isSelectedLut.slice();
       for (const trackId of trackIds) {
         const track = newTracks.get(trackId);
-        if (!track || !newTracks.has(trackId)) {
+        if (!track) {
           continue;
         }
         newTracks.delete(trackId);
