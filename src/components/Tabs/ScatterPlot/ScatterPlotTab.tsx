@@ -91,6 +91,16 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const xAxisFeatureKey = useViewerStateStore((state) => state.scatterXAxis);
   const yAxisFeatureKey = useViewerStateStore((state) => state.scatterYAxis);
 
+  const xAxisPlotRange = useRef<[number, number]>([-Infinity, Infinity]);
+  const yAxisPlotRange = useRef<[number, number]>([-Infinity, Infinity]);
+
+  const resetXAxisPlotRange = useCallback((): void => {
+    xAxisPlotRange.current = [-Infinity, Infinity];
+  }, []);
+  const resetYAxisPlotRange = useCallback((): void => {
+    yAxisPlotRange.current = [-Infinity, Infinity];
+  }, []);
+
   // Debounce changes to the dataset to prevent noticeably blocking the UI thread with a re-render.
   const datasetKey = useViewerStateStore((state) => state.datasetKey);
   const rawDataset = useViewerStateStore((state) => state.dataset);
@@ -193,7 +203,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   }, [hasConfigChanged]);
 
   //////////////////////////////////
-  // Click Handlers
+  // Event Handlers
   //////////////////////////////////
 
   // Add click event listeners to the plot. When clicking a point, find the track and jump to
@@ -229,6 +239,32 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       plotRef?.removeAllListeners("plotly_click");
     };
   }, [plotRef, dataset, setTrack, setFrame]);
+
+  // Sync axis ranges on relayout events (zoom)
+  useEffect(() => {
+    const onRelayout = (eventData: Plotly.PlotRelayoutEvent): void => {
+      if (eventData["xaxis.autorange"]) {
+        resetXAxisPlotRange();
+      } else {
+        const xRange0 = eventData["xaxis.range[0]"] ?? xAxisPlotRange.current[0];
+        const xRange1 = eventData["xaxis.range[1]"] ?? xAxisPlotRange.current[1];
+        xAxisPlotRange.current[0] = Math.min(xRange0, xRange1);
+        xAxisPlotRange.current[1] = Math.max(xRange0, xRange1);
+      }
+      if (eventData["yaxis.autorange"]) {
+        resetYAxisPlotRange();
+      } else {
+        const yRange0 = eventData["yaxis.range[0]"] ?? yAxisPlotRange.current[0];
+        const yRange1 = eventData["yaxis.range[1]"] ?? yAxisPlotRange.current[1];
+        yAxisPlotRange.current[0] = Math.min(yRange0, yRange1);
+        yAxisPlotRange.current[1] = Math.max(yRange0, yRange1);
+      }
+    };
+    plotRef?.on("plotly_relayout", onRelayout);
+    return () => {
+      plotRef?.removeAllListeners("plotly_relayout");
+    };
+  }, [plotRef, resetXAxisPlotRange, resetYAxisPlotRange]);
 
   //////////////////////////////////
   // Helper Methods
@@ -650,6 +686,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     colorRamp,
     inRangeLUT,
     categoricalPalette,
+    resetXAxisPlotRange,
+    resetYAxisPlotRange,
   ];
 
   const renderPlot = (forceRelayout: boolean = false): void => {
@@ -798,12 +836,12 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
     if (forceRelayout || shouldPlotUiReset()) {
       uiRevision.current += 1;
-      // @ts-ignore. TODO: Update once the plotly types are updated.
-      layout.uirevision = uiRevision.current;
-    } else {
-      // @ts-ignore. TODO: Update once the plotly types are updated.
-      layout.uirevision = uiRevision.current;
+      // Reset axis ranges because zoom will be reset.
+      resetXAxisPlotRange();
+      resetYAxisPlotRange();
     }
+    // @ts-ignore. TODO: Update once the plotly types are updated.
+    layout.uirevision = uiRevision.current;
 
     try {
       Plotly.react(plotDivRef.current, traces, layout, PLOTLY_CONFIG).then(() => {
@@ -858,7 +896,11 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     // a metadata column in the CSV.
     featureSet.delete(TIME_FEATURE_KEY);
     const features = Array.from(featureSet);
-    const csvString = getScatterplotDataAsCsv(dataset, Array.from(plottedIds.current), inRangeLUT, features);
+    const filters = new Map([
+      [xAxisFeatureKey, xAxisPlotRange.current],
+      [yAxisFeatureKey, yAxisPlotRange.current],
+    ]);
+    const csvString = getScatterplotDataAsCsv(dataset, Array.from(plottedIds.current), inRangeLUT, features, filters);
     const name = datasetKey ? `${datasetKey}-scatterplot.csv` : "scatterplot.csv";
     downloadCsv(name, csvString);
   }, [
