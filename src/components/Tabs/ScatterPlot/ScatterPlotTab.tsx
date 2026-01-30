@@ -64,6 +64,7 @@ const ScatterPlotContainer = styled.div`
     // Remove Plotly border
     border: 0px solid transparent !important;
   }
+  // Center plot horizontally
   margin: 0 auto;
 `;
 
@@ -86,7 +87,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const clearTracks = useViewerStateStore((state) => state.clearTracks);
   const setFrame = useViewerStateStore((state) => state.setFrame);
   const setRangeType = useViewerStateStore((state) => state.setScatterRangeType);
-  const toggleTrack = useViewerStateStore((state) => state.toggleTrack);
   const setXAxis = useViewerStateStore((state) => state.setScatterXAxis);
   const setYAxis = useViewerStateStore((state) => state.setScatterYAxis);
   const xAxisFeatureKey = useViewerStateStore((state) => state.scatterXAxis);
@@ -229,7 +229,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     return () => {
       plotRef?.removeAllListeners("plotly_click");
     };
-  }, [plotRef, dataset, clearTracks, toggleTrack, addTracks, setFrame]);
+  }, [plotRef, dataset, clearTracks, addTracks, setFrame]);
 
   //////////////////////////////////
   // Helper Methods
@@ -785,14 +785,14 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
     // Add extra margin for categorical feature labels on the Y axis.
     const leftMarginPx = Math.max(60, estimateTextWidthPxForCategories(yAxisFeatureKey));
-    const layout = {
+    const layout: Partial<Plotly.Layout> = {
       autosize: true,
       showlegend: false,
       xaxis: scatterPlotXAxis,
       yaxis: scatterPlotYAxis,
       xaxis2: histogramXAxis,
       yaxis2: histogramYAxis,
-      margin: { l: leftMarginPx, r: 50, b: 50, t: 20, pad: 4 },
+      margin: { l: leftMarginPx, r: 50, b: 50, t: 20 },
       font: {
         // Unfortunately using the Lato font family causes the text to render with SEVERE
         // aliasing. Using the default plotly font family causes the X and Y axes to be
