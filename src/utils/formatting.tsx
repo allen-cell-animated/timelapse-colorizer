@@ -1,4 +1,4 @@
-import React, { type ReactElement, type ReactNode } from "react";
+import React, { cloneElement, isValidElement, type ReactElement, type ReactNode } from "react";
 import styled from "styled-components";
 
 export const RenderedStringContainer = styled.div`
@@ -43,17 +43,22 @@ export function renderStringArrayAsJsx(items: ReactNode[] | string[] | string | 
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
     if (typeof item === "string" && item.trim().startsWith("- ")) {
+      // For list items, add them to a temporary array. We will push them all of
+      // them at once as an unordered list (`ul`) when we hit a non-list item.
       currListElements.push(<li key={currListElements.length}>{item.trim().substring(2)}</li>);
     } else {
+      // Push accumulated list items as a `ul`.
       if (currListElements.length > 0) {
         elements.push(<ul key={i - 1}>{currListElements}</ul>);
         currListElements = [];
       }
+      // Handle non-list items
       if (typeof item === "string") {
         elements.push(<p key={i}>{item}</p>);
-      } else if (React.isValidElement(item)) {
-        if (item.key == null) {
-          elements.push(React.cloneElement(item, { key: i }));
+      } else if (isValidElement(item)) {
+        // React element, ensure it has a key assigned
+        if (item.key === null) {
+          elements.push(cloneElement(item, { key: i }));
         } else {
           elements.push(item);
         }
