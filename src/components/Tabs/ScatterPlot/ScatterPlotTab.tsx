@@ -407,7 +407,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     let max = dataset?.getFeatureData(featureKey)?.max || 0;
 
     if (0 < min && min < (max - min) / 20) {
-      // If min is within 5% of zero, snap it to zero
+      // If min is close to zero (within 5% of the range), snap to zero.
       min = 0;
     }
     if (dataset && dataset.isFeatureCategorical(featureKey)) {
@@ -757,11 +757,12 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       }
     }
 
-    // Render track points
+    // Render crosshair at the current time for all tracks.
     for (const track of tracks.values()) {
       const currentObjectId = track.getIdAtTime(currentFrame);
       if (currentObjectId !== -1) {
         traces.push(...drawCrosshair(rawXData[currentObjectId], rawYData[currentObjectId]));
+        // Extra single point, so the point is still visible over the crosshair.
         traces.push(
           ...colorizeScatterplotPoints(
             [rawXData[currentObjectId]],
