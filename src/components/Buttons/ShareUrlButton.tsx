@@ -25,21 +25,42 @@ function isInternalUrl(url: string): boolean {
   return url.startsWith(ALLEN_FILE_PREFIX) || url.startsWith(VAST_FILES_URL);
 }
 
+const FAQ_DOCUMENTATION =
+  "https://github.com/allen-cell-animated/timelapse-colorizer/blob/doc/dataset-sharing/docs/FAQ.md";
+// const FAQ_DOCUMENTATION = "https://github.com/allen-cell-animated/timelapse-colorizer/blob/main/docs/FAQ.md"
+const enum FaqSection {
+  SHARE_LOCAL_DATASETS = FAQ_DOCUMENTATION + "#q-how-do-i-share-local-datasets",
+  SHARE_INTERNAL_DATASETS = FAQ_DOCUMENTATION +
+    "#q-how-do-i-share-datasets-located-on-an-internal-system-with-external-collaborators",
+}
+
+function makeFaqLink(link: string): ReactNode {
+  return (
+    <span>
+      For more help, see our <ExternalLink href={link}>FAQ documentation.</ExternalLink>
+    </span>
+  );
+}
+
+/**
+ * Button that copies the current URL to the clipboard. Shows a warning if the
+ * resulting URL may fail to load for other users.
+ */
 export default function ShareUrlButton(props: ShareUrlButtonProps): ReactElement {
   const theme = useContext(AppThemeContext);
-
   const collection = useViewerStateStore((state) => state.collection);
   const dataset = useViewerStateStore((state) => state.dataset);
 
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Warning conditions
   const collectionUrl = collection?.getUrl() || "";
   const dataset3dSource = dataset?.frames3d?.source || "";
-  const dataset2dSource = dataset?.frameFiles?.[0] || "";
+  const dataset2dSource = dataset?.frames2dPaths?.[0] || "";
+  const dataset2dBackdropSource = Array.from(dataset?.getBackdropData().values() || [])[0]?.frames[0] || "";
   const datasetManifestUrl = dataset?.manifestUrl || "";
-
-  const dataSources = [collectionUrl, dataset3dSource, dataset2dSource, datasetManifestUrl];
+  const dataSources = [collectionUrl, dataset3dSource, dataset2dSource, dataset2dBackdropSource, datasetManifestUrl];
 
   const isLocalTfeInstance = window.location.hostname === "localhost";
   const hasLocalUrls = dataSources.some(isLocalUrl);
@@ -59,16 +80,20 @@ export default function ShareUrlButton(props: ShareUrlButtonProps): ReactElement
     });
   };
 
+  /**
+   * Handles changes to the open state (on click or blur) of the popup confirmation.
+   * Shows the warning popup when one or more warning conditions are met.
+   */
   const handleOpenChange = (open: boolean): void => {
     if (!open) {
       setIsOpen(false);
       return;
     }
-    const canShareNormally = !isLocalTfeInstance && !hasLocalUrls && !hasInternalUrls;
-    if (canShareNormally) {
-      copyUrlAndShowNotification();
-    } else {
+    const showWarning = hasLocalUrls || isLocalTfeInstance || hasInternalUrls;
+    if (showWarning) {
       setIsOpen(true);
+    } else {
+      copyUrlAndShowNotification();
     }
   };
 
@@ -76,22 +101,16 @@ export default function ShareUrlButton(props: ShareUrlButtonProps): ReactElement
   let icon = <ExclamationCircleFilled />;
   const warningContents: ReactNode[] = [];
 
-  const faqLink = (
-    <span>
-      For more help, see our{" "}
-      <ExternalLink href="https://github.com/allen-cell-animated/timelapse-colorizer/blob/doc/dataset-sharing/docs/FAQ.md#q-how-do-i-share-local-datasets">
-        FAQ documentation.
-      </ExternalLink>
-    </span>
-  );
-
   if (hasLocalUrls) {
     warningContents.push(
       "The dataset is being loaded from a local source (e.g. localhost). You may need to move the dataset to an HTTPS-accessible location for other users to load it.",
-      faqLink
+      makeFaqLink(FaqSection.SHARE_LOCAL_DATASETS)
     );
   } else if (isLocalTfeInstance) {
-    // TFE instance is local but dataset isn't, so it can be opened in public TFE.
+    // TFE instance is local but dataset is public, so it can be opened in the
+    // public TFE instance. Show a button link to it.
+    // TODO: This does not currently check if the dataset resources are only
+    // available over HTTP, which would cause it to fail to load.
     warningContents.push(
       "This URL may not load for other users because the viewer is running locally. You can try opening this dataset in the public build here:",
       <ButtonStyleLink
@@ -107,7 +126,7 @@ export default function ShareUrlButton(props: ShareUrlButtonProps): ReactElement
     warningTitle = "Shared URL may not load for external users";
     warningContents.push(
       "Some files in the dataset are being loaded from the internal filesystem, so external users may not be able to load it.",
-      faqLink
+      makeFaqLink(FaqSection.SHARE_INTERNAL_DATASETS)
     );
   }
 
@@ -124,7 +143,6 @@ export default function ShareUrlButton(props: ShareUrlButtonProps): ReactElement
         okText="Copy URL"
         open={isOpen}
         onOpenChange={handleOpenChange}
-        style={{ marginRight: "10px" }}
         placement="bottomRight"
       >
         <TextButton>

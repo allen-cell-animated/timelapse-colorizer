@@ -23,7 +23,7 @@ Your institution may have its own hosting solution for internal-only data.
 
 Files located on the internal filesystem (VAST) can be shared with other internal users. Users must be connected to the Allen Institute network to access them.
 
-1. If needed, rerun dataset conversion to output to a folder on the internal filesystem. Your segmentations and/or images must also be on the filesystem or another network-accessible location.
+1. If needed, rerun dataset conversion to output to a folder on the internal filesystem (e.g. `/allen/aics/...`). Your segmentations and/or images must also be on the filesystem or another network-accessible location.
 2. Copy the path to your dataset folder.
 3. Follow the steps below, using the path as the URL to your dataset folder.
 

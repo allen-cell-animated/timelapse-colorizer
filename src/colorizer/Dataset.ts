@@ -90,7 +90,7 @@ const MAX_CACHED_BACKDROPS_BYTES = 500_000_000; // 500 MB
 
 export default class Dataset {
   private frameLoader: ITextureImageLoader;
-  public frameFiles?: string[];
+  private frameFiles?: string[];
   private frames: DataCache<number, Texture> | null;
   private frameDimensions: Vector2 | null;
 
@@ -188,6 +188,10 @@ export default class Dataset {
     this.metadata = defaultMetadata;
 
     this.getSegmentationId = this.getSegmentationId.bind(this);
+  }
+
+  public get frames2dPaths(): readonly string[] | undefined {
+    return this.frameFiles;
   }
 
   private resolveManifestPath = (url: string): string | null => {
