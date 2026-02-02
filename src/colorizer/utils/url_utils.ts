@@ -570,10 +570,10 @@ export function isAllenPath(input: string): boolean {
  * otherwise, returns an HTTPS resource path.
  */
 export function convertAllenPathToHttps(input: string): string | null {
+  // Escape special characters in the path, except for slashes
   const escapedInput = encodeURIComponent(normalizeFilePathSlashes(input)).replaceAll("%2F", "/");
   for (const [prefix, httpsPrefix] of Object.entries(ALLEN_PREFIX_TO_HTTPS)) {
     if (escapedInput.startsWith(prefix)) {
-      // Escape special characters (except slashes) in the path
       return escapedInput.replace(prefix, httpsPrefix);
     }
   }
