@@ -65,6 +65,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
       setTracks: state.addTracks,
       clearTracks: state.clearTracks,
       addTracks: state.addTracks,
+      toggleTrack: state.toggleTrack,
       setFrame: state.setFrame,
       tracks: state.tracks,
     }))
@@ -349,10 +350,12 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
             onClickTrack={(trackId) => {
               const track = store.dataset?.getTrack(trackId);
               if (track) {
-                if (!areAnyHotkeysPressed(ShortcutKeys.viewport.multiTrackSelect.keycode)) {
+                if (areAnyHotkeysPressed(ShortcutKeys.viewport.multiTrackSelect.keycode)) {
+                  store.toggleTrack(track);
+                } else {
                   store.clearTracks();
+                  store.addTracks(track);
                 }
-                store.addTracks(track);
               }
             }}
             setFrame={store.setFrame}
