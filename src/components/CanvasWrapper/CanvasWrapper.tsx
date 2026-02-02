@@ -30,7 +30,7 @@ import TooltipButtonStyleLink from "src/components/Buttons/TooltipButtonStyleLin
 import LoadingSpinner from "src/components/LoadingSpinner";
 import AnnotationInputPopover from "src/components/Tabs/Annotation/AnnotationInputPopover";
 import { TooltipWithSubtitle } from "src/components/Tooltips/TooltipWithSubtitle";
-import { CANVAS_ASPECT_RATIO, ShortcutKeys } from "src/constants";
+import { CANVAS_ASPECT_RATIO, ShortcutKeycode, ShortcutKeyDisplayName, ShortcutKeys } from "src/constants";
 import type { AnnotationState } from "src/hooks";
 import { renderCanvasStateParamsSelector } from "src/state";
 import { useViewerStateStore } from "src/state/ViewerState";
@@ -604,12 +604,13 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             </span>
             {shouldShowRangeSelectionHotkey && (
               <FlexRowAlignCenter $gap={6}>
-                <HotkeyText>{ShortcutKeys.annotation.selectRange.keycodeDisplay}</HotkeyText> hold to select range
+                <HotkeyText>{ShortcutKeyDisplayName[ShortcutKeycode.ANNOTATION_SELECT_RANGE]}</HotkeyText> hold to
+                select range
               </FlexRowAlignCenter>
             )}
             {shouldShowReuseValueHotkey && (
               <FlexRowAlignCenter $gap={6}>
-                <HotkeyText>{ShortcutKeys.annotation.reuseValue.keycodeDisplay}</HotkeyText>
+                <HotkeyText>{ShortcutKeyDisplayName[ShortcutKeycode.ANNOTATION_REUSE_VALUE]}</HotkeyText>
                 hold to reuse last value
               </FlexRowAlignCenter>
             )}
