@@ -3,7 +3,7 @@ import { Popconfirm } from "antd";
 import type { NotificationInstance } from "antd/es/notification/interface";
 import React, { type ReactElement, type ReactNode, useContext, useRef, useState } from "react";
 
-import { ALLEN_FILE_PREFIX, PUBLIC_TFE_URL, VAST_FILES_URL } from "src/colorizer/utils/url_utils";
+import { isAllenPath, PUBLIC_TFE_URL, VAST_FILES_URL } from "src/colorizer/utils/url_utils";
 import { ButtonStyleLink } from "src/components/Buttons/ButtonStyleLink";
 import TextButton from "src/components/Buttons/TextButton";
 import { useViewerStateStore } from "src/state";
@@ -22,7 +22,7 @@ function isLocalUrl(url: string): boolean {
 }
 
 function isInternalUrl(url: string): boolean {
-  return url.startsWith(ALLEN_FILE_PREFIX) || url.startsWith(VAST_FILES_URL);
+  return isAllenPath(url) || url.startsWith(VAST_FILES_URL);
 }
 
 const FAQ_DOCUMENTATION =
