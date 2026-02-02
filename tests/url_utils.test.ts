@@ -80,6 +80,8 @@ describe("convertAllenPathToHttps", () => {
 
   it("Does not convert non-aics paths", () => {
     expect(convertAllenPathToHttps("/allen/some-resource/path.json")).to.equal(null);
+    expect(convertAllenPathToHttps("/not-allen/some-file.json")).to.equal(null);
+    expect(convertAllenPathToHttps("https://something.com/data/example.json")).to.equal(null);
   });
 
   it("Replaces special characters", () => {
