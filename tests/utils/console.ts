@@ -3,6 +3,11 @@ import { vi } from "vitest";
 /**
  * Console spy storage for automatic cleanup in afterEach hooks.
  * This allows tests to suppress expected console output without manual cleanup.
+ *
+ * Note: This implementation relies on vitest's default sequential test execution
+ * within each test file. The global afterEach hook in tests/setup.ts ensures
+ * spies are cleaned up between tests. If parallel test execution is enabled
+ * in the future, this approach may need to be refactored.
  */
 let consoleSpies: {
   warn?: ReturnType<typeof vi.spyOn>;
