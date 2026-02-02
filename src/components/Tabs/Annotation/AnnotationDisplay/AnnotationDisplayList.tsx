@@ -164,8 +164,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
             </p>
           </FlexRow>
           <div style={{ height: "480px", overflowY: "auto" }}>
-            {/* TODO: pass in all selected tracks */}
-            <ValueAndTrackList selectedTrack={lastSelectedTrack} lookupInfo={lookupInfo} {...props} />
+            <ValueAndTrackList lookupInfo={lookupInfo} {...props} />
           </div>
         </FlexColumn>
         <VerticalDivider />

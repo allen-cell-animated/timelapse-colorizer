@@ -64,7 +64,6 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
       dataset: state.dataset,
       setTracks: state.addTracks,
       clearTracks: state.clearTracks,
-      toggleTrack: state.toggleTrack,
       addTracks: state.addTracks,
       setFrame: state.setFrame,
       tracks: state.tracks,
@@ -133,7 +132,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
         store.setFrame(record.time);
       }
     },
-    [store.dataset, store.toggleTrack, store.clearTracks, store.addTracks, store.setFrame]
+    [store.dataset, store.clearTracks, store.addTracks, store.setFrame]
   );
 
   const onClickDeleteObject = useCallback(

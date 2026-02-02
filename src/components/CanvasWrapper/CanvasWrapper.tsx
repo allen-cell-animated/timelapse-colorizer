@@ -163,6 +163,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const showTimestamp = useViewerStateStore((state) => state.showTimestamp);
   const frameLoadResult = useViewerStateStore((state) => state.frameLoadResult);
 
+  const isAnnotationModeEnabled = props.annotationState.isAnnotationModeEnabled;
+
   const containerRef = useRef<HTMLDivElement>(null);
 
   const canv = props.canv;
@@ -392,9 +394,12 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       const newTrack = dataset.getTrack(trackId);
       const isMultiTrackSelectHotkeyPressed = areAnyHotkeysPressed(ShortcutKeys.viewport.multiTrackSelect.keycode);
       if (newTrack) {
-        if (isMultiTrackSelectHotkeyPressed) {
+        if (isMultiTrackSelectHotkeyPressed && !isAnnotationModeEnabled) {
           // Toggle selection of clicked track during multi-select mode.
           toggleTrack(newTrack);
+        } else if (isMultiTrackSelectHotkeyPressed && isAnnotationModeEnabled) {
+          // During annotation mode, don't toggle tracks.
+          addTracks(newTrack);
         } else {
           // Select only the clicked track.
           clearTracks();
@@ -402,7 +407,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         }
       }
     },
-    [toggleTrack, clearTracks, addTracks]
+    [toggleTrack, clearTracks, addTracks, isAnnotationModeEnabled]
   );
 
   /** Report clicked tracks via the passed callback. */

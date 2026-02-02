@@ -14,7 +14,7 @@ import ValueListItem from "./ListItems/ValueListItem";
 type ValueAndTrackListProps = {
   lookupInfo: LookupInfo;
   dataset: Dataset | null;
-  selectedTrack: Track | null;
+  selectedTracks: Map<number, Track>;
   labelColor: Color;
   onClickTrack: (trackId: number) => void;
 };
@@ -47,7 +47,7 @@ type PlaceholderItemData = {
 
 type ListItemData = {
   dataset: Dataset | null;
-  selectedTrack: Track | null;
+  selectedTracks: Map<number, Track>;
   labelColor: Color;
   onClickTrack: (trackId: number) => void;
   onFocus: (index: number) => void;
@@ -95,7 +95,7 @@ const listItemRenderer = ({
           trackId={item.trackId}
           ids={item.ids}
           dataset={data.dataset!}
-          isSelectedTrack={item.trackId === data.selectedTrack?.trackId}
+          isSelectedTrack={data.selectedTracks.has(item.trackId)}
           labelColor={data.labelColor}
           onClickTrack={data.onClickTrack}
           onFocus={() => data.onFocus(index)}

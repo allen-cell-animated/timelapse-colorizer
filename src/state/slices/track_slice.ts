@@ -35,18 +35,6 @@ export type TrackSliceActions = {
    * size as the current one to reset it.
    */
   clearTracks: (newLut?: Uint8Array) => void;
-
-  /**
-   * Legacy method used when only a single track could be selected
-   * at a time.
-   * @deprecated will be removed in future updates. Use `addTracks` instead.
-   */
-  setTrack: (track: Track) => void;
-  /**
-   * Legacy method used when only a single track could be selected at a time.
-   * @deprecated will be removed in future updates. Use `clearTracks` instead.
-   */
-  clearTrack: () => void;
 };
 
 export type TrackSlice = TrackSliceState & TrackSliceActions;
@@ -121,15 +109,6 @@ export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (s
     // of it to trigger relevant state updates, create a new Uint8Array to replace it.
     const newSelectedLut = newLut ?? new Uint8Array(get().isSelectedLut.length);
     set({ tracks: new Map<number, Track>(), track: null, isSelectedLut: newSelectedLut });
-  },
-
-  // Deprecated -- to be removed once no code uses single selected track
-  setTrack: (track: Track) => {
-    get().clearTracks();
-    get().addTracks(track);
-  },
-  clearTrack: () => {
-    get().clearTracks();
   },
 });
 
