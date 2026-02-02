@@ -22,8 +22,8 @@ type AnnotationDisplayListProps = {
   onClickTrack: (trackId: number) => void;
   onClickObjectRow: (record: TableDataType) => void;
   onClickDeleteObject: (record: TableDataType) => void;
-  selectedTrack: Track | null;
-  selectedId?: number;
+  selectedTracks: Map<number, Track>;
+  selectedIds?: Set<number>;
   highlightRange: number[] | null;
   rangeStartId: number | null;
   frame: number;
@@ -79,7 +79,9 @@ const TooltipContainer = styled.div<{ $x?: number }>`
 export default function AnnotationDisplayList(props: AnnotationDisplayListProps): ReactElement {
   const theme = useContext(AppThemeContext);
 
-  const selectedTrackId = props.selectedTrack?.trackId;
+  const lastSelectedTrack: Track | null =
+    Array.from(props.selectedTracks.values())[props.selectedTracks.size - 1] ?? null;
+  const selectedTrackId = lastSelectedTrack?.trackId;
   const tooltipContainerRef = useRef<HTMLDivElement>(null);
   const [thumbnailHoveredX, setThumbnailHoveredX] = useState<number | null>(null);
   const [thumbnailHoveredTime, setThumbnailHoveredTime] = useState<number | null>(null);
@@ -96,24 +98,26 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
 
   // By default, highlight all selected IDs in the selected track.
   const selectedTrackIds = trackToIds.get(selectedTrackId?.toString() ?? "") ?? [];
-  let selectedIds = selectedTrackIds;
+  let selectedIds = new Set(selectedTrackIds);
   let bgIds: number[] = [];
 
   // If there is a selected ID in the current frame, highlight only IDs that
   // match that ID's assigned value. Also trigger this when the user hovers over
   // a time in the thumbnail.
-  const currentId = props.selectedTrack?.getIdAtTime(props.frame);
+  const currentId = lastSelectedTrack?.getIdAtTime(props.frame);
   const currentValue = currentId ? props.idToValue?.get(currentId) : undefined;
-  const hoveredId = thumbnailHoveredTime ? props.selectedTrack?.getIdAtTime(thumbnailHoveredTime) : undefined;
+  const hoveredId = thumbnailHoveredTime ? lastSelectedTrack?.getIdAtTime(thumbnailHoveredTime) : undefined;
   const hoveredValue = hoveredId ? props.idToValue?.get(hoveredId) : undefined;
   // Hovering takes precedence over current frame.
   const highlightedId = hoveredValue ? hoveredId : currentId;
   const highlightedValue = hoveredValue ?? currentValue;
-  if (highlightedValue !== undefined && highlightedId && selectedIds.includes(highlightedId)) {
+  if (highlightedValue !== undefined && highlightedId && selectedIds.has(highlightedId)) {
     // Filter so only IDs with matching values are highlighted, and the rest are
     // background.
-    const currentValueIds = selectedIds.filter((id) => props.idToValue?.get(id) === highlightedValue);
-    bgIds = selectedIds;
+    const currentValueIds = new Set(
+      Array.from(selectedIds).filter((id) => props.idToValue?.get(id) === highlightedValue)
+    );
+    bgIds = Array.from(selectedIds);
     selectedIds = currentValueIds;
   }
 
@@ -160,7 +164,8 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
             </p>
           </FlexRow>
           <div style={{ height: "480px", overflowY: "auto" }}>
-            <ValueAndTrackList lookupInfo={lookupInfo} {...props} />
+            {/* TODO: pass in all selected tracks */}
+            <ValueAndTrackList selectedTrack={lastSelectedTrack} lookupInfo={lookupInfo} {...props} />
           </div>
         </FlexColumn>
         <VerticalDivider />
@@ -185,9 +190,9 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
                     lastHoveredX.current = x;
                   }
                 }}
-                ids={selectedIds}
+                ids={Array.from(selectedIds)}
                 bgIds={bgIds}
-                track={props.selectedTrack}
+                track={lastSelectedTrack}
                 dataset={props.dataset}
                 color={props.labelColor}
                 mark={markedTime}
@@ -216,7 +221,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
                   ...NO_WRAP,
                 }}
               >
-                {selectedTrackIds.length}/{props.selectedTrack?.times.length}
+                {selectedTrackIds.length}/{lastSelectedTrack?.times.length}
               </p>
             )}
           </FlexRowAlignCenter>
@@ -227,7 +232,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
             ids={selectedTrackId ? trackToIds.get(selectedTrackId?.toString()) ?? [] : []}
             idToValue={props.idToValue}
             height={410}
-            selectedId={props.selectedId}
+            selectedIds={selectedIds}
             hideTrackColumn={true}
           ></AnnotationDisplayTable>
         </FlexColumn>
