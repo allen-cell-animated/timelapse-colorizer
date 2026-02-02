@@ -102,7 +102,7 @@ export const isChannelKey = (key: string): key is ChannelSettingParamKey => {
 
 const TRACK_PATH_STEPS_REGEX = /^(\d+)!?,(\d+)!?$/;
 
-export const ALLEN_FILE_PREFIX = "/allen/";
+const ALLEN_FILE_PREFIX = "/allen/";
 export const VAST_FILES_URL = "https://vast-files.int.allencell.org/";
 const ALLEN_PREFIX_TO_HTTPS: Record<string, string> = {
   // eslint-disable-next-line @typescript-eslint/naming-convention
