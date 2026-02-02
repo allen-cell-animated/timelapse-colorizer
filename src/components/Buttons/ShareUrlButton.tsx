@@ -125,7 +125,7 @@ export default function ShareUrlButton(props: ShareUrlButtonProps): ReactElement
     icon = <InfoCircleFilled style={{ color: theme.color.text.info }} />;
     warningTitle = "Shared URL may not load for external users";
     warningContents.push(
-      "Some files in the dataset are being loaded from the internal filesystem, so external users may not be able to load it.",
+      "Some files are being loaded from the internal filesystem, so external users may not be able to load the dataset.",
       makeFaqLink(FaqSection.SHARE_INTERNAL_DATASETS)
     );
   }
