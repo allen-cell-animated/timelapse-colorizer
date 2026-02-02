@@ -12,6 +12,9 @@ import {
 import type { AnyManifestFile } from "src/colorizer/utils/dataset_utils";
 import type { fetchWithTimeout } from "src/colorizer/utils/url_utils";
 
+// Re-export console utilities for convenience
+export { disableConsole, restoreConsole } from "./console";
+
 export const ANY_ERROR = /[.]*/;
 export const DEFAULT_DATASET_DIR = "https://some-path/";
 export const DEFAULT_DATASET_PATH = "https://some-path/manifest.json";

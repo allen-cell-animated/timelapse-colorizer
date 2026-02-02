@@ -1,5 +1,5 @@
 import { generateUUID } from "three/src/math/MathUtils";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import Collection, {
   type CollectionLoadOptions,
@@ -8,7 +8,7 @@ import Collection, {
 } from "src/colorizer/Collection";
 import { DEFAULT_COLLECTION_FILENAME, DEFAULT_DATASET_FILENAME } from "src/colorizer/constants";
 import { MOCK_DATASET_FEATURE_1, MOCK_DATASET_MANIFEST, MOCK_DATASET_TIMES } from "tests/constants";
-import { ANY_ERROR, makeMockFetchMethod, MockFetchArrayLoader } from "tests/utils";
+import { ANY_ERROR, disableConsole, makeMockFetchMethod, MockFetchArrayLoader } from "tests/utils";
 
 const collectionData = new Map([
   ["d1", { path: "https://some-path.json", name: "dataset1" }],
@@ -261,7 +261,7 @@ describe("Collection", () => {
     });
 
     it("can load a single dataset from a file map", async () => {
-      const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      disableConsole(["warn"]);
 
       const collection = await Collection.loadFromAmbiguousFile("", MOCK_DATASET_FILEMAP, COLLECTION_LOAD_CONFIG);
 
@@ -272,23 +272,19 @@ describe("Collection", () => {
       expect(collection.sourcePath).to.be.null;
       expect(collection.sourceType).toEqual(CollectionSourceType.ZIP_FILE);
       collection.dispose();
-
-      consoleWarnSpy.mockRestore();
     });
 
     it("throws an error if no manifest files exist", async () => {
-      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      disableConsole(["error"]);
 
       const fileMap = {};
       await expect(Collection.loadFromAmbiguousFile("", fileMap, COLLECTION_LOAD_CONFIG)).rejects.toThrowError(
         ANY_ERROR
       );
-
-      consoleErrorSpy.mockRestore();
     });
 
     it("throws an error if Collection manifest is malformed", async () => {
-      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      disableConsole(["error"]);
 
       const fileMap = {
         // eslint-disable-next-line
@@ -297,13 +293,10 @@ describe("Collection", () => {
       await expect(
         Collection.loadFromAmbiguousFile("collection.json", fileMap, COLLECTION_LOAD_CONFIG)
       ).rejects.toThrowError(ANY_ERROR);
-
-      consoleErrorSpy.mockRestore();
     });
 
     it("throws an error if dataset manifest is malformed", async () => {
-      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-      const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      disableConsole(["error", "warn"]);
 
       const fileMap = {
         ...MOCK_DATASET_FILEMAP,
@@ -313,9 +306,6 @@ describe("Collection", () => {
       await expect(Collection.loadFromAmbiguousFile("", fileMap, COLLECTION_LOAD_CONFIG)).rejects.toThrowError(
         ANY_ERROR
       );
-
-      consoleErrorSpy.mockRestore();
-      consoleWarnSpy.mockRestore();
     });
   });
 });

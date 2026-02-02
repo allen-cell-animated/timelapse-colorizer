@@ -1,6 +1,6 @@
 import { gte as semverGte, lt as semverLt } from "semver";
 import { Vector2 } from "three";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { FeatureDataType } from "src/colorizer";
 import { MAX_FEATURE_CATEGORIES } from "src/colorizer/constants";
@@ -11,6 +11,7 @@ import {
   ANY_ERROR,
   DEFAULT_DATASET_DIR,
   DEFAULT_DATASET_PATH,
+  disableConsole,
   makeMockAsyncLoader,
   makeMockDataset,
   MockArrayLoader,
@@ -161,7 +162,7 @@ describe("Dataset", () => {
       });
 
       it("throws an error if categorical data is missing categories", async () => {
-        const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+        disableConsole(["warn"]);
 
         const badManifest = {
           frames: ["frame0.json"],
@@ -178,12 +179,10 @@ describe("Dataset", () => {
         });
         const mockFetch = makeMockAsyncLoader(DEFAULT_DATASET_PATH, badManifest);
         await expect(dataset.open({ manifestLoader: mockFetch })).rejects.toThrowError(ANY_ERROR);
-
-        consoleWarnSpy.mockRestore();
       });
 
       it("throws an error if the number of categories exceeds the max", async () => {
-        const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+        disableConsole(["warn"]);
 
         const categories = [...Array(MAX_FEATURE_CATEGORIES + 1).keys()].map((i) => i.toString());
         const badManifest = {
@@ -204,8 +203,6 @@ describe("Dataset", () => {
         });
         const mockFetch = makeMockAsyncLoader(DEFAULT_DATASET_PATH, badManifest);
         await expect(dataset.open({ manifestLoader: mockFetch })).rejects.toThrowError(ANY_ERROR);
-
-        consoleWarnSpy.mockRestore();
       });
 
       it("Loads the first frame and retrieves frame dimensions on open", async () => {
