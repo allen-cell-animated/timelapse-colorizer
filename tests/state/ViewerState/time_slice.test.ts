@@ -183,7 +183,7 @@ describe("useViewerStateStore: TimeSlice", () => {
       await setDatasetAsync(result, MOCK_DATASET);
       act(() => {
         // Fake track with start time at 50
-        result.current.setTrack(new Track(15, [3], [0], [0, 0], [1, 1]));
+        result.current.addTracks(new Track(15, [3], [0], [0, 0], [1, 1]));
       });
       const params = new URLSearchParams();
       act(() => {
