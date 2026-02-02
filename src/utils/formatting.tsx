@@ -84,6 +84,7 @@ export function insertBetweenElements(
   for (let i = 0; i < elementsArray.length; i++) {
     elementList.push(elementsArray[i]);
     if (i < elementsArray.length - 1) {
+      // Separators are keyed by index in final list
       elementList.push(typeof separator === "function" ? separator(2 * i + 1) : separator);
     }
   }

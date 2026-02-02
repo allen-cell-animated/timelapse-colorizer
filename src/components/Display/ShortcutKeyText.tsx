@@ -39,6 +39,7 @@ function toHotkeyDisplay(key: string): ReactElement {
   const keys = key.split("+").map((k) => k.trim());
   const hotkeyElements = keys.map((k, index) => {
     const hotkeyDisplayName = keycodeToDisplay[k.toLowerCase()] || capitalizeFirstLetter(k);
+    // Keys are 2*index because hotkey elements will be interspersed with "+" elements
     return <KeyCharacter key={2 * index}>{hotkeyDisplayName}</KeyCharacter>;
   });
   const elements = insertBetweenElements(hotkeyElements, (index) => <span key={index}>+</span>);
