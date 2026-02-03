@@ -395,12 +395,15 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       const newTrack = dataset.getTrack(trackId);
       const isMultiTrackSelectHotkeyPressed = areAnyHotkeysPressed(ShortcutKeys.viewport.multiTrackSelect.keycode);
       if (newTrack) {
-        if (isMultiTrackSelectHotkeyPressed && !isAnnotationModeEnabled) {
-          // Toggle selection of clicked track during multi-select mode.
-          toggleTrack(newTrack);
-        } else if (isMultiTrackSelectHotkeyPressed && isAnnotationModeEnabled) {
-          // During annotation mode, don't toggle tracks.
-          addTracks(newTrack);
+        if (isMultiTrackSelectHotkeyPressed) {
+          if (isAnnotationModeEnabled) {
+            // During annotation mode, don't toggle tracks to prevent tracks from
+            // becoming deselected while editing them.
+            addTracks(newTrack);
+          } else {
+            // Otherwise, toggle selection of clicked track during multi-select mode.
+            toggleTrack(newTrack);
+          }
         } else {
           // Select only the clicked track.
           setTracks(newTrack);

@@ -98,7 +98,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
 
   // By default, highlight all selected IDs in the selected track.
   const selectedTrackIds = trackToIds.get(selectedTrackId?.toString() ?? "") ?? [];
-  let selectedIds = new Set(selectedTrackIds);
+  let selectedIds = selectedTrackIds;
   let bgIds: number[] = [];
 
   // If there is a selected ID in the current frame, highlight only IDs that
@@ -111,13 +111,11 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
   // Hovering takes precedence over current frame.
   const highlightedId = hoveredValue ? hoveredId : currentId;
   const highlightedValue = hoveredValue ?? currentValue;
-  if (highlightedValue !== undefined && highlightedId && selectedIds.has(highlightedId)) {
+  if (highlightedValue !== undefined && highlightedId && selectedIds.includes(highlightedId)) {
     // Filter so only IDs with matching values are highlighted, and the rest are
     // background.
-    const currentValueIds = new Set(
-      Array.from(selectedIds).filter((id) => props.idToValue?.get(id) === highlightedValue)
-    );
-    bgIds = Array.from(selectedIds);
+    const currentValueIds = selectedIds.filter((id) => props.idToValue?.get(id) === highlightedValue);
+    bgIds = selectedIds;
     selectedIds = currentValueIds;
   }
 
@@ -189,7 +187,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
                     lastHoveredX.current = x;
                   }
                 }}
-                ids={Array.from(selectedIds)}
+                ids={selectedIds}
                 bgIds={bgIds}
                 track={lastSelectedTrack}
                 dataset={props.dataset}
@@ -231,7 +229,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
             ids={selectedTrackId ? trackToIds.get(selectedTrackId?.toString()) ?? [] : []}
             idToValue={props.idToValue}
             height={410}
-            selectedIds={selectedIds}
+            selectedIds={new Set(selectedIds)}
             hideTrackColumn={true}
           ></AnnotationDisplayTable>
         </FlexColumn>
