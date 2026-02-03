@@ -40,9 +40,10 @@ const DropdownItemButton = styled(Button)<{ $selected: boolean }>`
         color: var(--color-button) !important;
       `;
     }
-    // Otherwise, add grey backdrop when hovered
+    // Otherwise, add grey backdrop when hovered or focused
     return css`
-      &:hover {
+      &:hover,
+      &:focus-visible {
         background-color: var(--color-dropdown-hover) !important;
       }
     `;
