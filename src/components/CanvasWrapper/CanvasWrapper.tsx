@@ -157,7 +157,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const setApplyChannelRangePresetCallback = useViewerStateStore((state) => state.setApplyChannelRangePresetCallback);
   const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
   const clearTracks = useViewerStateStore((state) => state.clearTracks);
-  const clearAndAddTracks = useViewerStateStore((state) => state.clearAndAddTracks);
+  const setTracks = useViewerStateStore((state) => state.setTracks);
   const addTracks = useViewerStateStore((state) => state.addTracks);
   const toggleTrack = useViewerStateStore((state) => state.toggleTrack);
   const showScaleBar = useViewerStateStore((state) => state.showScaleBar);
@@ -403,11 +403,11 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
           addTracks(newTrack);
         } else {
           // Select only the clicked track.
-          clearAndAddTracks(newTrack);
+          setTracks(newTrack);
         }
       }
     },
-    [toggleTrack, clearAndAddTracks, addTracks, isAnnotationModeEnabled]
+    [toggleTrack, setTracks, addTracks, isAnnotationModeEnabled]
   );
 
   /** Report clicked tracks via the passed callback. */

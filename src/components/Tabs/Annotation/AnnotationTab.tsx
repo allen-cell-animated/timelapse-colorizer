@@ -62,8 +62,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     useShallow((state) => ({
       frame: state.currentFrame,
       dataset: state.dataset,
-      setTracks: state.addTracks,
-      clearAndAddTracks: state.clearAndAddTracks,
+      setTracks: state.setTracks,
       addTracks: state.addTracks,
       toggleTrack: state.toggleTrack,
       setFrame: state.setFrame,
@@ -129,12 +128,12 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
         if (areAnyHotkeysPressed(ShortcutKeys.viewport.multiTrackSelect.keycode)) {
           store.addTracks(track);
         } else {
-          store.clearAndAddTracks(track);
+          store.setTracks(track);
         }
         store.setFrame(record.time);
       }
     },
-    [store.dataset, store.addTracks, store.clearAndAddTracks, store.setFrame]
+    [store.dataset, store.addTracks, store.setTracks, store.setFrame]
   );
 
   const onClickDeleteObject = useCallback(
@@ -354,7 +353,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
                 if (areAnyHotkeysPressed(ShortcutKeys.viewport.multiTrackSelect.keycode)) {
                   store.toggleTrack(track);
                 } else {
-                  store.clearAndAddTracks(track);
+                  store.setTracks(track);
                 }
               }
             }}

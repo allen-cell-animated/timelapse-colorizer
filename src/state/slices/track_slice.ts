@@ -29,11 +29,11 @@ export type TrackSliceActions = {
   /** Toggles the selection state of a track. */
   toggleTrack: (track: Track) => void;
   /**
-   * Clears all tracks and selects only the specified tracks.
+   * Sets the current track selection to the specified tracks.
    * Use in place of `clearTracks() => addTracks(tracks)` to avoid
    * unnecessary state updates.
    */
-  clearAndAddTracks: (tracks: Track | Track[]) => void;
+  setTracks: (tracks: Track | Track[]) => void;
   /**
    * Removes all tracks from the current selection.
    * @param newLut For internal use when the dataset changes. Optional new
@@ -116,7 +116,7 @@ export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (s
     const newSelectedLut = newLut ?? new Uint8Array(get().isSelectedLut.length);
     set({ tracks: new Map<number, Track>(), track: null, isSelectedLut: newSelectedLut });
   },
-  clearAndAddTracks: (tracks: Track | Track[]) => {
+  setTracks: (tracks: Track | Track[]) => {
     tracks = Array.isArray(tracks) ? tracks : [tracks];
     // Combines steps for `clearTracks` and `addTracks` into one state update
     // to prevent unnecessary re-rendering.
