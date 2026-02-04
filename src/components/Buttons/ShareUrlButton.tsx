@@ -25,9 +25,8 @@ function isInternalUrl(url: string): boolean {
   return isAllenPath(url) || url.startsWith(VAST_FILES_URL);
 }
 
-const FAQ_DOCUMENTATION =
-  "https://github.com/allen-cell-animated/timelapse-colorizer/blob/doc/dataset-sharing/docs/FAQ.md";
-// const FAQ_DOCUMENTATION = "https://github.com/allen-cell-animated/timelapse-colorizer/blob/main/docs/FAQ.md"
+const FAQ_DOCUMENTATION = "https://github.com/allen-cell-animated/timelapse-colorizer/blob/main/docs/FAQ.md";
+
 const enum FaqSection {
   SHARE_LOCAL_DATASETS = FAQ_DOCUMENTATION + "#q-how-do-i-share-local-datasets",
   SHARE_INTERNAL_DATASETS = FAQ_DOCUMENTATION +
