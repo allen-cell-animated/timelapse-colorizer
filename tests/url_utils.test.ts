@@ -84,9 +84,15 @@ describe("convertAllenPathToHttps", () => {
     expect(convertAllenPathToHttps("https://something.com/data/example.json")).to.equal(null);
   });
 
-  it("Replaces special characters", () => {
-    expect(convertAllenPathToHttps("/allen/aics/some resource/path with spaces/my file #40.json")).to.equal(
-      `${VAST_FILES_URL}some%20resource/path%20with%20spaces/my%20file%20%2340.json`
+  it("Replaces spaces", () => {
+    expect(convertAllenPathToHttps("/allen/aics/some resource/path with spaces/my file.json")).to.equal(
+      `${VAST_FILES_URL}some%20resource/path%20with%20spaces/my%20file.json`
+    );
+  });
+
+  it("replaces special characters", () => {
+    expect(convertAllenPathToHttps("/allen/aics/some_resource/&*#$@^~!.json")).to.equal(
+      `${VAST_FILES_URL}some_resource/%26*%23%24%40%5E~!.json`
     );
   });
 });
