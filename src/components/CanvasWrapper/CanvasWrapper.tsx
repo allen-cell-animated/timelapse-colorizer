@@ -684,7 +684,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
               props.annotationState.setVisibility(!props.annotationState.visible);
             }}
           >
-            {props.annotationState.visible ? <TagSlashIconSVG /> : <TagIconSVG />}
+            {props.annotationState.visible ? <TagIconSVG /> : <TagSlashIconSVG />}
             <VisuallyHidden>{props.annotationState.visible ? "Hide annotations" : "Show annotations"}</VisuallyHidden>
           </IconButton>
         </TooltipWithSubtitle>

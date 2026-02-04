@@ -82,7 +82,7 @@ export function ImageToggleButton(props: ToggleImageButtonProps): ReactElement {
           onClick={() => props.setVisible(!props.visible)}
           disabled={props.disabled}
         >
-          {props.visible ? <ImagesSlashIconSVG /> : <ImagesIconSVG />}
+          {props.visible ? <ImagesIconSVG /> : <ImagesSlashIconSVG />}
           <VisuallyHidden>{tooltipTitle}</VisuallyHidden>
         </IconButton>
       </TooltipWithSubtitle>
