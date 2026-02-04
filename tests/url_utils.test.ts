@@ -90,7 +90,7 @@ describe("convertAllenPathToHttps", () => {
     );
   });
 
-  it("replaces special characters", () => {
+  it("Replaces special characters", () => {
     expect(convertAllenPathToHttps("/allen/aics/some_resource/&*#$@^~!.json")).to.equal(
       `${VAST_FILES_URL}some_resource/%26*%23%24%40%5E~!.json`
     );
