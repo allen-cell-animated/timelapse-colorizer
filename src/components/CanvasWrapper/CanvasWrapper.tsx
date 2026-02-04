@@ -30,12 +30,13 @@ import TooltipButtonStyleLink from "src/components/Buttons/TooltipButtonStyleLin
 import LoadingSpinner from "src/components/LoadingSpinner";
 import AnnotationInputPopover from "src/components/Tabs/Annotation/AnnotationInputPopover";
 import { TooltipWithSubtitle } from "src/components/Tooltips/TooltipWithSubtitle";
-import { CANVAS_ASPECT_RATIO, ShortcutKeycode, ShortcutKeyDisplayName } from "src/constants";
-import { type AnnotationState, useShortcutKey } from "src/hooks";
+import { CANVAS_ASPECT_RATIO, ShortcutKeycode, ShortcutKeyDisplayName, ShortcutKeys } from "src/constants";
+import type { AnnotationState } from "src/hooks";
 import { renderCanvasStateParamsSelector } from "src/state";
 import { useViewerStateStore } from "src/state/ViewerState";
 import { AppThemeContext } from "src/styles/AppStyle";
 import { FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter, VisuallyHidden } from "src/styles/utils";
+import { areAnyHotkeysPressed } from "src/utils/user_input";
 
 import BackdropToggleButton from "./BackdropToggleButton";
 import ChannelToggleButton from "./ChannelToggleButton";
@@ -171,8 +172,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   const isFrameLoading = pendingFrame !== currentFrame;
   const loadProgress = props.loading ? props.loadingProgress : null;
-
-  const isMultiTrackSelectHotkeyPressed = useShortcutKey(ShortcutKeycode.MULTI_TRACK_SELECT);
 
   // Add subscriber so canvas parameters are updated when the state changes.
   useEffect(() => {
@@ -379,16 +378,19 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   );
 
   const handleBackgroundClicked = useCallback((): void => {
+    const isMultiTrackSelectHotkeyPressed = areAnyHotkeysPressed(ShortcutKeys.viewport.multiTrackSelect.keycode);
     if (isMultiTrackSelectHotkeyPressed) {
+      // Ignore background clicks during multi-track selection.
       return;
     }
     clearTracks();
-  }, [isMultiTrackSelectHotkeyPressed, clearTracks]);
+  }, [clearTracks]);
 
   const handleObjectClicked = useCallback(
     (dataset: Dataset, globalId: number) => {
       const trackId = dataset.getTrackId(globalId);
       const newTrack = dataset.getTrack(trackId);
+      const isMultiTrackSelectHotkeyPressed = areAnyHotkeysPressed(ShortcutKeys.viewport.multiTrackSelect.keycode);
       if (newTrack) {
         if (isMultiTrackSelectHotkeyPressed) {
           // Toggle selection of clicked track during multi-select mode.
@@ -400,7 +402,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         }
       }
     },
-    [isMultiTrackSelectHotkeyPressed, toggleTrack, clearTracks, addTracks]
+    [toggleTrack, clearTracks, addTracks]
   );
 
   /** Report clicked tracks via the passed callback. */
@@ -421,16 +423,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         handleBackgroundClicked();
       }
     },
-    [
-      canv,
-      dataset,
-      props.onClickId,
-      handleBackgroundClicked,
-      handleObjectClicked,
-      clearTracks,
-      updateCanvasCursor,
-      isMultiTrackSelectHotkeyPressed,
-    ]
+    [canv, dataset, props.onClickId, clearTracks, handleObjectClicked, handleBackgroundClicked]
   );
 
   // Mouse event handlers
