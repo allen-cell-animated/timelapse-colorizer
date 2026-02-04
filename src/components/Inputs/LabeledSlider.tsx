@@ -72,6 +72,7 @@ const defaultProps: Partial<LabeledSliderProps> = {
   maxDecimalsToDisplay: 3,
   marks: undefined,
   showMidpoint: false,
+  showInput: true,
 };
 
 // STYLING /////////////////////////////////////////////////////////////////
