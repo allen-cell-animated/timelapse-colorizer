@@ -1,5 +1,7 @@
 import { Tooltip, type TooltipProps } from "antd";
-import React, { type ReactElement, type ReactNode } from "react";
+import React, { type ReactElement, type ReactNode, useContext } from "react";
+
+import { AppThemeContext } from "src/styles/AppStyle";
 
 type TooltipWithSubtitleProps = TooltipProps & {
   title: ReactNode;
@@ -13,6 +15,8 @@ type TooltipWithSubtitleProps = TooltipProps & {
  * list of subtitles) beneath the main tooltip text.
  */
 export function TooltipWithSubtitle(props: TooltipWithSubtitleProps): ReactElement {
+  const theme = useContext(AppThemeContext);
+
   return (
     <Tooltip
       {...props}
@@ -20,10 +24,10 @@ export function TooltipWithSubtitle(props: TooltipWithSubtitleProps): ReactEleme
       title={
         <div ref={props.tooltipRef}>
           <p style={{ margin: 0 }}>{props.title}</p>
-          {props.subtitle && <p style={{ margin: 0, fontSize: "12px" }}>{props.subtitle}</p>}
+          {props.subtitle && <p style={{ margin: 0, fontSize: theme.font.size.labelSmall }}>{props.subtitle}</p>}
           {props.subtitleList &&
             props.subtitleList.map((text, i) => (
-              <p key={i} style={{ margin: 0, fontSize: "12px" }}>
+              <p key={i} style={{ margin: 0, fontSize: theme.font.size.labelSmall }}>
                 {text}
               </p>
             ))}

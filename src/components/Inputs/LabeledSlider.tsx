@@ -41,6 +41,8 @@ type BaseLabeledSliderProps = {
    */
   numberFormatter?: (value?: number) => React.ReactNode;
   sliderStyles?: SliderBaseProps["styles"];
+  showInput?: boolean;
+  labelStyles?: React.CSSProperties;
 };
 
 type LabeledRangeSliderProps = BaseLabeledSliderProps & {
@@ -80,7 +82,7 @@ const ComponentContainer = styled.div`
   flex-direction: row;
   gap: 8px;
   width: 100%;
-  min-width: 200px;
+  min-width: 100px;
 `;
 
 const SliderContainer = styled.div`
@@ -307,22 +309,29 @@ export default function LabeledSlider(inputProps: LabeledSliderProps): ReactElem
     onBlur: handleMaxInputChange,
   };
 
+  // Conditionally render either min or value input
+  const inputComponent1 =
+    props.type === "value" ? (
+      <InputNumber {...sharedInputNumberProps} {...valueInputNumberProps} id={props.id} />
+    ) : (
+      <InputNumber {...sharedInputNumberProps} {...minInputNumberProps} id={props.id} />
+    );
+  const inputComponent2 =
+    props.type === "range" ? <InputNumber {...sharedInputNumberProps} {...maxInputNumberProps} /> : null;
+
   return (
     <ComponentContainer>
-      {
-        // Conditionally render either min or value input
-        props.type === "value" ? (
-          <InputNumber {...sharedInputNumberProps} {...valueInputNumberProps} id={props.id} />
-        ) : (
-          <InputNumber {...sharedInputNumberProps} {...minInputNumberProps} id={props.id} />
-        )
-      }
+      {props.showInput ? inputComponent1 : null}
       <SliderContainer>
         <Slider {...sharedSliderProps} {...(props.type === "value" ? valueSliderProps : rangeSliderProps)} />
-        <SliderLabel $disabled={props.disabled}>{minSliderLabel}</SliderLabel>
-        <SliderLabel $disabled={props.disabled}>{maxSliderLabel}</SliderLabel>
+        <SliderLabel $disabled={props.disabled} style={props.labelStyles}>
+          {minSliderLabel}
+        </SliderLabel>
+        <SliderLabel $disabled={props.disabled} style={props.labelStyles}>
+          {maxSliderLabel}
+        </SliderLabel>
       </SliderContainer>
-      {props.type === "range" && <InputNumber {...sharedInputNumberProps} {...maxInputNumberProps} />}
+      {props.showInput ? inputComponent2 : null}
     </ComponentContainer>
   );
 }
