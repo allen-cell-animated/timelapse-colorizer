@@ -160,7 +160,7 @@ export default function SelectionDropdown(inputProps: React.PropsWithChildren<Se
   // Set up fuse for fuzzy searching
   const fuse = useMemo(() => {
     return new Fuse(options, {
-      keys: ["value", "label"],
+      keys: ["label"],
       isCaseSensitive: false,
       shouldSort: true,
     });
