@@ -180,7 +180,7 @@ export default function SelectionDropdown(inputProps: React.PropsWithChildren<Se
         setFilteredItems(filteredItems);
       });
     }
-  }, [searchInput, props.items]);
+  }, [fuse, searchInput, props.items, setFilteredItems]);
 
   // Add tooltip so it only responds to interaction with the selected option in the control area.
   // Fixes a bug where the tooltip would show when hovering anywhere over the dropdown, including
