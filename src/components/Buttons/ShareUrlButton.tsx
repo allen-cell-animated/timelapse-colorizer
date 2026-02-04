@@ -25,9 +25,8 @@ function isInternalUrl(url: string): boolean {
   return isAllenPath(url) || url.startsWith(VAST_FILES_URL);
 }
 
-const FAQ_DOCUMENTATION =
-  "https://github.com/allen-cell-animated/timelapse-colorizer/blob/doc/dataset-sharing/docs/FAQ.md";
-// const FAQ_DOCUMENTATION = "https://github.com/allen-cell-animated/timelapse-colorizer/blob/main/docs/FAQ.md"
+const FAQ_DOCUMENTATION = "https://github.com/allen-cell-animated/timelapse-colorizer/blob/main/docs/FAQ.md";
+
 const enum FaqSection {
   SHARE_LOCAL_DATASETS = FAQ_DOCUMENTATION + "#q-how-do-i-share-local-datasets",
   SHARE_INTERNAL_DATASETS = FAQ_DOCUMENTATION +
@@ -125,7 +124,7 @@ export default function ShareUrlButton(props: ShareUrlButtonProps): ReactElement
     icon = <InfoCircleFilled style={{ color: theme.color.text.info }} />;
     warningTitle = "Shared URL may not load for external users";
     warningContents.push(
-      "Some files in the dataset are being loaded from the internal filesystem, so external users may not be able to load it.",
+      "Some files are being loaded from the internal filesystem, so external users may not be able to load the dataset.",
       makeFaqLink(FaqSection.SHARE_INTERNAL_DATASETS)
     );
   }

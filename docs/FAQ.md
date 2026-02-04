@@ -41,6 +41,6 @@ To open and share your dataset:
 
 ### Q: How do I share datasets located on an internal system with external collaborators?
 
-Datasets will need to be moved to a publicly accessible hosting service or server before they can be shared with external collaborators (e.g., Amazon S3, Google Cloud Storage).
+A: Datasets will need to be moved to a publicly accessible hosting service or server before they can be shared with external collaborators (e.g., Amazon S3, Google Cloud Storage).
 
 Once the dataset is hosted externally, follow the steps outlined above to load and share the dataset in Timelapse Feature Explorer.
