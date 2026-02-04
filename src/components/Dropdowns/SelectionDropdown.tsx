@@ -138,7 +138,7 @@ export default function SelectionDropdown(inputProps: React.PropsWithChildren<Se
   // TODO: Show loading spinner?
   const [_isPending, startTransition] = useTransition();
   const [searchInput, setSearchInput] = useState("");
-  const [filteredValues, setFilteredValues] = useState<Set<string>>(new Set(options.map((item) => item.value)));
+  const [filteredItems, setFilteredItems] = useState<SelectItem[]>(options);
 
   let selectedOption: SelectItem | undefined;
   if (typeof props.selected === "string") {
@@ -162,7 +162,9 @@ export default function SelectionDropdown(inputProps: React.PropsWithChildren<Se
     return new Fuse(options, {
       keys: ["value", "label"],
       isCaseSensitive: false,
-      shouldSort: true, // sorts by match score
+      shouldSort: true,
+      threshold: 0.9, // 0.0 = exact matches only, 1.0 = match all
+      distance: 150,
     });
   }, [props.items]);
 
@@ -171,13 +173,13 @@ export default function SelectionDropdown(inputProps: React.PropsWithChildren<Se
     if (searchInput === "") {
       startTransition(() => {
         // Reset to original list
-        setFilteredValues(new Set(options.map((item) => item.value)));
+        setFilteredItems(options);
       });
     } else {
       const searchResult = fuse.search(searchInput);
-      const filteredItems = searchResult.map((result) => result.item.value);
+      const filteredItems = searchResult.map((result) => result.item);
       startTransition(() => {
-        setFilteredValues(new Set(filteredItems));
+        setFilteredItems(filteredItems);
       });
     }
   }, [searchInput, props.items]);
@@ -234,8 +236,7 @@ export default function SelectionDropdown(inputProps: React.PropsWithChildren<Se
         type={props.buttonType ?? "outlined"}
         value={selectedOption}
         components={{ Option, Control }}
-        options={options}
-        filterOption={(option) => filteredValues.has(option.value)}
+        options={filteredItems}
         isDisabled={props.disabled}
         isClearable={false}
         isSearchable={props.isSearchable}
