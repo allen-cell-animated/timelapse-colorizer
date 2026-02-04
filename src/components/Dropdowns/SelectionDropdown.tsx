@@ -163,8 +163,6 @@ export default function SelectionDropdown(inputProps: React.PropsWithChildren<Se
       keys: ["value", "label"],
       isCaseSensitive: false,
       shouldSort: true,
-      threshold: 0.9, // 0.0 = exact matches only, 1.0 = match all
-      distance: 150,
     });
   }, [props.items]);
 
