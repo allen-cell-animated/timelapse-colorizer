@@ -309,7 +309,6 @@ export default function LabeledSlider(inputProps: LabeledSliderProps): ReactElem
     onBlur: handleMaxInputChange,
   };
 
-  // Conditionally render either min or value input
   const inputComponent1 =
     props.type === "value" ? (
       <InputNumber {...sharedInputNumberProps} {...valueInputNumberProps} id={props.id} />
