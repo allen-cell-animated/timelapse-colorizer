@@ -25,21 +25,26 @@ export type ToggleImageButtonProps = {
 const labelToViewerSettingsSection = {
   backdrop: "Viewer settings > 2D Backdrop",
   channels: "Viewer settings > 3D Channels",
-};
+} as const;
 
 /**
  * Icon button that toggles an image layer (e.g. 3D channels or 2D backdrop
  * images), as a reusable component.
  */
 export function ImageToggleButton(props: ToggleImageButtonProps): ReactElement {
+  const theme = useContext(AppThemeContext);
+  const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
+
+  const [configMenuOpen, setConfigMenuOpen] = useState(false);
   const popupContainerRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
 
-  const theme = useContext(AppThemeContext);
-  const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
-  const [configMenuOpen, setConfigMenuOpen] = useState(false);
-
+  // When the backdrop or channels are not visible, clicking the button shows
+  // them. When they are currently visible, clicking the button opens the config
+  // menu. Clicking again while the config menu is open hides the
+  // backdrop/channels and closes the config menu.
   const tooltipTitle = (props.visible ? (configMenuOpen ? "Hide" : "Configure ") : "Show") + " " + props.label;
+
   const tooltipContents = [...props.tooltipContents];
   if (!configMenuOpen && props.visible) {
     tooltipContents.push("Double-click to hide " + props.label.toLowerCase());
@@ -58,7 +63,7 @@ export function ImageToggleButton(props: ToggleImageButtonProps): ReactElement {
     }
   };
 
-  const configTitle = (
+  const configMenuTitle = (
     <FlexRow style={{ width: "100%", justifyContent: "space-between", alignItems: "center" }}>
       <p style={{ fontSize: "16px", marginTop: 0 }}>{"Configure " + props.label}</p>
       <TextButton>
@@ -67,6 +72,7 @@ export function ImageToggleButton(props: ToggleImageButtonProps): ReactElement {
     </FlexRow>
   );
 
+  // Passed contents + link to settings in the config menu + close button
   const configMenuContents = (
     <FlexColumn>
       {typeof props.configMenuContents === "function"
@@ -99,7 +105,7 @@ export function ImageToggleButton(props: ToggleImageButtonProps): ReactElement {
       <Popover
         content={configMenuContents}
         placement="right"
-        title={configTitle}
+        title={configMenuTitle}
         trigger={["click"]}
         getPopupContainer={() => popupContainerRef.current || document.body}
         onOpenChange={(open) => setConfigMenuOpen(open)}
@@ -107,6 +113,10 @@ export function ImageToggleButton(props: ToggleImageButtonProps): ReactElement {
       >
         <TooltipWithSubtitle
           title={tooltipTitle}
+          // Normally placed to right for consistency, but preferentially
+          // switches to the left when the config menu is open. (If there isn't
+          // enough space, both will switch to the left, with the config menu
+          // taking priority over the tooltip.)
           placement={configMenuOpen ? "left" : "right"}
           subtitleList={tooltipContents}
           tooltipRef={tooltipRef}

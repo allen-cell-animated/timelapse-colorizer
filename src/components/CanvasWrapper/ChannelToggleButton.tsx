@@ -4,6 +4,7 @@ import React, { type ReactElement, type ReactNode, useRef } from "react";
 import { ImageToggleButton } from "src/components/Buttons/ImageToggleButton";
 import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
 import { useViewerStateStore } from "src/state";
+import { formatQuantityString } from "src/utils/formatting";
 
 const enum ChannelToggleButtonHtmlIds {
   CHANNEL_CHECKBOXES = "channel-toggle-channel-checkbox",
@@ -29,9 +30,10 @@ export default function ChannelToggleButton(): ReactElement {
     lastVisibleChannelConfig.current = channelVisibility;
   }
 
+  const channelString = formatQuantityString(channelData?.length ?? 0, "channel", "channels");
   const tooltipContents: ReactNode[] = [
     <span key="no-channels">
-      {hasChannels ? `${channelData.length} channels available` : "(No channels available)"}
+      {hasChannels ? `${channelData.length} ${channelString} available` : "(No channels available)"}
     </span>,
   ];
 
@@ -42,7 +44,7 @@ export default function ChannelToggleButton(): ReactElement {
         labelStyle={{ marginBottom: "auto" }}
         htmlFor={ChannelToggleButtonHtmlIds.CHANNEL_CHECKBOXES}
       >
-        <div style={{ padding: "0 0 0 6px" }}>
+        <div style={{ paddingLeft: "6px" }} id={ChannelToggleButtonHtmlIds.CHANNEL_CHECKBOXES}>
           {(channelData ?? []).map((channel, index) => {
             return (
               <Checkbox

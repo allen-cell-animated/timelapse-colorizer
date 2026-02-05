@@ -42,7 +42,6 @@ type BaseLabeledSliderProps = {
   numberFormatter?: (value?: number) => React.ReactNode;
   sliderStyles?: SliderBaseProps["styles"];
   showInput?: boolean;
-  labelStyles?: React.CSSProperties;
 };
 
 type LabeledRangeSliderProps = BaseLabeledSliderProps & {
@@ -325,12 +324,8 @@ export default function LabeledSlider(inputProps: LabeledSliderProps): ReactElem
       {props.showInput ? inputComponent1 : null}
       <SliderContainer>
         <Slider {...sharedSliderProps} {...(props.type === "value" ? valueSliderProps : rangeSliderProps)} />
-        <SliderLabel $disabled={props.disabled} style={props.labelStyles}>
-          {minSliderLabel}
-        </SliderLabel>
-        <SliderLabel $disabled={props.disabled} style={props.labelStyles}>
-          {maxSliderLabel}
-        </SliderLabel>
+        <SliderLabel $disabled={props.disabled}>{minSliderLabel}</SliderLabel>
+        <SliderLabel $disabled={props.disabled}>{maxSliderLabel}</SliderLabel>
       </SliderContainer>
       {props.showInput ? inputComponent2 : null}
     </ComponentContainer>
