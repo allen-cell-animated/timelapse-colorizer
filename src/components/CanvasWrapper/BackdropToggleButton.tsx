@@ -2,7 +2,7 @@ import React, { type ReactElement, type ReactNode, useContext } from "react";
 
 import { ImageToggleButton } from "src/components/Buttons/ImageToggleButton";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
-import { SelectItem } from "src/components/Dropdowns/types";
+import type { SelectItem } from "src/components/Dropdowns/types";
 import LabeledSlider from "src/components/Inputs/LabeledSlider";
 import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
 import { useViewerStateStore } from "src/state";
