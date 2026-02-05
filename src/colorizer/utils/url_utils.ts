@@ -103,10 +103,13 @@ export const isChannelKey = (key: string): key is ChannelSettingParamKey => {
 const TRACK_PATH_STEPS_REGEX = /^(\d+)!?,(\d+)!?$/;
 
 const ALLEN_FILE_PREFIX = "/allen/";
+export const VAST_FILES_URL = "https://vast-files.int.allencell.org/";
 const ALLEN_PREFIX_TO_HTTPS: Record<string, string> = {
   // eslint-disable-next-line @typescript-eslint/naming-convention
-  "/allen/aics/": "https://vast-files.int.allencell.org/",
+  "/allen/aics/": VAST_FILES_URL,
 };
+
+export const PUBLIC_TFE_URL = "https://timelapse.allencell.org/";
 
 export const DEFAULT_FETCH_TIMEOUT_MS = 2000;
 
@@ -567,10 +570,11 @@ export function isAllenPath(input: string): boolean {
  * otherwise, returns an HTTPS resource path.
  */
 export function convertAllenPathToHttps(input: string): string | null {
-  input = normalizeFilePathSlashes(input);
-  for (const prefix of Object.keys(ALLEN_PREFIX_TO_HTTPS)) {
-    if (input.startsWith(prefix)) {
-      return input.replace(prefix, ALLEN_PREFIX_TO_HTTPS[prefix]);
+  // Escape special characters in the path, except for slashes
+  const escapedInput = encodeURIComponent(normalizeFilePathSlashes(input)).replaceAll("%2F", "/");
+  for (const [prefix, httpsPrefix] of Object.entries(ALLEN_PREFIX_TO_HTTPS)) {
+    if (escapedInput.startsWith(prefix)) {
+      return escapedInput.replace(prefix, httpsPrefix);
     }
   }
   return null;
