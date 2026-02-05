@@ -32,13 +32,11 @@ export default function ChannelToggleButton(): ReactElement {
 
   const channelString = formatQuantityString(channelData?.length ?? 0, "channel", "channels");
   const tooltipContents: ReactNode[] = [
-    <span key="no-channels">
-      {hasChannels ? `${channelData.length} ${channelString} available` : "(No channels available)"}
-    </span>,
+    <span key="no-channels">{hasChannels ? `${channelString} available` : "(No channels available)"}</span>,
   ];
 
   const createConfigMenuContents = [
-    <SettingsContainer labelWidth="60px" style={{ marginBottom: 6 }} key="channel-settings-container">
+    <SettingsContainer labelWidth="80px" style={{ marginBottom: 6 }} key="channel-settings-container">
       <SettingsItem
         label={"Channels"}
         labelStyle={{ marginBottom: "auto" }}

@@ -1,15 +1,13 @@
-import { CloseOutlined } from "@ant-design/icons";
 import { Button, Popover } from "antd";
 import React, { type ReactElement, type ReactNode, useContext, useRef, useState } from "react";
 
 import { ImagesIconSVG, ImagesSlashIconSVG } from "src/assets";
 import { TabType } from "src/colorizer";
 import { LinkStyleButton } from "src/components/Buttons/LinkStyleButton";
-import TextButton from "src/components/Buttons/TextButton";
 import { TooltipWithSubtitle } from "src/components/Tooltips/TooltipWithSubtitle";
 import { useViewerStateStore } from "src/state";
 import { AppThemeContext } from "src/styles/AppStyle";
-import { FlexColumn, FlexRow, VisuallyHidden } from "src/styles/utils";
+import { FlexColumn, VisuallyHidden } from "src/styles/utils";
 
 import IconButton from "./IconButton";
 
@@ -63,15 +61,6 @@ export function ImageToggleButton(props: ToggleImageButtonProps): ReactElement {
     }
   };
 
-  const configMenuTitle = (
-    <FlexRow style={{ width: "100%", justifyContent: "space-between", alignItems: "center" }}>
-      <p style={{ fontSize: "16px", marginTop: 0 }}>{"Configure " + props.label}</p>
-      <TextButton>
-        <CloseOutlined />
-      </TextButton>
-    </FlexRow>
-  );
-
   // Passed contents + link to settings in the config menu + close button
   const configMenuContents = (
     <FlexColumn>
@@ -104,8 +93,7 @@ export function ImageToggleButton(props: ToggleImageButtonProps): ReactElement {
     <div ref={popupContainerRef}>
       <Popover
         content={configMenuContents}
-        placement="right"
-        title={configMenuTitle}
+        placement="left"
         trigger={["click"]}
         getPopupContainer={() => popupContainerRef.current || document.body}
         onOpenChange={(open) => setConfigMenuOpen(open)}
@@ -113,11 +101,7 @@ export function ImageToggleButton(props: ToggleImageButtonProps): ReactElement {
       >
         <TooltipWithSubtitle
           title={tooltipTitle}
-          // Normally placed to right for consistency, but preferentially
-          // switches to the left when the config menu is open. (If there isn't
-          // enough space, both will switch to the left, with the config menu
-          // taking priority over the tooltip.)
-          placement={configMenuOpen ? "left" : "right"}
+          placement={"right"}
           subtitleList={tooltipContents}
           tooltipRef={tooltipRef}
           getPopupContainer={() => popupContainerRef.current || document.body}
