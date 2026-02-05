@@ -1,10 +1,14 @@
 import { CloseOutlined } from "@ant-design/icons";
 import { Button, Popover } from "antd";
-import React, { type ReactElement, type ReactNode, useRef, useState } from "react";
+import React, { type ReactElement, type ReactNode, useContext, useRef, useState } from "react";
 
 import { ImagesIconSVG, ImagesSlashIconSVG } from "src/assets";
+import { TabType } from "src/colorizer";
+import { LinkStyleButton } from "src/components/Buttons/LinkStyleButton";
 import TextButton from "src/components/Buttons/TextButton";
 import { TooltipWithSubtitle } from "src/components/Tooltips/TooltipWithSubtitle";
+import { useViewerStateStore } from "src/state";
+import { AppThemeContext } from "src/styles/AppStyle";
 import { FlexColumn, FlexRow, VisuallyHidden } from "src/styles/utils";
 
 import IconButton from "./IconButton";
@@ -18,6 +22,11 @@ export type ToggleImageButtonProps = {
   configMenuContents: ReactNode[] | ((setOpen: (open: boolean) => void) => ReactNode[]);
 };
 
+const labelToViewerSettingsSection = {
+  backdrop: "Viewer settings > 2D Backdrop",
+  channels: "Viewer settings > 3D Channels",
+};
+
 /**
  * Icon button that toggles an image layer (e.g. 3D channels or 2D backdrop
  * images), as a reusable component.
@@ -26,6 +35,8 @@ export function ImageToggleButton(props: ToggleImageButtonProps): ReactElement {
   const popupContainerRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
 
+  const theme = useContext(AppThemeContext);
+  const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
   const [configMenuOpen, setConfigMenuOpen] = useState(false);
 
   const tooltipTitle = (props.visible ? (configMenuOpen ? "Hide" : "Configure ") : "Show") + " " + props.label;
@@ -56,19 +67,37 @@ export function ImageToggleButton(props: ToggleImageButtonProps): ReactElement {
     </FlexRow>
   );
 
+  const configMenuContents = (
+    <FlexColumn>
+      {typeof props.configMenuContents === "function"
+        ? props.configMenuContents(setConfigMenuOpen)
+        : props.configMenuContents}
+
+      <div key="backdrop-settings-link">
+        <LinkStyleButton
+          onClick={() => {
+            setOpenTab(TabType.SETTINGS);
+            setConfigMenuOpen(false);
+          }}
+          $color={theme.color.text.hint}
+          $hoverColor={theme.color.text.secondary}
+        >
+          <span>
+            {labelToViewerSettingsSection[props.label]} <VisuallyHidden>(opens settings tab)</VisuallyHidden>
+          </span>
+        </LinkStyleButton>
+      </div>
+
+      <div style={{ marginLeft: "auto", marginTop: "8px" }}>
+        <Button onClick={() => setConfigMenuOpen(false)}>Close</Button>
+      </div>
+    </FlexColumn>
+  );
+
   return (
     <div ref={popupContainerRef}>
       <Popover
-        content={
-          <FlexColumn>
-            {typeof props.configMenuContents === "function"
-              ? props.configMenuContents(setConfigMenuOpen)
-              : props.configMenuContents}
-            <div style={{ marginLeft: "auto", marginTop: "8px" }}>
-              <Button onClick={() => setConfigMenuOpen(false)}>Close</Button>
-            </div>
-          </FlexColumn>
-        }
+        content={configMenuContents}
         placement="right"
         title={configTitle}
         trigger={["click"]}

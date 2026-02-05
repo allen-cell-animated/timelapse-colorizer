@@ -1,15 +1,12 @@
 import React, { type ReactElement, type ReactNode, useContext } from "react";
 
-import { TabType } from "src/colorizer";
 import { ImageToggleButton } from "src/components/Buttons/ImageToggleButton";
-import { LinkStyleButton } from "src/components/Buttons/LinkStyleButton";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import { SelectItem } from "src/components/Dropdowns/types";
 import LabeledSlider from "src/components/Inputs/LabeledSlider";
 import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
 import { useViewerStateStore } from "src/state";
 import { AppThemeContext } from "src/styles/AppStyle";
-import { VisuallyHidden } from "src/styles/utils";
 
 const enum BackdropToggleButtonHtmlIds {
   OPACITY_SLIDER = "backdrop-toggle-opacity-slider",
@@ -23,7 +20,6 @@ export default function BackdropToggleButton(): ReactElement {
   const backdropKey = useViewerStateStore((state) => state.backdropKey);
   const backdropVisible = useViewerStateStore((state) => state.backdropVisible);
   const objectOpacity = useViewerStateStore((state) => state.objectOpacity);
-  const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
   const setBackdropKey = useViewerStateStore((state) => state.setBackdropKey);
   const setBackdropVisible = useViewerStateStore((state) => state.setBackdropVisible);
   const setObjectOpacity = useViewerStateStore((state) => state.setObjectOpacity);
@@ -45,56 +41,39 @@ export default function BackdropToggleButton(): ReactElement {
   ];
 
   // Config menu
-  const createBackdropConfigMenuContents = (setOpen: (open: boolean) => void): ReactNode[] => {
-    return [
-      <SettingsContainer labelWidth="70px">
-        <SettingsItem label="Backdrop" htmlFor={BackdropToggleButtonHtmlIds.BACKDROP_SELECT}>
-          <SelectionDropdown
-            id={BackdropToggleButtonHtmlIds.BACKDROP_SELECT}
-            disabled={!hasBackdrops}
-            items={backdropsAsItems}
-            selected={backdropKey ?? ""}
-            onChange={(value) => {
-              setBackdropVisible(true);
-              setBackdropKey(value);
-            }}
-            controlWidth="220px"
-          />
-        </SettingsItem>
-        <SettingsItem label="Opacity" htmlFor={BackdropToggleButtonHtmlIds.OPACITY_SLIDER} style={{ marginBottom: 14 }}>
-          <div style={{ display: "flex", flexGrow: 1 }}>
-            <LabeledSlider
-              id={BackdropToggleButtonHtmlIds.OPACITY_SLIDER}
-              disabled={!backdropVisible}
-              type="value"
-              value={objectOpacity}
-              onChange={setObjectOpacity}
-              step={1}
-              minSliderBound={0}
-              maxSliderBound={100}
-              showInput={false}
-              numberFormatter={(value) => value + "%"}
-            />
-          </div>
-        </SettingsItem>
-      </SettingsContainer>,
-      <div>
-        <LinkStyleButton
-          key="backdrop-settings-link"
-          onClick={() => {
-            setOpenTab(TabType.SETTINGS);
-            setOpen(false);
+  const createBackdropConfigMenuContents = [
+    <SettingsContainer labelWidth="70px" key="backdrop-settings-container">
+      <SettingsItem label="Backdrop" htmlFor={BackdropToggleButtonHtmlIds.BACKDROP_SELECT}>
+        <SelectionDropdown
+          id={BackdropToggleButtonHtmlIds.BACKDROP_SELECT}
+          disabled={!hasBackdrops}
+          items={backdropsAsItems}
+          selected={backdropKey ?? ""}
+          onChange={(value) => {
+            setBackdropVisible(true);
+            setBackdropKey(value);
           }}
-          $color={theme.color.text.hint}
-          $hoverColor={theme.color.text.secondary}
-        >
-          <span>
-            {"Viewer settings > 2D Backdrop"} <VisuallyHidden>(opens settings tab)</VisuallyHidden>
-          </span>
-        </LinkStyleButton>
-      </div>,
-    ];
-  };
+          controlWidth="220px"
+        />
+      </SettingsItem>
+      <SettingsItem label="Opacity" htmlFor={BackdropToggleButtonHtmlIds.OPACITY_SLIDER} style={{ marginBottom: 14 }}>
+        <div style={{ display: "flex", flexGrow: 1 }}>
+          <LabeledSlider
+            id={BackdropToggleButtonHtmlIds.OPACITY_SLIDER}
+            disabled={!backdropVisible}
+            type="value"
+            value={objectOpacity}
+            onChange={setObjectOpacity}
+            step={1}
+            minSliderBound={0}
+            maxSliderBound={100}
+            showInput={false}
+            numberFormatter={(value) => value + "%"}
+          />
+        </div>
+      </SettingsItem>
+    </SettingsContainer>,
+  ];
 
   return (
     <ImageToggleButton
