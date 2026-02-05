@@ -1,9 +1,11 @@
-import React, { type ReactElement, type ReactNode, useEffect, useRef, useState } from "react";
-import { useDebounce } from "usehooks-ts";
+import { CloseOutlined } from "@ant-design/icons";
+import { Popover } from "antd";
+import React, { type ReactElement, type ReactNode, useRef, useState } from "react";
 
 import { ImagesIconSVG, ImagesSlashIconSVG } from "src/assets";
+import TextButton from "src/components/Buttons/TextButton";
 import { TooltipWithSubtitle } from "src/components/Tooltips/TooltipWithSubtitle";
-import { VisuallyHidden } from "src/styles/utils";
+import { FlexColumn, FlexRow, VisuallyHidden } from "src/styles/utils";
 
 import IconButton from "./IconButton";
 
@@ -13,6 +15,7 @@ export type ToggleImageButtonProps = {
   disabled: boolean;
   label: string;
   tooltipContents: ReactNode[];
+  configMenuContents: ReactNode[] | ((setOpen: (open: boolean) => void) => ReactNode[]);
 };
 
 /**
@@ -20,72 +23,73 @@ export type ToggleImageButtonProps = {
  * images), as a reusable component.
  */
 export function ImageToggleButton(props: ToggleImageButtonProps): ReactElement {
-  const tooltipContainerRef = useRef<HTMLDivElement>(null);
+  const popupContainerRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
-  const [tooltipOpen, setTooltipOpen] = useState(false);
-  const [isHoveringTooltip, setIsHoveringTooltip] = useState(false);
 
-  // Debounce focus state, because focusout and focusin events can fire one
-  // after the other.
-  const [isFocusedInTooltip, setIsFocusedInTooltip] = useState(false);
-  const isFocusedInTooltipDebounced = useDebounce(isFocusedInTooltip, 10);
+  const [configMenuOpen, setConfigMenuOpen] = useState(false);
 
-  const tooltipTitle = (props.visible ? "Hide" : "Show") + " " + props.label;
+  const tooltipTitle = (props.visible ? (configMenuOpen ? "Hide" : "Configure ") : "Show") + " " + props.label;
+  const tooltipContents = [...props.tooltipContents];
+  if (!configMenuOpen && props.visible) {
+    tooltipContents.push("Double-click to hide " + props.label.toLowerCase());
+  }
 
-  useEffect(() => {
-    const onPointerEnter = (): void => setIsHoveringTooltip(true);
-    const onPointerLeave = (): void => setIsHoveringTooltip(false);
-    const onFocusIn = (): void => setIsFocusedInTooltip(true);
-    const onFocusOut = (): void => setIsFocusedInTooltip(false);
-    const tooltipDiv = tooltipRef.current;
-    if (tooltipDiv) {
-      tooltipDiv.addEventListener("pointerenter", onPointerEnter);
-      tooltipDiv.addEventListener("pointerleave", onPointerLeave);
-      tooltipDiv.addEventListener("focusin", onFocusIn);
-      tooltipDiv.addEventListener("focusout", onFocusOut);
-    }
-    return () => {
-      if (tooltipDiv) {
-        tooltipDiv.removeEventListener("pointerenter", onPointerEnter);
-        tooltipDiv.removeEventListener("pointerleave", onPointerLeave);
-        tooltipDiv.removeEventListener("focusin", onFocusIn);
-        tooltipDiv.removeEventListener("focusout", onFocusOut);
+  const onClick = (): void => {
+    if (props.visible) {
+      if (!configMenuOpen) {
+        setConfigMenuOpen(true);
+      } else {
+        setConfigMenuOpen(false);
+        props.setVisible(false);
       }
-    };
-  }, [tooltipRef.current]);
-
-  const onOpenChange = (open: boolean): void => {
-    // Fix a bug where, if the tooltip is open because the inner button is
-    // focused (e.g. a user clicked it), clicking on the tooltip's contents
-    // would cause the button to lose focus and instantly close the tooltip.
-    // Instead, we want the tooltip to stay open if the user while the user is
-    // hovering or focused in the tooltip.
-    if (!isHoveringTooltip) {
-      setTooltipOpen(open);
+    } else {
+      props.setVisible(true);
     }
   };
 
+  const configTitle = (
+    <FlexRow style={{ width: "100%", justifyContent: "space-between", alignItems: "center" }}>
+      <p style={{ fontSize: "16px", marginTop: 0 }}>{"Configure " + props.label}</p>
+      <TextButton>
+        <CloseOutlined />
+      </TextButton>
+    </FlexRow>
+  );
+
   return (
-    <div ref={tooltipContainerRef}>
-      <TooltipWithSubtitle
-        title={tooltipTitle}
+    <div ref={popupContainerRef}>
+      <Popover
+        content={
+          <FlexColumn>
+            {typeof props.configMenuContents === "function"
+              ? props.configMenuContents(setConfigMenuOpen)
+              : props.configMenuContents}
+          </FlexColumn>
+        }
         placement="right"
-        subtitleList={props.tooltipContents}
-        trigger={["hover", "focus"]}
-        onOpenChange={onOpenChange}
-        open={tooltipOpen || isFocusedInTooltipDebounced}
-        tooltipRef={tooltipRef}
-        getPopupContainer={() => tooltipContainerRef.current || document.body}
+        title={configTitle}
+        trigger={["click"]}
+        getPopupContainer={() => popupContainerRef.current || document.body}
+        onOpenChange={(open) => setConfigMenuOpen(open)}
+        open={configMenuOpen}
       >
-        <IconButton
-          type={props.visible && !props.disabled ? "primary" : "link"}
-          onClick={() => props.setVisible(!props.visible)}
-          disabled={props.disabled}
+        <TooltipWithSubtitle
+          title={tooltipTitle}
+          placement={configMenuOpen ? "left" : "right"}
+          subtitleList={tooltipContents}
+          tooltipRef={tooltipRef}
+          getPopupContainer={() => popupContainerRef.current || document.body}
         >
-          {props.visible ? <ImagesIconSVG /> : <ImagesSlashIconSVG />}
-          <VisuallyHidden>{tooltipTitle}</VisuallyHidden>
-        </IconButton>
-      </TooltipWithSubtitle>
+          <IconButton
+            type={props.visible && !props.disabled ? "primary" : "link"}
+            onClick={onClick}
+            disabled={props.disabled}
+          >
+            {props.visible ? <ImagesIconSVG /> : <ImagesSlashIconSVG />}
+            <VisuallyHidden>{tooltipTitle}</VisuallyHidden>
+          </IconButton>
+        </TooltipWithSubtitle>
+      </Popover>
     </div>
   );
 }
