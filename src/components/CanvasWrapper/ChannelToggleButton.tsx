@@ -1,9 +1,10 @@
-import { Checkbox, ConfigProvider } from "antd";
+import { Checkbox } from "antd";
 import React, { type ReactElement, type ReactNode, useContext, useRef } from "react";
 
 import { TabType } from "src/colorizer";
 import { ImageToggleButton } from "src/components/Buttons/ImageToggleButton";
-import TooltipButtonStyleLink from "src/components/Buttons/TooltipButtonStyleLink";
+import { LinkStyleButton } from "src/components/Buttons/LinkStyleButton";
+import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
 import { useViewerStateStore } from "src/state";
 import { AppThemeContext } from "src/styles/AppStyle";
 import { VisuallyHidden } from "src/styles/utils";
@@ -31,36 +32,49 @@ export default function ChannelToggleButton(): ReactElement {
     lastVisibleChannelConfig.current = channelVisibility;
   }
 
-  const tooltipContents: ReactNode[] = [];
-  if (!hasChannels) {
-    tooltipContents.push(<span key="no-channels">(No channels available)</span>);
-  } else {
-    const channelToggles = channelData.map((channel, index) => {
-      return (
-        <Checkbox
-          key={`channel-checkbox-${index}`}
-          checked={channelVisibility[index]}
-          onChange={(e) => {
-            updateChannelSettings(index, { visible: e.target.checked });
-          }}
-        >
-          <span style={{ color: theme.color.text.button }}>{channel.name}</span>
-        </Checkbox>
-      );
-    });
-    tooltipContents.push(
-      <ConfigProvider theme={{ components: { Checkbox: { colorBgContainer: "transparent" } } }}>
-        <div style={{ padding: "4px 0 4px 6px" }}>{channelToggles}</div>
-      </ConfigProvider>
-    );
-  }
-  tooltipContents.push(
-    <TooltipButtonStyleLink onClick={() => setOpenTab(TabType.SETTINGS)} key="channel-settings-link">
-      <span>
-        {"Viewer settings > Channels"} <VisuallyHidden>(opens settings tab)</VisuallyHidden>
-      </span>
-    </TooltipButtonStyleLink>
-  );
+  const tooltipContents: ReactNode[] = [
+    <span key="no-channels">
+      {hasChannels ? `${channelData.length} channels available` : "(No channels available)"}
+    </span>,
+  ];
+
+  const createConfigMenuContents = (setOpen: (open: boolean) => void): ReactNode[] => [
+    <SettingsContainer labelWidth="60px" style={{ marginBottom: 6 }}>
+      <SettingsItem label={"Channels"} labelStyle={{ marginBottom: "auto" }}>
+        <div style={{ padding: "0 0 0 6px" }}>
+          {(channelData ?? []).map((channel, index) => {
+            return (
+              <Checkbox
+                key={`channel-checkbox-${index}`}
+                checked={channelVisibility[index]}
+                onChange={(e) => {
+                  updateChannelSettings(index, { visible: e.target.checked });
+                }}
+                style={{ padding: "2px 0" }}
+              >
+                <span>{channel.name}</span>
+              </Checkbox>
+            );
+          })}
+        </div>
+      </SettingsItem>
+    </SettingsContainer>,
+    <div>
+      <LinkStyleButton
+        key="backdrop-settings-link"
+        onClick={() => {
+          setOpenTab(TabType.SETTINGS);
+          setOpen(false);
+        }}
+        $color={theme.color.text.hint}
+        $hoverColor={theme.color.text.secondary}
+      >
+        <span>
+          {"Viewer settings > 3D Channels"} <VisuallyHidden>(opens settings tab)</VisuallyHidden>
+        </span>
+      </LinkStyleButton>
+    </div>,
+  ];
 
   const onSetVisible = (visible: boolean): void => {
     if (visible) {
@@ -84,6 +98,7 @@ export default function ChannelToggleButton(): ReactElement {
       disabled={!hasChannels}
       label={"channels"}
       tooltipContents={tooltipContents}
+      configMenuContents={createConfigMenuContents}
     ></ImageToggleButton>
   );
 }

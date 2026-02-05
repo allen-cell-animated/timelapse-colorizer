@@ -1,5 +1,5 @@
 import { CloseOutlined } from "@ant-design/icons";
-import { Popover } from "antd";
+import { Button, Popover } from "antd";
 import React, { type ReactElement, type ReactNode, useRef, useState } from "react";
 
 import { ImagesIconSVG, ImagesSlashIconSVG } from "src/assets";
@@ -13,7 +13,7 @@ export type ToggleImageButtonProps = {
   visible: boolean;
   setVisible: (visible: boolean) => void;
   disabled: boolean;
-  label: string;
+  label: "backdrop" | "channels";
   tooltipContents: ReactNode[];
   configMenuContents: ReactNode[] | ((setOpen: (open: boolean) => void) => ReactNode[]);
 };
@@ -64,6 +64,9 @@ export function ImageToggleButton(props: ToggleImageButtonProps): ReactElement {
             {typeof props.configMenuContents === "function"
               ? props.configMenuContents(setConfigMenuOpen)
               : props.configMenuContents}
+            <div style={{ marginLeft: "auto", marginTop: "8px" }}>
+              <Button onClick={() => setConfigMenuOpen(false)}>Close</Button>
+            </div>
           </FlexColumn>
         }
         placement="right"
