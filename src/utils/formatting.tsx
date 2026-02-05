@@ -85,3 +85,33 @@ export function renderStringArrayAsJsx(items: ReactNode[] | string[] | string | 
 export function formatQuantityString(quantity: number, singular: string, plural: string): string {
   return `${quantity} ${quantity === 1 ? singular : plural}`;
 }
+
+/**
+ * Inserts the provided separator element between each element in the array and returns
+ * as a new array.
+ */
+export function insertBetweenElements(
+  elements: ReactNode | ReactNode[],
+  separator: ReactElement | ((index: number) => ReactElement)
+): ReactNode {
+  if (!elements) {
+    return elements;
+  }
+  const elementList: ReactNode[] = [];
+  const elementsArray = (Array.isArray(elements) ? elements : [elements]).filter((el) => !!el);
+  for (let i = 0; i < elementsArray.length; i++) {
+    elementList.push(elementsArray[i]);
+    if (i < elementsArray.length - 1) {
+      // Separators are keyed by index in final list
+      elementList.push(typeof separator === "function" ? separator(2 * i + 1) : separator);
+    }
+  }
+  return elementList;
+}
+
+export function capitalizeFirstLetter(str: string): string {
+  if (str.length === 0) {
+    return str;
+  }
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
