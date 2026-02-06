@@ -46,7 +46,7 @@ type SelectionDropdownProps = {
    * Callback that is fired whenever an item in the dropdown is selected.
    * The callback will be passed the `value` of the selected item.
    */
-  onChange: (value: string) => void;
+  onChange: ((value: string) => Promise<void>) | ((value: string) => void);
   /**
    * If true, shows the label of the currently-selected item as a tooltip
    * when hovering over the input/selection area.
@@ -140,6 +140,13 @@ export default function SelectionDropdown(inputProps: React.PropsWithChildren<Se
   const [searchInput, setSearchInput] = useState("");
   const [filteredValues, setFilteredValues] = useState<Set<string>>(new Set(options.map((item) => item.value)));
 
+  // Value that is pending confirmation (e.g., during async updates). Cleared if
+  // the currently selected value changes.
+  const [pendingValue, setPendingValue] = useState<SelectItem | null>(null);
+  useEffect(() => {
+    setPendingValue(null);
+  }, [props.selected]);
+
   let selectedOption: SelectItem | undefined;
   if (typeof props.selected === "string") {
     // Find the full options object corresponding with the selected object
@@ -232,18 +239,22 @@ export default function SelectionDropdown(inputProps: React.PropsWithChildren<Se
         isMulti={false}
         placeholder=""
         type={props.buttonType ?? "outlined"}
-        value={selectedOption}
+        value={pendingValue ?? selectedOption}
         components={{ Option, Control }}
         options={options}
         filterOption={(option) => filteredValues.has(option.value)}
         isDisabled={props.disabled}
         isClearable={false}
         isSearchable={props.isSearchable}
+        isLoading={pendingValue !== null}
         // TODO: Allow `onChange` to be async, and show a loading indicator
         // + the awaited value while waiting for it to resolve.
         onChange={(value) => {
           if (value && value.value) {
-            props.onChange(value.value);
+            setPendingValue(value);
+            Promise.resolve(props.onChange(value.value)).then(() => {
+              setPendingValue(null);
+            });
           }
           startTransition(() => {
             setSearchInput("");
