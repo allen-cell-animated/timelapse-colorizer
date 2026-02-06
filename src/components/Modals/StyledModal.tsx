@@ -1,9 +1,9 @@
-import { App, ModalFuncProps, ModalProps } from "antd";
-import { useAppProps } from "antd/es/app/context";
+import { App, type ModalFuncProps, type ModalProps } from "antd";
+import type { useAppProps } from "antd/es/app/context";
 import Modal from "antd/es/modal/Modal";
-import React, { PropsWithChildren, ReactElement, useContext } from "react";
+import React, { type PropsWithChildren, type ReactElement, useContext } from "react";
 
-import { DocumentContext } from "../AppStyle";
+import { DocumentContext } from "src/styles/AppStyle";
 
 type AntModalApi = useAppProps["modal"];
 type AntModalApiFunction = AntModalApi["info"];
@@ -49,11 +49,11 @@ const wrapStaticModalFunction = (
 ): AntModalApiFunction => {
   return (props: ModalFuncProps) => {
     const newProps = addContainerToModalProps(modalContainerRef, props);
-    const { destroy, update } = modalFunction(newProps);
+    const { destroy, update, then } = modalFunction(newProps);
     const wrappedUpdate: typeof update = (props: ModalUpdateMethodProps) => {
       return update(addContainerToUpdateMethodProps(modalContainerRef, props));
     };
-    return { destroy, update: wrappedUpdate };
+    return { destroy, update: wrappedUpdate, then };
   };
 };
 

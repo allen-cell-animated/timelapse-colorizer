@@ -42,7 +42,15 @@ export const DEFAULT_CONFIG = {
     exclude: ["@aics/vole-core"],
     // Have to still optimize all CommonJS dependencies of vole-core. See
     // https://vite.dev/config/dep-optimization-options#optimizedeps-exclude
-    include: ["@aics/vole-core > tweakpane", "@aics/vole-core > geotiff", "@aics/vole-core > throttled-queue"],
+    include: [
+      "@aics/vole-core > tweakpane",
+      "@aics/vole-core > geotiff",
+      "@aics/vole-core > numcodecs",
+      "@aics/vole-core > throttled-queue",
+    ],
+  },
+  resolve: {
+    alias: [{ find: "src", replacement: resolve(__dirname, "./src") }],
   },
   worker: {
     // Fixes an invalid output format error when building

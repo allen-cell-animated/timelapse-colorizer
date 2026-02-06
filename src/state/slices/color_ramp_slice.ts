@@ -1,13 +1,11 @@
-import { Color, ColorRepresentation } from "three";
-import { StateCreator } from "zustand";
+import { Color, type ColorRepresentation } from "three";
+import type { StateCreator } from "zustand";
 
-import { isThresholdNumeric } from "../../colorizer";
-import {
-  DEFAULT_CATEGORICAL_PALETTE_KEY,
-  KNOWN_CATEGORICAL_PALETTES,
-} from "../../colorizer/colors/categorical_palettes";
-import { DEFAULT_COLOR_RAMP_KEY, KNOWN_COLOR_RAMPS } from "../../colorizer/colors/color_ramps";
-import { arrayElementsAreEqual, getColorMap, thresholdMatchFinder } from "../../colorizer/utils/data_utils";
+import { isThresholdNumeric, MAX_FEATURE_CATEGORIES } from "src/colorizer";
+import ColorRamp, { ColorRampType } from "src/colorizer/ColorRamp";
+import { DEFAULT_CATEGORICAL_PALETTE_KEY, KNOWN_CATEGORICAL_PALETTES } from "src/colorizer/colors/categorical_palettes";
+import { DEFAULT_COLOR_RAMP_KEY, KNOWN_COLOR_RAMPS } from "src/colorizer/colors/color_ramps";
+import { arrayElementsAreEqual, getColorMap, thresholdMatchFinder } from "src/colorizer/utils/data_utils";
 import {
   decodeBoolean,
   decodeString,
@@ -16,14 +14,13 @@ import {
   encodeNumber,
   URL_COLOR_RAMP_REVERSED_SUFFIX,
   UrlParam,
-} from "../../colorizer/utils/url_utils";
-import { COLOR_RAMP_RANGE_DEFAULT, MAX_FEATURE_CATEGORIES } from "../../constants";
-import { SerializedStoreData, SubscribableStore } from "../types";
-import { addDerivedStateSubscriber } from "../utils/store_utils";
-import { DatasetSlice } from "./dataset_slice";
-import { ThresholdSlice } from "./threshold_slice";
+} from "src/colorizer/utils/url_utils";
+import { COLOR_RAMP_RANGE_DEFAULT } from "src/constants";
+import type { SerializedStoreData, SubscribableStore } from "src/state/types";
+import { addDerivedStateSubscriber } from "src/state/utils/store_utils";
 
-import ColorRamp, { ColorRampType } from "../../colorizer/ColorRamp";
+import type { DatasetSlice } from "./dataset_slice";
+import type { ThresholdSlice } from "./threshold_slice";
 
 export type ColorRampSliceState = {
   colorRampKey: string;

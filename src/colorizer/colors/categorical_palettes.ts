@@ -1,7 +1,9 @@
 import { Color } from "three";
 
-import { MAX_FEATURE_CATEGORIES } from "../../constants";
-import { RawColorData } from "./color_ramps";
+import { ColorRampType } from "src/colorizer/ColorRamp";
+import { MAX_FEATURE_CATEGORIES } from "src/colorizer/constants";
+
+import type { RawColorData } from "./color_ramps";
 
 export type PaletteData = RawColorData & {
   colors: Color[];
@@ -14,6 +16,7 @@ const rawPaletteData: RawColorData[] = [
     // https://spectrum.adobe.com/page/color-for-data-visualization/
     key: "adobe",
     name: "Adobe Categorical",
+    type: ColorRampType.CATEGORICAL,
     colorStops: [
       "#27B4AE",
       "#4047C4",
@@ -33,6 +36,7 @@ const rawPaletteData: RawColorData[] = [
     // https://spectrum.adobe.com/page/color-for-data-visualization/
     key: "adobe_light",
     name: "Adobe Categorical 50%",
+    type: ColorRampType.CATEGORICAL,
     colorStops: [
       "#93D9D7",
       "#8DBCF6",
@@ -51,6 +55,7 @@ const rawPaletteData: RawColorData[] = [
   {
     key: "matplotlib_paired",
     name: "Paired",
+    type: ColorRampType.CATEGORICAL,
     colorStops: [
       "#A8CEE2",
       "#2678B0",
@@ -70,6 +75,7 @@ const rawPaletteData: RawColorData[] = [
     // https://matplotlib.org/stable/gallery/color/colormap_reference.html
     key: "matplotlib_accent",
     name: "Accent",
+    type: ColorRampType.CATEGORICAL,
     colorStops: [
       "#7FC97F",
       "#BEAED2",
@@ -89,6 +95,7 @@ const rawPaletteData: RawColorData[] = [
     // https://matplotlib.org/stable/gallery/color/colormap_reference.html
     key: "matplotlib_tab10",
     name: "Matplotlib - Tab 10",
+    type: ColorRampType.CATEGORICAL,
     colorStops: [
       "#2677B0",
       "#FC822E",
@@ -110,6 +117,7 @@ const rawPaletteData: RawColorData[] = [
     // TODO: Potentially remove or rename
     key: "iwanthue_set2",
     name: "Random - Tea Party",
+    type: ColorRampType.CATEGORICAL,
     colorStops: [
       "#E085FB",
       "#8BE56C",
@@ -130,6 +138,7 @@ const rawPaletteData: RawColorData[] = [
     // TODO: Potentially remove or rename
     key: "iwanthue_set3",
     name: "Random - Chiclets",
+    type: ColorRampType.CATEGORICAL,
     colorStops: [
       "#F769CD",
       "#FFC140",
@@ -148,6 +157,7 @@ const rawPaletteData: RawColorData[] = [
   {
     key: "neon",
     name: "Neon",
+    type: ColorRampType.CATEGORICAL,
     colorStops: [
       "#33FCFE",
       "#F91EF8",
@@ -167,6 +177,7 @@ const rawPaletteData: RawColorData[] = [
     // https://medialab.github.io/iwanthue/
     key: "iwanthue_dark",
     name: "Dark",
+    type: ColorRampType.CATEGORICAL,
     colorStops: [
       "#44C098",
       "#A2408D",
@@ -186,6 +197,7 @@ const rawPaletteData: RawColorData[] = [
     // https://matplotlib.org/stable/gallery/color/colormap_reference.html
     key: "matplotlib_pastel1",
     name: "Pastel 1",
+    type: ColorRampType.CATEGORICAL,
     colorStops: [
       "#90D3C8",
       "#BB81BA",
@@ -205,6 +217,7 @@ const rawPaletteData: RawColorData[] = [
     // https://matplotlib.org/stable/gallery/color/colormap_reference.html
     key: "matplotlib_pastel2",
     name: "Pastel 2",
+    type: ColorRampType.CATEGORICAL,
     colorStops: [
       "#F9B5B0",
       "#B4CDE2",
@@ -224,6 +237,7 @@ const rawPaletteData: RawColorData[] = [
     // https://medialab.github.io/iwanthue/
     key: "iwanthue_pastel_3",
     name: "Pastel 3",
+    type: ColorRampType.CATEGORICAL,
     colorStops: [
       "#9CD2B8",
       "#AAF1D9",

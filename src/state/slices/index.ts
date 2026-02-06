@@ -1,63 +1,84 @@
-import { StateCreator } from "zustand";
+import type { StateCreator } from "zustand";
 
-import { SubscribableStore } from "../types";
+import type { SubscribableStore } from "src/state/types";
+
 import {
   addBackdropDerivedStateSubscribers,
-  BackdropSliceActions,
-  BackdropSliceSerializableState,
-  BackdropSliceState,
+  type BackdropSliceActions,
+  type BackdropSliceSerializableState,
+  type BackdropSliceState,
   createBackdropSlice,
 } from "./backdrop_slice";
 import {
-  CollectionSliceActions,
-  CollectionSliceSerializableState,
-  CollectionSliceState,
+  addChannelDerivedStateSubscribers,
+  type ChannelSliceActions,
+  type ChannelSliceSerializableState,
+  type ChannelSliceState,
+  createChannelSlice,
+} from "./channel_slice";
+import {
+  type CollectionSliceActions,
+  type CollectionSliceSerializableState,
+  type CollectionSliceState,
   createCollectionSlice,
 } from "./collection_slice";
 import {
   addColorRampDerivedStateSubscribers,
-  ColorRampSliceActions,
-  ColorRampSliceSerializableState,
-  ColorRampSliceState,
+  type ColorRampSliceActions,
+  type ColorRampSliceSerializableState,
+  type ColorRampSliceState,
   createColorRampSlice,
 } from "./color_ramp_slice";
-import { ConfigSliceActions, ConfigSliceSerializableState, ConfigSliceState, createConfigSlice } from "./config_slice";
+import {
+  type ConfigSliceActions,
+  type ConfigSliceSerializableState,
+  type ConfigSliceState,
+  createConfigSlice,
+} from "./config_slice";
 import {
   createDatasetSlice,
-  DatasetSliceActions,
-  DatasetSliceSerializableState,
-  DatasetSliceState,
+  type DatasetSliceActions,
+  type DatasetSliceSerializableState,
+  type DatasetSliceState,
 } from "./dataset_slice";
 import {
   addScatterPlotSliceDerivedStateSubscribers,
   createScatterPlotSlice,
-  ScatterPlotSliceActions,
-  ScatterPlotSliceSerializableState,
-  ScatterPlotSliceState,
+  type ScatterPlotSliceActions,
+  type ScatterPlotSliceSerializableState,
+  type ScatterPlotSliceState,
 } from "./scatterplot_slice";
 import {
   addThresholdDerivedStateSubscribers,
   createThresholdSlice,
-  ThresholdSliceActions,
-  ThresholdSliceSerializableState,
-  ThresholdSliceState,
+  type ThresholdSliceActions,
+  type ThresholdSliceSerializableState,
+  type ThresholdSliceState,
 } from "./threshold_slice";
 import {
   addTimeDerivedStateSubscribers,
   createTimeSlice,
-  TimeSliceActions,
-  TimeSliceSerializableState,
-  TimeSliceState,
+  type TimeSliceActions,
+  type TimeSliceSerializableState,
+  type TimeSliceState,
 } from "./time_slice";
+import {
+  addTrackDerivedStateSubscribers,
+  createTrackSlice,
+  type TrackSliceActions,
+  type TrackSliceSerializableState,
+  type TrackSliceState,
+} from "./track_slice";
 import {
   addVectorDerivedStateSubscribers,
   createVectorSlice,
-  VectorSliceActions,
-  VectorSliceSerializableState,
-  VectorSliceState,
+  type VectorSliceActions,
+  type VectorSliceSerializableState,
+  type VectorSliceState,
 } from "./vector_slice";
 
 export * from "./backdrop_slice";
+export * from "./channel_slice";
 export * from "./collection_slice";
 export * from "./color_ramp_slice";
 export * from "./config_slice";
@@ -65,9 +86,11 @@ export * from "./dataset_slice";
 export * from "./scatterplot_slice";
 export * from "./threshold_slice";
 export * from "./time_slice";
+export * from "./track_slice";
 export * from "./vector_slice";
 
 export type ViewerStoreState = BackdropSliceState &
+  ChannelSliceState &
   CollectionSliceState &
   ColorRampSliceState &
   ConfigSliceState &
@@ -75,9 +98,11 @@ export type ViewerStoreState = BackdropSliceState &
   ScatterPlotSliceState &
   ThresholdSliceState &
   TimeSliceState &
+  TrackSliceState &
   VectorSliceState;
 
 export type ViewerStoreActions = BackdropSliceActions &
+  ChannelSliceActions &
   CollectionSliceActions &
   ColorRampSliceActions &
   ConfigSliceActions &
@@ -85,6 +110,7 @@ export type ViewerStoreActions = BackdropSliceActions &
   ScatterPlotSliceActions &
   ThresholdSliceActions &
   TimeSliceActions &
+  TrackSliceActions &
   VectorSliceActions;
 
 /**
@@ -92,6 +118,7 @@ export type ViewerStoreActions = BackdropSliceActions &
  * ViewerStoreState.
  */
 export type ViewerStoreSerializableState = BackdropSliceSerializableState &
+  ChannelSliceSerializableState &
   CollectionSliceSerializableState &
   ColorRampSliceSerializableState &
   ConfigSliceSerializableState &
@@ -99,6 +126,7 @@ export type ViewerStoreSerializableState = BackdropSliceSerializableState &
   ScatterPlotSliceSerializableState &
   ThresholdSliceSerializableState &
   TimeSliceSerializableState &
+  TrackSliceSerializableState &
   VectorSliceSerializableState;
 
 /**
@@ -111,6 +139,7 @@ export type ViewerStore = ViewerStoreState & ViewerStoreActions;
 
 export const viewerStateStoreCreator: StateCreator<ViewerStore> = (...a) => ({
   ...createBackdropSlice(...a),
+  ...createChannelSlice(...a),
   ...createCollectionSlice(...a),
   ...createColorRampSlice(...a),
   ...createConfigSlice(...a),
@@ -118,6 +147,7 @@ export const viewerStateStoreCreator: StateCreator<ViewerStore> = (...a) => ({
   ...createScatterPlotSlice(...a),
   ...createThresholdSlice(...a),
   ...createTimeSlice(...a),
+  ...createTrackSlice(...a),
   ...createVectorSlice(...a),
 });
 
@@ -128,9 +158,11 @@ export const viewerStateStoreCreator: StateCreator<ViewerStore> = (...a) => ({
  */
 export const addStoreStateSubscribers = (store: SubscribableStore<ViewerStore>): void => {
   addBackdropDerivedStateSubscribers(store);
+  addChannelDerivedStateSubscribers(store);
   addColorRampDerivedStateSubscribers(store);
   addScatterPlotSliceDerivedStateSubscribers(store);
   addThresholdDerivedStateSubscribers(store);
   addTimeDerivedStateSubscribers(store);
+  addTrackDerivedStateSubscribers(store);
   addVectorDerivedStateSubscribers(store);
 };

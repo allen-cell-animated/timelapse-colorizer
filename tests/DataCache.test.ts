@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import DataCache from "../src/colorizer/DataCache";
+import DataCache from "src/colorizer/DataCache";
 
 describe("DataCache", () => {
   class DisposableString {

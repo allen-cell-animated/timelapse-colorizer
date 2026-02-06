@@ -1,6 +1,6 @@
 // Defines types for working with dataset manifests, and methods for
 // updating manifests from one version to another.
-import { Spread } from "./type_utils";
+import type { Spread } from "./type_utils";
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 type ManifestFileMetadataV0_0_0 = {
@@ -94,16 +94,22 @@ type ManifestFileV1_1_0 = Spread<
     frames3d?: {
       /**
        * URL or path relative to the root of the manifest. Expected to be a
-       * time-series ZARR (e.g. ends with `.ome.zarr`). */
+       * time-series ZARR (e.g. ends with `.ome.zarr`).
+       */
       source: string;
-      /**
-       * The index of the channel to use as a segmentation. If multiple volumes
-       * are specified in `source`, `segmentationChannel` indexes into a list of
-       * the channels of all volumes concatenated together.
-       **/
+      /* The index of the channel to use as a segmentation within the source. */
       segmentationChannel: number;
       /** Total number of frames in the time-series volume. */
       totalFrames: number;
+      backdrops?: {
+        source: string;
+        name: string;
+        description?: string;
+        /** Index of the channel in the source volume. */
+        channelIndex?: number;
+        min?: number;
+        max?: number;
+      }[];
     };
   }
 >;

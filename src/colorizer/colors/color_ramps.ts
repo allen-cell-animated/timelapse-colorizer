@@ -1,6 +1,6 @@
-import { GLASBEY_DARK_COLORS, GLASBEY_DEFAULT_COLORS, GLASBEY_LIGHT_COLORS } from "./glasbey";
+import ColorRamp, { ColorRampType } from "src/colorizer/ColorRamp";
 
-import ColorRamp, { ColorRampType } from "../ColorRamp";
+import { GLASBEY_DARK_COLORS, GLASBEY_DEFAULT_COLORS, GLASBEY_LIGHT_COLORS } from "./glasbey";
 
 // TODO: Could add additional tags for filtering, etc. to each color ramp!
 export type RawColorData = {
@@ -10,11 +10,14 @@ export type RawColorData = {
   name: string;
   colorStops: `#${string}`[];
   /**
-   * Ramps meant for features with many integer values (e.g. track ID).
-   * Most commonly used for glasbey color ramp visualizations, where lots
-   * of colors are needed to distinguish between many different values.
+   * Whether this color should be reversed by default when shown or selected in
+   * the UI, without changing the underlying color stops to maintain backwards
+   * compatibility with legacy URLs. For scientific purposes, linear color ramps
+   * should be shown as light-to-dark (dark = high value), but in the past some
+   * ramps had dark-to-light color stops.
    */
-  categorical?: boolean;
+  reverseByDefault?: boolean;
+  type: ColorRampType;
 };
 
 export type ColorRampData = RawColorData & {
@@ -29,6 +32,7 @@ const rawColorRampData: RawColorData[] = [
   {
     key: "matplotlib-cool",
     name: "Matplotlib - Cool",
+    type: ColorRampType.LINEAR,
     // TODO: This results in some banding in the scatterplot because Three is using linear SRGB
     // color space for interpolation. This could potentially be fixed by manually calculating the
     // interpolated colors in the color ramp.
@@ -37,31 +41,42 @@ const rawColorRampData: RawColorData[] = [
   {
     key: "matplotlib-viridis",
     name: "Matplotlib - Viridis",
+    type: ColorRampType.LINEAR,
     colorStops: ["#440154", "#3a528b", "#20908c", "#5ec961", "#fde724"],
+    reverseByDefault: true,
   },
   {
     key: "matplotlib-plasma",
     name: "Matplotlib - Plasma",
+    type: ColorRampType.LINEAR,
     colorStops: ["#0c0786", "#5c00a5", "#9b179e", "#cb4777", "#ec7853", "#fdb32e", "#eff821"],
+    reverseByDefault: true,
   },
   {
     key: "matplotlib-inferno",
     name: "Matplotlib - Inferno",
+    type: ColorRampType.LINEAR,
     colorStops: ["#000003", "#410967", "#932567", "#dc5039", "#fba40a", "#fcfea4"],
+    reverseByDefault: true,
   },
   {
     key: "matplotlib-magma",
     name: "Matplotlib - Magma",
+    type: ColorRampType.LINEAR,
     colorStops: ["#000003", "#3b0f6f", "#8c2980", "#dd4968", "#fd9f6c", "#fbfcbf"],
+    reverseByDefault: true,
   },
   {
     key: "seaborn-mako",
     name: "Seaborn - Mako",
+    type: ColorRampType.LINEAR,
     colorStops: ["#0b0305", "#382a54", "#395d9b", "#3496a9", "#5fceac", "#def4e4"],
+    reverseByDefault: true,
   },
   {
     key: "matplotlib-turbo",
     name: "Matplotlib - Turbo",
+    type: ColorRampType.LINEAR,
     colorStops: [
       "#30123b",
       "#3c358b",
@@ -87,40 +102,52 @@ const rawColorRampData: RawColorData[] = [
     ],
   },
 
-  { key: "esri-red_5", name: "ESRI - Red 5", colorStops: ["#fee5d9", "#fcae91", "#fb6a4a", "#de2d26", "#a50f15"] },
+  {
+    key: "esri-red_5",
+    name: "ESRI - Red 5",
+    type: ColorRampType.LINEAR,
+    colorStops: ["#fee5d9", "#fcae91", "#fb6a4a", "#de2d26", "#a50f15"],
+  },
   {
     key: "esri-orange_5",
     name: "ESRI - Orange 5",
+    type: ColorRampType.LINEAR,
     colorStops: ["#dfe1e6", "#bbbfc9", "#b39e93", "#c4703e", "#8c4a23"],
   },
   {
     key: "esri-yellow_2",
     name: "ESRI - Yellow 2",
+    type: ColorRampType.LINEAR,
     colorStops: ["#ffc800", "#e7a300", "#b78300", "#886200", "#584100"],
   },
   {
     key: "esri-green_4",
     name: "ESRI - Green 4",
+    type: ColorRampType.LINEAR,
     colorStops: ["#ffffcc", "#c2e699", "#78c679", "#31a354", "#006837"],
   },
   {
     key: "esri-blue_14",
     name: "ESRI - Blue 14",
+    type: ColorRampType.LINEAR,
     colorStops: ["#ffec99", "#ccbe6a", "#799a96", "#3d6da2", "#3a4d6b"],
   },
   {
     key: "esri-purple_4",
     name: "ESRI - Purple 4",
+    type: ColorRampType.LINEAR,
     colorStops: ["#edf8fb", "#b3cde3", "#8c96c6", "#8856a7", "#810f7c"],
   },
   {
     key: "esri-mentone_beach",
     name: "ESRI - Mentone Beach",
+    type: ColorRampType.LINEAR,
     colorStops: ["#48385f", "#995375", "#db4a5b", "#fc9a59", "#fee086"],
   },
   {
     key: "esri-retro_flow",
     name: "ESRI - Retro Flow",
+    type: ColorRampType.LINEAR,
     colorStops: [
       "#ebe498",
       "#c4dc66",
@@ -137,6 +164,7 @@ const rawColorRampData: RawColorData[] = [
   {
     key: "esri-heatmap_4",
     name: "ESRI - Heatmap 4",
+    type: ColorRampType.LINEAR,
     colorStops: [
       "#ffffff",
       "#ffe3aa",
@@ -157,53 +185,72 @@ const rawColorRampData: RawColorData[] = [
     key: "esri-blue_red_9",
     name: "ESRI - Blue Red 9",
     colorStops: ["#2c7bb6", "#abd9e9", "#ffffbf", "#fdae61", "#d7191c"],
+    type: ColorRampType.DIVERGING,
   },
   {
     key: "esri-blue_red_8",
     name: "ESRI - Blue Red 8",
     colorStops: ["#0571b0", "#92c5de", "#f7f7f7", "#f4a582", "#ca0020"],
+    type: ColorRampType.DIVERGING,
   },
   {
     key: "esri-red_green_9",
     name: "ESRI - Red Green 9",
     colorStops: ["#d7191c", "#fdae61", "#ffffbf", "#a6d96a", "#1a9641"],
+    type: ColorRampType.DIVERGING,
   },
   {
     key: "esri-purple_red_2",
     name: "ESRI - Purple Red 2",
     colorStops: ["#570959", "#ab84a0", "#fffee6", "#d2987f", "#a53217"],
+    type: ColorRampType.DIVERGING,
   },
   {
     key: "esri-green_brown_1",
     name: "ESRI - Green Brown 1",
     colorStops: ["#018571", "#80cdc1", "#f5f5f5", "#dfc27d", "#a6611a"],
+    type: ColorRampType.DIVERGING,
   },
   {
     key: "matplotlib-purple_orange",
     name: "Matplotlib - Purple Orange",
     colorStops: ["#2d004b", "#998fbf", "#f7f6f5", "#ed9b39", "#7f3b08"],
+    type: ColorRampType.DIVERGING,
   },
   {
     key: "seaborn-cubehelix_blue",
     name: "Seaborn - Cubehelix Blue",
+    type: ColorRampType.LINEAR,
     // seaborn.cubehelix_palette(start=0.2, rot=-0.3, as_cmap=True, reverse=True)
     colorStops: ["#27203f", "#48507e", "#6585ab", "#8cb8c9", "#c2e2e2"],
+    reverseByDefault: true,
   },
   {
     key: "seaborn-cubehelix_purple",
     name: "Seaborn - Cubehelix Purple",
+    type: ColorRampType.LINEAR,
     // seaborn.cubehelix_palette(as_cmap=True, reverse=True)
     colorStops: ["#2c1e3d", "#6d3f71", "#aa678f", "#d499a7", "#edd1cb"],
+    reverseByDefault: true,
   },
   {
     key: "seaborn-cubehelix_green",
     name: "Seaborn - Cubehelix Green",
+    type: ColorRampType.LINEAR,
     // seaborn.cubehelix_palette(start=2.3, rot=-0.3, as_cmap=True, reverse=True)
     colorStops: ["#0f3221", "#31673d", "#64945a", "#a0ba84", "#d9ddbf"],
+    reverseByDefault: true,
+  },
+  {
+    key: "matplotlib-reds",
+    name: "Matplotlib - Reds",
+    type: ColorRampType.LINEAR,
+    colorStops: ["#fff5f0", "#fcbba1", "#fb694a", "#ca181d", "#67000d"],
   },
   {
     key: "fabio_crameri-romao",
     name: "Crameri - RomaO (Cyclical)",
+    type: ColorRampType.CYCLICAL,
     // Note: this is reversed from the original to match the other palettes
     // which typically reserve warm colors for higher values.
     colorStops: [
@@ -229,6 +276,7 @@ const rawColorRampData: RawColorData[] = [
   {
     key: "fabio_crameri-viko",
     name: "Crameri - VikO (Cyclical)",
+    type: ColorRampType.CYCLICAL,
     colorStops: [
       "#4F1A3D",
       "#442551",
@@ -252,6 +300,7 @@ const rawColorRampData: RawColorData[] = [
   {
     key: "fabio_crameri-broco",
     name: "Crameri - BrocO (Cyclical)",
+    type: ColorRampType.CYCLICAL,
     colorStops: [
       "#372F38",
       "#36344C",
@@ -277,19 +326,19 @@ const rawColorRampData: RawColorData[] = [
     // repeating ramps function?
     key: "colorcet-glasbey",
     name: "Colorcet - Glasbey (Repeating)",
-    categorical: true,
+    type: ColorRampType.CATEGORICAL,
     colorStops: GLASBEY_DEFAULT_COLORS,
   },
   {
     key: "colorcet-glasbey_light",
     name: "Colorcet - Glasbey Light (Repeating)",
-    categorical: true,
+    type: ColorRampType.CATEGORICAL,
     colorStops: GLASBEY_LIGHT_COLORS,
   },
   {
     key: "colorcet-glasbey_dark",
     name: "Colorcet - Glasbey Dark (Repeating)",
-    categorical: true,
+    type: ColorRampType.CATEGORICAL,
     colorStops: GLASBEY_DARK_COLORS,
   },
 ];
@@ -298,7 +347,7 @@ const rawColorRampData: RawColorData[] = [
 const colorRampData: ColorRampData[] = rawColorRampData.map((value) => {
   return {
     ...value,
-    colorRamp: new ColorRamp(value.colorStops, value.categorical ? ColorRampType.CATEGORICAL : ColorRampType.LINEAR),
+    colorRamp: new ColorRamp(value.colorStops, value.type),
   };
 });
 
@@ -309,12 +358,8 @@ const keyedColorRampData: [string, ColorRampData][] = colorRampData.map((value) 
 const colorRampMap = new Map(keyedColorRampData);
 
 export const KNOWN_COLOR_RAMPS = colorRampMap;
-/**
- * List of color ramp keys that should be visible on the UI, in order of display.
- * Color ramps should never be removed from `KNOWN_COLOR_RAMPS` to maintain backwards
- * compatibility with URLs, only removed here to omit them from the UI.
- */
-export const DISPLAY_COLOR_RAMP_KEYS = [
+
+export const DISPLAY_COLOR_RAMP_LINEAR_KEYS = [
   "matplotlib-cool",
   "matplotlib-viridis",
   "seaborn-mako",
@@ -324,15 +369,27 @@ export const DISPLAY_COLOR_RAMP_KEYS = [
   "seaborn-cubehelix_purple",
   "seaborn-cubehelix_green",
   "seaborn-cubehelix_blue",
+  "matplotlib-reds",
   "matplotlib-turbo",
-  "esri-blue_red_8",
-  "esri-green_brown_1",
-  "matplotlib-purple_orange",
-  "fabio_crameri-romao",
-  "fabio_crameri-viko",
-  "fabio_crameri-broco",
+];
+export const DISPLAY_COLOR_RAMP_DIVERGING_KEYS = ["esri-blue_red_8", "esri-green_brown_1", "matplotlib-purple_orange"];
+export const DISPLAY_COLOR_RAMP_CYCLICAL_KEYS = ["fabio_crameri-romao", "fabio_crameri-viko", "fabio_crameri-broco"];
+export const DISPLAY_COLOR_RAMP_CATEGORICAL_KEYS = [
   "colorcet-glasbey",
   "colorcet-glasbey_light",
   "colorcet-glasbey_dark",
 ];
+
+/**
+ * List of color ramp keys that should be visible on the UI, in order of display.
+ * Color ramps should never be removed from `KNOWN_COLOR_RAMPS` to maintain backwards
+ * compatibility with URLs, only removed here to omit them from the UI.
+ */
+export const DISPLAY_COLOR_RAMP_KEYS = [
+  ...DISPLAY_COLOR_RAMP_LINEAR_KEYS,
+  ...DISPLAY_COLOR_RAMP_DIVERGING_KEYS,
+  ...DISPLAY_COLOR_RAMP_CYCLICAL_KEYS,
+  ...DISPLAY_COLOR_RAMP_CATEGORICAL_KEYS,
+];
 export const DEFAULT_COLOR_RAMP_KEY = Array.from(colorRampMap.keys())[0];
+export const DEFAULT_DIVERGING_COLOR_RAMP_KEY = "esri-blue_red_8";

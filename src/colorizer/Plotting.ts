@@ -1,7 +1,7 @@
 import Plotly from "plotly.js-dist-min";
 
-import Dataset from "./Dataset";
-import Track from "./Track";
+import type Dataset from "./Dataset";
+import type Track from "./Track";
 
 const LINE_OPACITY = 0.5;
 const LINE_COLOR = "rgb(25, 25, 25)";

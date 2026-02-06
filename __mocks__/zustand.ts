@@ -7,6 +7,7 @@ import { act } from "@testing-library/react";
 import { afterEach, vi } from "vitest";
 import type * as ZustandExportedTypes from "zustand";
 
+// eslint-disable-next-line import/export
 export * from "zustand";
 
 const { create: actualCreate, createStore: actualCreateStore } = await vi.importActual<typeof ZustandExportedTypes>(
@@ -28,6 +29,7 @@ const createUncurried = <T>(
 };
 
 // when creating a store, we get its initial state, create a reset function and add it in the set
+// eslint-disable-next-line import/export
 export const create = (<T>(stateCreator: ZustandExportedTypes.StateCreator<T>) => {
   // to support curried version of create
   return typeof stateCreator === "function" ? createUncurried(stateCreator) : createUncurried;
@@ -45,6 +47,7 @@ const createStoreUncurried = <T>(
 };
 
 // when creating a store, we get its initial state, create a reset function and add it in the set
+// eslint-disable-next-line import/export
 export const createStore = (<T>(stateCreator: ZustandExportedTypes.StateCreator<T>) => {
   // to support curried version of createStore
   return typeof stateCreator === "function" ? createStoreUncurried(stateCreator) : createStoreUncurried;

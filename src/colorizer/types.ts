@@ -1,16 +1,15 @@
 import {
-  Color,
-  DataTexture,
+  type Color,
+  type DataTexture,
   FloatType,
   IntType,
-  PixelFormat,
-  PixelFormatGPU,
+  type PixelFormat,
+  type PixelFormatGPU,
   RedFormat,
   RedIntegerFormat,
-  TextureDataType,
+  type TextureDataType,
   UnsignedByteType,
   UnsignedIntType,
-  Vector2,
 } from "three";
 
 // This file provides a bit of type trickery to allow data loading code to be generic over multiple numeric types.
@@ -91,44 +90,10 @@ export type FrameLoadResult = {
   backdropError: boolean;
 };
 
-export enum CanvasType {
-  CANVAS_2D = "2D",
-  CANVAS_3D = "3D",
-}
-
-export type Canvas2DScaleInfo = {
-  type: CanvasType.CANVAS_2D;
-  /**
-   * Size of the frame in [0, 1] canvas coordinates, accounting for zoom.
-   */
-  frameSizeInCanvasCoordinates: Vector2;
-  /**
-   * Transforms from [0,1] space of the canvas to the [0,1] space of the frame,
-   * account for zoom.
-   *
-   * e.g. If frame has the same aspect ratio as the canvas and zoom is set to
-   * 2x, then, assuming that the [0, 0] position of the frame and the canvas are
-   * in the same position, the position [1, 1] on the canvas should map to [0.5,
-   * 0.5] on the frame.
-   */
-  canvasToFrameCoordinates: Vector2;
-  /**
-   * Inverse of `canvasToFrameCoordinates`. Transforms from [0,1] space of the
-   * frame to the [0,1] space of the canvas, accounting for zoom.
-   */
-  frameToCanvasCoordinates: Vector2;
-};
-
-export type Canvas3DScaleInfo = {
-  type: CanvasType.CANVAS_3D;
-};
-
-export type CanvasScaleInfo = Canvas3DScaleInfo | Canvas2DScaleInfo;
-
 // MUST be synchronized with the DRAW_MODE_* constants in `colorize_RGBA8U.frag`!
 // CHANGING THESE VALUES CAN POTENTIALLY BREAK URLs. See `url_utils.parseDrawSettings` for parsing logic.
 /** Draw options for object types. */
-export enum DrawMode {
+export const enum DrawMode {
   /** Hide this object type. */
   HIDE = 0,
   /** Use a solid color for this object type. */
@@ -139,10 +104,17 @@ export const isDrawMode = (mode: number): mode is DrawMode => {
   return mode === DrawMode.HIDE || mode === DrawMode.USE_COLOR;
 };
 
+export const enum TrackPathColorMode {
+  USE_OUTLINE_COLOR = 0,
+  USE_CUSTOM_COLOR = 1,
+  USE_FEATURE_COLOR = 2,
+  USE_COLOR_MAP = 3,
+}
+
 // Similar to `FeatureType`, but indicates that thresholds are lossy when it comes
 // to numeric data. Numeric thresholds do not track if their source feature is integer
 // (FeatureType.DISCRETE) or a float (FeatureType.CONTINUOUS).
-export enum ThresholdType {
+export const enum ThresholdType {
   NUMERIC = "numeric",
   CATEGORICAL = "categorical",
 }
@@ -195,7 +167,17 @@ export type VectorConfig = {
   timeIntervals: number;
   color: Color;
   scaleFactor: number;
+  scaleThicknessByMagnitude: boolean;
+  thickness: number;
   tooltipMode: VectorTooltipMode;
+};
+
+/** Bucketed vector data for objects visible on a single frame. */
+export type FrameVectorData = {
+  ids: number[];
+  centroids: Float32Array;
+  deltas: Float32Array;
+  magnitude: Float32Array;
 };
 
 // TODO: This should live in the viewer and not in `colorizer`. Same with `url_utils`.
@@ -308,15 +290,38 @@ export enum LoadTroubleshooting {
     " Please check your network access.",
   CHECK_FILE_EXISTS = "Please check if the file exists and if you have access to it, or see the developer console for more details.",
   CHECK_FILE_OR_NETWORK = "This may be because of an unsupported format, missing files, or server and network issues. Please see the developer console for more details.",
+  CHECK_ZIP_FORMAT = "Make sure a 'collection.json' or 'manifest.json' file exists in the base directory.",
+  CHECK_ZIP_FORMAT_COLLECTION = "A 'collection.json' should exist in the base directory.",
+  CHECK_ZIP_FORMAT_MANIFEST = "A 'manifest.json' should exist in the base directory.",
+  CHECK_ZIP_ZARR_DATA = "Please check if the file exists. If this was a Zarr array, note that Zarr data cannot currently be loaded from ZIP archives. " +
+    "Consider opening the dataset locally with the CLI tools provided in colorizer-data; for more details, see Help > Visit GitHub repository.",
 }
 
-export enum LoadErrorMessage {
+export const enum LoadErrorMessage {
   UNREACHABLE_MANIFEST = "The expected manifest JSON file could not be reached.",
   UNREACHABLE_COLLECTION = "The expected collection JSON file could not be reached.",
   BOTH_UNREACHABLE = "Could not access either a collection or a dataset JSON at the provided URL.",
+  ZIP_BOTH_UNREACHABLE = "No top-level collection or dataset manifest file could be found in the ZIP archive.",
   BOTH_404 = "Could not load the provided URL as either a collection or a dataset. Server returned a 404 (Not Found) code.",
   COLLECTION_HAS_NO_DATASETS = "Collection JSON was loaded but no datasets were found. At least one dataset must be defined in the collection.",
   MANIFEST_HAS_NO_FEATURES = "The dataset's manifest JSON was loaded but no features were found. At least one feature must be defined.",
   COLLECTION_JSON_PARSE_FAILED = "Parsing failed for the collections JSON file with the following error. Please check that the JSON syntax is correct: ",
   MANIFEST_JSON_PARSE_FAILED = "Parsing failed for the manifest JSON file with the following error. Please check that the JSON syntax is correct: ",
 }
+
+export const enum ChannelRangePreset {
+  NONE = "none",
+  DEFAULT = "default",
+  IJ_AUTO = "ij_auto",
+  AUTO_2 = "auto_2",
+}
+
+export type ChannelSetting = {
+  visible: boolean;
+  color: Color;
+  opacity: number;
+  min: number;
+  max: number;
+  dataMin: number;
+  dataMax: number;
+};

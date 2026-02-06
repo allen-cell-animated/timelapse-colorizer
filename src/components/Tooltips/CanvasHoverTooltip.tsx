@@ -1,16 +1,16 @@
 import { Tag } from "antd";
-import React, { PropsWithChildren, ReactElement, useCallback } from "react";
+import React, { type PropsWithChildren, type ReactElement, useCallback } from "react";
 import styled from "styled-components";
 import { useShallow } from "zustand/shallow";
 
-import { AnnotationSelectionMode, PixelIdInfo, VECTOR_KEY_MOTION_DELTA, VectorTooltipMode } from "../../colorizer";
-import { formatNumber } from "../../colorizer/utils/math_utils";
-import { AnnotationState } from "../../colorizer/utils/react_utils";
-import { selectVectorConfigFromState } from "../../state/slices";
-import { FlexColumn, FlexRow } from "../../styles/utils";
+import { AnnotationSelectionMode, type PixelIdInfo, VECTOR_KEY_MOTION_DELTA, VectorTooltipMode } from "src/colorizer";
+import { LabelType } from "src/colorizer/AnnotationData";
+import { formatNumber } from "src/colorizer/utils/math_utils";
+import type { AnnotationState } from "src/hooks";
+import { selectVectorConfigFromState } from "src/state/slices";
+import { useViewerStateStore } from "src/state/ViewerState";
+import { FlexColumn, FlexRow } from "src/styles/utils";
 
-import { LabelType } from "../../colorizer/AnnotationData";
-import { useViewerStateStore } from "../../state/ViewerState";
 import HoverTooltip from "./HoverTooltip";
 
 type CanvasHoverTooltipProps = {
@@ -90,7 +90,7 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
       return null;
     }
     const globalId = lastHoveredId.globalId;
-    const motionDelta = [motionDeltas[2 * globalId], motionDeltas[2 * globalId + 1]];
+    const motionDelta = motionDeltas.subarray(globalId * 3, globalId * 3 + 3);
 
     if (Number.isNaN(motionDelta[0]) || Number.isNaN(motionDelta[1])) {
       return null;
@@ -101,7 +101,7 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
     // display name from the dataset.
     const vectorName = vectorKey === VECTOR_KEY_MOTION_DELTA ? "Avg. motion delta" : vectorKey;
     if (vectorConfig.tooltipMode === VectorTooltipMode.MAGNITUDE) {
-      const magnitude = Math.sqrt(motionDelta[0] ** 2 + motionDelta[1] ** 2);
+      const magnitude = Math.sqrt(motionDelta[0] ** 2 + motionDelta[1] ** 2 + motionDelta[2] ** 2);
       const angleDegrees = (360 + Math.atan2(-motionDelta[1], motionDelta[0]) * (180 / Math.PI)) % 360;
       const magnitudeText = formatNumber(magnitude, 3);
       const angleText = formatNumber(angleDegrees, 1);
@@ -110,7 +110,9 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
       const showIntegersAsDecimals = !Number.isInteger(motionDelta[0]) || !Number.isInteger(motionDelta[1]);
       const x = formatNumber(motionDelta[0], 3, showIntegersAsDecimals);
       const y = formatNumber(motionDelta[1], 3, showIntegersAsDecimals);
-      return `${vectorName}: (${x}, ${y}) px
+      const z = formatNumber(motionDelta[2], 3, showIntegersAsDecimals);
+      // TODO: Change px unit if the vector is in 3D? Use real-world units?
+      return `${vectorName}: (${x}, ${y}, ${z}) px
        `;
     }
   }, [vectorConfig, lastHoveredId, motionDeltas]);
@@ -123,11 +125,11 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
     <p key="feature_value">
       {featureName ?? "Feature"}: <span style={{ whiteSpace: "nowrap" }}>{hoveredFeatureValue}</span>
     </p>,
-    <DebugText key="object_id">Pixel value: {lastHoveredId.segId}</DebugText>,
+    <DebugText key="object_id">Label ID: {lastHoveredId.segId}</DebugText>,
   ];
 
   if (vectorTooltipText) {
-    objectInfoContent.push(<p key="vector">{vectorTooltipText}</p>);
+    objectInfoContent.splice(2, 0, <p key="vector">{vectorTooltipText}</p>);
   }
 
   // Show all current labels applied to the hovered object
@@ -189,7 +191,7 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
     if (lastHoveredId.globalId !== undefined) {
       const isHoveredIdLabeled = props.annotationState.data.isLabelOnId(currentLabelIdx, lastHoveredId.globalId);
       const isLabelBoolean = currentLabelData.options.type === LabelType.BOOLEAN;
-      const verb = isHoveredIdLabeled ? (isLabelBoolean ? "unlabel" : "edit") : "label";
+      const verb = isHoveredIdLabeled ? (isLabelBoolean ? "clear" : "edit") : "annotate";
       if (props.annotationState.selectionMode === AnnotationSelectionMode.TRACK) {
         annotationLabel = (
           <FlexRow>

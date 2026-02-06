@@ -1,14 +1,13 @@
 import { DeleteOutlined } from "@ant-design/icons";
-import { Card, Input, InputRef } from "antd";
-import React, { ReactElement, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { AutoComplete, Card } from "antd";
+import React, { type ReactElement, useCallback, useContext, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 
-import { AnnotationState } from "../../../colorizer/utils/react_utils";
-import { FlexColumn, FlexRow } from "../../../styles/utils";
-
-import { LabelType } from "../../../colorizer/AnnotationData";
-import { AppThemeContext } from "../../AppStyle";
-import IconButton from "../../IconButton";
+import { LabelType } from "src/colorizer/AnnotationData";
+import IconButton from "src/components/Buttons/IconButton";
+import type { AnnotationState } from "src/hooks";
+import { AppThemeContext } from "src/styles/AppStyle";
+import { FlexColumn, FlexRow } from "src/styles/utils";
 
 type AnnotationInputPopoverProps = {
   annotationState: AnnotationState;
@@ -23,13 +22,13 @@ const StyledCard = styled(Card)`
   // card aligns with pixel grid.
   left: -${CARD_WIDTH_PX / 2}px;
   width: ${CARD_WIDTH_PX}px;
-  bottom: 90px;
+  bottom: -20px;
   z-index: 1;
   & .ant-card-body {
     padding: 8px;
     padding-top: 6px;
   }
-  & * {
+  &&& * {
     // Fixes a bug where the input popover's contents would persist when the
     // popover was hidden.
     transition: all 0.2s, visibility 0s;
@@ -37,10 +36,6 @@ const StyledCard = styled(Card)`
 `;
 
 export default function AnnotationInputPopover(props: AnnotationInputPopoverProps): ReactElement {
-  const [inputValue, setInputValue] = useState("");
-  const anchorRef = React.useRef<HTMLDivElement>(null);
-  const inputRef = React.useRef<InputRef>(null);
-
   const theme = useContext(AppThemeContext);
 
   const {
@@ -53,10 +48,19 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
     activeEditRange,
     clearActiveEditRange,
   } = props.annotationState;
-  const originalValueRef = React.useRef<string | null>(null);
+
+  const [inputValue, setInputValue] = useState("");
+  const anchorRef = useRef<HTMLDivElement>(null);
+  const inputContainerRef = useRef<HTMLDivElement>(null);
+
+  const originalValueRef = useRef<string | null>(null);
   const lastActiveEditRangeRef = useRef(props.annotationState.activeEditRange);
   const lastLabelIdxRef = useRef(props.annotationState.currentLabelIdx);
   const lastLabelCountRef = useRef(props.annotationState.data.getLabels().length);
+  // During editing, values are live-updated in annotations as the user types.
+  // To prevent the in-progress input value from appearing in the autocomplete
+  // options list, we update the options only when editing starts.
+  const originalOptionsRef = useRef<{ value: string; label: string }[]>([]);
 
   const hasValidData =
     isAnnotationModeEnabled && activeEditRange !== null && lastClickedId !== null && currentLabelIdx !== null;
@@ -94,6 +98,9 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
       const value = annotationData.getValueFromId(currentLabelIdx, lastClickedId) ?? "";
       setInputValue(value);
       originalValueRef.current = value;
+      // Update the autocomplete options only when editing starts.
+      const labelData = annotationData.getLabels()[currentLabelIdx];
+      originalOptionsRef.current = Array.from(labelData.valueToIds.keys()).map((value) => ({ value, label: value }));
     }
     lastLabelIdxRef.current = currentLabelIdx;
     lastLabelCountRef.current = annotationData.getLabels().length;
@@ -101,34 +108,26 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
 
   // Focus the input when the popover is visible.
   useEffect(() => {
-    if (hasValidData && inputRef.current) {
+    if (hasValidData && inputContainerRef.current) {
       // Adding a slight delay fixes a bug where the input is not consistently
       // focused
       setTimeout(() => {
-        inputRef.current?.focus();
-        inputRef.current?.select();
+        const inputElement = inputContainerRef.current!.querySelector("input");
+        inputElement?.focus();
+        inputElement?.select();
       }, 10);
     }
   }, [hasValidData]);
 
   //// Interaction handlers ////
 
-  const handleInputConfirm = (): void => {
-    if (currentLabelIdx === null || activeEditRange === null) {
-      return;
-    }
-    saveInputValue(currentLabelIdx, activeEditRange);
-    clearActiveEditRange();
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+  const handleInputChange = (value: string): void => {
     // Editing the input value directly updates the label value in the annotation state.
     if (currentLabelIdx === null || activeEditRange === null) {
       return;
     }
     // Validate input based on label type.
     const labelData = props.annotationState.data.getLabels()[currentLabelIdx];
-    let value = e.target.value;
     if (labelData.options.type === LabelType.INTEGER) {
       value = value.replaceAll(/[^0-9]/g, "");
       if (value.length === 0) {
@@ -145,28 +144,32 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
     if (currentLabelIdx !== null && activeEditRange !== null) {
       props.annotationState.removeLabelOnIds(currentLabelIdx, activeEditRange);
     }
+    setInputValue("");
     clearActiveEditRange();
   };
 
   // Reset to original value and close the popover when escape is pressed.
   const handleEscape = useCallback((): void => {
     if (originalValueRef.current !== null && hasValidData) {
+      setInputValue(originalValueRef.current);
       props.annotationState.setLabelValueOnIds(currentLabelIdx, activeEditRange, originalValueRef.current);
     }
     clearActiveEditRange();
   }, [hasValidData]);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent): void => {
-      if (e.key === "Escape") {
-        handleEscape();
-      }
-    };
-    anchorRef.current?.addEventListener("keydown", handleKeyDown);
-    return () => {
-      anchorRef.current?.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [handleEscape]);
+  const handleKeyInput: React.KeyboardEventHandler = (e): void => {
+    if (currentLabelIdx === null || activeEditRange === null) {
+      return;
+    }
+    if (e.key === "Enter") {
+      // Save the input value when Enter is pressed.
+      saveInputValue(currentLabelIdx, activeEditRange);
+      clearActiveEditRange();
+    }
+    if (e.key === "Escape") {
+      handleEscape();
+    }
+  };
 
   // TODO: Use the actual popover component from Antd to get the little arrow at
   // the bottom? This requires visibility to be toggled every time anchor
@@ -183,6 +186,8 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
   // 1005). This can be fixed by updating the AnnotationData API to include a
   // setter for the last value field.
 
+  const labelData = hasValidData ? annotationData.getLabels()[currentLabelIdx] : undefined;
+  const showOptions = labelData ? labelData.options.type === LabelType.CUSTOM : false;
   const editCount = activeEditRange?.length ?? 0;
 
   return (
@@ -192,18 +197,20 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
           <span style={{ fontSize: theme.font.size.labelSmall, color: theme.color.text.hint, marginTop: "0" }}>
             Editing {editCount} object{editCount > 1 ? "s" : ""}
           </span>
-          <FlexRow $gap={6}>
-            {/* TODO: Resize input based on value? */}
-            <Input
-              ref={inputRef}
+          <FlexRow $gap={6} ref={inputContainerRef}>
+            <AutoComplete
               size="small"
               defaultValue={inputValue}
-              style={{ pointerEvents: "auto" }}
+              style={{ pointerEvents: "auto", width: "150px" }}
               value={inputValue}
+              options={showOptions ? originalOptionsRef.current : []}
+              open={showOptions ? undefined : false}
               onChange={handleInputChange}
-              onPressEnter={handleInputConfirm}
-              width={"50px"}
-            ></Input>
+              onInputKeyDown={handleKeyInput}
+              filterOption={(inputValue, option) =>
+                option!.value.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1
+              }
+            ></AutoComplete>
             <IconButton type="link" onClick={handleDelete}>
               <DeleteOutlined />
             </IconButton>

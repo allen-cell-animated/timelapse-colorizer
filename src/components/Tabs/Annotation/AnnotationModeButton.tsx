@@ -1,12 +1,11 @@
 import { CheckOutlined } from "@ant-design/icons";
 import { Button } from "antd";
-import React, { ReactElement, useContext } from "react";
+import React, { type ReactElement, useContext } from "react";
 import styled, { css } from "styled-components";
 
-import { TagIconSVG } from "../../../assets";
-import { FlexRow, FlexRowAlignCenter } from "../../../styles/utils";
-
-import { AppThemeContext } from "../../AppStyle";
+import { TagIconSVG } from "src/assets";
+import { AppThemeContext } from "src/styles/AppStyle";
+import { FlexRow, FlexRowAlignCenter } from "src/styles/utils";
 
 /**
  * Overrides the default button color with a green 'success' color
@@ -37,6 +36,7 @@ const AnnotationModeStyledButton = styled(Button)<{ $active: boolean }>`
 type AnnotationModeButtonProps = {
   active: boolean;
   onClick: () => void;
+  hasAnnotations: boolean;
 };
 
 export default function AnnotationModeButton(props: AnnotationModeButtonProps): ReactElement {
@@ -56,13 +56,14 @@ export default function AnnotationModeButton(props: AnnotationModeButtonProps): 
           </FlexRowAlignCenter>
         ) : (
           <FlexRowAlignCenter $gap={6}>
-            <TagIconSVG /> Apply and edit labels
+            <TagIconSVG />
+            {props.hasAnnotations ? "Edit" : "Create"} annotations
           </FlexRowAlignCenter>
         )}
       </AnnotationModeStyledButton>
       {props.active && (
         <p style={{ color: theme.color.text.hint }}>
-          <i>Editing in progress; click objects to apply label</i>
+          <i>Editing in progress; click objects to apply annotations</i>
         </p>
       )}
     </FlexRow>

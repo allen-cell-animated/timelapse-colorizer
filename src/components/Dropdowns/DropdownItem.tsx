@@ -1,5 +1,5 @@
 import { Button } from "antd";
-import React, { PropsWithChildren, ReactElement } from "react";
+import React, { type PropsWithChildren, type ReactElement } from "react";
 import styled, { css } from "styled-components";
 
 type DropdownItemProps = {
@@ -8,8 +8,8 @@ type DropdownItemProps = {
   /** Whether the item is currently selected. False by default. */
   selected?: boolean;
   disabled?: boolean;
-  /** Callback that is fired whenever the item is clicked. */
   onClick: (key: React.Key) => void;
+  onFocus?: () => void;
 };
 
 const defaultProps: Partial<DropdownItemProps> = {
@@ -54,7 +54,13 @@ const DropdownItemButton = styled(Button)<{ $selected: boolean }>`
 export default function DropdownItem(inputProps: PropsWithChildren<DropdownItemProps>): ReactElement {
   const props = { ...defaultProps, ...inputProps } as PropsWithChildren<Required<DropdownItemProps>>;
   return (
-    <DropdownItemButton $selected={props.selected} key={props.key} type="text" onClick={() => props.onClick(props.key)}>
+    <DropdownItemButton
+      $selected={props.selected}
+      key={props.key}
+      type="text"
+      onClick={() => props.onClick(props.key)}
+      onFocus={props.onFocus}
+    >
       {props.children}
     </DropdownItemButton>
   );

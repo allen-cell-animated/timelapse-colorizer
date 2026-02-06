@@ -1,4 +1,4 @@
-import chroma from "chroma-js";
+import type chroma from "chroma-js";
 import * as d3 from "d3";
 
 export const SVG_TEXT_PADDING = 0.1;

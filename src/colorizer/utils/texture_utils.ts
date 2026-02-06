@@ -1,6 +1,6 @@
 import { DataTexture } from "three";
 
-import { FeatureArrayType, FeatureDataType, featureTypeSpecs } from "../types";
+import { type FeatureArrayType, type FeatureDataType, featureTypeSpecs } from "src/colorizer/types";
 
 /**
  * Calculate the squarest possible texture that `data` can fit into and return a tuple of `[width, height]`
@@ -48,7 +48,7 @@ export type DataTextureInfo<T extends FeatureDataType> = {
 export function infoToDataTexture<T extends FeatureDataType>(dataTextureArrayInfo: DataTextureInfo<T>): DataTexture {
   const { data, width, height, type } = dataTextureArrayInfo;
   const spec = featureTypeSpecs[type];
-  const tex = new DataTexture(data, width, height, spec.format, spec.dataType);
+  const tex = new DataTexture(data as unknown as ArrayBuffer, width, height, spec.format, spec.dataType);
   tex.internalFormat = spec.internalFormat;
   tex.needsUpdate = true;
   return tex;

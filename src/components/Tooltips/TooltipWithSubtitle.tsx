@@ -1,20 +1,24 @@
-import { Tooltip, TooltipProps } from "antd";
-import React, { ReactElement, ReactNode, useRef } from "react";
+import { Tooltip, type TooltipProps } from "antd";
+import React, { type ReactElement, type ReactNode } from "react";
+
+type TooltipWithSubtitleProps = TooltipProps & {
+  title: ReactNode;
+  subtitle?: ReactNode;
+  subtitleList?: ReactNode[];
+  tooltipRef?: React.RefObject<HTMLDivElement>;
+};
 
 /**
  * A wrapper around the Ant Design Tooltip that adds support for a subtitle (or
  * list of subtitles) beneath the main tooltip text.
  */
-export function TooltipWithSubtitle(
-  props: TooltipProps & { title: ReactNode; subtitle?: ReactNode; subtitleList?: ReactNode[] }
-): ReactElement {
-  const divRef = useRef<HTMLDivElement>(null);
+export function TooltipWithSubtitle(props: TooltipWithSubtitleProps): ReactElement {
   return (
     <Tooltip
       {...props}
       trigger={["hover", "focus"]}
       title={
-        <>
+        <div ref={props.tooltipRef}>
           <p style={{ margin: 0 }}>{props.title}</p>
           {props.subtitle && <p style={{ margin: 0, fontSize: "12px" }}>{props.subtitle}</p>}
           {props.subtitleList &&
@@ -23,13 +27,10 @@ export function TooltipWithSubtitle(
                 {text}
               </p>
             ))}
-        </>
+        </div>
       }
-      getPopupContainer={() => divRef.current ?? document.body}
     >
       {props.children}
-      {/* TODO: include invisible text here copying the tooltip? */}
-      <div ref={divRef}></div>
     </Tooltip>
   );
 }

@@ -2,31 +2,38 @@
 // Typescript doesn't recognize RequestInit
 import { Color } from "three";
 
-import { MAX_FEATURE_CATEGORIES } from "../../constants";
-import { HexColorString, isThresholdCategorical } from "../types";
+import { MAX_FEATURE_CATEGORIES } from "src/colorizer/constants";
 import {
-  DrawSettings,
-  FeatureThreshold,
+  type ChannelSetting,
+  type DrawMode,
+  type DrawSettings,
+  type FeatureThreshold,
+  type HexColorString,
   isDrawMode,
+  isThresholdCategorical,
   LoadErrorMessage,
   LoadTroubleshooting,
   PlotRangeType,
   ThresholdType,
-} from "../types";
+  TrackPathColorMode,
+} from "src/colorizer/types";
+import { removeUndefinedProperties } from "src/colorizer/utils/data_utils";
+
 import { nanToNull } from "./data_load_utils";
-import { AnyManifestFile } from "./dataset_utils";
+import type { AnyManifestFile } from "./dataset_utils";
 import { formatNumber } from "./math_utils";
 
 // TODO: This file needs to be split up for easier reading and unit testing.
-// This could also be a great opportunity to reconsider how we store and manage state.
 
 export const URL_COLOR_RAMP_REVERSED_SUFFIX = "!";
+export const URL_PATH_SHOW_ALL_SUFFIX = "!";
 export enum UrlParam {
-  TRACK = "track",
+  COLLECTION = "collection",
   DATASET = "dataset",
+  SOURCE_ZIP = "zip",
+  TRACK = "track",
   FEATURE = "feature",
   TIME = "t",
-  COLLECTION = "collection",
   THRESHOLDS = "filters",
   RANGE = "range",
   COLOR_RAMP = "color",
@@ -42,7 +49,16 @@ export enum UrlParam {
   FILTERED_MODE = "filter-mode",
   FILTERED_COLOR = "filter-color",
   OUTLINE_COLOR = "outline-color",
+  EDGE_COLOR = "edge-color",
+  EDGE_MODE = "edge",
   SHOW_PATH = "path",
+  PATH_COLOR = "path-color",
+  PATH_COLOR_RAMP = "path-ramp",
+  PATH_WIDTH = "path-width",
+  PATH_COLOR_MODE = "path-mode",
+  SHOW_PATH_BREAKS = "path-breaks",
+  PATH_STEPS = "path-steps",
+  PATH_PERSIST_OUT_OF_RANGE = "path-persist",
   SHOW_SCALEBAR = "scalebar",
   SHOW_TIMESTAMP = "timestamp",
   KEEP_RANGE = "keep-range",
@@ -51,18 +67,49 @@ export enum UrlParam {
   SCATTERPLOT_RANGE_MODE = "scatter-range",
   OPEN_TAB = "tab",
   SHOW_VECTOR = "vc",
+  INTERPOLATE_3D = "interpolate",
   VECTOR_KEY = "vc-key",
   VECTOR_COLOR = "vc-color",
   VECTOR_SCALE = "vc-scale",
+  VECTOR_SCALE_THICKNESS = "vc-thickness-scaling",
+  VECTOR_THICKNESS = "vc-thickness",
   VECTOR_TOOLTIP_MODE = "vc-tooltip",
   VECTOR_TIME_INTERVALS = "vc-time-int",
 }
 
+export enum ChannelSettingUrlParam {
+  /** Whether the channel is visible. `1` if visible, `0` if not. */
+  VISIBLE = "ven",
+  /** Color + opacity, as a 8-character hex string (RRGGBBAA). */
+  COLOR = "col",
+  /** Ramp min and max intensity value, as `min:max`. */
+  RAMP = "rmp",
+  /** Slider range, determined from data min/max, as `dataMin:dataMax`. */
+  RANGE = "rng",
+}
+/**
+ * Channels, matching the pattern `c0`, `c1`, etc. corresponding to the index of
+ * the channel being configured. The channel parameter should have a value that
+ * is a comma-separated list of `key:value` pairs, with keys defined in
+ * `ChannelSettingUrlParam`.
+ */
+export type ChannelSettingParamKey = `c${number}`;
+
+const CHANNEL_STATE_KEY_REGEX = /^c[0-9]+$/;
+export const isChannelKey = (key: string): key is ChannelSettingParamKey => {
+  return CHANNEL_STATE_KEY_REGEX.test(key);
+};
+
+const TRACK_PATH_STEPS_REGEX = /^(\d+)!?,(\d+)!?$/;
+
 const ALLEN_FILE_PREFIX = "/allen/";
+export const VAST_FILES_URL = "https://vast-files.int.allencell.org/";
 const ALLEN_PREFIX_TO_HTTPS: Record<string, string> = {
   // eslint-disable-next-line @typescript-eslint/naming-convention
-  "/allen/aics/": "https://dev-aics-dtp-001.int.allencell.org/",
+  "/allen/aics/": VAST_FILES_URL,
 };
+
+export const PUBLIC_TFE_URL = "https://timelapse.allencell.org/";
 
 export const DEFAULT_FETCH_TIMEOUT_MS = 2000;
 
@@ -240,6 +287,42 @@ export function deserializeThresholds(thresholds: string | null): FeatureThresho
   }, [] as FeatureThreshold[]);
 }
 
+export function serializeTrackPathSteps(
+  pastSteps?: number,
+  futureSteps?: number,
+  showAllPastSteps?: boolean,
+  showAllFutureSteps?: boolean
+): string | undefined {
+  if (pastSteps === undefined || futureSteps === undefined) {
+    return undefined;
+  }
+  const pastString = pastSteps + (showAllPastSteps ? URL_PATH_SHOW_ALL_SUFFIX : "");
+  const futureString = futureSteps + (showAllFutureSteps ? URL_PATH_SHOW_ALL_SUFFIX : "");
+  return `${pastString},${futureString}`;
+}
+
+export function deserializeTrackPathSteps(
+  stepsString: string | null
+): { pastSteps: number; futureSteps: number; showAllPastSteps: boolean; showAllFutureSteps: boolean } | undefined {
+  if (!stepsString || !TRACK_PATH_STEPS_REGEX.test(stepsString)) {
+    return;
+  }
+  const [pastString, futureString] = stepsString.split(",");
+  let pastSteps = 0;
+  let futureSteps = 0;
+  let showAllPastSteps = false;
+  let showAllFutureSteps = false;
+  if (pastString) {
+    showAllPastSteps = pastString.endsWith(URL_PATH_SHOW_ALL_SUFFIX);
+    pastSteps = parseInt(showAllPastSteps ? pastString.slice(0, -1) : pastString, 10);
+  }
+  if (futureString) {
+    showAllFutureSteps = futureString.endsWith(URL_PATH_SHOW_ALL_SUFFIX);
+    futureSteps = parseInt(showAllFutureSteps ? futureString.slice(0, -1) : futureString, 10);
+  }
+  return { pastSteps, futureSteps, showAllPastSteps, showAllFutureSteps };
+}
+
 export function encodeColor(value: Color): string {
   return value.getHexString();
 }
@@ -248,14 +331,56 @@ export function encodeMaybeColor(value: Color | undefined): string | undefined {
   return value ? encodeColor(value) : undefined;
 }
 
+export function encodeColorWithAlpha(value: Color, alpha: number): string {
+  return `${value.getHexString()}${Math.round(alpha * 255)
+    .toString(16)
+    .padStart(2, "0")}`;
+}
+
+export function encodeMaybeColorWithAlpha(value: Color | undefined, alpha: number | undefined): string | undefined {
+  if (value === undefined || alpha === undefined) {
+    return undefined;
+  }
+  return encodeColorWithAlpha(value, alpha);
+}
+
 export function isHexColor(value: string | null): value is HexColorString {
   const hexRegex = /^#([0-9a-f]{3}){1,2}$/;
   return value !== null && hexRegex.test(value);
 }
 
+export function isHexAlphaColor(value: string | null): value is HexColorString {
+  const hexAlphaRegex = /^#([0-9a-f]{4}){1,2}$/;
+  return value !== null && hexAlphaRegex.test(value);
+}
+
 export function decodeHexColor(value: string | null): Color | undefined {
   value = value?.startsWith("#") ? value : "#" + value;
   return isHexColor(value) ? new Color(value) : undefined;
+}
+
+export function decodeHexAlphaColor(value: string | null): { color: Color; alpha: number } | undefined {
+  if (value === null) {
+    return undefined;
+  }
+  // Ensure the value starts with a hash
+  value = value.startsWith("#") ? value : "#" + value;
+
+  if (isHexAlphaColor(value)) {
+    const isShortenedHex = value.length === 5; // #RGBA vs #RRGGBBAA
+    // Extract the color and alpha components
+    const colorHex = isShortenedHex ? value.slice(0, -1) : value.slice(0, -2);
+    // Double up the last digit for 4-digit hex colors.
+    const alphaHex = isShortenedHex ? value.slice(-1).repeat(2) : value.slice(-2);
+    const color = new Color(colorHex);
+    const alpha = parseInt(alphaHex, 16) / 255;
+    return { color, alpha };
+  } else if (isHexColor(value)) {
+    // If it's a regular hex color (3 or 6 digits), return it with alpha 1
+    return { color: new Color(value), alpha: 1 };
+  } else {
+    return undefined;
+  }
 }
 
 export function encodeNumber(value: number): string {
@@ -274,6 +399,21 @@ export function decodeInt(value: string | null): number | undefined {
   return value === null ? undefined : parseInt(value, 10);
 }
 
+export function decodeTracks(value: string | null): number[] | undefined {
+  if (value === null) {
+    return undefined;
+  }
+  return value
+    .split(",")
+    .map((trackIdStr) => parseInt(trackIdStr, 10))
+    .filter((trackId) => !Number.isNaN(trackId));
+}
+
+export function parseDrawMode(mode: string | null): DrawMode | undefined {
+  const modeInt = parseInt(mode || "-1", 10);
+  return mode && isDrawMode(modeInt) ? modeInt : undefined;
+}
+
 export function parseDrawSettings(
   color: string | null,
   mode: string | null,
@@ -285,6 +425,16 @@ export function parseDrawSettings(
     color: isHexColor(hexColor) ? new Color(hexColor) : defaultSettings.color,
     mode: mode && isDrawMode(modeInt) ? modeInt : defaultSettings.mode,
   };
+}
+
+export function parseTrackPathMode(mode: string | null): TrackPathColorMode | undefined {
+  const modeInt = parseInt(mode || "-1", 10);
+  const isTrackPathColorMode =
+    modeInt === TrackPathColorMode.USE_CUSTOM_COLOR ||
+    modeInt === TrackPathColorMode.USE_OUTLINE_COLOR ||
+    modeInt === TrackPathColorMode.USE_FEATURE_COLOR ||
+    modeInt === TrackPathColorMode.USE_COLOR_MAP;
+  return mode && isTrackPathColorMode ? (modeInt as TrackPathColorMode) : undefined;
 }
 
 export function encodeBoolean(value: boolean): string {
@@ -323,6 +473,59 @@ export function decodeScatterPlotRangeType(rangeString: string | null): PlotRang
     return;
   }
   return urlParamToRangeType[rangeString];
+}
+
+export function encodeChannelSetting(setting: ChannelSetting): string {
+  const colorHex = setting.color.getHexString();
+  const opacityHex = Math.round(setting.opacity * 255)
+    .toString(16)
+    .padStart(2, "0");
+  const rampMin = formatNumber(setting.min, 3);
+  const rampMax = formatNumber(setting.max, 3);
+  const rangeMin = formatNumber(setting.dataMin, 3);
+  const rangeMax = formatNumber(setting.dataMax, 3);
+  let encodedChannel = "";
+  encodedChannel += `${ChannelSettingUrlParam.VISIBLE}:${encodeBoolean(setting.visible)}`;
+  encodedChannel += `,${ChannelSettingUrlParam.COLOR}:${colorHex}${opacityHex}`;
+  encodedChannel += `,${ChannelSettingUrlParam.RAMP}:${rampMin}:${rampMax}`;
+  encodedChannel += `,${ChannelSettingUrlParam.RANGE}:${rangeMin}:${rangeMax}`;
+  return encodedChannel;
+}
+
+export function decodeMaybeChannelSetting(settingString: string | null): Partial<ChannelSetting> | undefined {
+  if (settingString === null) {
+    return undefined;
+  }
+  const settingParts = settingString.split(",");
+  const setting: Partial<ChannelSetting> = {};
+  for (const part of settingParts) {
+    const [key, ...valueParts] = part.split(":");
+    if (key === undefined || valueParts.length === 0) {
+      continue;
+    }
+    switch (key) {
+      case ChannelSettingUrlParam.VISIBLE:
+        setting.visible = decodeBoolean(valueParts[0]);
+        break;
+      case ChannelSettingUrlParam.COLOR: {
+        const { color, alpha } = decodeHexAlphaColor(valueParts[0]) || {};
+        setting.color = color;
+        setting.opacity = alpha;
+        break;
+      }
+      case ChannelSettingUrlParam.RAMP:
+        setting.min = decodeFloat(valueParts[0]);
+        setting.max = decodeFloat(valueParts[1]);
+        break;
+      case ChannelSettingUrlParam.RANGE:
+        setting.dataMin = decodeFloat(valueParts[0]);
+        setting.dataMax = decodeFloat(valueParts[1]);
+        break;
+      default:
+        console.warn(`url_utils.decodeMaybeChannelSetting: Unknown channel setting key: '${key}'`);
+    }
+  }
+  return removeUndefinedProperties(setting);
 }
 
 /**
@@ -367,10 +570,11 @@ export function isAllenPath(input: string): boolean {
  * otherwise, returns an HTTPS resource path.
  */
 export function convertAllenPathToHttps(input: string): string | null {
-  input = normalizeFilePathSlashes(input);
-  for (const prefix of Object.keys(ALLEN_PREFIX_TO_HTTPS)) {
-    if (input.startsWith(prefix)) {
-      return input.replace(prefix, ALLEN_PREFIX_TO_HTTPS[prefix]);
+  // Escape special characters in the path, except for slashes
+  const escapedInput = encodeURIComponent(normalizeFilePathSlashes(input)).replaceAll("%2F", "/");
+  for (const [prefix, httpsPrefix] of Object.entries(ALLEN_PREFIX_TO_HTTPS)) {
+    if (escapedInput.startsWith(prefix)) {
+      return escapedInput.replace(prefix, httpsPrefix);
     }
   }
   return null;
@@ -403,6 +607,31 @@ export function formatPath(input: string): string {
     input = input.slice(0, input.length - 1);
   }
   return input.trim();
+}
+
+/**
+ * Resolves relative paths to absolute URLs using an optional base path.
+ * Also handles resolution for `/allen` paths.
+ */
+export function resolveUrl(baseUrl: string, url: string): string {
+  baseUrl = formatPath(baseUrl);
+  url = formatPath(url);
+
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    return url;
+  } else if (isAllenPath(url)) {
+    const newUrl = convertAllenPathToHttps(url);
+    if (newUrl) {
+      return newUrl;
+    } else {
+      throw new Error(
+        `Error while resolving path: Allen filepath '${url}' was detected but could not be converted to an HTTPS URL.` +
+          ` This may be because the file is in a directory that is not publicly servable.`
+      );
+    }
+  } else {
+    return `${baseUrl}/${url}`;
+  }
 }
 
 export const makeGitHubIssueLink = (title: string, body: string, labels?: string[]): string => {

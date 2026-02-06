@@ -1,9 +1,8 @@
-import { ReportErrorCallback, ReportLoadProgressCallback, ReportWarningCallback } from "../colorizer/types";
-import { isUrl, UrlParam } from "../colorizer/utils/url_utils";
-import { LocationState } from "../types";
-
-import Collection, { CollectionLoadOptions, DatasetLoadOptions } from "../colorizer/Collection";
-import Dataset from "../colorizer/Dataset";
+import Collection, { type CollectionConfig, type CollectionLoadOptions, type DatasetLoadOptions } from "src/colorizer/Collection";
+import type Dataset from "src/colorizer/Dataset";
+import type { ReportErrorCallback, ReportLoadProgressCallback, ReportWarningCallback } from "src/colorizer/types";
+import { isUrl, UrlParam } from "src/colorizer/utils/url_utils";
+import type { LocationState } from "src/types";
 
 export const enum LoadResultType {
   SUCCESS,
@@ -39,10 +38,15 @@ const loadCollectionFromParams = async (
   // 2. Dataset URL only
 
   let collection: Collection;
+  const collectionConfig: CollectionConfig = {
+    sourcePath: collectionParam,
+    pathResolver: collectionLoadOptions.pathResolver,
+  };
+
   if (collectionParam) {
     // 1. Collection URL and dataset key
     try {
-      collection = await Collection.loadCollection(collectionParam, collectionLoadOptions);
+      collection = await Collection.loadCollection(collectionParam, collectionLoadOptions, collectionConfig);
     } catch (error) {
       // Error loading collection
       console.error("loadCollectionFromParams: ", error);
@@ -51,7 +55,12 @@ const loadCollectionFromParams = async (
   } else if (datasetParam !== null && isUrl(datasetParam)) {
     // 2. Dataset URL only
     // Make a dummy collection that will include only this dataset
-    collection = await Collection.makeCollectionFromSingleDataset(datasetParam);
+    try {
+      collection = await Collection.makeCollectionFromSingleDataset(datasetParam, collectionConfig);
+    } catch (error) {
+      console.error("loadCollectionFromParams: ", error);
+      return { type: LoadResultType.LOAD_ERROR, message: (error as Error).message };
+    }
   } else if (collectionParam === null && datasetParam === null) {
     // No arguments provided, report missing datasets as a special case
     return { type: LoadResultType.MISSING_DATASET };
@@ -125,12 +134,14 @@ export const loadInitialCollectionAndDataset = async (
     arrayLoader?: DatasetLoadOptions["arrayLoader"];
     frameLoader?: DatasetLoadOptions["frameLoader"];
     onLoadProgress?: ReportLoadProgressCallback;
+    promptForFileLoad?: (zipName: string, expectedDatasetName: string | null) => Promise<Collection | null>;
     reportMissingDataset?: () => void;
     reportWarning?: ReportWarningCallback;
     reportLoadError?: ReportErrorCallback;
   } = {}
 ): Promise<{ collection: Collection; dataset: Dataset; datasetKey: string } | null> => {
   // Load collection
+  const sourceZipNameParam = params.get(UrlParam.SOURCE_ZIP);
   const collectionParam = params.get(UrlParam.COLLECTION);
   const datasetParam = overrides?.datasetKey ?? params.get(UrlParam.DATASET);
 
@@ -138,6 +149,13 @@ export const loadInitialCollectionAndDataset = async (
   if (overrides && overrides.collection) {
     // An already-loaded Collection object has been provided. Skip loading.
     collection = overrides.collection;
+  } else if (sourceZipNameParam !== null && options.promptForFileLoad) {
+    const result = await options.promptForFileLoad(sourceZipNameParam, datasetParam);
+    if (!result) {
+      options.reportMissingDataset?.();
+      return null;
+    }
+    collection = result;
   } else {
     const collectionResult = await loadCollectionFromParams(collectionParam, datasetParam, {
       fetchMethod: options.collectionFetchMethod,

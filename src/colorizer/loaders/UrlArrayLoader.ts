@@ -1,10 +1,10 @@
-import { DataTexture } from "three";
+import type { DataTexture } from "three";
 
-import { FeatureArrayType, FeatureDataType } from "../types";
-import { infoToDataTexture } from "../utils/texture_utils";
+import type { FeatureArrayType, FeatureDataType } from "src/colorizer/types";
+import { infoToDataTexture } from "src/colorizer/utils/texture_utils";
+import SharedWorkerPool from "src/colorizer/workers/SharedWorkerPool";
 
-import SharedWorkerPool from "../workers/SharedWorkerPool";
-import { ArraySource, IArrayLoader } from "./ILoader";
+import type { ArraySource, IArrayLoader } from "./ILoader";
 
 export class UrlArraySource<T extends FeatureDataType> implements ArraySource<T> {
   array: FeatureArrayType[T];
@@ -49,7 +49,7 @@ export default class UrlArrayLoader implements IArrayLoader {
 
   /**
    * Loads array data from the specified URL, handling both JSON and Parquet files.
-   * @param url The URL to load data from. Must end in ".json" or ".parquet".
+   * @param url The URL to load data from. Must be a ".json" or ".parquet" data file.
    * @param type `FeatureDataType` for the returned array source (e.g. `F32` or `U8`).
    * @param min Optional minimum value for the data. If defined, overrides the `min` field
    *   in JSON files or the calculated minimum value for Parquet files.
@@ -59,11 +59,6 @@ export default class UrlArrayLoader implements IArrayLoader {
    * @returns a URLArraySource object containing the loaded data.
    */
   async load<T extends FeatureDataType>(url: string, type: T, min?: number, max?: number): Promise<UrlArraySource<T>> {
-    if (!url.endsWith(".json") && !url.endsWith(".parquet")) {
-      throw new Error(
-        `Encountered unsupported file format when loading data. URL must end in '.parquet' or '.json': ${url}`
-      );
-    }
     const { data, textureInfo, min: newMin, max: newMax } = await this.workerPool.loadUrlData(url, type);
 
     const tex = infoToDataTexture(textureInfo);

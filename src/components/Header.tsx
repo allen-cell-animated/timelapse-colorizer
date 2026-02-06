@@ -1,12 +1,12 @@
 import { LockOutlined } from "@ant-design/icons";
 import { Tooltip } from "antd";
-import React, { PropsWithChildren, ReactElement } from "react";
+import React, { type PropsWithChildren, type ReactElement } from "react";
 import { Link } from "react-router-dom";
 import styled from "styled-components";
 
-import { AicsLogoAndNameSVG, AicsLogoSVG } from "../assets";
-import { INTERNAL_BUILD } from "../constants";
-import { FlexRowAlignCenter, VisuallyHidden } from "../styles/utils";
+import { AicsLogoAndNameSVG, AicsLogoSVG } from "src/assets";
+import { INTERNAL_BUILD } from "src/constants";
+import { FlexRowAlignCenter, VisuallyHidden } from "src/styles/utils";
 
 const AICS_LOGO_RESIZE_THRESHOLD_PX = 540;
 

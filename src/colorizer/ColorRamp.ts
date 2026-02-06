@@ -1,9 +1,29 @@
-import { Color, ColorRepresentation, DataTexture, FloatType, LinearFilter, NearestFilter, RGBAFormat } from "three";
+import {
+  Color,
+  type ColorRepresentation,
+  DataTexture,
+  FloatType,
+  LinearFilter,
+  NearestFilter,
+  RGBAFormat,
+} from "three";
 
 export enum ColorRampType {
   LINEAR,
+  DIVERGING,
+  CYCLICAL,
   CATEGORICAL,
 }
+
+export type GradientCanvasOptions = {
+  vertical?: boolean;
+  reverse?: boolean;
+  /**
+   * If true, linear ramps will be drawn with a mirrored gradient. Has no effect
+   * on diverging, cyclical, or categorical ramps.
+   */
+  mirror?: boolean;
+};
 
 const DISPLAY_GRADIENT_MAX_STOPS = 24;
 
@@ -51,30 +71,44 @@ export default class ColorRamp {
     return gradient;
   }
 
-  /** Creates a canvas filled in with this color ramp, to present as an option in a menu e.g. */
-  public createGradientCanvas(width: number, height: number, vertical = false): HTMLCanvasElement {
+  /**
+   * Creates an HTML canvas filled in with this color ramp (e.g. to present as
+   * an option in a menu)
+   */
+  public createGradientCanvas(width: number, height: number, options?: GradientCanvasOptions): HTMLCanvasElement {
     const canvas = document.createElement("canvas");
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext("2d")!;
+    let colorStops = options?.reverse ? [...this.colorStops].reverse() : this.colorStops;
 
-    if (this.colorStops.length < 2) {
-      ctx.fillStyle = `#${this.colorStops[0].getHexString()}`;
+    if (options?.mirror && this.type === ColorRampType.LINEAR) {
+      const reversedColorStops: Color[] = [];
+      // Skip first color stop to avoid duplication in the middle
+      for (let i = colorStops.length - 2; i >= 0; i--) {
+        reversedColorStops.push(colorStops[i]);
+      }
+      colorStops = [...colorStops, ...reversedColorStops];
+    }
+
+    if (colorStops.length < 2) {
+      ctx.fillStyle = `#${colorStops[0].getHexString()}`;
       ctx.fillRect(0, 0, width, height);
-    } else if (this.type === ColorRampType.LINEAR) {
-      const gradientWidth = vertical ? 0 : width;
-      const gradientHeight = vertical ? height : 0;
-      const gradient = ColorRamp.linearGradientFromColors(ctx, this.colorStops, gradientWidth, gradientHeight);
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, width, height);
-    } else {
+    } else if (this.type === ColorRampType.CATEGORICAL) {
       // Draw as hard stop gradients
-      const stops = this.colorStops.slice(0, DISPLAY_GRADIENT_MAX_STOPS);
+      const stops = colorStops.slice(0, DISPLAY_GRADIENT_MAX_STOPS);
       const step = width / stops.length;
       stops.forEach((color, idx) => {
         ctx.fillStyle = `#${color.getHexString()}`;
         ctx.fillRect(Math.floor(step * idx), 0, Math.ceil(step), height);
       });
+    } else {
+      // All other ramp types are linear gradients
+      const gradientWidth = options?.vertical ? 0 : width;
+      const gradientHeight = options?.vertical ? height : 0;
+      const gradient = ColorRamp.linearGradientFromColors(ctx, colorStops, gradientWidth, gradientHeight);
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, width, height);
     }
 
     return canvas;
@@ -97,7 +131,13 @@ export default class ColorRamp {
     // Scale t so it represents a (float) index in the array of color stops
     const tIndex = t * (this.colorStops.length - 1);
 
-    // Get the two colors on either side of the tIndex
+    if (this.type === ColorRampType.CATEGORICAL) {
+      // For categorical ramps, we return the nearest color
+      return this.colorStops[Math.round(tIndex)].clone();
+    }
+
+    // For linear ramps, we need to interpolate between the two colors  on
+    // either side of the tIndex
     const minIndex = Math.floor(tIndex);
     const maxIndex = Math.ceil(tIndex);
     // For single-color color ramps, or if t is the exact index of a color stop
@@ -117,6 +157,6 @@ export default class ColorRamp {
    */
   public reverse(): ColorRamp {
     const newColorStops = [...this.colorStops].reverse();
-    return new ColorRamp(newColorStops);
+    return new ColorRamp(newColorStops, this.type);
   }
 }
