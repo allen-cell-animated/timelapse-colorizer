@@ -628,6 +628,7 @@ function Viewer(): ReactElement {
                 onSelectDataset={handleDatasetChange}
                 onSelectFeature={reportFeatureSelected}
                 disabled={disableUi}
+                annotationState={annotationState}
               />
               <ColorizeControls disabled={disableUi} />
             </FlexColumn>
