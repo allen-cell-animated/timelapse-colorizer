@@ -239,6 +239,8 @@ vec4 getObjectColor(vec2 sUv, float opacity) {
       int colorIdx = int(selectionIdx) - 1;
       vec4 color = getOutlineColor(colorIdx);
       return vec4(color.rgb, 1.0);
+    } else if (isEdge(sUv, labelId, OUTLINE_WIDTH_PX + 2.0)) {
+      return vec4(backgroundColor, 1.0);
     }
   }
 
