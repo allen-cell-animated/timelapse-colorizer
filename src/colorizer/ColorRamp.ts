@@ -54,7 +54,7 @@ export default class ColorRamp {
     this.textureLinear = new DataTexture(new Float32Array(linearSRGBDataArr), numStops, 1, RGBAFormat, FloatType);
     this.textureSRGB = new DataTexture(new Float32Array(sRGBDataArr), numStops, 1, RGBAFormat, FloatType);
 
-    const configureTexture = (texture: DataTexture) => {
+    const configureTexture = (texture: DataTexture): void => {
       if (this.type === ColorRampType.CATEGORICAL) {
         texture.minFilter = NearestFilter;
         texture.magFilter = NearestFilter;
