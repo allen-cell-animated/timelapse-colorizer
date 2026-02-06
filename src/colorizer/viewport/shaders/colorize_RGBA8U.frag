@@ -14,6 +14,7 @@ uniform usampler2D inRangeIds;
  * index is `i`, `selectedIds[i] = 1` if the object is selected.
 */
 uniform usampler2D selectedIds;
+uniform sampler2D selectedTracksPalette;
 /** Min and max feature values that define the endpoints of the color map. Values
  * outside the range will be clamped to the nearest endpoint.
  */
@@ -143,6 +144,12 @@ vec4 getCategoricalColor(float featureValue) {
   return getColorRamp(modValue / (width - 1.0));
 }
 
+vec4 getOutlineColor(int colorIdx) {
+  float width = float(textureSize(selectedTracksPalette, 0).x);
+  float adjustedIdx = (0.5 + float(colorIdx)) / width;
+  return texture(selectedTracksPalette, vec2(adjustedIdx, 0.5));
+}
+
 /**
  * Returns true if the pixel at the given coordinates is at the edge of an object.
  * @param uv The scaled UV coordinates to check.
@@ -226,11 +233,12 @@ vec4 getObjectColor(vec2 sUv, float opacity) {
   }
 
   // do an outline around highlighted object
-  bool isSelected = getUintFromTex(selectedIds, id).r == 1u;
-  if (isSelected) {
+  uint selectionIdx = getUintFromTex(selectedIds, id).r;
+  if (selectionIdx > 0u) {
     if (isEdge(sUv, labelId, OUTLINE_WIDTH_PX)) {
-      // ignore opacity for edge color
-      return vec4(outlineColor, 1.0);
+      int colorIdx = int(selectionIdx) - 1;
+      vec4 color = getOutlineColor(colorIdx);
+      return vec4(color.rgb, 1.0);
     }
   }
 

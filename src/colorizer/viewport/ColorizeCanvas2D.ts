@@ -75,6 +75,7 @@ type ColorizeUniformTypes = {
   outlierData: Texture;
   inRangeIds: Texture;
   selectedIds: Texture;
+  selectedTracksPalette: Texture;
   /** LUT mapping from segmentation ID (raw pixel value) to the global ID. */
   segIdToGlobalId: DataTexture;
   segIdOffset: number;
@@ -125,6 +126,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
     outlierData: new Uniform(emptyOutliers),
     inRangeIds: new Uniform(emptyInRangeIds),
     selectedIds: new Uniform(emptyIsSelectedIds),
+    selectedTracksPalette: new Uniform(emptyColorRamp),
     segIdToGlobalId: new Uniform(emptySegIdToGlobalId),
     segIdOffset: new Uniform(0),
     overlay: new Uniform(emptyOverlay),
@@ -651,6 +653,9 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
 
     if (hasPropertyChanged(params, prevParams, ["isSelectedLut"])) {
       this.setUniform("selectedIds", packDataTexture(Array.from(params.isSelectedLut), FeatureDataType.U8));
+    }
+    if (hasPropertyChanged(params, prevParams, ["selectedTracksPaletteRamp"])) {
+      this.setUniform("selectedTracksPalette", params.selectedTracksPaletteRamp.texture);
     }
 
     this.render();

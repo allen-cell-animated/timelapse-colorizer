@@ -1,18 +1,42 @@
+import { Color } from "three";
 import type { StateCreator } from "zustand";
 
-import type { Track } from "src/colorizer";
+import {
+  ColorRamp,
+  ColorRampType,
+  DEFAULT_CATEGORICAL_PALETTE_KEY,
+  KNOWN_CATEGORICAL_PALETTES,
+  type Track,
+} from "src/colorizer";
 import { arrayElementsAreEqual } from "src/colorizer/utils/data_utils";
 import { decodeTracks, UrlParam } from "src/colorizer/utils/url_utils";
 import type { DatasetSlice } from "src/state/slices/dataset_slice";
 import type { SerializedStoreData, SubscribableStore } from "src/state/types";
 import { addDerivedStateSubscriber } from "src/state/utils/store_utils";
 
+const DEFAULT_TRACK_PALETTE_KEY = DEFAULT_CATEGORICAL_PALETTE_KEY;
+const DEFAULT_TRACK_PALETTE = KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_TRACK_PALETTE_KEY)!;
+
+const LUT_UNSELECTED = 0;
+
 export type TrackSliceState = {
   tracks: Map<number, Track>;
+  trackToColorId: Map<number, number>;
 
   /** Derived values */
   /** @deprecated */
   track: Track | null;
+  /**
+   * Current color palette for the track path. Currently static; can be made
+   * serializable + editable in the future.
+   */
+  selectedTracksPaletteRamp: ColorRamp;
+  /**
+   * LUT that maps from an object ID to whether it is selected (>=1) or not (0).
+   * Non-zero values represent the index of the track's color in the track path palette ramp, plus one
+   * because zero is reserved to represent unselected objects. Updated when
+   * tracks are added/removed from the selection.
+   */
   isSelectedLut: Uint8Array;
 };
 
@@ -41,6 +65,7 @@ export type TrackSliceActions = {
    * size as the current one to reset it.
    */
   clearTracks: (newLut?: Uint8Array) => void;
+  getTrackColor: (trackId: number) => Color | undefined;
 };
 
 export type TrackSlice = TrackSliceState & TrackSliceActions;
@@ -50,15 +75,24 @@ function getDefaultTrack(tracks: Map<number, Track>): Track | null {
   return trackValues[trackValues.length - 1] ?? null;
 }
 
+function getNextColorId(tracks: Map<number, Track>, trackToColorId: Map<number, number>): number {
+  const trackValues = Array.from(tracks.values());
+  const lastTrack = trackValues[trackValues.length - 1];
+  const lastColorId = lastTrack ? trackToColorId.get(lastTrack.trackId) ?? -1 : -1;
+  return (lastColorId + 1) % DEFAULT_TRACK_PALETTE.colorStops.length;
+}
+
 /** Marks a track as selected/deselected in the provided LUT. */
-function applyTrackToSelectionLut(lut: Uint8Array, track: Track, selected: boolean): void {
+function applyTrackToSelectionLut(lut: Uint8Array, track: Track, colorIdx: number): void {
   for (const id of track.ids) {
-    lut[id] = selected ? 1 : 0;
+    lut[id] = colorIdx;
   }
 }
 
 export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (set, get) => ({
   tracks: new Map<number, Track>(),
+  trackToColorId: new Map<number, number>(),
+  selectedTracksPaletteRamp: new ColorRamp(DEFAULT_TRACK_PALETTE.colorStops, ColorRampType.CATEGORICAL),
   track: null,
   isSelectedLut: new Uint8Array(0),
 
@@ -73,14 +107,23 @@ export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (s
       }
       const newTracks = new Map(state.tracks);
       const newSelectedLut = state.isSelectedLut.slice();
+      const newTrackToColorId = new Map(state.trackToColorId);
+      let nextColorId = getNextColorId(state.tracks, state.trackToColorId);
       for (const track of tracks) {
         if (newTracks.has(track.trackId)) {
           continue;
         }
         newTracks.set(track.trackId, track);
-        applyTrackToSelectionLut(newSelectedLut, track, true);
+        applyTrackToSelectionLut(newSelectedLut, track, nextColorId);
+        newTrackToColorId.set(track.trackId, nextColorId);
+        nextColorId = (nextColorId + 1) % state.selectedTracksPaletteRamp.colorStops.length;
       }
-      return { tracks: newTracks, track: getDefaultTrack(newTracks), isSelectedLut: newSelectedLut };
+      return {
+        tracks: newTracks,
+        track: getDefaultTrack(newTracks),
+        isSelectedLut: newSelectedLut,
+        trackToColorId: newTrackToColorId,
+      };
     });
   },
   removeTracks: (trackIds: number | number[]) => {
@@ -92,15 +135,22 @@ export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (s
       }
       const newTracks = new Map(state.tracks);
       const newSelectedLut = state.isSelectedLut.slice();
+      const newTrackToColorId = new Map(state.trackToColorId);
       for (const trackId of trackIds) {
         const track = newTracks.get(trackId);
         if (!track) {
           continue;
         }
         newTracks.delete(trackId);
-        applyTrackToSelectionLut(newSelectedLut, track, false);
+        newTrackToColorId.delete(trackId);
+        applyTrackToSelectionLut(newSelectedLut, track, LUT_UNSELECTED);
       }
-      return { tracks: newTracks, track: getDefaultTrack(newTracks), isSelectedLut: newSelectedLut };
+      return {
+        tracks: newTracks,
+        track: getDefaultTrack(newTracks),
+        isSelectedLut: newSelectedLut,
+        trackToColorId: newTrackToColorId,
+      };
     });
   },
   toggleTrack: (track: Track) => {
@@ -114,7 +164,12 @@ export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (s
     // Fill the selection LUT with zeros; because we also need to make a copy
     // of it to trigger relevant state updates, create a new Uint8Array to replace it.
     const newSelectedLut = newLut ?? new Uint8Array(get().isSelectedLut.length);
-    set({ tracks: new Map<number, Track>(), track: null, isSelectedLut: newSelectedLut });
+    set({
+      tracks: new Map<number, Track>(),
+      track: null,
+      isSelectedLut: newSelectedLut,
+      trackToColorId: new Map<number, number>(),
+    });
   },
   setTracks: (tracks: Track | Track[]) => {
     tracks = Array.isArray(tracks) ? tracks : [tracks];
@@ -122,11 +177,27 @@ export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (s
     // to prevent unnecessary re-rendering.
     const newTracks = new Map<number, Track>();
     const newSelectedLut = new Uint8Array(get().isSelectedLut.length);
-    for (const track of tracks) {
+    const newTrackToColorId = new Map<number, number>();
+    for (let i = 0; i < tracks.length; i++) {
+      const track = tracks[i];
       newTracks.set(track.trackId, track);
-      applyTrackToSelectionLut(newSelectedLut, track, true);
+      const colorIdx = (i % get().selectedTracksPaletteRamp.colorStops.length) + 1;
+      applyTrackToSelectionLut(newSelectedLut, track, colorIdx);
+      newTrackToColorId.set(track.trackId, colorIdx);
     }
-    set({ tracks: newTracks, track: getDefaultTrack(newTracks), isSelectedLut: newSelectedLut });
+    set({
+      tracks: newTracks,
+      track: getDefaultTrack(newTracks),
+      isSelectedLut: newSelectedLut,
+      trackToColorId: newTrackToColorId,
+    });
+  },
+  getTrackColor: (trackId: number): Color | undefined => {
+    const colorId = get().trackToColorId.get(trackId);
+    if (colorId === undefined) {
+      return;
+    }
+    return get().selectedTracksPaletteRamp.colorStops[colorId - 1];
   },
 });
 
