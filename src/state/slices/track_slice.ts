@@ -29,24 +29,18 @@ export type TrackSliceActions = {
   /** Toggles the selection state of a track. */
   toggleTrack: (track: Track) => void;
   /**
+   * Sets the current track selection to the specified tracks.
+   * Use in place of `clearTracks() => addTracks(tracks)` to avoid
+   * unnecessary state updates.
+   */
+  setTracks: (tracks: Track | Track[]) => void;
+  /**
    * Removes all tracks from the current selection.
    * @param newLut For internal use when the dataset changes. Optional new
    * selection LUT to use; if not provided, uses a zero-filled LUT of the same
    * size as the current one to reset it.
    */
   clearTracks: (newLut?: Uint8Array) => void;
-
-  /**
-   * Legacy method used when only a single track could be selected
-   * at a time.
-   * @deprecated will be removed in future updates. Use `addTracks` instead.
-   */
-  setTrack: (track: Track) => void;
-  /**
-   * Legacy method used when only a single track could be selected at a time.
-   * @deprecated will be removed in future updates. Use `clearTracks` instead.
-   */
-  clearTrack: () => void;
 };
 
 export type TrackSlice = TrackSliceState & TrackSliceActions;
@@ -122,14 +116,17 @@ export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (s
     const newSelectedLut = newLut ?? new Uint8Array(get().isSelectedLut.length);
     set({ tracks: new Map<number, Track>(), track: null, isSelectedLut: newSelectedLut });
   },
-
-  // Deprecated -- to be removed once no code uses single selected track
-  setTrack: (track: Track) => {
-    get().clearTracks();
-    get().addTracks(track);
-  },
-  clearTrack: () => {
-    get().clearTracks();
+  setTracks: (tracks: Track | Track[]) => {
+    tracks = Array.isArray(tracks) ? tracks : [tracks];
+    // Combines steps for `clearTracks` and `addTracks` into one state update
+    // to prevent unnecessary re-rendering.
+    const newTracks = new Map<number, Track>();
+    const newSelectedLut = new Uint8Array(get().isSelectedLut.length);
+    for (const track of tracks) {
+      newTracks.set(track.trackId, track);
+      applyTrackToSelectionLut(newSelectedLut, track, true);
+    }
+    set({ tracks: newTracks, track: getDefaultTrack(newTracks), isSelectedLut: newSelectedLut });
   },
 });
 
