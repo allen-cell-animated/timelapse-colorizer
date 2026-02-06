@@ -9,11 +9,6 @@ import { FlexRowAlignCenter } from "src/styles/utils";
 import StyledSelect from "./StyledSelect";
 import type { SelectItem } from "./types";
 
-// TODO: Have the dropdown show a loading indicator after a selection has been
-// made but before the prop value updates. -> this is especially noticeable when
-// loading large datasets. Is there a way we can do this using async promises,
-// maybe? If the promise rejects, discard the changed value?
-
 type SelectionDropdownProps = {
   /** Text label to include with the dropdown. If null or undefined, hides the label. */
   label?: string | null;
@@ -135,7 +130,6 @@ export default function SelectionDropdown(inputProps: React.PropsWithChildren<Se
 
   const options = useMemo(() => formatAsSelectItems(props.items), [props.items]);
 
-  // TODO: Show loading spinner?
   const [_isPending, startTransition] = useTransition();
   const [searchInput, setSearchInput] = useState("");
   const [filteredValues, setFilteredValues] = useState<Set<string>>(new Set(options.map((item) => item.value)));
@@ -247,8 +241,6 @@ export default function SelectionDropdown(inputProps: React.PropsWithChildren<Se
         isClearable={false}
         isSearchable={props.isSearchable}
         isLoading={pendingValue !== null}
-        // TODO: Allow `onChange` to be async, and show a loading indicator
-        // + the awaited value while waiting for it to resolve.
         onChange={(value) => {
           if (value && value.value) {
             setPendingValue(value);

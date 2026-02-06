@@ -1,5 +1,5 @@
 import { LoadingOutlined } from "@ant-design/icons";
-import { type ButtonProps } from "antd";
+import type { ButtonProps } from "antd";
 import React, { type ReactElement, useContext, useMemo } from "react";
 import Select, {
   components,
