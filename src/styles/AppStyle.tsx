@@ -73,6 +73,7 @@ const theme = {
     layout: {
       background: palette.gray0,
       backgroundAlt: palette.gray7,
+      backgroundAltTransparent: "rgba(240, 240, 240, 0.5)",
       tabBackground: palette.gray5,
       dividers: palette.gray15,
       borders: palette.gray20,
@@ -192,8 +193,9 @@ const CssContainer = styled.div`
   --color-text-link-hover: ${theme.color.text.linkHover};
 
   /* Layout */
-  --color-background-alt: ${theme.color.layout.backgroundAlt};
   --color-background: ${theme.color.layout.background};
+  --color-background-alt: ${theme.color.layout.backgroundAlt};
+  --color-background-alt-transparent: ${theme.color.layout.backgroundAltTransparent};
   --color-dividers: ${theme.color.layout.dividers};
   --color-borders: ${theme.color.layout.borders};
   --color-modal-overlay: ${theme.color.layout.modalOverlay};

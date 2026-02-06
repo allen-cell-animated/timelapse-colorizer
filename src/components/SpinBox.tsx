@@ -1,6 +1,7 @@
 import React, { type KeyboardEvent, type ReactElement, useCallback, useEffect, useState } from "react";
 
 import { SpinBoxHandleDownSVG, SpinBoxHandleUpSVG } from "src/assets";
+import { useLongPress } from "src/hooks";
 
 import styles from "./SpinBox.module.css";
 
@@ -46,6 +47,16 @@ export default function SpinBox(propsInput: SpinBoxProps): ReactElement {
    * and onChange will be called.
    */
   const [inputValue, setInputValue] = useState(props.value);
+
+  const incrementValue = useCallback((): void => {
+    setInputValue((prevValue) => Math.max(props.min, Math.min(props.max, prevValue + 1)));
+  }, [props.min, props.max]);
+  const decrementValue = useCallback((): void => {
+    setInputValue((prevValue) => Math.max(props.min, Math.min(props.max, prevValue - 1)));
+  }, [props.min, props.max]);
+
+  const incrementButtonProps = useLongPress(incrementValue, () => props.onChange(inputValue));
+  const decrementButtonProps = useLongPress(decrementValue, () => props.onChange(inputValue));
 
   // If the prop value changes, reset the input value to it.
   useEffect(() => {
@@ -124,10 +135,10 @@ export default function SpinBox(propsInput: SpinBoxProps): ReactElement {
       ></input>
       <div className={styles.spinButtons + " " + (props.disabled ? styles.disabled : "")}>
         {/** Tab index -1 prevents spin handles from being selected via tab navigation */}
-        <button tabIndex={-1} onClick={() => adjustValue(1)} disabled={props.disabled}>
+        <button tabIndex={-1} onClick={() => adjustValue(1)} disabled={props.disabled} {...incrementButtonProps}>
           <SpinBoxHandleUpSVG />
         </button>
-        <button tabIndex={-1} onClick={() => adjustValue(-1)} disabled={props.disabled}>
+        <button tabIndex={-1} onClick={() => adjustValue(-1)} disabled={props.disabled} {...decrementButtonProps}>
           <SpinBoxHandleDownSVG />
         </button>
       </div>
