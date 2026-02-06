@@ -11,10 +11,11 @@ export type ShortcutKeyInfo = {
    * "a" => triggers on "a" key press.
    * "ctrl+shift+a" => triggers on "Ctrl + Shift + A" key press.
    * "a,b" => triggers on either "a" or "b" key press.
+   * ["a", "b"] => triggers on either "a" or "b" key press.
    * "a>b" => triggers when a and b are pressed in sequence.
    * ```
    */
-  keycode: string | null;
+  keycode: string | string[] | null;
   /**
    * Display string(s) for the shortcut key. If not provided, `keycode` will
    * be used instead.
@@ -22,14 +23,14 @@ export type ShortcutKeyInfo = {
   keycodeDisplay?: string | string[];
 };
 
-export const ShortcutKeys = {
+export const SHORTCUT_KEYS = {
   viewport: {
     stepFrameForward: {
       name: "Step frame forward",
       keycode: "right",
     },
     stepFrameBackward: {
-      name: "Step frame backwards",
+      name: "Step frame backward",
       keycode: "left",
     },
     togglePlayback: {
@@ -58,9 +59,12 @@ export const ShortcutKeys = {
     },
   },
   annotation: {
+    selectRange: { name: "Select range", keycode: "shift" },
     // TODO: Alt is used for other shortcuts in Chrome (by default, it focuses the menu bar when released).
     // Is there another modifier key that works better?
-    reuseValue: { name: "Reuse last integer value", keycode: "alt,option", keycodeDisplay: "Alt" },
-    selectRange: { name: "Select range", keycode: "shift", keycodeDisplay: "Shift" },
+    reuseValue: { name: "Reuse last value", keycode: "alt,option" },
+  },
+  navigation: {
+    showShortcutMenu: { name: "Show keyboard shortcuts", keycode: "shift+slash,?", keycodeDisplay: "?" },
   },
 } as const satisfies Record<string, Record<string, ShortcutKeyInfo>>;
