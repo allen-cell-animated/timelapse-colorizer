@@ -1,7 +1,7 @@
 import { Checkbox, Tooltip } from "antd";
 import React, { type ReactElement, useMemo } from "react";
 
-import { TrackPathColorMode } from "src/colorizer";
+import { DISPLAY_COLOR_RAMP_DIVERGING_KEYS, DISPLAY_COLOR_RAMP_LINEAR_KEYS, TrackPathColorMode } from "src/colorizer";
 import DropdownWithColorPicker from "src/components/Dropdowns/DropdownWithColorPicker";
 import type { SelectItem } from "src/components/Dropdowns/types";
 import LabeledSlider from "src/components/Inputs/LabeledSlider";
@@ -14,12 +14,15 @@ import { VisuallyHidden } from "src/styles/utils";
 
 import { DEFAULT_OUTLINE_COLOR_PRESETS, SETTINGS_GAP_PX } from "./constants";
 
+const COLOR_RAMP_KEYS_TO_DISPLAY = [...DISPLAY_COLOR_RAMP_DIVERGING_KEYS, ...DISPLAY_COLOR_RAMP_LINEAR_KEYS];
+
 const enum TrackPathSettingsHtmlIds {
   TRACK_PATH_COLOR_SELECT = "track-path-color-select",
   TRACK_PATH_WIDTH_SLIDER = "track-path-width-slider",
   TRACK_PATH_SHOW_BREAKS_CHECKBOX = "track-path-show-breaks-checkbox",
   TRACK_PATH_PAST_STEPS_SLIDER = "track-path-past-steps-slider",
   TRACK_PATH_FUTURE_STEPS_SLIDER = "track-path-future-steps-slider",
+  TRACK_PATH_PERSIST_OUT_OF_RANGE_CHECKBOX = "track-path-persist-out-of-range-checkbox",
 }
 
 const TRACK_MODE_ITEMS: SelectItem[] = [
@@ -27,20 +30,28 @@ const TRACK_MODE_ITEMS: SelectItem[] = [
   { value: TrackPathColorMode.USE_CUSTOM_COLOR.toString(), label: "Custom" },
   { value: TrackPathColorMode.USE_FEATURE_COLOR.toString(), label: "Feature" },
 ];
+if (INTERNAL_BUILD) {
+  TRACK_MODE_ITEMS.push({ value: TrackPathColorMode.USE_COLOR_MAP.toString(), label: "Colormap" });
+}
 
 export default function TrackPathSettings(): ReactElement {
   const dataset = useViewerStateStore((state) => state.dataset);
   const showTrackPath = useViewerStateStore((state) => state.showTrackPath);
   const showTrackPathBreaks = useViewerStateStore((state) => state.showTrackPathBreaks);
   const trackPathColor = useViewerStateStore((state) => state.trackPathColor);
+  const trackPathColorRampKey = useViewerStateStore((state) => state.trackPathColorRampKey);
+  const trackPathIsColorRampReversed = useViewerStateStore((state) => state.trackPathIsColorRampReversed);
   const trackPathColorMode = useViewerStateStore((state) => state.trackPathColorMode);
   const trackPathWidthPx = useViewerStateStore((state) => state.trackPathWidthPx);
   const trackPathPastSteps = useViewerStateStore((state) => state.trackPathPastSteps);
   const trackPathFutureSteps = useViewerStateStore((state) => state.trackPathFutureSteps);
   const showAllTrackPathPastSteps = useViewerStateStore((state) => state.showAllTrackPathPastSteps);
   const showAllTrackPathFutureSteps = useViewerStateStore((state) => state.showAllTrackPathFutureSteps);
+  const persistTrackPathWhenOutOfRange = useViewerStateStore((state) => state.persistTrackPathWhenOutOfRange);
   const setShowTrackPath = useViewerStateStore((state) => state.setShowTrackPath);
   const setTrackPathColor = useViewerStateStore((state) => state.setTrackPathColor);
+  const setTrackPathColorRampKey = useViewerStateStore((state) => state.setTrackPathColorRampKey);
+  const setTrackPathIsColorRampReversed = useViewerStateStore((state) => state.setTrackPathIsColorRampReversed);
   const setTrackPathColorMode = useViewerStateStore((state) => state.setTrackPathColorMode);
   const setTrackPathWidthPx = useViewerStateStore((state) => state.setTrackPathWidthPx);
   const setShowTrackPathBreaks = useViewerStateStore((state) => state.setShowTrackPathBreaks);
@@ -48,6 +59,7 @@ export default function TrackPathSettings(): ReactElement {
   const setTrackPathFutureSteps = useViewerStateStore((state) => state.setTrackPathFutureSteps);
   const setShowAllTrackPathPastSteps = useViewerStateStore((state) => state.setShowAllTrackPathPastSteps);
   const setShowAllTrackPathFutureSteps = useViewerStateStore((state) => state.setShowAllTrackPathFutureSteps);
+  const setPersistTrackPathWhenOutOfRange = useViewerStateStore((state) => state.setPersistTrackPathWhenOutOfRange);
 
   const maxTrackPathSteps = useMemo(() => dataset?.getMaxTrackLength() ?? 0, [dataset]);
 
@@ -57,13 +69,28 @@ export default function TrackPathSettings(): ReactElement {
         <SettingsItem label="Color" htmlFor={TrackPathSettingsHtmlIds.TRACK_PATH_COLOR_SELECT}>
           <DropdownWithColorPicker
             id={TrackPathSettingsHtmlIds.TRACK_PATH_COLOR_SELECT}
+            disabled={dataset === null}
+            // Dropdown
             selected={trackPathColorMode.toString()}
             items={TRACK_MODE_ITEMS}
             onValueChange={(value) => setTrackPathColorMode(Number.parseInt(value, 10) as TrackPathColorMode)}
-            onColorChange={setTrackPathColor}
-            color={trackPathColor}
-            presets={DEFAULT_OUTLINE_COLOR_PRESETS}
+            // Color picker
             showColorPicker={trackPathColorMode === TrackPathColorMode.USE_CUSTOM_COLOR}
+            color={trackPathColor}
+            onColorChange={setTrackPathColor}
+            presets={DEFAULT_OUTLINE_COLOR_PRESETS}
+            // Ramp picker
+            // TODO: Ramp picker is clipped by the containing scrollable div. Consider moving
+            // it to a containing element outside of the clip group?
+            showColorRamp={trackPathColorMode === TrackPathColorMode.USE_COLOR_MAP}
+            selectedRampKey={trackPathColorRampKey}
+            isRampReversed={trackPathIsColorRampReversed}
+            onRampChange={(key, reversed) => {
+              setTrackPathColorRampKey(key);
+              setTrackPathIsColorRampReversed(reversed);
+            }}
+            colorRampsToDisplay={COLOR_RAMP_KEYS_TO_DISPLAY}
+            mirrorRamp={true}
           />
         </SettingsItem>
         <SettingsItem label="Width" htmlFor={TrackPathSettingsHtmlIds.TRACK_PATH_WIDTH_SLIDER}>
@@ -117,6 +144,28 @@ export default function TrackPathSettings(): ReactElement {
                   showAllChecked={showAllTrackPathFutureSteps}
                   onShowAllChanged={setShowAllTrackPathFutureSteps}
                 />
+              </SettingsItem>
+              <SettingsItem
+                label="Persist when out of range"
+                htmlFor={TrackPathSettingsHtmlIds.TRACK_PATH_PERSIST_OUT_OF_RANGE_CHECKBOX}
+              >
+                <Tooltip
+                  title="Keep the track path visible when showing all past or future steps, even when the current time is outside the track's range."
+                  placement="right"
+                  trigger={["focus", "hover"]}
+                >
+                  <div style={{ width: "fit-content", paddingTop: 2 }}>
+                    <Checkbox
+                      id={TrackPathSettingsHtmlIds.TRACK_PATH_PERSIST_OUT_OF_RANGE_CHECKBOX}
+                      type="checkbox"
+                      checked={persistTrackPathWhenOutOfRange}
+                      onChange={(event) => {
+                        setPersistTrackPathWhenOutOfRange(event.target.checked);
+                      }}
+                      disabled={!(showAllTrackPathPastSteps || showAllTrackPathFutureSteps)}
+                    ></Checkbox>
+                  </div>
+                </Tooltip>
               </SettingsItem>
             </>
           )

@@ -108,6 +108,7 @@ export const enum TrackPathColorMode {
   USE_OUTLINE_COLOR = 0,
   USE_CUSTOM_COLOR = 1,
   USE_FEATURE_COLOR = 2,
+  USE_COLOR_MAP = 3,
 }
 
 // Similar to `FeatureType`, but indicates that thresholds are lossy when it comes

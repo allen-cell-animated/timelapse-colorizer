@@ -190,6 +190,10 @@ export default class Dataset {
     this.getSegmentationId = this.getSegmentationId.bind(this);
   }
 
+  public get frames2dPaths(): readonly string[] | undefined {
+    return this.frameFiles;
+  }
+
   private resolveManifestPath = (url: string): string | null => {
     return this.pathResolver.resolve("", url);
   };
