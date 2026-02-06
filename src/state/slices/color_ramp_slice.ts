@@ -92,7 +92,7 @@ export const createColorRampSlice: StateCreator<ColorRampSlice> = (set, _get) =>
   categoricalPalette: defaultCategoricalPalette.colors,
 
   // Derived state
-  colorRamp: getColorMap(KNOWN_COLOR_RAMPS, DEFAULT_COLOR_RAMP_KEY, false),
+  colorRamp: getColorMap(KNOWN_COLOR_RAMPS, DEFAULT_COLOR_RAMP_KEY),
   categoricalPaletteKey: DEFAULT_CATEGORICAL_PALETTE_KEY,
   categoricalPaletteRamp: new ColorRamp(defaultCategoricalPalette.colors, ColorRampType.CATEGORICAL),
 
@@ -165,9 +165,12 @@ export const addColorRampDerivedStateSubscribers = (
   addDerivedStateSubscriber(
     store,
     (state) => [state.colorRampKey, state.isColorRampReversed],
-    ([key, reversed]) => ({
-      colorRamp: getColorMap(KNOWN_COLOR_RAMPS, key, reversed),
-    })
+    ([key, reversed]) => {
+      store.getState().colorRamp.dispose();
+      return {
+        colorRamp: getColorMap(KNOWN_COLOR_RAMPS, key, { reversed }),
+      };
+    }
   );
 
   // Update color ramp range if the threshold changes for the currently selected feature
