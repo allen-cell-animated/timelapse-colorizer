@@ -1,15 +1,16 @@
 import type Plotly from "plotly.js-dist-min";
-import type {PlotlyHTMLElement} from "plotly.js-dist-min";
+import type { PlotlyHTMLElement } from "plotly.js-dist-min";
 import React, { type ReactElement, useEffect, useMemo, useRef, useState } from "react";
 
-import { type Dataset, Plotting, type Track } from "src/colorizer";
-import type { TrackPlotLayoutConfig } from "src/colorizer/Plotting";
+import type { Dataset, Track } from "src/colorizer";
+
+import Plotting, { type TrackPlotLayoutConfig } from "./Plotting";
 
 type PlotWrapperProps = {
   frame: number;
   dataset: Dataset | null;
   featureKey: string | null;
-  selectedTrack: Track | null;
+  tracks: Map<number, Track>;
   setFrame: (frame: number) => Promise<void>;
 };
 const defaultProps: Partial<PlotWrapperProps> = {};
@@ -59,16 +60,16 @@ export default function PlotWrapper(inputProps: PlotWrapperProps): ReactElement 
       hover,
     };
     plot?.updateLayout(config);
-  }, [props.dataset, props.frame, props.selectedTrack, props.featureKey, hoveredObjectId]);
+  }, [props.dataset, props.frame, props.tracks, props.featureKey, hoveredObjectId]);
 
   // Handle updates to selected track and feature, updating/clearing the plot accordingly.
   useMemo(() => {
-    if (props.selectedTrack) {
-      plot?.plot(props.selectedTrack, props.featureKey, props.frame);
+    if (props.tracks.size > 0) {
+      plot?.plot(props.tracks, props.featureKey, props.frame);
     } else {
       plot?.removePlot();
     }
-  }, [props.selectedTrack, props.featureKey]);
+  }, [props.tracks, props.featureKey]);
 
   const updatePlotSize = (): void => {
     if (!plotDivRef.current) {
@@ -104,11 +105,12 @@ export default function PlotWrapper(inputProps: PlotWrapperProps): ReactElement 
         setHoveredObjectId(null);
         return;
       }
-      const time = eventData.points[0].x;
-      if (time) {
-        const objectId = props.selectedTrack?.getIdAtTime(time as number);
-        objectId && setHoveredObjectId(objectId);
+      const point = eventData.points[0];
+      const objectId = Number.parseInt(point.data.ids[point.pointNumber], 10);
+      if (isNaN(objectId)) {
+        return;
       }
+      setHoveredObjectId(objectId);
     };
 
     const onHoverExit = (): void => {
