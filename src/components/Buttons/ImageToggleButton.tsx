@@ -15,7 +15,7 @@ export type ToggleImageButtonProps = {
   visible: boolean;
   setVisible: (visible: boolean) => void;
   disabled: boolean;
-  label: "backdrop" | "channels";
+  imageType: "backdrop" | "channels";
   tooltipContents: ReactNode[];
   configMenuContents: ReactNode[] | ((setOpen: (open: boolean) => void) => ReactNode[]);
 };
@@ -41,11 +41,11 @@ export function ImageToggleButton(props: ToggleImageButtonProps): ReactElement {
   // them. When they are currently visible, clicking the button opens the config
   // menu. Clicking again while the config menu is open hides the
   // backdrop/channels and closes the config menu.
-  const tooltipTitle = (props.visible ? (configMenuOpen ? "Hide" : "Configure ") : "Show") + " " + props.label;
+  const tooltipTitle = (props.visible ? (configMenuOpen ? "Hide" : "Configure ") : "Show") + " " + props.imageType;
 
   const tooltipContents = [...props.tooltipContents];
   if (!configMenuOpen && props.visible) {
-    tooltipContents.push("Double-click to hide " + props.label.toLowerCase());
+    tooltipContents.push("Double-click to hide " + props.imageType.toLowerCase());
   }
 
   const onClick = (): void => {
@@ -78,7 +78,7 @@ export function ImageToggleButton(props: ToggleImageButtonProps): ReactElement {
           $hoverColor={theme.color.text.secondary}
         >
           <span>
-            {labelToViewerSettingsSection[props.label]} <VisuallyHidden>(opens settings tab)</VisuallyHidden>
+            {labelToViewerSettingsSection[props.imageType]} <VisuallyHidden>(opens settings tab)</VisuallyHidden>
           </span>
         </LinkStyleButton>
       </div>

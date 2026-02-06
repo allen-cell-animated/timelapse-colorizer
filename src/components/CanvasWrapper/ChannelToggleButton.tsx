@@ -82,7 +82,7 @@ export default function ChannelToggleButton(): ReactElement {
       visible={isAnyChannelVisible}
       setVisible={onSetVisible}
       disabled={!hasChannels}
-      label={"channels"}
+      imageType={"channels"}
       tooltipContents={tooltipContents}
       configMenuContents={createConfigMenuContents}
     ></ImageToggleButton>
