@@ -1,5 +1,6 @@
-import { Popconfirm } from "antd";
-import React, { type ReactElement, useMemo, useRef, useState } from "react";
+import { ExclamationCircleFilled } from "@ant-design/icons";
+import { Button, Popover } from "antd";
+import React, { type ReactElement, useContext, useMemo, useRef, useState } from "react";
 
 import type { Dataset } from "src/colorizer";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
@@ -7,7 +8,9 @@ import type { SelectItem } from "src/components/Dropdowns/types";
 import GlossaryPanel from "src/components/GlossaryPanel";
 import { AnnotationState } from "src/hooks";
 import { useViewerStateStore } from "src/state";
+import { AppThemeContext } from "src/styles/AppStyle";
 import { FlexColumn, FlexRow } from "src/styles/utils";
+import { downloadCsv } from "src/utils/file_io";
 
 type DatasetFeatureControlsProps = {
   onSelectDataset: (datasetKey: string) => Promise<void>;
@@ -17,6 +20,7 @@ type DatasetFeatureControlsProps = {
 };
 
 export default function DatasetFeatureControls(props: DatasetFeatureControlsProps): ReactElement {
+  const theme = useContext(AppThemeContext);
   const datasetKey = useViewerStateStore((state) => state.datasetKey);
   const setFeatureKey = useViewerStateStore((state) => state.setFeatureKey);
 
@@ -63,7 +67,12 @@ export default function DatasetFeatureControls(props: DatasetFeatureControlsProp
     }
   };
 
-  const downloadAndClearAnnotations = async (): Promise<void> => {};
+  const downloadAndClearAnnotations = async (): Promise<void> => {
+    const csvData = props.annotationState.data.toCsv(dataset!);
+    const name = datasetKey ? `${datasetKey}-annotations.csv` : "annotations.csv";
+    downloadCsv(name, csvData);
+    props.annotationState.clear();
+  };
 
   const onConfirm = async (clearAnnotations: boolean): Promise<void> => {
     if (clearAnnotations) {
@@ -84,6 +93,26 @@ export default function DatasetFeatureControls(props: DatasetFeatureControlsProp
     userConfirmationPromiseRejectRef.current = null;
   };
 
+  const annotationPopupContents = (
+    <FlexColumn style={{ maxWidth: 350 }} $gap={12}>
+      <FlexRow $gap={10}>
+        <ExclamationCircleFilled style={{ color: theme.color.text.warning, margin: "6px 0 auto 0" }} />
+        <FlexColumn>
+          <p style={{ margin: "2px 0" }}>Clear annotations before changing datasets?</p>
+          <span style={{ color: theme.color.text.secondary, margin: "2px 0" }}>
+            Datasets with different tracks will cause existing annotations to be applied to the wrong objects.
+          </span>
+        </FlexColumn>
+      </FlexRow>
+      <FlexRow $gap={6}>
+        <Button onClick={() => onConfirm(false)}>Keep Annotations</Button>
+        <Button type="primary" danger onClick={() => onConfirm(true)}>
+          Save and Clear Annotations
+        </Button>
+      </FlexRow>
+    </FlexColumn>
+  );
+
   return (
     <FlexRow $gap={22} style={{ width: "100%" }}>
       <div style={{ width: "45%" }}>
@@ -96,24 +125,15 @@ export default function DatasetFeatureControls(props: DatasetFeatureControlsProp
           onChange={onSelectDataset}
           controlWidth={"100%"}
         />
-        <Popconfirm
-          title={"Clear annotations before changing datasets?"}
-          description={
-            <FlexColumn style={{ maxWidth: 300, marginBottom: 6 }} $gap={6}>
-              Datasets with different tracks will cause existing annotations to be applied to the wrong objects.
-            </FlexColumn>
-          }
+        <Popover
+          trigger={["click", "focus"]}
+          content={annotationPopupContents}
           open={showAnnotationDataWarning}
           onOpenChange={onCancel}
-          onCancel={() => onConfirm(false)}
-          onConfirm={() => onConfirm(true)}
-          okButtonProps={{ danger: true }}
-          okText="Save and Clear Annotations"
-          cancelText="Keep Annotations"
           style={{ width: "300px" }}
         >
           <div></div>
-        </Popconfirm>
+        </Popover>
       </div>
 
       <FlexRow $gap={6} style={{ width: "55%" }}>
