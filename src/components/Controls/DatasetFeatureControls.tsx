@@ -1,6 +1,5 @@
-import { Button, Popconfirm } from "antd";
+import { Popconfirm } from "antd";
 import React, { type ReactElement, useMemo, useRef, useState } from "react";
-import { useTimeout } from "usehooks-ts";
 
 import type { Dataset } from "src/colorizer";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
@@ -8,7 +7,7 @@ import type { SelectItem } from "src/components/Dropdowns/types";
 import GlossaryPanel from "src/components/GlossaryPanel";
 import { AnnotationState } from "src/hooks";
 import { useViewerStateStore } from "src/state";
-import { FlexRow } from "src/styles/utils";
+import { FlexColumn, FlexRow } from "src/styles/utils";
 
 type DatasetFeatureControlsProps = {
   onSelectDataset: (datasetKey: string) => Promise<void>;
@@ -41,6 +40,8 @@ export default function DatasetFeatureControls(props: DatasetFeatureControlsProp
     });
   }, [dataset]);
 
+  // On selection, prompt the user for additional confirmation if there are
+  // annotations that need to be handled.
   const onSelectDataset = async (key: string): Promise<void> => {
     if (key === datasetKey) {
       return;
@@ -62,16 +63,20 @@ export default function DatasetFeatureControls(props: DatasetFeatureControlsProp
     }
   };
 
-  const onConfirmDatasetChange = (): void => {
+  const downloadAndClearAnnotations = async (): Promise<void> => {};
+
+  const onConfirm = async (clearAnnotations: boolean): Promise<void> => {
+    if (clearAnnotations) {
+      await downloadAndClearAnnotations();
+    }
     userConfirmationPromiseResolveRef.current?.();
 
-    setShowAnnotationDataWarning(false);
     userConfirmationPromiseResolveRef.current = null;
     userConfirmationPromiseRejectRef.current = null;
+    setShowAnnotationDataWarning(false);
   };
 
-  const onCancelDatasetChange = (): void => {
-    console.log("Cancelled");
+  const onCancel = (): void => {
     userConfirmationPromiseRejectRef.current?.();
 
     setShowAnnotationDataWarning(false);
@@ -92,20 +97,19 @@ export default function DatasetFeatureControls(props: DatasetFeatureControlsProp
           controlWidth={"100%"}
         />
         <Popconfirm
-          title={"Change dataset with existing annotations?"}
+          title={"Clear annotations before changing datasets?"}
           description={
-            <div style={{ maxWidth: 300 }}>
+            <FlexColumn style={{ maxWidth: 300, marginBottom: 6 }} $gap={6}>
               Datasets with different tracks will cause existing annotations to be applied to the wrong objects.
-              Consider exporting and clearing existing annotations first.
-              <Button>Export and clear annotations</Button>
-            </div>
+            </FlexColumn>
           }
           open={showAnnotationDataWarning}
-          onOpenChange={onCancelDatasetChange}
-          onCancel={onCancelDatasetChange}
-          onConfirm={onConfirmDatasetChange}
-          okText="Continue"
-          placement="bottom"
+          onOpenChange={onCancel}
+          onCancel={() => onConfirm(false)}
+          onConfirm={() => onConfirm(true)}
+          okButtonProps={{ danger: true }}
+          okText="Save and Clear Annotations"
+          cancelText="Keep Annotations"
           style={{ width: "300px" }}
         >
           <div></div>
