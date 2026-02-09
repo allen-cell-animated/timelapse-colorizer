@@ -3,14 +3,17 @@ import { Button, Popover } from "antd";
 import React, { type ReactElement, useContext, useMemo, useRef, useState } from "react";
 
 import type { Dataset } from "src/colorizer";
+import { KeyCharacter } from "src/components/Display/ShortcutKeyText";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import type { SelectItem } from "src/components/Dropdowns/types";
 import GlossaryPanel from "src/components/GlossaryPanel";
+import { SHORTCUT_KEYS } from "src/constants";
 import { AnnotationState } from "src/hooks";
 import { useViewerStateStore } from "src/state";
 import { AppThemeContext } from "src/styles/AppStyle";
 import { FlexColumn, FlexRow } from "src/styles/utils";
 import { downloadCsv } from "src/utils/file_io";
+import { areAnyHotkeysPressed } from "src/utils/user_input";
 
 type DatasetFeatureControlsProps = {
   onSelectDataset: (datasetKey: string) => Promise<void>;
@@ -23,6 +26,8 @@ export default function DatasetFeatureControls(props: DatasetFeatureControlsProp
   const theme = useContext(AppThemeContext);
   const datasetKey = useViewerStateStore((state) => state.datasetKey);
   const setFeatureKey = useViewerStateStore((state) => state.setFeatureKey);
+
+  const popupContainerRef = useRef<HTMLDivElement>(null);
 
   const dataset = useViewerStateStore((state) => state.dataset);
   const featureKey = useViewerStateStore((state) => state.featureKey);
@@ -50,7 +55,10 @@ export default function DatasetFeatureControls(props: DatasetFeatureControlsProp
     if (key === datasetKey) {
       return;
     }
-    if (hasAnnotations) {
+    const isHoldingKeepAnnotationsHotkey = areAnyHotkeysPressed(
+      SHORTCUT_KEYS.annotation.keepAnnotationsBetweenDatasets.keycode
+    );
+    if (hasAnnotations && !isHoldingKeepAnnotationsHotkey) {
       setShowAnnotationDataWarning(true);
       // Setup promise
       const userConfirmationPromise = new Promise<void>((resolve, reject) => {
@@ -100,13 +108,17 @@ export default function DatasetFeatureControls(props: DatasetFeatureControlsProp
         <FlexColumn>
           <p style={{ margin: "2px 0" }}>Clear annotations before changing datasets?</p>
           <span style={{ color: theme.color.text.secondary, margin: "2px 0" }}>
-            Datasets with different tracks will cause existing annotations to be applied to the wrong objects.
+            Existing annotations will be applied to the wrong objects if tracks differ between datasets.
+          </span>
+          <span style={{ color: theme.color.text.secondary, margin: "2px 0" }}>
+            (Hold <KeyCharacter>{SHORTCUT_KEYS.annotation.keepAnnotationsBetweenDatasets.keycodeDisplay}</KeyCharacter>{" "}
+            while selecting a dataset to keep annotations and skip this message.)
           </span>
         </FlexColumn>
       </FlexRow>
       <FlexRow $gap={6}>
         <Button onClick={() => onConfirm(false)}>Keep Annotations</Button>
-        <Button type="primary" danger onClick={() => onConfirm(true)}>
+        <Button type="primary" onClick={() => onConfirm(true)}>
           Save and Clear Annotations
         </Button>
       </FlexRow>
@@ -131,8 +143,9 @@ export default function DatasetFeatureControls(props: DatasetFeatureControlsProp
           open={showAnnotationDataWarning}
           onOpenChange={onCancel}
           style={{ width: "300px" }}
+          getPopupContainer={() => popupContainerRef.current || document.body}
         >
-          <div></div>
+          <div ref={popupContainerRef}></div>
         </Popover>
       </div>
 
