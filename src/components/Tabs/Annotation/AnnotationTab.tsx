@@ -9,7 +9,7 @@ import TextButton from "src/components/Buttons/TextButton";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import type { SelectItem } from "src/components/Dropdowns/types";
 import LoadingSpinner from "src/components/LoadingSpinner";
-import { ShortcutKeys } from "src/constants";
+import { SHORTCUT_KEYS } from "src/constants";
 import type { AnnotationState } from "src/hooks";
 import { useViewerStateStore } from "src/state";
 import { Z_INDEX_MODAL } from "src/styles/AppStyle";
@@ -125,7 +125,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
       const trackId = record.track;
       const track = store.dataset?.getTrack(trackId);
       if (track) {
-        if (areAnyHotkeysPressed(ShortcutKeys.viewport.multiTrackSelect.keycode)) {
+        if (areAnyHotkeysPressed(SHORTCUT_KEYS.viewport.multiTrackSelect.keycode)) {
           store.addTracks(track);
         } else {
           store.setTracks(track);
@@ -350,7 +350,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
             onClickTrack={(trackId) => {
               const track = store.dataset?.getTrack(trackId);
               if (track) {
-                if (areAnyHotkeysPressed(ShortcutKeys.viewport.multiTrackSelect.keycode)) {
+                if (areAnyHotkeysPressed(SHORTCUT_KEYS.viewport.multiTrackSelect.keycode)) {
                   store.toggleTrack(track);
                 } else {
                   store.setTracks(track);
