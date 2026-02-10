@@ -1,8 +1,9 @@
-import { ExclamationCircleFilled } from "@ant-design/icons";
+import { CloseOutlined, ExclamationCircleFilled } from "@ant-design/icons";
 import { Button, Popover } from "antd";
-import React, { type ReactElement, useContext, useMemo, useRef, useState } from "react";
+import React, { type ReactElement, useContext, useEffect, useMemo, useRef, useState } from "react";
 
 import type { Dataset } from "src/colorizer";
+import IconButton from "src/components/Buttons/IconButton";
 import { KeyCharacter } from "src/components/Display/ShortcutKeyText";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import type { SelectItem } from "src/components/Dropdowns/types";
@@ -11,7 +12,7 @@ import { SHORTCUT_KEYS } from "src/constants";
 import { AnnotationState } from "src/hooks";
 import { useViewerStateStore } from "src/state";
 import { AppThemeContext } from "src/styles/AppStyle";
-import { FlexColumn, FlexRow } from "src/styles/utils";
+import { FlexColumn, FlexRow, FlexRowAlignCenter } from "src/styles/utils";
 import { downloadCsv } from "src/utils/file_io";
 import { areAnyHotkeysPressed } from "src/utils/user_input";
 
@@ -49,10 +50,22 @@ export default function DatasetFeatureControls(props: DatasetFeatureControlsProp
     });
   }, [dataset]);
 
+  const hideAndCleanupAnnotationWarning = (): void => {
+    setShowAnnotationDataWarning(false);
+    userConfirmationPromiseResolveRef.current = null;
+    userConfirmationPromiseRejectRef.current = null;
+  };
+
+  useEffect(() => {
+    // Clear annotation warning if dataset changes (likely from loading)
+    hideAndCleanupAnnotationWarning();
+  }, [dataset]);
+
   // On selection, prompt the user for additional confirmation if there are
   // annotations that need to be handled.
   const onSelectDataset = async (key: string): Promise<void> => {
     if (key === datasetKey) {
+      hideAndCleanupAnnotationWarning();
       return;
     }
     const isHoldingKeepAnnotationsHotkey = areAnyHotkeysPressed(
@@ -87,18 +100,12 @@ export default function DatasetFeatureControls(props: DatasetFeatureControlsProp
       await downloadAndClearAnnotations();
     }
     userConfirmationPromiseResolveRef.current?.();
-
-    userConfirmationPromiseResolveRef.current = null;
-    userConfirmationPromiseRejectRef.current = null;
-    setShowAnnotationDataWarning(false);
+    hideAndCleanupAnnotationWarning();
   };
 
   const onCancel = (): void => {
     userConfirmationPromiseRejectRef.current?.();
-
-    setShowAnnotationDataWarning(false);
-    userConfirmationPromiseResolveRef.current = null;
-    userConfirmationPromiseRejectRef.current = null;
+    hideAndCleanupAnnotationWarning();
   };
 
   const annotationPopupContents = (
@@ -106,13 +113,18 @@ export default function DatasetFeatureControls(props: DatasetFeatureControlsProp
       <FlexRow $gap={10}>
         <ExclamationCircleFilled style={{ color: theme.color.text.warning, margin: "6px 0 auto 0" }} />
         <FlexColumn>
-          <p style={{ margin: "2px 0" }}>Clear annotations before changing datasets?</p>
+          <FlexRowAlignCenter style={{ justifyContent: "space-between" }}>
+            <p style={{ margin: "2px 0" }}>Clear annotations before changing datasets?</p>
+            <IconButton type="text" sizePx={20} onClick={onCancel}>
+              <CloseOutlined />
+            </IconButton>
+          </FlexRowAlignCenter>
           <span style={{ color: theme.color.text.secondary, margin: "2px 0" }}>
             Existing annotations will be applied to the wrong objects if tracks differ between datasets.
           </span>
           <span style={{ color: theme.color.text.secondary, margin: "2px 0" }}>
             (Hold <KeyCharacter>{SHORTCUT_KEYS.annotation.keepAnnotationsBetweenDatasets.keycodeDisplay}</KeyCharacter>{" "}
-            while selecting a dataset to keep annotations and skip this message.)
+            in the future to keep annotations and skip this message.)
           </span>
         </FlexColumn>
       </FlexRow>
