@@ -18,6 +18,7 @@ const DEFAULT_TRACK_PALETTE_KEY = DEFAULT_CATEGORICAL_PALETTE_KEY;
 const DEFAULT_TRACK_PALETTE = KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_TRACK_PALETTE_KEY)!;
 
 const LUT_UNSELECTED = 0;
+const LUT_OFFSET = 1;
 
 export type TrackSliceState = {
   tracks: Map<number, Track>;
@@ -114,7 +115,7 @@ export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (s
           continue;
         }
         newTracks.set(track.trackId, track);
-        applyTrackToSelectionLut(newSelectedLut, track, nextColorId + 1);
+        applyTrackToSelectionLut(newSelectedLut, track, nextColorId + LUT_OFFSET);
         newTrackToColorId.set(track.trackId, nextColorId);
         nextColorId = (nextColorId + 1) % state.selectedTracksPaletteRamp.colorStops.length;
       }
@@ -183,7 +184,7 @@ export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (s
       const track = tracks[i];
       newTracks.set(track.trackId, track);
       const colorIdx = colors[i] % get().selectedTracksPaletteRamp.colorStops.length;
-      applyTrackToSelectionLut(newSelectedLut, track, colorIdx + 1);
+      applyTrackToSelectionLut(newSelectedLut, track, colorIdx + LUT_OFFSET);
       newTrackToColorId.set(track.trackId, colorIdx);
     }
     set({
@@ -198,7 +199,7 @@ export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (s
     if (colorId === undefined) {
       return;
     }
-    return get().selectedTracksPaletteRamp.colorStops[colorId - 1];
+    return get().selectedTracksPaletteRamp.colorStops[colorId];
   },
 });
 
