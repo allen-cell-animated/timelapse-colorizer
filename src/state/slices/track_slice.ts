@@ -34,9 +34,9 @@ export type TrackSliceState = {
   selectedTracksPaletteRamp: ColorRamp;
   /**
    * LUT that maps from an object ID to whether it is selected (>=1) or not (0).
-   * Non-zero values represent the index of the track's color in the track path palette ramp, plus one
-   * because zero is reserved to represent unselected objects. Updated when
-   * tracks are added/removed from the selection.
+   * Non-zero values represent the index of the track's color in the track path
+   * palette ramp + 1 because zero is reserved to represent unselected objects.
+   * Updated when tracks are added/removed from the selection.
    */
   isSelectedLut: Uint8Array;
 };
@@ -76,6 +76,13 @@ function getDefaultTrack(tracks: Map<number, Track>): Track | null {
   return trackValues[trackValues.length - 1] ?? null;
 }
 
+/**
+ * Gets the next color ID to assign. Chooses the next color after the the color
+ * of the track that was last selected.
+ *
+ * Behavior is deterministic, so a user who shares a URL with selected tracks
+ * will get the same color ordering as the user who created the URL.
+ */
 function getNextColorId(tracks: Map<number, Track>, trackToColorId: Map<number, number>): number {
   const trackValues = Array.from(tracks.values());
   const lastTrack = trackValues[trackValues.length - 1];

@@ -67,7 +67,7 @@ export default function ObjectSettings(): ReactElement {
   return (
     <ToggleCollapse label="Objects">
       <SettingsContainer gapPx={SETTINGS_GAP_PX}>
-        <SettingsItem label="Highlight" htmlFor={ObjectSettingsHtmlIds.HIGHLIGHT_COLOR_PICKER}>
+        <SettingsItem label="Selected outline" htmlFor={ObjectSettingsHtmlIds.HIGHLIGHT_COLOR_PICKER}>
           {/* NOTE: 'Highlight color' is 'outline' internally, and 'Outline color' is 'edge' for legacy reasons. */}
           <WrappedColorPicker
             id={ObjectSettingsHtmlIds.HIGHLIGHT_COLOR_PICKER}
@@ -80,7 +80,7 @@ export default function ObjectSettings(): ReactElement {
             presets={DEFAULT_OUTLINE_COLOR_PRESETS}
           />
         </SettingsItem>
-        <SettingsItem label="Outline" htmlFor={ObjectSettingsHtmlIds.EDGE_COLOR_SELECT}>
+        <SettingsItem label="Default edge" htmlFor={ObjectSettingsHtmlIds.EDGE_COLOR_SELECT}>
           <DropdownWithColorPicker
             id={ObjectSettingsHtmlIds.EDGE_COLOR_SELECT}
             selected={edgeMode.toString()}
