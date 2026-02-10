@@ -9,7 +9,7 @@ import {
   type Track,
 } from "src/colorizer";
 import { arrayElementsAreEqual } from "src/colorizer/utils/data_utils";
-import { decodeTracks, UrlParam } from "src/colorizer/utils/url_utils";
+import { decodeTracks, encodeTracks, UrlParam } from "src/colorizer/utils/url_utils";
 import type { DatasetSlice } from "src/state/slices/dataset_slice";
 import type { SerializedStoreData, SubscribableStore } from "src/state/types";
 import { addDerivedStateSubscriber } from "src/state/utils/store_utils";
@@ -40,7 +40,7 @@ export type TrackSliceState = {
   isSelectedLut: Uint8Array;
 };
 
-export type TrackSliceSerializableState = Pick<TrackSliceState, "tracks">;
+export type TrackSliceSerializableState = Pick<TrackSliceState, "tracks" | "trackToColorId">;
 
 export type TrackSliceActions = {
   /**
@@ -57,7 +57,7 @@ export type TrackSliceActions = {
    * Use in place of `clearTracks() => addTracks(tracks)` to avoid
    * unnecessary state updates.
    */
-  setTracks: (tracks: Track | Track[]) => void;
+  setTracks: (tracks: Track | Track[], colorIdx?: number[]) => void;
   /**
    * Removes all tracks from the current selection.
    * @param newLut For internal use when the dataset changes. Optional new
@@ -114,7 +114,7 @@ export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (s
           continue;
         }
         newTracks.set(track.trackId, track);
-        applyTrackToSelectionLut(newSelectedLut, track, nextColorId);
+        applyTrackToSelectionLut(newSelectedLut, track, nextColorId + 1);
         newTrackToColorId.set(track.trackId, nextColorId);
         nextColorId = (nextColorId + 1) % state.selectedTracksPaletteRamp.colorStops.length;
       }
@@ -171,8 +171,9 @@ export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (s
       trackToColorId: new Map<number, number>(),
     });
   },
-  setTracks: (tracks: Track | Track[]) => {
+  setTracks: (tracks: Track | Track[], colors?: number[]) => {
     tracks = Array.isArray(tracks) ? tracks : [tracks];
+    colors = colors ?? tracks.map((_, i) => i);
     // Combines steps for `clearTracks` and `addTracks` into one state update
     // to prevent unnecessary re-rendering.
     const newTracks = new Map<number, Track>();
@@ -181,8 +182,8 @@ export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (s
     for (let i = 0; i < tracks.length; i++) {
       const track = tracks[i];
       newTracks.set(track.trackId, track);
-      const colorIdx = (i % get().selectedTracksPaletteRamp.colorStops.length) + 1;
-      applyTrackToSelectionLut(newSelectedLut, track, colorIdx);
+      const colorIdx = colors[i] % get().selectedTracksPaletteRamp.colorStops.length;
+      applyTrackToSelectionLut(newSelectedLut, track, colorIdx + 1);
       newTrackToColorId.set(track.trackId, colorIdx);
     }
     set({
@@ -243,13 +244,15 @@ export const addTrackDerivedStateSubscribers = (store: SubscribableStore<TrackSl
 export const serializeTrackSlice = (slice: Partial<TrackSliceSerializableState>): SerializedStoreData => {
   const ret: SerializedStoreData = {};
   if (slice.tracks && slice.tracks.size > 0) {
-    ret[UrlParam.TRACK] = Array.from(slice.tracks.keys()).join(",");
+    const trackIds = Array.from(slice.tracks.keys());
+    ret[UrlParam.TRACK] = encodeTracks(trackIds, slice.trackToColorId);
   }
   return ret;
 };
 
 export const selectTrackSliceSerializationDeps = (slice: TrackSlice): TrackSliceSerializableState => ({
   tracks: slice.tracks,
+  trackToColorId: slice.trackToColorId,
 });
 
 export const loadTrackSliceFromParams = (slice: TrackSlice & DatasetSlice, params: URLSearchParams): void => {
@@ -257,15 +260,20 @@ export const loadTrackSliceFromParams = (slice: TrackSlice & DatasetSlice, param
   if (!dataset) {
     return;
   }
-  const trackIdsParam = decodeTracks(params.get(UrlParam.TRACK));
-  if (trackIdsParam !== undefined) {
-    const validatedTracks: Track[] = [];
-    for (const trackId of trackIdsParam) {
+  const trackInfo = decodeTracks(params.get(UrlParam.TRACK));
+  if (trackInfo !== undefined) {
+    const tracks: Track[] = [];
+    const colors: number[] = [];
+
+    const { trackIds, colorIdx: colorIdxFromParams } = trackInfo;
+    for (let i = 0; i < trackIds.length; i++) {
+      const trackId = trackIds[i];
       const track = dataset.getTrack(trackId);
       if (track) {
-        validatedTracks.push(track);
+        tracks.push(track);
+        colors.push(colorIdxFromParams?.[i] ?? i);
       }
     }
-    slice.addTracks(validatedTracks);
+    slice.setTracks(tracks, colors);
   }
 };
