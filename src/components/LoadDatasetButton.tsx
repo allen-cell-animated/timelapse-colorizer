@@ -107,10 +107,11 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
   useEffect(() => {
     if (isLoadModalOpen) {
       // Clear modal when opening
-      // TODO: This does not actually stop the underlying load operation. Could cause the interface to act
-      // unexpectedly, but maybe not a huge problem because there's a ~4s timeout on the load operation anyways.
+      // TODO: This does not actually stop the underlying load operation. Handle
+      // existing loading operations better?
       setIsLoadingUrl(false);
       setIsLoadingZip(false);
+      setZipLoadProgress(0);
       setErrorText("");
     }
   }, [isLoadModalOpen]);
