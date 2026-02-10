@@ -14,7 +14,7 @@ import TextButton from "src/components/Buttons/TextButton";
 import StyledInlineProgress from "src/components/Feedback/StyledInlineProgress";
 import MessageCard from "src/components/MessageCard";
 import StyledModal from "src/components/Modals/StyledModal";
-import { AnnotationState, useAnnotationDatasetWarning, useRecentCollections } from "src/hooks";
+import { type AnnotationState, useAnnotationDatasetWarning, useRecentCollections } from "src/hooks";
 import { useJsxText } from "src/hooks/useJsxText";
 import { useViewerStateStore } from "src/state";
 import { AppThemeContext } from "src/styles/AppStyle";
