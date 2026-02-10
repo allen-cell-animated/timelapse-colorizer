@@ -1,6 +1,6 @@
+export { useAnnotationDatasetWarning } from "./useAnnotationDatasetWarning";
 export type { AnnotationState } from "./useAnnotations";
 export { useAnnotations } from "./useAnnotations";
-export { useAnnotationDatasetWarning } from "./useAnnotationDatasetWarning";
 export { useConstructor } from "./useConstructor";
 export { useDebounce } from "./useDebounce";
 export { useIsHotkeyHeld } from "./useIsHotkeyHeld";

@@ -1,11 +1,11 @@
 import { CloseOutlined, ExclamationCircleFilled } from "@ant-design/icons";
 import { Button, Popover } from "antd";
-import React, { ReactElement, useCallback, useContext, useEffect, useRef, useState } from "react";
+import React, { type ReactElement, useCallback, useContext, useEffect, useRef, useState } from "react";
 
 import IconButton from "src/components/Buttons/IconButton";
 import { KeyCharacter } from "src/components/Display/ShortcutKeyText";
 import { SHORTCUT_KEYS } from "src/constants";
-import { AnnotationState } from "src/hooks/useAnnotations";
+import type { AnnotationState } from "src/hooks/useAnnotations";
 import { useViewerStateStore } from "src/state";
 import { AppThemeContext } from "src/styles/AppStyle";
 import { FlexColumn, FlexRow, FlexRowAlignCenter } from "src/styles/utils";
@@ -25,9 +25,9 @@ import { areAnyHotkeysPressed } from "src/utils/user_input";
  *    callback. Use this for the action that triggers the dataset change.
  */
 export function useAnnotationDatasetWarning<A, B>(
-  annotationState: AnnotationState,
-  callback: (...args: A[]) => Promise<B>
-): { popupEl: ReactElement; wrappedCallback: (...args: A[]) => Promise<B> } {
+  callback: (args: A) => Promise<B>,
+  annotationState?: AnnotationState
+): { popupEl: ReactElement; wrappedCallback: (args: A) => Promise<B> } {
   const theme = useContext(AppThemeContext);
 
   const dataset = useViewerStateStore((state) => state.dataset);
@@ -55,21 +55,22 @@ export function useAnnotationDatasetWarning<A, B>(
 
   // On selection, prompt the user for additional confirmation if there are
   // annotations that need to be handled.
+  const annotationData = annotationState?.data;
   const wrappedCallback = useCallback(
-    async (...args: A[]): Promise<B> => {
-      const hasAnnotations = annotationState.data.getLabels().length > 0;
+    async (args: A): Promise<B> => {
+      const hasAnnotations = annotationData && annotationData.getLabels().length > 0;
       const isHoldingKeepAnnotationsHotkey = areAnyHotkeysPressed(
         SHORTCUT_KEYS.annotation.keepAnnotationsBetweenDatasets.keycode
       );
       if (!hasAnnotations || isHoldingKeepAnnotationsHotkey) {
-        return callbackRef.current(...args);
+        return callbackRef.current(args);
       }
       setIsWarningVisible(true);
       // Setup promise, which will be resolved if the user makes a selection or
       // rejected if the user closes the popup.
       const userConfirmationPromise = new Promise<B>((resolve, reject) => {
         const resolveCallback = async (): Promise<void> => {
-          const result = await callbackRef.current(...args);
+          const result = await callbackRef.current(args);
           resolve(result);
         };
         userConfirmationPromiseResolveRef.current = resolveCallback;
@@ -77,14 +78,16 @@ export function useAnnotationDatasetWarning<A, B>(
       });
       return userConfirmationPromise;
     },
-    [annotationState.data]
+    [annotationData]
   );
 
   const downloadAndClearAnnotations = async (): Promise<void> => {
-    const csvData = annotationState.data.toCsv(dataset!);
-    const name = datasetKey ? `${datasetKey}-annotations.csv` : "annotations.csv";
-    downloadCsv(name, csvData);
-    annotationState.clear();
+    if (annotationState) {
+      const csvData = annotationState.data.toCsv(dataset!);
+      const name = datasetKey ? `${datasetKey}-annotations.csv` : "annotations.csv";
+      downloadCsv(name, csvData);
+      annotationState.clear();
+    }
   };
 
   const onConfirm = async (clearAnnotations: boolean): Promise<void> => {
@@ -135,6 +138,7 @@ export function useAnnotationDatasetWarning<A, B>(
       content={annotationPopupContents}
       open={isWarningVisible}
       onOpenChange={onCancel}
+      placement="bottom"
       style={{ width: "300px" }}
       getPopupContainer={() => popupContainerRef.current || document.body}
     >

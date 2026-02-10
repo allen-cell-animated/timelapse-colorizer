@@ -4,7 +4,7 @@ import type { Dataset } from "src/colorizer";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import type { SelectItem } from "src/components/Dropdowns/types";
 import GlossaryPanel from "src/components/GlossaryPanel";
-import { AnnotationState, useAnnotationDatasetWarning } from "src/hooks";
+import { type AnnotationState, useAnnotationDatasetWarning } from "src/hooks";
 import { useViewerStateStore } from "src/state";
 import { FlexRow } from "src/styles/utils";
 
@@ -24,8 +24,8 @@ export default function DatasetFeatureControls(props: DatasetFeatureControlsProp
   const collection = useViewerStateStore((state) => state.collection);
 
   const { popupEl, wrappedCallback: wrappedOnSelectDataset } = useAnnotationDatasetWarning(
-    props.annotationState,
-    props.onSelectDataset
+    props.onSelectDataset,
+    props.annotationState
   );
 
   // Wrap the returned callback one more time to skip if the selected dataset

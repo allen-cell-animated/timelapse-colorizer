@@ -588,6 +588,7 @@ function Viewer(): ReactElement {
                 onLoad={handleDatasetLoad}
                 currentResourceUrl={collection?.sourcePath ?? datasetKey ?? ""}
                 reportWarning={showDatasetLoadWarning}
+                annotationState={annotationState}
               />
               <LoadZipModal
                 sourceZipName={sourceZipName ?? ""}
