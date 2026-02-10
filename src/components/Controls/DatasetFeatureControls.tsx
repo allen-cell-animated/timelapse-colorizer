@@ -1,20 +1,12 @@
-import { CloseOutlined, ExclamationCircleFilled } from "@ant-design/icons";
-import { Button, Popover } from "antd";
-import React, { type ReactElement, useContext, useEffect, useMemo, useRef, useState } from "react";
+import React, { type ReactElement, useMemo } from "react";
 
 import type { Dataset } from "src/colorizer";
-import IconButton from "src/components/Buttons/IconButton";
-import { KeyCharacter } from "src/components/Display/ShortcutKeyText";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import type { SelectItem } from "src/components/Dropdowns/types";
 import GlossaryPanel from "src/components/GlossaryPanel";
-import { SHORTCUT_KEYS } from "src/constants";
-import { AnnotationState } from "src/hooks";
+import { AnnotationState, useAnnotationDatasetWarning } from "src/hooks";
 import { useViewerStateStore } from "src/state";
-import { AppThemeContext } from "src/styles/AppStyle";
-import { FlexColumn, FlexRow, FlexRowAlignCenter } from "src/styles/utils";
-import { downloadCsv } from "src/utils/file_io";
-import { areAnyHotkeysPressed } from "src/utils/user_input";
+import { FlexRow } from "src/styles/utils";
 
 type DatasetFeatureControlsProps = {
   onSelectDataset: (datasetKey: string) => Promise<void>;
@@ -24,20 +16,26 @@ type DatasetFeatureControlsProps = {
 };
 
 export default function DatasetFeatureControls(props: DatasetFeatureControlsProps): ReactElement {
-  const theme = useContext(AppThemeContext);
   const datasetKey = useViewerStateStore((state) => state.datasetKey);
   const setFeatureKey = useViewerStateStore((state) => state.setFeatureKey);
-
-  const popupContainerRef = useRef<HTMLDivElement>(null);
 
   const dataset = useViewerStateStore((state) => state.dataset);
   const featureKey = useViewerStateStore((state) => state.featureKey);
   const collection = useViewerStateStore((state) => state.collection);
 
-  const userConfirmationPromiseResolveRef = useRef<(() => void) | null>(null);
-  const userConfirmationPromiseRejectRef = useRef<(() => void) | null>(null);
-  const [showAnnotationDataWarning, setShowAnnotationDataWarning] = useState(false);
-  const hasAnnotations = props.annotationState.data.getLabels().length > 0;
+  const { popupEl, wrappedCallback: wrappedOnSelectDataset } = useAnnotationDatasetWarning(
+    props.annotationState,
+    props.onSelectDataset
+  );
+
+  // Wrap the returned callback one more time to skip if the selected dataset
+  // is the same.
+  const onSelectedDatasetValue = async (key: string): Promise<void> => {
+    if (key === datasetKey) {
+      return;
+    }
+    return await wrappedOnSelectDataset(key);
+  };
 
   const datasetDropdownData = useMemo(() => collection?.getDatasetKeys() || [], [collection]);
   const featureDropdownData = useMemo((): SelectItem[] => {
@@ -50,93 +48,6 @@ export default function DatasetFeatureControls(props: DatasetFeatureControlsProp
     });
   }, [dataset]);
 
-  const hideAndCleanupAnnotationWarning = (): void => {
-    setShowAnnotationDataWarning(false);
-    userConfirmationPromiseResolveRef.current = null;
-    userConfirmationPromiseRejectRef.current = null;
-  };
-
-  useEffect(() => {
-    // Clear annotation warning if dataset changes (likely from loading)
-    hideAndCleanupAnnotationWarning();
-  }, [dataset]);
-
-  // On selection, prompt the user for additional confirmation if there are
-  // annotations that need to be handled.
-  const onSelectDataset = async (key: string): Promise<void> => {
-    if (key === datasetKey) {
-      hideAndCleanupAnnotationWarning();
-      return;
-    }
-    const isHoldingKeepAnnotationsHotkey = areAnyHotkeysPressed(
-      SHORTCUT_KEYS.annotation.keepAnnotationsBetweenDatasets.keycode
-    );
-    if (hasAnnotations && !isHoldingKeepAnnotationsHotkey) {
-      setShowAnnotationDataWarning(true);
-      // Setup promise
-      const userConfirmationPromise = new Promise<void>((resolve, reject) => {
-        const resolveCallback = async (): Promise<void> => {
-          await props.onSelectDataset(key);
-          resolve();
-        };
-        userConfirmationPromiseResolveRef.current = resolveCallback;
-        userConfirmationPromiseRejectRef.current = reject;
-      });
-      return userConfirmationPromise;
-    } else {
-      await props.onSelectDataset(key);
-    }
-  };
-
-  const downloadAndClearAnnotations = async (): Promise<void> => {
-    const csvData = props.annotationState.data.toCsv(dataset!);
-    const name = datasetKey ? `${datasetKey}-annotations.csv` : "annotations.csv";
-    downloadCsv(name, csvData);
-    props.annotationState.clear();
-  };
-
-  const onConfirm = async (clearAnnotations: boolean): Promise<void> => {
-    if (clearAnnotations) {
-      await downloadAndClearAnnotations();
-    }
-    userConfirmationPromiseResolveRef.current?.();
-    hideAndCleanupAnnotationWarning();
-  };
-
-  const onCancel = (): void => {
-    userConfirmationPromiseRejectRef.current?.();
-    hideAndCleanupAnnotationWarning();
-  };
-
-  const annotationPopupContents = (
-    <FlexColumn style={{ maxWidth: 350 }} $gap={12}>
-      <FlexRow $gap={10}>
-        <ExclamationCircleFilled style={{ color: theme.color.text.warning, margin: "6px 0 auto 0" }} />
-        <FlexColumn>
-          <FlexRowAlignCenter style={{ justifyContent: "space-between" }}>
-            <p style={{ margin: "2px 0" }}>Clear annotations before changing datasets?</p>
-            <IconButton type="text" sizePx={20} onClick={onCancel}>
-              <CloseOutlined />
-            </IconButton>
-          </FlexRowAlignCenter>
-          <span style={{ color: theme.color.text.secondary, margin: "2px 0" }}>
-            Existing annotations will be applied to the wrong objects if tracks differ between datasets.
-          </span>
-          <span style={{ color: theme.color.text.secondary, margin: "2px 0" }}>
-            (Hold <KeyCharacter>{SHORTCUT_KEYS.annotation.keepAnnotationsBetweenDatasets.keycodeDisplay}</KeyCharacter>{" "}
-            in the future to keep annotations and skip this message.)
-          </span>
-        </FlexColumn>
-      </FlexRow>
-      <FlexRow $gap={6}>
-        <Button onClick={() => onConfirm(false)}>Keep Annotations</Button>
-        <Button type="primary" onClick={() => onConfirm(true)}>
-          Save and Clear Annotations
-        </Button>
-      </FlexRow>
-    </FlexColumn>
-  );
-
   return (
     <FlexRow $gap={22} style={{ width: "100%" }}>
       <div style={{ width: "45%" }}>
@@ -146,19 +57,10 @@ export default function DatasetFeatureControls(props: DatasetFeatureControlsProp
           selected={datasetKey ?? ""}
           buttonType="primary"
           items={datasetDropdownData}
-          onChange={onSelectDataset}
+          onChange={onSelectedDatasetValue}
           controlWidth={"100%"}
         />
-        <Popover
-          trigger={["click", "focus"]}
-          content={annotationPopupContents}
-          open={showAnnotationDataWarning}
-          onOpenChange={onCancel}
-          style={{ width: "300px" }}
-          getPopupContainer={() => popupContainerRef.current || document.body}
-        >
-          <div ref={popupContainerRef}></div>
-        </Popover>
+        {popupEl}
       </div>
 
       <FlexRow $gap={6} style={{ width: "55%" }}>
