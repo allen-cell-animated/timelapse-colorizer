@@ -29,12 +29,11 @@ export function useAnnotationDatasetWarning<A extends unknown[], B>(
   annotationState?: AnnotationState
 ): { popupEl: ReactElement; wrappedCallback: (...args: A) => Promise<B> } {
   const theme = useContext(AppThemeContext);
-
   const dataset = useViewerStateStore((state) => state.dataset);
   const datasetKey = useViewerStateStore((state) => state.datasetKey);
   const popupContainerRef = useRef<HTMLDivElement>(null);
 
-  // Wrap the callback in case it's not memoized.
+  // Save the callback to a ref in case it's not memoized.
   const callbackRef = useRef(callback);
   callbackRef.current = callback;
 
@@ -49,12 +48,12 @@ export function useAnnotationDatasetWarning<A extends unknown[], B>(
   }, []);
 
   useEffect(() => {
-    // Clear annotation warning if dataset changes (likely from loading)
+    // Clear annotation warning if dataset changes
     cleanupWarning();
   }, [dataset, cleanupWarning]);
 
-  // On selection, prompt the user for additional confirmation if there are
-  // annotations that need to be handled.
+  // Prompt the user for additional confirmation if there are annotations that
+  // need to be handled before completing the action (callback).
   const annotationData = annotationState?.data;
   const wrappedCallback = useCallback(
     async (...args: A): Promise<B> => {
@@ -115,7 +114,7 @@ export function useAnnotationDatasetWarning<A extends unknown[], B>(
             </IconButton>
           </FlexRowAlignCenter>
           <span style={{ color: theme.color.text.secondary, margin: "2px 0" }}>
-            Existing annotations will be applied to the wrong objects if tracks differ between datasets.
+            Existing annotations will be applied to the wrong objects if tracks differ.
           </span>
           <span style={{ color: theme.color.text.secondary, margin: "2px 0" }}>
             (Hold <KeyCharacter>{SHORTCUT_KEYS.annotation.keepAnnotationsBetweenDatasets.keycodeDisplay}</KeyCharacter>{" "}
