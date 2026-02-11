@@ -134,9 +134,9 @@ export default class TrackPath3D {
       currentFrame
     );
     this.lineObject.setColorRampScale(rampScale, rampOffset);
+    this.lineObject.setVisibleSegmentsRange(startingInstance, endingInstance);
     this.lineOverlayObject.setColorRampScale(rampScale, rampOffset);
-    this.lineObject.setVisibleSegmentsRange(startingInstance, Math.max(0, endingInstance));
-    this.lineOverlayObject.setVisibleSegmentsRange(startingInstance, Math.max(0, endingInstance));
+    this.lineOverlayObject.setVisibleSegmentsRange(startingInstance, endingInstance);
   }
 
   /**
