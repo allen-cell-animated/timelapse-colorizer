@@ -635,8 +635,8 @@ export function getLineUpdateFlags(
  * visible path instances to show and how to apply the color ramp.
  * @returns An object containing:
  *  - `rampScale`: The number of vertices the color ramp spans.
- *  - `rampOffset`: The offset to apply to the color ramp (usually the index of
- *    the vertex in the track that is currently visible).
+ *  - `rampOffset`: The vertex index that the color ramp is centered on (usually
+ *    corresponding with the current frame in the track).
  *  - `startingInstance`: The index of the first path instance to show, where an
  *    instance is a line segment between two frames.
  *  - `endingInstance`: The index of the last path instance to show.
@@ -664,7 +664,6 @@ export function getTrackPathRenderInfo(
   const trackStepIdx = currentFrame - track.startTime();
   let endingInstance;
   let startingInstance;
-
   if (params.showAllTrackPathPastSteps) {
     startingInstance = 0;
   } else {
