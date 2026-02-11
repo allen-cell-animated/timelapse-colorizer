@@ -8,10 +8,10 @@ import {
   type IAnnotationDataSetters,
   LabelType,
 } from "src/colorizer/AnnotationData";
-import { ShortcutKeycode } from "src/constants";
+import { SHORTCUT_KEYS } from "src/constants";
+import { useIsHotkeyHeld } from "src/hooks";
 
 import { useConstructor } from "./useConstructor";
-import { useShortcutKey } from "./useShortcutKey";
 
 export type AnnotationState = {
   // Viewer state that lives outside the annotation data itself
@@ -81,8 +81,8 @@ export const useAnnotations = (): AnnotationState => {
 
   const [baseSelectionMode, setBaseSelectionMode] = useState<AnnotationSelectionMode>(AnnotationSelectionMode.TIME);
 
-  const isSelectRangeHotkeyPressed = useShortcutKey(ShortcutKeycode.ANNOTATION_SELECT_RANGE);
-  const isReuseValueHotkeyPressed = useShortcutKey(ShortcutKeycode.ANNOTATION_REUSE_VALUE);
+  const isSelectRangeHotkeyPressed = useIsHotkeyHeld(SHORTCUT_KEYS.annotation.selectRange.keycode);
+  const isReuseValueHotkeyPressed = useIsHotkeyHeld(SHORTCUT_KEYS.annotation.reuseValue.keycode);
 
   const [lastClickedId, setLastClickedId] = useState<number | null>(null);
   const [rangeStartId, setRangeStartId] = useState<number | null>(null);

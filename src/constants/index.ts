@@ -1,5 +1,7 @@
 import { DEFAULT_ANNOTATION_LABEL_COLORS } from "src/colorizer/AnnotationData";
 
+export * from "./shortcuts";
+
 export const INTERNAL_BUILD = import.meta.env.VITE_INTERNAL_BUILD === "true";
 export const VERSION_NUMBER = import.meta.env.VITE_APP_VERSION;
 export const BASE_URL = import.meta.env.BASE_URL;
@@ -33,15 +35,3 @@ export const MAX_SETTINGS_SLIDER_WIDTH = "250px";
  * Deprecated because Time is now automatically added as a feature to the dataset.
  */
 export const DEPRECATED_SCATTERPLOT_TIME_KEY = "scatterplot_time";
-
-export const enum ShortcutKeycode {
-  MULTI_TRACK_SELECT = "Control",
-  ANNOTATION_REUSE_VALUE = "Alt",
-  ANNOTATION_SELECT_RANGE = "Shift",
-}
-
-export const ShortcutKeyDisplayName: Record<ShortcutKeycode, string> = {
-  [ShortcutKeycode.MULTI_TRACK_SELECT]: "Ctrl",
-  [ShortcutKeycode.ANNOTATION_REUSE_VALUE]: "Alt (⌥)",
-  [ShortcutKeycode.ANNOTATION_SELECT_RANGE]: "Shift",
-};

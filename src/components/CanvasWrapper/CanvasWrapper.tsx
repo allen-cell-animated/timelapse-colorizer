@@ -27,15 +27,17 @@ import type CanvasOverlay from "src/colorizer/viewport/CanvasOverlay";
 import type { AlertBannerProps } from "src/components/Banner";
 import IconButton from "src/components/Buttons/IconButton";
 import TooltipButtonStyleLink from "src/components/Buttons/TooltipButtonStyleLink";
+import ShortcutKeyList from "src/components/Display/ShortcutKeyList";
 import LoadingSpinner from "src/components/LoadingSpinner";
 import AnnotationInputPopover from "src/components/Tabs/Annotation/AnnotationInputPopover";
 import { TooltipWithSubtitle } from "src/components/Tooltips/TooltipWithSubtitle";
-import { CANVAS_ASPECT_RATIO, ShortcutKeycode, ShortcutKeyDisplayName } from "src/constants";
-import { type AnnotationState, useShortcutKey } from "src/hooks";
+import { CANVAS_ASPECT_RATIO, SHORTCUT_KEYS } from "src/constants";
+import type { AnnotationState } from "src/hooks";
 import { renderCanvasStateParamsSelector } from "src/state";
 import { useViewerStateStore } from "src/state/ViewerState";
 import { AppThemeContext } from "src/styles/AppStyle";
-import { FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter, VisuallyHidden } from "src/styles/utils";
+import { FlexColumn, FlexColumnAlignCenter, VisuallyHidden } from "src/styles/utils";
+import { areAnyHotkeysPressed } from "src/utils/user_input";
 
 import BackdropToggleButton from "./BackdropToggleButton";
 import ChannelToggleButton from "./ChannelToggleButton";
@@ -90,20 +92,8 @@ const AnnotationModeContainer = styled(FlexColumn)`
   position: absolute;
   top: 10px;
   left: 10px;
-  background-color: var(--color-viewport-overlay-background);
-  border: 1px solid var(--color-viewport-overlay-outline);
   z-index: 100;
-  padding: 8px 8px;
-  border-radius: 4px;
   pointer-events: none;
-  gap: 6px;
-`;
-
-const HotkeyText = styled.div`
-  padding: 1px 4px;
-  border-radius: 4px;
-  background-color: var(--color-viewport-overlay-background);
-  border: 1px solid var(--color-viewport-overlay-outline);
 `;
 
 type CanvasWrapperProps = {
@@ -171,8 +161,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   const isFrameLoading = pendingFrame !== currentFrame;
   const loadProgress = props.loading ? props.loadingProgress : null;
-
-  const isMultiTrackSelectHotkeyPressed = useShortcutKey(ShortcutKeycode.MULTI_TRACK_SELECT);
 
   // Add subscriber so canvas parameters are updated when the state changes.
   useEffect(() => {
@@ -379,16 +367,19 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   );
 
   const handleBackgroundClicked = useCallback((): void => {
+    const isMultiTrackSelectHotkeyPressed = areAnyHotkeysPressed(SHORTCUT_KEYS.viewport.multiTrackSelect.keycode);
     if (isMultiTrackSelectHotkeyPressed) {
+      // Ignore background clicks during multi-track selection.
       return;
     }
     clearTracks();
-  }, [isMultiTrackSelectHotkeyPressed, clearTracks]);
+  }, [clearTracks]);
 
   const handleObjectClicked = useCallback(
     (dataset: Dataset, globalId: number) => {
       const trackId = dataset.getTrackId(globalId);
       const newTrack = dataset.getTrack(trackId);
+      const isMultiTrackSelectHotkeyPressed = areAnyHotkeysPressed(SHORTCUT_KEYS.viewport.multiTrackSelect.keycode);
       if (newTrack) {
         if (isMultiTrackSelectHotkeyPressed) {
           // Toggle selection of clicked track during multi-select mode.
@@ -400,7 +391,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         }
       }
     },
-    [isMultiTrackSelectHotkeyPressed, toggleTrack, clearTracks, addTracks]
+    [toggleTrack, clearTracks, addTracks]
   );
 
   /** Report clicked tracks via the passed callback. */
@@ -421,16 +412,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         handleBackgroundClicked();
       }
     },
-    [
-      canv,
-      dataset,
-      props.onClickId,
-      handleBackgroundClicked,
-      handleObjectClicked,
-      clearTracks,
-      updateCanvasCursor,
-      isMultiTrackSelectHotkeyPressed,
-    ]
+    [canv, dataset, props.onClickId, clearTracks, handleObjectClicked, handleBackgroundClicked]
   );
 
   // Mouse event handlers
@@ -596,31 +578,30 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     </TooltipButtonStyleLink>
   );
   const labelData: LabelData | undefined = labels[props.annotationState.currentLabelIdx ?? 0];
+
+  const annotationShortcutKeys = [];
   const shouldShowRangeSelectionHotkey = props.annotationState.baseSelectionMode !== AnnotationSelectionMode.RANGE;
   const shouldShowReuseValueHotkey = labelData?.options.type === LabelType.INTEGER && labelData?.options.autoIncrement;
+  if (shouldShowRangeSelectionHotkey) {
+    annotationShortcutKeys.push(SHORTCUT_KEYS.annotation.selectRange);
+  }
+  if (shouldShowReuseValueHotkey) {
+    annotationShortcutKeys.push(SHORTCUT_KEYS.annotation.reuseValue);
+  }
 
   return (
     <CanvasContainer ref={containerRef} $annotationModeEnabled={props.annotationState.isAnnotationModeEnabled}>
       {
-        // TODO: Fade out annotation mode modal if mouse approaches top left corner?
-        // TODO: Make the hotkey text change styling if the hotkey is pressed?
+        // TODO: Fade out annotation mode modal if mouse approaches top left
+        // corner? (This would require mouse position to be a state variable,
+        // might cause too many re-renders)
         props.annotationState.isAnnotationModeEnabled && (
           <AnnotationModeContainer>
-            <span style={{ marginLeft: "2px" }}>
-              <b>Annotation editing in progress...</b>
-            </span>
-            {shouldShowRangeSelectionHotkey && (
-              <FlexRowAlignCenter $gap={6}>
-                <HotkeyText>{ShortcutKeyDisplayName[ShortcutKeycode.ANNOTATION_SELECT_RANGE]}</HotkeyText> hold to
-                select range
-              </FlexRowAlignCenter>
-            )}
-            {shouldShowReuseValueHotkey && (
-              <FlexRowAlignCenter $gap={6}>
-                <HotkeyText>{ShortcutKeyDisplayName[ShortcutKeycode.ANNOTATION_REUSE_VALUE]}</HotkeyText>
-                hold to reuse last value
-              </FlexRowAlignCenter>
-            )}
+            <ShortcutKeyList
+              title="Annotation editing in progress..."
+              shortcutKeys={annotationShortcutKeys}
+              inline={true}
+            />
           </AnnotationModeContainer>
         )
       }
