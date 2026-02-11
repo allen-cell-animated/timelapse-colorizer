@@ -7,6 +7,7 @@ import {
   computeTrackLinePointsAndIds,
   computeVertexColorsFromIds,
   getLineUpdateFlags,
+  getTrackPathRenderInfo,
 } from "src/colorizer/utils/data_utils";
 
 import type { TrackPathParams } from "./types";
@@ -128,48 +129,10 @@ export default class TrackPath3D {
    * @param currentFrame The current frame index.
    */
   public updateVisibleRange(currentFrame: number): void {
-    // Show nothing if track doesn't exist
-    if (!this.params || !this.params.track || !this.params.showTrackPath) {
-      this.lineObject.setVisibleSegmentsRange(0, 0);
-      this.lineOverlayObject.setVisibleSegmentsRange(0, 0);
-      return;
-    }
-    const track = this.params.track;
-    const trackStepIdx = currentFrame - track.startTime();
-    let endingInstance;
-    let startingInstance;
-
-    if (this.params.showAllTrackPathPastSteps) {
-      startingInstance = 0;
-    } else {
-      startingInstance = Math.max(0, trackStepIdx - this.params.trackPathPastSteps);
-    }
-
-    if (this.params.showAllTrackPathFutureSteps) {
-      endingInstance = track.duration();
-    } else {
-      endingInstance = Math.min(trackStepIdx + this.params.trackPathFutureSteps, track.duration());
-    }
-
-    // Check if the path should be hidden entirely because it is outside of the
-    // range. This happens when all past paths are shown and the track has ended,
-    // or if all future paths are shown and the track has not yet started.
-    if (!this.params.persistTrackPathWhenOutOfRange) {
-      const isVisiblePastEnd = this.params.showAllTrackPathPastSteps && trackStepIdx >= track.duration();
-      const isVisibleBeforeStart = this.params.showAllTrackPathFutureSteps && trackStepIdx < 0;
-      if (isVisiblePastEnd || isVisibleBeforeStart) {
-        startingInstance = 0;
-        endingInstance = 0;
-      }
-    }
-
-    // Update color ramp related logic
-    const maxTrackLength = this.params.dataset?.getMaxTrackLength() || track.duration();
-    const pastSteps = this.params.showAllTrackPathPastSteps ? maxTrackLength : this.params.trackPathPastSteps;
-    const futureSteps = this.params.showAllTrackPathFutureSteps ? maxTrackLength : this.params.trackPathFutureSteps;
-
-    const rampScale = Math.max(pastSteps, futureSteps) * 2;
-    const rampOffset = trackStepIdx;
+    const { rampScale, rampOffset, startingInstance, endingInstance } = getTrackPathRenderInfo(
+      this.params,
+      currentFrame
+    );
     this.lineObject.setColorRampScale(rampScale, rampOffset);
     this.lineOverlayObject.setColorRampScale(rampScale, rampOffset);
     this.lineObject.setVisibleSegmentsRange(startingInstance, Math.max(0, endingInstance));
