@@ -24,11 +24,13 @@ export default function BackdropToggleButton(): ReactElement {
   const setBackdropVisible = useViewerStateStore((state) => state.setBackdropVisible);
   const setObjectOpacity = useViewerStateStore((state) => state.setObjectOpacity);
 
-  // Tooltip shows current backdrop + link to viewer settings
   const backdropData = dataset?.getBackdropData();
-  const hasBackdrops = backdropData !== undefined && backdropData.size > 0;
+  const hasBackdrops = backdropData !== undefined && backdropData.size > 0 && backdropKey !== null;
+  const selectedBackdrop = hasBackdrops ? backdropData.get(backdropKey) : undefined;
 
-  const backdropsAsItems: SelectItem[] = Array.from(backdropData?.entries() ?? []).map(([key, backdrop]) => ({
+  // Dropdown contents
+  const backdropDataArr = Array.from(backdropData?.entries() ?? []);
+  const backdropsAsItems: SelectItem[] = backdropDataArr.map(([key, backdrop]) => ({
     value: key,
     label: backdrop.name,
   }));
@@ -36,7 +38,7 @@ export default function BackdropToggleButton(): ReactElement {
   // Tooltip
   const backdropTooltipContents: ReactNode[] = [
     <span key="backdrop-name" style={{ color: theme.color.text.button }}>
-      {hasBackdrops && backdropKey ? backdropData.get(backdropKey)?.name : "(No backdrops available)"}
+      {selectedBackdrop?.name ?? "(No backdrops available)"}
     </span>,
   ];
 
