@@ -212,10 +212,10 @@ export default class TrackPath2D {
     (this.line.material as SubrangeLineMaterial).colorRampVertexScale = rampScale;
     (this.line.material as SubrangeLineMaterial).colorRampVertexOffset = rampOffset;
     (this.line.material as SubrangeLineMaterial).minInstance = startingInstance;
+    this.line.geometry.instanceCount = endingInstance;
     this.line.material.needsUpdate = true;
 
     (this.bgLine.material as SubrangeLineMaterial).minInstance = startingInstance;
-    this.line.geometry.instanceCount = endingInstance;
     this.bgLine.geometry.instanceCount = endingInstance;
     this.bgLine.material.needsUpdate = true;
   }
