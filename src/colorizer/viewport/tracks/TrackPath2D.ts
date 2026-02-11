@@ -211,25 +211,13 @@ export default class TrackPath2D {
     );
     (this.line.material as SubrangeLineMaterial).colorRampVertexScale = rampScale;
     (this.line.material as SubrangeLineMaterial).colorRampVertexOffset = rampOffset;
+    (this.line.material as SubrangeLineMaterial).minInstance = startingInstance;
     this.line.material.needsUpdate = true;
 
-    if (
-      !(this.line.material instanceof SubrangeLineMaterial) ||
-      !(this.bgLine.material instanceof SubrangeLineMaterial)
-    ) {
-      return;
-    }
-
-    // Update color ramp related logic
-    const maxTrackLength = this.params.dataset?.getMaxTrackLength() || track.duration();
-    const pastSteps = this.params.showAllTrackPathPastSteps ? maxTrackLength : this.params.trackPathPastSteps;
-    const futureSteps = this.params.showAllTrackPathFutureSteps ? maxTrackLength : this.params.trackPathFutureSteps;
-    this.line.material.colorRampVertexOffset = trackStepIdx;
-    this.line.material.colorRampVertexScale = Math.max(pastSteps, futureSteps) * 2;
-
-    this.line.material.minInstance = startingInstance;
-    this.bgLine.material.minInstance = startingInstance;
+    (this.bgLine.material as SubrangeLineMaterial).minInstance = startingInstance;
     this.line.geometry.instanceCount = Math.max(0, endingInstance);
+    this.bgLine.geometry.instanceCount = Math.max(0, endingInstance);
+    this.bgLine.material.needsUpdate = true;
   }
 
   /**
