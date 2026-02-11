@@ -215,8 +215,8 @@ export default class TrackPath2D {
     this.line.material.needsUpdate = true;
 
     (this.bgLine.material as SubrangeLineMaterial).minInstance = startingInstance;
-    this.line.geometry.instanceCount = Math.max(0, endingInstance);
-    this.bgLine.geometry.instanceCount = Math.max(0, endingInstance);
+    this.line.geometry.instanceCount = endingInstance;
+    this.bgLine.geometry.instanceCount = endingInstance;
     this.bgLine.material.needsUpdate = true;
   }
 
