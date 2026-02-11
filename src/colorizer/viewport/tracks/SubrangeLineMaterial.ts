@@ -1,11 +1,15 @@
-import { UniformsUtils } from "three";
+import { type Texture, UniformsUtils } from "three";
 import { LineMaterial, type LineMaterialParameters } from "three/addons/lines/LineMaterial";
+
+import ColorRamp from "src/colorizer/ColorRamp";
 
 import vertexShader from "./track.vert";
 
 type SubrangeLineMaterialParameters = LineMaterialParameters & {
   minInstance?: number;
 };
+
+const DEFAULT_COLOR_RAMP_TEXTURE = new ColorRamp(["#aaa", "#fff"]).texture;
 
 /**
  * Replacement for LineMaterial with custom vertex shader to support showing
@@ -16,11 +20,17 @@ export default class SubrangeLineMaterial extends LineMaterial {
   constructor(params?: SubrangeLineMaterialParameters) {
     super(params);
 
+    const emptyColorRamp = DEFAULT_COLOR_RAMP_TEXTURE;
+
     this.vertexShader = vertexShader;
     this.uniforms = UniformsUtils.merge([
       this.uniforms,
       {
         minInstance: { value: params?.minInstance ?? 0 },
+        useColorRamp: { value: false },
+        colorRamp: { value: emptyColorRamp },
+        colorRampVertexScale: { value: 1 },
+        colorRampVertexOffset: { value: 0 },
       },
     ]);
     this.uniformsNeedUpdate = true;
@@ -33,5 +43,30 @@ export default class SubrangeLineMaterial extends LineMaterial {
    */
   set minInstance(value: number) {
     this.uniforms.minInstance.value = value;
+  }
+
+  set useColorRamp(value: boolean) {
+    this.uniforms.useColorRamp.value = value;
+  }
+
+  set colorRamp(value: Texture) {
+    this.uniforms.colorRamp.value = value;
+  }
+
+  /** The number of vertices that the color ramp spans. */
+  set colorRampVertexScale(value: number) {
+    this.uniforms.colorRampVertexScale.value = value;
+  }
+
+  /**
+   * The vertex index that will be assigned the middle of the color ramp. Vertex
+   * indices start at 0 for the first vertex in the line segments geometry.
+   *
+   * For example, if the color ramp spans 10 vertices, setting
+   * `colorRampVertexOffset` to 5 will center the color ramp on the 5th vertex,
+   * with the starting color at vertex 0 and the ending color at vertex 10.
+   */
+  set colorRampVertexOffset(value: number) {
+    this.uniforms.colorRampVertexOffset.value = value;
   }
 }
