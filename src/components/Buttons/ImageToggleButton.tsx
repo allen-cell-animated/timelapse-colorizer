@@ -37,14 +37,22 @@ export function ImageToggleButton(props: ToggleImageButtonProps): ReactElement {
   const popupContainerRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
 
-  // When the backdrop or channels are not visible, clicking the button shows
-  // them. When they are currently visible, clicking the button opens the config
-  // menu. Clicking again while the config menu is open hides the
-  // backdrop/channels and closes the config menu.
-  const tooltipTitle = (props.visible ? (configMenuOpen ? "Hide" : "Configure ") : "Show") + " " + props.imageType;
+  let buttonActionVerb: string;
+  if (props.visible) {
+    // While visible, clicking the first time opens the config menu, and
+    // clicking again hides the image layer.
+    if (!configMenuOpen) {
+      buttonActionVerb = "Configure";
+    } else {
+      buttonActionVerb = "Hide";
+    }
+  } else {
+    buttonActionVerb = "Show";
+  }
+  const tooltipTitle = buttonActionVerb + " " + props.imageType;
 
   const tooltipContents = [...props.tooltipContents];
-  if (!configMenuOpen && props.visible) {
+  if (props.visible && !configMenuOpen) {
     tooltipContents.push("Double-click to hide " + props.imageType.toLowerCase());
   }
 
@@ -89,6 +97,8 @@ export function ImageToggleButton(props: ToggleImageButtonProps): ReactElement {
     </FlexColumn>
   );
 
+  const isVisible = props.visible && !props.disabled;
+
   return (
     <div ref={popupContainerRef}>
       <Popover
@@ -106,11 +116,7 @@ export function ImageToggleButton(props: ToggleImageButtonProps): ReactElement {
           tooltipRef={tooltipRef}
           getPopupContainer={() => popupContainerRef.current || document.body}
         >
-          <IconButton
-            type={props.visible && !props.disabled ? "primary" : "link"}
-            onClick={onClick}
-            disabled={props.disabled}
-          >
+          <IconButton type={isVisible ? "primary" : "link"} onClick={onClick} disabled={props.disabled}>
             {props.visible ? <ImagesIconSVG /> : <ImagesSlashIconSVG />}
             <VisuallyHidden>{tooltipTitle}</VisuallyHidden>
           </IconButton>
