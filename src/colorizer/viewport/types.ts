@@ -54,7 +54,9 @@ export type RenderCanvasStateParams = {
   datasetKey: string | null;
   pendingFrame: number;
   featureKey: string | null;
+  /** @deprecated will be removed in a future update */
   track: Track | null;
+  tracks: Map<number, Track>;
   showTrackPath: boolean;
   showTrackPathBreaks: boolean;
   trackPathColorRamp: ColorRamp;
@@ -76,6 +78,7 @@ export type RenderCanvasStateParams = {
   outlierDrawSettings: DrawSettings;
   outOfRangeDrawSettings: DrawSettings;
   inRangeLUT: Uint8Array;
+  isSelectedLut: Uint8Array;
   vectorMotionDeltas: Float32Array | null;
   vectorVisible: boolean;
   vectorColor: Color;

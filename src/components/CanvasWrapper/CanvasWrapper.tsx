@@ -14,6 +14,7 @@ import styled from "styled-components";
 import { Vector2 } from "three";
 
 import { NoImageSVG, TagIconSVG, TagSlashIconSVG } from "src/assets";
+import type { Dataset } from "src/colorizer";
 import { type LabelData, LabelType } from "src/colorizer/AnnotationData";
 import {
   AnnotationSelectionMode,
@@ -29,8 +30,8 @@ import TooltipButtonStyleLink from "src/components/Buttons/TooltipButtonStyleLin
 import LoadingSpinner from "src/components/LoadingSpinner";
 import AnnotationInputPopover from "src/components/Tabs/Annotation/AnnotationInputPopover";
 import { TooltipWithSubtitle } from "src/components/Tooltips/TooltipWithSubtitle";
-import { CANVAS_ASPECT_RATIO } from "src/constants";
-import type { AnnotationState } from "src/hooks";
+import { CANVAS_ASPECT_RATIO, ShortcutKeycode, ShortcutKeyDisplayName } from "src/constants";
+import { type AnnotationState, useShortcutKey } from "src/hooks";
 import { renderCanvasStateParamsSelector } from "src/state";
 import { useViewerStateStore } from "src/state/ViewerState";
 import { AppThemeContext } from "src/styles/AppStyle";
@@ -148,14 +149,15 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   // Access state properties
   const pendingFrame = useViewerStateStore((state) => state.pendingFrame);
   const currentFrame = useViewerStateStore((state) => state.currentFrame);
-  const clearTrack = useViewerStateStore((state) => state.clearTrack);
   const collection = useViewerStateStore((state) => state.collection);
   const dataset = useViewerStateStore((state) => state.dataset);
   const updateChannelSettings = useViewerStateStore((state) => state.updateChannelSettings);
   const setGetChannelDataRangeCallback = useViewerStateStore((state) => state.setGetChannelDataRangeCallback);
   const setApplyChannelRangePresetCallback = useViewerStateStore((state) => state.setApplyChannelRangePresetCallback);
   const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
-  const setTrack = useViewerStateStore((state) => state.setTrack);
+  const clearTracks = useViewerStateStore((state) => state.clearTracks);
+  const addTracks = useViewerStateStore((state) => state.addTracks);
+  const toggleTrack = useViewerStateStore((state) => state.toggleTrack);
   const showScaleBar = useViewerStateStore((state) => state.showScaleBar);
   const showTimestamp = useViewerStateStore((state) => state.showTimestamp);
   const frameLoadResult = useViewerStateStore((state) => state.frameLoadResult);
@@ -169,6 +171,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   const isFrameLoading = pendingFrame !== currentFrame;
   const loadProgress = props.loading ? props.loadingProgress : null;
+
+  const isMultiTrackSelectHotkeyPressed = useShortcutKey(ShortcutKeycode.MULTI_TRACK_SELECT);
 
   // Add subscriber so canvas parameters are updated when the state changes.
   useEffect(() => {
@@ -374,25 +378,59 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     ]
   );
 
+  const handleBackgroundClicked = useCallback((): void => {
+    if (isMultiTrackSelectHotkeyPressed) {
+      return;
+    }
+    clearTracks();
+  }, [isMultiTrackSelectHotkeyPressed, clearTracks]);
+
+  const handleObjectClicked = useCallback(
+    (dataset: Dataset, globalId: number) => {
+      const trackId = dataset.getTrackId(globalId);
+      const newTrack = dataset.getTrack(trackId);
+      if (newTrack) {
+        if (isMultiTrackSelectHotkeyPressed) {
+          // Toggle selection of clicked track during multi-select mode.
+          toggleTrack(newTrack);
+        } else {
+          // Select only the clicked track.
+          clearTracks();
+          addTracks(newTrack);
+        }
+      }
+    },
+    [isMultiTrackSelectHotkeyPressed, toggleTrack, clearTracks, addTracks]
+  );
+
   /** Report clicked tracks via the passed callback. */
   const handleClick = useCallback(
     async (event: MouseEvent): Promise<void> => {
       setLastClickPosition([event.offsetX, event.offsetY]);
-      const info = canv.getIdAtPixel(event.offsetX, event.offsetY);
-      // Reset track input
-      if (dataset === null || info === null || info.globalId === undefined) {
-        clearTrack();
-      } else {
-        const trackId = dataset.getTrackId(info.globalId);
-        const newTrack = dataset.getTrack(trackId);
-        if (newTrack) {
-          setTrack(newTrack);
-        }
-      }
-      props.onClickId(info);
       updateCanvasCursor(event.offsetX, event.offsetY);
+      const info = canv.getIdAtPixel(event.offsetX, event.offsetY);
+      props.onClickId(info);
+
+      // Update track selection based on clicked object
+      if (dataset === null) {
+        clearTracks();
+      } else if (info?.globalId !== undefined) {
+        handleObjectClicked(dataset, info.globalId);
+      } else {
+        // User clicked on background or on a cell with no data.
+        handleBackgroundClicked();
+      }
     },
-    [canv, dataset, props.onClickId, setTrack, clearTrack, updateCanvasCursor]
+    [
+      canv,
+      dataset,
+      props.onClickId,
+      handleBackgroundClicked,
+      handleObjectClicked,
+      clearTracks,
+      updateCanvasCursor,
+      isMultiTrackSelectHotkeyPressed,
+    ]
   );
 
   // Mouse event handlers
@@ -573,12 +611,13 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             </span>
             {shouldShowRangeSelectionHotkey && (
               <FlexRowAlignCenter $gap={6}>
-                <HotkeyText>Shift</HotkeyText> hold to select range
+                <HotkeyText>{ShortcutKeyDisplayName[ShortcutKeycode.ANNOTATION_SELECT_RANGE]}</HotkeyText> hold to
+                select range
               </FlexRowAlignCenter>
             )}
             {shouldShowReuseValueHotkey && (
               <FlexRowAlignCenter $gap={6}>
-                <HotkeyText>Ctrl</HotkeyText>
+                <HotkeyText>{ShortcutKeyDisplayName[ShortcutKeycode.ANNOTATION_REUSE_VALUE]}</HotkeyText>
                 hold to reuse last value
               </FlexRowAlignCenter>
             )}

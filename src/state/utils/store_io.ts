@@ -9,6 +9,7 @@ import {
   loadScatterPlotSliceFromParams,
   loadThresholdSliceFromParams,
   loadTimeSliceFromParams,
+  loadTrackSliceFromParams,
   loadVectorSliceFromParams,
   selectBackdropSliceSerializationDeps,
   selectChannelSliceSerializationDeps,
@@ -19,6 +20,7 @@ import {
   selectScatterPlotSliceSerializationDeps,
   selectThresholdSliceSerializationDeps,
   selectTimeSliceSerializationDeps,
+  selectTrackSliceSerializationDeps,
   selectVectorSliceSerializationDeps,
   serializeBackdropSlice,
   serializeChannelSlice,
@@ -29,6 +31,7 @@ import {
   serializeScatterPlotSlice,
   serializeThresholdSlice,
   serializeTimeSlice,
+  serializeTrackSlice,
   serializeVectorSlice,
   type ViewerStore,
   type ViewerStoreSerializableState,
@@ -40,6 +43,7 @@ import type { SerializedStoreData, Store } from "src/state/types";
 export const selectSerializationDependencies = (state: ViewerStore): Partial<ViewerStore> => ({
   ...selectCollectionSliceSerializationDeps(state),
   ...selectDatasetSliceSerializationDeps(state),
+  ...selectTrackSliceSerializationDeps(state),
   ...selectTimeSliceSerializationDeps(state),
   ...selectColorRampSliceSerializationDeps(state),
   ...selectThresholdSliceSerializationDeps(state),
@@ -61,6 +65,7 @@ export const serializeViewerState = (state: Partial<ViewerStoreSerializableState
   return removeUndefinedProperties({
     ...serializeCollectionSlice(state),
     ...serializeDatasetSlice(state),
+    ...serializeTrackSlice(state),
     ...serializeTimeSlice(state),
     ...serializeColorRampSlice(state),
     ...serializeThresholdSlice(state),
@@ -143,12 +148,13 @@ export const loadViewerStateFromParams = (store: Store<ViewerStore>, params: URL
   // 2. Dependent on dataset object:
   loadBackdropSliceFromParams(store.getState(), params);
   loadDatasetSliceFromParams(store.getState(), params);
+  loadTrackSliceFromParams(store.getState(), params);
   loadScatterPlotSliceFromParams(store.getState(), params);
   loadThresholdSliceFromParams(store.getState(), params);
   loadVectorSliceFromParams(store.getState(), params);
   loadChannelSliceFromParams(store.getState(), params);
 
-  // 3. Dependent on dataset slice (track/backdrop/features):
+  // 3. Dependent on dataset + track slices:
   loadTimeSliceFromParams(store.getState(), params);
 
   // 4. Dependent on dataset + threshold slices:

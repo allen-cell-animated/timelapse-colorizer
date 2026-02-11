@@ -53,7 +53,8 @@ export default class ColorRamp {
     const numStops = this.colorStops.length;
     this.textureLinear = new DataTexture(new Float32Array(linearSRGBDataArr), numStops, 1, RGBAFormat, FloatType);
     this.textureSRGB = new DataTexture(new Float32Array(sRGBDataArr), numStops, 1, RGBAFormat, FloatType);
-    for (const texture of [this.textureLinear, this.textureSRGB]) {
+
+    const configureTexture = (texture: DataTexture): void => {
       if (this.type === ColorRampType.CATEGORICAL) {
         texture.minFilter = NearestFilter;
         texture.magFilter = NearestFilter;
@@ -63,7 +64,9 @@ export default class ColorRamp {
       }
       texture.internalFormat = "RGBA32F";
       texture.needsUpdate = true;
-    }
+    };
+    configureTexture(this.textureLinear);
+    configureTexture(this.textureSRGB);
   }
 
   /**
