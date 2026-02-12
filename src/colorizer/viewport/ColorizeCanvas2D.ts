@@ -82,6 +82,7 @@ type ColorizeUniformTypes = {
   inRangeIds: Texture;
   selectedIds: Texture;
   selectedTracksPalette: Texture;
+  useTracksPalette: boolean;
   /** LUT mapping from segmentation ID (raw pixel value) to the global ID. */
   segIdToGlobalId: DataTexture;
   segIdOffset: number;
@@ -133,6 +134,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
     inRangeIds: new Uniform(emptyInRangeIds),
     selectedIds: new Uniform(emptyIsSelectedIds),
     selectedTracksPalette: new Uniform(emptyColorRamp),
+    useTracksPalette: new Uniform(false),
     segIdToGlobalId: new Uniform(emptySegIdToGlobalId),
     segIdOffset: new Uniform(0),
     overlay: new Uniform(emptyOverlay),
@@ -670,6 +672,11 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     }
     if (hasPropertyChanged(params, prevParams, ["selectedTracksPaletteRamp"])) {
       this.setUniform("selectedTracksPalette", params.selectedTracksPaletteRamp.texture);
+    }
+    if (hasPropertyChanged(params, prevParams, ["tracks", "outlineColorMode"])) {
+      const useTracksPalette =
+        params.tracks.size > 1 && params.outlineColorMode === TrackOutlineColorMode.USE_AUTO_COLOR;
+      this.setUniform("useTracksPalette", useTracksPalette);
     }
 
     this.render();

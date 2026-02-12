@@ -11,9 +11,10 @@ uniform usampler2D outlierData;
 uniform usampler2D inRangeIds;
 /** 
  * A mapping of IDs that are selected in the current track(s). If an object's
- * index is `i`, `selectedIds[i] = 1` if the object is selected.
+ * index is `i`, `selectedIds[i] >= 1` if the object is selected.
 */
 uniform usampler2D selectedIds;
+uniform bool useTracksPalette;
 uniform sampler2D selectedTracksPalette;
 /** Min and max feature values that define the endpoints of the color map. Values
  * outside the range will be clamped to the nearest endpoint.
@@ -145,6 +146,9 @@ vec4 getCategoricalColor(float featureValue) {
 }
 
 vec4 getOutlineColor(int colorIdx) {
+  if (!useTracksPalette) {
+    return vec4(outlineColor, 1);
+  }
   float width = float(textureSize(selectedTracksPalette, 0).x);
   float adjustedIdx = (0.5 + float(colorIdx)) / width;
   return texture(selectedTracksPalette, vec2(adjustedIdx, 0.5));
@@ -239,7 +243,7 @@ vec4 getObjectColor(vec2 sUv, float opacity) {
       int colorIdx = int(selectionIdx) - 1;
       vec4 color = getOutlineColor(colorIdx);
       return vec4(color.rgb, 1.0);
-    } else if (isEdge(sUv, labelId, OUTLINE_WIDTH_PX + 2.0)) {
+    } else if (isEdge(sUv, labelId, OUTLINE_WIDTH_PX + 2.0) && useTracksPalette) {
       return vec4(backgroundColor, 1.0);
     }
   }
