@@ -302,7 +302,7 @@ export default class CanvasOverlay implements IRenderCanvas {
         this.innerCanvas3d = new ColorizeCanvas3D();
       }
       await this.setCanvas(this.innerCanvas3d);
-    } else if (this.innerCanvasType === CanvasType.CANVAS_3D && viewMode === ViewMode.VIEW_2D) {
+    } else if (this.innerCanvasType !== CanvasType.CANVAS_2D && viewMode === ViewMode.VIEW_2D) {
       this.innerCanvasType = CanvasType.CANVAS_2D;
       await this.setCanvas(this.innerCanvas2d);
     }
@@ -312,10 +312,9 @@ export default class CanvasOverlay implements IRenderCanvas {
     const prevParams = this.params;
     this.params = params;
 
-    // If the dataset has changed types, construct and initialize the inner
-    // canvas.
+    // Handle updates the the dataset viewing mode (2D/3D)
     let hasAlreadyUpdatedCanvasParams = false;
-    if (hasPropertyChanged(params, prevParams, ["dataset", "viewMode"])) {
+    if (hasPropertyChanged(params, prevParams, ["viewMode"])) {
       await this.setCanvasType(params.viewMode);
       hasAlreadyUpdatedCanvasParams = true;
     }
