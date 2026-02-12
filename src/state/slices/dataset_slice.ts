@@ -1,7 +1,7 @@
 import type { StateCreator } from "zustand";
 
 import type Dataset from "src/colorizer/Dataset";
-import { decodeInt, parseViewMode, UrlParam } from "src/colorizer/utils/url_utils";
+import { parseViewMode, UrlParam } from "src/colorizer/utils/url_utils";
 import type { SerializedStoreData } from "src/state/types";
 
 import type { CollectionSlice } from "./collection_slice";
@@ -119,7 +119,6 @@ export const createDatasetSlice: StateCreator<CollectionSlice & DatasetSlice, []
     //   viewMode = ViewMode.VIEW_3D;
     // }
 
-    // TODO: Dispose of old dataset?
     set({ datasetKey: key, dataset, featureKey, backdropKey, viewMode });
   },
 
