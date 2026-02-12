@@ -331,8 +331,8 @@ export default function AntStyledSelect<
         menuPlacement={props.menuPlacement}
         components={{ DropdownIndicator: dropdownIndicator, ...props.components }}
         styles={{ ...(customStyles as unknown as StylesConfig<SelectItem, IsMulti, Group>), ...props.styles }}
-        // Do not use default Select loading indicator-- it is handled by
-        // dropdown indicator instead.
+        // Select default loading styling is overridden (since it is handled via
+        // DropdownIndicator instead).
         isLoading={false}
       />
     </SelectContainer>
