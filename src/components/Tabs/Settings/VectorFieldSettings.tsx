@@ -33,9 +33,7 @@ const enum VectorSettingsHtmlIds {
   VECTOR_TOOLTIP_MODE_RADIO = "vector-tooltip-mode-radio",
 }
 
-type VectorFieldSettingsProps = {};
-
-export default function VectorFieldSettings(_props: VectorFieldSettingsProps): ReactElement {
+export default function VectorFieldSettings(): ReactElement {
   const dataset = useViewerStateStore((state) => state.dataset);
   const viewMode = useViewerStateStore((state) => state.viewMode);
   const setVectorColor = useViewerStateStore((state) => state.setVectorColor);

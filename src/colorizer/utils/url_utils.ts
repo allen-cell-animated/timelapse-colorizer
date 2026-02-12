@@ -64,7 +64,6 @@ export enum UrlParam {
   SHOW_SCALEBAR = "scalebar",
   SHOW_TIMESTAMP = "timestamp",
   KEEP_RANGE = "keep-range",
-  // INTERPOLATE_3D = "interpolate",
   SCATTERPLOT_X_AXIS = "scatter-x",
   SCATTERPLOT_Y_AXIS = "scatter-y",
   SCATTERPLOT_RANGE_MODE = "scatter-range",

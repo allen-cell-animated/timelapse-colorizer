@@ -295,9 +295,7 @@ export default class CanvasOverlay implements IRenderCanvas {
     return this.handleRenderableAction(this.innerCanvas.handleZoomOut());
   }
 
-  private async updateCanvasType(viewMode: ViewMode): Promise<void> {
-    // TODO: Change API for this to `setCanvasType`, with the type passed in as
-    // a parameter rather than being read from dataset.
+  private async setCanvasType(viewMode: ViewMode): Promise<void> {
     if (this.innerCanvasType !== CanvasType.CANVAS_3D && viewMode === ViewMode.VIEW_3D) {
       this.innerCanvasType = CanvasType.CANVAS_3D;
       if (!this.innerCanvas3d) {
@@ -318,7 +316,7 @@ export default class CanvasOverlay implements IRenderCanvas {
     // canvas.
     let hasAlreadyUpdatedCanvasParams = false;
     if (hasPropertyChanged(params, prevParams, ["dataset", "viewMode"])) {
-      await this.updateCanvasType(params.viewMode);
+      await this.setCanvasType(params.viewMode);
       hasAlreadyUpdatedCanvasParams = true;
     }
 

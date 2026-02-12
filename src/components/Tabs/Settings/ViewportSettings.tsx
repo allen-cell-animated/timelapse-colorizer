@@ -15,9 +15,7 @@ const enum ViewportSettingsHtmlIds {
   INTERPOLATE_3D_SWITCH = "interpolate-3d-switch",
 }
 
-type ViewportSettingsProps = {};
-
-export default function ViewportSettings(_props: ViewportSettingsProps): ReactElement {
+export default function ViewportSettings(): ReactElement {
   const interpolate3d = useViewerStateStore((state) => state.interpolate3d);
   const setInterpolate3d = useViewerStateStore((state) => state.setInterpolate3d);
   const setShowScaleBar = useViewerStateStore((state) => state.setShowScaleBar);
