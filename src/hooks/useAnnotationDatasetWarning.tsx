@@ -110,8 +110,8 @@ export function useAnnotationDatasetWarning<A extends unknown[], B>(
         style={{ marginTop: 25 }}
         footer={
           <FlexRowAlignCenter style={{ justifyContent: "flex-end" }} $gap={6}>
-            <Button type="default" danger onClick={() => onConfirm(false)}>
-              Do not export
+            <Button type="default" onClick={() => onConfirm(false)}>
+              Proceed without exporting
             </Button>
             <Button type="primary" onClick={() => onConfirm(true)}>
               Export and proceed
@@ -120,7 +120,7 @@ export function useAnnotationDatasetWarning<A extends unknown[], B>(
         }
       >
         <p>Annotations are not preserved between datasets.</p>
-        <p>Export the annotations linked to this dataset?</p>
+        <p>To keep your work, export annotations as a .csv file before proceeding and reimport them later</p>
       </StyledModal>
     </div>
   );
