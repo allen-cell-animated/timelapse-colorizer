@@ -102,27 +102,29 @@ export default class Plotting {
     if (dataset === null || featureKey === null) {
       return;
     }
-    const traces: Partial<Plotly.PlotData>[] = Array.from(tracks.values()).map((track, index) => {
-      const plotinfo = dataset.buildTrackFeaturePlot(track, featureKey);
-      // Add segmentation ID + track ID to customdata for hovertemplate
-      const segIds = track.ids.map((id) => dataset.getSegmentationId(id));
-      const customData = segIds.map((segId) => {
-        return [track.trackId.toString(), segId.toString()];
-      });
+    const traces: Partial<Plotly.PlotData>[] = Array.from(
+      tracks.values().map((track, index) => {
+        const plotinfo = dataset.buildTrackFeaturePlot(track, featureKey);
+        // Add segmentation ID + track ID to customdata for hovertemplate
+        const segIds = track.ids.map((id) => dataset.getSegmentationId(id));
+        const customData = segIds.map((segId) => {
+          return [track.trackId.toString(), segId.toString()];
+        });
 
-      return {
-        x: plotinfo.domain,
-        y: plotinfo.range,
-        ids: track.ids.map((id) => id.toString()),
-        type: "scatter",
-        name: `Track ${track.trackId}`,
-        customdata: customData,
-        hovertemplate: getHoverTemplate(dataset, TIME_FEATURE_KEY, featureKey),
-        line: {
-          color: DEFAULT_LINE_PALETTE[index % DEFAULT_LINE_PALETTE.length],
-        },
-      };
-    });
+        return {
+          x: plotinfo.domain,
+          y: plotinfo.range,
+          ids: track.ids.map((id) => id.toString()),
+          type: "scatter",
+          name: `Track ${track.trackId}`,
+          customdata: customData,
+          hovertemplate: getHoverTemplate(dataset, TIME_FEATURE_KEY, featureKey),
+          line: {
+            color: DEFAULT_LINE_PALETTE[index % DEFAULT_LINE_PALETTE.length],
+          },
+        };
+      })
+    );
 
     const title = tracks.size === 1 ? `Track ${Array.from(tracks.keys())[0]}` : tracks.size + " tracks selected";
     const layout: Partial<Plotly.Layout> = {
