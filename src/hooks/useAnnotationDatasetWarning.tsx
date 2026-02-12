@@ -5,7 +5,7 @@ import StyledModal from "src/components/Modals/StyledModal";
 import { SHORTCUT_KEYS } from "src/constants";
 import type { AnnotationState } from "src/hooks/useAnnotations";
 import { useViewerStateStore } from "src/state";
-import { FlexRow, FlexRowAlignCenter } from "src/styles/utils";
+import { FlexRowAlignCenter } from "src/styles/utils";
 import { downloadCsv } from "src/utils/file_io";
 import { areAnyHotkeysPressed } from "src/utils/user_input";
 
@@ -104,26 +104,23 @@ export function useAnnotationDatasetWarning<A extends unknown[], B>(
       <StyledModal
         open={isWarningVisible}
         onCancel={onCancel}
-        title="Save current annotations?"
+        title="Save annotations?"
         width={400}
         getContainer={() => modalContainerRef.current || document.body}
         style={{ marginTop: 25 }}
         footer={
-          <FlexRowAlignCenter style={{ justifyContent: "space-between" }}>
-            <Button onClick={onCancel}>Cancel</Button>
-            <FlexRow $gap={6}>
-              <Button type="default" danger onClick={() => onConfirm(false)}>
-                Do not save
-              </Button>
-              <Button type="primary" onClick={() => onConfirm(true)}>
-                Save
-              </Button>
-            </FlexRow>
+          <FlexRowAlignCenter style={{ justifyContent: "flex-end" }} $gap={6}>
+            <Button type="default" danger onClick={() => onConfirm(false)}>
+              Do not export
+            </Button>
+            <Button type="primary" onClick={() => onConfirm(true)}>
+              Export and proceed
+            </Button>
           </FlexRowAlignCenter>
         }
       >
-        <p>Annotations are not preserved between datasets; existing annotations will be discarded.</p>
-        <p>Would you like to save your current annotations before continuing?</p>
+        <p>Annotations are not preserved between datasets.</p>
+        <p>Export the annotations linked to this dataset?</p>
       </StyledModal>
     </div>
   );
