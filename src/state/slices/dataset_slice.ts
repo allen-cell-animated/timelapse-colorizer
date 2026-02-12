@@ -1,7 +1,7 @@
 import type { StateCreator } from "zustand";
 
 import type Dataset from "src/colorizer/Dataset";
-import { parseViewMode, UrlParam } from "src/colorizer/utils/url_utils";
+import { UrlParam } from "src/colorizer/utils/url_utils";
 import type { SerializedStoreData } from "src/state/types";
 
 import type { CollectionSlice } from "./collection_slice";
@@ -18,6 +18,8 @@ export type DatasetSliceState = {
   /** The key of the backdrop image set in the current dataset. `null` if there
    * is no Dataset loaded or if the dataset does not have backdrops. */
   backdropKey: string | null;
+
+  // Derived state flags
   /**
    * Current view mode, either 2D or 3D. Will be automatically switched for
    * datasets that support only one or the other.
@@ -25,10 +27,7 @@ export type DatasetSliceState = {
   viewMode: ViewMode;
 };
 
-export type DatasetSliceSerializableState = Pick<
-  DatasetSliceState,
-  "datasetKey" | "featureKey" | "backdropKey" | "viewMode"
->;
+export type DatasetSliceSerializableState = Pick<DatasetSliceState, "datasetKey" | "featureKey" | "backdropKey">;
 
 export type DatasetSliceActions = {
   setDataset: (key: string, dataset: Dataset) => void;
@@ -136,9 +135,6 @@ export const serializeDatasetSlice = (slice: Partial<DatasetSliceSerializableSta
   if (slice.backdropKey !== undefined && slice.backdropKey !== null) {
     ret[UrlParam.BACKDROP_KEY] = slice.backdropKey;
   }
-  if (slice.viewMode !== undefined) {
-    ret[UrlParam.VIEW_MODE] = slice.viewMode;
-  }
   return ret;
 };
 
@@ -147,7 +143,6 @@ export const selectDatasetSliceSerializationDeps = (slice: DatasetSlice): Datase
   datasetKey: slice.datasetKey,
   featureKey: slice.featureKey,
   backdropKey: slice.backdropKey,
-  viewMode: slice.viewMode,
 });
 
 export const loadDatasetSliceFromParams = (slice: DatasetSlice, params: URLSearchParams): void => {
@@ -158,7 +153,6 @@ export const loadDatasetSliceFromParams = (slice: DatasetSlice, params: URLSearc
   }
   const featureKeyParam = params.get(UrlParam.FEATURE);
   const backdropKeyParam = params.get(UrlParam.BACKDROP_KEY);
-  const viewModeParam = parseViewMode(params.get(UrlParam.VIEW_MODE));
 
   if (featureKeyParam !== null) {
     const featureKey = dataset.findFeatureByKeyOrName(featureKeyParam);
@@ -168,8 +162,5 @@ export const loadDatasetSliceFromParams = (slice: DatasetSlice, params: URLSearc
   }
   if (backdropKeyParam !== null && dataset.hasBackdrop(backdropKeyParam)) {
     slice.setBackdropKey(backdropKeyParam);
-  }
-  if (viewModeParam !== undefined) {
-    slice.setViewMode(viewModeParam);
   }
 };

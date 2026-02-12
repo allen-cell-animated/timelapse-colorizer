@@ -18,7 +18,6 @@ import {
   TrackPathColorMode,
 } from "src/colorizer/types";
 import { removeUndefinedProperties } from "src/colorizer/utils/data_utils";
-import { ViewMode } from "src/state/slices";
 
 import { nanToNull } from "./data_load_utils";
 import type { AnyManifestFile } from "./dataset_utils";
@@ -34,7 +33,6 @@ export enum UrlParam {
   SOURCE_ZIP = "zip",
   TRACK = "track",
   FEATURE = "feature",
-  VIEW_MODE = "view",
   TIME = "t",
   THRESHOLDS = "filters",
   RANGE = "range",
@@ -399,13 +397,6 @@ export function decodeFloat(value: string | null): number | undefined {
 
 export function decodeInt(value: string | null): number | undefined {
   return value === null ? undefined : parseInt(value, 10);
-}
-
-export function parseViewMode(mode: string | null): ViewMode | undefined {
-  if (mode === ViewMode.VIEW_2D || mode === ViewMode.VIEW_3D) {
-    return mode;
-  }
-  return undefined;
 }
 
 export function decodeTracks(value: string | null): number[] | undefined {
