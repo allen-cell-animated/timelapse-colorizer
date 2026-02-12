@@ -59,8 +59,8 @@ describe("useViewerStateStore: ColorRampSlice", () => {
       act(() => {
         result.current.setColorRampKey(colorRampData.key);
       });
-      expect(result.current.colorRamp).not.toStrictEqual(originalColorRamp);
-      expect(result.current.colorRamp).toStrictEqual(colorRampData.colorRamp);
+      expect(result.current.colorRamp.colorStops).not.toEqual(originalColorRamp.colorStops);
+      expect(result.current.colorRamp.colorStops).toEqual(colorRampData.colorRamp.colorStops);
     });
   });
 

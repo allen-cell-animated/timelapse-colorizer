@@ -132,7 +132,7 @@ export default function SelectionDropdown(inputProps: React.PropsWithChildren<Se
 
   const [_isPending, startTransition] = useTransition();
   const [searchInput, setSearchInput] = useState("");
-  const [filteredValues, setFilteredValues] = useState<Set<string>>(new Set(options.map((item) => item.value)));
+  const [filteredItems, setFilteredItems] = useState<SelectItem[]>(options);
 
   // Value that is pending confirmation (e.g., during async updates). Cleared if
   // the currently selected value changes.
@@ -161,9 +161,9 @@ export default function SelectionDropdown(inputProps: React.PropsWithChildren<Se
   // Set up fuse for fuzzy searching
   const fuse = useMemo(() => {
     return new Fuse(options, {
-      keys: ["value", "label"],
+      keys: ["label"],
       isCaseSensitive: false,
-      shouldSort: true, // sorts by match score
+      shouldSort: true,
     });
   }, [props.items]);
 
@@ -172,16 +172,16 @@ export default function SelectionDropdown(inputProps: React.PropsWithChildren<Se
     if (searchInput === "") {
       startTransition(() => {
         // Reset to original list
-        setFilteredValues(new Set(options.map((item) => item.value)));
+        setFilteredItems(options);
       });
     } else {
       const searchResult = fuse.search(searchInput);
-      const filteredItems = searchResult.map((result) => result.item.value);
+      const filteredItems = searchResult.map((result) => result.item);
       startTransition(() => {
-        setFilteredValues(new Set(filteredItems));
+        setFilteredItems(filteredItems);
       });
     }
-  }, [searchInput, props.items]);
+  }, [fuse, searchInput, props.items, setFilteredItems]);
 
   // Add tooltip so it only responds to interaction with the selected option in the control area.
   // Fixes a bug where the tooltip would show when hovering anywhere over the dropdown, including
@@ -235,8 +235,7 @@ export default function SelectionDropdown(inputProps: React.PropsWithChildren<Se
         type={props.buttonType ?? "outlined"}
         value={pendingValue ?? selectedOption}
         components={{ Option, Control }}
-        options={options}
-        filterOption={(option) => filteredValues.has(option.value)}
+        options={filteredItems}
         isDisabled={props.disabled}
         isClearable={false}
         isSearchable={props.isSearchable}
