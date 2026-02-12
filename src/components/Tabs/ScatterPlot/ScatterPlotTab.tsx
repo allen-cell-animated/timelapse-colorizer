@@ -20,7 +20,6 @@ import { useViewerStateStore } from "src/state/ViewerState";
 import { AppThemeContext } from "src/styles/AppStyle";
 import { FlexRow, FlexRowAlignCenter } from "src/styles/utils";
 import { downloadCsv } from "src/utils/file_io";
-
 import {
   type DataArray,
   drawCrosshair,
@@ -34,7 +33,7 @@ import {
   splitTraceData,
   subsampleColorRamp,
   type TraceData,
-} from "./scatter_plot_data_utils";
+} from "src/utils/scatter_plot_data_utils";
 
 // TODO: Translate into seconds/minutes/hours for datasets where frame duration is known?
 
