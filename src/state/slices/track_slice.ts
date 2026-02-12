@@ -14,7 +14,7 @@ import type { DatasetSlice } from "src/state/slices/dataset_slice";
 import type { SerializedStoreData, SubscribableStore } from "src/state/types";
 import { addDerivedStateSubscriber } from "src/state/utils/store_utils";
 
-const DEFAULT_TRACK_PALETTE_KEY = DEFAULT_CATEGORICAL_PALETTE_KEY;
+const DEFAULT_TRACK_PALETTE_KEY = "neon";
 const DEFAULT_TRACK_PALETTE = KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_TRACK_PALETTE_KEY)!;
 
 const LUT_UNSELECTED = 0;
@@ -27,6 +27,7 @@ export type TrackSliceState = {
   /** Derived values */
   /** @deprecated */
   track: Track | null;
+  trackColors: Map<number, Color>;
   /**
    * Current color palette for the track path. Currently static; can be made
    * serializable + editable in the future.
@@ -100,6 +101,7 @@ function applyTrackToSelectionLut(lut: Uint8Array, track: Track, colorIdx: numbe
 export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (set, get) => ({
   tracks: new Map<number, Track>(),
   trackToColorId: new Map<number, number>(),
+  trackColors: new Map<number, Color>(),
   selectedTracksPaletteRamp: new ColorRamp(DEFAULT_TRACK_PALETTE.colorStops, ColorRampType.CATEGORICAL),
   track: null,
   isSelectedLut: new Uint8Array(0),
@@ -245,6 +247,18 @@ export const addTrackDerivedStateSubscribers = (store: SubscribableStore<TrackSl
         store.getState().clearTracks(newLut);
       }
       return {};
+    }
+  );
+
+  // Sync track colors w/ color palette + tracks
+  addDerivedStateSubscriber(
+    store,
+    (state) => [state.selectedTracksPaletteRamp, state.trackToColorId],
+    ([selectedTrackRamp, trackToColorId]) => {
+      const trackColors = new Map(
+        Array.from(trackToColorId.entries()).map(([key, value]) => [key, selectedTrackRamp.colorStops[value]])
+      );
+      return { trackColors };
     }
   );
 };

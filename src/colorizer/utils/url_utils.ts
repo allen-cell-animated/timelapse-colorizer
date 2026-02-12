@@ -15,6 +15,7 @@ import {
   LoadTroubleshooting,
   PlotRangeType,
   ThresholdType,
+  TrackOutlineColorMode,
   TrackPathColorMode,
 } from "src/colorizer/types";
 import { removeUndefinedProperties } from "src/colorizer/utils/data_utils";
@@ -49,6 +50,7 @@ export enum UrlParam {
   FILTERED_MODE = "filter-mode",
   FILTERED_COLOR = "filter-color",
   OUTLINE_COLOR = "outline-color",
+  OUTLINE_COLOR_MODE = "outline-mode",
   EDGE_COLOR = "edge-color",
   EDGE_MODE = "edge",
   SHOW_PATH = "path",
@@ -445,6 +447,13 @@ export function parseDrawSettings(
     color: isHexColor(hexColor) ? new Color(hexColor) : defaultSettings.color,
     mode: mode && isDrawMode(modeInt) ? modeInt : defaultSettings.mode,
   };
+}
+
+export function parseTrackOutlineColorMode(mode: string | null): TrackOutlineColorMode | undefined {
+  const modeInt = parseInt(mode || "-1", 10);
+  const isTrackOutlineColorMode =
+    modeInt === TrackOutlineColorMode.USE_CUSTOM_COLOR || modeInt === TrackOutlineColorMode.USE_AUTO_COLOR;
+  return mode && isTrackOutlineColorMode ? (modeInt as TrackOutlineColorMode) : undefined;
 }
 
 export function parseTrackPathMode(mode: string | null): TrackPathColorMode | undefined {

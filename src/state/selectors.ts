@@ -17,6 +17,8 @@ export const renderCanvasStateParamsSelector = (state: ViewerStoreState): Render
   colorRampRange: state.colorRampRange,
   categoricalPaletteRamp: state.categoricalPaletteRamp,
   outlineColor: state.outlineColor,
+  outlineColorMode: state.outlineColorMode,
+  trackColors: state.trackColors,
   edgeColor: state.edgeColor,
   edgeMode: state.edgeMode,
   edgeColorAlpha: state.edgeColorAlpha,

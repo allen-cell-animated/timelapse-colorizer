@@ -1,15 +1,13 @@
 import type { PresetsItem } from "antd/es/color-picker/interface";
 import React, { type ReactElement } from "react";
-import { Color, type ColorRepresentation } from "three";
+import { Color } from "three";
 
-import { DrawMode, OUTLINE_COLOR_DEFAULT } from "src/colorizer";
+import { DrawMode, TrackOutlineColorMode } from "src/colorizer";
 import DropdownWithColorPicker from "src/components/Dropdowns/DropdownWithColorPicker";
 import type { SelectItem } from "src/components/Dropdowns/types";
-import WrappedColorPicker from "src/components/Inputs/WrappedColorPicker";
 import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
 import ToggleCollapse from "src/components/ToggleCollapse";
 import { useViewerStateStore } from "src/state";
-import { threeToAntColor } from "src/utils/color_utils";
 
 import { DEFAULT_OUTLINE_COLOR_PRESETS, SETTINGS_GAP_PX } from "./constants";
 
@@ -51,17 +49,24 @@ const EDGE_COLOR_PRESETS: PresetsItem[] = [
   },
 ];
 
+const OUTLINE_COLOR_MODE_ITEMS: SelectItem[] = [
+  { value: TrackOutlineColorMode.USE_AUTO_COLOR.toString(), label: "Auto" },
+  { value: TrackOutlineColorMode.USE_CUSTOM_COLOR.toString(), label: "Use color" },
+];
+
 export default function ObjectSettings(): ReactElement {
   const edgeColor = useViewerStateStore((state) => state.edgeColor);
   const edgeColorAlpha = useViewerStateStore((state) => state.edgeColorAlpha);
   const edgeMode = useViewerStateStore((state) => state.edgeMode);
   const outlierDrawSettings = useViewerStateStore((state) => state.outlierDrawSettings);
   const outlineColor = useViewerStateStore((state) => state.outlineColor);
+  const outlineColorMode = useViewerStateStore((state) => state.outlineColorMode);
   const outOfRangeDrawSettings = useViewerStateStore((state) => state.outOfRangeDrawSettings);
   const setEdgeColor = useViewerStateStore((state) => state.setEdgeColor);
   const setEdgeMode = useViewerStateStore((state) => state.setEdgeMode);
   const setOutlierDrawSettings = useViewerStateStore((state) => state.setOutlierDrawSettings);
   const setOutlineColor = useViewerStateStore((state) => state.setOutlineColor);
+  const setOutlineColorMode = useViewerStateStore((state) => state.setOutlineColorMode);
   const setOutOfRangeDrawSettings = useViewerStateStore((state) => state.setOutOfRangeDrawSettings);
 
   return (
@@ -69,16 +74,18 @@ export default function ObjectSettings(): ReactElement {
       <SettingsContainer gapPx={SETTINGS_GAP_PX}>
         <SettingsItem label="Selected outline" htmlFor={ObjectSettingsHtmlIds.HIGHLIGHT_COLOR_PICKER}>
           {/* NOTE: 'Highlight color' is 'outline' internally, and 'Outline color' is 'edge' for legacy reasons. */}
-          <WrappedColorPicker
+          <DropdownWithColorPicker
             id={ObjectSettingsHtmlIds.HIGHLIGHT_COLOR_PICKER}
-            style={{ width: "min-content" }}
-            size="small"
-            disabledAlpha={true}
-            defaultValue={OUTLINE_COLOR_DEFAULT}
-            onChange={(_color, hex) => setOutlineColor(new Color(hex as ColorRepresentation))}
-            value={threeToAntColor(outlineColor)}
+            selected={outlineColorMode.toString()}
+            items={OUTLINE_COLOR_MODE_ITEMS}
+            onValueChange={(mode: string) => {
+              setOutlineColorMode(Number.parseInt(mode, 10) as TrackOutlineColorMode);
+            }}
+            showColorPicker={true}
+            color={outlineColor}
+            onColorChange={setOutlineColor}
             presets={DEFAULT_OUTLINE_COLOR_PRESETS}
-          />
+          ></DropdownWithColorPicker>
         </SettingsItem>
         <SettingsItem label="Default edge" htmlFor={ObjectSettingsHtmlIds.EDGE_COLOR_SELECT}>
           <DropdownWithColorPicker
