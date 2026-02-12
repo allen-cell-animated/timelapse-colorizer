@@ -1,10 +1,10 @@
 import { Checkbox, Tooltip } from "antd";
 import React, { type ReactElement } from "react";
 
+import { ViewMode } from "src/colorizer/types";
 import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
 import ToggleCollapse from "src/components/ToggleCollapse";
 import { useViewerStateStore } from "src/state";
-import { ViewMode } from "src/state/slices";
 import { VisuallyHidden } from "src/styles/utils";
 
 import { SETTINGS_GAP_PX } from "./constants";

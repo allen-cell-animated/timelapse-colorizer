@@ -22,6 +22,7 @@ import {
   LoadTroubleshooting,
   type PixelIdInfo,
   TabType,
+  ViewMode,
 } from "src/colorizer/types";
 import type CanvasOverlay from "src/colorizer/viewport/CanvasOverlay";
 import type { AlertBannerProps } from "src/components/Banner";
@@ -34,7 +35,6 @@ import { TooltipWithSubtitle } from "src/components/Tooltips/TooltipWithSubtitle
 import { CANVAS_ASPECT_RATIO, SHORTCUT_KEYS } from "src/constants";
 import type { AnnotationState } from "src/hooks";
 import { renderCanvasStateParamsSelector } from "src/state";
-import { ViewMode } from "src/state/slices";
 import { useViewerStateStore } from "src/state/ViewerState";
 import { AppThemeContext } from "src/styles/AppStyle";
 import { FlexColumn, FlexColumnAlignCenter, VisuallyHidden } from "src/styles/utils";
