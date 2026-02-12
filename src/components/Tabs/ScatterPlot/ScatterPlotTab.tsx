@@ -6,7 +6,7 @@ import styled from "styled-components";
 import { Color, type ColorRepresentation } from "three";
 
 import { SwitchIconSVG } from "src/assets";
-import { ColorRampType, type Dataset } from "src/colorizer";
+import { ColorRampType, type Dataset, type Track } from "src/colorizer";
 import { TIME_FEATURE_KEY } from "src/colorizer/Dataset";
 import { DrawMode, type HexColorString, PlotRangeType } from "src/colorizer/types";
 import type { ShowAlertBannerCallback } from "src/components/Banner/hooks";
@@ -64,6 +64,8 @@ const ScatterPlotContainer = styled.div`
     // Remove Plotly border
     border: 0px solid transparent !important;
   }
+  // Center plot horizontally
+  margin: 0 auto;
 `;
 
 /**
@@ -73,7 +75,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   // ^ Memo prevents re-rendering if the props haven't changed.
   const theme = useContext(AppThemeContext);
 
-  const clearTrack = useViewerStateStore((state) => state.clearTrack);
   const colorRamp = useViewerStateStore((state) => state.colorRamp);
   const currentFrame = useViewerStateStore((state) => state.currentFrame);
   const inRangeLUT = useViewerStateStore((state) => state.inRangeLUT);
@@ -81,10 +82,11 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const outOfRangeDrawSettings = useViewerStateStore((state) => state.outOfRangeDrawSettings);
   const rangeType = useViewerStateStore((state) => state.scatterRangeType);
   const selectedFeatureKey = useViewerStateStore((state) => state.featureKey);
-  const selectedTrack = useViewerStateStore((state) => state.track);
+  const tracks = useViewerStateStore((state) => state.tracks);
+  const addTracks = useViewerStateStore((state) => state.addTracks);
+  const clearTracks = useViewerStateStore((state) => state.clearTracks);
   const setFrame = useViewerStateStore((state) => state.setFrame);
   const setRangeType = useViewerStateStore((state) => state.setScatterRangeType);
-  const setTrack = useViewerStateStore((state) => state.setTrack);
   const setXAxis = useViewerStateStore((state) => state.setScatterXAxis);
   const setYAxis = useViewerStateStore((state) => state.setScatterYAxis);
   const xAxisFeatureKey = useViewerStateStore((state) => state.scatterXAxis);
@@ -160,7 +162,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       // click event occurs.
       emptyClickTimeout.current = window.setTimeout(() => {
         if (currentRangeType.current !== PlotRangeType.CURRENT_TRACK) {
-          clearTrack();
+          clearTracks();
         }
       }, PLOTLY_CLICK_TIMEOUT_MS);
     };
@@ -171,7 +173,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     return () => {
       xyPlotDiv?.removeEventListener("click", onClick);
     };
-  }, [plotDivRef.current, clearTrack]);
+  }, [plotDivRef.current, clearTracks]);
 
   // Trigger render spinner when playback starts, but only if the render is being delayed.
   // If a render is allowed to happen (such as in the current-track- or current-frame-only
@@ -229,7 +231,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       }
       const frame = dataset.times ? dataset.times[objectId] : track.times[0];
       setFrame(frame).then(() => {
-        setTrack(track);
+        addTracks(track);
       });
     };
 
@@ -237,7 +239,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     return () => {
       plotRef?.removeAllListeners("plotly_click");
     };
-  }, [plotRef, dataset, setTrack, setFrame]);
+  }, [plotRef, dataset, addTracks, setFrame]);
 
   // Sync axis ranges on relayout events (zoom)
   useEffect(() => {
@@ -327,20 +329,26 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   };
 
   /**
-   * Reduces the given data to only show the selected range (frame, track, or all data points).
+   * Reduces the given data to only show the selected range (frame, track, or
+   * all data points).
    * @param rawXData raw data for the X-axis feature
    * @param rawYData raw data for the Y-axis feature.
+   * @param range The range type to filter the data by.
+   * @param track Required if `range` is `PlotRangeType.CURRENT_TRACK`. The
+   * track to filter data by.
    * @returns One of the following:
    *   - `undefined` if the data could not be filtered.
    *   - An object with the following arrays:
    *     - `xData`: The filtered x data.
    *     - `yData`: The filtered y data.
-   *     - `objectIds`: The object IDs corresponding to the index of the filtered data.
+   *     - `objectIds`: The object IDs corresponding to the index of the
+   *       filtered data.
    */
   const filterDataByRange = (
     rawXData: DataArray,
     rawYData: DataArray,
-    range: PlotRangeType
+    range: PlotRangeType,
+    track?: Track
   ):
     | undefined
     | {
@@ -376,17 +384,17 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       }
     } else if (range === PlotRangeType.CURRENT_TRACK) {
       // Filter data to only show the current track.
-      if (!selectedTrack) {
+      if (!track) {
         return { xData: [], yData: [], objectIds: [], segIds: [], trackIds: [] };
       }
-      for (let i = 0; i < selectedTrack.ids.length; i++) {
-        const id = selectedTrack.ids[i];
+      for (let i = 0; i < track.ids.length; i++) {
+        const id = track.ids[i];
         xData.push(rawXData[id]);
         yData.push(rawYData[id]);
       }
-      objectIds = Array.from(selectedTrack.ids);
+      objectIds = Array.from(track.ids);
       segIds = objectIds.map(dataset.getSegmentationId);
-      trackIds = Array(selectedTrack.ids.length).fill(selectedTrack.trackId);
+      trackIds = Array(track.ids.length).fill(track.trackId);
     } else {
       // All time
       objectIds = [...rawXData.keys()];
@@ -419,14 +427,14 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     histogramTrace: Partial<PlotData>;
   } => {
     let scatterPlotAxis: Partial<Plotly.LayoutAxis> = {
-      domain: [0, 0.8],
+      domain: [0, 0.85],
       showgrid: false,
+      showline: true,
       zeroline: true,
     };
     const histogramAxis: Partial<Plotly.LayoutAxis> = {
-      domain: [0.85, 1],
+      domain: [0.9, 1],
       showgrid: false,
-      zeroline: true,
       hoverformat: "f",
     };
     const newHistogramTrace = { ...histogramTrace };
@@ -434,15 +442,18 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     let min = dataset?.getFeatureData(featureKey)?.min || 0;
     let max = dataset?.getFeatureData(featureKey)?.max || 0;
 
+    if (0 < min && min < (max - min) / 20) {
+      // If min is close to zero (within 5% of the range), snap to zero.
+      min = 0;
+    }
     if (dataset && dataset.isFeatureCategorical(featureKey)) {
       // Add extra padding for categories so they're nicely centered
       min -= 0.5;
       max += 0.5;
     } else {
-      // Add a little padding to the min/max so points aren't cut off by the edge of the plot.
+      // Add a little padding to the max so points aren't cut off by the edge of the plot.
       // (ideally this would be a pixel padding, but plotly doesn't support that.)
-      min -= (max - min) / 10;
-      max += (max - min) / 10;
+      max += (max - min) / 100;
     }
     scatterPlotAxis.range = [min, max];
 
@@ -488,18 +499,21 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
   // TODO: Move to `scatter_plot_data_utils.ts`
   /**
-   * Applies coloring to point traces in a scatterplot. Does this by splitting the data into multiple traces each with a solid
-   * color, which is much faster than using Plotly's native color ramping. Also enforces a maximum number of points
-   * per trace, which significantly speeds up Plotly renders.
+   * Applies coloring to point traces in a scatterplot. Does this by splitting
+   * the data into multiple traces each with a solid color, which is much faster
+   * than using Plotly's native color ramping. Also enforces a maximum number of
+   * points per trace, which significantly speeds up Plotly renders.
    *
    * @param xData
    * @param yData
    * @param objectIds
    * @param trackIds
-   * @param markerConfig Additional marker configuration to apply to all points. By default,
-   * markers are size 4.
-   * @param {Color | undefined} overrideColor When defined, uses a base color for all points, instead of
-   * calculating based on the color ramp or palette.
+   * @param markerConfig Additional marker configuration to apply to all points.
+   * By default, markers are size 4.
+   * @param {Color | undefined} overrideColor When defined, uses a base color
+   * for all points, instead of calculating based on the color ramp or palette.
+   * @param allowHover Whether to allow hover tooltips on the points, true by
+   * default. When false, hover info is disabled.
    */
   const colorizeScatterplotPoints = (
     xData: DataArray,
@@ -673,7 +687,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     yAxisFeatureKey,
     rangeType,
     currentFrame,
-    selectedTrack,
+    tracks,
     isVisible,
     isPlaying,
     plotDivRef.current,
@@ -709,7 +723,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     plottedIds.current = new Set(objectIds);
 
     let markerBaseColor = undefined;
-    if (rangeType === PlotRangeType.ALL_TIME && selectedTrack) {
+    if (rangeType === PlotRangeType.ALL_TIME && tracks.size > 0) {
       // Use a light grey for other markers when a track is selected.
       markerBaseColor = new Color("#dddddd");
     }
@@ -726,13 +740,13 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       {},
       markerBaseColor,
       // disable hover for all points other than the track when one is selected
-      selectedTrack === null || rangeType !== PlotRangeType.ALL_TIME
+      tracks.size === 0 || rangeType !== PlotRangeType.ALL_TIME
     );
 
     const xHistogram: Partial<Plotly.PlotData> = {
       x: xData,
       name: "x density",
-      marker: { color: theme.color.themeLight, line: { color: theme.color.themeDark, width: 1 } },
+      marker: { color: theme.color.plots.histogram, line: { color: theme.color.plots.histogramOutline, width: 1 } },
       yaxis: "y2",
       type: "histogram",
       // @ts-ignore. TODO: Update once the plotly types are updated.
@@ -741,7 +755,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     const yHistogram: Partial<PlotData> = {
       y: yData,
       name: "y density",
-      marker: { color: theme.color.themeLight, line: { color: theme.color.themeDark, width: 1 } },
+      marker: { color: theme.color.plots.histogram, line: { color: theme.color.plots.histogramOutline, width: 1 } },
       xaxis: "x2",
       type: "histogram",
       // @ts-ignore. TODO: Update once the plotly types are updated.
@@ -752,45 +766,48 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     traces.push(yHistogram);
 
     // Render current track as an extra trace.
-    const trackData = filterDataByRange(rawXData, rawYData, PlotRangeType.CURRENT_TRACK);
-    if (trackData && rangeType !== PlotRangeType.CURRENT_FRAME) {
-      // Render an extra trace for lines connecting the points in the current track when time is a feature.
-      if (isUsingTime) {
-        traces.push(
-          makeLineTrace(trackData.xData, trackData.yData, trackData.objectIds, trackData.segIds, trackData.trackIds)
-        );
-      }
-      // Render track points
-      const outOfRangeOutlineColor = outOfRangeDrawSettings.color.clone().multiplyScalar(0.8);
-      const trackTraces = colorizeScatterplotPoints(
-        trackData.xData,
-        trackData.yData,
-        trackData.objectIds,
-        trackData.segIds,
-        trackData.trackIds,
-        {
-          outOfRange: {
-            color: theme.color.layout.background,
-            line: { width: 1, color: "#" + outOfRangeOutlineColor.getHexString() + "40" },
-          },
+    for (const track of tracks.values()) {
+      const trackData = filterDataByRange(rawXData, rawYData, PlotRangeType.CURRENT_TRACK, track);
+      if (trackData && rangeType !== PlotRangeType.CURRENT_FRAME) {
+        // Render an extra trace for lines connecting the points in the current track when time is a feature.
+        if (isUsingTime) {
+          traces.push(
+            makeLineTrace(trackData.xData, trackData.yData, trackData.objectIds, trackData.segIds, trackData.trackIds)
+          );
         }
-      );
-      traces.push(...trackTraces);
-      plottedIds.current = new Set([...plottedIds.current, ...trackData.objectIds]);
+        // Connect track points as a line trace.
+        const outOfRangeOutlineColor = outOfRangeDrawSettings.color.clone().multiplyScalar(0.8);
+        const trackTraces = colorizeScatterplotPoints(
+          trackData.xData,
+          trackData.yData,
+          trackData.objectIds,
+          trackData.segIds,
+          trackData.trackIds,
+          {
+            outOfRange: {
+              color: theme.color.layout.background,
+              line: { width: 1, color: "#" + outOfRangeOutlineColor.getHexString() + "40" },
+            },
+          }
+        );
+        traces.push(...trackTraces);
+        plottedIds.current = new Set([...plottedIds.current, ...trackData.objectIds]);
+      }
     }
 
-    // Render currently selected object as an extra crosshair trace.
-    if (selectedTrack) {
-      const currentObjectId = selectedTrack.getIdAtTime(currentFrame);
+    // Render crosshair at the current time for all tracks.
+    for (const track of tracks.values()) {
+      const currentObjectId = track.getIdAtTime(currentFrame);
       if (currentObjectId !== -1) {
         traces.push(...drawCrosshair(rawXData[currentObjectId], rawYData[currentObjectId]));
+        // Extra single point, so the point is still visible over the crosshair.
         traces.push(
           ...colorizeScatterplotPoints(
             [rawXData[currentObjectId]],
             [rawYData[currentObjectId]],
             [currentObjectId],
             [dataset.getSegmentationId(currentObjectId)],
-            [selectedTrack.trackId],
+            [track.trackId],
             { size: 4 }
           )
         );
@@ -815,14 +832,14 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
     // Add extra margin for categorical feature labels on the Y axis.
     const leftMarginPx = Math.max(60, estimateTextWidthPxForCategories(yAxisFeatureKey));
-    const layout = {
+    const layout: Partial<Plotly.Layout> = {
       autosize: true,
       showlegend: false,
       xaxis: scatterPlotXAxis,
       yaxis: scatterPlotYAxis,
       xaxis2: histogramXAxis,
       yaxis2: histogramYAxis,
-      margin: { l: leftMarginPx, r: 50, b: 50, t: 20, pad: 4 },
+      margin: { l: leftMarginPx, r: 50, b: 50, t: 20 },
       font: {
         // Unfortunately using the Lato font family causes the text to render with SEVERE
         // aliasing. Using the default plotly font family causes the X and Y axes to be
@@ -976,11 +993,11 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         <Button
           onClick={() => {
             setIsRendering(true);
-            clearTrack();
+            clearTracks();
           }}
-          disabled={selectedTrack === null}
+          disabled={tracks.size === 0}
         >
-          Clear Track
+          Clear Tracks
         </Button>
 
         <Button
@@ -1003,7 +1020,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         <LoadingSpinner loading={isRendering || isDebouncePending} style={{ marginTop: "10px" }}>
           {makePlotButtons()}
           <ScatterPlotContainer
-            style={{ width: "100%", height: "475px", padding: "5px" }}
+            style={{ width: "calc(min(100%, 680px))", aspectRatio: "7 / 6", padding: "5px" }}
             ref={plotDivRef}
           ></ScatterPlotContainer>
         </LoadingSpinner>

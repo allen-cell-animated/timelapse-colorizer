@@ -73,9 +73,16 @@ export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (s
       // Note: Object references must be changed here to trigger state updates,
       // so the Map and LUT are copied.
       tracks = Array.isArray(tracks) ? tracks : [tracks];
+      const willTracksBeAdded = tracks.some((track) => !state.tracks.has(track.trackId));
+      if (!willTracksBeAdded) {
+        return {};
+      }
       const newTracks = new Map(state.tracks);
       const newSelectedLut = state.isSelectedLut.slice();
       for (const track of tracks) {
+        if (newTracks.has(track.trackId)) {
+          continue;
+        }
         newTracks.set(track.trackId, track);
         applyTrackToSelectionLut(newSelectedLut, track, true);
       }
@@ -85,6 +92,10 @@ export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (s
   removeTracks: (trackIds: number | number[]) => {
     set((state) => {
       trackIds = Array.isArray(trackIds) ? trackIds : [trackIds];
+      const willTracksBeRemoved = trackIds.some((trackId) => state.tracks.has(trackId));
+      if (!willTracksBeRemoved) {
+        return {};
+      }
       const newTracks = new Map(state.tracks);
       const newSelectedLut = state.isSelectedLut.slice();
       for (const trackId of trackIds) {
