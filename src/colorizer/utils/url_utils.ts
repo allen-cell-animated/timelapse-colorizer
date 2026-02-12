@@ -15,6 +15,7 @@ import {
   LoadTroubleshooting,
   PlotRangeType,
   ThresholdType,
+  TrackOutlineColorMode,
   TrackPathColorMode,
 } from "src/colorizer/types";
 import { removeUndefinedProperties } from "src/colorizer/utils/data_utils";
@@ -49,6 +50,7 @@ export enum UrlParam {
   FILTERED_MODE = "filter-mode",
   FILTERED_COLOR = "filter-color",
   OUTLINE_COLOR = "outline-color",
+  OUTLINE_COLOR_MODE = "outline-mode",
   EDGE_COLOR = "edge-color",
   EDGE_MODE = "edge",
   SHOW_PATH = "path",
@@ -399,14 +401,34 @@ export function decodeInt(value: string | null): number | undefined {
   return value === null ? undefined : parseInt(value, 10);
 }
 
-export function decodeTracks(value: string | null): number[] | undefined {
+export function encodeTracks(trackIds: number[], trackToColorIdx?: Map<number, number>): string {
+  // Serialized format is a comma-separated list of track IDs, with an optional
+  // color ID appended after a colon.
+  const tracksAndColorIdx = trackIds.map((trackId, index) => {
+    const colorId = trackToColorIdx?.get(trackId) ?? index;
+    return `${trackId}:${colorId}`;
+  });
+  return tracksAndColorIdx.join(",");
+}
+
+export function decodeTracks(value: string | null): { trackIds: number[]; colorIdx?: number[] } | undefined {
   if (value === null) {
     return undefined;
   }
-  return value
-    .split(",")
-    .map((trackIdStr) => parseInt(trackIdStr, 10))
-    .filter((trackId) => !Number.isNaN(trackId));
+  const trackInfo = value.split(",");
+  const trackIds: number[] = [];
+  const colorIdx: number[] = [];
+  for (let i = 0; i < trackInfo.length; i++) {
+    const info = trackInfo[i];
+    const [trackIdStr, colorIdStr] = info.split(":");
+    const trackId = parseInt(trackIdStr, 10);
+    const colorId = colorIdStr ? parseInt(colorIdStr, 10) : i;
+    if (!Number.isNaN(trackId)) {
+      trackIds.push(trackId);
+      colorIdx.push(colorId);
+    }
+  }
+  return { trackIds, colorIdx };
 }
 
 export function parseDrawMode(mode: string | null): DrawMode | undefined {
@@ -425,6 +447,13 @@ export function parseDrawSettings(
     color: isHexColor(hexColor) ? new Color(hexColor) : defaultSettings.color,
     mode: mode && isDrawMode(modeInt) ? modeInt : defaultSettings.mode,
   };
+}
+
+export function parseTrackOutlineColorMode(mode: string | null): TrackOutlineColorMode | undefined {
+  const modeInt = parseInt(mode || "-1", 10);
+  const isTrackOutlineColorMode =
+    modeInt === TrackOutlineColorMode.USE_CUSTOM_COLOR || modeInt === TrackOutlineColorMode.USE_AUTO_COLOR;
+  return mode && isTrackOutlineColorMode ? (modeInt as TrackOutlineColorMode) : undefined;
 }
 
 export function parseTrackPathMode(mode: string | null): TrackPathColorMode | undefined {

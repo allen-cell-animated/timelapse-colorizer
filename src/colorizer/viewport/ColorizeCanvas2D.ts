@@ -33,7 +33,13 @@ import {
   OUTLINE_COLOR_DEFAULT,
 } from "src/colorizer/constants";
 import type Dataset from "src/colorizer/Dataset";
-import { DrawMode, FeatureDataType, type FrameLoadResult, type PixelIdInfo } from "src/colorizer/types";
+import {
+  DrawMode,
+  FeatureDataType,
+  type FrameLoadResult,
+  type PixelIdInfo,
+  TrackOutlineColorMode,
+} from "src/colorizer/types";
 import { getGlobalIdFromSegId, hasPropertyChanged } from "src/colorizer/utils/data_utils";
 import { convertCanvasOffsetPxToFrameCoords, getFrameSizeInScreenPx } from "src/colorizer/utils/math_utils";
 import { packDataTexture } from "src/colorizer/utils/texture_utils";
@@ -75,6 +81,8 @@ type ColorizeUniformTypes = {
   outlierData: Texture;
   inRangeIds: Texture;
   selectedIds: Texture;
+  selectedTracksPalette: Texture;
+  useTracksPalette: boolean;
   /** LUT mapping from segmentation ID (raw pixel value) to the global ID. */
   segIdToGlobalId: DataTexture;
   segIdOffset: number;
@@ -125,6 +133,8 @@ const getDefaultUniforms = (): ColorizeUniforms => {
     outlierData: new Uniform(emptyOutliers),
     inRangeIds: new Uniform(emptyInRangeIds),
     selectedIds: new Uniform(emptyIsSelectedIds),
+    selectedTracksPalette: new Uniform(emptyColorRamp),
+    useTracksPalette: new Uniform(false),
     segIdToGlobalId: new Uniform(emptySegIdToGlobalId),
     segIdOffset: new Uniform(0),
     overlay: new Uniform(emptyOverlay),
@@ -540,9 +550,17 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     }
 
     // Update params for all TrackPath2D objects.
+    const usePerTrackColors =
+      this.trackPaths.size > 1 && params.outlineColorMode === TrackOutlineColorMode.USE_AUTO_COLOR;
+
     this.trackPaths.forEach((trackPath, trackId) => {
       const track = params.tracks.get(trackId) ?? null;
-      trackPath.setParams({ ...params, track });
+      let outlineColor = params.outlineColor;
+      if (track && usePerTrackColors) {
+        // Replace default outlineColor with track path color
+        outlineColor = params.trackColors.get(track.trackId) ?? outlineColor;
+      }
+      trackPath.setParams({ ...params, track, outlineColor });
     });
   }
 
@@ -651,6 +669,14 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
 
     if (hasPropertyChanged(params, prevParams, ["isSelectedLut"])) {
       this.setUniform("selectedIds", packDataTexture(Array.from(params.isSelectedLut), FeatureDataType.U8));
+    }
+    if (hasPropertyChanged(params, prevParams, ["selectedTracksPaletteRamp"])) {
+      this.setUniform("selectedTracksPalette", params.selectedTracksPaletteRamp.texture);
+    }
+    if (hasPropertyChanged(params, prevParams, ["tracks", "outlineColorMode"])) {
+      const useTracksPalette =
+        params.tracks.size > 1 && params.outlineColorMode === TrackOutlineColorMode.USE_AUTO_COLOR;
+      this.setUniform("useTracksPalette", useTracksPalette);
     }
 
     this.render();

@@ -112,10 +112,11 @@ export default class TrackPath2D {
     if (!this.params) {
       return;
     }
-    const { trackPathColorMode, outlineColor, trackPathColor, trackPathWidthPx } = this.params;
+    const { trackPathColorMode, trackPathColor, trackPathWidthPx, outlineColor } = this.params;
+
     const modeToColor = {
-      [TrackPathColorMode.USE_FEATURE_COLOR]: FEATURE_BASE_COLOR,
       [TrackPathColorMode.USE_OUTLINE_COLOR]: outlineColor,
+      [TrackPathColorMode.USE_FEATURE_COLOR]: FEATURE_BASE_COLOR,
       [TrackPathColorMode.USE_CUSTOM_COLOR]: trackPathColor,
       [TrackPathColorMode.USE_COLOR_MAP]: FEATURE_BASE_COLOR,
     };

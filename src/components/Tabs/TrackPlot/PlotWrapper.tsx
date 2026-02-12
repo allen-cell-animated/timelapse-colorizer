@@ -11,6 +11,7 @@ type PlotWrapperProps = {
   dataset: Dataset | null;
   featureKey: string | null;
   tracks: Map<number, Track>;
+  trackColors: string[];
   setFrame: (frame: number) => Promise<void>;
 };
 const defaultProps: Partial<PlotWrapperProps> = {};
@@ -65,12 +66,11 @@ export default function PlotWrapper(inputProps: PlotWrapperProps): ReactElement 
   // Handle updates to selected track and feature, updating/clearing the plot accordingly.
   useMemo(() => {
     if (props.tracks.size > 0) {
-      plot?.plot(props.tracks, props.featureKey, props.frame);
+      plot?.plot(props.tracks, props.featureKey, props.frame, props.trackColors);
     } else {
       plot?.removePlot();
     }
-  }, [props.tracks, props.featureKey]);
-
+  }, [props.tracks, props.featureKey, props.trackColors]);
   const updatePlotSize = (): void => {
     if (!plotDivRef.current) {
       return;
