@@ -1,14 +1,11 @@
-import { CloseOutlined, ExclamationCircleFilled } from "@ant-design/icons";
-import { Button, Popover } from "antd";
-import React, { type ReactElement, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { Button } from "antd";
+import React, { type ReactElement, useCallback, useEffect, useRef, useState } from "react";
 
-import IconButton from "src/components/Buttons/IconButton";
-import { KeyCharacter } from "src/components/Display/ShortcutKeyText";
+import StyledModal from "src/components/Modals/StyledModal";
 import { SHORTCUT_KEYS } from "src/constants";
 import type { AnnotationState } from "src/hooks/useAnnotations";
 import { useViewerStateStore } from "src/state";
-import { AppThemeContext } from "src/styles/AppStyle";
-import { FlexColumn, FlexRow, FlexRowAlignCenter } from "src/styles/utils";
+import { FlexRow, FlexRowAlignCenter } from "src/styles/utils";
 import { downloadCsv } from "src/utils/file_io";
 import { areAnyHotkeysPressed } from "src/utils/user_input";
 
@@ -28,16 +25,16 @@ export function useAnnotationDatasetWarning<A extends unknown[], B>(
   callback: (...args: A) => Promise<B>,
   annotationState?: AnnotationState
 ): { popupEl: ReactElement; wrappedCallback: (...args: A) => Promise<B> } {
-  const theme = useContext(AppThemeContext);
   const dataset = useViewerStateStore((state) => state.dataset);
   const datasetKey = useViewerStateStore((state) => state.datasetKey);
-  const popupContainerRef = useRef<HTMLDivElement>(null);
+  const modalContainerRef = useRef<HTMLDivElement>(null);
 
   // Save the callback to a ref in case it's not memoized.
   const callbackRef = useRef(callback);
   callbackRef.current = callback;
 
   const [isWarningVisible, setIsWarningVisible] = useState(false);
+  const userConfirmationPromiseRef = useRef<Promise<B> | null>(null);
   const userConfirmationPromiseResolveRef = useRef<(() => void) | null>(null);
   const userConfirmationPromiseRejectRef = useRef<(() => void) | null>(null);
 
@@ -45,6 +42,7 @@ export function useAnnotationDatasetWarning<A extends unknown[], B>(
     setIsWarningVisible(false);
     userConfirmationPromiseResolveRef.current = null;
     userConfirmationPromiseRejectRef.current = null;
+    userConfirmationPromiseRef.current = null;
   }, []);
 
   useEffect(() => {
@@ -57,7 +55,7 @@ export function useAnnotationDatasetWarning<A extends unknown[], B>(
   const annotationData = annotationState?.data;
   const wrappedCallback = useCallback(
     async (...args: A): Promise<B> => {
-      const hasAnnotations = annotationData && annotationData.getLabels().length > 0;
+      const hasAnnotations = !!annotationData && annotationData.getLabels().length > 0;
       const isHoldingKeepAnnotationsHotkey = areAnyHotkeysPressed(
         SHORTCUT_KEYS.annotation.keepAnnotationsBetweenDatasets.keycode
       );
@@ -65,9 +63,12 @@ export function useAnnotationDatasetWarning<A extends unknown[], B>(
         return callbackRef.current(...args);
       }
       setIsWarningVisible(true);
+      if (userConfirmationPromiseRef.current !== null) {
+        return userConfirmationPromiseRef.current;
+      }
       // Setup promise, which will be resolved if the user makes a selection or
       // rejected if the user closes the popup.
-      const userConfirmationPromise = new Promise<B>((resolve, reject) => {
+      userConfirmationPromiseRef.current = new Promise<B>((resolve, reject) => {
         const resolveCallback = async (): Promise<void> => {
           const result = await callbackRef.current(...args);
           resolve(result);
@@ -75,23 +76,19 @@ export function useAnnotationDatasetWarning<A extends unknown[], B>(
         userConfirmationPromiseResolveRef.current = resolveCallback;
         userConfirmationPromiseRejectRef.current = reject;
       });
-      return userConfirmationPromise;
+      return userConfirmationPromiseRef.current;
     },
     [annotationData]
   );
 
-  const downloadAndClearAnnotations = async (): Promise<void> => {
+  const onConfirm = async (download: boolean): Promise<void> => {
     if (annotationState) {
-      const csvData = annotationState.data.toCsv(dataset!);
-      const name = datasetKey ? `${datasetKey}-annotations.csv` : "annotations.csv";
-      downloadCsv(name, csvData);
+      if (download) {
+        const csvData = annotationState.data.toCsv(dataset!);
+        const name = datasetKey ? `${datasetKey}-annotations.csv` : "annotations.csv";
+        downloadCsv(name, csvData);
+      }
       annotationState.clear();
-    }
-  };
-
-  const onConfirm = async (clearAnnotations: boolean): Promise<void> => {
-    if (clearAnnotations) {
-      await downloadAndClearAnnotations();
     }
     userConfirmationPromiseResolveRef.current?.();
     cleanupWarning();
@@ -102,47 +99,33 @@ export function useAnnotationDatasetWarning<A extends unknown[], B>(
     cleanupWarning();
   };
 
-  const annotationPopupContents = (
-    <FlexColumn style={{ maxWidth: 350 }} $gap={12}>
-      <FlexRow $gap={10}>
-        <ExclamationCircleFilled style={{ color: theme.color.text.warning, margin: "6px 0 auto 0" }} />
-        <FlexColumn>
-          <FlexRowAlignCenter style={{ justifyContent: "space-between" }}>
-            <p style={{ margin: "2px 0" }}>Clear annotations before changing datasets?</p>
-            <IconButton type="text" sizePx={20} onClick={onCancel}>
-              <CloseOutlined />
-            </IconButton>
-          </FlexRowAlignCenter>
-          <span style={{ color: theme.color.text.secondary, margin: "2px 0" }}>
-            Existing annotations will be applied to the wrong objects if tracks differ.
-          </span>
-          <span style={{ color: theme.color.text.secondary, margin: "2px 0" }}>
-            (Hold <KeyCharacter>{SHORTCUT_KEYS.annotation.keepAnnotationsBetweenDatasets.keycodeDisplay}</KeyCharacter>{" "}
-            in the future to keep annotations and skip this message.)
-          </span>
-        </FlexColumn>
-      </FlexRow>
-      <FlexRow $gap={6}>
-        <Button onClick={() => onConfirm(false)}>Keep Annotations</Button>
-        <Button type="primary" onClick={() => onConfirm(true)}>
-          Save and Clear Annotations
-        </Button>
-      </FlexRow>
-    </FlexColumn>
-  );
-
   const popupElement = (
-    <Popover
-      trigger={["click", "focus"]}
-      content={annotationPopupContents}
-      open={isWarningVisible}
-      onOpenChange={onCancel}
-      placement="bottom"
-      style={{ width: "300px" }}
-      getPopupContainer={() => popupContainerRef.current || document.body}
-    >
-      <div ref={popupContainerRef}></div>
-    </Popover>
+    <div ref={modalContainerRef}>
+      <StyledModal
+        open={isWarningVisible}
+        onCancel={onCancel}
+        title="Save current annotations?"
+        width={400}
+        getContainer={() => modalContainerRef.current || document.body}
+        style={{ marginTop: 25 }}
+        footer={
+          <FlexRowAlignCenter style={{ justifyContent: "space-between" }}>
+            <Button onClick={onCancel}>Cancel</Button>
+            <FlexRow $gap={6}>
+              <Button type="default" danger onClick={() => onConfirm(false)}>
+                Do not save
+              </Button>
+              <Button type="primary" onClick={() => onConfirm(true)}>
+                Save
+              </Button>
+            </FlexRow>
+          </FlexRowAlignCenter>
+        }
+      >
+        <p>Annotations are not preserved between datasets; existing annotations will be discarded.</p>
+        <p>Would you like to save your current annotations before continuing?</p>
+      </StyledModal>
+    </div>
   );
 
   return { popupEl: popupElement, wrappedCallback: wrappedCallback };

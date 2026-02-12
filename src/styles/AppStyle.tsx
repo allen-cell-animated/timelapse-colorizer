@@ -37,6 +37,7 @@ const palette = {
   successMedium: "#b7eb8f",
   successLight: "#f6ffed",
   errorMedium: "#ffa39e",
+  errorMediumDark: "#ff7875",
   errorLight: "#fff2f0",
   infoMedium: "#91d5ff",
   infoLight: "#e6f4ff",
@@ -97,6 +98,10 @@ const theme = {
       success: {
         background: palette.success,
         hover: palette.successMediumDark,
+      },
+      danger: {
+        background: palette.error,
+        hover: palette.errorMediumDark,
       },
     },
     dropdown: {
@@ -272,6 +277,14 @@ const CssContainer = styled.div`
     color: ${theme.color.text.button};
   }
 
+  // Style danger buttons
+  .ant-btn-default.ant-btn-dangerous:not(:disabled):active,
+  .ant-btn-default.ant-btn-dangerous:not(:disabled):hover {
+    border-color: ${theme.color.button.danger.background};
+    background-color: ${theme.color.button.danger.hover};
+    color: ${theme.color.text.button};
+  }
+
   // Use the darker theme color for the primary-style, solid-color button
   .ant-btn-primary:where(:not(:disabled):active) {
     border: 1px solid ${theme.color.button.backgroundPrimary};
@@ -280,13 +293,13 @@ const CssContainer = styled.div`
   // Use the normal theme color for the button outline when hovered,
   // then darken it when active. This way, the outline is always visible
   // for the default button.
-  .ant-btn-default:not(:disabled):hover {
+  .ant-btn-default:not(.ant-btn-dangerous):not(:disabled):hover {
     border: 1px solid ${theme.color.button.backgroundPrimary};
   }
-  .ant-btn-default:not(:disabled):active {
+  .ant-btn-default:not(.ant-btn-dangerous):not(:disabled):active {
     border: 1px solid ${theme.color.button.outlineActive};
   }
-  .ant-btn-default:not(:disabled) {
+  .ant-btn-default:not(.ant-btn-dangerous):not(:disabled):not(:hover):not(:active) {
     border-color: ${theme.color.button.outline};
     color: ${theme.color.button.outline};
   }
