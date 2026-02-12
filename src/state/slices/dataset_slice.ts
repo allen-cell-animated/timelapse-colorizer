@@ -1,15 +1,11 @@
 import type { StateCreator } from "zustand";
 
 import type Dataset from "src/colorizer/Dataset";
+import { ViewMode } from "src/colorizer/types";
 import { UrlParam } from "src/colorizer/utils/url_utils";
 import type { SerializedStoreData } from "src/state/types";
 
 import type { CollectionSlice } from "./collection_slice";
-
-export const enum ViewMode {
-  VIEW_2D = "2d",
-  VIEW_3D = "3d",
-}
 
 export type DatasetSliceState = {
   datasetKey: string | null;
@@ -81,9 +77,9 @@ export const createDatasetSlice: StateCreator<CollectionSlice & DatasetSlice, []
     if (!dataset) {
       throw new Error("DatasetSlice.setViewMode: Cannot set view mode when no dataset loaded");
     }
-    if (viewMode == ViewMode.VIEW_3D && !dataset.has3dFrames()) {
+    if (viewMode === ViewMode.VIEW_3D && !dataset.has3dFrames()) {
       throw new Error("DatasetSlice.setViewMode: Dataset does not support 3D view mode");
-    } else if (viewMode == ViewMode.VIEW_2D && !dataset.has2dFrames()) {
+    } else if (viewMode === ViewMode.VIEW_2D && !dataset.has2dFrames()) {
       throw new Error("DatasetSlice.setViewMode: Dataset does not support 2D view mode");
     }
     set({ viewMode });

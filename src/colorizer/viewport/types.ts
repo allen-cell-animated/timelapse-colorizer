@@ -4,8 +4,7 @@ import type Collection from "src/colorizer/Collection";
 import type ColorRamp from "src/colorizer/ColorRamp";
 import type Dataset from "src/colorizer/Dataset";
 import type Track from "src/colorizer/Track";
-import type { ChannelSetting, DrawMode, DrawSettings, TrackPathColorMode } from "src/colorizer/types";
-import { ViewMode } from "src/state/slices";
+import type { ChannelSetting, DrawMode, DrawSettings, TrackPathColorMode, ViewMode } from "src/colorizer/types";
 
 export const enum CanvasType {
   CANVAS_2D = "2D",

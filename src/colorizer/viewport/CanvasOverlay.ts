@@ -2,8 +2,8 @@ import { Vector2 } from "three";
 
 import type { LabelData } from "src/colorizer/AnnotationData";
 import type { ChannelRangePreset, FrameLoadResult, PixelIdInfo } from "src/colorizer/types";
+import { ViewMode } from "src/colorizer/types";
 import { hasPropertyChanged } from "src/colorizer/utils/data_utils";
-import { ViewMode } from "src/state/slices";
 
 import ColorizeCanvas2D from "./ColorizeCanvas2D";
 import { ColorizeCanvas3D } from "./ColorizeCanvas3D";

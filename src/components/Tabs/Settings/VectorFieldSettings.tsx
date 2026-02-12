@@ -4,14 +4,13 @@ import React, { type ReactElement, useMemo } from "react";
 import { Color, type ColorRepresentation } from "three";
 
 import { VECTOR_KEY_MOTION_DELTA } from "src/colorizer/constants";
-import { VectorTooltipMode } from "src/colorizer/types";
+import { VectorTooltipMode, ViewMode } from "src/colorizer/types";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import LabeledSlider from "src/components/Inputs/LabeledSlider";
 import WrappedColorPicker from "src/components/Inputs/WrappedColorPicker";
 import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
 import ToggleCollapse from "src/components/ToggleCollapse";
 import { MAX_SETTINGS_SLIDER_WIDTH } from "src/constants";
-import { ViewMode } from "src/state/slices";
 import { useViewerStateStore } from "src/state/ViewerState";
 import { threeToAntColor } from "src/utils/color_utils";
 
@@ -57,7 +56,7 @@ export default function VectorFieldSettings(): ReactElement {
   const vectorOptions = useMemo(() => [VECTOR_OPTION_MOTION], []);
   const vectorOptionsEnabled = vectorVisible && dataset !== null;
 
-  const is3dDataset = viewMode == ViewMode.VIEW_3D;
+  const is3dDataset = viewMode === ViewMode.VIEW_3D;
 
   return (
     <ToggleCollapse label="Vector arrows" toggleChecked={vectorVisible} onToggleChange={setVectorVisible}>
