@@ -1,20 +1,14 @@
 import { Color } from "three";
 import type { StateCreator } from "zustand";
 
-import {
-  ColorRamp,
-  ColorRampType,
-  DEFAULT_CATEGORICAL_PALETTE_KEY,
-  KNOWN_CATEGORICAL_PALETTES,
-  type Track,
-} from "src/colorizer";
+import { ColorRamp, ColorRampType, KNOWN_CATEGORICAL_PALETTES, type Track } from "src/colorizer";
 import { arrayElementsAreEqual } from "src/colorizer/utils/data_utils";
 import { decodeTracks, encodeTracks, UrlParam } from "src/colorizer/utils/url_utils";
 import type { DatasetSlice } from "src/state/slices/dataset_slice";
 import type { SerializedStoreData, SubscribableStore } from "src/state/types";
 import { addDerivedStateSubscriber } from "src/state/utils/store_utils";
 
-const DEFAULT_TRACK_PALETTE_KEY = "neon";
+const DEFAULT_TRACK_PALETTE_KEY = "adobe";
 const DEFAULT_TRACK_PALETTE = KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_TRACK_PALETTE_KEY)!;
 
 const LUT_UNSELECTED = 0;
