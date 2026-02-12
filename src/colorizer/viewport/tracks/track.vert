@@ -13,6 +13,12 @@ uniform vec2 resolution;
 // CHANGED FROM ORIGINAL 
 // -----------------------------
 uniform int minInstance;
+uniform bool useColorRamp;
+uniform sampler2D colorRamp;
+/** The number of vertices that the color ramp spans. */
+uniform float colorRampVertexScale;
+/** The vertex index that will be assigned the middle of the color ramp. */
+uniform float colorRampVertexOffset;
 // -----------------------------
 
 attribute vec3 instanceStart;
@@ -52,19 +58,34 @@ void trimSegment(const in vec4 start, inout vec4 end) {
 }
 
 void main() {
-
   // CHANGED FROM ORIGINAL
   // -----------------------------
-  // cull instances below min instance
+  #ifdef USE_COLOR
+  if (useColorRamp) {
+    // Determine the vertex index in the original line, using the current
+    // instance ID and vertex ID. THREE's line segments have 8 vertices, where
+    // the first 4 are at the end of the line segment and the last 4 are at the
+    // start (determined experimentally).
+    int lineVertexIdx = gl_InstanceID + 1;
+    if (gl_VertexID >= 4) {
+      lineVertexIdx -= 1;
+    }
+    // Map the vertex index to the range [0, 1] for color ramp lookup.
+    float t = (float(lineVertexIdx) - colorRampVertexOffset) / colorRampVertexScale + 0.5;
+    t = clamp(t, 0.0, 1.0);
+    vColor.xyz = texture(colorRamp, vec2(t, 0.5)).xyz;
+  } else {
+    // Original default color behavior
+    vColor.xyz = (position.y < 0.5) ? instanceColorStart : instanceColorEnd;
+  }
+  #endif
+
+  // Cull instances below min instance
   if (gl_InstanceID < minInstance) {
     gl_Position = vec4(0.0, 0.0, 0.0, 0.0);
     return;
   }
   // -----------------------------
-
-  #ifdef USE_COLOR
-  vColor.xyz = (position.y < 0.5) ? instanceColorStart : instanceColorEnd;
-  #endif
 
   #ifdef USE_DASH
   vLineDistance = (position.y < 0.5) ? dashScale * instanceDistanceStart : dashScale * instanceDistanceEnd;
