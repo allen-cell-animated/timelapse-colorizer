@@ -101,18 +101,12 @@ export const createDatasetSlice: StateCreator<CollectionSlice & DatasetSlice, []
       backdropKey = dataset.getDefaultBackdropKey();
     }
 
-    // Change view mode if the current mode is not supported by the new dataset
+    // Change view mode if the current mode is not supported by the new dataset,
+    // preferring 3D over 2D if available.
     let viewMode = ViewMode.VIEW_2D;
-    // Prefer 3D if available
     if (dataset.has3dFrames()) {
       viewMode = ViewMode.VIEW_3D;
     }
-    // TODO: Re-enable when users are given a control for switching modes
-    // if (viewMode === ViewMode.VIEW_3D && !dataset.has3dFrames()) {
-    //   viewMode = ViewMode.VIEW_2D;
-    // } else if (viewMode === ViewMode.VIEW_2D && !dataset.has2dFrames()) {
-    //   viewMode = ViewMode.VIEW_3D;
-    // }
 
     set({ datasetKey: key, dataset, featureKey, backdropKey, viewMode });
   },
