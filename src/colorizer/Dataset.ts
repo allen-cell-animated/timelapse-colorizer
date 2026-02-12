@@ -25,6 +25,17 @@ import * as urlUtils from "./utils/url_utils";
 
 export const TRACK_FEATURE_KEY = "_track_";
 export const TIME_FEATURE_KEY = "_time_";
+export const CENTROID_X_FEATURE_KEY = "_centroid_x_";
+export const CENTROID_Y_FEATURE_KEY = "_centroid_y_";
+export const CENTROID_Z_FEATURE_KEY = "_centroid_z_";
+
+export const AUTO_GENERATED_FEATURE_KEYS = [
+  TRACK_FEATURE_KEY,
+  TIME_FEATURE_KEY,
+  CENTROID_X_FEATURE_KEY,
+  CENTROID_Y_FEATURE_KEY,
+  CENTROID_Z_FEATURE_KEY,
+];
 
 export enum FeatureType {
   CONTINUOUS = "continuous",
@@ -489,7 +500,7 @@ export default class Dataset {
         unit: "",
         type: FeatureType.DISCRETE,
         categories: null,
-        description: "Track ID of the object. This feature was added by the viewer.",
+        description: "Track ID of the object. This feature was added by the viewer from provided data.",
       });
     }
 
@@ -505,7 +516,41 @@ export default class Dataset {
         unit: "",
         type: FeatureType.CONTINUOUS,
         categories: null,
-        description: "Frame number where the object appears. This feature was added by the viewer.",
+        description: "Frame number where the object appears. This feature was added by the viewer from provided data.",
+      });
+    }
+  }
+
+  private addCentroidFeatures(): void {
+    const centroidFeatureKeys = [CENTROID_X_FEATURE_KEY, CENTROID_Y_FEATURE_KEY, CENTROID_Z_FEATURE_KEY];
+    const axes = ["X", "Y", "Z"];
+    if (!this.centroids) {
+      return;
+    }
+    console.log("centroids", this.centroids);
+    for (let i = 0; i < centroidFeatureKeys.length; i++) {
+      const key = centroidFeatureKeys[i];
+      if (this.features.has(key)) {
+        continue;
+      }
+      const axis = axes[i];
+      const data = new Float32Array(this.centroids.filter((_, index) => index % 3 === i));
+      console.log(axis, data);
+      const min = data.reduce((min, value) => Math.min(min, value), Infinity);
+      const max = data.reduce((max, value) => Math.max(max, value), -Infinity);
+      const tex = packDataTexture(data, FeatureDataType.F32);
+      const description = `Centroid ${axis} coordinate, in pixels/voxels. This feature was added by the viewer from provided data.`;
+      this.features.set(key, {
+        name: "Centroid " + axis,
+        key,
+        data,
+        tex,
+        min,
+        max,
+        unit: "",
+        type: FeatureType.DISCRETE,
+        categories: null,
+        description,
       });
     }
   }
@@ -697,8 +742,6 @@ export default class Dataset {
       ]);
     }
 
-    this.addTimeAndTrackFeatures();
-
     // Construct default array of segmentation IDs if not provided in the manifest.
     if (!this.segIds) {
       // Construct default segIds array (0, 1, 2, ...)
@@ -716,6 +759,9 @@ export default class Dataset {
     if (this.centroids) {
       this.centroids = padCentroidsTo3d(this.centroids, this.numObjects);
     }
+
+    this.addTimeAndTrackFeatures();
+    this.addCentroidFeatures();
 
     // Analytics reporting
     triggerAnalyticsEvent(AnalyticsEvent.DATASET_LOAD, {
