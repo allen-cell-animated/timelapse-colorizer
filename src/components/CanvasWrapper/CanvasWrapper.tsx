@@ -146,11 +146,14 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const setApplyChannelRangePresetCallback = useViewerStateStore((state) => state.setApplyChannelRangePresetCallback);
   const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
   const clearTracks = useViewerStateStore((state) => state.clearTracks);
+  const setTracks = useViewerStateStore((state) => state.setTracks);
   const addTracks = useViewerStateStore((state) => state.addTracks);
   const toggleTrack = useViewerStateStore((state) => state.toggleTrack);
   const showScaleBar = useViewerStateStore((state) => state.showScaleBar);
   const showTimestamp = useViewerStateStore((state) => state.showTimestamp);
   const frameLoadResult = useViewerStateStore((state) => state.frameLoadResult);
+
+  const isAnnotationModeEnabled = props.annotationState.isAnnotationModeEnabled;
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -382,16 +385,21 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       const isMultiTrackSelectHotkeyPressed = areAnyHotkeysPressed(SHORTCUT_KEYS.viewport.multiTrackSelect.keycode);
       if (newTrack) {
         if (isMultiTrackSelectHotkeyPressed) {
-          // Toggle selection of clicked track during multi-select mode.
-          toggleTrack(newTrack);
+          if (isAnnotationModeEnabled) {
+            // During annotation mode, don't toggle tracks to prevent tracks from
+            // becoming deselected while editing them.
+            addTracks(newTrack);
+          } else {
+            // Otherwise, toggle selection of clicked track during multi-select mode.
+            toggleTrack(newTrack);
+          }
         } else {
           // Select only the clicked track.
-          clearTracks();
-          addTracks(newTrack);
+          setTracks(newTrack);
         }
       }
     },
-    [toggleTrack, clearTracks, addTracks]
+    [toggleTrack, setTracks, addTracks, isAnnotationModeEnabled]
   );
 
   /** Report clicked tracks via the passed callback. */
