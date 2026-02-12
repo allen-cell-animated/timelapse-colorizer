@@ -27,6 +27,7 @@ import { formatNumber } from "./math_utils";
 // TODO: This file needs to be split up for easier reading and unit testing.
 
 export const URL_COLOR_RAMP_REVERSED_SUFFIX = "!";
+export const URL_PATH_SHOW_ALL_SUFFIX = "!";
 export enum UrlParam {
   COLLECTION = "collection",
   DATASET = "dataset",
@@ -54,9 +55,12 @@ export enum UrlParam {
   EDGE_MODE = "edge",
   SHOW_PATH = "path",
   PATH_COLOR = "path-color",
+  PATH_COLOR_RAMP = "path-ramp",
   PATH_WIDTH = "path-width",
   PATH_COLOR_MODE = "path-mode",
   SHOW_PATH_BREAKS = "path-breaks",
+  PATH_STEPS = "path-steps",
+  PATH_PERSIST_OUT_OF_RANGE = "path-persist",
   SHOW_SCALEBAR = "scalebar",
   SHOW_TIMESTAMP = "timestamp",
   KEEP_RANGE = "keep-range",
@@ -66,6 +70,7 @@ export enum UrlParam {
   SCATTERPLOT_RANGE_MODE = "scatter-range",
   OPEN_TAB = "tab",
   SHOW_VECTOR = "vc",
+  INTERPOLATE_3D = "interpolate",
   VECTOR_KEY = "vc-key",
   VECTOR_COLOR = "vc-color",
   VECTOR_SCALE = "vc-scale",
@@ -98,11 +103,16 @@ export const isChannelKey = (key: string): key is ChannelSettingParamKey => {
   return CHANNEL_STATE_KEY_REGEX.test(key);
 };
 
+const TRACK_PATH_STEPS_REGEX = /^(\d+)!?,(\d+)!?$/;
+
 const ALLEN_FILE_PREFIX = "/allen/";
+export const VAST_FILES_URL = "https://vast-files.int.allencell.org/";
 const ALLEN_PREFIX_TO_HTTPS: Record<string, string> = {
   // eslint-disable-next-line @typescript-eslint/naming-convention
-  "/allen/aics/": "https://dev-aics-dtp-001.int.allencell.org/",
+  "/allen/aics/": VAST_FILES_URL,
 };
+
+export const PUBLIC_TFE_URL = "https://timelapse.allencell.org/";
 
 export const DEFAULT_FETCH_TIMEOUT_MS = 2000;
 
@@ -280,6 +290,42 @@ export function deserializeThresholds(thresholds: string | null): FeatureThresho
   }, [] as FeatureThreshold[]);
 }
 
+export function serializeTrackPathSteps(
+  pastSteps?: number,
+  futureSteps?: number,
+  showAllPastSteps?: boolean,
+  showAllFutureSteps?: boolean
+): string | undefined {
+  if (pastSteps === undefined || futureSteps === undefined) {
+    return undefined;
+  }
+  const pastString = pastSteps + (showAllPastSteps ? URL_PATH_SHOW_ALL_SUFFIX : "");
+  const futureString = futureSteps + (showAllFutureSteps ? URL_PATH_SHOW_ALL_SUFFIX : "");
+  return `${pastString},${futureString}`;
+}
+
+export function deserializeTrackPathSteps(
+  stepsString: string | null
+): { pastSteps: number; futureSteps: number; showAllPastSteps: boolean; showAllFutureSteps: boolean } | undefined {
+  if (!stepsString || !TRACK_PATH_STEPS_REGEX.test(stepsString)) {
+    return;
+  }
+  const [pastString, futureString] = stepsString.split(",");
+  let pastSteps = 0;
+  let futureSteps = 0;
+  let showAllPastSteps = false;
+  let showAllFutureSteps = false;
+  if (pastString) {
+    showAllPastSteps = pastString.endsWith(URL_PATH_SHOW_ALL_SUFFIX);
+    pastSteps = parseInt(showAllPastSteps ? pastString.slice(0, -1) : pastString, 10);
+  }
+  if (futureString) {
+    showAllFutureSteps = futureString.endsWith(URL_PATH_SHOW_ALL_SUFFIX);
+    futureSteps = parseInt(showAllFutureSteps ? futureString.slice(0, -1) : futureString, 10);
+  }
+  return { pastSteps, futureSteps, showAllPastSteps, showAllFutureSteps };
+}
+
 export function encodeColor(value: Color): string {
   return value.getHexString();
 }
@@ -363,6 +409,16 @@ export function parseViewMode(mode: string | null): ViewMode | undefined {
   return undefined;
 }
 
+export function decodeTracks(value: string | null): number[] | undefined {
+  if (value === null) {
+    return undefined;
+  }
+  return value
+    .split(",")
+    .map((trackIdStr) => parseInt(trackIdStr, 10))
+    .filter((trackId) => !Number.isNaN(trackId));
+}
+
 export function parseDrawMode(mode: string | null): DrawMode | undefined {
   const modeInt = parseInt(mode || "-1", 10);
   return mode && isDrawMode(modeInt) ? modeInt : undefined;
@@ -384,7 +440,10 @@ export function parseDrawSettings(
 export function parseTrackPathMode(mode: string | null): TrackPathColorMode | undefined {
   const modeInt = parseInt(mode || "-1", 10);
   const isTrackPathColorMode =
-    modeInt === TrackPathColorMode.USE_CUSTOM_COLOR || modeInt === TrackPathColorMode.USE_OUTLINE_COLOR;
+    modeInt === TrackPathColorMode.USE_CUSTOM_COLOR ||
+    modeInt === TrackPathColorMode.USE_OUTLINE_COLOR ||
+    modeInt === TrackPathColorMode.USE_FEATURE_COLOR ||
+    modeInt === TrackPathColorMode.USE_COLOR_MAP;
   return mode && isTrackPathColorMode ? (modeInt as TrackPathColorMode) : undefined;
 }
 
@@ -521,10 +580,11 @@ export function isAllenPath(input: string): boolean {
  * otherwise, returns an HTTPS resource path.
  */
 export function convertAllenPathToHttps(input: string): string | null {
-  input = normalizeFilePathSlashes(input);
-  for (const prefix of Object.keys(ALLEN_PREFIX_TO_HTTPS)) {
-    if (input.startsWith(prefix)) {
-      return input.replace(prefix, ALLEN_PREFIX_TO_HTTPS[prefix]);
+  // Escape special characters in the path, except for slashes
+  const escapedInput = encodeURIComponent(normalizeFilePathSlashes(input)).replaceAll("%2F", "/");
+  for (const [prefix, httpsPrefix] of Object.entries(ALLEN_PREFIX_TO_HTTPS)) {
+    if (escapedInput.startsWith(prefix)) {
+      return escapedInput.replace(prefix, httpsPrefix);
     }
   }
   return null;

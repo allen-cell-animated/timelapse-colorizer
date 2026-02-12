@@ -1,5 +1,7 @@
 import { DEFAULT_ANNOTATION_LABEL_COLORS } from "src/colorizer/AnnotationData";
 
+export * from "./shortcuts";
+
 export const INTERNAL_BUILD = import.meta.env.VITE_INTERNAL_BUILD === "true";
 export const VERSION_NUMBER = import.meta.env.VITE_APP_VERSION;
 export const BASE_URL = import.meta.env.BASE_URL;

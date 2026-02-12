@@ -1,8 +1,19 @@
+import { unparse } from "papaparse";
 import type Plotly from "plotly.js-dist-min";
-import type {PlotData} from "plotly.js-dist-min";
+import type { PlotData } from "plotly.js-dist-min";
 import type { Color } from "three";
 
-import type { ColorRamp, Dataset, HexColorString } from "src/colorizer";
+import {
+  type ColorRamp,
+  CSV_COL_FILTERED,
+  CSV_COL_OUTLIER,
+  CSV_COL_SEG_ID,
+  CSV_COL_TIME_WITH_UNITS,
+  CSV_COL_TRACK,
+  type Dataset,
+  type HexColorString,
+} from "src/colorizer";
+import { type FeatureData, FeatureType, TIME_FEATURE_KEY, TRACK_FEATURE_KEY } from "src/colorizer/Dataset";
 import { remap } from "src/colorizer/utils/math_utils";
 
 export type DataArray = Uint32Array | Float32Array | number[];
@@ -192,4 +203,81 @@ export function drawCrosshair(x: number, y: number): Partial<PlotData>[] {
     },
   };
   return [crosshairBg, crosshair];
+}
+
+function isValueOutOfRange(value: number, range?: [number, number]): boolean {
+  if (range) {
+    // Check if value outside of range (range is treated as inclusive)
+    return value < range[0] || value > range[1];
+  }
+  return false;
+}
+
+export function getScatterplotDataAsCsv(
+  dataset: Dataset,
+  objectIds: number[],
+  inRangeLUT: Uint8Array,
+  featureKeys: string[],
+  featureToRangeFilter: Map<string, [number, number]> = new Map(),
+  delimiter: string = ","
+): string {
+  for (const featureKey of featureKeys) {
+    if (!dataset.hasFeatureKey(featureKey)) {
+      throw new Error(`Cannot generate CSV data: Missing feature data for key '${featureKey}'.`);
+    }
+  }
+  const allFeatureData = featureKeys.map((featureKey) => dataset.getFeatureData(featureKey)) as FeatureData[];
+  const featureNames = featureKeys.map((featureKey) => dataset.getFeatureNameWithUnits(featureKey));
+  const headerRow = [
+    CSV_COL_SEG_ID,
+    CSV_COL_TRACK,
+    CSV_COL_TIME_WITH_UNITS,
+    ...featureNames,
+    CSV_COL_OUTLIER,
+    CSV_COL_FILTERED,
+  ];
+
+  const csvRows: (string | number)[][] = [];
+  for (const id of objectIds) {
+    const segId = dataset.getSegmentationId(id);
+    const track = dataset.getTrackId(id);
+    const time = dataset.getTime(id);
+
+    // Check if track or time are excluded by filters
+    let skipRow =
+      isValueOutOfRange(track, featureToRangeFilter.get(TRACK_FEATURE_KEY)) ||
+      isValueOutOfRange(time, featureToRangeFilter.get(TIME_FEATURE_KEY));
+    if (skipRow) {
+      continue;
+    }
+
+    const row: (string | number)[] = [segId, track, time];
+    for (const featureData of allFeatureData) {
+      let value: string | number = featureData.data[id];
+      // Apply axis filters to exclude points that are outside range.
+      if (isValueOutOfRange(value as number, featureToRangeFilter.get(featureData.key))) {
+        skipRow = true;
+        break;
+      }
+      // Parse categorical data back into original string labels
+      if (featureData.type === FeatureType.CATEGORICAL && featureData.categories) {
+        value = featureData.categories[value] ?? "";
+      }
+      row.push(value);
+    }
+    if (skipRow) {
+      continue;
+    }
+    // Sort outliers and filtered status after feature columns
+    const outlier = dataset.outliers && dataset.outliers[id] === 1 ? "true" : "false";
+    const filtered = inRangeLUT[id] === 1 ? "true" : "false";
+    row.push(outlier, filtered);
+    csvRows.push(row);
+  }
+
+  const csvString = unparse(
+    { fields: headerRow, data: csvRows },
+    { delimiter: delimiter, header: true, escapeFormulae: true }
+  );
+  return csvString;
 }

@@ -1,10 +1,12 @@
 import { Button } from "antd";
-import React, { type ReactElement, useState } from "react";
+import React, { type ReactElement, useCallback, useState } from "react";
+import { useHotkeys } from "react-hotkeys-hook";
 import styled, { css } from "styled-components";
 
 import { getBuildDisplayDateString } from "src/colorizer/utils/math_utils";
+import ShortcutKeyModal from "src/components/Modals/ShortcutKeyModal";
 import StyledModal from "src/components/Modals/StyledModal";
-import { INTERNAL_BUILD } from "src/constants";
+import { INTERNAL_BUILD, SHORTCUT_KEYS } from "src/constants";
 import { VisuallyHidden } from "src/styles/utils";
 
 import AccessibleDropdown from "./AccessibleDropdown";
@@ -44,6 +46,12 @@ const StyledButton = styled(Button)`
 
 export default function HelpDropdown(): ReactElement {
   const [showVersionModal, setShowVersionModal] = useState(false);
+  const [showShortcutKeyModal, setShowShortcutKeyModal] = useState(false);
+
+  const toggleShortcutKeyModal = useCallback((): void => {
+    setShowShortcutKeyModal((prev) => !prev);
+  }, []);
+  useHotkeys(SHORTCUT_KEYS.navigation.showShortcutMenu.keycode, toggleShortcutKeyModal);
 
   const dropdownContent = (
     <DropdownItemList>
@@ -67,6 +75,9 @@ export default function HelpDropdown(): ReactElement {
         Report an issue
         <VisuallyHidden>(opens in new tab)</VisuallyHidden>
       </StyledLink>
+      <StyledButton type="text" onClick={() => setShowShortcutKeyModal(true)}>
+        Keyboard shortcuts
+      </StyledButton>
       <StyledButton type="text" onClick={() => setShowVersionModal(true)}>
         Version info
       </StyledButton>
@@ -96,6 +107,7 @@ export default function HelpDropdown(): ReactElement {
           </p>
         )}
       </StyledModal>
+      <ShortcutKeyModal open={showShortcutKeyModal} setOpen={setShowShortcutKeyModal} shortcuts={SHORTCUT_KEYS} />
     </div>
   );
 }

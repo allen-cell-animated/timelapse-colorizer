@@ -1,8 +1,14 @@
 import { Vector2 } from "three";
 
+import type { LabelData } from "src/colorizer/AnnotationData";
+import type { ChannelRangePreset, FrameLoadResult, PixelIdInfo } from "src/colorizer/types";
+import { hasPropertyChanged } from "src/colorizer/utils/data_utils";
 import { ViewMode } from "src/state/slices";
 
-import type { LabelData } from "./AnnotationData";
+import ColorizeCanvas2D from "./ColorizeCanvas2D";
+import { ColorizeCanvas3D } from "./ColorizeCanvas3D";
+import type { IInnerRenderCanvas } from "./IInnerRenderCanvas";
+import type { IRenderCanvas } from "./IRenderCanvas";
 import {
   defaultFooterStyle,
   defaultHeaderStyle,
@@ -19,27 +25,16 @@ import {
   type LegendStyle,
   type ScaleBarStyle,
   type TimestampStyle,
-} from "./canvas/elements";
+} from "./overlays/elements";
 import {
   type AnnotationParams,
   type AnnotationStyle,
   defaultAnnotationStyle,
   getAnnotationRenderer,
-} from "./canvas/elements/annotations";
-import type { BaseRenderParams, RenderInfo } from "./canvas/types";
-import { getPixelRatio, toEven } from "./canvas/utils";
-import ColorizeCanvas2D from "./ColorizeCanvas2D";
-import { ColorizeCanvas3D } from "./ColorizeCanvas3D";
-import type { IInnerRenderCanvas } from "./IInnerRenderCanvas";
-import type { IRenderCanvas, RenderCanvasStateParams, RenderOptions } from "./IRenderCanvas";
-import {
-  type CanvasScaleInfo,
-  CanvasType,
-  type ChannelRangePreset,
-  type FrameLoadResult,
-  type PixelIdInfo,
-} from "./types";
-import { hasPropertyChanged } from "./utils/data_utils";
+} from "./overlays/elements/annotations";
+import type { BaseRenderParams, RenderInfo } from "./overlays/types";
+import { getPixelRatio, toEven } from "./overlays/utils";
+import { type CanvasScaleInfo, CanvasType, type RenderCanvasStateParams, type RenderOptions } from "./types";
 
 type OverlayRenderOptions = RenderOptions & {
   renderInnerCanvas?: boolean;

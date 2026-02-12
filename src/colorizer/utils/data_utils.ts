@@ -1,13 +1,11 @@
 import type { Color } from "three";
 
 import { BOOLEAN_VALUE_FALSE, BOOLEAN_VALUE_TRUE, type LabelData, LabelType } from "src/colorizer/AnnotationData";
-import type ColorRamp from "src/colorizer/ColorRamp";
-import { ColorRampType } from "src/colorizer/ColorRamp";
+import ColorRamp, { ColorRampType } from "src/colorizer/ColorRamp";
 import type { ColorRampData } from "src/colorizer/colors/color_ramps";
 import { MAX_FEATURE_CATEGORIES } from "src/colorizer/constants";
 import type Dataset from "src/colorizer/Dataset";
 import { FeatureType } from "src/colorizer/Dataset";
-import type { RenderCanvasStateParams } from "src/colorizer/IRenderCanvas";
 import type Track from "src/colorizer/Track";
 import {
   FeatureDataType,
@@ -19,8 +17,11 @@ import {
   ThresholdType,
   TrackPathColorMode,
 } from "src/colorizer/types";
+import type { TrackPathParams } from "src/colorizer/viewport/tracks/types";
 
 import { packDataTexture } from "./texture_utils";
+
+// TODO: Move all track path utils into the viewport/tracks directory
 
 /** Returns whether the two arrays are deeply equal, where arr1[i] === arr2[i] for all i. */
 export function arrayElementsAreEqual<T>(arr1: T[], arr2: T[]): boolean {
@@ -51,14 +52,34 @@ export function thresholdMatchFinder(featureKey: string, unit: string): (thresho
 }
 
 /**
- * Convenience method for getting a single ramp from a map of strings to ramps, optionally reversing it.
+ * Convenience method for getting a single ramp from a map of strings to ramps,
+ * optionally reversing or mirroring it. Always returns a *new* ColorRamp
+ * instance that should be disposed of when no longer needed.
  */
-export function getColorMap(colorRampData: Map<string, ColorRampData>, key: string, reversed = false): ColorRamp {
-  const colorRamp = colorRampData.get(key)?.colorRamp;
-  if (!colorRamp) {
+export function getColorMap(
+  colorRampDataMap: Map<string, ColorRampData>,
+  key: string,
+  options: {
+    reversed?: boolean;
+    mirrored?: boolean;
+  } = {}
+): ColorRamp {
+  const colorRampData = colorRampDataMap.get(key);
+  if (!colorRampData) {
     throw new Error("Could not find data for color ramp '" + key + "'");
   }
-  return colorRamp && reversed ? colorRamp.reverse() : colorRamp;
+  let colorStops = [...colorRampData.colorStops];
+  if (options.reversed) {
+    colorStops.reverse();
+  }
+  if (options.mirrored && colorRampData.type === ColorRampType.LINEAR) {
+    // Reverse + remove color at the beginning so the color stop isn't repeated
+    // ex: 123 => 12321 (3 is not repeated)
+    const reversedColorStops = [...colorStops].reverse();
+    reversedColorStops.shift();
+    colorStops = [...colorStops, ...reversedColorStops];
+  }
+  return new ColorRamp(colorStops, colorRampData.type);
 }
 
 /**
@@ -415,7 +436,7 @@ export function cloneLabel(label: LabelData): LabelData {
  * @returns The color for the given object ID, using the rules in the main
  * viewport shader.
  */
-export function computeColorFromId(id: number, params: RenderCanvasStateParams): Color {
+export function computeColorFromId(id: number, params: TrackPathParams): Color {
   const {
     dataset,
     featureKey,
@@ -463,7 +484,7 @@ export function computeColorFromId(id: number, params: RenderCanvasStateParams):
  * B: colors[i * 3 + 2]
  * ```
  */
-export function computeVertexColorsFromIds(ids: number[], params: RenderCanvasStateParams): Float32Array {
+export function computeVertexColorsFromIds(ids: number[], params: TrackPathParams): Float32Array {
   // Especially for discontinuous lines, IDs may be repeated. Cache results to
   // avoid repeat computation.
   const idToColor = new Map<number, [number, number, number]>();
@@ -549,24 +570,8 @@ export function computeTrackLinePointsAndIds(
   return { ids, points };
 }
 
-/**
- * Normalizes 3D centroids to 2D canvas space in-place, where the X and Y coordinates are
- * in the range [-1, 1] and the Z coordinate is always zero.
- */
-export function normalizePointsTo2dCanvasSpace(points: Float32Array, dataset: Dataset): Float32Array {
-  // TODO: This normalization step may be unnecessary if we do it during the
-  // line scaling step.
-  for (let i = 0; i < points.length; i += 3) {
-    points[i + 0] = (points[i + 0] / dataset.frameResolution.x) * 2.0 - 1.0;
-    points[i + 1] = -((points[i + 1] / dataset.frameResolution.y) * 2.0 - 1.0);
-    // Z coordinate is always zero for 2D canvas space
-    points[i + 2] = 0;
-  }
-  return points;
-}
-
-const LINE_GEOMETRY_DEPS: (keyof RenderCanvasStateParams)[] = ["dataset", "track", "showTrackPathBreaks"];
-const LINE_VERTEX_COLOR_DEPS: (keyof RenderCanvasStateParams)[] = [
+const LINE_GEOMETRY_DEPS: (keyof TrackPathParams)[] = ["dataset", "track", "showTrackPathBreaks"];
+const LINE_VERTEX_COLOR_DEPS: (keyof TrackPathParams)[] = [
   ...LINE_GEOMETRY_DEPS,
   "trackPathColorMode",
   "featureKey",
@@ -578,17 +583,27 @@ const LINE_VERTEX_COLOR_DEPS: (keyof RenderCanvasStateParams)[] = [
   "outlierDrawSettings",
   "showTrackPath",
 ];
-const LINE_MATERIAL_DEPS: (keyof RenderCanvasStateParams)[] = [
+const LINE_MATERIAL_DEPS: (keyof TrackPathParams)[] = [
   "trackPathColorMode",
   "trackPathColor",
+  "trackPathColorRamp",
   "outlineColor",
   "trackPathWidthPx",
 ];
-const LINE_RENDER_DEPS: (keyof RenderCanvasStateParams)[] = ["showTrackPath"];
+
+/** Dependencies that will trigger a re-render of the track path on change. */
+const LINE_RENDER_DEPS: (keyof TrackPathParams)[] = [
+  "showTrackPath",
+  "trackPathPastSteps",
+  "trackPathFutureSteps",
+  "showAllTrackPathPastSteps",
+  "showAllTrackPathFutureSteps",
+  "persistTrackPathWhenOutOfRange",
+];
 
 export function getLineUpdateFlags(
-  prevParams: RenderCanvasStateParams | null,
-  params: RenderCanvasStateParams
+  prevParams: TrackPathParams | null,
+  params: TrackPathParams
 ): {
   geometryNeedsUpdate: boolean;
   vertexColorNeedsUpdate: boolean;
@@ -597,7 +612,8 @@ export function getLineUpdateFlags(
 } {
   const geometryNeedsUpdate = hasPropertyChanged(prevParams, params, LINE_GEOMETRY_DEPS);
   const vertexColorNeedsUpdate =
-    params.trackPathColorMode === TrackPathColorMode.USE_FEATURE_COLOR &&
+    (params.trackPathColorMode === TrackPathColorMode.USE_COLOR_MAP ||
+      params.trackPathColorMode === TrackPathColorMode.USE_FEATURE_COLOR) &&
     hasPropertyChanged(prevParams, params, LINE_VERTEX_COLOR_DEPS);
   const materialNeedsUpdate = vertexColorNeedsUpdate || hasPropertyChanged(prevParams, params, LINE_MATERIAL_DEPS);
   const needsRender =

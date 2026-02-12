@@ -1,6 +1,5 @@
 import type { StateCreator } from "zustand";
 
-import type { Track } from "src/colorizer";
 import type Dataset from "src/colorizer/Dataset";
 import { decodeInt, parseViewMode, UrlParam } from "src/colorizer/utils/url_utils";
 import type { SerializedStoreData } from "src/state/types";
@@ -16,7 +15,6 @@ export type DatasetSliceState = {
   datasetKey: string | null;
   dataset: Dataset | null;
   featureKey: string | null;
-  track: Track | null;
   /** The key of the backdrop image set in the current dataset. `null` if there
    * is no Dataset loaded or if the dataset does not have backdrops. */
   backdropKey: string | null;
@@ -29,7 +27,7 @@ export type DatasetSliceState = {
 
 export type DatasetSliceSerializableState = Pick<
   DatasetSliceState,
-  "datasetKey" | "featureKey" | "track" | "backdropKey" | "viewMode"
+  "datasetKey" | "featureKey" | "backdropKey" | "viewMode"
 >;
 
 export type DatasetSliceActions = {
@@ -40,8 +38,6 @@ export type DatasetSliceActions = {
    * @throws {Error} If no dataset is loaded.
    */
   setFeatureKey: (featureKey: string) => void;
-  setTrack: (track: Track) => void;
-  clearTrack: () => void;
   setBackdropKey: (key: string) => void;
   setViewMode: (viewMode: ViewMode) => void;
 };
@@ -52,7 +48,6 @@ export const createDatasetSlice: StateCreator<CollectionSlice & DatasetSlice, []
   datasetKey: null,
   dataset: null,
   featureKey: null,
-  track: null,
   backdropKey: null,
   viewMode: ViewMode.VIEW_2D,
 
@@ -81,16 +76,7 @@ export const createDatasetSlice: StateCreator<CollectionSlice & DatasetSlice, []
       throw new Error(`ViewerStateStore.setFeatureKey: Feature key '${featureKey}' was not found in the dataset.`);
     }
   },
-  setTrack: (track: Track) => {
-    if (!get().dataset) {
-      throw new Error("DatasetSlice.setTrack: Cannot set track when no dataset loaded");
-    }
-    // TODO: Validate whether the track is in the dataset?
-    set({ track });
-  },
-  clearTrack: () => {
-    set({ track: null });
-  },
+
   setViewMode: (viewMode: ViewMode) => {
     const dataset = get().dataset;
     if (!dataset) {
@@ -105,8 +91,6 @@ export const createDatasetSlice: StateCreator<CollectionSlice & DatasetSlice, []
   },
 
   setDataset: (key: string, dataset: Dataset) => {
-    // TODO: Clear/dispose of old dataset here?
-
     ///// Validate dataset-dependent state values /////
 
     // Use new dataset's default feature key if current key is not present
@@ -136,10 +120,10 @@ export const createDatasetSlice: StateCreator<CollectionSlice & DatasetSlice, []
     // }
 
     // TODO: Dispose of old dataset?
-    set({ datasetKey: key, dataset, track: null, featureKey, backdropKey, viewMode });
+    set({ datasetKey: key, dataset, featureKey, backdropKey, viewMode });
   },
 
-  clearDataset: () => set({ datasetKey: null, dataset: null, track: null, featureKey: null, backdropKey: null }),
+  clearDataset: () => set({ datasetKey: null, dataset: null, featureKey: null, backdropKey: null }),
 });
 
 export const serializeDatasetSlice = (slice: Partial<DatasetSliceSerializableState>): SerializedStoreData => {
@@ -149,9 +133,6 @@ export const serializeDatasetSlice = (slice: Partial<DatasetSliceSerializableSta
   }
   if (slice.featureKey !== undefined && slice.featureKey !== null) {
     ret[UrlParam.FEATURE] = slice.featureKey;
-  }
-  if (slice.track) {
-    ret[UrlParam.TRACK] = slice.track.trackId.toString();
   }
   if (slice.backdropKey !== undefined && slice.backdropKey !== null) {
     ret[UrlParam.BACKDROP_KEY] = slice.backdropKey;
@@ -166,7 +147,6 @@ export const serializeDatasetSlice = (slice: Partial<DatasetSliceSerializableSta
 export const selectDatasetSliceSerializationDeps = (slice: DatasetSlice): DatasetSliceSerializableState => ({
   datasetKey: slice.datasetKey,
   featureKey: slice.featureKey,
-  track: slice.track,
   backdropKey: slice.backdropKey,
   viewMode: slice.viewMode,
 });
@@ -178,7 +158,6 @@ export const loadDatasetSliceFromParams = (slice: DatasetSlice, params: URLSearc
     return;
   }
   const featureKeyParam = params.get(UrlParam.FEATURE);
-  const trackIdParam = decodeInt(params.get(UrlParam.TRACK));
   const backdropKeyParam = params.get(UrlParam.BACKDROP_KEY);
   const viewModeParam = parseViewMode(params.get(UrlParam.VIEW_MODE));
 
@@ -186,12 +165,6 @@ export const loadDatasetSliceFromParams = (slice: DatasetSlice, params: URLSearc
     const featureKey = dataset.findFeatureByKeyOrName(featureKeyParam);
     if (featureKey) {
       slice.setFeatureKey(featureKey);
-    }
-  }
-  if (trackIdParam !== undefined) {
-    const track = dataset.getTrack(trackIdParam);
-    if (track) {
-      slice.setTrack(track);
     }
   }
   if (backdropKeyParam !== null && dataset.hasBackdrop(backdropKeyParam)) {

@@ -1,60 +1,8 @@
-import type { Color, Vector2 } from "three";
+import type { Vector2 } from "three";
 
-import type { ColorRamp, Dataset, Track } from "src/colorizer";
-import type Collection from "src/colorizer/Collection";
-import type {
-  CanvasScaleInfo,
-  ChannelSetting,
-  DrawMode,
-  DrawSettings,
-  FrameLoadResult,
-  PixelIdInfo,
-  TrackPathColorMode,
-} from "src/colorizer/types";
-import { ViewMode } from "src/state/slices";
+import type { FrameLoadResult, PixelIdInfo } from "src/colorizer/types";
 
-// Standalone type for render canvas state params
-export type RenderCanvasStateParams = {
-  dataset: Dataset | null;
-  collection: Collection | null;
-  datasetKey: string | null;
-  pendingFrame: number;
-  featureKey: string | null;
-  track: Track | null;
-  viewMode: ViewMode;
-  showTrackPath: boolean;
-  showTrackPathBreaks: boolean;
-  colorRamp: ColorRamp;
-  colorRampRange: [number, number];
-  categoricalPaletteRamp: ColorRamp;
-  outlineColor: Color;
-  edgeColor: Color;
-  edgeColorAlpha: number;
-  edgeMode: DrawMode;
-  trackPathColor: Color;
-  trackPathWidthPx: number;
-  trackPathColorMode: TrackPathColorMode;
-  outlierDrawSettings: DrawSettings;
-  outOfRangeDrawSettings: DrawSettings;
-  inRangeLUT: Uint8Array;
-  vectorMotionDeltas: Float32Array | null;
-  vectorVisible: boolean;
-  vectorColor: Color;
-  vectorScaleFactor: number;
-  vectorScaleThicknessByMagnitude: boolean;
-  vectorThickness: number;
-  backdropKey: string | null;
-  backdropVisible: boolean;
-  channelSettings: ChannelSetting[];
-  objectOpacity: number;
-  backdropSaturation: number;
-  backdropBrightness: number;
-};
-
-export type RenderOptions = {
-  /** If true, renders synchronously. */
-  synchronous?: boolean;
-};
+import type { CanvasScaleInfo, RenderCanvasStateParams, RenderOptions } from "./types";
 
 /**
  * A canvas that renders timelapse data.

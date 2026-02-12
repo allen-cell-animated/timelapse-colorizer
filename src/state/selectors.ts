@@ -1,4 +1,4 @@
-import type { RenderCanvasStateParams } from "src/colorizer/IRenderCanvas";
+import type { RenderCanvasStateParams } from "src/colorizer/viewport/types";
 import type { ViewerStoreState } from "src/state/slices";
 
 export const renderCanvasStateParamsSelector = (state: ViewerStoreState): RenderCanvasStateParams => ({
@@ -9,6 +9,8 @@ export const renderCanvasStateParamsSelector = (state: ViewerStoreState): Render
   pendingFrame: state.pendingFrame,
   track: state.track,
   viewMode: state.viewMode,
+  tracks: state.tracks,
+  isSelectedLut: state.isSelectedLut,
   showTrackPath: state.showTrackPath,
   showTrackPathBreaks: state.showTrackPathBreaks,
   colorRamp: state.colorRamp,
@@ -19,8 +21,14 @@ export const renderCanvasStateParamsSelector = (state: ViewerStoreState): Render
   edgeMode: state.edgeMode,
   edgeColorAlpha: state.edgeColorAlpha,
   trackPathColor: state.trackPathColor,
+  trackPathColorRamp: state.trackPathColorRamp,
   trackPathWidthPx: state.trackPathWidthPx,
   trackPathColorMode: state.trackPathColorMode,
+  trackPathPastSteps: state.trackPathPastSteps,
+  trackPathFutureSteps: state.trackPathFutureSteps,
+  showAllTrackPathPastSteps: state.showAllTrackPathPastSteps,
+  showAllTrackPathFutureSteps: state.showAllTrackPathFutureSteps,
+  persistTrackPathWhenOutOfRange: state.persistTrackPathWhenOutOfRange,
   outlierDrawSettings: state.outlierDrawSettings,
   outOfRangeDrawSettings: state.outOfRangeDrawSettings,
   inRangeLUT: state.inRangeLUT,
@@ -36,4 +44,5 @@ export const renderCanvasStateParamsSelector = (state: ViewerStoreState): Render
   objectOpacity: state.objectOpacity,
   backdropSaturation: state.backdropSaturation,
   backdropBrightness: state.backdropBrightness,
+  interpolate3d: state.interpolate3d,
 });

@@ -15,8 +15,15 @@ const EXAMPLE_SLICE_1: Partial<ConfigSlice> = {
   showTrackPath: false,
   trackPathColor: new Color(0x00ff00),
   trackPathWidthPx: 2,
+  trackPathColorRampKey: "matplotlib-cool",
+  trackPathIsColorRampReversed: false,
   trackPathColorMode: TrackPathColorMode.USE_CUSTOM_COLOR,
   showTrackPathBreaks: false,
+  trackPathPastSteps: 70,
+  trackPathFutureSteps: 100,
+  showAllTrackPathPastSteps: false,
+  showAllTrackPathFutureSteps: true,
+  persistTrackPathWhenOutOfRange: false,
   showScaleBar: false,
   showTimestamp: false,
   outOfRangeDrawSettings: { color: new Color(0xff0000), mode: DrawMode.USE_COLOR },
@@ -26,14 +33,18 @@ const EXAMPLE_SLICE_1: Partial<ConfigSlice> = {
   edgeColorAlpha: 128 / 255, // 0x80
   edgeMode: DrawMode.USE_COLOR,
   openTab: TabType.SCATTER_PLOT,
+  interpolate3d: false,
 };
 
 const EXAMPLE_SLICE_1_PARAMS: SerializedStoreData = {
   [UrlParam.SHOW_PATH]: "0",
   [UrlParam.PATH_COLOR]: "00ff00",
   [UrlParam.PATH_WIDTH]: "2",
+  [UrlParam.PATH_COLOR_RAMP]: "matplotlib-cool",
   [UrlParam.PATH_COLOR_MODE]: TrackPathColorMode.USE_CUSTOM_COLOR.toString(),
   [UrlParam.SHOW_PATH_BREAKS]: "0",
+  [UrlParam.PATH_STEPS]: "70,100!",
+  [UrlParam.PATH_PERSIST_OUT_OF_RANGE]: "0",
   [UrlParam.SHOW_SCALEBAR]: "0",
   [UrlParam.SHOW_TIMESTAMP]: "0",
   [UrlParam.FILTERED_COLOR]: "ff0000",
@@ -44,14 +55,22 @@ const EXAMPLE_SLICE_1_PARAMS: SerializedStoreData = {
   [UrlParam.EDGE_COLOR]: "80808080",
   [UrlParam.EDGE_MODE]: "1",
   [UrlParam.OPEN_TAB]: TabType.SCATTER_PLOT,
+  [UrlParam.INTERPOLATE_3D]: "0",
 };
 
 const EXAMPLE_SLICE_2: Partial<ConfigSlice> = {
   showTrackPath: true,
   trackPathColor: new Color(0xffff00),
   trackPathWidthPx: 3,
+  trackPathColorRampKey: "esri-blue_red_8",
+  trackPathIsColorRampReversed: true,
   trackPathColorMode: TrackPathColorMode.USE_OUTLINE_COLOR,
   showTrackPathBreaks: true,
+  trackPathPastSteps: 25,
+  trackPathFutureSteps: 0,
+  showAllTrackPathPastSteps: true,
+  showAllTrackPathFutureSteps: false,
+  persistTrackPathWhenOutOfRange: true,
   showScaleBar: true,
   showTimestamp: true,
   outOfRangeDrawSettings: { color: new Color(0xffff00), mode: DrawMode.HIDE },
@@ -61,14 +80,18 @@ const EXAMPLE_SLICE_2: Partial<ConfigSlice> = {
   edgeColorAlpha: 208 / 255, // 0xd0
   edgeMode: DrawMode.HIDE,
   openTab: TabType.SETTINGS,
+  interpolate3d: true,
 };
 
 const EXAMPLE_SLICE_2_PARAMS: SerializedStoreData = {
   [UrlParam.SHOW_PATH]: "1",
   [UrlParam.PATH_COLOR]: "ffff00",
   [UrlParam.PATH_WIDTH]: "3",
+  [UrlParam.PATH_COLOR_RAMP]: "esri-blue_red_8!",
   [UrlParam.PATH_COLOR_MODE]: TrackPathColorMode.USE_OUTLINE_COLOR.toString(),
   [UrlParam.SHOW_PATH_BREAKS]: "1",
+  [UrlParam.PATH_STEPS]: "25!,0",
+  [UrlParam.PATH_PERSIST_OUT_OF_RANGE]: "1",
   [UrlParam.SHOW_SCALEBAR]: "1",
   [UrlParam.SHOW_TIMESTAMP]: "1",
   [UrlParam.FILTERED_COLOR]: "ffff00",
@@ -79,6 +102,7 @@ const EXAMPLE_SLICE_2_PARAMS: SerializedStoreData = {
   [UrlParam.EDGE_COLOR]: "a0b0c0d0",
   [UrlParam.EDGE_MODE]: DrawMode.HIDE.toString(),
   [UrlParam.OPEN_TAB]: TabType.SETTINGS,
+  [UrlParam.INTERPOLATE_3D]: "1",
 };
 
 describe("ConfigSlice", () => {
