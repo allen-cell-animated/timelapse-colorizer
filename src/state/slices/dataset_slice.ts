@@ -17,8 +17,8 @@ export type DatasetSliceState = {
 
   // Derived state flags
   /**
-   * Current view mode, either 2D or 3D. Will be automatically switched for
-   * datasets that support only one or the other.
+   * Current view mode, either 2D or 3D. Updates based on the currently loaded
+   * dataset.
    */
   viewMode: ViewMode;
 };
@@ -34,7 +34,6 @@ export type DatasetSliceActions = {
    */
   setFeatureKey: (featureKey: string) => void;
   setBackdropKey: (key: string) => void;
-  setViewMode: (viewMode: ViewMode) => void;
 };
 
 export type DatasetSlice = DatasetSliceState & DatasetSliceActions;
@@ -72,19 +71,6 @@ export const createDatasetSlice: StateCreator<CollectionSlice & DatasetSlice, []
     }
   },
 
-  setViewMode: (viewMode: ViewMode) => {
-    const dataset = get().dataset;
-    if (!dataset) {
-      throw new Error("DatasetSlice.setViewMode: Cannot set view mode when no dataset loaded");
-    }
-    if (viewMode === ViewMode.VIEW_3D && !dataset.has3dFrames()) {
-      throw new Error("DatasetSlice.setViewMode: Dataset does not support 3D view mode");
-    } else if (viewMode === ViewMode.VIEW_2D && !dataset.has2dFrames()) {
-      throw new Error("DatasetSlice.setViewMode: Dataset does not support 2D view mode");
-    }
-    set({ viewMode });
-  },
-
   setDataset: (key: string, dataset: Dataset) => {
     ///// Validate dataset-dependent state values /////
 
@@ -101,8 +87,7 @@ export const createDatasetSlice: StateCreator<CollectionSlice & DatasetSlice, []
       backdropKey = dataset.getDefaultBackdropKey();
     }
 
-    // Change view mode if the current mode is not supported by the new dataset,
-    // preferring 3D over 2D if available.
+    // Prefer 3D mode if the dataset supports it.
     let viewMode = ViewMode.VIEW_2D;
     if (dataset.has3dFrames()) {
       viewMode = ViewMode.VIEW_3D;
@@ -111,7 +96,8 @@ export const createDatasetSlice: StateCreator<CollectionSlice & DatasetSlice, []
     set({ datasetKey: key, dataset, featureKey, backdropKey, viewMode });
   },
 
-  clearDataset: () => set({ datasetKey: null, dataset: null, featureKey: null, backdropKey: null }),
+  clearDataset: () =>
+    set({ datasetKey: null, dataset: null, featureKey: null, backdropKey: null, viewMode: ViewMode.VIEW_2D }),
 });
 
 export const serializeDatasetSlice = (slice: Partial<DatasetSliceSerializableState>): SerializedStoreData => {
