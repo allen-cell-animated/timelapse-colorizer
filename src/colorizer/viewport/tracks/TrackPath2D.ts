@@ -12,6 +12,7 @@ import {
   computeTrackLinePointsAndIds,
   computeVertexColorsFromIds,
   getLineUpdateFlags,
+  getTrackPathRenderInfo,
 } from "src/colorizer/utils/data_utils";
 import SubrangeLineMaterial from "src/colorizer/viewport/tracks/SubrangeLineMaterial";
 
@@ -204,58 +205,19 @@ export default class TrackPath2D {
    * @param currentFrame The current frame index.
    */
   public updateVisibleRange(currentFrame: number): void {
-    const track = this.params?.track;
-    // Show nothing if track doesn't exist or doesn't have centroid data
-    if (!track || !track.centroids || !this.params?.showTrackPath) {
-      this.line.geometry.instanceCount = 0;
-      return;
-    }
+    const { rampScale, rampOffset, startingInstance, endingInstance } = getTrackPathRenderInfo(
+      this.params,
+      currentFrame
+    );
+    (this.line.material as SubrangeLineMaterial).colorRampVertexScale = rampScale;
+    (this.line.material as SubrangeLineMaterial).colorRampVertexOffset = rampOffset;
+    (this.line.material as SubrangeLineMaterial).minInstance = startingInstance;
+    this.line.geometry.instanceCount = endingInstance;
+    this.line.material.needsUpdate = true;
 
-    const trackStepIdx = currentFrame - track.startTime();
-    let endingInstance;
-    let startingInstance;
-
-    if (this.params.showAllTrackPathPastSteps) {
-      startingInstance = 0;
-    } else {
-      startingInstance = Math.max(0, trackStepIdx - this.params.trackPathPastSteps);
-    }
-
-    if (this.params.showAllTrackPathFutureSteps) {
-      endingInstance = track.duration();
-    } else {
-      endingInstance = Math.min(trackStepIdx + this.params.trackPathFutureSteps, track.duration());
-    }
-
-    // Check if the path should be hidden entirely because it is outside of the
-    // range. This happens when all past paths are shown and the track has ended,
-    // or if all future paths are shown and the track has not yet started.
-    if (!this.params.persistTrackPathWhenOutOfRange) {
-      const isVisiblePastEnd = this.params.showAllTrackPathPastSteps && trackStepIdx >= track.duration();
-      const isVisibleBeforeStart = this.params.showAllTrackPathFutureSteps && trackStepIdx < 0;
-      if (isVisiblePastEnd || isVisibleBeforeStart) {
-        startingInstance = 0;
-        endingInstance = 0;
-      }
-    }
-
-    if (
-      !(this.line.material instanceof SubrangeLineMaterial) ||
-      !(this.bgLine.material instanceof SubrangeLineMaterial)
-    ) {
-      return;
-    }
-
-    // Update color ramp related logic
-    const maxTrackLength = this.params.dataset?.getMaxTrackLength() || track.duration();
-    const pastSteps = this.params.showAllTrackPathPastSteps ? maxTrackLength : this.params.trackPathPastSteps;
-    const futureSteps = this.params.showAllTrackPathFutureSteps ? maxTrackLength : this.params.trackPathFutureSteps;
-    this.line.material.colorRampVertexOffset = trackStepIdx;
-    this.line.material.colorRampVertexScale = Math.max(pastSteps, futureSteps) * 2;
-
-    this.line.material.minInstance = startingInstance;
-    this.bgLine.material.minInstance = startingInstance;
-    this.line.geometry.instanceCount = Math.max(0, endingInstance);
+    (this.bgLine.material as SubrangeLineMaterial).minInstance = startingInstance;
+    this.bgLine.geometry.instanceCount = endingInstance;
+    this.bgLine.material.needsUpdate = true;
   }
 
   /**

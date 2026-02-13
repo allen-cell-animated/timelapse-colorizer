@@ -8,7 +8,7 @@ import LabeledSlider from "src/components/Inputs/LabeledSlider";
 import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
 import TrackPathLengthControl from "src/components/Tabs/Settings/TrackPathLengthControl";
 import ToggleCollapse from "src/components/ToggleCollapse";
-import { INTERNAL_BUILD, MAX_SETTINGS_SLIDER_WIDTH } from "src/constants";
+import { MAX_SETTINGS_SLIDER_WIDTH } from "src/constants";
 import { useViewerStateStore } from "src/state";
 import { VisuallyHidden } from "src/styles/utils";
 
@@ -29,10 +29,8 @@ const TRACK_MODE_ITEMS: SelectItem[] = [
   { value: TrackPathColorMode.USE_OUTLINE_COLOR.toString(), label: "Highlight" },
   { value: TrackPathColorMode.USE_CUSTOM_COLOR.toString(), label: "Custom" },
   { value: TrackPathColorMode.USE_FEATURE_COLOR.toString(), label: "Feature" },
+  { value: TrackPathColorMode.USE_COLOR_MAP.toString(), label: "Colormap" },
 ];
-if (INTERNAL_BUILD) {
-  TRACK_MODE_ITEMS.push({ value: TrackPathColorMode.USE_COLOR_MAP.toString(), label: "Colormap" });
-}
 
 export default function TrackPathSettings(): ReactElement {
   const dataset = useViewerStateStore((state) => state.dataset);
@@ -112,64 +110,56 @@ export default function TrackPathSettings(): ReactElement {
           </div>
         </SettingsItem>
 
-        {
-          // Locked behind an internal build flag for now since the track path
-          // does not respond to updates yet.
-          INTERNAL_BUILD && (
-            <>
-              <SettingsItem
-                label="Past steps"
-                htmlFor={TrackPathSettingsHtmlIds.TRACK_PATH_PAST_STEPS_SLIDER}
-                style={{ marginTop: 4 }}
-              >
-                <TrackPathLengthControl
-                  id={TrackPathSettingsHtmlIds.TRACK_PATH_PAST_STEPS_SLIDER}
-                  value={trackPathPastSteps}
-                  showAllValue={maxTrackPathSteps}
-                  onValueChanged={setTrackPathPastSteps}
-                  showAllChecked={showAllTrackPathPastSteps}
-                  onShowAllChanged={setShowAllTrackPathPastSteps}
-                />
-              </SettingsItem>
-              <SettingsItem
-                label="Future steps"
-                htmlFor={TrackPathSettingsHtmlIds.TRACK_PATH_FUTURE_STEPS_SLIDER}
-                style={{ marginTop: 4 }}
-              >
-                <TrackPathLengthControl
-                  id={TrackPathSettingsHtmlIds.TRACK_PATH_FUTURE_STEPS_SLIDER}
-                  value={trackPathFutureSteps}
-                  showAllValue={maxTrackPathSteps}
-                  onValueChanged={setTrackPathFutureSteps}
-                  showAllChecked={showAllTrackPathFutureSteps}
-                  onShowAllChanged={setShowAllTrackPathFutureSteps}
-                />
-              </SettingsItem>
-              <SettingsItem
-                label="Persist when out of range"
-                htmlFor={TrackPathSettingsHtmlIds.TRACK_PATH_PERSIST_OUT_OF_RANGE_CHECKBOX}
-              >
-                <Tooltip
-                  title="Keep the track path visible when showing all past or future steps, even when the current time is outside the track's range."
-                  placement="right"
-                  trigger={["focus", "hover"]}
-                >
-                  <div style={{ width: "fit-content", paddingTop: 2 }}>
-                    <Checkbox
-                      id={TrackPathSettingsHtmlIds.TRACK_PATH_PERSIST_OUT_OF_RANGE_CHECKBOX}
-                      type="checkbox"
-                      checked={persistTrackPathWhenOutOfRange}
-                      onChange={(event) => {
-                        setPersistTrackPathWhenOutOfRange(event.target.checked);
-                      }}
-                      disabled={!(showAllTrackPathPastSteps || showAllTrackPathFutureSteps)}
-                    ></Checkbox>
-                  </div>
-                </Tooltip>
-              </SettingsItem>
-            </>
-          )
-        }
+        <SettingsItem
+          label="Past steps"
+          htmlFor={TrackPathSettingsHtmlIds.TRACK_PATH_PAST_STEPS_SLIDER}
+          style={{ marginTop: 4 }}
+        >
+          <TrackPathLengthControl
+            id={TrackPathSettingsHtmlIds.TRACK_PATH_PAST_STEPS_SLIDER}
+            value={trackPathPastSteps}
+            showAllValue={maxTrackPathSteps}
+            onValueChanged={setTrackPathPastSteps}
+            showAllChecked={showAllTrackPathPastSteps}
+            onShowAllChanged={setShowAllTrackPathPastSteps}
+          />
+        </SettingsItem>
+        <SettingsItem
+          label="Future steps"
+          htmlFor={TrackPathSettingsHtmlIds.TRACK_PATH_FUTURE_STEPS_SLIDER}
+          style={{ marginTop: 4 }}
+        >
+          <TrackPathLengthControl
+            id={TrackPathSettingsHtmlIds.TRACK_PATH_FUTURE_STEPS_SLIDER}
+            value={trackPathFutureSteps}
+            showAllValue={maxTrackPathSteps}
+            onValueChanged={setTrackPathFutureSteps}
+            showAllChecked={showAllTrackPathFutureSteps}
+            onShowAllChanged={setShowAllTrackPathFutureSteps}
+          />
+        </SettingsItem>
+        <SettingsItem
+          label="Persist when out of range"
+          htmlFor={TrackPathSettingsHtmlIds.TRACK_PATH_PERSIST_OUT_OF_RANGE_CHECKBOX}
+        >
+          <Tooltip
+            title="Keep the track path visible when showing all past or future steps, even when the current time is outside the track's range."
+            placement="right"
+            trigger={["focus", "hover"]}
+          >
+            <div style={{ width: "fit-content", paddingTop: 2 }}>
+              <Checkbox
+                id={TrackPathSettingsHtmlIds.TRACK_PATH_PERSIST_OUT_OF_RANGE_CHECKBOX}
+                type="checkbox"
+                checked={persistTrackPathWhenOutOfRange}
+                onChange={(event) => {
+                  setPersistTrackPathWhenOutOfRange(event.target.checked);
+                }}
+                disabled={!(showAllTrackPathPastSteps || showAllTrackPathFutureSteps)}
+              ></Checkbox>
+            </div>
+          </Tooltip>
+        </SettingsItem>
 
         <SettingsItem
           label={"Show breaks"}
