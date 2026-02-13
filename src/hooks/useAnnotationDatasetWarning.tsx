@@ -120,7 +120,7 @@ export function useAnnotationDatasetWarning<A extends unknown[], B>(
         }
       >
         <p>Annotations are not preserved between datasets.</p>
-        <p>To keep your work, export annotations as a .csv file before proceeding and reimport them later</p>
+        <p>To keep your work, export annotations as a .csv file before proceeding and reimport them later.</p>
       </StyledModal>
     </div>
   );
