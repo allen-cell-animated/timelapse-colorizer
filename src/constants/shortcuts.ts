@@ -58,6 +58,23 @@ export const SHORTCUT_KEYS = {
       keycodeDisplay: "Left click drag",
     },
   },
+  backdrops: {
+    cycleForward: {
+      name: "Show next backdrop/channel",
+      keycode: ["period"],
+      keycodeDisplay: [">"],
+    },
+    cycleBackward: {
+      name: "Show previous backdrop/channel",
+      keycode: ["comma"],
+      keycodeDisplay: "<",
+    },
+    // showChannel: {
+    //   name: "Toggle backdrop/channel by number",
+    //   keycode: ["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+    //   keycodeDisplay: "1-9",
+    // },
+  },
   annotation: {
     selectRange: { name: "Select range", keycode: "shift" },
     // TODO: Alt is used for other shortcuts in Chrome (by default, it focuses the menu bar when released).

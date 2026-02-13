@@ -1,5 +1,6 @@
 export type { AnnotationState } from "./useAnnotations";
 export { useAnnotations } from "./useAnnotations";
+export { useBackdropShortcuts } from "./useBackdropShortcuts";
 export { useConstructor } from "./useConstructor";
 export { useDebounce } from "./useDebounce";
 export { useIsHotkeyHeld } from "./useIsHotkeyHeld";
