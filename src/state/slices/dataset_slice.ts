@@ -1,6 +1,7 @@
 import type { StateCreator } from "zustand";
 
 import type Dataset from "src/colorizer/Dataset";
+import { ViewMode } from "src/colorizer/types";
 import { UrlParam } from "src/colorizer/utils/url_utils";
 import type { SerializedStoreData } from "src/state/types";
 
@@ -13,6 +14,13 @@ export type DatasetSliceState = {
   /** The key of the backdrop image set in the current dataset. `null` if there
    * is no Dataset loaded or if the dataset does not have backdrops. */
   backdropKey: string | null;
+
+  // Derived state flags
+  /**
+   * Current view mode, either 2D or 3D. Will be automatically switched for
+   * datasets that support only one or the other.
+   */
+  viewMode: ViewMode;
 };
 
 export type DatasetSliceSerializableState = Pick<DatasetSliceState, "datasetKey" | "featureKey" | "backdropKey">;
@@ -26,6 +34,7 @@ export type DatasetSliceActions = {
    */
   setFeatureKey: (featureKey: string) => void;
   setBackdropKey: (key: string) => void;
+  setViewMode: (viewMode: ViewMode) => void;
 };
 
 export type DatasetSlice = DatasetSliceState & DatasetSliceActions;
@@ -35,6 +44,7 @@ export const createDatasetSlice: StateCreator<CollectionSlice & DatasetSlice, []
   dataset: null,
   featureKey: null,
   backdropKey: null,
+  viewMode: ViewMode.VIEW_2D,
 
   setBackdropKey: (key: string) => {
     const dataset = get().dataset;
@@ -62,6 +72,19 @@ export const createDatasetSlice: StateCreator<CollectionSlice & DatasetSlice, []
     }
   },
 
+  setViewMode: (viewMode: ViewMode) => {
+    const dataset = get().dataset;
+    if (!dataset) {
+      throw new Error("DatasetSlice.setViewMode: Cannot set view mode when no dataset loaded");
+    }
+    if (viewMode === ViewMode.VIEW_3D && !dataset.has3dFrames()) {
+      throw new Error("DatasetSlice.setViewMode: Dataset does not support 3D view mode");
+    } else if (viewMode === ViewMode.VIEW_2D && !dataset.has2dFrames()) {
+      throw new Error("DatasetSlice.setViewMode: Dataset does not support 2D view mode");
+    }
+    set({ viewMode });
+  },
+
   setDataset: (key: string, dataset: Dataset) => {
     ///// Validate dataset-dependent state values /////
 
@@ -78,7 +101,14 @@ export const createDatasetSlice: StateCreator<CollectionSlice & DatasetSlice, []
       backdropKey = dataset.getDefaultBackdropKey();
     }
 
-    set({ datasetKey: key, dataset, featureKey, backdropKey });
+    // Change view mode if the current mode is not supported by the new dataset,
+    // preferring 3D over 2D if available.
+    let viewMode = ViewMode.VIEW_2D;
+    if (dataset.has3dFrames()) {
+      viewMode = ViewMode.VIEW_3D;
+    }
+
+    set({ datasetKey: key, dataset, featureKey, backdropKey, viewMode });
   },
 
   clearDataset: () => set({ datasetKey: null, dataset: null, featureKey: null, backdropKey: null }),

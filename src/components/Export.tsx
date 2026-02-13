@@ -5,6 +5,7 @@ import styled from "styled-components";
 import { Vector2 } from "three";
 import { clamp } from "three/src/math/MathUtils";
 
+import { ViewMode } from "src/colorizer";
 import type CanvasRecorder from "src/colorizer/recorders/CanvasRecorder";
 import type { RecordingOptions } from "src/colorizer/recorders/CanvasRecorder";
 import ImageSequenceRecorder from "src/colorizer/recorders/ImageSequenceRecorder";
@@ -175,6 +176,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
   const showLegendDuringExport = useViewerStateStore((state) => state.showLegendDuringExport);
   const setShowLegendDuringExport = useViewerStateStore((state) => state.setShowLegendDuringExport);
   const dataset = useViewerStateStore((state) => state.dataset);
+  const viewMode = useViewerStateStore((state) => state.viewMode);
 
   const originalFrameRef = useRef(props.currentFrame);
   const exportModalRef = useRef<HTMLDivElement>(null);
@@ -456,7 +458,8 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
     recorder.current.start();
   };
 
-  const imageDimensions = dataset && !dataset.has3dFrames() ? dataset.frameResolution.toArray() : null;
+  const isIn2dMode = viewMode === ViewMode.VIEW_2D;
+  const imageDimensions = dataset && isIn2dMode ? dataset.frameResolution.toArray() : null;
   const isImageDimensions =
     imageDimensions && imageDimensions[0] === dimensionsInput[0] && imageDimensions[1] === dimensionsInput[1];
 
