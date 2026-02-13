@@ -35,7 +35,7 @@ export default function ChannelToggleButton(): ReactElement {
     <span key="no-channels">{hasChannels ? `${channelString} available` : "(No channels available)"}</span>,
   ];
 
-  const createConfigMenuContents = [
+  const createConfigMenuContents = (
     <SettingsContainer labelWidth="80px" style={{ marginBottom: 6 }} key="channel-settings-container">
       <SettingsItem
         label={"Channels"}
@@ -59,8 +59,8 @@ export default function ChannelToggleButton(): ReactElement {
           })}
         </div>
       </SettingsItem>
-    </SettingsContainer>,
-  ];
+    </SettingsContainer>
+  );
 
   const onSetVisible = (visible: boolean): void => {
     if (visible) {

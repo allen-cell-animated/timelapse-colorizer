@@ -16,8 +16,8 @@ export type ToggleImageButtonProps = {
   setVisible: (visible: boolean) => void;
   disabled: boolean;
   imageType: "backdrop" | "channels";
-  tooltipContents: ReactNode[];
-  configMenuContents: ReactNode[] | ((setOpen: (open: boolean) => void) => ReactNode[]);
+  tooltipContents: ReactNode;
+  configMenuContents: ReactNode | ((setOpen: (open: boolean) => void) => ReactNode[]);
 };
 
 const labelToViewerSettingsSection = {
@@ -51,7 +51,7 @@ export function ImageToggleButton(props: ToggleImageButtonProps): ReactElement {
   }
   const tooltipTitle = buttonActionVerb + " " + props.imageType;
 
-  const tooltipContents = [...props.tooltipContents];
+  const tooltipContents = Array.isArray(props.tooltipContents) ? [...props.tooltipContents] : [props.tooltipContents];
   if (props.visible && !configMenuOpen) {
     tooltipContents.push("Double-click to hide " + props.imageType.toLowerCase());
   }
