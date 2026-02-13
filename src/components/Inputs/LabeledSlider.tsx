@@ -309,24 +309,24 @@ export default function LabeledSlider(inputProps: LabeledSliderProps): ReactElem
     onBlur: handleMaxInputChange,
   };
 
-  const inputComponent1 =
-    props.type === "value" ? (
-      <InputNumber {...sharedInputNumberProps} {...valueInputNumberProps} id={props.id} />
-    ) : (
-      <InputNumber {...sharedInputNumberProps} {...minInputNumberProps} id={props.id} />
-    );
+  const inputComponent1Props = props.type === "value" ? valueInputNumberProps : minInputNumberProps;
+  const inputComponent1 = props.showInput && (
+    <InputNumber {...sharedInputNumberProps} {...inputComponent1Props} id={props.id} />
+  );
   const inputComponent2 =
-    props.type === "range" ? <InputNumber {...sharedInputNumberProps} {...maxInputNumberProps} /> : null;
+    props.showInput && props.type === "range" ? (
+      <InputNumber {...sharedInputNumberProps} {...maxInputNumberProps} />
+    ) : null;
 
   return (
     <ComponentContainer>
-      {props.showInput ? inputComponent1 : null}
+      {inputComponent1}
       <SliderContainer>
         <Slider {...sharedSliderProps} {...(props.type === "value" ? valueSliderProps : rangeSliderProps)} />
         <SliderLabel $disabled={props.disabled}>{minSliderLabel}</SliderLabel>
         <SliderLabel $disabled={props.disabled}>{maxSliderLabel}</SliderLabel>
       </SliderContainer>
-      {props.showInput ? inputComponent2 : null}
+      {inputComponent2}
     </ComponentContainer>
   );
 }
