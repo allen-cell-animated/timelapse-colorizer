@@ -83,8 +83,8 @@ export function useAnnotationDatasetWarning<A extends unknown[], B>(
 
   const onConfirm = async (download: boolean): Promise<void> => {
     if (annotationState) {
-      if (download) {
-        const csvData = annotationState.data.toCsv(dataset!);
+      if (download && dataset) {
+        const csvData = annotationState.data.toCsv(dataset);
         const name = datasetKey ? `${datasetKey}-annotations.csv` : "annotations.csv";
         downloadCsv(name, csvData);
       }
