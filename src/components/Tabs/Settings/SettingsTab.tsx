@@ -20,7 +20,7 @@ export default function SettingsTab(): ReactElement {
     <FlexColumn $gap={4}>
       <StyledHorizontalRule />
 
-      <ViewportSettings isDataset3d={isDataset3d} />
+      <ViewportSettings />
       <StyledHorizontalRule />
 
       <ObjectSettings />
@@ -32,7 +32,7 @@ export default function SettingsTab(): ReactElement {
       {isDataset3d ? <ChannelSettingsControl /> : <BackdropSettings />}
       <StyledHorizontalRule />
 
-      <VectorFieldSettings isDataset3d={isDataset3d} />
+      <VectorFieldSettings />
 
       {/* Extra padding to prevent layout shift when toggling open/closed */}
       <div style={{ height: "400px" }}></div>
