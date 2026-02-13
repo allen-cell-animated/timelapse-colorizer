@@ -312,7 +312,7 @@ export default class CanvasOverlay implements IRenderCanvas {
     const prevParams = this.params;
     this.params = params;
 
-    // Handle updates the the dataset viewing mode (2D/3D)
+    // Handle updates to the dataset viewing mode (2D/3D)
     let hasAlreadyUpdatedCanvasParams = false;
     if (hasPropertyChanged(params, prevParams, ["viewMode"])) {
       await this.setCanvasType(params.viewMode);
