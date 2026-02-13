@@ -73,16 +73,28 @@ export default class SharedWorkerPool {
    * For each object ID `i`, the motion delta is stored at `[3i, 3i + 1, 3i + 2]`. If the delta cannot be calculated
    * for the object (e.g. it does not exist for part or all of the  the time interval), the values will be `NaN`.
    */
-  async getMotionDeltas(dataset: Dataset, timeIntervals: number): Promise<Float32Array | undefined> {
+  async getMotionDeltas(
+    dataset: Dataset,
+    timeIntervals: number,
+    inRangeLUT: Uint8Array
+  ): Promise<Float32Array | undefined> {
     // We cannot directly pass the Dataset due to textures not being transferable to workers.
     // Instead, pass the relevant data and reconstruct the tracks on the worker side.
     const trackIds = dataset.trackIds;
     const times = dataset.times;
     const centroids = dataset.centroids;
+    const outliers = dataset.outliers ?? new Uint8Array([0]);
     if (!trackIds || !times || !centroids || timeIntervals < 1) {
       return undefined;
     }
-    return await this.workerPool.exec("getMotionDeltas", [trackIds, times, centroids, timeIntervals]);
+    return await this.workerPool.exec("getMotionDeltas", [
+      trackIds,
+      times,
+      centroids,
+      outliers,
+      inRangeLUT,
+      timeIntervals,
+    ]);
   }
 
   async terminate(): Promise<void> {

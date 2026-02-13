@@ -19,6 +19,7 @@ import {
   UrlParam,
 } from "src/colorizer/utils/url_utils";
 import { getSharedWorkerPool } from "src/colorizer/workers/SharedWorkerPool";
+import { ThresholdSlice } from "src/state/slices/threshold_slice";
 import type { SerializedStoreData, SubscribableStore } from "src/state/types";
 import { setValueIfDefined, validateFiniteValue } from "src/state/utils/data_validation";
 import { addDerivedStateSubscriber, makeDebouncedCallback } from "src/state/utils/store_utils";
@@ -116,19 +117,28 @@ export const createVectorSlice: StateCreator<VectorSlice & DatasetSlice, [], [],
   setVectorTooltipMode: (mode: VectorTooltipMode) => set({ vectorTooltipMode: mode }),
 });
 
-export const addVectorDerivedStateSubscribers = (store: SubscribableStore<VectorSlice & DatasetSlice>): void => {
+export const addVectorDerivedStateSubscribers = (
+  store: SubscribableStore<VectorSlice & ThresholdSlice & DatasetSlice>
+): void => {
   // Update motion deltas when the dataset, vector key, or motion time intervals change.
+  // Also, do not show motion deltas for outlier or filtered objects.
   addDerivedStateSubscriber(
     store,
-    (state) => [state.dataset, state.vectorKey, state.vectorMotionTimeIntervals, state.vectorScaleFactor],
-    makeDebouncedCallback(([dataset, vectorKey, vectorMotionTimeIntervals]) => {
+    (state) => [
+      state.dataset,
+      state.vectorKey,
+      state.vectorMotionTimeIntervals,
+      state.vectorScaleFactor,
+      state.inRangeLUT,
+    ],
+    makeDebouncedCallback(([dataset, vectorKey, vectorMotionTimeIntervals, _scaleFactor, inRangeLUT]) => {
       const updateMotionDeltas = async (): Promise<void> => {
         if (vectorKey !== VECTOR_KEY_MOTION_DELTA || dataset === null) {
           store.setState({ vectorMotionDeltas: null });
           return;
         }
         const workerPool = getSharedWorkerPool();
-        const motionDeltas = await workerPool.getMotionDeltas(dataset, vectorMotionTimeIntervals);
+        const motionDeltas = await workerPool.getMotionDeltas(dataset, vectorMotionTimeIntervals, inRangeLUT);
         store.setState({ vectorMotionDeltas: motionDeltas });
       };
       updateMotionDeltas();
