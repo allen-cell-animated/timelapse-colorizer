@@ -41,6 +41,7 @@ type BaseLabeledSliderProps = {
    */
   numberFormatter?: (value?: number) => React.ReactNode;
   sliderStyles?: SliderBaseProps["styles"];
+  showInput?: boolean;
 };
 
 type LabeledRangeSliderProps = BaseLabeledSliderProps & {
@@ -70,6 +71,7 @@ const defaultProps: Partial<LabeledSliderProps> = {
   maxDecimalsToDisplay: 3,
   marks: undefined,
   showMidpoint: false,
+  showInput: true,
 };
 
 // STYLING /////////////////////////////////////////////////////////////////
@@ -80,7 +82,7 @@ const ComponentContainer = styled.div`
   flex-direction: row;
   gap: 8px;
   width: 100%;
-  min-width: 200px;
+  min-width: 100px;
 `;
 
 const SliderContainer = styled.div`
@@ -307,22 +309,24 @@ export default function LabeledSlider(inputProps: LabeledSliderProps): ReactElem
     onBlur: handleMaxInputChange,
   };
 
+  const inputComponent1Props = props.type === "value" ? valueInputNumberProps : minInputNumberProps;
+  const inputComponent1 = props.showInput && (
+    <InputNumber {...sharedInputNumberProps} {...inputComponent1Props} id={props.id} />
+  );
+  const inputComponent2 =
+    props.showInput && props.type === "range" ? (
+      <InputNumber {...sharedInputNumberProps} {...maxInputNumberProps} />
+    ) : null;
+
   return (
     <ComponentContainer>
-      {
-        // Conditionally render either min or value input
-        props.type === "value" ? (
-          <InputNumber {...sharedInputNumberProps} {...valueInputNumberProps} id={props.id} />
-        ) : (
-          <InputNumber {...sharedInputNumberProps} {...minInputNumberProps} id={props.id} />
-        )
-      }
+      {inputComponent1}
       <SliderContainer>
         <Slider {...sharedSliderProps} {...(props.type === "value" ? valueSliderProps : rangeSliderProps)} />
         <SliderLabel $disabled={props.disabled}>{minSliderLabel}</SliderLabel>
         <SliderLabel $disabled={props.disabled}>{maxSliderLabel}</SliderLabel>
       </SliderContainer>
-      {props.type === "range" && <InputNumber {...sharedInputNumberProps} {...maxInputNumberProps} />}
+      {inputComponent2}
     </ComponentContainer>
   );
 }
