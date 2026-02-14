@@ -88,6 +88,7 @@ export default function ShortcutKeyText(props: ShortcutKeyDisplayProps): ReactEl
           alignItems: "flex-end",
           flexDirection: props.inline ? "row" : "column",
           flexWrap: "wrap",
+          width: "fit-content",
         }}
       >
         {hotkeyElements}

@@ -69,11 +69,11 @@ export const SHORTCUT_KEYS = {
       keycode: ["comma", "<", "shift+comma"],
       keycodeDisplay: [",", "<"],
     },
-    // showChannel: {
-    //   name: "Toggle backdrop/channel by number",
-    //   keycode: ["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-    //   keycodeDisplay: "1-9",
-    // },
+    showChannel: {
+      name: "Toggle backdrop/channel by number",
+      keycode: ["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+      keycodeDisplay: "1-9",
+    },
   },
   annotation: {
     selectRange: { name: "Select range", keycode: "shift" },
