@@ -19,7 +19,12 @@ export default function ShortcutKeyModal(props: ShortcutKeyModalProps): ReactEle
       Object.entries(props.shortcuts).map(([sectionName, shortcutKeyRecord]) => {
         const shortcutKeys = Object.values(shortcutKeyRecord);
         return (
-          <ShortcutKeyList key={sectionName} shortcutKeys={shortcutKeys} title={capitalizeFirstLetter(sectionName)} />
+          <ShortcutKeyList
+            key={sectionName}
+            shortcutKeys={shortcutKeys}
+            title={capitalizeFirstLetter(sectionName)}
+            inline={true}
+          />
         );
       }),
     [props.shortcuts]
