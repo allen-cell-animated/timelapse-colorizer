@@ -527,15 +527,29 @@ export default class Dataset {
     if (!this.centroids) {
       return;
     }
-    console.log("centroids", this.centroids);
+    // TODO: Provide metadata for 3D datasets that describes the volume's dimensions in physical units, and
+    // normalize the centroid coordinates accordingly
+    const pixelDims = this.frameDimensions ? [this.frameDimensions.x, this.frameDimensions.y, 1] : [1, 1, 1];
+    const metadataDims = this.metadata.frameDims;
+    const physicalDims =
+      metadataDims.width && metadataDims.height ? [metadataDims.width, metadataDims.height, 1] : pixelDims;
+
     for (let i = 0; i < centroidFeatureKeys.length; i++) {
       const key = centroidFeatureKeys[i];
       if (this.features.has(key)) {
         continue;
       }
+
+      let rawData = this.centroids.filter((_, index) => index % 3 === i);
+      if (this.frameDimensions) {
+        // If provided, normalize centroid coordinates to physical units.
+        const physicalDim = physicalDims[i];
+        const pixelDim = pixelDims[i];
+        rawData = rawData.map((value) => (value / pixelDim) * physicalDim);
+      }
+
+      const data = new Float32Array(rawData);
       const axis = axes[i];
-      const data = new Float32Array(this.centroids.filter((_, index) => index % 3 === i));
-      console.log(axis, data);
       const min = data.reduce((min, value) => Math.min(min, value), Infinity);
       const max = data.reduce((max, value) => Math.max(max, value), -Infinity);
       const tex = packDataTexture(data, FeatureDataType.F32);
@@ -547,7 +561,7 @@ export default class Dataset {
         tex,
         min,
         max,
-        unit: "",
+        unit: metadataDims.units || "",
         type: FeatureType.DISCRETE,
         categories: null,
         description,
