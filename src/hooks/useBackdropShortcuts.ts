@@ -82,11 +82,11 @@ export const useBackdropShortcuts = (): void => {
   const handleCycleHotkey = isDataset3d ? cycleChannel : cycleBackdrop;
   const handleToggleHotkey = isDataset3d ? toggleChannel : toggleBackdrop;
 
-  useHotkeys(SHORTCUT_KEYS.backdrops.cycleForward.keycode, () => {
+  useHotkeys(SHORTCUT_KEYS.backdropsOrChannels.cycleForward.keycode, () => {
     handleCycleHotkey(1);
   });
-  useHotkeys(SHORTCUT_KEYS.backdrops.cycleBackward.keycode, () => {
+  useHotkeys(SHORTCUT_KEYS.backdropsOrChannels.cycleBackward.keycode, () => {
     handleCycleHotkey(-1);
   });
-  useHotkeys(SHORTCUT_KEYS.backdrops.showChannel.keycode, handleToggleHotkey);
+  useHotkeys(SHORTCUT_KEYS.backdropsOrChannels.showChannel.keycode, handleToggleHotkey);
 };

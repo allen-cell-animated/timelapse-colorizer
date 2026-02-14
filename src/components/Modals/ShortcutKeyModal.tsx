@@ -17,15 +17,9 @@ export default function ShortcutKeyModal(props: ShortcutKeyModalProps): ReactEle
   const shortcutDisplays = useMemo(
     () =>
       Object.entries(props.shortcuts).map(([sectionName, shortcutKeyRecord]) => {
+        const title = capitalizeFirstLetter(sectionName.replaceAll("Or", "/"));
         const shortcutKeys = Object.values(shortcutKeyRecord);
-        return (
-          <ShortcutKeyList
-            key={sectionName}
-            shortcutKeys={shortcutKeys}
-            title={capitalizeFirstLetter(sectionName)}
-            inline={true}
-          />
-        );
+        return <ShortcutKeyList key={sectionName} shortcutKeys={shortcutKeys} title={title} inline={true} />;
       }),
     [props.shortcuts]
   );

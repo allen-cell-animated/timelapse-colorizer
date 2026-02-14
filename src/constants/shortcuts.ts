@@ -58,7 +58,7 @@ export const SHORTCUT_KEYS = {
       keycodeDisplay: "Left click drag",
     },
   },
-  backdrops: {
+  backdropsOrChannels: {
     cycleForward: {
       name: "Show next backdrop/channel",
       keycode: ["period", ">", "shift+period"],
