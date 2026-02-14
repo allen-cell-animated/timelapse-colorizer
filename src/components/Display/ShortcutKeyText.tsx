@@ -83,7 +83,13 @@ export default function ShortcutKeyText(props: ShortcutKeyDisplayProps): ReactEl
       <FlexColumn
         $gap={4}
         // Change to row if inline
-        style={{ justifyContent: "flex-end", alignItems: "flex-end", flexDirection: props.inline ? "row" : "column" }}
+        style={{
+          justifyContent: "flex-end",
+          alignItems: "flex-end",
+          flexDirection: props.inline ? "row" : "column",
+          flexWrap: "wrap",
+          width: "fit-content",
+        }}
       >
         {hotkeyElements}
       </FlexColumn>
