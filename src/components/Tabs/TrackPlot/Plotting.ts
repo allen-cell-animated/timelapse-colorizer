@@ -1,7 +1,10 @@
 import Plotly from "plotly.js-dist-min";
 
-import type Dataset from "./Dataset";
-import type Track from "./Track";
+import { DEFAULT_CATEGORICAL_PALETTE_KEY, KNOWN_CATEGORICAL_PALETTES } from "src/colorizer/colors/categorical_palettes";
+import type Dataset from "src/colorizer/Dataset";
+import { TIME_FEATURE_KEY } from "src/colorizer/Dataset";
+import type Track from "src/colorizer/Track";
+import { getHoverTemplate } from "src/utils/scatter_plot_data_utils";
 
 const LINE_OPACITY = 0.5;
 const LINE_COLOR = "rgb(25, 25, 25)";
@@ -19,6 +22,8 @@ const LINE_SPEC: Partial<Plotly.Shape> = {
     dash: "dot",
   },
 };
+
+const DEFAULT_LINE_PALETTE = KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_KEY)!.colorStops;
 
 // TODO: Color the plot with the current color ramp?
 // TODO: Style the crosshair like the one in the Scatterplot?
@@ -68,11 +73,9 @@ export type TrackPlotLayoutConfig = {
 export default class Plotting {
   private parentRef: HTMLElement;
   private dataset: Dataset | null;
-  private trace: Plotly.Data | null;
 
   constructor(parentRef: HTMLElement) {
     this.dataset = null;
-    this.trace = null;
     this.parentRef = parentRef;
     const layout: Partial<Plotly.Layout> = {
       xaxis: {
@@ -83,7 +86,7 @@ export default class Plotting {
       },
       title: "No track selected",
       width: 600,
-      height: 400,
+      height: 650,
     };
 
     Plotly.newPlot(this.parentRef, [], layout, CONFIG);
@@ -94,21 +97,48 @@ export default class Plotting {
     this.dataset = dataset;
   }
 
-  plot(track: Track, featureKey: string | null, time: number, yAxisLayout: Partial<Plotly.Layout["yaxis"]> = {}): void {
-    if (this.dataset === null || featureKey === null) {
+  plot(
+    tracks: Map<number, Track>,
+    featureKey: string | null,
+    time: number,
+    yAxisLayout: Partial<Plotly.Layout["yaxis"]> = {}
+  ): void {
+    const dataset = this.dataset;
+    if (dataset === null || featureKey === null) {
       return;
     }
-    const plotinfo = this.dataset?.buildTrackFeaturePlot(track, featureKey);
-    this.trace = {
-      x: plotinfo.domain,
-      y: plotinfo.range,
-      type: "scatter",
-    };
+    const traces: Partial<Plotly.PlotData>[] = Array.from(
+      tracks.values().map((track, index) => {
+        const plotinfo = dataset.buildTrackFeaturePlot(track, featureKey);
+        // Add segmentation ID + track ID to customdata for hovertemplate
+        const segIds = track.ids.map((id) => dataset.getSegmentationId(id));
+        const customData = segIds.map((segId) => {
+          return [track.trackId.toString(), segId.toString()];
+        });
 
+        return {
+          x: plotinfo.domain,
+          y: plotinfo.range,
+          ids: track.ids.map((id) => id.toString()),
+          type: "scatter",
+          name: `Track ${track.trackId}`,
+          customdata: customData,
+          hovertemplate: getHoverTemplate(dataset, TIME_FEATURE_KEY, featureKey),
+          line: {
+            color: DEFAULT_LINE_PALETTE[index % DEFAULT_LINE_PALETTE.length],
+          },
+        };
+      })
+    );
+
+    const title = tracks.size === 1 ? `Track ${Array.from(tracks.keys())[0]}` : tracks.size + " tracks selected";
     const layout: Partial<Plotly.Layout> = {
       yaxis: {
         ...yAxisLayout,
-        title: this.dataset.getFeatureNameWithUnits(featureKey),
+        title: dataset.getFeatureNameWithUnits(featureKey),
+      },
+      xaxis: {
+        title: dataset.getFeatureNameWithUnits(TIME_FEATURE_KEY),
       },
       shapes: [
         {
@@ -117,10 +147,10 @@ export default class Plotting {
           x1: time,
         },
       ],
-      title: "track " + track.trackId,
+      title,
     };
 
-    Plotly.react(this.parentRef, [this.trace], layout, CONFIG);
+    Plotly.react(this.parentRef, traces, layout, CONFIG);
   }
 
   updateLayout(config: TrackPlotLayoutConfig): void {

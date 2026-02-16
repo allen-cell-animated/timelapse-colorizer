@@ -75,16 +75,16 @@ describe("useViewerStateStore: DatasetSlice", () => {
       await setDatasetAsync(result, MOCK_DATASET);
       act(() => {
         result.current.setFeatureKey(MockFeatureKeys.FEATURE2);
-        result.current.setTrack(MOCK_DATASET_DEFAULT_TRACK);
+        result.current.setTracks(MOCK_DATASET_DEFAULT_TRACK);
       });
       expect(result.current.featureKey).toBe(MockFeatureKeys.FEATURE2);
-      expect(result.current.track).toBe(MOCK_DATASET_DEFAULT_TRACK);
+      expect(Array.from(result.current.tracks.keys())).toEqual([MOCK_DATASET_DEFAULT_TRACK.trackId]);
 
       act(() => {
         result.current.clearDataset();
       });
       expect(result.current.featureKey).toBeNull();
-      expect(result.current.track).toBeNull();
+      expect(result.current.tracks.size).toBe(0);
     });
   });
 
