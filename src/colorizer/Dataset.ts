@@ -529,10 +529,10 @@ export default class Dataset {
     }
     // TODO: Provide metadata for 3D datasets that describes the volume's dimensions in physical units, and
     // normalize the centroid coordinates accordingly
-    const pixelDims = this.frameDimensions ? [this.frameDimensions.x, this.frameDimensions.y, 1] : [1, 1, 1];
     const metadataDims = this.metadata.frameDims;
     const physicalDims =
-      metadataDims.width && metadataDims.height ? [metadataDims.width, metadataDims.height, 1] : pixelDims;
+      metadataDims.width && metadataDims.height ? [metadataDims.width, metadataDims.height, 1] : [1, 1, 1];
+    const pixelDims = this.frameDimensions ? [this.frameDimensions.x, this.frameDimensions.y, 1] : physicalDims;
 
     for (let i = 0; i < centroidFeatureKeys.length; i++) {
       const key = centroidFeatureKeys[i];
