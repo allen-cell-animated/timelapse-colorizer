@@ -23,6 +23,7 @@ export const renderCanvasStateParamsSelector = (state: ViewerStoreState): Render
   edgeMode: state.edgeMode,
   edgeColorAlpha: state.edgeColorAlpha,
   trackPathColor: state.trackPathColor,
+  trackPathColorRamp: state.trackPathColorRamp,
   trackPathWidthPx: state.trackPathWidthPx,
   trackPathColorMode: state.trackPathColorMode,
   trackPathPastSteps: state.trackPathPastSteps,

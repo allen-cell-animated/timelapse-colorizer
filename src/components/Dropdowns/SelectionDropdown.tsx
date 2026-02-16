@@ -9,11 +9,6 @@ import { FlexRowAlignCenter } from "src/styles/utils";
 import StyledSelect from "./StyledSelect";
 import type { SelectItem } from "./types";
 
-// TODO: Have the dropdown show a loading indicator after a selection has been
-// made but before the prop value updates. -> this is especially noticeable when
-// loading large datasets. Is there a way we can do this using async promises,
-// maybe? If the promise rejects, discard the changed value?
-
 type SelectionDropdownProps = {
   /** Text label to include with the dropdown. If null or undefined, hides the label. */
   label?: string | null;
@@ -46,7 +41,7 @@ type SelectionDropdownProps = {
    * Callback that is fired whenever an item in the dropdown is selected.
    * The callback will be passed the `value` of the selected item.
    */
-  onChange: (value: string) => void;
+  onChange: ((value: string) => Promise<void>) | ((value: string) => void);
   /**
    * If true, shows the label of the currently-selected item as a tooltip
    * when hovering over the input/selection area.
@@ -135,10 +130,16 @@ export default function SelectionDropdown(inputProps: React.PropsWithChildren<Se
 
   const options = useMemo(() => formatAsSelectItems(props.items), [props.items]);
 
-  // TODO: Show loading spinner?
   const [_isPending, startTransition] = useTransition();
   const [searchInput, setSearchInput] = useState("");
-  const [filteredValues, setFilteredValues] = useState<Set<string>>(new Set(options.map((item) => item.value)));
+  const [filteredItems, setFilteredItems] = useState<SelectItem[]>(options);
+
+  // Value that is pending confirmation (e.g., during async updates). Cleared if
+  // the currently selected value changes.
+  const [pendingValue, setPendingValue] = useState<SelectItem | null>(null);
+  useEffect(() => {
+    setPendingValue(null);
+  }, [props.selected]);
 
   let selectedOption: SelectItem | undefined;
   if (typeof props.selected === "string") {
@@ -160,9 +161,9 @@ export default function SelectionDropdown(inputProps: React.PropsWithChildren<Se
   // Set up fuse for fuzzy searching
   const fuse = useMemo(() => {
     return new Fuse(options, {
-      keys: ["value", "label"],
+      keys: ["label"],
       isCaseSensitive: false,
-      shouldSort: true, // sorts by match score
+      shouldSort: true,
     });
   }, [props.items]);
 
@@ -171,16 +172,16 @@ export default function SelectionDropdown(inputProps: React.PropsWithChildren<Se
     if (searchInput === "") {
       startTransition(() => {
         // Reset to original list
-        setFilteredValues(new Set(options.map((item) => item.value)));
+        setFilteredItems(options);
       });
     } else {
       const searchResult = fuse.search(searchInput);
-      const filteredItems = searchResult.map((result) => result.item.value);
+      const filteredItems = searchResult.map((result) => result.item);
       startTransition(() => {
-        setFilteredValues(new Set(filteredItems));
+        setFilteredItems(filteredItems);
       });
     }
-  }, [searchInput, props.items]);
+  }, [fuse, searchInput, props.items, setFilteredItems]);
 
   // Add tooltip so it only responds to interaction with the selected option in the control area.
   // Fixes a bug where the tooltip would show when hovering anywhere over the dropdown, including
@@ -232,18 +233,19 @@ export default function SelectionDropdown(inputProps: React.PropsWithChildren<Se
         isMulti={false}
         placeholder=""
         type={props.buttonType ?? "outlined"}
-        value={selectedOption}
+        value={pendingValue ?? selectedOption}
         components={{ Option, Control }}
-        options={options}
-        filterOption={(option) => filteredValues.has(option.value)}
+        options={filteredItems}
         isDisabled={props.disabled}
         isClearable={false}
         isSearchable={props.isSearchable}
-        // TODO: Allow `onChange` to be async, and show a loading indicator
-        // + the awaited value while waiting for it to resolve.
+        isLoading={pendingValue !== null}
         onChange={(value) => {
           if (value && value.value) {
-            props.onChange(value.value);
+            setPendingValue(value);
+            Promise.allSettled([props.onChange(value.value)]).then(() => {
+              setPendingValue(null);
+            });
           }
           startTransition(() => {
             setSearchInput("");

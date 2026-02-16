@@ -22,6 +22,7 @@ export type TrackPathParams = {
   showTrackPath: boolean;
   showTrackPathBreaks: boolean;
   trackPathColor: Color;
+  trackPathColorRamp: ColorRamp;
   trackPathWidthPx: number;
   trackPathColorMode: TrackPathColorMode;
   trackPathPastSteps: number;

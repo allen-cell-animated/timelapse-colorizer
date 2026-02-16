@@ -66,6 +66,7 @@ export type RenderCanvasStateParams = {
   trackColors: Map<number, Color>;
   showTrackPath: boolean;
   showTrackPathBreaks: boolean;
+  trackPathColorRamp: ColorRamp;
   colorRamp: ColorRamp;
   colorRampRange: [number, number];
   categoricalPaletteRamp: ColorRamp;
