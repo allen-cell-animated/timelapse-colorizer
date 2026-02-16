@@ -1,8 +1,9 @@
 import type Plotly from "plotly.js-dist-min";
-import type {PlotlyHTMLElement} from "plotly.js-dist-min";
+import type { PlotlyHTMLElement } from "plotly.js-dist-min";
 import React, { type ReactElement, useEffect, useMemo, useRef, useState } from "react";
 
-import { type Dataset, Plotting, type Track } from "src/colorizer";
+import { type Dataset, Plotting, type Track, ViewMode } from "src/colorizer";
+import { CENTROID_Y_FEATURE_KEY } from "src/colorizer/Dataset";
 import type { TrackPlotLayoutConfig } from "src/colorizer/Plotting";
 
 type PlotWrapperProps = {
@@ -11,6 +12,7 @@ type PlotWrapperProps = {
   featureKey: string | null;
   selectedTrack: Track | null;
   setFrame: (frame: number) => Promise<void>;
+  viewMode: ViewMode;
 };
 const defaultProps: Partial<PlotWrapperProps> = {};
 
@@ -64,11 +66,13 @@ export default function PlotWrapper(inputProps: PlotWrapperProps): ReactElement 
   // Handle updates to selected track and feature, updating/clearing the plot accordingly.
   useMemo(() => {
     if (props.selectedTrack) {
-      plot?.plot(props.selectedTrack, props.featureKey, props.frame);
+      const reverseYAxis = props.viewMode === ViewMode.VIEW_2D && props.featureKey === CENTROID_Y_FEATURE_KEY;
+      const yAxisLayout = reverseYAxis ? { autorange: "reversed" as const } : {};
+      plot?.plot(props.selectedTrack, props.featureKey, props.frame, yAxisLayout);
     } else {
       plot?.removePlot();
     }
-  }, [props.selectedTrack, props.featureKey]);
+  }, [props.selectedTrack, props.featureKey, props.viewMode]);
 
   const updatePlotSize = (): void => {
     if (!plotDivRef.current) {

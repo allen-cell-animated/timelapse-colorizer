@@ -94,7 +94,7 @@ export default class Plotting {
     this.dataset = dataset;
   }
 
-  plot(track: Track, featureKey: string | null, time: number): void {
+  plot(track: Track, featureKey: string | null, time: number, yAxisLayout: Partial<Plotly.Layout["yaxis"]> = {}): void {
     if (this.dataset === null || featureKey === null) {
       return;
     }
@@ -107,6 +107,7 @@ export default class Plotting {
 
     const layout: Partial<Plotly.Layout> = {
       yaxis: {
+        ...yAxisLayout,
         title: this.dataset.getFeatureNameWithUnits(featureKey),
       },
       shapes: [

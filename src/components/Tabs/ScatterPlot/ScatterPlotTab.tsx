@@ -7,8 +7,8 @@ import { Color, type ColorRepresentation } from "three";
 
 import { SwitchIconSVG } from "src/assets";
 import { ColorRampType, type Dataset } from "src/colorizer";
-import { TIME_FEATURE_KEY } from "src/colorizer/Dataset";
-import { DrawMode, type HexColorString, PlotRangeType } from "src/colorizer/types";
+import { CENTROID_Y_FEATURE_KEY, TIME_FEATURE_KEY } from "src/colorizer/Dataset";
+import { DrawMode, type HexColorString, PlotRangeType, ViewMode } from "src/colorizer/types";
 import type { ShowAlertBannerCallback } from "src/components/Banner/hooks";
 import IconButton from "src/components/Buttons/IconButton";
 import TextButton from "src/components/Buttons/TextButton";
@@ -90,6 +90,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const setYAxis = useViewerStateStore((state) => state.setScatterYAxis);
   const xAxisFeatureKey = useViewerStateStore((state) => state.scatterXAxis);
   const yAxisFeatureKey = useViewerStateStore((state) => state.scatterYAxis);
+  const viewMode = useViewerStateStore((state) => state.viewMode);
 
   const xAxisPlotRange = useRef<[number, number]>([-Infinity, Infinity]);
   const yAxisPlotRange = useRef<[number, number]>([-Infinity, Infinity]);
@@ -446,6 +447,12 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       max += (max - min) / 10;
     }
     scatterPlotAxis.range = [min, max];
+    if (viewMode === ViewMode.VIEW_2D && featureKey === CENTROID_Y_FEATURE_KEY) {
+      // In 2D mode, the Y-axis is reversed so that the origin (0,0) is in the
+      // top left corner. Reverse the range so the plot matches the onscreen
+      // objects.
+      scatterPlotAxis.range = [max, min];
+    }
 
     // TODO: Show categories as box and whisker plots instead of scatterplot?
     // TODO: Add special handling for integer features once implemented, so their histograms use reasonable
