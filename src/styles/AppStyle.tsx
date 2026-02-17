@@ -130,6 +130,10 @@ const theme = {
         info: palette.infoLight,
       },
     },
+    plots: {
+      histogram: palette.gray10,
+      histogramOutline: palette.gray30,
+    },
   },
   font: {
     // LatoExtended font is a custom font family declared in the CssContainer.

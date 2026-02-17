@@ -9,12 +9,14 @@ import TextButton from "src/components/Buttons/TextButton";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import type { SelectItem } from "src/components/Dropdowns/types";
 import LoadingSpinner from "src/components/LoadingSpinner";
+import { SHORTCUT_KEYS } from "src/constants";
 import type { AnnotationState } from "src/hooks";
 import { useViewerStateStore } from "src/state";
 import { Z_INDEX_MODAL } from "src/styles/AppStyle";
 import { StyledRadioGroup } from "src/styles/components";
 import { FlexColumnAlignCenter, FlexRow, VisuallyHidden } from "src/styles/utils";
 import { downloadCsv } from "src/utils/file_io";
+import { areAnyHotkeysPressed } from "src/utils/user_input";
 
 import AnnotationDisplayList from "./AnnotationDisplay/AnnotationDisplayList";
 import AnnotationDisplayTable, { type TableDataType } from "./AnnotationDisplay/AnnotationDisplayTable";
@@ -60,17 +62,21 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     useShallow((state) => ({
       frame: state.currentFrame,
       dataset: state.dataset,
-      setTrack: state.setTrack,
+      setTracks: state.setTracks,
+      addTracks: state.addTracks,
+      toggleTrack: state.toggleTrack,
       setFrame: state.setFrame,
-      selectedTrack: state.track,
+      tracks: state.tracks,
     }))
   );
 
   const labels = annotationData.getLabels();
   const selectedLabel: LabelData | undefined = labels[currentLabelIdx ?? -1];
-  const selectedId = useMemo(() => {
-    return store.selectedTrack?.getIdAtTime(store.frame) ?? -1;
-  }, [store.frame, store.selectedTrack]);
+  const selectedIds = useMemo(() => {
+    const tracks = Array.from(store.tracks.values());
+    const currentIds = tracks.map((track) => track.getIdAtTime(store.frame));
+    return new Set(currentIds);
+  }, [store.frame, store.tracks]);
 
   // If range mode is enabled, highlight the range of IDs that would be selected
   // if the user clicks on the currently hovered ID.
@@ -119,11 +125,15 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
       const trackId = record.track;
       const track = store.dataset?.getTrack(trackId);
       if (track) {
-        store.setTrack(track);
+        if (areAnyHotkeysPressed(SHORTCUT_KEYS.viewport.multiTrackSelect.keycode)) {
+          store.addTracks(track);
+        } else {
+          store.setTracks(track);
+        }
         store.setFrame(record.time);
       }
     },
-    [store.dataset, store.setTrack, store.setFrame]
+    [store.dataset, store.addTracks, store.setTracks, store.setFrame]
   );
 
   const onClickDeleteObject = useCallback(
@@ -318,7 +328,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
             ids={tableIds}
             idToValue={idToValue}
             height={480}
-            selectedId={selectedId}
+            selectedIds={selectedIds}
           />
         </div>
         {/*
@@ -340,7 +350,11 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
             onClickTrack={(trackId) => {
               const track = store.dataset?.getTrack(trackId);
               if (track) {
-                store.setTrack(track);
+                if (areAnyHotkeysPressed(SHORTCUT_KEYS.viewport.multiTrackSelect.keycode)) {
+                  store.toggleTrack(track);
+                } else {
+                  store.setTracks(track);
+                }
               }
             }}
             setFrame={store.setFrame}
@@ -350,8 +364,8 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
             valueToIds={valueToIds}
             highlightRange={highlightedIds}
             rangeStartId={props.annotationState.rangeStartId}
-            selectedTrack={store.selectedTrack}
-            selectedId={selectedId}
+            selectedTracks={store.tracks}
+            selectedIds={selectedIds}
             frame={store.frame}
             labelColor={selectedLabel?.options.color}
           ></AnnotationDisplayList>

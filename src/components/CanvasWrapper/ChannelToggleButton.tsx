@@ -1,24 +1,23 @@
-import { Checkbox, ConfigProvider } from "antd";
-import React, { type ReactElement, type ReactNode, useContext, useRef } from "react";
+import { Checkbox } from "antd";
+import React, { type ReactElement, type ReactNode, useRef } from "react";
 
-import { TabType } from "src/colorizer";
 import { ImageToggleButton } from "src/components/Buttons/ImageToggleButton";
-import TooltipButtonStyleLink from "src/components/Buttons/TooltipButtonStyleLink";
+import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
 import { useViewerStateStore } from "src/state";
-import { AppThemeContext } from "src/styles/AppStyle";
-import { VisuallyHidden } from "src/styles/utils";
+import { formatQuantityString } from "src/utils/formatting";
+
+const enum ChannelToggleButtonHtmlIds {
+  CHANNEL_CHECKBOXES = "channel-toggle-channel-checkbox",
+}
 
 /**
  * Icon button that toggles 3D channels, and includes a tooltip that
  * allows toggling individual channels.
  */
 export default function ChannelToggleButton(): ReactElement {
-  const theme = useContext(AppThemeContext);
-
   const dataset = useViewerStateStore((state) => state.dataset);
   const channelSettings = useViewerStateStore((state) => state.channelSettings);
   const updateChannelSettings = useViewerStateStore((state) => state.updateChannelSettings);
-  const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
 
   const channelData = dataset?.frames3d?.backdrops;
   const hasChannels = !!channelData && channelData.length > 0;
@@ -31,35 +30,36 @@ export default function ChannelToggleButton(): ReactElement {
     lastVisibleChannelConfig.current = channelVisibility;
   }
 
-  const tooltipContents: ReactNode[] = [];
-  if (!hasChannels) {
-    tooltipContents.push(<span key="no-channels">(No channels available)</span>);
-  } else {
-    const channelToggles = channelData.map((channel, index) => {
-      return (
-        <Checkbox
-          key={`channel-checkbox-${index}`}
-          checked={channelVisibility[index]}
-          onChange={(e) => {
-            updateChannelSettings(index, { visible: e.target.checked });
-          }}
-        >
-          <span style={{ color: theme.color.text.button }}>{channel.name}</span>
-        </Checkbox>
-      );
-    });
-    tooltipContents.push(
-      <ConfigProvider theme={{ components: { Checkbox: { colorBgContainer: "transparent" } } }}>
-        <div style={{ padding: "4px 0 4px 6px" }}>{channelToggles}</div>
-      </ConfigProvider>
-    );
-  }
-  tooltipContents.push(
-    <TooltipButtonStyleLink onClick={() => setOpenTab(TabType.SETTINGS)} key="channel-settings-link">
-      <span>
-        {"Viewer settings > Channels"} <VisuallyHidden>(opens settings tab)</VisuallyHidden>
-      </span>
-    </TooltipButtonStyleLink>
+  const channelString = formatQuantityString(channelData?.length ?? 0, "channel", "channels");
+  const tooltipContents: ReactNode[] = [
+    <span key="no-channels">{hasChannels ? `${channelString} available` : "(No channels available)"}</span>,
+  ];
+
+  const createConfigMenuContents = (
+    <SettingsContainer labelWidth="80px" style={{ marginBottom: 6 }} key="channel-settings-container">
+      <SettingsItem
+        label={"Channels"}
+        labelStyle={{ marginBottom: "auto" }}
+        htmlFor={ChannelToggleButtonHtmlIds.CHANNEL_CHECKBOXES}
+      >
+        <div style={{ paddingLeft: "6px" }} id={ChannelToggleButtonHtmlIds.CHANNEL_CHECKBOXES}>
+          {(channelData ?? []).map((channel, index) => {
+            return (
+              <Checkbox
+                key={`channel-checkbox-${index}`}
+                checked={channelVisibility[index]}
+                onChange={(e) => {
+                  updateChannelSettings(index, { visible: e.target.checked });
+                }}
+                style={{ padding: "2px 0" }}
+              >
+                <span>{channel.name}</span>
+              </Checkbox>
+            );
+          })}
+        </div>
+      </SettingsItem>
+    </SettingsContainer>
   );
 
   const onSetVisible = (visible: boolean): void => {
@@ -82,8 +82,9 @@ export default function ChannelToggleButton(): ReactElement {
       visible={isAnyChannelVisible}
       setVisible={onSetVisible}
       disabled={!hasChannels}
-      label={"channels"}
+      imageType={"channels"}
       tooltipContents={tooltipContents}
+      configMenuContents={createConfigMenuContents}
     ></ImageToggleButton>
   );
 }

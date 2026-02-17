@@ -69,13 +69,13 @@ type AnnotationTableProps = {
   idToValue?: Map<number, string>;
   height?: number | string;
   hideTrackColumn?: boolean;
-  selectedId?: number;
+  selectedIds?: Set<number>;
 };
 
 const defaultProps = {
   height: "100%",
   hideTrackColumn: false,
-  selectedId: -1,
+  selectedIds: new Set<number>(),
 };
 
 /**
@@ -166,7 +166,7 @@ const AnnotationDisplayTable = memo(function AnnotationDisplayTable(inputProps: 
 
   return (
     <StyledAntTable
-      rowClassName={(record) => (record.id === props.selectedId ? SELECTED_ROW_CLASSNAME : "")}
+      rowClassName={(record) => (props.selectedIds?.has(record.id) ? SELECTED_ROW_CLASSNAME : "")}
       dataSource={tableData}
       columns={tableColumns}
       size="small"

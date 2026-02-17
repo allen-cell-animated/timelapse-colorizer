@@ -1,3 +1,4 @@
+import { LoadingOutlined } from "@ant-design/icons";
 import type { ButtonProps } from "antd";
 import React, { type ReactElement, useContext, useMemo } from "react";
 import Select, {
@@ -292,6 +293,14 @@ const DropdownIndicator = (props: DropdownIndicatorProps<SelectItem>): ReactElem
   );
 };
 
+const SpinningDropdownIndicator = (props: DropdownIndicatorProps<SelectItem>): ReactElement => {
+  return (
+    <components.DropdownIndicator {...props}>
+      <LoadingOutlined size={12} />
+    </components.DropdownIndicator>
+  );
+};
+
 // TODO: Add open/close animation to Menu; see similar implementation in
 // ColorRampDropdown.css.
 
@@ -313,13 +322,18 @@ export default function AntStyledSelect<
     [theme, props.controlWidth, props.menuWidth]
   );
 
+  const dropdownIndicator = props.isLoading ? SpinningDropdownIndicator : DropdownIndicator;
+
   return (
     <SelectContainer $type={props.type} style={{ width: "100%" }}>
       <Select
         {...props}
         menuPlacement={props.menuPlacement}
-        components={{ DropdownIndicator, ...props.components }}
+        components={{ DropdownIndicator: dropdownIndicator, ...props.components }}
         styles={{ ...(customStyles as unknown as StylesConfig<SelectItem, IsMulti, Group>), ...props.styles }}
+        // Select default loading styling is overridden (since it is handled via
+        // DropdownIndicator instead).
+        isLoading={false}
       />
     </SelectContainer>
   );

@@ -1,8 +1,13 @@
-import React, { type ReactElement, type ReactNode, useEffect, useRef, useState } from "react";
+import { Button, Popover } from "antd";
+import React, { type ReactElement, type ReactNode, useContext, useRef, useState } from "react";
 
 import { ImagesIconSVG, ImagesSlashIconSVG } from "src/assets";
+import { TabType } from "src/colorizer";
+import { LinkStyleButton } from "src/components/Buttons/LinkStyleButton";
 import { TooltipWithSubtitle } from "src/components/Tooltips/TooltipWithSubtitle";
-import { VisuallyHidden } from "src/styles/utils";
+import { useViewerStateStore } from "src/state";
+import { AppThemeContext } from "src/styles/AppStyle";
+import { FlexColumn, VisuallyHidden } from "src/styles/utils";
 
 import IconButton from "./IconButton";
 
@@ -10,70 +15,113 @@ export type ToggleImageButtonProps = {
   visible: boolean;
   setVisible: (visible: boolean) => void;
   disabled: boolean;
-  label: string;
-  tooltipContents: ReactNode[];
+  imageType: "backdrop" | "channels";
+  tooltipContents: ReactNode;
+  configMenuContents: ReactNode | ((setOpen: (open: boolean) => void) => ReactNode[]);
 };
+
+const labelToViewerSettingsSection = {
+  backdrop: "Viewer settings > 2D Backdrop",
+  channels: "Viewer settings > 3D Channels",
+} as const;
 
 /**
  * Icon button that toggles an image layer (e.g. 3D channels or 2D backdrop
  * images), as a reusable component.
  */
 export function ImageToggleButton(props: ToggleImageButtonProps): ReactElement {
-  const tooltipContainerRef = useRef<HTMLDivElement>(null);
+  const theme = useContext(AppThemeContext);
+  const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
+
+  const [configMenuOpen, setConfigMenuOpen] = useState(false);
+  const popupContainerRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
-  const [tooltipOpen, setTooltipOpen] = useState(false);
-  const [isHoveringTooltip, setIsHoveringTooltip] = useState(false);
 
-  const tooltipTitle = (props.visible ? "Hide" : "Show") + " " + props.label;
-
-  useEffect(() => {
-    const onPointerEnter = (): void => setIsHoveringTooltip(true);
-    const onPointerLeave = (): void => setIsHoveringTooltip(false);
-    const tooltipDiv = tooltipRef.current;
-    if (tooltipDiv) {
-      tooltipDiv.addEventListener("pointerenter", onPointerEnter);
-      tooltipDiv.addEventListener("pointerleave", onPointerLeave);
+  let buttonActionVerb: string;
+  if (props.visible) {
+    // While visible, clicking the first time opens the config menu, and
+    // clicking again hides the image layer.
+    if (!configMenuOpen) {
+      buttonActionVerb = "Configure";
+    } else {
+      buttonActionVerb = "Hide";
     }
-    return () => {
-      if (tooltipDiv) {
-        tooltipDiv.removeEventListener("pointerenter", onPointerEnter);
-        tooltipDiv.removeEventListener("pointerleave", onPointerLeave);
-      }
-    };
-  }, [tooltipRef.current]);
+  } else {
+    buttonActionVerb = "Show";
+  }
+  const tooltipTitle = buttonActionVerb + " " + props.imageType;
 
-  const onOpenChange = (open: boolean): void => {
-    // Fix a bug where, if the tooltip is open because the inner button is
-    // focused (e.g. a user clicked it), clicking on the tooltip's contents
-    // would cause the button to lose focus and instantly close the tooltip.
-    // Instead, we want the tooltip to stay open if the user while the user is
-    // hovering.
-    if (!isHoveringTooltip) {
-      setTooltipOpen(open);
+  const tooltipContents = Array.isArray(props.tooltipContents) ? [...props.tooltipContents] : [props.tooltipContents];
+  if (props.visible && !configMenuOpen) {
+    tooltipContents.push("Double-click to hide " + props.imageType.toLowerCase());
+  }
+
+  const onClick = (): void => {
+    if (props.visible) {
+      if (!configMenuOpen) {
+        setConfigMenuOpen(true);
+      } else {
+        setConfigMenuOpen(false);
+        props.setVisible(false);
+      }
+    } else {
+      props.setVisible(true);
     }
   };
 
-  return (
-    <div ref={tooltipContainerRef}>
-      <TooltipWithSubtitle
-        title={tooltipTitle}
-        placement="right"
-        subtitleList={props.tooltipContents}
-        trigger={["hover", "focus"]}
-        onOpenChange={onOpenChange}
-        open={tooltipOpen}
-        tooltipRef={tooltipRef}
-        getPopupContainer={() => tooltipContainerRef.current || document.body}
-      >
-        <IconButton
-          type={props.visible && !props.disabled ? "primary" : "link"}
-          onClick={() => props.setVisible(!props.visible)}
-          disabled={props.disabled}
+  // Passed contents + link to settings in the config menu + close button
+  const configMenuContents = (
+    <FlexColumn>
+      {typeof props.configMenuContents === "function"
+        ? props.configMenuContents(setConfigMenuOpen)
+        : props.configMenuContents}
+
+      <div key="backdrop-settings-link">
+        <LinkStyleButton
+          onClick={() => {
+            setOpenTab(TabType.SETTINGS);
+            setConfigMenuOpen(false);
+          }}
+          $color={theme.color.text.hint}
+          $hoverColor={theme.color.text.secondary}
         >
-          {props.visible ? <ImagesSlashIconSVG /> : <ImagesIconSVG />}
-          <VisuallyHidden>{tooltipTitle}</VisuallyHidden>
-        </IconButton>
-      </TooltipWithSubtitle>
+          <span>
+            {labelToViewerSettingsSection[props.imageType]} <VisuallyHidden>(opens settings tab)</VisuallyHidden>
+          </span>
+        </LinkStyleButton>
+      </div>
+
+      <div style={{ marginLeft: "auto", marginTop: "8px" }}>
+        <Button onClick={() => setConfigMenuOpen(false)}>Close</Button>
+      </div>
+    </FlexColumn>
+  );
+
+  const isVisible = props.visible && !props.disabled;
+
+  return (
+    <div ref={popupContainerRef}>
+      <Popover
+        content={configMenuContents}
+        placement="left"
+        trigger={["click"]}
+        getPopupContainer={() => popupContainerRef.current || document.body}
+        onOpenChange={(open) => setConfigMenuOpen(open)}
+        open={configMenuOpen}
+      >
+        <TooltipWithSubtitle
+          title={tooltipTitle}
+          placement={"right"}
+          subtitleList={tooltipContents}
+          tooltipRef={tooltipRef}
+          getPopupContainer={() => popupContainerRef.current || document.body}
+        >
+          <IconButton type={isVisible ? "primary" : "link"} onClick={onClick} disabled={props.disabled}>
+            {props.visible ? <ImagesIconSVG /> : <ImagesSlashIconSVG />}
+            <VisuallyHidden>{tooltipTitle}</VisuallyHidden>
+          </IconButton>
+        </TooltipWithSubtitle>
+      </Popover>
     </div>
   );
 }
