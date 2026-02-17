@@ -1,15 +1,14 @@
 import React, { type ReactElement, type ReactNode, useContext } from "react";
 
 import { ImageToggleButton } from "src/components/Buttons/ImageToggleButton";
-import { KeyCharacter } from "src/components/Display/ShortcutKeyText";
+import { getBackdropChannelHotkeyHint } from "src/components/CanvasWrapper/utils";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import type { SelectItem } from "src/components/Dropdowns/types";
 import LabeledSlider from "src/components/Inputs/LabeledSlider";
 import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
-import { SHORTCUT_KEYS } from "src/constants";
 import { useViewerStateStore } from "src/state";
 import { AppThemeContext } from "src/styles/AppStyle";
-import { FlexColumn, FlexRow } from "src/styles/utils";
+import { FlexColumn } from "src/styles/utils";
 
 const enum BackdropToggleButtonHtmlIds {
   OPACITY_SLIDER = "backdrop-toggle-opacity-slider",
@@ -66,11 +65,7 @@ export default function BackdropToggleButton(): ReactElement {
             controlWidth="220px"
           />
 
-          <FlexRow style={{ color: theme.color.text.hint, width: "100%" }} $gap={4}>
-            Press <KeyCharacter>{SHORTCUT_KEYS.backdropsOrChannels.cycleBackward.keycodeDisplay[0]}</KeyCharacter> /{" "}
-            <KeyCharacter>{SHORTCUT_KEYS.backdropsOrChannels.cycleForward.keycodeDisplay[0]}</KeyCharacter> or{" "}
-            <KeyCharacter>{SHORTCUT_KEYS.backdropsOrChannels.showChannel.keycodeDisplay}</KeyCharacter> to cycle
-          </FlexRow>
+          {getBackdropChannelHotkeyHint(theme)}
         </FlexColumn>
       </SettingsItem>
       <SettingsItem label="Opacity" htmlFor={BackdropToggleButtonHtmlIds.OPACITY_SLIDER} style={{ marginBottom: 14 }}>
