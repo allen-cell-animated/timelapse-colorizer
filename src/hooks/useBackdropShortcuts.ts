@@ -28,19 +28,22 @@ export const useBackdropShortcuts = (): void => {
       if (backdropKeys.length === 0) {
         return;
       }
-      // If backdrops aren't visible, enable them on first press
+
+      let nextBackdropIdx;
       if (!backdropVisible) {
+        // If backdrops aren't visible, enable them on first press. This always
+        // switches to the first or last backdrop in the list.
+        nextBackdropIdx = step === 1 ? 0 : backdropKeys.length - 1;
         setBackdropVisible(true);
-        return;
-      }
-      // If cycling past the first or last backdrop, hide backdrops. This makes
-      // it so that having no backdrop visible is in the cycle.
-      let nextBackdropIdx = backdropIndex + step;
-      if (backdropIndex + step < 0 || backdropIndex + step >= backdropKeys.length) {
+      } else if (backdropIndex + step < 0 || backdropIndex + step >= backdropKeys.length) {
+        // If cycling past the first or last backdrop, hide backdrops.
+        nextBackdropIdx = backdropIndex;
         setBackdropVisible(false);
+      } else {
+        // Otherwise, cycle to next backdrop
+        nextBackdropIdx = (backdropIndex + step + backdropKeys.length) % backdropKeys.length;
       }
 
-      nextBackdropIdx = (backdropIndex + step + backdropKeys.length) % backdropKeys.length;
       const nextBackdropKey = backdropKeys[nextBackdropIdx];
       setBackdropKey(nextBackdropKey);
     },
@@ -75,11 +78,17 @@ export const useBackdropShortcuts = (): void => {
         (lastActiveIndex, setting, index) => (setting.visible ? index : lastActiveIndex),
         -1
       );
+      const hasEnabledChannel = channelSettings.some((setting) => setting.visible);
 
       let enabledChannelIdx;
-      if (lastEnabledChannel + step < 0 || lastEnabledChannel + step >= channelData.length) {
+      if (!hasEnabledChannel) {
+        // If channels are all disabled, go to the first or last channel.
+        enabledChannelIdx = step === 1 ? 0 : channelData.length - 1;
+      } else if (lastEnabledChannel + step < 0 || lastEnabledChannel + step >= channelData.length) {
+        // If cycling past the first or last channel, disable all channels
         enabledChannelIdx = -1;
       } else {
+        // Otherwise, cycle through channels.
         enabledChannelIdx = (lastEnabledChannel + step + channelData.length) % channelData.length;
       }
       for (let i = 0; i < channelData.length; i++) {
