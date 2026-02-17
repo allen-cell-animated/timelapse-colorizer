@@ -534,7 +534,7 @@ export default class Dataset {
     // cause centroids to be scaled incorrectly in 3D. Add a flag to indicate
     // whether centroids are in physical or pixel units.
     const metadataDims = this.metadata.frameDims;
-    const hasMetadataDims = metadataDims && metadataDims.width !== undefined && metadataDims.height !== undefined;
+    const hasMetadataDims = metadataDims && metadataDims.width && metadataDims.height;
     const physicalDims = hasMetadataDims ? [metadataDims.width, metadataDims.height, 1] : [1, 1, 1];
     const pixelDims = this.frameDimensions ? [this.frameDimensions.x, this.frameDimensions.y, 1] : physicalDims;
 
