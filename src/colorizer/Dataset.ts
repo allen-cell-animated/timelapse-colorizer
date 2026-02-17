@@ -527,11 +527,15 @@ export default class Dataset {
     if (!this.centroids) {
       return;
     }
-    // TODO: Provide metadata for 3D datasets that describes the volume's dimensions in physical units, and
-    // normalize the centroid coordinates accordingly
     const metadataDims = this.metadata.frameDims;
-    const physicalDims =
-      metadataDims.width && metadataDims.height ? [metadataDims.width, metadataDims.height, 1] : [1, 1, 1];
+    // TODO: The handling for centroid scaling is not consistent for 2D and 3D
+    // datasets. Currently, 2D datasets must provide centroids in pixels, while
+    // 3D datasets must provide them in physical units. If both 3D and 2D frame
+    // data is present, centroids would be read as being pixel units, which
+    // would cause incorrect behavior in 3D view. Consider revising centroid
+    // parameters or adding a flag to indicate the units of centroid data.
+    const hasMetadataDims = metadataDims && metadataDims.width !== undefined && metadataDims.height !== undefined;
+    const physicalDims = hasMetadataDims ? [metadataDims.width, metadataDims.height, 1] : [1, 1, 1];
     const pixelDims = this.frameDimensions ? [this.frameDimensions.x, this.frameDimensions.y, 1] : physicalDims;
 
     for (let i = 0; i < centroidFeatureKeys.length; i++) {
@@ -550,8 +554,9 @@ export default class Dataset {
 
       const data = new Float32Array(rawData);
       const axis = axes[i];
-      const min = data.reduce((min, value) => Math.min(min, value), Infinity);
-      const max = data.reduce((max, value) => Math.max(max, value), -Infinity);
+      const min = 0;
+      const dataMax = data.reduce((max, value) => Math.max(max, value), -Infinity);
+      const max = hasMetadataDims ? physicalDims[i] : dataMax;
       const tex = packDataTexture(data, FeatureDataType.F32);
       const description = `Centroid ${axis} coordinate, in pixels/voxels. This feature was added by the viewer from provided data.`;
       this.features.set(key, {
@@ -561,7 +566,7 @@ export default class Dataset {
         tex,
         min,
         max,
-        unit: metadataDims.units || "",
+        unit: metadataDims?.units || "",
         type: FeatureType.DISCRETE,
         categories: null,
         description,
