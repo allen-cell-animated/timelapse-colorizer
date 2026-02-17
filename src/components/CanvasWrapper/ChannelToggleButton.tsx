@@ -62,13 +62,11 @@ export default function ChannelToggleButton(): ReactElement {
               </Checkbox>
             );
           })}
-          {
-            <FlexRow style={{ color: theme.color.text.hint, width: "100%" }} $gap={4}>
-              Press <KeyCharacter>{SHORTCUT_KEYS.backdropsOrChannels.cycleBackward.keycodeDisplay[0]}</KeyCharacter> /{" "}
-              <KeyCharacter>{SHORTCUT_KEYS.backdropsOrChannels.cycleForward.keycodeDisplay[0]}</KeyCharacter> or{" "}
-              <KeyCharacter>{SHORTCUT_KEYS.backdropsOrChannels.showChannel.keycodeDisplay}</KeyCharacter> to cycle
-            </FlexRow>
-          }
+          <FlexRow style={{ color: theme.color.text.hint, width: "100%" }} $gap={4}>
+            Press <KeyCharacter>{SHORTCUT_KEYS.backdropsOrChannels.cycleBackward.keycodeDisplay[0]}</KeyCharacter> /{" "}
+            <KeyCharacter>{SHORTCUT_KEYS.backdropsOrChannels.cycleForward.keycodeDisplay[0]}</KeyCharacter> or{" "}
+            <KeyCharacter>{SHORTCUT_KEYS.backdropsOrChannels.showChannel.keycodeDisplay}</KeyCharacter> to cycle
+          </FlexRow>
         </div>
       </SettingsItem>
     </SettingsContainer>
