@@ -25,7 +25,7 @@ export const useBackdropShortcuts = (): void => {
 
   const cycleBackdrop = useCallback(
     (step: 1 | -1) => {
-      if (backdropKeys.length === 0) {
+      if (backdropKeys.length === 0 || backdropIndex === -1) {
         return;
       }
 
@@ -41,7 +41,7 @@ export const useBackdropShortcuts = (): void => {
         setBackdropVisible(false);
       } else {
         // Otherwise, cycle to next backdrop
-        nextBackdropIdx = (backdropIndex + step + backdropKeys.length) % backdropKeys.length;
+        nextBackdropIdx = backdropIndex + step;
       }
 
       const nextBackdropKey = backdropKeys[nextBackdropIdx];
@@ -53,7 +53,7 @@ export const useBackdropShortcuts = (): void => {
   const toggleBackdrop = useCallback(
     (event: KeyboardEvent) => {
       const newIndex = Number.parseInt(event.key, 10) - 1;
-      if (Number.isNaN(newIndex) || newIndex >= backdropKeys.length) {
+      if (Number.isNaN(newIndex) || newIndex < 0 || newIndex >= backdropKeys.length) {
         return;
       }
       if (newIndex === backdropIndex) {
@@ -89,7 +89,7 @@ export const useBackdropShortcuts = (): void => {
         enabledChannelIdx = -1;
       } else {
         // Otherwise, cycle through channels.
-        enabledChannelIdx = (lastEnabledChannel + step + channelData.length) % channelData.length;
+        enabledChannelIdx = lastEnabledChannel + step;
       }
       for (let i = 0; i < channelData.length; i++) {
         updateChannelSettings(i, { visible: i === enabledChannelIdx });
@@ -104,7 +104,7 @@ export const useBackdropShortcuts = (): void => {
         return;
       }
       const index = Number.parseInt(event.key, 10) - 1;
-      if (Number.isNaN(index) || index >= channelData.length) {
+      if (Number.isNaN(index) || index < 0 || index >= channelData.length) {
         return;
       }
       const visible = channelSettings[index]?.visible ?? false;
