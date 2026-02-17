@@ -163,6 +163,14 @@ export const MOCK_DATASET_WITH_TWO_FRAMES = await makeMockDataset(
   MOCK_DATASET_ARRAY_LOADER
 );
 
+export const MOCK_DATASET_2D_ONLY = await makeMockDataset(
+  {
+    ...MOCK_DATASET_MANIFEST,
+    frames3d: undefined,
+  },
+  MOCK_DATASET_ARRAY_LOADER
+);
+
 export const MOCK_DATASET_WITHOUT_BACKDROP = await makeMockDataset(
   {
     ...MOCK_DATASET_MANIFEST,
