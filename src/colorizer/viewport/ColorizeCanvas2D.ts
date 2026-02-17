@@ -53,7 +53,7 @@ import {
 
 import type { IInnerRenderCanvas } from "./IInnerRenderCanvas";
 import TrackPath2D from "./tracks/TrackPath2D";
-import { get2DCanvasScaling } from "./utils";
+import { get2DCanvasScaling, getTrackPathColor } from "./utils";
 
 import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
 import vertexShader from "./shaders/colorize.vert";
@@ -550,17 +550,9 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     }
 
     // Update params for all TrackPath2D objects.
-    const usePerTrackColors =
-      this.trackPaths.size > 1 && params.outlineColorMode === TrackOutlineColorMode.USE_AUTO_COLOR;
-
     this.trackPaths.forEach((trackPath, trackId) => {
       const track = params.tracks.get(trackId) ?? null;
-      let outlineColor = params.outlineColor;
-      if (track && usePerTrackColors) {
-        // Replace default outlineColor with track path color
-        outlineColor = params.trackColors.get(track.trackId) ?? outlineColor;
-      }
-      trackPath.setParams({ ...params, track, outlineColor });
+      trackPath.setParams({ ...params, track, outlineColor: getTrackPathColor(track, params) });
     });
   }
 
