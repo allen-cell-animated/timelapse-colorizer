@@ -1,4 +1,4 @@
-import { Color } from "three";
+import type { Color } from "three";
 import type { StateCreator } from "zustand";
 
 import { ColorRamp, ColorRampType, KNOWN_CATEGORICAL_PALETTES, type Track } from "src/colorizer";

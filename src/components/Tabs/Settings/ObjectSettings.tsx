@@ -1,6 +1,6 @@
 import type { PresetsItem } from "antd/es/color-picker/interface";
 import React, { type ReactElement } from "react";
-import { Color } from "three";
+import type { Color } from "three";
 
 import { DrawMode, TrackOutlineColorMode } from "src/colorizer";
 import DropdownWithColorPicker from "src/components/Dropdowns/DropdownWithColorPicker";
