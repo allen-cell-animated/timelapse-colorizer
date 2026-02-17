@@ -23,6 +23,9 @@ export const useBackdropShortcuts = (): void => {
 
   const cycleBackdrop = useCallback(
     (step: number) => {
+      if (backdropKeys.length === 0) {
+        return;
+      }
       const nextBackdropKey = backdropKeys[(backdropIndex + step + backdropKeys.length) % backdropKeys.length];
       setBackdropKey(nextBackdropKey);
       setBackdropVisible(true);
@@ -32,7 +35,7 @@ export const useBackdropShortcuts = (): void => {
 
   const toggleBackdrop = useCallback(
     (event: KeyboardEvent) => {
-      const newIndex = Number.parseInt(event.key) - 1;
+      const newIndex = Number.parseInt(event.key, 10) - 1;
       if (Number.isNaN(newIndex) || newIndex >= backdropKeys.length) {
         return;
       }
@@ -44,7 +47,7 @@ export const useBackdropShortcuts = (): void => {
         setBackdropVisible(true);
       }
     },
-    [backdropKeys, backdropIndex, setBackdropKey, setBackdropVisible]
+    [backdropKeys, backdropIndex, backdropVisible, setBackdropKey, setBackdropVisible]
   );
 
   const cycleChannel = useCallback(
@@ -69,7 +72,7 @@ export const useBackdropShortcuts = (): void => {
       if (!channelData || channelData.length === 0) {
         return;
       }
-      const index = Number.parseInt(event.key) - 1;
+      const index = Number.parseInt(event.key, 10) - 1;
       if (Number.isNaN(index) || index >= channelData.length) {
         return;
       }

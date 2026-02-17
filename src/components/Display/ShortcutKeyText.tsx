@@ -72,7 +72,7 @@ export default function ShortcutKeyText(props: ShortcutKeyDisplayProps): ReactEl
 
     let hotkeyElements: ReactNode = keycodeArray.map(toHotkeyDisplay);
     if (inline) {
-      hotkeyElements = insertBetweenElements(hotkeyElements, <span>/</span>);
+      hotkeyElements = insertBetweenElements(hotkeyElements, (key) => <span key={key}>/</span>);
     }
     return hotkeyElements;
   }, [keycode, keycodeDisplay, inline]);
@@ -86,9 +86,7 @@ export default function ShortcutKeyText(props: ShortcutKeyDisplayProps): ReactEl
         style={{
           justifyContent: "flex-end",
           alignItems: "flex-end",
-          flexDirection: props.inline ? "row" : "column",
-          flexWrap: "wrap",
-          width: "fit-content",
+          flexFlow: `${props.inline ? "row" : "column"} wrap`,
         }}
       >
         {hotkeyElements}
