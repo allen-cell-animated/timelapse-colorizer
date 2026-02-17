@@ -67,9 +67,13 @@ export default function PlotWrapper(inputProps: PlotWrapperProps): ReactElement 
   // Handle updates to selected track and feature, updating/clearing the plot accordingly.
   useMemo(() => {
     if (props.tracks.size > 0) {
+      // In 2D mode, the the origin (0,0) is in the top left corner, versus in
+      // plot the origin is in the bottom left by default. Reverse the Y-axis
+      // centroid value in 2D so the plot matches the onscreen objects.
       const reverseYAxis = props.viewMode === ViewMode.VIEW_2D && props.featureKey === CENTROID_Y_FEATURE_KEY;
       const yAxisLayout = reverseYAxis ? { autorange: "reversed" as const } : {};
-      plot?.plot(props.tracks, props.featureKey, props.frame, yAxisLayout);
+
+      plot?.plot(props.tracks, props.featureKey, props.frame, { yaxis: yAxisLayout });
     } else {
       plot?.removePlot();
     }

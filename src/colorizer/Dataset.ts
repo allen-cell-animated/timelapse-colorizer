@@ -527,13 +527,13 @@ export default class Dataset {
     if (!this.centroids) {
       return;
     }
-    const metadataDims = this.metadata.frameDims;
     // TODO: The handling for centroid scaling is not consistent for 2D and 3D
     // datasets. Currently, 2D datasets must provide centroids in pixels, while
     // 3D datasets must provide them in physical units. If both 3D and 2D frame
     // data is present, centroids would be read as being pixel units, which
-    // would cause incorrect behavior in 3D view. Consider revising centroid
-    // parameters or adding a flag to indicate the units of centroid data.
+    // cause centroids to be scaled incorrectly in 3D. Add a flag to indicate
+    // whether centroids are in physical or pixel units.
+    const metadataDims = this.metadata.frameDims;
     const hasMetadataDims = metadataDims && metadataDims.width !== undefined && metadataDims.height !== undefined;
     const physicalDims = hasMetadataDims ? [metadataDims.width, metadataDims.height, 1] : [1, 1, 1];
     const pixelDims = this.frameDimensions ? [this.frameDimensions.x, this.frameDimensions.y, 1] : physicalDims;

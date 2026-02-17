@@ -458,9 +458,9 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     }
     scatterPlotAxis.range = [min, max];
     if (viewMode === ViewMode.VIEW_2D && featureKey === CENTROID_Y_FEATURE_KEY) {
-      // In 2D mode, the Y-axis is reversed so that the origin (0,0) is in the
-      // top left corner. Reverse the range so the plot matches the onscreen
-      // objects.
+      // In 2D mode, the the origin (0,0) is in the top left corner, versus in
+      // plot the origin is in the bottom left by default. Reverse the Y-axis
+      // centroid value in 2D so the plot matches the onscreen objects.
       scatterPlotAxis.range = [max, min];
     }
 
