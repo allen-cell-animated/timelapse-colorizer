@@ -21,16 +21,30 @@ export const useBackdropShortcuts = (): void => {
   const backdropIndex = backdropKey !== null ? backdropKeys.indexOf(backdropKey) : -1;
   const channelData = dataset?.frames3d?.backdrops;
 
+  //// 2D backdrops
+
   const cycleBackdrop = useCallback(
-    (step: number) => {
+    (step: 1 | -1) => {
       if (backdropKeys.length === 0) {
         return;
       }
-      const nextBackdropKey = backdropKeys[(backdropIndex + step + backdropKeys.length) % backdropKeys.length];
+      // If backdrops aren't visible, enable them on first press
+      if (!backdropVisible) {
+        setBackdropVisible(true);
+        return;
+      }
+      // If cycling past the first or last backdrop, hide backdrops. This makes
+      // it so that having no backdrop visible is in the cycle.
+      let nextBackdropIdx = backdropIndex + step;
+      if (backdropIndex + step < 0 || backdropIndex + step >= backdropKeys.length) {
+        setBackdropVisible(false);
+      }
+
+      nextBackdropIdx = (backdropIndex + step + backdropKeys.length) % backdropKeys.length;
+      const nextBackdropKey = backdropKeys[nextBackdropIdx];
       setBackdropKey(nextBackdropKey);
-      setBackdropVisible(true);
     },
-    [backdropKeys, backdropIndex, setBackdropKey, setBackdropVisible]
+    [backdropKeys, backdropIndex, backdropVisible, setBackdropKey, setBackdropVisible]
   );
 
   const toggleBackdrop = useCallback(
@@ -39,8 +53,8 @@ export const useBackdropShortcuts = (): void => {
       if (Number.isNaN(newIndex) || newIndex >= backdropKeys.length) {
         return;
       }
-
       if (newIndex === backdropIndex) {
+        // Toggle visibility if backdrop is already selected
         setBackdropVisible(!backdropVisible);
       } else {
         setBackdropKey(backdropKeys[newIndex]);
@@ -50,8 +64,10 @@ export const useBackdropShortcuts = (): void => {
     [backdropKeys, backdropIndex, backdropVisible, setBackdropKey, setBackdropVisible]
   );
 
+  //// 3D channels
+
   const cycleChannel = useCallback(
-    (step: number) => {
+    (step: 1 | -1) => {
       if (!channelData || channelData.length === 0) {
         return;
       }
@@ -59,7 +75,13 @@ export const useBackdropShortcuts = (): void => {
         (lastActiveIndex, setting, index) => (setting.visible ? index : lastActiveIndex),
         -1
       );
-      const enabledChannelIdx = (lastEnabledChannel + step + channelData.length) % channelData.length;
+
+      let enabledChannelIdx;
+      if (lastEnabledChannel + step < 0 || lastEnabledChannel + step >= channelData.length) {
+        enabledChannelIdx = -1;
+      } else {
+        enabledChannelIdx = (lastEnabledChannel + step + channelData.length) % channelData.length;
+      }
       for (let i = 0; i < channelData.length; i++) {
         updateChannelSettings(i, { visible: i === enabledChannelIdx });
       }
@@ -81,6 +103,8 @@ export const useBackdropShortcuts = (): void => {
     },
     [channelData, channelSettings, updateChannelSettings]
   );
+
+  //// Hotkey handlers
 
   const handleCycleHotkey = isDataset3d ? cycleChannel : cycleBackdrop;
   const handleToggleHotkey = isDataset3d ? toggleChannel : toggleBackdrop;

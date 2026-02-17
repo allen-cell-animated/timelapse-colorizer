@@ -1,9 +1,13 @@
 import { Checkbox } from "antd";
-import React, { type ReactElement, type ReactNode, useRef } from "react";
+import React, { type ReactElement, type ReactNode, useContext, useRef } from "react";
 
 import { ImageToggleButton } from "src/components/Buttons/ImageToggleButton";
+import { KeyCharacter } from "src/components/Display/ShortcutKeyText";
 import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
+import { SHORTCUT_KEYS } from "src/constants";
 import { useViewerStateStore } from "src/state";
+import { AppThemeContext } from "src/styles/AppStyle";
+import { FlexRow } from "src/styles/utils";
 import { formatQuantityString } from "src/utils/formatting";
 
 const enum ChannelToggleButtonHtmlIds {
@@ -15,6 +19,7 @@ const enum ChannelToggleButtonHtmlIds {
  * allows toggling individual channels.
  */
 export default function ChannelToggleButton(): ReactElement {
+  const theme = useContext(AppThemeContext);
   const dataset = useViewerStateStore((state) => state.dataset);
   const channelSettings = useViewerStateStore((state) => state.channelSettings);
   const updateChannelSettings = useViewerStateStore((state) => state.updateChannelSettings);
@@ -57,6 +62,13 @@ export default function ChannelToggleButton(): ReactElement {
               </Checkbox>
             );
           })}
+          {
+            <FlexRow style={{ color: theme.color.text.hint, width: "100%" }} $gap={4}>
+              Press <KeyCharacter>{SHORTCUT_KEYS.backdropsOrChannels.cycleBackward.keycodeDisplay[0]}</KeyCharacter> /{" "}
+              <KeyCharacter>{SHORTCUT_KEYS.backdropsOrChannels.cycleForward.keycodeDisplay[0]}</KeyCharacter> or{" "}
+              <KeyCharacter>{SHORTCUT_KEYS.backdropsOrChannels.showChannel.keycodeDisplay}</KeyCharacter> to cycle
+            </FlexRow>
+          }
         </div>
       </SettingsItem>
     </SettingsContainer>
