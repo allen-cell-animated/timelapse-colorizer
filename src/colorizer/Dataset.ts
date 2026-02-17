@@ -29,14 +29,6 @@ export const CENTROID_X_FEATURE_KEY = "_centroid_x_";
 export const CENTROID_Y_FEATURE_KEY = "_centroid_y_";
 export const CENTROID_Z_FEATURE_KEY = "_centroid_z_";
 
-export const AUTO_GENERATED_FEATURE_KEYS = [
-  TRACK_FEATURE_KEY,
-  TIME_FEATURE_KEY,
-  CENTROID_X_FEATURE_KEY,
-  CENTROID_Y_FEATURE_KEY,
-  CENTROID_Z_FEATURE_KEY,
-];
-
 export enum FeatureType {
   CONTINUOUS = "continuous",
   DISCRETE = "discrete",
@@ -779,8 +771,8 @@ export default class Dataset {
       this.centroids = padCentroidsTo3d(this.centroids, this.numObjects);
     }
 
-    this.addTimeAndTrackFeatures();
     this.addCentroidFeatures();
+    this.addTimeAndTrackFeatures();
 
     // Analytics reporting
     triggerAnalyticsEvent(AnalyticsEvent.DATASET_LOAD, {
