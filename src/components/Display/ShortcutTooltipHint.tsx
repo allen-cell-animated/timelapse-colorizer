@@ -1,5 +1,5 @@
 import { InfoCircleOutlined } from "@ant-design/icons";
-import React, { type ReactElement, useContext } from "react";
+import React, { type ReactElement, useContext, useRef } from "react";
 
 import ShortcutKeyText from "src/components/Display/ShortcutKeyText";
 import { TooltipWithSubtitle } from "src/components/Tooltips/TooltipWithSubtitle";
@@ -13,7 +13,7 @@ type ShortcutTooltipHintProps = {
 
 export default function ShortcutTooltipHint(props: ShortcutTooltipHintProps): ReactElement {
   const theme = useContext(AppThemeContext);
-  const popupContainerRef = React.useRef<HTMLDivElement>(null);
+  const popupContainerRef = useRef<HTMLDivElement>(null);
 
   const tooltipKeycharacterStyle: React.CSSProperties = {
     backgroundColor: theme.color.text.shortcutKey.dark.background,
@@ -23,8 +23,8 @@ export default function ShortcutTooltipHint(props: ShortcutTooltipHintProps): Re
 
   const tooltipContents = (
     <FlexColumn $gap={4}>
-      {props.shortcutKeys.map((shortcutKey, _index) => (
-        <ShortcutKeyText shortcutKey={shortcutKey} keyStyle={tooltipKeycharacterStyle} inline={true} />
+      {props.shortcutKeys.map((shortcutKey, index) => (
+        <ShortcutKeyText shortcutKey={shortcutKey} keyStyle={tooltipKeycharacterStyle} inline={true} key={index} />
       ))}
     </FlexColumn>
   );
