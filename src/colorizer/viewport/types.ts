@@ -8,7 +8,7 @@ import type {
   ChannelSetting,
   DrawMode,
   DrawSettings,
-  TrackOutlineColorMode,
+  SelectionOutlineColorMode,
   TrackPathColorMode,
 } from "src/colorizer/types";
 
@@ -71,7 +71,7 @@ export type RenderCanvasStateParams = {
   colorRampRange: [number, number];
   categoricalPaletteRamp: ColorRamp;
   outlineColor: Color;
-  outlineColorMode: TrackOutlineColorMode;
+  outlineColorMode: SelectionOutlineColorMode;
   edgeColor: Color;
   edgeColorAlpha: number;
   edgeMode: DrawMode;

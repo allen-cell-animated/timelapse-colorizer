@@ -1,7 +1,7 @@
 import { type Color, Vector2 } from "three";
 
 import type Track from "src/colorizer/Track";
-import { TrackOutlineColorMode } from "src/colorizer/types";
+import { SelectionOutlineColorMode } from "src/colorizer/types";
 
 import { type Canvas2DScaleInfo, CanvasType, type RenderCanvasStateParams } from "./types";
 
@@ -57,7 +57,8 @@ export function get2DCanvasScaling(
  * color to per-track colors if there are multiple tracks selected.
  */
 export function getTrackPathColor(track: Track | null, params: RenderCanvasStateParams): Color {
-  const usePerTrackColors = params.tracks.size > 1 && params.outlineColorMode === TrackOutlineColorMode.USE_AUTO_COLOR;
+  const usePerTrackColors =
+    params.tracks.size > 1 && params.outlineColorMode === SelectionOutlineColorMode.USE_AUTO_COLOR;
   if (usePerTrackColors && track !== null) {
     return params.trackColors.get(track.trackId) ?? params.outlineColor;
   }

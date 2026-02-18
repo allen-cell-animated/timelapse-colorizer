@@ -14,8 +14,8 @@ import {
   OUT_OF_RANGE_COLOR_DEFAULT,
   OUTLIER_COLOR_DEFAULT,
   OUTLINE_COLOR_DEFAULT,
+  SelectionOutlineColorMode,
   TabType,
-  TrackOutlineColorMode,
   TrackPathColorMode,
 } from "src/colorizer";
 import { getColorMap } from "src/colorizer/utils/data_utils";
@@ -87,7 +87,7 @@ export type ConfigSliceState = {
   outOfRangeDrawSettings: DrawSettings;
   outlierDrawSettings: DrawSettings;
   outlineColor: Color;
-  outlineColorMode: TrackOutlineColorMode;
+  outlineColorMode: SelectionOutlineColorMode;
   edgeColor: Color;
   edgeColorAlpha: number;
   edgeMode: DrawMode;
@@ -147,7 +147,7 @@ export type ConfigSliceActions = {
   setEdgeMode: (edgeMode: DrawMode) => void;
   setOpenTab: (openTab: TabType) => void;
   setInterpolate3d: (interpolate3d: boolean) => void;
-  setOutlineColorMode: (outlineColorMode: TrackOutlineColorMode) => void;
+  setOutlineColorMode: (outlineColorMode: SelectionOutlineColorMode) => void;
 };
 
 export const addConfigDerivedStateSubscribers = (store: SubscribableStore<ConfigSlice>): void => {
@@ -185,7 +185,7 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   outOfRangeDrawSettings: OUT_OF_RANGE_DRAW_SETTINGS_DEFAULT,
   outlierDrawSettings: OUTLIER_DRAW_SETTINGS_DEFAULT,
   outlineColor: new Color(OUTLINE_COLOR_DEFAULT),
-  outlineColorMode: TrackOutlineColorMode.USE_AUTO_COLOR,
+  outlineColorMode: SelectionOutlineColorMode.USE_AUTO_COLOR,
   edgeColor: new Color(EDGE_COLOR_DEFAULT),
   edgeColorAlpha: EDGE_COLOR_ALPHA_DEFAULT,
   edgeMode: DrawMode.USE_COLOR,

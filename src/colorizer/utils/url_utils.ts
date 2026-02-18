@@ -14,8 +14,8 @@ import {
   LoadErrorMessage,
   LoadTroubleshooting,
   PlotRangeType,
+  SelectionOutlineColorMode,
   ThresholdType,
-  TrackOutlineColorMode,
   TrackPathColorMode,
 } from "src/colorizer/types";
 import { removeUndefinedProperties } from "src/colorizer/utils/data_utils";
@@ -449,11 +449,11 @@ export function parseDrawSettings(
   };
 }
 
-export function parseTrackOutlineColorMode(mode: string | null): TrackOutlineColorMode | undefined {
+export function parseTrackOutlineColorMode(mode: string | null): SelectionOutlineColorMode | undefined {
   const modeInt = parseInt(mode || "-1", 10);
   const isTrackOutlineColorMode =
-    modeInt === TrackOutlineColorMode.USE_CUSTOM_COLOR || modeInt === TrackOutlineColorMode.USE_AUTO_COLOR;
-  return mode && isTrackOutlineColorMode ? (modeInt as TrackOutlineColorMode) : undefined;
+    modeInt === SelectionOutlineColorMode.USE_CUSTOM_COLOR || modeInt === SelectionOutlineColorMode.USE_AUTO_COLOR;
+  return mode && isTrackOutlineColorMode ? (modeInt as SelectionOutlineColorMode) : undefined;
 }
 
 export function parseTrackPathMode(mode: string | null): TrackPathColorMode | undefined {

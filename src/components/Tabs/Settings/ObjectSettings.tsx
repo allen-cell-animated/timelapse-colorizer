@@ -2,7 +2,7 @@ import type { PresetsItem } from "antd/es/color-picker/interface";
 import React, { type ReactElement } from "react";
 import type { Color } from "three";
 
-import { DrawMode, TrackOutlineColorMode } from "src/colorizer";
+import { DrawMode, SelectionOutlineColorMode } from "src/colorizer";
 import DropdownWithColorPicker from "src/components/Dropdowns/DropdownWithColorPicker";
 import type { SelectItem } from "src/components/Dropdowns/types";
 import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
@@ -50,8 +50,8 @@ const EDGE_COLOR_PRESETS: PresetsItem[] = [
 ];
 
 const OUTLINE_COLOR_MODE_ITEMS: SelectItem[] = [
-  { value: TrackOutlineColorMode.USE_AUTO_COLOR.toString(), label: "Auto" },
-  { value: TrackOutlineColorMode.USE_CUSTOM_COLOR.toString(), label: "Use color" },
+  { value: SelectionOutlineColorMode.USE_AUTO_COLOR.toString(), label: "Auto" },
+  { value: SelectionOutlineColorMode.USE_CUSTOM_COLOR.toString(), label: "Use color" },
 ];
 
 export default function ObjectSettings(): ReactElement {
@@ -79,7 +79,7 @@ export default function ObjectSettings(): ReactElement {
             selected={outlineColorMode.toString()}
             items={OUTLINE_COLOR_MODE_ITEMS}
             onValueChange={(mode: string) => {
-              setOutlineColorMode(Number.parseInt(mode, 10) as TrackOutlineColorMode);
+              setOutlineColorMode(Number.parseInt(mode, 10) as SelectionOutlineColorMode);
             }}
             showColorPicker={true}
             color={outlineColor}

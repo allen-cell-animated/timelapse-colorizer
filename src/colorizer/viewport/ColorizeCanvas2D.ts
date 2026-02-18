@@ -38,7 +38,7 @@ import {
   FeatureDataType,
   type FrameLoadResult,
   type PixelIdInfo,
-  TrackOutlineColorMode,
+  SelectionOutlineColorMode,
 } from "src/colorizer/types";
 import { getGlobalIdFromSegId, hasPropertyChanged } from "src/colorizer/utils/data_utils";
 import { convertCanvasOffsetPxToFrameCoords, getFrameSizeInScreenPx } from "src/colorizer/utils/math_utils";
@@ -667,7 +667,7 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     }
     if (hasPropertyChanged(params, prevParams, ["tracks", "outlineColorMode"])) {
       const useTracksPalette =
-        params.tracks.size > 1 && params.outlineColorMode === TrackOutlineColorMode.USE_AUTO_COLOR;
+        params.tracks.size > 1 && params.outlineColorMode === SelectionOutlineColorMode.USE_AUTO_COLOR;
       this.setUniform("useTracksPalette", useTracksPalette);
     }
 
