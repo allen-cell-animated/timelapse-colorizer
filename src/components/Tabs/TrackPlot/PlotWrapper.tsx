@@ -2,7 +2,8 @@ import type Plotly from "plotly.js-dist-min";
 import type { PlotlyHTMLElement } from "plotly.js-dist-min";
 import React, { type ReactElement, useEffect, useMemo, useRef, useState } from "react";
 
-import type { Dataset, Track } from "src/colorizer";
+import { type Dataset, type Track, ViewMode } from "src/colorizer";
+import { CENTROID_Y_FEATURE_KEY } from "src/colorizer/Dataset";
 
 import Plotting, { type TrackPlotLayoutConfig } from "./Plotting";
 
@@ -12,6 +13,7 @@ type PlotWrapperProps = {
   featureKey: string | null;
   tracks: Map<number, Track>;
   setFrame: (frame: number) => Promise<void>;
+  viewMode: ViewMode;
 };
 const defaultProps: Partial<PlotWrapperProps> = {};
 
@@ -65,11 +67,17 @@ export default function PlotWrapper(inputProps: PlotWrapperProps): ReactElement 
   // Handle updates to selected track and feature, updating/clearing the plot accordingly.
   useMemo(() => {
     if (props.tracks.size > 0) {
-      plot?.plot(props.tracks, props.featureKey, props.frame);
+      // In 2D mode, the the origin (0,0) is in the top left corner, versus in
+      // plot the origin is in the bottom left by default. Reverse the Y-axis
+      // centroid value in 2D so the plot matches the onscreen objects.
+      const reverseYAxis = props.viewMode === ViewMode.VIEW_2D && props.featureKey === CENTROID_Y_FEATURE_KEY;
+      const yAxisLayout = reverseYAxis ? { autorange: "reversed" as const } : {};
+
+      plot?.plot(props.tracks, props.featureKey, props.frame, { yaxis: yAxisLayout });
     } else {
       plot?.removePlot();
     }
-  }, [props.tracks, props.featureKey]);
+  }, [props.tracks, props.featureKey, props.viewMode]);
 
   const updatePlotSize = (): void => {
     if (!plotDivRef.current) {

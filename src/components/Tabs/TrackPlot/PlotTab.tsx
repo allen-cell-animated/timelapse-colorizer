@@ -38,6 +38,7 @@ export default function PlotTab(props: PlotTabProps): ReactElement {
   const tracks = useViewerStateStore((state) => state.tracks);
   const setFrame = useViewerStateStore((state) => state.setFrame);
   const addTracks = useViewerStateStore((state) => state.addTracks);
+  const viewMode = useViewerStateStore((state) => state.viewMode);
 
   const [findTrackInput, setFindTrackInput] = useState("");
 
@@ -110,6 +111,7 @@ export default function PlotTab(props: PlotTabProps): ReactElement {
             dataset={dataset}
             featureKey={featureKey}
             tracks={tracks}
+            viewMode={viewMode}
           />
         </LoadingSpinner>
       </div>

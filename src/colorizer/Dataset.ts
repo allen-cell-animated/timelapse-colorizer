@@ -25,6 +25,9 @@ import * as urlUtils from "./utils/url_utils";
 
 export const TRACK_FEATURE_KEY = "_track_";
 export const TIME_FEATURE_KEY = "_time_";
+export const CENTROID_X_FEATURE_KEY = "_centroid_x_";
+export const CENTROID_Y_FEATURE_KEY = "_centroid_y_";
+export const CENTROID_Z_FEATURE_KEY = "_centroid_z_";
 
 export enum FeatureType {
   CONTINUOUS = "continuous",
@@ -489,7 +492,7 @@ export default class Dataset {
         unit: "",
         type: FeatureType.DISCRETE,
         categories: null,
-        description: "Track ID of the object. This feature was added by the viewer.",
+        description: "Track ID of the object. This feature was added by the viewer from provided data.",
       });
     }
 
@@ -505,7 +508,60 @@ export default class Dataset {
         unit: "",
         type: FeatureType.CONTINUOUS,
         categories: null,
-        description: "Frame number where the object appears. This feature was added by the viewer.",
+        description: "Frame number where the object appears. This feature was added by the viewer from provided data.",
+      });
+    }
+  }
+
+  private addCentroidFeatures(): void {
+    const centroidFeatureKeys = [CENTROID_X_FEATURE_KEY, CENTROID_Y_FEATURE_KEY, CENTROID_Z_FEATURE_KEY];
+    const axes = ["X", "Y", "Z"];
+    if (!this.centroids) {
+      return;
+    }
+    // TODO: The handling for centroid scaling is not consistent for 2D and 3D
+    // datasets. Currently, 2D datasets must provide centroids in pixels, while
+    // 3D datasets must provide them in physical units. If both 3D and 2D frame
+    // data is present, centroids would be read as being pixel units, which
+    // cause centroids to be scaled incorrectly in 3D. Add a flag to indicate
+    // whether centroids are in physical or pixel units.
+    const metadataDims = this.metadata.frameDims;
+    const hasMetadataDims = metadataDims && metadataDims.width && metadataDims.height;
+    const physicalDims = hasMetadataDims ? [metadataDims.width, metadataDims.height, 1] : [1, 1, 1];
+    const pixelDims = this.frameDimensions ? [this.frameDimensions.x, this.frameDimensions.y, 1] : physicalDims;
+
+    for (let i = 0; i < centroidFeatureKeys.length; i++) {
+      const key = centroidFeatureKeys[i];
+      if (this.features.has(key)) {
+        continue;
+      }
+
+      let rawData = this.centroids.filter((_, index) => index % 3 === i);
+      if (this.frameDimensions) {
+        // If provided, normalize centroid coordinates to physical units.
+        const physicalDim = physicalDims[i];
+        const pixelDim = pixelDims[i];
+        rawData = rawData.map((value) => (value / pixelDim) * physicalDim);
+      }
+
+      const data = new Float32Array(rawData);
+      const axis = axes[i];
+      const min = 0;
+      const dataMax = data.reduce((max, value) => Math.max(max, value), -Infinity);
+      const max = hasMetadataDims ? physicalDims[i] : dataMax;
+      const tex = packDataTexture(data, FeatureDataType.F32);
+      const description = `Centroid ${axis} coordinate, in pixels/voxels. This feature was added by the viewer from provided data.`;
+      this.features.set(key, {
+        name: "Centroid " + axis,
+        key,
+        data,
+        tex,
+        min,
+        max,
+        unit: metadataDims?.units || "",
+        type: FeatureType.DISCRETE,
+        categories: null,
+        description,
       });
     }
   }
@@ -697,8 +753,6 @@ export default class Dataset {
       ]);
     }
 
-    this.addTimeAndTrackFeatures();
-
     // Construct default array of segmentation IDs if not provided in the manifest.
     if (!this.segIds) {
       // Construct default segIds array (0, 1, 2, ...)
@@ -716,6 +770,9 @@ export default class Dataset {
     if (this.centroids) {
       this.centroids = padCentroidsTo3d(this.centroids, this.numObjects);
     }
+
+    this.addCentroidFeatures();
+    this.addTimeAndTrackFeatures();
 
     // Analytics reporting
     triggerAnalyticsEvent(AnalyticsEvent.DATASET_LOAD, {
