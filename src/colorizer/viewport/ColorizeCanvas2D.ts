@@ -33,13 +33,7 @@ import {
   OUTLINE_COLOR_DEFAULT,
 } from "src/colorizer/constants";
 import type Dataset from "src/colorizer/Dataset";
-import {
-  DrawMode,
-  FeatureDataType,
-  type FrameLoadResult,
-  type PixelIdInfo,
-  SelectionOutlineColorMode,
-} from "src/colorizer/types";
+import { DrawMode, FeatureDataType, type FrameLoadResult, type PixelIdInfo } from "src/colorizer/types";
 import { getGlobalIdFromSegId, hasPropertyChanged } from "src/colorizer/utils/data_utils";
 import { convertCanvasOffsetPxToFrameCoords, getFrameSizeInScreenPx } from "src/colorizer/utils/math_utils";
 import { packDataTexture } from "src/colorizer/utils/texture_utils";
@@ -53,7 +47,7 @@ import {
 
 import type { IInnerRenderCanvas } from "./IInnerRenderCanvas";
 import TrackPath2D from "./tracks/TrackPath2D";
-import { get2DCanvasScaling, getTrackPathColor } from "./utils";
+import { get2DCanvasScaling, getTrackPathColor, shouldUsePerTrackPathColors } from "./utils";
 
 import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
 import vertexShader from "./shaders/colorize.vert";
@@ -666,9 +660,7 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
       this.setUniform("selectedTracksPalette", params.selectedTracksPaletteRamp.texture);
     }
     if (hasPropertyChanged(params, prevParams, ["tracks", "outlineColorMode"])) {
-      const useTracksPalette =
-        params.tracks.size > 1 && params.outlineColorMode === SelectionOutlineColorMode.USE_AUTO_COLOR;
-      this.setUniform("useTracksPalette", useTracksPalette);
+      this.setUniform("useTracksPalette", shouldUsePerTrackPathColors(params));
     }
 
     this.render();

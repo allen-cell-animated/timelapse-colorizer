@@ -72,7 +72,7 @@ function getDefaultTrack(tracks: Map<number, Track>): Track | null {
 }
 
 /**
- * Gets the next color ID to assign. Chooses the next color after the the color
+ * Gets the next color ID to assign. Chooses the next color after the color
  * of the track that was last selected.
  *
  * Behavior is deterministic, so a user who shares a URL with selected tracks

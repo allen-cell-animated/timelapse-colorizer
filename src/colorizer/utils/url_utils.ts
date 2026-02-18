@@ -401,9 +401,11 @@ export function decodeInt(value: string | null): number | undefined {
   return value === null ? undefined : parseInt(value, 10);
 }
 
+/**
+ * Serializes a list of track IDs and their associated color indices.
+ * @returns A comma-separated list of trackID:colorIdx entries.
+ */
 export function encodeTracks(trackIds: number[], trackToColorIdx?: Map<number, number>): string {
-  // Serialized format is a comma-separated list of track IDs, with an optional
-  // color ID appended after a colon.
   const tracksAndColorIdx = trackIds.map((trackId, index) => {
     const colorId = trackToColorIdx?.get(trackId) ?? index;
     return `${trackId}:${colorId}`;
@@ -411,7 +413,7 @@ export function encodeTracks(trackIds: number[], trackToColorIdx?: Map<number, n
   return tracksAndColorIdx.join(",");
 }
 
-export function decodeTracks(value: string | null): { trackIds: number[]; colorIdx?: number[] } | undefined {
+export function decodeTracks(value: string | null): { trackIds: number[]; colorIdx: number[] } | undefined {
   if (value === null) {
     return undefined;
   }
@@ -422,10 +424,11 @@ export function decodeTracks(value: string | null): { trackIds: number[]; colorI
     const info = trackInfo[i];
     const [trackIdStr, colorIdStr] = info.split(":");
     const trackId = parseInt(trackIdStr, 10);
-    const colorId = colorIdStr ? parseInt(colorIdStr, 10) : i;
+    const parsedColorId = colorIdStr ? parseInt(colorIdStr, 10) : i;
+    const colorId = Number.isInteger(parsedColorId) ? parsedColorId : i;
     if (Number.isInteger(trackId) && trackId >= 0) {
       trackIds.push(trackId);
-      colorIdx.push(Number.isInteger(colorId) ? colorId : i);
+      colorIdx.push(colorId);
     }
   }
   return { trackIds, colorIdx };

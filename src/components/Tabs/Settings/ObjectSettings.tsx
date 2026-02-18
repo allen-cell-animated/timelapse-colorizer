@@ -12,17 +12,16 @@ import { useViewerStateStore } from "src/state";
 import { DEFAULT_OUTLINE_COLOR_PRESETS, SETTINGS_GAP_PX } from "./constants";
 
 const enum ObjectSettingsHtmlIds {
-  HIGHLIGHT_COLOR_PICKER = "highlight-color-picker",
+  OUTLINE_COLOR_SELECT = "outline-color-select",
   EDGE_COLOR_SELECT = "edge-color-select",
   OUTLIER_OBJECT_COLOR_SELECT = "outlier-object-color-select",
-  OUTLIER_OBJECT_COLOR_PICKER = "outlier-object-color-picker",
   OUT_OF_RANGE_OBJECT_COLOR_SELECT = "out-of-range-object-color-select",
 }
 
-const DRAW_MODE_ITEMS: SelectItem[] = [
+const DRAW_MODE_ITEMS = [
   { value: DrawMode.HIDE.toString(), label: "Hide" },
   { value: DrawMode.USE_COLOR.toString(), label: "Use color" },
-];
+] as const satisfies SelectItem[];
 
 const DRAW_MODE_COLOR_PRESETS: PresetsItem[] = [
   {
@@ -49,10 +48,10 @@ const EDGE_COLOR_PRESETS: PresetsItem[] = [
   },
 ];
 
-const OUTLINE_COLOR_MODE_ITEMS: SelectItem[] = [
+const OUTLINE_COLOR_MODE_ITEMS = [
   { value: SelectionOutlineColorMode.USE_AUTO_COLOR.toString(), label: "Auto" },
   { value: SelectionOutlineColorMode.USE_CUSTOM_COLOR.toString(), label: "Use color" },
-];
+] as const satisfies SelectItem[];
 
 export default function ObjectSettings(): ReactElement {
   const edgeColor = useViewerStateStore((state) => state.edgeColor);
@@ -72,10 +71,9 @@ export default function ObjectSettings(): ReactElement {
   return (
     <ToggleCollapse label="Objects">
       <SettingsContainer gapPx={SETTINGS_GAP_PX}>
-        <SettingsItem label="Selected outline" htmlFor={ObjectSettingsHtmlIds.HIGHLIGHT_COLOR_PICKER}>
-          {/* NOTE: 'Highlight color' is 'outline' internally, and 'Outline color' is 'edge' for legacy reasons. */}
+        <SettingsItem label="Selected outline" htmlFor={ObjectSettingsHtmlIds.OUTLINE_COLOR_SELECT}>
           <DropdownWithColorPicker
-            id={ObjectSettingsHtmlIds.HIGHLIGHT_COLOR_PICKER}
+            id={ObjectSettingsHtmlIds.OUTLINE_COLOR_SELECT}
             selected={outlineColorMode.toString()}
             items={OUTLINE_COLOR_MODE_ITEMS}
             onValueChange={(mode: string) => {

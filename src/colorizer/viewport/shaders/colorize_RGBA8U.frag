@@ -12,11 +12,21 @@ uniform usampler2D inRangeIds;
 /** 
  * A mapping of IDs that are selected in the current track(s). If an object's
  * index is `i`, `selectedIds[i] >= 1` if the object is selected.
-*/
+ *
+ * For selected objects, `selectedIds[i] - 1` is the index into the
+ * `selectedTracksPalette` for the outline color that should be used when
+ * `useTracksPalette` is true.
+ */
 uniform usampler2D selectedIds;
+/**
+ * If true, uses the `selectedTracksPalette` to outline selected tracks, and
+ * shows an additional inner outline. When false, uses `outlineColor` for
+ * outlines.
+ */
 uniform bool useTracksPalette;
 uniform sampler2D selectedTracksPalette;
-/** Min and max feature values that define the endpoints of the color map. Values
+/** 
+ * Min and max feature values that define the endpoints of the color map. Values
  * outside the range will be clamped to the nearest endpoint.
  */
 uniform float featureColorRampMin;
@@ -28,7 +38,7 @@ uniform float featureColorRampMax;
  * 
  * For a given segmentation ID `segId`, the global ID is given by:
  * `segIdToGlobalId[segId - segIdOffset] - 1`.
-*/
+ */
 uniform usampler2D segIdToGlobalId;
 uniform uint segIdOffset;
 
@@ -244,6 +254,9 @@ vec4 getObjectColor(vec2 sUv, float opacity) {
       vec4 color = getOutlineColor(colorIdx);
       return vec4(color.rgb, 1.0);
     } else if (isEdge(sUv, labelId, OUTLINE_WIDTH_PX + 2.0) && useTracksPalette) {
+      // When coloring with the track palette, apply an additional 2px inner
+      // outline using the background color for better contrast against the
+      // track outline color.
       return vec4(backgroundColor, 1.0);
     }
   }
