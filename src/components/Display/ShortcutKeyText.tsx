@@ -29,18 +29,23 @@ export const KeyCharacter = styled.span`
 
 type ShortcutKeyDisplayProps = {
   shortcutKey: ShortcutKeyInfo;
+  keyStyle?: React.CSSProperties;
   inline?: boolean;
 };
 
 /** Converts a hotkey string into a formatted React element with styled keys. */
-function toHotkeyDisplay(key: string): ReactElement {
+function toHotkeyDisplay(key: string, keyStyle?: React.CSSProperties): ReactElement {
   // Ex: "ctrl+shift+a" will be split into KeyCharacter elements with a "+"
   // character between each.
   const keys = key.split("+").map((k) => k.trim());
   const hotkeyElements = keys.map((k, index) => {
     const hotkeyDisplayName = keycodeToDisplay[k.toLowerCase()] || capitalizeFirstLetter(k);
     // Keys are 2*index because hotkey elements will be interspersed with "+" elements
-    return <KeyCharacter key={2 * index}>{hotkeyDisplayName}</KeyCharacter>;
+    return (
+      <KeyCharacter key={2 * index} style={keyStyle}>
+        {hotkeyDisplayName}
+      </KeyCharacter>
+    );
   });
   const elements = insertBetweenElements(hotkeyElements, (index) => <span key={index}>+</span>);
   return <FlexRowAlignCenter $gap={4}>{elements}</FlexRowAlignCenter>;
@@ -70,12 +75,12 @@ export default function ShortcutKeyText(props: ShortcutKeyDisplayProps): ReactEl
       keycodeArray = [];
     }
 
-    let hotkeyElements: ReactNode = keycodeArray.map(toHotkeyDisplay);
+    let hotkeyElements: ReactNode = keycodeArray.map((key) => toHotkeyDisplay(key, props.keyStyle));
     if (inline) {
       hotkeyElements = insertBetweenElements(hotkeyElements, (key) => <span key={key}>/</span>);
     }
     return hotkeyElements;
-  }, [keycode, keycodeDisplay, inline]);
+  }, [keycode, keycodeDisplay, inline, props.keyStyle]);
 
   return (
     <FlexRow style={{ justifyContent: "space-between", width: "100%" }} $gap={12}>

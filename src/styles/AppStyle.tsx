@@ -69,6 +69,12 @@ const theme = {
       linkHover: palette.linkDark,
       darkLink: palette.gray20,
       darkLinkHover: palette.gray10,
+      shortcutKey: {
+        dark: {
+          background: palette.gray60,
+          border: palette.gray40,
+        },
+      },
     },
     layout: {
       background: palette.gray0,

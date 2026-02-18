@@ -1,11 +1,12 @@
 import { Checkbox } from "antd";
-import React, { type ReactElement, type ReactNode, useContext, useRef } from "react";
+import React, { type ReactElement, type ReactNode, useRef } from "react";
 
 import { ImageToggleButton } from "src/components/Buttons/ImageToggleButton";
-import { getBackdropChannelHotkeyHint } from "src/components/CanvasWrapper/utils";
+import ShortcutTooltipHint from "src/components/Display/ShortcutTooltipHint";
 import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
+import { SHORTCUT_KEYS } from "src/constants";
 import { useViewerStateStore } from "src/state";
-import { AppThemeContext } from "src/styles/AppStyle";
+import { FlexRow } from "src/styles/utils";
 import { formatQuantityString } from "src/utils/formatting";
 
 const enum ChannelToggleButtonHtmlIds {
@@ -17,7 +18,6 @@ const enum ChannelToggleButtonHtmlIds {
  * allows toggling individual channels.
  */
 export default function ChannelToggleButton(): ReactElement {
-  const theme = useContext(AppThemeContext);
   const dataset = useViewerStateStore((state) => state.dataset);
   const channelSettings = useViewerStateStore((state) => state.channelSettings);
   const updateChannelSettings = useViewerStateStore((state) => state.updateChannelSettings);
@@ -41,7 +41,18 @@ export default function ChannelToggleButton(): ReactElement {
   const createConfigMenuContents = (
     <SettingsContainer labelWidth="80px" style={{ marginBottom: 6 }} key="channel-settings-container">
       <SettingsItem
-        label={"Channels"}
+        label={
+          <FlexRow $gap={6}>
+            Channels
+            <ShortcutTooltipHint
+              shortcutKeys={[
+                SHORTCUT_KEYS.backdropsOrChannels.cycleForward,
+                SHORTCUT_KEYS.backdropsOrChannels.cycleBackward,
+                SHORTCUT_KEYS.backdropsOrChannels.showChannel,
+              ]}
+            ></ShortcutTooltipHint>
+          </FlexRow>
+        }
         labelStyle={{ marginBottom: "auto" }}
         htmlFor={ChannelToggleButtonHtmlIds.CHANNEL_CHECKBOXES}
       >
@@ -60,7 +71,6 @@ export default function ChannelToggleButton(): ReactElement {
               </Checkbox>
             );
           })}
-          {getBackdropChannelHotkeyHint(theme)}
         </div>
       </SettingsItem>
     </SettingsContainer>
