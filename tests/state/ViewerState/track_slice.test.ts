@@ -338,6 +338,24 @@ describe("useViewerStateStore: TrackSlice", () => {
       expect(result.current.trackToColorId.get(MOCK_DATASET_DEFAULT_TRACK.trackId)).toBe(2);
     });
 
+    it("handles bad track color indices", async () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      await setDatasetAsync(result, MOCK_DATASET);
+      act(() => {
+        loadTrackSliceFromParams(
+          result.current,
+          new URLSearchParams({
+            [UrlParam.TRACK]: `${MOCK_DATASET_TRACK_1.trackId}:blabla,${MOCK_DATASET_TRACK_2.trackId}:Infinity,${MOCK_DATASET_DEFAULT_TRACK.trackId}:145`,
+          })
+        );
+      });
+      expect(result.current.tracks.size).toBe(3);
+      expect(result.current.trackToColorId.get(MOCK_DATASET_TRACK_1.trackId)).toBe(0);
+      expect(result.current.trackToColorId.get(MOCK_DATASET_TRACK_2.trackId)).toBe(1);
+      expect(result.current.trackToColorId.get(MOCK_DATASET_DEFAULT_TRACK.trackId)).toBe(1);
+      expect(result.current.isSelectedLut).deep.equals(new Uint8Array([2, 1, 2, 2, 1, 2, 2, 1, 2]));
+    });
+
     it("handles non-integer tracks", async () => {
       const { result } = renderHook(() => useViewerStateStore());
       const params = new URLSearchParams();

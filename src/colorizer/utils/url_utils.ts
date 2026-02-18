@@ -423,9 +423,9 @@ export function decodeTracks(value: string | null): { trackIds: number[]; colorI
     const [trackIdStr, colorIdStr] = info.split(":");
     const trackId = parseInt(trackIdStr, 10);
     const colorId = colorIdStr ? parseInt(colorIdStr, 10) : i;
-    if (!Number.isNaN(trackId)) {
+    if (Number.isInteger(trackId) && trackId >= 0) {
       trackIds.push(trackId);
-      colorIdx.push(colorId);
+      colorIdx.push(Number.isInteger(colorId) ? colorId : i);
     }
   }
   return { trackIds, colorIdx };
