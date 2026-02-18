@@ -11,6 +11,10 @@ type ShortcutTooltipHintProps = {
   shortcutKeys: ShortcutKeyInfo[];
 };
 
+/**
+ * A shortcut hint icon that displays a tooltip with shortcut key info when
+ * hovered or focused.
+ */
 export default function ShortcutTooltipHint(props: ShortcutTooltipHintProps): ReactElement {
   const theme = useContext(AppThemeContext);
   const popupContainerRef = useRef<HTMLDivElement>(null);
