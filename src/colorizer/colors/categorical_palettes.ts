@@ -174,25 +174,6 @@ const rawPaletteData: RawColorData[] = [
     ],
   },
   {
-    key: "neon_reordered",
-    name: "Neon",
-    type: ColorRampType.CATEGORICAL,
-    colorStops: [
-      "#F91EF8",
-      "#33FCFE",
-      "#49FE86",
-      "#FAEC4C",
-      "#AF26F3",
-      "#FFB800",
-      "#6822F2",
-      "#F72B75",
-      "#F88538",
-      "#003AFF",
-      "#CFFA4E",
-      "#3EBAFB",
-    ],
-  },
-  {
     // https://medialab.github.io/iwanthue/
     key: "iwanthue_dark",
     name: "Dark",
@@ -311,7 +292,7 @@ export const DISPLAY_CATEGORICAL_PALETTE_KEYS = [
   "adobe",
   "matplotlib_paired",
   "matplotlib_tab10",
-  "neon_reordered",
+  "neon",
   "matplotlib_pastel1",
 ];
 

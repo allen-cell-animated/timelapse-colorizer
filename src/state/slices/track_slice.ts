@@ -188,8 +188,10 @@ export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (s
       newTracks.set(track.trackId, track);
 
       // Resolve color index value-- handle edge case of very large negative
-      // input numbers
-      const colorIdx = (colors[i] + Math.ceil(Math.abs(colors[i] / numStops)) * numStops) % numStops;
+      // input numbers by adding multiples of numStops to make it positive
+      // before modulo operation.
+      let colorIdx = (Math.floor(colors[i]) + Math.ceil(Math.abs(colors[i] / numStops)) * numStops) % numStops;
+      colorIdx = Number.isInteger(colorIdx) ? colorIdx : i % numStops;
       applyTrackToSelectionLut(newSelectedLut, track, colorIdx + LUT_OFFSET);
       newTrackToColorId.set(track.trackId, colorIdx);
     }

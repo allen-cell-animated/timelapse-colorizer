@@ -372,6 +372,9 @@ describe("useViewerStateStore: TrackSlice", () => {
       });
       expect(result.current.tracks.size).toBe(3);
       // Numbers are modded
+      // 150 % 12 = 6
+      // -16 % 12 = 8
+      // 5.5  -> 5
       expect(result.current.trackToColorId.get(MOCK_DATASET_TRACK_1.trackId)).toBe(6);
       expect(result.current.trackToColorId.get(MOCK_DATASET_TRACK_2.trackId)).toBe(8);
       expect(result.current.trackToColorId.get(MOCK_DATASET_DEFAULT_TRACK.trackId)).toBe(5);
