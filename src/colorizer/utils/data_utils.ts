@@ -629,6 +629,76 @@ export function getLineUpdateFlags(
     needsRender,
   };
 }
+
+/**
+ * Calculates rendering information for a track path, including the range of
+ * visible path instances to show and how to apply the color ramp.
+ * @returns An object containing:
+ *  - `rampScale`: The number of vertices the color ramp spans.
+ *  - `rampOffset`: The vertex index that the color ramp is centered on (usually
+ *    corresponding with the current frame in the track).
+ *  - `startingInstance`: The index of the first path instance to show, where an
+ *    instance is a line segment between two frames.
+ *  - `endingInstance`: The index of the last path instance to show.
+ */
+export function getTrackPathRenderInfo(
+  params: TrackPathParams | null,
+  currentFrame: number
+): {
+  rampScale: number;
+  rampOffset: number;
+  startingInstance: number;
+  endingInstance: number;
+} {
+  const track = params?.track;
+  // Show nothing if track doesn't exist or doesn't have centroid data
+  if (!track || !track.centroids || !params?.showTrackPath) {
+    return {
+      rampScale: 1,
+      rampOffset: 0,
+      startingInstance: 0,
+      endingInstance: 0,
+    };
+  }
+
+  const trackStepIdx = currentFrame - track.startTime();
+  let endingInstance;
+  let startingInstance;
+  if (params.showAllTrackPathPastSteps) {
+    startingInstance = 0;
+  } else {
+    startingInstance = Math.max(0, trackStepIdx - params.trackPathPastSteps);
+  }
+
+  if (params.showAllTrackPathFutureSteps) {
+    endingInstance = track.duration();
+  } else {
+    endingInstance = Math.min(trackStepIdx + params.trackPathFutureSteps, track.duration());
+  }
+
+  // Check if the path should be hidden entirely because it is outside of the
+  // range. This happens when all past paths are shown and the track has ended,
+  // or if all future paths are shown and the track has not yet started.
+  if (!params.persistTrackPathWhenOutOfRange) {
+    const isVisiblePastEnd = params.showAllTrackPathPastSteps && trackStepIdx >= track.duration();
+    const isVisibleBeforeStart = params.showAllTrackPathFutureSteps && trackStepIdx < 0;
+    if (isVisiblePastEnd || isVisibleBeforeStart) {
+      startingInstance = 0;
+      endingInstance = 0;
+    }
+  }
+
+  const maxTrackLength = params.dataset?.getMaxTrackLength() || track.duration();
+  const pastSteps = params.showAllTrackPathPastSteps ? maxTrackLength : params.trackPathPastSteps;
+  const futureSteps = params.showAllTrackPathFutureSteps ? maxTrackLength : params.trackPathFutureSteps;
+  return {
+    rampScale: Math.max(pastSteps, futureSteps) * 2,
+    rampOffset: trackStepIdx,
+    startingInstance,
+    endingInstance: Math.max(0, endingInstance),
+  };
+}
+
 /**
  * Returns a copy of an object where any properties with a value of `undefined`
  * are not included.
