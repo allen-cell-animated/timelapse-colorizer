@@ -88,9 +88,11 @@ describe("useViewerStateStore: TrackSlice", () => {
       expect(result.current.tracks.get(MOCK_DATASET_DEFAULT_TRACK.trackId)).toBe(MOCK_DATASET_DEFAULT_TRACK);
       expect(result.current.tracks.get(MOCK_DATASET_TRACK_1.trackId)).toBe(MOCK_DATASET_TRACK_1);
       expect(result.current.tracks.get(MOCK_DATASET_TRACK_2.trackId)).toBe(MOCK_DATASET_TRACK_2);
+      // Color index matches order of addition
       expect(result.current.trackToColorId.get(MOCK_DATASET_TRACK_2.trackId)).toBe(0);
       expect(result.current.trackToColorId.get(MOCK_DATASET_DEFAULT_TRACK.trackId)).toBe(1);
       expect(result.current.trackToColorId.get(MOCK_DATASET_TRACK_1.trackId)).toBe(2);
+      // lut = color index + 1
       expect(result.current.isSelectedLut).deep.equals(new Uint8Array([2, 3, 1, 2, 3, 1, 2, 3, 1]));
     });
 
@@ -345,15 +347,35 @@ describe("useViewerStateStore: TrackSlice", () => {
         loadTrackSliceFromParams(
           result.current,
           new URLSearchParams({
-            [UrlParam.TRACK]: `${MOCK_DATASET_TRACK_1.trackId}:blabla,${MOCK_DATASET_TRACK_2.trackId}:Infinity,${MOCK_DATASET_DEFAULT_TRACK.trackId}:145`,
+            [UrlParam.TRACK]: `${MOCK_DATASET_TRACK_1.trackId}:blabla,${MOCK_DATASET_TRACK_2.trackId}:Infinity,${MOCK_DATASET_DEFAULT_TRACK.trackId}:NaN`,
           })
         );
       });
       expect(result.current.tracks.size).toBe(3);
+      // Invalid color IDs default to ascending index
       expect(result.current.trackToColorId.get(MOCK_DATASET_TRACK_1.trackId)).toBe(0);
       expect(result.current.trackToColorId.get(MOCK_DATASET_TRACK_2.trackId)).toBe(1);
-      expect(result.current.trackToColorId.get(MOCK_DATASET_DEFAULT_TRACK.trackId)).toBe(1);
-      expect(result.current.isSelectedLut).deep.equals(new Uint8Array([2, 1, 2, 2, 1, 2, 2, 1, 2]));
+      expect(result.current.trackToColorId.get(MOCK_DATASET_DEFAULT_TRACK.trackId)).toBe(2);
+      expect(result.current.isSelectedLut).deep.equals(new Uint8Array([3, 1, 2, 3, 1, 2, 3, 1, 2]));
+    });
+
+    it("handles bad track color indices", async () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      await setDatasetAsync(result, MOCK_DATASET);
+      act(() => {
+        loadTrackSliceFromParams(
+          result.current,
+          new URLSearchParams({
+            [UrlParam.TRACK]: `${MOCK_DATASET_TRACK_1.trackId}:150,${MOCK_DATASET_TRACK_2.trackId}:-16,${MOCK_DATASET_DEFAULT_TRACK.trackId}:5.5`,
+          })
+        );
+      });
+      expect(result.current.tracks.size).toBe(3);
+      // Numbers are modded
+      expect(result.current.trackToColorId.get(MOCK_DATASET_TRACK_1.trackId)).toBe(6);
+      expect(result.current.trackToColorId.get(MOCK_DATASET_TRACK_2.trackId)).toBe(8);
+      expect(result.current.trackToColorId.get(MOCK_DATASET_DEFAULT_TRACK.trackId)).toBe(5);
+      expect(result.current.isSelectedLut).deep.equals(new Uint8Array([6, 7, 9, 6, 7, 9, 6, 7, 9]));
     });
 
     it("handles non-integer tracks", async () => {

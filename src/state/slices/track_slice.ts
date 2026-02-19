@@ -61,7 +61,6 @@ export type TrackSliceActions = {
    * size as the current one to reset it.
    */
   clearTracks: (newLut?: Uint8Array) => void;
-  getTrackColor: (trackId: number) => Color | undefined;
 };
 
 export type TrackSlice = TrackSliceState & TrackSliceActions;
@@ -183,10 +182,14 @@ export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (s
     const newTracks = new Map<number, Track>();
     const newSelectedLut = new Uint8Array(get().isSelectedLut.length);
     const newTrackToColorId = new Map<number, number>();
+    const numStops = get().selectedTracksPaletteRamp.colorStops.length;
     for (let i = 0; i < tracks.length; i++) {
       const track = tracks[i];
       newTracks.set(track.trackId, track);
-      const colorIdx = colors[i] % get().selectedTracksPaletteRamp.colorStops.length;
+
+      // Resolve color index value-- handle edge case of very large negative
+      // input numbers
+      const colorIdx = (colors[i] + Math.ceil(Math.abs(colors[i] / numStops)) * numStops) % numStops;
       applyTrackToSelectionLut(newSelectedLut, track, colorIdx + LUT_OFFSET);
       newTrackToColorId.set(track.trackId, colorIdx);
     }
@@ -196,13 +199,6 @@ export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (s
       isSelectedLut: newSelectedLut,
       trackToColorId: newTrackToColorId,
     });
-  },
-  getTrackColor: (trackId: number): Color | undefined => {
-    const colorId = get().trackToColorId.get(trackId);
-    if (colorId === undefined) {
-      return;
-    }
-    return get().selectedTracksPaletteRamp.colorStops[colorId];
   },
 });
 

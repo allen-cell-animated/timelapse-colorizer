@@ -38,13 +38,15 @@ export default function PlotTab(props: PlotTabProps): ReactElement {
   const tracks = useViewerStateStore((state) => state.tracks);
   const setFrame = useViewerStateStore((state) => state.setFrame);
   const addTracks = useViewerStateStore((state) => state.addTracks);
-  const getTrackColor = useViewerStateStore((state) => state.getTrackColor);
-
-  const [findTrackInput, setFindTrackInput] = useState("");
+  const trackToColorMap = useViewerStateStore((state) => state.trackColors);
 
   const trackColors = useMemo(() => {
-    return Array.from(tracks.values()).map((track) => "#" + getTrackColor(track.trackId)?.getHexString());
-  }, [tracks, getTrackColor]);
+    return Array.from(tracks.keys())
+      .map(trackToColorMap.get)
+      .map((color) => "#" + (color?.getHexString() || "ff00ff"));
+  }, [tracks, trackToColorMap]);
+
+  const [findTrackInput, setFindTrackInput] = useState("");
 
   // Sync track searchbox with selected track
   useEffect(() => {
