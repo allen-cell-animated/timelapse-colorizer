@@ -313,11 +313,6 @@ describe("useViewerStateStore: TrackSlice", () => {
         MOCK_DATASET_TRACK_2.trackId,
         MOCK_DATASET_DEFAULT_TRACK.trackId,
       ]);
-      expect(Array.from(result.current.tracks.keys())).toEqual([
-        MOCK_DATASET_TRACK_1.trackId,
-        MOCK_DATASET_TRACK_2.trackId,
-        MOCK_DATASET_DEFAULT_TRACK.trackId,
-      ]);
       expect(result.current.tracks.get(MOCK_DATASET_TRACK_1.trackId)).toBe(MOCK_DATASET_TRACK_1);
       expect(result.current.tracks.get(MOCK_DATASET_TRACK_2.trackId)).toBe(MOCK_DATASET_TRACK_2);
       expect(result.current.tracks.get(MOCK_DATASET_DEFAULT_TRACK.trackId)).toBe(MOCK_DATASET_DEFAULT_TRACK);
