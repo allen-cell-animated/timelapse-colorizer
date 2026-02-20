@@ -15,7 +15,7 @@ import { areAnyHotkeysPressed } from "src/utils/user_input";
  * to keep annotations or download and clear them.
  * @param annotationState Current annotation state.
  * @param callback Callback to wrap.
- * @returns An object with two properties:
+ * @returns An array with two elements:
  *   - popupEl: A React element containing the confirmation popup. Place this
  *     after the component that triggers the action (e.g. a load button).
  *  - wrappedCallback: The wrapped callback to use in place of the original
@@ -24,7 +24,7 @@ import { areAnyHotkeysPressed } from "src/utils/user_input";
 export function useAnnotationDatasetWarning<A extends unknown[], B>(
   callback: (...args: A) => Promise<B>,
   annotationState?: AnnotationState
-): { popupEl: ReactElement; wrappedCallback: (...args: A) => Promise<B> } {
+): [popupEl: ReactElement, wrappedCallback: (...args: A) => Promise<B>] {
   const dataset = useViewerStateStore((state) => state.dataset);
   const datasetKey = useViewerStateStore((state) => state.datasetKey);
   const modalContainerRef = useRef<HTMLDivElement>(null);
@@ -125,5 +125,5 @@ export function useAnnotationDatasetWarning<A extends unknown[], B>(
     </div>
   );
 
-  return { popupEl: popupElement, wrappedCallback: wrappedCallback };
+  return [popupElement, wrappedCallback];
 }

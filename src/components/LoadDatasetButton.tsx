@@ -290,11 +290,11 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
     );
   }, [urlInput, props.onLoad, clearSourceZipName]);
 
-  const { popupEl: loadButtonPopupEl, wrappedCallback: wrappedHandleLoadClicked } = useAnnotationDatasetWarning(
+  const [loadButtonPopupEl, wrappedHandleLoadClicked] = useAnnotationDatasetWarning(
     handleLoadClicked,
     props.annotationState
   );
-  const { popupEl: loadZipPopupEl, wrappedCallback: wrappedHandleLoadZipClicked } = useAnnotationDatasetWarning(
+  const [loadZipPopupEl, wrappedHandleLoadZipClicked] = useAnnotationDatasetWarning(
     handleLoadZipClicked,
     props.annotationState
   );

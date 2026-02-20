@@ -23,10 +23,7 @@ export default function DatasetFeatureControls(props: DatasetFeatureControlsProp
   const featureKey = useViewerStateStore((state) => state.featureKey);
   const collection = useViewerStateStore((state) => state.collection);
 
-  const { popupEl, wrappedCallback: wrappedOnSelectDataset } = useAnnotationDatasetWarning(
-    props.onSelectDataset,
-    props.annotationState
-  );
+  const [popupEl, wrappedOnSelectDataset] = useAnnotationDatasetWarning(props.onSelectDataset, props.annotationState);
 
   // Wrap the returned callback one more time to skip if the selected dataset
   // is the same.
