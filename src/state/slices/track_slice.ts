@@ -183,7 +183,13 @@ export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (s
   },
   setTracks: (tracks: Track | Track[], colors?: number[]) => {
     tracks = Array.isArray(tracks) ? tracks : [tracks];
-    colors = colors ?? tracks.map((_, i) => i);
+
+    // Ensure colors array matches length of tracks
+    colors = colors ?? [];
+    while (colors.length < tracks.length) {
+      colors.push(colors.length);
+    }
+
     // Combines steps for `clearTracks` and `addTracks` into one state update
     // to prevent unnecessary re-rendering.
     const newTracks = new Map<number, Track>();
