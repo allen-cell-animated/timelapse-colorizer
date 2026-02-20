@@ -91,6 +91,10 @@ function applyTrackToSelectionLut(lut: Uint8Array, track: Track, colorIdx: numbe
   }
 }
 
+function getTrackColors(trackToColorId: Map<number, number>, palette: ColorRamp): Map<number, Color> {
+  return new Map(Array.from(trackToColorId.entries()).map(([key, value]) => [key, palette.colorStops[value]]));
+}
+
 export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (set, get) => ({
   tracks: new Map<number, Track>(),
   trackToColorId: new Map<number, number>(),
@@ -126,6 +130,7 @@ export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (s
         track: getDefaultTrack(newTracks),
         isSelectedLut: newSelectedLut,
         trackToColorId: newTrackToColorId,
+        trackColors: getTrackColors(newTrackToColorId, state.selectedTracksPaletteRamp),
       };
     });
   },
@@ -153,6 +158,7 @@ export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (s
         track: getDefaultTrack(newTracks),
         isSelectedLut: newSelectedLut,
         trackToColorId: newTrackToColorId,
+        trackColors: getTrackColors(newTrackToColorId, state.selectedTracksPaletteRamp),
       };
     });
   },
@@ -172,6 +178,7 @@ export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (s
       track: null,
       isSelectedLut: newSelectedLut,
       trackToColorId: new Map<number, number>(),
+      trackColors: new Map<number, Color>(),
     });
   },
   setTracks: (tracks: Track | Track[], colors?: number[]) => {
@@ -195,12 +202,13 @@ export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (s
       applyTrackToSelectionLut(newSelectedLut, track, colorIdx + LUT_OFFSET);
       newTrackToColorId.set(track.trackId, colorIdx);
     }
-    set({
+    set((state) => ({
       tracks: newTracks,
       track: getDefaultTrack(newTracks),
       isSelectedLut: newSelectedLut,
       trackToColorId: newTrackToColorId,
-    });
+      trackColors: getTrackColors(newTrackToColorId, state.selectedTracksPaletteRamp),
+    }));
   },
 });
 
@@ -239,18 +247,6 @@ export const addTrackDerivedStateSubscribers = (store: SubscribableStore<TrackSl
         store.getState().clearTracks(newLut);
       }
       return {};
-    }
-  );
-
-  // Sync track colors w/ color palette + tracks
-  addDerivedStateSubscriber(
-    store,
-    (state) => [state.selectedTracksPaletteRamp, state.trackToColorId],
-    ([selectedTrackRamp, trackToColorId]) => {
-      const trackColors = new Map(
-        Array.from(trackToColorId.entries()).map(([key, value]) => [key, selectedTrackRamp.colorStops[value]])
-      );
-      return { trackColors };
     }
   );
 };
