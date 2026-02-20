@@ -85,7 +85,7 @@ export default function ObjectSettings(): ReactElement {
             presets={DEFAULT_OUTLINE_COLOR_PRESETS}
           ></DropdownWithColorPicker>
         </SettingsItem>
-        <SettingsItem label="Default edge" htmlFor={ObjectSettingsHtmlIds.EDGE_COLOR_SELECT}>
+        <SettingsItem label="Edge" htmlFor={ObjectSettingsHtmlIds.EDGE_COLOR_SELECT}>
           <DropdownWithColorPicker
             id={ObjectSettingsHtmlIds.EDGE_COLOR_SELECT}
             selected={edgeMode.toString()}
