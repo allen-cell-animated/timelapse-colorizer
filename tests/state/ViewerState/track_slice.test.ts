@@ -124,6 +124,35 @@ describe("useViewerStateStore: TrackSlice", () => {
       expect(result.current.trackToColorId.get(MOCK_DATASET_TRACK_2.trackId)).toBe(4);
       expect(result.current.isSelectedLut).deep.equals(new Uint8Array([12, 1, 5, 12, 1, 5, 12, 1, 5]));
     });
+
+    it("handles mismatched length color array", async () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      await setDatasetAsync(result, MOCK_DATASET);
+      act(() => {
+        result.current.setTracks([MOCK_DATASET_DEFAULT_TRACK, MOCK_DATASET_TRACK_1, MOCK_DATASET_TRACK_2], [11]);
+      });
+      expect(result.current.tracks.size).toBe(3);
+      expect(result.current.trackToColorId.get(MOCK_DATASET_DEFAULT_TRACK.trackId)).toBe(11);
+      expect(result.current.trackToColorId.get(MOCK_DATASET_TRACK_1.trackId)).toBe(1);
+      expect(result.current.trackToColorId.get(MOCK_DATASET_TRACK_2.trackId)).toBe(2);
+      expect(result.current.isSelectedLut).deep.equals(new Uint8Array([12, 2, 3, 12, 2, 3, 12, 2, 3]));
+    });
+
+    it("handles NaN, negative, and out of bounds color indices", async () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      await setDatasetAsync(result, MOCK_DATASET);
+      act(() => {
+        result.current.setTracks(
+          [MOCK_DATASET_DEFAULT_TRACK, MOCK_DATASET_TRACK_1, MOCK_DATASET_TRACK_2],
+          [NaN, -40, 15.2]
+        );
+      });
+      expect(result.current.tracks.size).toBe(3);
+      expect(result.current.trackToColorId.get(MOCK_DATASET_DEFAULT_TRACK.trackId)).toBe(0);
+      expect(result.current.trackToColorId.get(MOCK_DATASET_TRACK_1.trackId)).toBe(8);
+      expect(result.current.trackToColorId.get(MOCK_DATASET_TRACK_2.trackId)).toBe(3);
+      expect(result.current.isSelectedLut).deep.equals(new Uint8Array([1, 9, 4, 1, 9, 4, 1, 9, 4]));
+    });
   });
 
   describe("addTrack, removeTrack, setTracks, & clearTracks", () => {
