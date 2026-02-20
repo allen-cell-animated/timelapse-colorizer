@@ -71,11 +71,13 @@ function getDefaultTrack(tracks: Map<number, Track>): Track | null {
 }
 
 /**
- * Gets the next color ID to assign. Chooses the next color after the color
- * of the track that was last selected.
+ * Gets the next color ID to assign. Chooses the next color after the color of
+ * the track that was last selected (e.g. the last track added to the Map).
  *
- * Behavior is deterministic, so a user who shares a URL with selected tracks
- * will get the same color ordering as the user who created the URL.
+ * This behavior is deterministic based on the current state of track selection.
+ * This is so, if a user who opens a shared URL with tracks already selected
+ * makes a new selection, they will get the same color sequence as the user who
+ * created the URL.
  */
 function getNextColorId(tracks: Map<number, Track>, trackToColorId: Map<number, number>): number {
   const trackValues = Array.from(tracks.values());
