@@ -50,7 +50,7 @@ import {
 } from "src/components/Tabs";
 import CanvasHoverTooltip from "src/components/Tooltips/CanvasHoverTooltip";
 import { INTERNAL_BUILD } from "src/constants";
-import { useAnnotations, useConstructor, useRecentCollections } from "src/hooks";
+import { useAnnotations, useBackdropShortcuts, useConstructor, useRecentCollections } from "src/hooks";
 import { renderCanvasStateParamsSelector } from "src/state";
 import { getDifferingProperties } from "src/state/utils/data_validation";
 import {
@@ -153,6 +153,11 @@ function Viewer(): ReactElement {
   const currentHoveredId = showObjectHoverInfo ? lastValidHoveredId : null;
 
   // EVENT LISTENERS ////////////////////////////////////////////////////////
+
+  // Hooks for shortcut keys
+  useBackdropShortcuts();
+
+  // URL handling
   const updateUrlParams = useCallback(
     makeDebouncedCallback(() => {
       if (isInitialDatasetLoaded) {

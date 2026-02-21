@@ -2,8 +2,11 @@ import { Checkbox } from "antd";
 import React, { type ReactElement, type ReactNode, useRef } from "react";
 
 import { ImageToggleButton } from "src/components/Buttons/ImageToggleButton";
+import ShortcutTooltipHint from "src/components/Display/ShortcutTooltipHint";
 import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
+import { SHORTCUT_KEYS } from "src/constants";
 import { useViewerStateStore } from "src/state";
+import { FlexRow } from "src/styles/utils";
 import { formatQuantityString } from "src/utils/formatting";
 
 const enum ChannelToggleButtonHtmlIds {
@@ -38,7 +41,18 @@ export default function ChannelToggleButton(): ReactElement {
   const createConfigMenuContents = (
     <SettingsContainer labelWidth="80px" style={{ marginBottom: 6 }} key="channel-settings-container">
       <SettingsItem
-        label={"Channels"}
+        label={
+          <FlexRow $gap={6}>
+            Channels
+            <ShortcutTooltipHint
+              shortcutKeys={[
+                SHORTCUT_KEYS.backdropsOrChannels.cycleForward,
+                SHORTCUT_KEYS.backdropsOrChannels.cycleBackward,
+                SHORTCUT_KEYS.backdropsOrChannels.showChannel,
+              ]}
+            ></ShortcutTooltipHint>
+          </FlexRow>
+        }
         labelStyle={{ marginBottom: "auto" }}
         htmlFor={ChannelToggleButtonHtmlIds.CHANNEL_CHECKBOXES}
       >
