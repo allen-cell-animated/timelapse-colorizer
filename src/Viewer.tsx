@@ -588,6 +588,7 @@ function Viewer(): ReactElement {
                 onLoad={handleDatasetLoad}
                 currentResourceUrl={collection?.sourcePath ?? datasetKey ?? ""}
                 reportWarning={showDatasetLoadWarning}
+                annotationState={annotationState}
               />
               <LoadZipModal
                 sourceZipName={sourceZipName ?? ""}
@@ -628,6 +629,7 @@ function Viewer(): ReactElement {
                 onSelectDataset={handleDatasetChange}
                 onSelectFeature={reportFeatureSelected}
                 disabled={disableUi}
+                annotationState={annotationState}
               />
               <ColorizeControls disabled={disableUi} />
             </FlexColumn>

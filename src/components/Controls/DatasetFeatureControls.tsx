@@ -4,6 +4,7 @@ import type { Dataset } from "src/colorizer";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import type { SelectItem } from "src/components/Dropdowns/types";
 import GlossaryPanel from "src/components/GlossaryPanel";
+import { type AnnotationState, useAnnotationDatasetWarning } from "src/hooks";
 import { useViewerStateStore } from "src/state";
 import { FlexRow } from "src/styles/utils";
 
@@ -11,6 +12,7 @@ type DatasetFeatureControlsProps = {
   onSelectDataset: (datasetKey: string) => Promise<void>;
   onSelectFeature: (dataset: Dataset, featureKey: string) => void;
   disabled: boolean;
+  annotationState: AnnotationState;
 };
 
 export default function DatasetFeatureControls(props: DatasetFeatureControlsProps): ReactElement {
@@ -20,6 +22,17 @@ export default function DatasetFeatureControls(props: DatasetFeatureControlsProp
   const dataset = useViewerStateStore((state) => state.dataset);
   const featureKey = useViewerStateStore((state) => state.featureKey);
   const collection = useViewerStateStore((state) => state.collection);
+
+  const [popupEl, wrappedOnSelectDataset] = useAnnotationDatasetWarning(props.onSelectDataset, props.annotationState);
+
+  // Wrap the returned callback one more time to skip if the selected dataset
+  // is the same.
+  const onSelectedDatasetValue = async (key: string): Promise<void> => {
+    if (key === datasetKey) {
+      return;
+    }
+    return await wrappedOnSelectDataset(key);
+  };
 
   const datasetDropdownData = useMemo(() => collection?.getDatasetKeys() || [], [collection]);
   const featureDropdownData = useMemo((): SelectItem[] => {
@@ -41,9 +54,10 @@ export default function DatasetFeatureControls(props: DatasetFeatureControlsProp
           selected={datasetKey ?? ""}
           buttonType="primary"
           items={datasetDropdownData}
-          onChange={props.onSelectDataset}
+          onChange={onSelectedDatasetValue}
           controlWidth={"100%"}
         />
+        {popupEl}
       </div>
 
       <FlexRow $gap={6} style={{ width: "55%" }}>

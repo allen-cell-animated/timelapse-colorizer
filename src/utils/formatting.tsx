@@ -115,3 +115,7 @@ export function capitalizeFirstLetter(str: string): string {
   }
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
+
+export function sanitizeFilename(filename: string): string {
+  return filename.replace(/[/\\?%*:|"<>]/g, "_");
+}

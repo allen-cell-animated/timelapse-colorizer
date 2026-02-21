@@ -14,7 +14,7 @@ import TextButton from "src/components/Buttons/TextButton";
 import StyledInlineProgress from "src/components/Feedback/StyledInlineProgress";
 import MessageCard from "src/components/MessageCard";
 import StyledModal from "src/components/Modals/StyledModal";
-import { useRecentCollections } from "src/hooks";
+import { type AnnotationState, useAnnotationDatasetWarning, useRecentCollections } from "src/hooks";
 import { useJsxText } from "src/hooks/useJsxText";
 import { useViewerStateStore } from "src/state";
 import { AppThemeContext } from "src/styles/AppStyle";
@@ -34,6 +34,7 @@ type LoadDatasetButtonProps = {
   /** The URL of the currently loaded resource, used to indicate it on the recent datasets dropdown. */
   currentResourceUrl: string;
   reportWarning?: ReportWarningCallback;
+  annotationState?: AnnotationState;
 };
 
 type LoadedCollectionResult = [string, Collection, Dataset];
@@ -106,10 +107,11 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
   useEffect(() => {
     if (isLoadModalOpen) {
       // Clear modal when opening
-      // TODO: This does not actually stop the underlying load operation. Could cause the interface to act
-      // unexpectedly, but maybe not a huge problem because there's a ~4s timeout on the load operation anyways.
+      // TODO: This does not actually stop the underlying load operation. Handle
+      // existing loading operations better?
       setIsLoadingUrl(false);
       setIsLoadingZip(false);
+      setZipLoadProgress(0);
       setErrorText("");
     }
   }, [isLoadModalOpen]);
@@ -288,6 +290,15 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
     );
   }, [urlInput, props.onLoad, clearSourceZipName]);
 
+  const [loadButtonPopupEl, wrappedHandleLoadClicked] = useAnnotationDatasetWarning(
+    handleLoadClicked,
+    props.annotationState
+  );
+  const [loadZipPopupEl, wrappedHandleLoadZipClicked] = useAnnotationDatasetWarning(
+    handleLoadZipClicked,
+    props.annotationState
+  );
+
   const handleCancel = useCallback(() => {
     // should this cancel datasets/collection loading mid-load?
     setIsLoadingUrl(false);
@@ -366,7 +377,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
                   placement="bottomLeft"
                   open={showRecentDropdown && !isRecentDropdownEmpty}
                   getPopupContainer={dropdownContextRef.current ? () => dropdownContextRef.current! : undefined}
-                  dropdownRender={renderDropdown}
+                  popupRender={renderDropdown}
                 >
                   <Input
                     placeholder="https://example.com/collection.json"
@@ -375,33 +386,44 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
                     onChange={(event) => setUrlInput(event.target.value)}
                     allowClear
                     disabled={isLoadingUrl || isLoadingZip}
-                    onPressEnter={handleLoadClicked}
+                    onPressEnter={wrappedHandleLoadClicked}
                   />
                 </Dropdown>
-                <Button type="primary" onClick={handleLoadClicked} loading={isLoadingUrl} disabled={isLoadingZip}>
-                  Load
-                </Button>
+                <div>
+                  <Button
+                    type="primary"
+                    onClick={wrappedHandleLoadClicked}
+                    loading={isLoadingUrl}
+                    disabled={isLoadingZip}
+                  >
+                    Load
+                  </Button>
+                  {loadButtonPopupEl}
+                </div>
               </Space.Compact>
             </div>
           </div>
 
           <FlexRowAlignCenter>
-            <Upload
-              name="file"
-              multiple={false}
-              accept=".zip"
-              showUploadList={false}
-              beforeUpload={handleLoadZipClicked}
-            >
-              <FlexRowAlignCenter $gap={6}>
-                <Button disabled={isLoadingUrl || isLoadingZip} type="link" style={{ padding: 0 }}>
-                  Load .zip file
-                </Button>
-                {(isLoadingZip || zipLoadProgress !== 0) && !errorText && (
-                  <StyledInlineProgress percent={zipLoadProgress} sizePx={16} />
-                )}
-              </FlexRowAlignCenter>
-            </Upload>
+            <div>
+              <Upload
+                name="file"
+                multiple={false}
+                accept=".zip"
+                showUploadList={false}
+                beforeUpload={wrappedHandleLoadZipClicked}
+              >
+                <FlexRowAlignCenter $gap={6}>
+                  <Button disabled={isLoadingUrl || isLoadingZip} type="link" style={{ padding: 0 }}>
+                    Load .zip file
+                  </Button>
+                  {(isLoadingZip || zipLoadProgress !== 0) && !errorText && (
+                    <StyledInlineProgress percent={zipLoadProgress} sizePx={16} />
+                  )}
+                </FlexRowAlignCenter>
+              </Upload>
+              {loadZipPopupEl}
+            </div>
           </FlexRowAlignCenter>
           {errorText && <MessageCard type="error">{errorText}</MessageCard>}
         </div>
