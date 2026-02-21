@@ -51,6 +51,7 @@ const EDGE_COLOR_PRESETS: PresetsItem[] = [
 const OUTLINE_COLOR_MODE_ITEMS = [
   { value: SelectionOutlineColorMode.USE_AUTO_COLOR.toString(), label: "Auto" },
   { value: SelectionOutlineColorMode.USE_CUSTOM_COLOR.toString(), label: "Use color" },
+  { value: SelectionOutlineColorMode.USE_PALETTE.toString(), label: "Use palette" },
 ] as const satisfies SelectItem[];
 
 export default function ObjectSettings(): ReactElement {
@@ -79,10 +80,20 @@ export default function ObjectSettings(): ReactElement {
             onValueChange={(mode: string) => {
               setOutlineColorMode(Number.parseInt(mode, 10) as SelectionOutlineColorMode);
             }}
-            showColorPicker={true}
+            // Color picker
+            showColorPicker={
+              outlineColorMode === SelectionOutlineColorMode.USE_AUTO_COLOR ||
+              outlineColorMode === SelectionOutlineColorMode.USE_CUSTOM_COLOR
+            }
             color={outlineColor}
             onColorChange={setOutlineColor}
             presets={DEFAULT_OUTLINE_COLOR_PRESETS}
+            // Color ramp picker
+            showColorRamp={
+              outlineColorMode === SelectionOutlineColorMode.USE_AUTO_COLOR ||
+              outlineColorMode === SelectionOutlineColorMode.USE_PALETTE
+            }
+            // TODO add options for palette config here
           ></DropdownWithColorPicker>
         </SettingsItem>
         <SettingsItem label="Edge" htmlFor={ObjectSettingsHtmlIds.EDGE_COLOR_SELECT}>

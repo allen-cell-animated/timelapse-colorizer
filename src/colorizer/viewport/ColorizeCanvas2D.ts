@@ -656,8 +656,8 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     if (hasPropertyChanged(params, prevParams, ["isSelectedLut"])) {
       this.setUniform("selectedIds", packDataTexture(Array.from(params.isSelectedLut), FeatureDataType.U8));
     }
-    if (hasPropertyChanged(params, prevParams, ["selectedTracksPaletteRamp"])) {
-      this.setUniform("selectedTracksPalette", params.selectedTracksPaletteRamp.texture);
+    if (hasPropertyChanged(params, prevParams, ["tracksPaletteRamp"])) {
+      this.setUniform("selectedTracksPalette", params.tracksPaletteRamp.texture);
     }
     if (hasPropertyChanged(params, prevParams, ["tracks", "outlineColorMode"])) {
       this.setUniform("useTracksPalette", shouldUsePerTrackPathColors(params));
