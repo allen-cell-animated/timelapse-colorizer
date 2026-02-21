@@ -288,7 +288,7 @@ export const serializeTrackSlice = (slice: Partial<TrackSliceSerializableState>)
     ret[UrlParam.TRACK] = encodeTracks(trackIds, slice.trackToColorId);
   }
   if (slice.tracksPaletteKey) {
-    ret[UrlParam.TRACK_PALETTE] = slice.tracksPaletteKey;
+    ret[UrlParam.TRACK_PALETTE_KEY] = slice.tracksPaletteKey;
   }
   return ret;
 };
@@ -320,7 +320,7 @@ export const loadTrackSliceFromParams = (slice: TrackSlice & DatasetSlice, param
     }
     slice.setTracks(tracks, colors);
   }
-  const trackPaletteKey = params.get(UrlParam.TRACK_PALETTE);
+  const trackPaletteKey = params.get(UrlParam.TRACK_PALETTE_KEY);
   if (trackPaletteKey) {
     slice.setTrackPaletteKey(trackPaletteKey);
   }
