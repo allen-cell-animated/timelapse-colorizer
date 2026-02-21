@@ -1,6 +1,6 @@
 import type Plotly from "plotly.js-dist-min";
 import type { PlotlyHTMLElement } from "plotly.js-dist-min";
-import React, { type ReactElement, useEffect, useMemo, useRef, useState } from "react";
+import React, { type ReactElement, useEffect, useRef, useState } from "react";
 
 import type { Dataset, Track } from "src/colorizer";
 
@@ -11,6 +11,7 @@ type PlotWrapperProps = {
   dataset: Dataset | null;
   featureKey: string | null;
   tracks: Map<number, Track>;
+  trackColors: string[];
   setFrame: (frame: number) => Promise<void>;
 };
 const defaultProps: Partial<PlotWrapperProps> = {};
@@ -34,7 +35,7 @@ export default function PlotWrapper(inputProps: PlotWrapperProps): ReactElement 
   }, []);
 
   // Update dataset when it changes
-  useMemo(() => {
+  useEffect(() => {
     plot?.removePlot();
     if (props.dataset) {
       plot?.setDataset(props.dataset);
@@ -42,7 +43,7 @@ export default function PlotWrapper(inputProps: PlotWrapperProps): ReactElement 
   }, [props.dataset]);
 
   // Update time and hovered value in plot
-  useMemo(() => {
+  useEffect(() => {
     let hover;
     if (hoveredObjectId && props.featureKey !== null && props.dataset !== null) {
       const featureData = props.dataset.getFeatureData(props.featureKey);
@@ -63,13 +64,13 @@ export default function PlotWrapper(inputProps: PlotWrapperProps): ReactElement 
   }, [props.dataset, props.frame, props.tracks, props.featureKey, hoveredObjectId]);
 
   // Handle updates to selected track and feature, updating/clearing the plot accordingly.
-  useMemo(() => {
+  useEffect(() => {
     if (props.tracks.size > 0) {
-      plot?.plot(props.tracks, props.featureKey, props.frame);
+      plot?.plot(props.tracks, props.featureKey, props.frame, props.trackColors);
     } else {
       plot?.removePlot();
     }
-  }, [props.tracks, props.featureKey]);
+  }, [props.tracks, props.featureKey, props.trackColors]);
 
   const updatePlotSize = (): void => {
     if (!plotDivRef.current) {

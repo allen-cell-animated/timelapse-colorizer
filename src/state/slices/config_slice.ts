@@ -14,6 +14,7 @@ import {
   OUT_OF_RANGE_COLOR_DEFAULT,
   OUTLIER_COLOR_DEFAULT,
   OUTLINE_COLOR_DEFAULT,
+  SelectionOutlineColorMode,
   TabType,
   TrackPathColorMode,
 } from "src/colorizer";
@@ -30,6 +31,7 @@ import {
   encodeMaybeNumber,
   parseDrawMode,
   parseDrawSettings,
+  parseTrackOutlineColorMode,
   parseTrackPathMode,
   serializeTrackPathSteps,
   URL_COLOR_RAMP_REVERSED_SUFFIX,
@@ -85,6 +87,7 @@ export type ConfigSliceState = {
   outOfRangeDrawSettings: DrawSettings;
   outlierDrawSettings: DrawSettings;
   outlineColor: Color;
+  outlineColorMode: SelectionOutlineColorMode;
   edgeColor: Color;
   edgeColorAlpha: number;
   edgeMode: DrawMode;
@@ -112,6 +115,7 @@ export type ConfigSliceSerializableState = Pick<
   | "outOfRangeDrawSettings"
   | "outlierDrawSettings"
   | "outlineColor"
+  | "outlineColorMode"
   | "edgeColor"
   | "edgeColorAlpha"
   | "edgeMode"
@@ -143,6 +147,7 @@ export type ConfigSliceActions = {
   setEdgeMode: (edgeMode: DrawMode) => void;
   setOpenTab: (openTab: TabType) => void;
   setInterpolate3d: (interpolate3d: boolean) => void;
+  setOutlineColorMode: (outlineColorMode: SelectionOutlineColorMode) => void;
 };
 
 export const addConfigDerivedStateSubscribers = (store: SubscribableStore<ConfigSlice>): void => {
@@ -180,6 +185,7 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   outOfRangeDrawSettings: OUT_OF_RANGE_DRAW_SETTINGS_DEFAULT,
   outlierDrawSettings: OUTLIER_DRAW_SETTINGS_DEFAULT,
   outlineColor: new Color(OUTLINE_COLOR_DEFAULT),
+  outlineColorMode: SelectionOutlineColorMode.USE_AUTO_COLOR,
   edgeColor: new Color(EDGE_COLOR_DEFAULT),
   edgeColorAlpha: EDGE_COLOR_ALPHA_DEFAULT,
   edgeMode: DrawMode.USE_COLOR,
@@ -224,6 +230,7 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   setOutOfRangeDrawSettings: (outOfRangeDrawSettings) => set({ outOfRangeDrawSettings }),
   setOutlierDrawSettings: (outlierDrawSettings) => set({ outlierDrawSettings }),
   setOutlineColor: (outlineColor) => set({ outlineColor }),
+  setOutlineColorMode: (outlineColorMode) => set({ outlineColorMode }),
   setEdgeColor: (edgeColor, alpha) => set({ edgeColor, edgeColorAlpha: clamp(alpha, 0, 1) }),
   setEdgeMode: (edgeMode) => set({ edgeMode }),
   setOpenTab: (openTab) => set({ openTab }),
@@ -255,6 +262,7 @@ export const serializeConfigSlice = (slice: Partial<ConfigSliceSerializableState
     [UrlParam.OUTLIER_COLOR]: encodeMaybeColor(slice.outlierDrawSettings?.color),
     [UrlParam.OUTLIER_MODE]: slice.outlierDrawSettings?.mode.toString(),
     [UrlParam.OUTLINE_COLOR]: encodeMaybeColor(slice.outlineColor),
+    [UrlParam.OUTLINE_COLOR_MODE]: slice.outlineColorMode?.toString(),
     [UrlParam.EDGE_MODE]: slice.edgeMode?.toString(),
     [UrlParam.EDGE_COLOR]: encodeMaybeColorWithAlpha(slice.edgeColor, slice.edgeColorAlpha),
     [UrlParam.OPEN_TAB]: slice.openTab,
@@ -281,6 +289,7 @@ export const selectConfigSliceSerializationDeps = (slice: ConfigSlice): ConfigSl
   outOfRangeDrawSettings: slice.outOfRangeDrawSettings,
   outlierDrawSettings: slice.outlierDrawSettings,
   outlineColor: slice.outlineColor,
+  outlineColorMode: slice.outlineColorMode,
   edgeMode: slice.edgeMode,
   edgeColor: slice.edgeColor,
   edgeColorAlpha: slice.edgeColorAlpha,
@@ -317,6 +326,10 @@ export const loadConfigSliceFromParams = (slice: ConfigSlice, params: URLSearchP
   const outlineColorParam = decodeHexColor(params.get(UrlParam.OUTLINE_COLOR));
   if (outlineColorParam) {
     slice.setOutlineColor(new Color(outlineColorParam));
+  }
+  const outlineColorModeParam = parseTrackOutlineColorMode(params.get(UrlParam.OUTLINE_COLOR_MODE));
+  if (outlineColorModeParam !== undefined) {
+    slice.setOutlineColorMode(outlineColorModeParam);
   }
   const trackPathColorParam = decodeHexColor(params.get(UrlParam.PATH_COLOR));
   if (trackPathColorParam) {

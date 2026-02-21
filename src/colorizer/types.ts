@@ -104,6 +104,11 @@ export const isDrawMode = (mode: number): mode is DrawMode => {
   return mode === DrawMode.HIDE || mode === DrawMode.USE_COLOR;
 };
 
+export const enum SelectionOutlineColorMode {
+  USE_AUTO_COLOR = 0,
+  USE_CUSTOM_COLOR = 1,
+}
+
 export const enum TrackPathColorMode {
   USE_OUTLINE_COLOR = 0,
   USE_CUSTOM_COLOR = 1,

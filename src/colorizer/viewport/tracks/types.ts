@@ -3,7 +3,7 @@ import type { Color } from "three";
 import type ColorRamp from "src/colorizer/ColorRamp";
 import type Dataset from "src/colorizer/Dataset";
 import type Track from "src/colorizer/Track";
-import type { DrawSettings, TrackPathColorMode } from "src/colorizer/types";
+import type { DrawSettings, SelectionOutlineColorMode, TrackPathColorMode } from "src/colorizer/types";
 
 /** Subset of RenderCanvasParams */
 export type TrackPathParams = {
@@ -15,6 +15,7 @@ export type TrackPathParams = {
   categoricalPaletteRamp: ColorRamp;
   outlierDrawSettings: DrawSettings;
   outlineColor: Color;
+  outlineColorMode: SelectionOutlineColorMode;
   outOfRangeDrawSettings: DrawSettings;
   inRangeLUT: Uint8Array;
   // Track-specific settings
