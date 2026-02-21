@@ -15,6 +15,7 @@ import TextButton from "src/components/Buttons/TextButton";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import type { SelectItem } from "src/components/Dropdowns/types";
 import LoadingSpinner from "src/components/LoadingSpinner";
+import { SHORTCUT_KEYS } from "src/constants";
 import { useDebounce } from "src/hooks";
 import { useViewerStateStore } from "src/state/ViewerState";
 import { AppThemeContext } from "src/styles/AppStyle";
@@ -34,6 +35,7 @@ import {
   subsampleColorRamp,
   type TraceData,
 } from "src/utils/scatter_plot_data_utils";
+import { areAnyHotkeysPressed } from "src/utils/user_input";
 
 // TODO: Translate into seconds/minutes/hours for datasets where frame duration is known?
 
@@ -84,6 +86,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const selectedFeatureKey = useViewerStateStore((state) => state.featureKey);
   const tracks = useViewerStateStore((state) => state.tracks);
   const addTracks = useViewerStateStore((state) => state.addTracks);
+  const toggleTrack = useViewerStateStore((state) => state.toggleTrack);
+  const setTracks = useViewerStateStore((state) => state.setTracks);
   const clearTracks = useViewerStateStore((state) => state.clearTracks);
   const setFrame = useViewerStateStore((state) => state.setFrame);
   const setRangeType = useViewerStateStore((state) => state.setScatterRangeType);
@@ -154,16 +158,19 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
   useEffect(() => {
     const onClick = (): void => {
-      // A point was recently clicked so ignore the click event.
-      if (timeOfLastPointClicked.current + PLOTLY_CLICK_TIMEOUT_MS > Date.now()) {
+      if (
+        timeOfLastPointClicked.current + PLOTLY_CLICK_TIMEOUT_MS > Date.now() ||
+        currentRangeType.current === PlotRangeType.CURRENT_TRACK ||
+        areAnyHotkeysPressed(SHORTCUT_KEYS.viewport.multiTrackSelect.keycode)
+      ) {
+        // Skip if a point was recently clicked, or if the tracks should not be cleared
+        // (e.g. during multi-select mode or in current track range view).
         return;
       }
       // Start a timeout to clear the track, which will be cleared if a plotly
       // click event occurs.
       emptyClickTimeout.current = window.setTimeout(() => {
-        if (currentRangeType.current !== PlotRangeType.CURRENT_TRACK) {
-          clearTracks();
-        }
+        clearTracks();
       }, PLOTLY_CLICK_TIMEOUT_MS);
     };
 
@@ -210,13 +217,13 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   // Add click event listeners to the plot. When clicking a point, find the track and jump to
   // that frame.
   useEffect(() => {
-    const onClickPlot = (eventData: Plotly.PlotMouseEvent): void => {
+    const onClickPlot = async (eventData: Plotly.PlotMouseEvent): Promise<void> => {
       if (!dataset || eventData.points.length === 0 || isHistogramEvent(eventData)) {
         return;
       }
 
       // Clear any timeouts for detecting clicks on blank areas of the plot.
-      if (emptyClickTimeout.current) {
+      if (emptyClickTimeout.current !== null) {
         clearTimeout(emptyClickTimeout.current);
         emptyClickTimeout.current = null;
       }
@@ -230,16 +237,26 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         return;
       }
       const frame = dataset.times ? dataset.times[objectId] : track.times[0];
-      setFrame(frame).then(() => {
+      await setFrame(frame);
+      if (currentRangeType.current === PlotRangeType.CURRENT_FRAME) {
+        if (areAnyHotkeysPressed(SHORTCUT_KEYS.viewport.multiTrackSelect.keycode)) {
+          toggleTrack(track);
+        } else {
+          // Select only the clicked track.
+          setTracks(track);
+        }
+      } else if (currentRangeType.current === PlotRangeType.ALL_TIME) {
+        // Assume we are either selecting a track while none is selected, or selecting
+        // a different timepoint in the same track.
         addTracks(track);
-      });
+      }
     };
 
     plotRef?.on("plotly_click", onClickPlot);
     return () => {
       plotRef?.removeAllListeners("plotly_click");
     };
-  }, [plotRef, dataset, addTracks, setFrame]);
+  }, [plotRef, dataset, addTracks, setFrame, toggleTrack, setTracks]);
 
   // Sync axis ranges on relayout events (zoom)
   useEffect(() => {
