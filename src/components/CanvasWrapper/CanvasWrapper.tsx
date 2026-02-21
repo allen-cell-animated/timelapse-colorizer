@@ -22,6 +22,7 @@ import {
   LoadTroubleshooting,
   type PixelIdInfo,
   TabType,
+  ViewMode,
 } from "src/colorizer/types";
 import type CanvasOverlay from "src/colorizer/viewport/CanvasOverlay";
 import type { AlertBannerProps } from "src/components/Banner";
@@ -152,6 +153,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const showScaleBar = useViewerStateStore((state) => state.showScaleBar);
   const showTimestamp = useViewerStateStore((state) => state.showTimestamp);
   const frameLoadResult = useViewerStateStore((state) => state.frameLoadResult);
+  const viewMode = useViewerStateStore((state) => state.viewMode);
 
   const isAnnotationModeEnabled = props.annotationState.isAnnotationModeEnabled;
 
@@ -188,8 +190,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   const isMissingFile = frameLoadResult !== null && (frameLoadResult.frameError || frameLoadResult.backdropError);
 
-  // TODO: This should be a property in state and not derived here and in CanvasOverlay.
-  const isDataset3d = dataset?.frames3d !== undefined;
+  const isDataset3d = viewMode === ViewMode.VIEW_3D;
 
   // CANVAS PROPERTIES /////////////////////////////////////////////////
 

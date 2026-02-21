@@ -81,6 +81,11 @@ export const featureTypeSpecs: { [T in FeatureDataType]: FeatureTypeSpec<T> } = 
 
 // CANVAS //////////////////////////////////////
 
+export const enum ViewMode {
+  VIEW_2D = "2d",
+  VIEW_3D = "3d",
+}
+
 export type FrameLoadResult = {
   frame: number;
   /** True if frame loading encountered an error. */

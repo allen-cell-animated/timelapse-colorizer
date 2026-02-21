@@ -1,6 +1,7 @@
 import { Checkbox, Tooltip } from "antd";
 import React, { type ReactElement } from "react";
 
+import { ViewMode } from "src/colorizer/types";
 import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
 import ToggleCollapse from "src/components/ToggleCollapse";
 import { useViewerStateStore } from "src/state";
@@ -14,17 +15,16 @@ const enum ViewportSettingsHtmlIds {
   INTERPOLATE_3D_SWITCH = "interpolate-3d-switch",
 }
 
-type ViewportSettingsProps = {
-  isDataset3d: boolean;
-};
-
-export default function ViewportSettings(props: ViewportSettingsProps): ReactElement {
+export default function ViewportSettings(): ReactElement {
   const interpolate3d = useViewerStateStore((state) => state.interpolate3d);
   const setInterpolate3d = useViewerStateStore((state) => state.setInterpolate3d);
   const setShowScaleBar = useViewerStateStore((state) => state.setShowScaleBar);
   const setShowTimestamp = useViewerStateStore((state) => state.setShowTimestamp);
   const showScaleBar = useViewerStateStore((state) => state.showScaleBar);
   const showTimestamp = useViewerStateStore((state) => state.showTimestamp);
+  const viewMode = useViewerStateStore((state) => state.viewMode);
+
+  const isDataset3d = viewMode === ViewMode.VIEW_3D;
 
   return (
     <ToggleCollapse label="Viewport">
@@ -55,7 +55,7 @@ export default function ViewportSettings(props: ViewportSettingsProps): ReactEle
             />
           </div>
         </SettingsItem>
-        {props.isDataset3d && (
+        {isDataset3d && (
           <SettingsItem
             label="Interpolate 3D data"
             htmlFor={ViewportSettingsHtmlIds.INTERPOLATE_3D_SWITCH}
