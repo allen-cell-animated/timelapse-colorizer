@@ -1,8 +1,8 @@
 import { Vector2 } from "three";
 
 import type { LabelData } from "src/colorizer/AnnotationData";
-import type Dataset from "src/colorizer/Dataset";
 import type { ChannelRangePreset, FrameLoadResult, PixelIdInfo } from "src/colorizer/types";
+import { ViewMode } from "src/colorizer/types";
 import { hasPropertyChanged } from "src/colorizer/utils/data_utils";
 
 import ColorizeCanvas2D from "./ColorizeCanvas2D";
@@ -295,35 +295,14 @@ export default class CanvasOverlay implements IRenderCanvas {
     return this.handleRenderableAction(this.innerCanvas.handleZoomOut());
   }
 
-  /**
-   * Returns true if the inner canvas type needs to be changed to match the
-   * dataset type.
-   *
-   * Currently, the 3D canvas is preferentially shown if the dataset has 3D
-   * frames, even if a dataset has 2D and 3D frame data.
-   */
-  private doesCanvasTypeNeedUpdate(dataset: Dataset): boolean {
-    // TODO: Change this check (and the conditional in `updateCanvasType`) to
-    // only switch if a dataset doesn't have the matching frame type once a user
-    // control for 2D/3D view mode is added. Right now, this always switches to
-    // 3D if the dataset has 3D frames, meaning that 3D frame data overrides 2D
-    // frame data.
-    return (
-      (this.innerCanvasType !== CanvasType.CANVAS_3D && dataset.has3dFrames()) ||
-      (this.innerCanvasType === CanvasType.CANVAS_3D && !dataset.has3dFrames())
-    );
-  }
-
-  private async updateCanvasType(dataset: Dataset): Promise<void> {
-    // TODO: Change API for this to `setCanvasType`, with the type passed in as
-    // a parameter rather than being read from dataset.
-    if (this.innerCanvasType !== CanvasType.CANVAS_3D && dataset.has3dFrames()) {
+  private async setCanvasType(viewMode: ViewMode): Promise<void> {
+    if (this.innerCanvasType !== CanvasType.CANVAS_3D && viewMode === ViewMode.VIEW_3D) {
       this.innerCanvasType = CanvasType.CANVAS_3D;
       if (!this.innerCanvas3d) {
         this.innerCanvas3d = new ColorizeCanvas3D();
       }
       await this.setCanvas(this.innerCanvas3d);
-    } else if (this.innerCanvasType === CanvasType.CANVAS_3D && !dataset.has3dFrames()) {
+    } else if (this.innerCanvasType !== CanvasType.CANVAS_2D && viewMode === ViewMode.VIEW_2D) {
       this.innerCanvasType = CanvasType.CANVAS_2D;
       await this.setCanvas(this.innerCanvas2d);
     }
@@ -333,15 +312,11 @@ export default class CanvasOverlay implements IRenderCanvas {
     const prevParams = this.params;
     this.params = params;
 
-    // If the dataset has changed types, construct and initialize the inner
-    // canvas.
+    // Handle updates to the dataset viewing mode (2D/3D)
     let hasAlreadyUpdatedCanvasParams = false;
-    if (hasPropertyChanged(params, prevParams, ["dataset"])) {
-      const dataset = params.dataset;
-      if (dataset && this.doesCanvasTypeNeedUpdate(dataset)) {
-        await this.updateCanvasType(dataset);
-        hasAlreadyUpdatedCanvasParams = true;
-      }
+    if (hasPropertyChanged(params, prevParams, ["viewMode"])) {
+      await this.setCanvasType(params.viewMode);
+      hasAlreadyUpdatedCanvasParams = true;
     }
 
     if (!hasAlreadyUpdatedCanvasParams) {
