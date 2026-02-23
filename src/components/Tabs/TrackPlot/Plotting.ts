@@ -97,7 +97,12 @@ export default class Plotting {
     this.dataset = dataset;
   }
 
-  plot(tracks: Map<number, Track>, featureKey: string | null, time: number): void {
+  plot(
+    tracks: Map<number, Track>,
+    featureKey: string | null,
+    time: number,
+    layoutAxisOverride: Partial<Pick<Plotly.Layout, "xaxis" | "yaxis">> = {}
+  ): void {
     const dataset = this.dataset;
     if (dataset === null || featureKey === null) {
       return;
@@ -129,9 +134,11 @@ export default class Plotting {
     const title = tracks.size === 1 ? `Track ${Array.from(tracks.keys())[0]}` : tracks.size + " tracks selected";
     const layout: Partial<Plotly.Layout> = {
       yaxis: {
+        ...layoutAxisOverride.yaxis,
         title: dataset.getFeatureNameWithUnits(featureKey),
       },
       xaxis: {
+        ...layoutAxisOverride.xaxis,
         title: dataset.getFeatureNameWithUnits(TIME_FEATURE_KEY),
       },
       shapes: [
