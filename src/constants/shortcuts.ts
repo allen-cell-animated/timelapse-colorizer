@@ -61,13 +61,13 @@ export const SHORTCUT_KEYS = {
   backdropsOrChannels: {
     cycleForward: {
       name: "Show next",
-      keycode: ["period", "shift+period"],
-      keycodeDisplay: [".", ">"],
+      keycode: ["period"],
+      keycodeDisplay: ["."],
     },
     cycleBackward: {
       name: "Show previous",
-      keycode: ["comma", "shift+comma"],
-      keycodeDisplay: [",", "<"],
+      keycode: ["comma"],
+      keycodeDisplay: [","],
     },
     showChannel: {
       name: "Toggle by number",
