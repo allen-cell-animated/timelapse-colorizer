@@ -77,7 +77,7 @@ export default function ShortcutKeyText(props: ShortcutKeyDisplayProps): ReactEl
 
     let hotkeyElements: ReactNode = keycodeArray.map((key) => toHotkeyDisplay(key, props.keyStyle));
     if (inline) {
-      hotkeyElements = insertBetweenElements(hotkeyElements, (key) => <span key={key}>/</span>);
+      hotkeyElements = insertBetweenElements(hotkeyElements, (key) => <span key={key}>or</span>);
     }
     return hotkeyElements;
   }, [keycode, keycodeDisplay, inline, props.keyStyle]);
