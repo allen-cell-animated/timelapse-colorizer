@@ -4,11 +4,11 @@ import styled from "styled-components";
 import { Color as ThreeColor } from "three";
 
 import { DEFAULT_COLOR_RAMP_KEY, DISPLAY_COLOR_RAMP_KEYS } from "src/colorizer";
-import ColorRampDropdown, { ColorRampSelectionProps } from "src/components/Dropdowns/ColorRampDropdown";
+import ColorRampDropdown, { type ColorRampSelectionProps } from "src/components/Dropdowns/ColorRampDropdown";
 import WrappedColorPicker from "src/components/Inputs/WrappedColorPicker";
 import { FlexRow, FlexRowAlignCenter } from "src/styles/utils";
 
-import SelectionDropdown, { SelectionDropdownProps } from "./SelectionDropdown";
+import SelectionDropdown, { type SelectionDropdownProps } from "./SelectionDropdown";
 
 type DropdownWithColorPickerProps = {
   id: string;
