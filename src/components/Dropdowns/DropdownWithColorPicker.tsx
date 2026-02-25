@@ -11,11 +11,17 @@ import { FlexRow, FlexRowAlignCenter } from "src/styles/utils";
 import SelectionDropdown, { type SelectionDropdownProps } from "./SelectionDropdown";
 
 type DropdownWithColorPickerProps = {
+  /** ID of the dropdown component. */
   id: string;
+  /**
+   * Whether the subcomponents are disabled by default. This can be overridden
+   * for the color picker/color ramp subcomponents by passing `disabled` in
+   * `colorPickerProps` or `colorRampProps`.
+   */
   disabled?: boolean;
 
   // Dropdown
-  dropdownProps: SelectionDropdownProps;
+  dropdownProps: Omit<SelectionDropdownProps, "id" | "disabled">;
 
   // Color picker
   showColorPicker?: boolean;
@@ -75,11 +81,11 @@ export default function DropdownWithColorPicker(propsInput: DropdownWithColorPic
   return (
     <HorizontalDiv ref={colorPickerRef}>
       <SelectionDropdown
-        label={null}
         id={props.id}
         disabled={props.disabled}
         showSelectedItemTooltip={false}
         controlWidth="105px"
+        label={null}
         {...props.dropdownProps}
       ></SelectionDropdown>
       <FlexRow style={{ position: "relative" }} $gap={6}>
