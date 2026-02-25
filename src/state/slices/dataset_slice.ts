@@ -1,6 +1,7 @@
 import type { StateCreator } from "zustand";
 
 import type Dataset from "src/colorizer/Dataset";
+import { ViewMode } from "src/colorizer/types";
 import { UrlParam } from "src/colorizer/utils/url_utils";
 import type { SerializedStoreData } from "src/state/types";
 
@@ -13,6 +14,13 @@ export type DatasetSliceState = {
   /** The key of the backdrop image set in the current dataset. `null` if there
    * is no Dataset loaded or if the dataset does not have backdrops. */
   backdropKey: string | null;
+
+  // Derived state flags
+  /**
+   * Current view mode, either 2D or 3D. Updates based on the currently loaded
+   * dataset.
+   */
+  viewMode: ViewMode;
 };
 
 export type DatasetSliceSerializableState = Pick<DatasetSliceState, "datasetKey" | "featureKey" | "backdropKey">;
@@ -35,6 +43,7 @@ export const createDatasetSlice: StateCreator<CollectionSlice & DatasetSlice, []
   dataset: null,
   featureKey: null,
   backdropKey: null,
+  viewMode: ViewMode.VIEW_2D,
 
   setBackdropKey: (key: string) => {
     const dataset = get().dataset;
@@ -78,10 +87,17 @@ export const createDatasetSlice: StateCreator<CollectionSlice & DatasetSlice, []
       backdropKey = dataset.getDefaultBackdropKey();
     }
 
-    set({ datasetKey: key, dataset, featureKey, backdropKey });
+    // Prefer 3D mode if the dataset supports it.
+    let viewMode = ViewMode.VIEW_2D;
+    if (dataset.has3dFrames()) {
+      viewMode = ViewMode.VIEW_3D;
+    }
+
+    set({ datasetKey: key, dataset, featureKey, backdropKey, viewMode });
   },
 
-  clearDataset: () => set({ datasetKey: null, dataset: null, featureKey: null, backdropKey: null }),
+  clearDataset: () =>
+    set({ datasetKey: null, dataset: null, featureKey: null, backdropKey: null, viewMode: ViewMode.VIEW_2D }),
 });
 
 export const serializeDatasetSlice = (slice: Partial<DatasetSliceSerializableState>): SerializedStoreData => {

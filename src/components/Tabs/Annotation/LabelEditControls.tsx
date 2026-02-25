@@ -33,6 +33,7 @@ export default function LabelEditControls(props: PropsWithChildren<LabelEditCont
   const editPopoverContainerRef = useRef<HTMLDivElement>(null);
 
   const [showDeletePopup, setShowDeletePopup] = useState(false);
+  const deletePopoverContainerRef = useRef<HTMLDivElement>(null);
 
   const savedLabelOptions = useRef<Partial<LabelOptions> | null>(null);
 
@@ -199,13 +200,15 @@ export default function LabelEditControls(props: PropsWithChildren<LabelEditCont
         onConfirm={deleteLabel}
         onCancel={() => setShowDeletePopup(false)}
         placement="bottom"
-        getPopupContainer={() => editPopoverContainerRef.current!}
+        getPopupContainer={() => deletePopoverContainerRef.current!}
       >
-        <Tooltip title="Delete annotation" placement="top">
-          <IconButton type="outlined" onClick={onClickDeleteButton}>
-            <DeleteOutlined />
-          </IconButton>
-        </Tooltip>
+        <div ref={deletePopoverContainerRef}>
+          <Tooltip title="Delete annotation" placement="top">
+            <IconButton type="outlined" onClick={onClickDeleteButton}>
+              <DeleteOutlined />
+            </IconButton>
+          </Tooltip>
+        </div>
       </Popconfirm>
     </>
   );
