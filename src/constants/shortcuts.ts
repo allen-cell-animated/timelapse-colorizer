@@ -58,11 +58,33 @@ export const SHORTCUT_KEYS = {
       keycodeDisplay: "Left click drag",
     },
   },
+  backdropsOrChannels: {
+    cycleForward: {
+      name: "Show next",
+      keycode: ["period"],
+      keycodeDisplay: ["."],
+    },
+    cycleBackward: {
+      name: "Show previous",
+      keycode: ["comma"],
+      keycodeDisplay: [","],
+    },
+    showChannel: {
+      name: "Toggle by number",
+      keycode: ["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+      keycodeDisplay: "1 - 9",
+    },
+  },
   annotation: {
     selectRange: { name: "Select range", keycode: "shift" },
     // TODO: Alt is used for other shortcuts in Chrome (by default, it focuses the menu bar when released).
     // Is there another modifier key that works better?
-    reuseValue: { name: "Reuse last value", keycode: "alt,option" },
+    reuseValue: { name: "Reuse last value", keycode: "alt,option", keycodeDisplay: "Alt / Option (⌥)" },
+    keepAnnotationsBetweenDatasets: {
+      name: "Keep annotations when switching datasets",
+      keycode: "alt,option",
+      keycodeDisplay: "Alt / Option (⌥)",
+    },
   },
   navigation: {
     showShortcutMenu: { name: "Show keyboard shortcuts", keycode: "shift+slash,?", keycodeDisplay: "?" },

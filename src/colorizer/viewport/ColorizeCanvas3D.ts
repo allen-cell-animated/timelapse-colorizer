@@ -245,7 +245,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
 
   private handleDatasetUpdate(prevParams: RenderCanvasStateParams | null, params: RenderCanvasStateParams): boolean {
     if (hasPropertyChanged(params, prevParams, ["dataset"])) {
-      if (params.dataset !== null && params.dataset.has3dFrames() && params.dataset.frames3d) {
+      if (params.dataset !== null && params.dataset.frames3d) {
         if (this.volume) {
           // Remove 3D objects so they are not cleaned up with the old volume
           // and can be reused.

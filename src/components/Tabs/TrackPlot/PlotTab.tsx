@@ -43,6 +43,7 @@ export default function PlotTab(props: PlotTabProps): ReactElement {
   const setFrame = useViewerStateStore((state) => state.setFrame);
   const addTracks = useViewerStateStore((state) => state.addTracks);
   const trackToColorMap = useViewerStateStore((state) => state.trackColors);
+  const viewMode = useViewerStateStore((state) => state.viewMode);
 
   const trackColors = useMemo(() => {
     return Array.from(tracks.keys())
@@ -131,6 +132,7 @@ export default function PlotTab(props: PlotTabProps): ReactElement {
             featureKey={featureKey}
             tracks={tracks}
             trackColors={trackColors}
+            viewMode={viewMode}
           />
         </LoadingSpinner>
       </div>
