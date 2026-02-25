@@ -53,7 +53,10 @@ export function get2DCanvasScaling(
 }
 
 export function shouldUsePerTrackPathColors(params: RenderCanvasStateParams): boolean {
-  return params.tracks.size > 1 && params.outlineColorMode === SelectionOutlineColorMode.USE_AUTO_COLOR;
+  return (
+    params.outlineColorMode === SelectionOutlineColorMode.USE_PALETTE ||
+    (params.tracks.size > 1 && params.outlineColorMode === SelectionOutlineColorMode.USE_AUTO_COLOR)
+  );
 }
 
 /**

@@ -33,6 +33,7 @@ export enum UrlParam {
   DATASET = "dataset",
   SOURCE_ZIP = "zip",
   TRACK = "track",
+  TRACK_PALETTE_KEY = "track-palette-key",
   FEATURE = "feature",
   TIME = "t",
   THRESHOLDS = "filters",

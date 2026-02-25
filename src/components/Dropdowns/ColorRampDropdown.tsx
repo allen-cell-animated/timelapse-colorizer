@@ -51,7 +51,7 @@ const ReverseIconButton = styled(IconButton)`
   }
 `;
 
-const DropdownStyleContainer = styled.div<{ $categorical: boolean }>`
+const DropdownStyleContainer = styled.div<{ $categorical: boolean; $showReverseButton: boolean }>`
   --width: ${DROPDOWN_CONTROL_WIDTH_PX}px;
   --border-width: 1px;
   --radius: 6px;
@@ -77,9 +77,9 @@ const DropdownStyleContainer = styled.div<{ $categorical: boolean }>`
 
   & .react-select__control {
     // Remove right border radius to merge visually with reverse button
-    border-radius: 6px 0 0 6px;
+    border-radius: ${(props) => (props.$showReverseButton ? "6px 0 0 6px" : "6px")};
     & img {
-      border-radius: 5px 0 0 5px;
+      border-radius: ${(props) => (props.$showReverseButton ? "5px 0 0 5px" : "5px")};
       outline: var(--outline-width-unselected) solid var(--color-text-button);
       outline-offset: calc(0px - var(--outline-width-unselected));
     }
@@ -146,6 +146,7 @@ export type ColorRampSelectionProps = {
   label?: string;
   disabled?: boolean;
   colorRampToImageUrl?: (colorRamp: ColorRamp) => string;
+  showReverseButton?: boolean;
 
   // Color ramp
   selectedRamp?: string;
@@ -174,6 +175,7 @@ export type ColorRampSelectionProps = {
 };
 
 const defaultProps: Partial<ColorRampSelectionProps> = {
+  showReverseButton: true,
   disabled: false,
 
   // Color ramps
@@ -315,7 +317,7 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
 
   return (
     <FlexRowAlignCenter $gap={4}>
-      <DropdownStyleContainer $categorical={props.useCategoricalPalettes}>
+      <DropdownStyleContainer $categorical={props.useCategoricalPalettes} $showReverseButton={props.showReverseButton}>
         <SelectionDropdown
           disabled={props.disabled}
           items={props.useCategoricalPalettes ? paletteItems : rampItems}
@@ -325,7 +327,7 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
           label={props.label}
           selected={props.useCategoricalPalettes ? selectedPaletteItem : selectedRampItem}
           onChange={props.useCategoricalPalettes ? onChangePalette : onChangeRamp}
-          controlWidth={`${DROPDOWN_CONTROL_WIDTH_PX}px`}
+          controlWidth={props.showReverseButton ? `${DROPDOWN_CONTROL_WIDTH_PX}px` : `${28 + 24}px`}
           menuWidth={`${DROPDOWN_MENU_WIDTH_PX}px`}
           isSearchable={false}
           controlTooltipPlacement="top"
@@ -335,18 +337,23 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
           }}
         >
           {/** Reverse map button */}
-          <Tooltip title="Reverse color map" open={props.disabled || props.useCategoricalPalettes ? false : undefined}>
-            <ReverseIconButton
-              aria-label="Reverse color map"
-              type="outlined"
-              disabled={props.disabled || props.useCategoricalPalettes}
-              onClick={() => {
-                props.onChangeRamp(props.selectedRamp, !props.reversed);
-              }}
+          {props.showReverseButton && (
+            <Tooltip
+              title="Reverse color map"
+              open={props.disabled || props.useCategoricalPalettes ? false : undefined}
             >
-              <RetweetOutlined />
-            </ReverseIconButton>
-          </Tooltip>
+              <ReverseIconButton
+                aria-label="Reverse color map"
+                type="outlined"
+                disabled={props.disabled || props.useCategoricalPalettes}
+                onClick={() => {
+                  props.onChangeRamp(props.selectedRamp, !props.reversed);
+                }}
+              >
+                <RetweetOutlined />
+              </ReverseIconButton>
+            </Tooltip>
+          )}
         </SelectionDropdown>
       </DropdownStyleContainer>
     </FlexRowAlignCenter>
