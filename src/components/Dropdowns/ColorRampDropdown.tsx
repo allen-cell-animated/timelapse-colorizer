@@ -138,9 +138,9 @@ const DropdownStyleContainer = styled.div<{ $categorical: boolean }>`
   }
 `;
 
-type ColorRampSelectionProps = {
+export type ColorRampSelectionProps = {
   // Config
-  id: string | undefined;
+  id?: string;
   label?: string;
   disabled?: boolean;
   colorRampToImageUrl?: (colorRamp: ColorRamp) => string;
