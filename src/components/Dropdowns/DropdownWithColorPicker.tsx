@@ -29,7 +29,7 @@ type DropdownWithColorPickerProps = {
 
   // Color ramp picker
   showColorRamp?: boolean;
-  colorRampProps?: ColorRampSelectionProps;
+  colorRampProps?: Partial<ColorRampSelectionProps>;
 };
 
 const defaultProps: Partial<DropdownWithColorPickerProps> = {

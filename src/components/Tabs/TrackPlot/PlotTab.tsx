@@ -3,7 +3,9 @@ import { Input } from "antd";
 import React, { type ReactElement, useEffect, useMemo, useState } from "react";
 import styled from "styled-components";
 
+import { KNOWN_CATEGORICAL_PALETTES } from "src/colorizer/colors/categorical_palettes";
 import IconButton from "src/components/Buttons/IconButton";
+import ColorRampDropdown from "src/components/Dropdowns/ColorRampDropdown";
 import LoadingSpinner from "src/components/LoadingSpinner";
 import PlotWrapper from "src/components/Tabs/TrackPlot/PlotWrapper";
 import { useViewerStateStore } from "src/state";
@@ -36,6 +38,8 @@ export default function PlotTab(props: PlotTabProps): ReactElement {
   const featureKey = useViewerStateStore((state) => state.featureKey);
   const pendingFrame = useViewerStateStore((state) => state.pendingFrame);
   const tracks = useViewerStateStore((state) => state.tracks);
+  const trackPaletteKey = useViewerStateStore((state) => state.trackPaletteKey);
+  const setTrackPaletteKey = useViewerStateStore((state) => state.setTrackPaletteKey);
   const setFrame = useViewerStateStore((state) => state.setFrame);
   const addTracks = useViewerStateStore((state) => state.addTracks);
   const trackToColorMap = useViewerStateStore((state) => state.trackColors);
@@ -85,7 +89,16 @@ export default function PlotTab(props: PlotTabProps): ReactElement {
 
   return (
     <>
-      <TrackTitleBar>
+      <TrackTitleBar $gap={12}>
+        <ColorRampDropdown
+          label={"Palette"}
+          useCategoricalPalettes={true}
+          selectedPaletteKey={trackPaletteKey}
+          selectedPalette={KNOWN_CATEGORICAL_PALETTES.get(trackPaletteKey)?.colors}
+          onChangePalette={(_colors, key) => setTrackPaletteKey(key)}
+          numCategories={12}
+          showReverseButton={false}
+        ></ColorRampDropdown>
         <NoSpinnerContainer>
           <TrackSearch $gap={6}>
             <label htmlFor={TRACK_SEARCH_ID}>

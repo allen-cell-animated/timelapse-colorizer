@@ -2,7 +2,7 @@ import type { PresetsItem } from "antd/es/color-picker/interface";
 import React, { type ReactElement } from "react";
 import type { Color } from "three";
 
-import { DrawMode, SelectionOutlineColorMode } from "src/colorizer";
+import { DrawMode, KNOWN_CATEGORICAL_PALETTES, SelectionOutlineColorMode } from "src/colorizer";
 import DropdownWithColorPicker from "src/components/Dropdowns/DropdownWithColorPicker";
 import type { SelectItem } from "src/components/Dropdowns/types";
 import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
@@ -62,12 +62,14 @@ export default function ObjectSettings(): ReactElement {
   const outlineColor = useViewerStateStore((state) => state.outlineColor);
   const outlineColorMode = useViewerStateStore((state) => state.outlineColorMode);
   const outOfRangeDrawSettings = useViewerStateStore((state) => state.outOfRangeDrawSettings);
+  const tracksPaletteKey = useViewerStateStore((state) => state.trackPaletteKey);
   const setEdgeColor = useViewerStateStore((state) => state.setEdgeColor);
   const setEdgeMode = useViewerStateStore((state) => state.setEdgeMode);
   const setOutlierDrawSettings = useViewerStateStore((state) => state.setOutlierDrawSettings);
   const setOutlineColor = useViewerStateStore((state) => state.setOutlineColor);
   const setOutlineColorMode = useViewerStateStore((state) => state.setOutlineColorMode);
   const setOutOfRangeDrawSettings = useViewerStateStore((state) => state.setOutOfRangeDrawSettings);
+  const setTracksPaletteKey = useViewerStateStore((state) => state.setTrackPaletteKey);
 
   return (
     <ToggleCollapse label="Objects">
@@ -97,7 +99,14 @@ export default function ObjectSettings(): ReactElement {
               outlineColorMode === SelectionOutlineColorMode.USE_AUTO_COLOR ||
               outlineColorMode === SelectionOutlineColorMode.USE_PALETTE
             }
-            // TODO add options for palette config here
+            colorRampProps={{
+              useCategoricalPalettes: true,
+              selectedPalette: KNOWN_CATEGORICAL_PALETTES.get(tracksPaletteKey)?.colors,
+              selectedPaletteKey: tracksPaletteKey,
+              onChangePalette: (_, key) => setTracksPaletteKey(key),
+              numCategories: 12,
+              showReverseButton: false,
+            }}
           ></DropdownWithColorPicker>
         </SettingsItem>
         <SettingsItem label="Edge" htmlFor={ObjectSettingsHtmlIds.EDGE_COLOR_SELECT}>

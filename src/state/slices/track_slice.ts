@@ -17,7 +17,7 @@ const LUT_OFFSET = 1;
 export type TrackSliceState = {
   tracks: Map<number, Track>;
   trackToColorId: Map<number, number>;
-  tracksPaletteKey: string;
+  trackPaletteKey: string;
 
   /** Derived values */
   /** @deprecated */
@@ -37,7 +37,7 @@ export type TrackSliceState = {
   isSelectedLut: Uint8Array;
 };
 
-export type TrackSliceSerializableState = Pick<TrackSliceState, "tracks" | "trackToColorId" | "tracksPaletteKey">;
+export type TrackSliceSerializableState = Pick<TrackSliceState, "tracks" | "trackToColorId" | "trackPaletteKey">;
 
 export type TrackSliceActions = {
   /**
@@ -105,7 +105,7 @@ export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (s
   trackColors: new Map<number, Color>(),
   tracksPaletteRamp: new ColorRamp(DEFAULT_TRACK_PALETTE.colorStops, ColorRampType.CATEGORICAL),
   track: null,
-  tracksPaletteKey: DEFAULT_TRACK_PALETTE_KEY,
+  trackPaletteKey: DEFAULT_TRACK_PALETTE_KEY,
   isSelectedLut: new Uint8Array(0),
 
   addTracks: (tracks: Track | Track[]) => {
@@ -223,7 +223,7 @@ export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (s
   },
   setTrackPaletteKey: (key: string) => {
     set((state) => {
-      if (state.tracksPaletteKey === key) {
+      if (state.trackPaletteKey === key) {
         return {};
       }
       const palette = KNOWN_CATEGORICAL_PALETTES.get(key);
@@ -235,7 +235,7 @@ export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (s
       const newTracksPaletteRamp = new ColorRamp(palette.colorStops, ColorRampType.CATEGORICAL);
       return {
         tracksPaletteRamp: newTracksPaletteRamp,
-        tracksPaletteKey: key,
+        trackPaletteKey: key,
         trackColors: getTrackColors(state.trackToColorId, newTracksPaletteRamp),
       };
     });
@@ -287,8 +287,8 @@ export const serializeTrackSlice = (slice: Partial<TrackSliceSerializableState>)
     const trackIds = Array.from(slice.tracks.keys());
     ret[UrlParam.TRACK] = encodeTracks(trackIds, slice.trackToColorId);
   }
-  if (slice.tracksPaletteKey) {
-    ret[UrlParam.TRACK_PALETTE_KEY] = slice.tracksPaletteKey;
+  if (slice.trackPaletteKey) {
+    ret[UrlParam.TRACK_PALETTE_KEY] = slice.trackPaletteKey;
   }
   return ret;
 };
@@ -296,7 +296,7 @@ export const serializeTrackSlice = (slice: Partial<TrackSliceSerializableState>)
 export const selectTrackSliceSerializationDeps = (slice: TrackSlice): TrackSliceSerializableState => ({
   tracks: slice.tracks,
   trackToColorId: slice.trackToColorId,
-  tracksPaletteKey: slice.tracksPaletteKey,
+  trackPaletteKey: slice.trackPaletteKey,
 });
 
 export const loadTrackSliceFromParams = (slice: TrackSlice & DatasetSlice, params: URLSearchParams): void => {
