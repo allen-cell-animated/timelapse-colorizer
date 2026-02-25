@@ -79,7 +79,7 @@ export default function DropdownWithColorPicker(propsInput: DropdownWithColorPic
         id={props.id}
         disabled={props.disabled}
         showSelectedItemTooltip={false}
-        controlWidth="115px"
+        controlWidth="105px"
         {...props.dropdownProps}
       ></SelectionDropdown>
       <FlexRow style={{ position: "relative" }} $gap={6}>
