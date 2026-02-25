@@ -4,48 +4,48 @@ import styled from "styled-components";
 import { Color as ThreeColor } from "three";
 
 import { DEFAULT_COLOR_RAMP_KEY, DISPLAY_COLOR_RAMP_KEYS } from "src/colorizer";
-import ColorRampDropdown from "src/components/Dropdowns/ColorRampDropdown";
+import ColorRampDropdown, { ColorRampSelectionProps } from "src/components/Dropdowns/ColorRampDropdown";
 import WrappedColorPicker from "src/components/Inputs/WrappedColorPicker";
 import { FlexRow, FlexRowAlignCenter } from "src/styles/utils";
 
-import SelectionDropdown from "./SelectionDropdown";
+import SelectionDropdown, { SelectionDropdownProps } from "./SelectionDropdown";
 
 type DropdownWithColorPickerProps = {
   id: string;
   disabled?: boolean;
 
   // Dropdown
-  selected: string;
-  items: { value: string; label: string }[];
-  onValueChange: (mode: string) => void;
-  controlWidth?: string;
+  dropdownProps: SelectionDropdownProps;
 
   // Color picker
   showColorPicker?: boolean;
-  color: ThreeColor;
-  /** Alpha value, in the [0, 1] range. */
-  alpha?: number;
-  onColorChange: (color: ThreeColor, alpha: number) => void;
-  presets?: PresetsItem[];
+  colorPickerProps?: {
+    color: ThreeColor;
+    /** Alpha value, in the [0, 1] range. */
+    alpha?: number;
+    onChange: (color: ThreeColor, alpha: number) => void;
+    presets?: PresetsItem[];
+  };
 
   // Color ramp picker
   showColorRamp?: boolean;
-  selectedRampKey?: string;
-  colorRampsToDisplay?: string[];
-  onRampChange?: (colorRampKey: string, reversed: boolean) => void;
-  isRampReversed?: boolean;
-  mirrorRamp?: boolean;
+  colorRampProps?: Partial<ColorRampSelectionProps>;
 };
 
 const defaultProps: Partial<DropdownWithColorPickerProps> = {
   disabled: false,
-  controlWidth: "105px",
   showColorPicker: true,
   showColorRamp: false,
-  selectedRampKey: DEFAULT_COLOR_RAMP_KEY,
-  colorRampsToDisplay: [...DISPLAY_COLOR_RAMP_KEYS],
-  onRampChange: () => {},
-  isRampReversed: false,
+};
+
+const defaultColorRampProps: ColorRampSelectionProps = {
+  selectedRamp: DEFAULT_COLOR_RAMP_KEY,
+  colorRampsToDisplay: DISPLAY_COLOR_RAMP_KEYS,
+  onChangeRamp: () => {},
+};
+
+const defaultColorPickerProps = {
+  color: new ThreeColor("#ffffff"),
 };
 
 const HorizontalDiv = styled(FlexRowAlignCenter)`
@@ -59,13 +59,15 @@ const HorizontalDiv = styled(FlexRowAlignCenter)`
  */
 export default function DropdownWithColorPicker(propsInput: DropdownWithColorPickerProps): ReactElement {
   const props = { ...defaultProps, ...propsInput };
+  const colorRampProps = { ...defaultColorRampProps, ...props.colorRampProps };
+  const colorPickerProps = { ...defaultColorPickerProps, ...props.colorPickerProps };
 
   const colorPickerRef = useRef<HTMLParagraphElement>(null);
 
-  const showAlpha = props.alpha !== undefined;
-  let colorHexString = props.color.getHexString();
-  if (showAlpha && props.alpha !== undefined) {
-    colorHexString += Math.round(props.alpha * 255)
+  const showAlpha = colorPickerProps.alpha !== undefined;
+  let colorHexString = colorPickerProps.color.getHexString();
+  if (showAlpha && colorPickerProps.alpha !== undefined) {
+    colorHexString += Math.round(colorPickerProps.alpha * 255)
       .toString(16)
       .padStart(2, "0");
   }
@@ -75,12 +77,10 @@ export default function DropdownWithColorPicker(propsInput: DropdownWithColorPic
       <SelectionDropdown
         label={null}
         id={props.id}
-        selected={props.selected.toString()}
-        items={props.items}
-        showSelectedItemTooltip={false}
-        onChange={props.onValueChange}
         disabled={props.disabled}
-        controlWidth={props.controlWidth}
+        showSelectedItemTooltip={false}
+        controlWidth="115px"
+        {...props.dropdownProps}
       ></SelectionDropdown>
       <FlexRow style={{ position: "relative" }} $gap={6}>
         <div
@@ -96,13 +96,9 @@ export default function DropdownWithColorPicker(propsInput: DropdownWithColorPic
           }}
         >
           <ColorRampDropdown
-            selectedRamp={props.selectedRampKey ?? DEFAULT_COLOR_RAMP_KEY}
-            onChangeRamp={props.onRampChange ?? (() => {})}
-            reversed={props.isRampReversed ?? false}
-            colorRampsToDisplay={props.colorRampsToDisplay ?? []}
             id={props.id + "_ramp_picker"}
-            mirror={props.mirrorRamp}
             disabled={props.disabled}
+            {...colorRampProps}
           ></ColorRampDropdown>
         </div>
         <WrappedColorPicker
@@ -117,12 +113,12 @@ export default function DropdownWithColorPicker(propsInput: DropdownWithColorPic
           disabledAlpha={!showAlpha}
           defaultValue={colorHexString}
           value={colorHexString}
-          presets={props.presets}
+          presets={colorPickerProps.presets}
           // onChange returns a different color type, so must convert from hex
           onChange={(color, _cssColor) => {
             const hex = color.toHexString().slice(0, 7); // Remove alpha if present
             const alpha = color.toRgb().a;
-            props.onColorChange(new ThreeColor(hex), alpha);
+            colorPickerProps.onChange?.(new ThreeColor(hex), alpha);
           }}
           disabled={props.disabled}
         />
