@@ -102,10 +102,10 @@ function getTrackColors(trackToColorId: Map<number, number>, palette: ColorRamp)
 export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (set, get) => ({
   tracks: new Map<number, Track>(),
   trackToColorId: new Map<number, number>(),
-  trackColors: new Map<number, Color>(),
-  tracksPaletteRamp: new ColorRamp(DEFAULT_TRACK_PALETTE.colorStops, ColorRampType.CATEGORICAL),
   track: null,
   trackPaletteKey: DEFAULT_TRACK_PALETTE_KEY,
+  tracksPaletteRamp: new ColorRamp(DEFAULT_TRACK_PALETTE.colorStops, ColorRampType.CATEGORICAL),
+  trackColors: new Map<number, Color>(),
   isSelectedLut: new Uint8Array(0),
 
   addTracks: (tracks: Track | Track[]) => {
