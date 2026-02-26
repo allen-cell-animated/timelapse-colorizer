@@ -2,6 +2,7 @@ import type { PresetsItem } from "antd/es/color-picker/interface";
 import React, { type ReactElement, useRef } from "react";
 import styled from "styled-components";
 import { Color as ThreeColor } from "three";
+import { useDebounce } from "usehooks-ts";
 
 import { DEFAULT_COLOR_RAMP_KEY, DISPLAY_COLOR_RAMP_KEYS } from "src/colorizer";
 import ColorRampDropdown, { type ColorRampSelectionProps } from "src/components/Dropdowns/ColorRampDropdown";
@@ -78,6 +79,13 @@ export default function DropdownWithColorPicker(propsInput: DropdownWithColorPic
       .padStart(2, "0");
   }
 
+  // If picker + palette were previously visible, but now only palette is visible,
+  // wait to change the picker's position until after the picker fade-out transition;
+  // otherwise the picker will jump abruptly/overlap with the ramp.
+  const areBothPickersVisible = props.showColorPicker && props.showColorRamp;
+  const wereBothPickersPreviouslyVisible = useDebounce(areBothPickersVisible, 200);
+  const keepPickerRelative = !props.showColorPicker && wereBothPickersPreviouslyVisible;
+
   return (
     <HorizontalDiv ref={colorPickerRef}>
       <SelectionDropdown
@@ -94,7 +102,7 @@ export default function DropdownWithColorPicker(propsInput: DropdownWithColorPic
             // Normally, both ramp + color picker occupy the same position next
             // to the dropdown. If *both* are shown, place them in relative
             // position so they don't overlap.
-            position: props.showColorPicker && props.showColorRamp ? "relative" : "absolute",
+            position: areBothPickersVisible || keepPickerRelative ? "relative" : "absolute",
             visibility: props.showColorRamp ? "visible" : "hidden",
             opacity: props.showColorRamp ? "1" : "0",
             // Copied from Ant transition styles
