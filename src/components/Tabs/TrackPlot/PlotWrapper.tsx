@@ -78,7 +78,7 @@ export default function PlotWrapper(inputProps: PlotWrapperProps): ReactElement 
     } else {
       plot?.removePlot();
     }
-  }, [props.tracks, props.featureKey, props.viewMode]);
+  }, [props.tracks, props.featureKey, props.viewMode, props.trackColors]);
 
   const updatePlotSize = (): void => {
     if (!plotDivRef.current) {

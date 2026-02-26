@@ -327,7 +327,7 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
           label={props.label}
           selected={props.useCategoricalPalettes ? selectedPaletteItem : selectedRampItem}
           onChange={props.useCategoricalPalettes ? onChangePalette : onChangeRamp}
-          controlWidth={props.showReverseButton ? `${DROPDOWN_CONTROL_WIDTH_PX}px` : `${28 + 24}px`}
+          controlWidth={`${DROPDOWN_CONTROL_WIDTH_PX}px`}
           menuWidth={`${DROPDOWN_MENU_WIDTH_PX}px`}
           isSearchable={false}
           controlTooltipPlacement="top"
