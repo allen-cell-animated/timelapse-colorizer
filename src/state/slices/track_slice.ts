@@ -1,10 +1,10 @@
 import type { Color } from "three";
 import type { StateCreator } from "zustand";
 
-import { ColorRamp, MAX_FEATURE_CATEGORIES, type Track } from "src/colorizer";
+import { type ColorRamp, MAX_FEATURE_CATEGORIES, type Track } from "src/colorizer";
 import { arrayElementsAreEqual } from "src/colorizer/utils/data_utils";
 import { decodeTracks, encodeTracks, UrlParam } from "src/colorizer/utils/url_utils";
-import { ConfigSlice } from "src/state/slices/config_slice";
+import type { ConfigSlice } from "src/state/slices/config_slice";
 import type { DatasetSlice } from "src/state/slices/dataset_slice";
 import type { SerializedStoreData, SubscribableStore } from "src/state/types";
 import { addDerivedStateSubscriber } from "src/state/utils/store_utils";
