@@ -43,8 +43,8 @@ import type { SerializedStoreData, SubscribableStore } from "src/state/types";
 import { setValueIfDefined } from "src/state/utils/data_validation";
 import { addDerivedStateSubscriber } from "src/state/utils/store_utils";
 
-const DEFAULT_TRACK_PALETTE_KEY = "adobe";
-const DEFAULT_TRACK_PALETTE = KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_TRACK_PALETTE_KEY)!;
+const DEFAULT_OUTLINE_PALETTE_KEY = "adobe";
+const DEFAULT_OUTLINE_PALETTE = KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_OUTLINE_PALETTE_KEY)!;
 
 const OUT_OF_RANGE_DRAW_SETTINGS_DEFAULT: DrawSettings = {
   color: new Color(OUT_OF_RANGE_COLOR_DEFAULT),
@@ -91,9 +91,24 @@ export type ConfigSliceState = {
   // Object settings
   outOfRangeDrawSettings: DrawSettings;
   outlierDrawSettings: DrawSettings;
-  outlineColor: Color;
+  /**
+   * Determines how outlines of selected tracks are colored, either as a solid
+   * color (`outlineColor`) or using a palette ramp (`outlinePaletteRamp` and
+   * `outlinePaletteKey`).
+   */
   outlineColorMode: SelectionOutlineColorMode;
+  outlineColor: Color;
+  /**
+   * Key of the outline palette used to color the outlines of selected tracks;
+   * see `outlinePaletteRamp`.
+   */
   outlinePaletteKey: string;
+  /**
+   * The color ramp derived from the outline palette key. Used to color the
+   * outlines of selected tracks when `outlineColorMode` is
+   * `SelectionOutlineColorMode.USE_PALETTE` or
+   * `SelectionOutlineColorMode.USE_AUTO_COLOR`.
+   */
   outlinePaletteRamp: ColorRamp;
   edgeColor: Color;
   edgeColorAlpha: number;
@@ -195,8 +210,8 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   outlierDrawSettings: OUTLIER_DRAW_SETTINGS_DEFAULT,
   outlineColor: new Color(OUTLINE_COLOR_DEFAULT),
   outlineColorMode: SelectionOutlineColorMode.USE_AUTO_COLOR,
-  outlinePaletteKey: DEFAULT_TRACK_PALETTE_KEY,
-  outlinePaletteRamp: new ColorRamp(DEFAULT_TRACK_PALETTE.colorStops, ColorRampType.CATEGORICAL),
+  outlinePaletteKey: DEFAULT_OUTLINE_PALETTE_KEY,
+  outlinePaletteRamp: new ColorRamp(DEFAULT_OUTLINE_PALETTE.colorStops, ColorRampType.CATEGORICAL),
   edgeColor: new Color(EDGE_COLOR_DEFAULT),
   edgeColorAlpha: EDGE_COLOR_ALPHA_DEFAULT,
   edgeMode: DrawMode.USE_COLOR,

@@ -256,12 +256,12 @@ export const addTrackDerivedStateSubscribers = (
   addDerivedStateSubscriber(
     store,
     (state) => ({
-      tracksPaletteRamp: state.outlinePaletteRamp,
+      outlinePaletteRamp: state.outlinePaletteRamp,
       trackToColorId: state.trackToColorId,
     }),
-    ({ tracksPaletteRamp, trackToColorId }) => {
+    ({ outlinePaletteRamp, trackToColorId }) => {
       return {
-        trackColors: getTrackColors(trackToColorId, tracksPaletteRamp),
+        trackColors: getTrackColors(trackToColorId, outlinePaletteRamp),
       };
     }
   );
