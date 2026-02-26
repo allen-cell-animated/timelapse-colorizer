@@ -3,13 +3,15 @@ import { clamp } from "three/src/math/MathUtils";
 import type { StateCreator } from "zustand";
 
 import {
-  type ColorRamp,
+  ColorRamp,
+  ColorRampType,
   DEFAULT_DIVERGING_COLOR_RAMP_KEY,
   DrawMode,
   type DrawSettings,
   EDGE_COLOR_ALPHA_DEFAULT,
   EDGE_COLOR_DEFAULT,
   isTabType,
+  KNOWN_CATEGORICAL_PALETTES,
   KNOWN_COLOR_RAMPS,
   OUT_OF_RANGE_COLOR_DEFAULT,
   OUTLIER_COLOR_DEFAULT,
@@ -41,6 +43,9 @@ import type { SerializedStoreData, SubscribableStore } from "src/state/types";
 import { setValueIfDefined } from "src/state/utils/data_validation";
 import { addDerivedStateSubscriber } from "src/state/utils/store_utils";
 
+const DEFAULT_TRACK_PALETTE_KEY = "adobe";
+const DEFAULT_TRACK_PALETTE = KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_TRACK_PALETTE_KEY)!;
+
 const OUT_OF_RANGE_DRAW_SETTINGS_DEFAULT: DrawSettings = {
   color: new Color(OUT_OF_RANGE_COLOR_DEFAULT),
   mode: DrawMode.USE_COLOR,
@@ -52,7 +57,7 @@ const OUTLIER_DRAW_SETTINGS_DEFAULT: DrawSettings = {
 };
 
 export type ConfigSliceState = {
-  // Track settings
+  // Track path settings
   showTrackPath: boolean;
   trackPathColor: Color;
   trackPathColorRampKey: string;
@@ -88,6 +93,8 @@ export type ConfigSliceState = {
   outlierDrawSettings: DrawSettings;
   outlineColor: Color;
   outlineColorMode: SelectionOutlineColorMode;
+  trackPaletteKey: string;
+  tracksPaletteRamp: ColorRamp;
   edgeColor: Color;
   edgeColorAlpha: number;
   edgeMode: DrawMode;
@@ -116,6 +123,7 @@ export type ConfigSliceSerializableState = Pick<
   | "outlierDrawSettings"
   | "outlineColor"
   | "outlineColorMode"
+  | "trackPaletteKey"
   | "edgeColor"
   | "edgeColorAlpha"
   | "edgeMode"
@@ -143,6 +151,7 @@ export type ConfigSliceActions = {
   setOutOfRangeDrawSettings: (outOfRangeDrawSettings: DrawSettings) => void;
   setOutlierDrawSettings: (outlierDrawSettings: DrawSettings) => void;
   setOutlineColor: (outlineColor: Color) => void;
+  setTrackPaletteKey: (trackPaletteKey: string) => void;
   setEdgeColor: (edgeColor: Color, alpha: number) => void;
   setEdgeMode: (edgeMode: DrawMode) => void;
   setOpenTab: (openTab: TabType) => void;
@@ -186,6 +195,8 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   outlierDrawSettings: OUTLIER_DRAW_SETTINGS_DEFAULT,
   outlineColor: new Color(OUTLINE_COLOR_DEFAULT),
   outlineColorMode: SelectionOutlineColorMode.USE_AUTO_COLOR,
+  trackPaletteKey: DEFAULT_TRACK_PALETTE_KEY,
+  tracksPaletteRamp: new ColorRamp(DEFAULT_TRACK_PALETTE.colorStops, ColorRampType.CATEGORICAL),
   edgeColor: new Color(EDGE_COLOR_DEFAULT),
   edgeColorAlpha: EDGE_COLOR_ALPHA_DEFAULT,
   edgeMode: DrawMode.USE_COLOR,
@@ -235,6 +246,23 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   setEdgeMode: (edgeMode) => set({ edgeMode }),
   setOpenTab: (openTab) => set({ openTab }),
   setInterpolate3d: (interpolate3d) => set({ interpolate3d }),
+  setTrackPaletteKey: (key) =>
+    set((state) => {
+      if (state.trackPaletteKey === key) {
+        return {};
+      }
+      const palette = KNOWN_CATEGORICAL_PALETTES.get(key);
+      if (!palette) {
+        return {};
+      }
+      // Clear original color ramp
+      state.tracksPaletteRamp.dispose();
+      const newTracksPaletteRamp = new ColorRamp(palette.colorStops, ColorRampType.CATEGORICAL);
+      return {
+        tracksPaletteRamp: newTracksPaletteRamp,
+        trackPaletteKey: key,
+      };
+    }),
 });
 
 export const serializeConfigSlice = (slice: Partial<ConfigSliceSerializableState>): SerializedStoreData => {
@@ -263,6 +291,7 @@ export const serializeConfigSlice = (slice: Partial<ConfigSliceSerializableState
     [UrlParam.OUTLIER_MODE]: slice.outlierDrawSettings?.mode.toString(),
     [UrlParam.OUTLINE_COLOR]: encodeMaybeColor(slice.outlineColor),
     [UrlParam.OUTLINE_COLOR_MODE]: slice.outlineColorMode?.toString(),
+    [UrlParam.TRACK_PALETTE_KEY]: slice.trackPaletteKey?.toString(),
     [UrlParam.EDGE_MODE]: slice.edgeMode?.toString(),
     [UrlParam.EDGE_COLOR]: encodeMaybeColorWithAlpha(slice.edgeColor, slice.edgeColorAlpha),
     [UrlParam.OPEN_TAB]: slice.openTab,
@@ -290,6 +319,7 @@ export const selectConfigSliceSerializationDeps = (slice: ConfigSlice): ConfigSl
   outlierDrawSettings: slice.outlierDrawSettings,
   outlineColor: slice.outlineColor,
   outlineColorMode: slice.outlineColorMode,
+  trackPaletteKey: slice.trackPaletteKey,
   edgeMode: slice.edgeMode,
   edgeColor: slice.edgeColor,
   edgeColorAlpha: slice.edgeColorAlpha,
@@ -331,6 +361,11 @@ export const loadConfigSliceFromParams = (slice: ConfigSlice, params: URLSearchP
   if (outlineColorModeParam !== undefined) {
     slice.setOutlineColorMode(outlineColorModeParam);
   }
+  const trackPaletteKey = params.get(UrlParam.TRACK_PALETTE_KEY);
+  if (trackPaletteKey) {
+    slice.setTrackPaletteKey(trackPaletteKey);
+  }
+
   const trackPathColorParam = decodeHexColor(params.get(UrlParam.PATH_COLOR));
   if (trackPathColorParam) {
     slice.setTrackPathColor(new Color(trackPathColorParam));

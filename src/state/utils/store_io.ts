@@ -148,7 +148,7 @@ export const loadViewerStateFromParams = (store: Store<ViewerStore>, params: URL
   // 2. Dependent on dataset object:
   loadBackdropSliceFromParams(store.getState(), params);
   loadDatasetSliceFromParams(store.getState(), params);
-  loadTrackSliceFromParams(store.getState(), params);
+  loadTrackSliceFromParams(store.getState(), params); // Also depends on config slice
   loadScatterPlotSliceFromParams(store.getState(), params);
   loadThresholdSliceFromParams(store.getState(), params);
   loadVectorSliceFromParams(store.getState(), params);

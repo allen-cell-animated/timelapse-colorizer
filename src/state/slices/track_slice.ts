@@ -1,15 +1,13 @@
 import type { Color } from "three";
 import type { StateCreator } from "zustand";
 
-import { ColorRamp, ColorRampType, KNOWN_CATEGORICAL_PALETTES, type Track } from "src/colorizer";
+import { ColorRamp, MAX_FEATURE_CATEGORIES, type Track } from "src/colorizer";
 import { arrayElementsAreEqual } from "src/colorizer/utils/data_utils";
 import { decodeTracks, encodeTracks, UrlParam } from "src/colorizer/utils/url_utils";
+import { ConfigSlice } from "src/state/slices/config_slice";
 import type { DatasetSlice } from "src/state/slices/dataset_slice";
 import type { SerializedStoreData, SubscribableStore } from "src/state/types";
 import { addDerivedStateSubscriber } from "src/state/utils/store_utils";
-
-const DEFAULT_TRACK_PALETTE_KEY = "adobe";
-const DEFAULT_TRACK_PALETTE = KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_TRACK_PALETTE_KEY)!;
 
 const LUT_UNSELECTED = 0;
 const LUT_OFFSET = 1;
@@ -17,17 +15,11 @@ const LUT_OFFSET = 1;
 export type TrackSliceState = {
   tracks: Map<number, Track>;
   trackToColorId: Map<number, number>;
-  trackPaletteKey: string;
 
   /** Derived values */
   /** @deprecated */
   track: Track | null;
   trackColors: Map<number, Color>;
-  /**
-   * Current color palette for the track path. Currently static; can be made
-   * serializable + editable in the future.
-   */
-  tracksPaletteRamp: ColorRamp;
   /**
    * LUT that maps from an object ID to whether it is selected (>=1) or not (0).
    * Non-zero values represent the index of the track's color in the track path
@@ -37,7 +29,7 @@ export type TrackSliceState = {
   isSelectedLut: Uint8Array;
 };
 
-export type TrackSliceSerializableState = Pick<TrackSliceState, "tracks" | "trackToColorId" | "trackPaletteKey">;
+export type TrackSliceSerializableState = Pick<TrackSliceState, "tracks" | "trackToColorId">;
 
 export type TrackSliceActions = {
   /**
@@ -62,7 +54,6 @@ export type TrackSliceActions = {
    * size as the current one to reset it.
    */
   clearTracks: (newLut?: Uint8Array) => void;
-  setTrackPaletteKey: (key: string) => void;
 };
 
 export type TrackSlice = TrackSliceState & TrackSliceActions;
@@ -85,7 +76,7 @@ function getNextColorId(tracks: Map<number, Track>, trackToColorId: Map<number, 
   const trackValues = Array.from(tracks.values());
   const lastTrack = trackValues[trackValues.length - 1];
   const lastColorId = lastTrack ? trackToColorId.get(lastTrack.trackId) ?? -1 : -1;
-  return (lastColorId + 1) % DEFAULT_TRACK_PALETTE.colorStops.length;
+  return (lastColorId + 1) % MAX_FEATURE_CATEGORIES;
 }
 
 /** Marks a track as selected/deselected in the provided LUT. */
@@ -99,12 +90,10 @@ function getTrackColors(trackToColorId: Map<number, number>, palette: ColorRamp)
   return new Map(Array.from(trackToColorId.entries()).map(([key, value]) => [key, palette.colorStops[value]]));
 }
 
-export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (set, get) => ({
+export const createTrackSlice: StateCreator<TrackSlice & ConfigSlice, [], [], TrackSlice> = (set, get) => ({
   tracks: new Map<number, Track>(),
   trackToColorId: new Map<number, number>(),
   track: null,
-  trackPaletteKey: DEFAULT_TRACK_PALETTE_KEY,
-  tracksPaletteRamp: new ColorRamp(DEFAULT_TRACK_PALETTE.colorStops, ColorRampType.CATEGORICAL),
   trackColors: new Map<number, Color>(),
   isSelectedLut: new Uint8Array(0),
 
@@ -221,28 +210,11 @@ export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (s
       trackColors: getTrackColors(newTrackToColorId, state.tracksPaletteRamp),
     }));
   },
-  setTrackPaletteKey: (key: string) => {
-    set((state) => {
-      if (state.trackPaletteKey === key) {
-        return {};
-      }
-      const palette = KNOWN_CATEGORICAL_PALETTES.get(key);
-      if (!palette) {
-        return {};
-      }
-      // Clear original color ramp
-      state.tracksPaletteRamp.dispose();
-      const newTracksPaletteRamp = new ColorRamp(palette.colorStops, ColorRampType.CATEGORICAL);
-      return {
-        tracksPaletteRamp: newTracksPaletteRamp,
-        trackPaletteKey: key,
-        trackColors: getTrackColors(state.trackToColorId, newTracksPaletteRamp),
-      };
-    });
-  },
 });
 
-export const addTrackDerivedStateSubscribers = (store: SubscribableStore<TrackSlice & DatasetSlice>): void => {
+export const addTrackDerivedStateSubscribers = (
+  store: SubscribableStore<TrackSlice & DatasetSlice & ConfigSlice>
+): void => {
   // When the dataset changes, clear tracks if the dataset has a different
   // number of objects or if the selected tracks are not present in the new
   // dataset.
@@ -279,6 +251,20 @@ export const addTrackDerivedStateSubscribers = (store: SubscribableStore<TrackSl
       return {};
     }
   );
+
+  // Update track colors when the track palette ramp (in config slice) changes.
+  addDerivedStateSubscriber(
+    store,
+    (state) => ({
+      tracksPaletteRamp: state.tracksPaletteRamp,
+      trackToColorId: state.trackToColorId,
+    }),
+    ({ tracksPaletteRamp, trackToColorId }) => {
+      return {
+        trackColors: getTrackColors(trackToColorId, tracksPaletteRamp),
+      };
+    }
+  );
 };
 
 export const serializeTrackSlice = (slice: Partial<TrackSliceSerializableState>): SerializedStoreData => {
@@ -287,16 +273,12 @@ export const serializeTrackSlice = (slice: Partial<TrackSliceSerializableState>)
     const trackIds = Array.from(slice.tracks.keys());
     ret[UrlParam.TRACK] = encodeTracks(trackIds, slice.trackToColorId);
   }
-  if (slice.trackPaletteKey) {
-    ret[UrlParam.TRACK_PALETTE_KEY] = slice.trackPaletteKey;
-  }
   return ret;
 };
 
 export const selectTrackSliceSerializationDeps = (slice: TrackSlice): TrackSliceSerializableState => ({
   tracks: slice.tracks,
   trackToColorId: slice.trackToColorId,
-  trackPaletteKey: slice.trackPaletteKey,
 });
 
 export const loadTrackSliceFromParams = (slice: TrackSlice & DatasetSlice, params: URLSearchParams): void => {
@@ -319,9 +301,5 @@ export const loadTrackSliceFromParams = (slice: TrackSlice & DatasetSlice, param
       }
     }
     slice.setTracks(tracks, colors);
-  }
-  const trackPaletteKey = params.get(UrlParam.TRACK_PALETTE_KEY);
-  if (trackPaletteKey) {
-    slice.setTrackPaletteKey(trackPaletteKey);
   }
 };
