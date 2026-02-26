@@ -117,14 +117,14 @@ export const createTrackSlice: StateCreator<TrackSlice & ConfigSlice, [], [], Tr
         newTracks.set(track.trackId, track);
         applyTrackToSelectionLut(newSelectedLut, track, nextColorId + LUT_OFFSET);
         newTrackToColorId.set(track.trackId, nextColorId);
-        nextColorId = (nextColorId + 1) % state.tracksPaletteRamp.colorStops.length;
+        nextColorId = (nextColorId + 1) % state.outlinePaletteRamp.colorStops.length;
       }
       return {
         tracks: newTracks,
         track: getDefaultTrack(newTracks),
         isSelectedLut: newSelectedLut,
         trackToColorId: newTrackToColorId,
-        trackColors: getTrackColors(newTrackToColorId, state.tracksPaletteRamp),
+        trackColors: getTrackColors(newTrackToColorId, state.outlinePaletteRamp),
       };
     });
   },
@@ -152,7 +152,7 @@ export const createTrackSlice: StateCreator<TrackSlice & ConfigSlice, [], [], Tr
         track: getDefaultTrack(newTracks),
         isSelectedLut: newSelectedLut,
         trackToColorId: newTrackToColorId,
-        trackColors: getTrackColors(newTrackToColorId, state.tracksPaletteRamp),
+        trackColors: getTrackColors(newTrackToColorId, state.outlinePaletteRamp),
       };
     });
   },
@@ -189,7 +189,7 @@ export const createTrackSlice: StateCreator<TrackSlice & ConfigSlice, [], [], Tr
     const newTracks = new Map<number, Track>();
     const newSelectedLut = new Uint8Array(get().isSelectedLut.length);
     const newTrackToColorId = new Map<number, number>();
-    const numStops = get().tracksPaletteRamp.colorStops.length;
+    const numStops = get().outlinePaletteRamp.colorStops.length;
     for (let i = 0; i < tracks.length; i++) {
       const track = tracks[i];
       newTracks.set(track.trackId, track);
@@ -207,7 +207,7 @@ export const createTrackSlice: StateCreator<TrackSlice & ConfigSlice, [], [], Tr
       track: getDefaultTrack(newTracks),
       isSelectedLut: newSelectedLut,
       trackToColorId: newTrackToColorId,
-      trackColors: getTrackColors(newTrackToColorId, state.tracksPaletteRamp),
+      trackColors: getTrackColors(newTrackToColorId, state.outlinePaletteRamp),
     }));
   },
 });
@@ -256,7 +256,7 @@ export const addTrackDerivedStateSubscribers = (
   addDerivedStateSubscriber(
     store,
     (state) => ({
-      tracksPaletteRamp: state.tracksPaletteRamp,
+      tracksPaletteRamp: state.outlinePaletteRamp,
       trackToColorId: state.trackToColorId,
     }),
     ({ tracksPaletteRamp, trackToColorId }) => {

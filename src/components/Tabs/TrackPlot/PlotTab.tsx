@@ -38,8 +38,8 @@ export default function PlotTab(props: PlotTabProps): ReactElement {
   const featureKey = useViewerStateStore((state) => state.featureKey);
   const pendingFrame = useViewerStateStore((state) => state.pendingFrame);
   const tracks = useViewerStateStore((state) => state.tracks);
-  const trackPaletteKey = useViewerStateStore((state) => state.trackPaletteKey);
-  const setTrackPaletteKey = useViewerStateStore((state) => state.setTrackPaletteKey);
+  const outlinePaletteKey = useViewerStateStore((state) => state.outlinePaletteKey);
+  const setOutlinePaletteKey = useViewerStateStore((state) => state.setOutlinePaletteKey);
   const setFrame = useViewerStateStore((state) => state.setFrame);
   const addTracks = useViewerStateStore((state) => state.addTracks);
   const trackToColorMap = useViewerStateStore((state) => state.trackColors);
@@ -94,9 +94,9 @@ export default function PlotTab(props: PlotTabProps): ReactElement {
         <ColorRampDropdown
           label={"Palette"}
           useCategoricalPalettes={true}
-          selectedPaletteKey={trackPaletteKey}
-          selectedPalette={KNOWN_CATEGORICAL_PALETTES.get(trackPaletteKey)?.colors}
-          onChangePalette={(_colors, key) => setTrackPaletteKey(key)}
+          selectedPaletteKey={outlinePaletteKey}
+          selectedPalette={KNOWN_CATEGORICAL_PALETTES.get(outlinePaletteKey)?.colors}
+          onChangePalette={(_colors, key) => setOutlinePaletteKey(key)}
           numCategories={12}
           showReverseButton={false}
         ></ColorRampDropdown>

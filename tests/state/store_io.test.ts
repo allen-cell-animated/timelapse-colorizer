@@ -88,7 +88,7 @@ const EXAMPLE_STORE: ViewerStoreSerializableState = {
   outlierDrawSettings: { mode: DrawMode.USE_COLOR, color: new Color("#00ff00") } as DrawSettings,
   outlineColor: new Color("#0000ff"),
   outlineColorMode: SelectionOutlineColorMode.USE_AUTO_COLOR,
-  trackPaletteKey: CATEGORICAL_PALETTE_KEY,
+  outlinePaletteKey: CATEGORICAL_PALETTE_KEY,
   edgeColor: new Color("#8090a0"),
   edgeColorAlpha: 176 / 255, // 0xb0
   edgeMode: DrawMode.USE_COLOR,
@@ -158,7 +158,7 @@ const EXAMPLE_STORE_EXPECTED_PARAMS: ExpectedParamType = {
   "outlier-mode": DrawMode.USE_COLOR.toString(),
   "outline-color": "0000ff",
   "outline-mode": SelectionOutlineColorMode.USE_AUTO_COLOR.toString(),
-  "track-palette-key": CATEGORICAL_PALETTE_KEY,
+  "outline-palette-key": CATEGORICAL_PALETTE_KEY,
   "edge-color": "8090a0b0",
   edge: DrawMode.USE_COLOR.toString(),
   interpolate: "1",

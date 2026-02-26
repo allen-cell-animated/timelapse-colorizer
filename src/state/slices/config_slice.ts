@@ -93,8 +93,8 @@ export type ConfigSliceState = {
   outlierDrawSettings: DrawSettings;
   outlineColor: Color;
   outlineColorMode: SelectionOutlineColorMode;
-  trackPaletteKey: string;
-  tracksPaletteRamp: ColorRamp;
+  outlinePaletteKey: string;
+  outlinePaletteRamp: ColorRamp;
   edgeColor: Color;
   edgeColorAlpha: number;
   edgeMode: DrawMode;
@@ -123,7 +123,7 @@ export type ConfigSliceSerializableState = Pick<
   | "outlierDrawSettings"
   | "outlineColor"
   | "outlineColorMode"
-  | "trackPaletteKey"
+  | "outlinePaletteKey"
   | "edgeColor"
   | "edgeColorAlpha"
   | "edgeMode"
@@ -151,7 +151,7 @@ export type ConfigSliceActions = {
   setOutOfRangeDrawSettings: (outOfRangeDrawSettings: DrawSettings) => void;
   setOutlierDrawSettings: (outlierDrawSettings: DrawSettings) => void;
   setOutlineColor: (outlineColor: Color) => void;
-  setTrackPaletteKey: (trackPaletteKey: string) => void;
+  setOutlinePaletteKey: (outlinePaletteKey: string) => void;
   setEdgeColor: (edgeColor: Color, alpha: number) => void;
   setEdgeMode: (edgeMode: DrawMode) => void;
   setOpenTab: (openTab: TabType) => void;
@@ -195,8 +195,8 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   outlierDrawSettings: OUTLIER_DRAW_SETTINGS_DEFAULT,
   outlineColor: new Color(OUTLINE_COLOR_DEFAULT),
   outlineColorMode: SelectionOutlineColorMode.USE_AUTO_COLOR,
-  trackPaletteKey: DEFAULT_TRACK_PALETTE_KEY,
-  tracksPaletteRamp: new ColorRamp(DEFAULT_TRACK_PALETTE.colorStops, ColorRampType.CATEGORICAL),
+  outlinePaletteKey: DEFAULT_TRACK_PALETTE_KEY,
+  outlinePaletteRamp: new ColorRamp(DEFAULT_TRACK_PALETTE.colorStops, ColorRampType.CATEGORICAL),
   edgeColor: new Color(EDGE_COLOR_DEFAULT),
   edgeColorAlpha: EDGE_COLOR_ALPHA_DEFAULT,
   edgeMode: DrawMode.USE_COLOR,
@@ -246,9 +246,9 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   setEdgeMode: (edgeMode) => set({ edgeMode }),
   setOpenTab: (openTab) => set({ openTab }),
   setInterpolate3d: (interpolate3d) => set({ interpolate3d }),
-  setTrackPaletteKey: (key) =>
+  setOutlinePaletteKey: (key) =>
     set((state) => {
-      if (state.trackPaletteKey === key) {
+      if (state.outlinePaletteKey === key) {
         return {};
       }
       const palette = KNOWN_CATEGORICAL_PALETTES.get(key);
@@ -256,11 +256,11 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
         return {};
       }
       // Clear original color ramp
-      state.tracksPaletteRamp.dispose();
+      state.outlinePaletteRamp.dispose();
       const newTracksPaletteRamp = new ColorRamp(palette.colorStops, ColorRampType.CATEGORICAL);
       return {
-        tracksPaletteRamp: newTracksPaletteRamp,
-        trackPaletteKey: key,
+        outlinePaletteRamp: newTracksPaletteRamp,
+        outlinePaletteKey: key,
       };
     }),
 });
@@ -291,7 +291,7 @@ export const serializeConfigSlice = (slice: Partial<ConfigSliceSerializableState
     [UrlParam.OUTLIER_MODE]: slice.outlierDrawSettings?.mode.toString(),
     [UrlParam.OUTLINE_COLOR]: encodeMaybeColor(slice.outlineColor),
     [UrlParam.OUTLINE_COLOR_MODE]: slice.outlineColorMode?.toString(),
-    [UrlParam.TRACK_PALETTE_KEY]: slice.trackPaletteKey?.toString(),
+    [UrlParam.OUTLINE_PALETTE_KEY]: slice.outlinePaletteKey?.toString(),
     [UrlParam.EDGE_MODE]: slice.edgeMode?.toString(),
     [UrlParam.EDGE_COLOR]: encodeMaybeColorWithAlpha(slice.edgeColor, slice.edgeColorAlpha),
     [UrlParam.OPEN_TAB]: slice.openTab,
@@ -319,7 +319,7 @@ export const selectConfigSliceSerializationDeps = (slice: ConfigSlice): ConfigSl
   outlierDrawSettings: slice.outlierDrawSettings,
   outlineColor: slice.outlineColor,
   outlineColorMode: slice.outlineColorMode,
-  trackPaletteKey: slice.trackPaletteKey,
+  outlinePaletteKey: slice.outlinePaletteKey,
   edgeMode: slice.edgeMode,
   edgeColor: slice.edgeColor,
   edgeColorAlpha: slice.edgeColorAlpha,
@@ -361,9 +361,9 @@ export const loadConfigSliceFromParams = (slice: ConfigSlice, params: URLSearchP
   if (outlineColorModeParam !== undefined) {
     slice.setOutlineColorMode(outlineColorModeParam);
   }
-  const trackPaletteKey = params.get(UrlParam.TRACK_PALETTE_KEY);
+  const trackPaletteKey = params.get(UrlParam.OUTLINE_PALETTE_KEY);
   if (trackPaletteKey) {
-    slice.setTrackPaletteKey(trackPaletteKey);
+    slice.setOutlinePaletteKey(trackPaletteKey);
   }
 
   const trackPathColorParam = decodeHexColor(params.get(UrlParam.PATH_COLOR));
