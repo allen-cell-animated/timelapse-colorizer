@@ -31,6 +31,7 @@ import { getRelativeToAbsoluteChannelIndexMap, getVolumeSources } from "src/colo
 import { bucketVectorDataByTime, getGlobalIdFromSegId, hasPropertyChanged } from "src/colorizer/utils/data_utils";
 import { packDataTexture } from "src/colorizer/utils/texture_utils";
 import TrackPath3D from "src/colorizer/viewport/tracks/TrackPath3D";
+import { shouldUsePerTrackPathColors } from "src/colorizer/viewport/utils";
 
 import type { IInnerRenderCanvas } from "./IInnerRenderCanvas";
 import { getPixelRatio } from "./overlays";
@@ -196,10 +197,12 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
           featureValueToColor: ramp.texture,
           useRepeatingColor: ramp.type === ColorRampType.CATEGORICAL,
           inRangeIds: packDataTexture(Array.from(this.params.inRangeLUT), FeatureDataType.U8),
-          outlierData: packDataTexture(Array.from(dataset.outliers ?? []), FeatureDataType.U8),
+          outlierData: packDataTexture(Array.from(dataset.outliers ?? [0]), FeatureDataType.U8),
           featureMin: range[0],
           featureMax: range[1],
           outlineColor: this.params.outlineColor.clone().convertLinearToSRGB(),
+          outlinePalette: this.params.outlinePaletteRamp.texture,
+          useOutlinePalette: shouldUsePerTrackPathColors(this.params),
           outlineAlpha: 1,
           outlierColor: this.params.outlierDrawSettings.color.clone().convertLinearToSRGB(),
           outOfRangeColor: this.params.outOfRangeDrawSettings.color.clone().convertLinearToSRGB(),
@@ -225,6 +228,10 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
         "outOfRangeDrawSettings",
         "outlierDrawSettings",
         "outlineColor",
+        "outlineColorMode",
+        "outlinePaletteRamp",
+        "tracks",
+        "trackColors",
       ])
     ) {
       if (this.volume) {
@@ -237,6 +244,16 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
             this.view3d.setChannelColorizeFeature(this.volume, i, null);
           }
         }
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private handleTracksUpdate(prevParams: RenderCanvasStateParams | null, params: RenderCanvasStateParams): boolean {
+    if (hasPropertyChanged(params, prevParams, ["isSelectedLut"])) {
+      if (this.volume) {
+        this.view3d.setSelectedIDs(params.isSelectedLut);
         return true;
       }
     }
@@ -476,13 +493,15 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     const didChannelUpdate = this.handleChannelUpdate(prevParams, params);
     const didVectorUpdate = this.handleVectorUpdate(prevParams, params);
     const didSettingsUpdate = this.handleSettingsUpdate(prevParams, params);
+    const didTracksUpdate = this.handleTracksUpdate(prevParams, params);
     const needsRender =
       didColorRampUpdate ||
       didDatasetUpdate ||
       didLineUpdate ||
       didChannelUpdate ||
       didVectorUpdate ||
-      didSettingsUpdate;
+      didSettingsUpdate ||
+      didTracksUpdate;
 
     if (needsRender) {
       this.render({ synchronous: false });
@@ -512,6 +531,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
       if (channelIndex === segChannel) {
         this.view3d.setVolumeChannelEnabled(currentVol, channelIndex, true);
         this.configureColorizeFeature(currentVol, channelIndex);
+        this.params && this.view3d.setSelectedIDs(this.params.isSelectedLut);
       } else {
         this.view3d.setVolumeChannelEnabled(currentVol, channelIndex, false);
       }
