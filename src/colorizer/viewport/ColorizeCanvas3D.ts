@@ -500,7 +500,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
         prevTracks,
         newTracks,
         this.trackPaths,
-        TrackPath3D
+        () => new TrackPath3D()
       );
       this.trackPaths = newTrackPaths;
 

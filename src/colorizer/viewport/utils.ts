@@ -75,6 +75,10 @@ export function getTrackPathColor(track: Track | null, params: RenderCanvasState
 /**
  * Reassigns TrackPath2D/3D objects based on changes to the set of active
  * tracks, reusing objects where possible.
+ * @param prevTracks The previous set of active tracks.
+ * @param newTracks The new set of active tracks.
+ * @param prevTrackPathMap The previous map of track IDs to TrackPath2D/3D objects.
+ * @param makeNewTrackPath Function that creates a new TrackPath2D/3D object.
  * @returns A tuple containing:
  *  - The updated map of track IDs to TrackPath2D/3D objects.
  *  - An array of added TrackPath2D/3D objects that need to be initialized.
@@ -84,7 +88,7 @@ export function reassignTrackPaths<T extends TrackPath2D | TrackPath3D>(
   prevTracks: Set<Track>,
   newTracks: Set<Track>,
   prevTrackPathMap: Map<number, T>,
-  trackPathClass: new () => T
+  makeNewTrackPath: () => T
 ): [Map<number, T>, T[], T[]] {
   const newTrackPathMap: Map<number, T> = new Map(prevTrackPathMap);
 
@@ -111,7 +115,7 @@ export function reassignTrackPaths<T extends TrackPath2D | TrackPath3D>(
   // Add new TrackPath2D objects, reusing unused ones where possible
   const addedTrackPaths: T[] = [];
   for (const track of addedTracks) {
-    const trackPath = unusedTrackPaths.pop() ?? new trackPathClass();
+    const trackPath = unusedTrackPaths.pop() ?? makeNewTrackPath();
     addedTrackPaths.push(trackPath);
     newTrackPathMap.set(track.trackId, trackPath);
   }

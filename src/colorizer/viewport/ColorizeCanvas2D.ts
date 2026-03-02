@@ -507,7 +507,7 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
         prevTracks,
         newTracks,
         this.trackPaths,
-        TrackPath2D
+        () => new TrackPath2D()
       );
       this.trackPaths = newTrackPaths;
       // Remove + dispose of unused tracks
