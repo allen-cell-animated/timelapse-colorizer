@@ -2,8 +2,8 @@ import { type Color, Vector2 } from "three";
 
 import type Track from "src/colorizer/Track";
 import { SelectionOutlineColorMode } from "src/colorizer/types";
-import TrackPath2D from "src/colorizer/viewport/tracks/TrackPath2D";
-import TrackPath3D from "src/colorizer/viewport/tracks/TrackPath3D";
+import type TrackPath2D from "src/colorizer/viewport/tracks/TrackPath2D";
+import type TrackPath3D from "src/colorizer/viewport/tracks/TrackPath3D";
 
 import { type Canvas2DScaleInfo, CanvasType, type RenderCanvasStateParams } from "./types";
 
@@ -84,7 +84,7 @@ export function reassignTrackPaths<T extends TrackPath2D | TrackPath3D>(
   prevTracks: Set<Track>,
   newTracks: Set<Track>,
   prevTrackPathMap: Map<number, T>,
-  TrackPathClass: new () => T
+  trackPathClass: new () => T
 ): [Map<number, T>, T[], T[]] {
   const newTrackPathMap: Map<number, T> = new Map(prevTrackPathMap);
 
@@ -111,7 +111,7 @@ export function reassignTrackPaths<T extends TrackPath2D | TrackPath3D>(
   // Add new TrackPath2D objects, reusing unused ones where possible
   const addedTrackPaths: T[] = [];
   for (const track of addedTracks) {
-    const trackPath = unusedTrackPaths.pop() ?? new TrackPathClass();
+    const trackPath = unusedTrackPaths.pop() ?? new trackPathClass();
     addedTrackPaths.push(trackPath);
     newTrackPathMap.set(track.trackId, trackPath);
   }

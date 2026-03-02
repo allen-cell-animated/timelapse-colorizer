@@ -206,7 +206,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
           outlineColor: this.params.outlineColor.clone().convertLinearToSRGB(),
           outlinePalette: this.params.outlinePaletteRamp.texture,
           innerOutlineColor: INNER_OUTLINE_COLOR,
-          innerOutlineThickness: useOutlinePalette ? 2.0 : 0.0,
+          innerOutlineThickness: useOutlinePalette ? 2 : 0,
           useOutlinePalette,
           outlineAlpha: 1,
           outlierColor: this.params.outlierDrawSettings.color.clone().convertLinearToSRGB(),
@@ -255,7 +255,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     return false;
   }
 
-  private handleTracksUpdate(prevParams: RenderCanvasStateParams | null, params: RenderCanvasStateParams): boolean {
+  private handleSelectionUpdate(prevParams: RenderCanvasStateParams | null, params: RenderCanvasStateParams): boolean {
     if (hasPropertyChanged(params, prevParams, ["isSelectedLut"])) {
       if (this.volume) {
         this.view3d.setSelectedIDs(params.isSelectedLut);
@@ -511,6 +511,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
         });
         trackPath.dispose();
       });
+      // Configure added track paths
       addedTracks.forEach((trackPath) => {
         trackPath.setVolumePhysicalSize(this.volume ? this.volume.physicalSize : new Vector3(1, 1, 1));
         trackPath.getSceneObjects().forEach((obj) => {
@@ -546,7 +547,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     const didChannelUpdate = this.handleChannelUpdate(prevParams, params);
     const didVectorUpdate = this.handleVectorUpdate(prevParams, params);
     const didSettingsUpdate = this.handleSettingsUpdate(prevParams, params);
-    const didTracksUpdate = this.handleTracksUpdate(prevParams, params);
+    const didSelectionUpdate = this.handleSelectionUpdate(prevParams, params);
     const needsRender =
       didColorRampUpdate ||
       didDatasetUpdate ||
@@ -554,7 +555,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
       didChannelUpdate ||
       didVectorUpdate ||
       didSettingsUpdate ||
-      didTracksUpdate;
+      didSelectionUpdate;
 
     if (needsRender) {
       this.render({ synchronous: false });
