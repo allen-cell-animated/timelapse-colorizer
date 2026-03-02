@@ -119,7 +119,7 @@ export default class TrackPath3D {
     return needsRender;
   }
 
-  public getCurrentTrack(): Track | null {
+  public get track(): Track | null {
     return this.params?.track ?? null;
   }
 
