@@ -524,10 +524,9 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     // Update all track paths
     this.trackPaths.forEach((trackPath, trackId) => {
       const track = params.tracks.get(trackId) ?? null;
-      const didUpdate = trackPath.setParams(
-        { ...params, track, outlineColor: getTrackPathColor(track, params).clone().convertLinearToSRGB() },
-        prevParams
-      );
+      const outlineColor = getTrackPathColor(track, params).clone().convertLinearToSRGB();
+      const prevTrackParams = prevParams ? { ...prevParams, track: trackPath.getCurrentTrack() } : null;
+      const didUpdate = trackPath.setParams({ ...params, track, outlineColor }, prevTrackParams);
       needsRender = needsRender || didUpdate;
     });
 
@@ -708,17 +707,8 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     this.vectorObject.setArrowData(vectorData.centroids, vectorData.deltas, thicknessData);
   }
 
-  private syncSelectedId(): void {
-    if (!this.volume || !this.params || !this.params.dataset) {
-      return;
-    }
-    const id = this.params.track ? this.params.track.getIdAtTime(this.currentFrame) : -1;
-    this.view3d.setSelectedID(this.volume, this.params.dataset.frames3d?.segmentationChannel ?? 0, id);
-  }
-
   render(options?: RenderOptions): void {
     this.syncTrackPathLine();
-    this.syncSelectedId();
     this.syncVectorArrows();
     this.view3d.redraw(options?.synchronous);
   }
