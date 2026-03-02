@@ -47,7 +47,7 @@ import {
 
 import type { IInnerRenderCanvas } from "./IInnerRenderCanvas";
 import TrackPath2D from "./tracks/TrackPath2D";
-import { get2DCanvasScaling, getTrackPathColor, shouldUsePerTrackPathColors } from "./utils";
+import { get2DCanvasScaling, getTrackPathColor, reassignTrackPaths, shouldUsePerTrackPathColors } from "./utils";
 
 import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
 import vertexShader from "./shaders/colorize.vert";
@@ -501,46 +501,29 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
 
   private updateTrackPaths(prevParams: RenderCanvasStateParams | null, params: RenderCanvasStateParams): void {
     if (hasPropertyChanged(params, prevParams, ["tracks"])) {
-      // Add and remove TrackPath2D objects as necessary, reusing objects where
-      // possible.
-      const prevTracks = new Set(prevParams ? prevParams.tracks.keys() : []);
-      const newTracks = new Set(params.tracks.keys());
-      const allTracks = new Set([...prevTracks, ...newTracks]);
-
-      const removedTrackIds: number[] = [];
-      const addedTrackIds: number[] = [];
-      for (const trackId of allTracks) {
-        if (prevTracks.has(trackId) && !newTracks.has(trackId)) {
-          removedTrackIds.push(trackId);
-        } else if (!prevTracks.has(trackId) && newTracks.has(trackId)) {
-          addedTrackIds.push(trackId);
-        }
+      const prevTracks = new Set(prevParams ? prevParams.tracks.values() : []);
+      const newTracks = new Set(params.tracks.values());
+      const [newTrackPaths, addedTracks, removedTracks] = reassignTrackPaths(
+        prevTracks,
+        newTracks,
+        this.trackPaths,
+        TrackPath2D
+      );
+      this.trackPaths = newTrackPaths;
+      // Remove + dispose of unused tracks
+      for (const removedTrackPath of removedTracks) {
+        this.scene.remove(...removedTrackPath.getSceneObjects());
+        removedTrackPath.dispose();
       }
-
-      // Remove unused TrackPath2D objects
-      const unusedTrackPaths: TrackPath2D[] = [];
-      for (const trackId of removedTrackIds) {
-        const trackPath = this.trackPaths.get(trackId);
-        if (trackPath) {
-          this.scene.remove(...trackPath.getSceneObjects());
-          unusedTrackPaths.push(trackPath);
-          this.trackPaths.delete(trackId);
-        }
+      // Configure newly-added track paths
+      for (const addedTrack of addedTracks) {
+        // Track will be assigned to params below; dataset must be set for
+        // zoom/position and scale calculations.
+        addedTrack.setParams({ ...params, track: null });
+        addedTrack.setZoom(this.zoomMultiplier);
+        addedTrack.setPositionAndScale(this.panOffset, this.savedScaleInfo.frameToCanvasCoordinates);
+        this.scene.add(...addedTrack.getSceneObjects());
       }
-      // Add new TrackPath2D objects, reusing unused ones where possible
-      for (const trackId of addedTrackIds) {
-        const track = params.tracks.get(trackId);
-        if (track) {
-          const trackPath = unusedTrackPaths.pop() ?? new TrackPath2D();
-          trackPath.setParams({ ...params, track });
-          trackPath.setZoom(this.zoomMultiplier);
-          trackPath.setPositionAndScale(this.panOffset, this.savedScaleInfo.frameToCanvasCoordinates);
-          this.trackPaths.set(trackId, trackPath);
-          this.scene.add(...trackPath.getSceneObjects());
-        }
-      }
-      // Cleanup unused TrackPath2D objects
-      unusedTrackPaths.forEach((trackPath) => trackPath.dispose());
     }
 
     // Update params for all TrackPath2D objects.

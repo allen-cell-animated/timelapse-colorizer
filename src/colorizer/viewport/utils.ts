@@ -2,6 +2,8 @@ import { type Color, Vector2 } from "three";
 
 import type Track from "src/colorizer/Track";
 import { SelectionOutlineColorMode } from "src/colorizer/types";
+import TrackPath2D from "src/colorizer/viewport/tracks/TrackPath2D";
+import TrackPath3D from "src/colorizer/viewport/tracks/TrackPath3D";
 
 import { type Canvas2DScaleInfo, CanvasType, type RenderCanvasStateParams } from "./types";
 
@@ -68,4 +70,51 @@ export function getTrackPathColor(track: Track | null, params: RenderCanvasState
     return params.trackColors.get(track.trackId) ?? params.outlineColor;
   }
   return params.outlineColor;
+}
+
+/**
+ * Reassigns TrackPath2D/3D objects based on changes to the set of active
+ * tracks, reusing objects where possible.
+ * @returns A tuple containing:
+ *  - The updated map of track IDs to TrackPath2D/3D objects.
+ *  - An array of added TrackPath2D/3D objects that need to be initialized.
+ *  - An array of removed TrackPath2D/3D objects that need to be disposed of.
+ */
+export function reassignTrackPaths<T extends TrackPath2D | TrackPath3D>(
+  prevTracks: Set<Track>,
+  newTracks: Set<Track>,
+  prevTrackPathMap: Map<number, T>,
+  TrackPathClass: new () => T
+): [Map<number, T>, T[], T[]] {
+  const newTrackPathMap: Map<number, T> = new Map(prevTrackPathMap);
+
+  const allTracks = new Set([...prevTracks, ...newTracks]);
+  const removedTracks: Track[] = [];
+  const addedTracks: Track[] = [];
+  for (const track of allTracks) {
+    if (prevTracks.has(track) && !newTracks.has(track)) {
+      removedTracks.push(track);
+    } else if (!prevTracks.has(track) && newTracks.has(track)) {
+      addedTracks.push(track);
+    }
+  }
+
+  // Remove unused TrackPath2D objects
+  const unusedTrackPaths: T[] = [];
+  for (const track of removedTracks) {
+    const trackPath = prevTrackPathMap.get(track.trackId);
+    if (trackPath) {
+      unusedTrackPaths.push(trackPath);
+    }
+    newTrackPathMap.delete(track.trackId);
+  }
+  // Add new TrackPath2D objects, reusing unused ones where possible
+  const addedTrackPaths: T[] = [];
+  for (const track of addedTracks) {
+    const trackPath = unusedTrackPaths.pop() ?? new TrackPathClass();
+    addedTrackPaths.push(trackPath);
+    newTrackPathMap.set(track.trackId, trackPath);
+  }
+
+  return [newTrackPathMap, addedTrackPaths, unusedTrackPaths];
 }
