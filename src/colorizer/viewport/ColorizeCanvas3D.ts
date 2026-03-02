@@ -14,7 +14,7 @@ import {
   VolumeLoaderContext,
   type WorkerLoader,
 } from "@aics/vole-core";
-import { Box3, Matrix4, Quaternion, Vector2, Vector3 } from "three";
+import { Box3, Color, Matrix4, Quaternion, Vector2, Vector3 } from "three";
 import { clamp, inverseLerp, lerp } from "three/src/math/MathUtils";
 
 import { ColorRampType } from "src/colorizer/ColorRamp";
@@ -46,6 +46,8 @@ const ZOOM_IN_MULTIPLIER = 0.75;
 const ZOOM_OUT_MULTIPLIER = 1 / ZOOM_IN_MULTIPLIER;
 
 const VECTOR_THICKNESS_BASE_SCALE = 0.002;
+
+const INNER_OUTLINE_COLOR = new Color(1, 1, 1);
 
 const loaderContext = new VolumeLoaderContext(CACHE_MAX_SIZE, CONCURRENCY_LIMIT, PREFETCH_CONCURRENCY_LIMIT);
 
@@ -189,6 +191,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     if (dataset !== null && featureKey !== null) {
       const featureData = dataset.getFeatureData(featureKey);
       if (featureData) {
+        const useOutlinePalette = shouldUsePerTrackPathColors(this.params);
         const isCategorical = dataset.isFeatureCategorical(featureKey);
         const ramp = isCategorical ? this.params.categoricalPaletteRamp : this.params.colorRamp;
         const range = isCategorical ? [0, MAX_FEATURE_CATEGORIES - 1] : this.params.colorRampRange;
@@ -202,7 +205,9 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
           featureMax: range[1],
           outlineColor: this.params.outlineColor.clone().convertLinearToSRGB(),
           outlinePalette: this.params.outlinePaletteRamp.texture,
-          useOutlinePalette: shouldUsePerTrackPathColors(this.params),
+          innerOutlineColor: INNER_OUTLINE_COLOR,
+          innerOutlineThickness: useOutlinePalette ? 2.0 : 0.0,
+          useOutlinePalette,
           outlineAlpha: 1,
           outlierColor: this.params.outlierDrawSettings.color.clone().convertLinearToSRGB(),
           outOfRangeColor: this.params.outOfRangeDrawSettings.color.clone().convertLinearToSRGB(),
