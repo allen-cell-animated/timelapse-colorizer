@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 
+import { getLabelTypeFromParsedCsv } from "src/colorizer/annotation/utils";
 import { LabelType } from "src/colorizer/AnnotationData";
 import { type FeatureThreshold, ThresholdType } from "src/colorizer/types";
 import {
   buildFrameToGlobalIdLookup,
   getIntervals,
   getKeyFromName,
-  getLabelTypeFromParsedCsv,
   validateThresholds,
 } from "src/colorizer/utils/data_utils";
 import { makeMockDataset } from "tests/utils";
