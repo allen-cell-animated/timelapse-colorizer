@@ -215,7 +215,7 @@ function drawAnnotationMarker(
     ctx.stroke();
   } else {
     // Draw a rectangle with rounded corners that contains a text label.
-    let textValue = labelData.idToValue.get(id) || "";
+    let textValue = (params.datasetKey && labelData.datasetToIdData.get(params.datasetKey)?.idToValue.get(id)) || "";
     if (textValue.length > style.maxTextCharacters) {
       textValue = textValue.slice(0, style.maxTextCharacters - 3) + "...";
     }

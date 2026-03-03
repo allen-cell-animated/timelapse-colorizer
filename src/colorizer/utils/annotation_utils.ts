@@ -1,3 +1,4 @@
+import { LabelData } from "src/colorizer/AnnotationData";
 import type Dataset from "src/colorizer/Dataset";
 
 export type LookupInfo = {
@@ -84,4 +85,12 @@ export function getTrackLookups(
     trackToIds,
     valueToTracksToIds: hasValueInfo ? valueToTracksToIds : undefined,
   };
+}
+
+export function getTotalLabeledIds(labelData: LabelData): number {
+  let total = 0;
+  for (const perDatasetData of labelData.datasetToIdData.values()) {
+    total += perDatasetData.ids.size;
+  }
+  return total;
 }

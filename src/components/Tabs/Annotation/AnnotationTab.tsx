@@ -51,6 +51,8 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   } = props.annotationState;
   const datasetKey = useViewerStateStore((state) => state.datasetKey);
 
+  const isInitialized = datasetKey !== null && currentLabelIdx !== null;
+
   const [isPending, startTransition] = useTransition();
   const [viewType, setViewType] = useState<AnnotationViewType>(AnnotationViewType.LIST);
   const [isColorPickerOpen, setIsColorPickerOpen] = useState(false);
@@ -72,6 +74,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
 
   const labels = annotationData.getLabels();
   const selectedLabel: LabelData | undefined = labels[currentLabelIdx ?? -1];
+  const selectedLabelData = isInitialized ? selectedLabel?.datasetToIdData.get(datasetKey) : undefined;
   const selectedIds = useMemo(() => {
     const tracks = Array.from(store.tracks.values());
     const currentIds = tracks.map((track) => track.getIdAtTime(store.frame));
@@ -138,11 +141,11 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
 
   const onClickDeleteObject = useCallback(
     (record: TableDataType): void => {
-      if (currentLabelIdx !== null) {
-        removeLabelOnIds(currentLabelIdx, [record.id]);
+      if (currentLabelIdx !== null && datasetKey !== null) {
+        removeLabelOnIds(datasetKey, currentLabelIdx, [record.id]);
       }
     },
-    [currentLabelIdx, removeLabelOnIds]
+    [datasetKey, currentLabelIdx, removeLabelOnIds]
   );
 
   // Options for the selection dropdown
@@ -154,23 +157,26 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
 
   const selectLabelOptions: SelectItem[] = useMemo(
     () =>
-      labels.map((label, index) => ({
-        value: index.toString(),
-        label: label.ids.size ? `${label.options.name} (${label.ids.size})` : label.options.name,
-        color: label.options.color,
-        colorLabel: labelTypeToLabel[label.options.type],
-      })),
-    [annotationData]
+      labels.map((label, index) => {
+        const idCount = datasetKey && label.datasetToIdData.get(datasetKey)?.ids.size;
+        return {
+          value: index.toString(),
+          label: idCount ? `${label.options.name} (${idCount})` : label.options.name,
+          color: label.options.color,
+          colorLabel: labelTypeToLabel[label.options.type],
+        };
+      }),
+    [annotationData, datasetKey]
   );
 
   const hasAnnotations = labels.length > 0;
 
   const tableIds = useMemo(() => {
-    return currentLabelIdx !== null ? annotationData.getLabeledIds(currentLabelIdx) : [];
+    return isInitialized ? annotationData.getLabeledIds(datasetKey, currentLabelIdx) : [];
   }, [currentLabelIdx, annotationData]);
-  const isMultiValueLabel = selectedLabel && selectedLabel?.options.type !== LabelType.BOOLEAN;
-  const idToValue = isMultiValueLabel ? selectedLabel.idToValue : undefined;
-  const valueToIds = isMultiValueLabel ? selectedLabel.valueToIds : undefined;
+  const isMultiValueLabel = selectedLabel && selectedLabelData && selectedLabel?.options.type !== LabelType.BOOLEAN;
+  const idToValue = isMultiValueLabel ? selectedLabelData.idToValue : undefined;
+  const valueToIds = isMultiValueLabel ? selectedLabelData.valueToIds : undefined;
 
   const labelSelectionDropdown = (
     <FlexRow>
@@ -249,7 +255,10 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           >
             <TextButton
               onClick={() => {
-                const csvData = props.annotationState.data.toCsv(store.dataset!);
+                if (datasetKey === null) {
+                  return;
+                }
+                const csvData = props.annotationState.data.toCsv(datasetKey, store.dataset!);
                 const name = datasetKey ? `${datasetKey}-annotations.csv` : "annotations.csv";
                 downloadCsv(name, csvData);
               }}

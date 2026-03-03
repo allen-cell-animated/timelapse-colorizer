@@ -14,7 +14,6 @@ import { compareRecord } from "tests/state/ViewerState/utils";
 
 describe("AnnotationData", () => {
   const defaultPalette = KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_KEY)!;
-  const defaultDataset = MOCK_DATASET_KEY;
 
   it("creates and returns index of new labels", () => {
     const annotationData = new AnnotationData();
@@ -146,7 +145,7 @@ describe("AnnotationData", () => {
 
     /* eslint-disable @typescript-eslint/naming-convention */
     // ESLint doesn't like "0" and "1" being property keys.
-    expect(annotationData.getTimeToLabelIdMap(mockDataset as unknown as Dataset, MOCK_DATASET_KEY)).to.deep.equal(
+    expect(annotationData.getTimeToLabelIdMap(MOCK_DATASET_KEY, mockDataset as unknown as Dataset)).to.deep.equal(
       new Map([
         [0, { 0: [0] }],
         [1, { 0: [1, 2], 1: [2] }],
@@ -271,11 +270,11 @@ describe("AnnotationData", () => {
       const annotationData = new AnnotationData();
       annotationData.createNewLabel({ name: "Label 1" });
 
-      annotationData.setLabelValueOnIds(0, [0], '"value"');
-      annotationData.setLabelValueOnIds(0, [1], "value,value,value");
-      annotationData.setLabelValueOnIds(0, [2], ",,,");
+      annotationData.setLabelValueOnIds(MOCK_DATASET_KEY, 0, [0], '"value"');
+      annotationData.setLabelValueOnIds(MOCK_DATASET_KEY, 0, [1], "value,value,value");
+      annotationData.setLabelValueOnIds(MOCK_DATASET_KEY, 0, [2], ",,,");
 
-      const csv = annotationData.toCsv(mockDataset);
+      const csv = annotationData.toCsv(MOCK_DATASET_KEY, mockDataset);
       expect(csv).to.equal(
         `ID,Label,Track,Frame,Label 1\r\n` +
           `0,0,0,0,"""value"""\r\n` +
@@ -290,7 +289,7 @@ describe("AnnotationData", () => {
       annotationData.createNewLabel({ name: "\tLabel 2  " });
       annotationData.createNewLabel({ name: "\t\tLabel 3 \t " });
 
-      const csv = annotationData.toCsv(mockDataset);
+      const csv = annotationData.toCsv(MOCK_DATASET_KEY, mockDataset);
       expect(csv).to.equal(`ID,Label,Track,Frame,Label 1,Label 2,Label 3\r\n`);
     });
 
@@ -304,7 +303,7 @@ describe("AnnotationData", () => {
       annotationData.createNewLabel({ name: "\tlabel 1" });
       annotationData.createNewLabel({ name: "\rlabel 2" });
 
-      const csv = annotationData.toCsv(mockDataset);
+      const csv = annotationData.toCsv(MOCK_DATASET_KEY, mockDataset);
       expect(csv).to.equal(`ID,Label,Track,Frame,"'=SUM(A2:A5)","'@label","'+label","'-label",label 1,label 2\r\n`);
     });
   });
@@ -322,7 +321,7 @@ describe("AnnotationData", () => {
         `2,0,2,${BOOLEAN_VALUE_TRUE}\r\n` +
         `3,1,3,${BOOLEAN_VALUE_FALSE}\r\n`; // false values are omitted
       const mockCsv = mockCsvHeaders + mockCsvData;
-      const result = AnnotationData.fromCsv(MOCK_DATASET, mockCsv);
+      const result = AnnotationData.fromCsv(MOCK_DATASET_KEY, MOCK_DATASET, mockCsv);
       const annotationData = result.annotationData;
 
       const labels = annotationData.getLabels();
@@ -333,11 +332,13 @@ describe("AnnotationData", () => {
       expect(labelData.options.type).toBe(LabelType.BOOLEAN);
 
       // Check IDs and values
-      expect(labelData.ids).toEqual(new Set([0, 1, 2]));
-      expect(labelData.valueToIds.get(BOOLEAN_VALUE_TRUE)).toEqual(new Set([0, 1, 2]));
-      expect(labelData.idToValue.get(0)).toEqual(BOOLEAN_VALUE_TRUE);
-      expect(labelData.idToValue.get(1)).toEqual(BOOLEAN_VALUE_TRUE);
-      expect(labelData.idToValue.get(2)).toEqual(BOOLEAN_VALUE_TRUE);
+      expect(labelData.datasetToIdData.get(MOCK_DATASET_KEY)!.ids).toEqual(new Set([0, 1, 2]));
+      expect(labelData.datasetToIdData.get(MOCK_DATASET_KEY)!.valueToIds.get(BOOLEAN_VALUE_TRUE)).toEqual(
+        new Set([0, 1, 2])
+      );
+      expect(labelData.datasetToIdData.get(MOCK_DATASET_KEY)!.idToValue.get(0)).toEqual(BOOLEAN_VALUE_TRUE);
+      expect(labelData.datasetToIdData.get(MOCK_DATASET_KEY)!.idToValue.get(1)).toEqual(BOOLEAN_VALUE_TRUE);
+      expect(labelData.datasetToIdData.get(MOCK_DATASET_KEY)!.idToValue.get(2)).toEqual(BOOLEAN_VALUE_TRUE);
     });
 
     it("determines and parses multiple labels", () => {
@@ -348,7 +349,7 @@ describe("AnnotationData", () => {
         `2,0,2,${BOOLEAN_VALUE_TRUE},3,"C"\r\n` +
         `7,2,7,${BOOLEAN_VALUE_TRUE},4,"D"\r\n`;
       const mockCsv = mockCsvHeaders + mockCsvData;
-      const result = AnnotationData.fromCsv(MOCK_DATASET, mockCsv);
+      const result = AnnotationData.fromCsv(MOCK_DATASET_KEY, MOCK_DATASET, mockCsv);
       const annotationData = result.annotationData;
 
       const labels = annotationData.getLabels();
@@ -361,11 +362,13 @@ describe("AnnotationData", () => {
       expect(labels[2].options.type).toBe(LabelType.CUSTOM);
 
       // Check ID + value to ID mappings
-      expect(labels[0].ids).toEqual(new Set([0, 1, 2, 7]));
-      expect(labels[0].valueToIds.get(BOOLEAN_VALUE_TRUE)).toEqual(new Set([0, 1, 2, 7]));
+      expect(labels[0].datasetToIdData.get(MOCK_DATASET_KEY)!.ids).toEqual(new Set([0, 1, 2, 7]));
+      expect(labels[0].datasetToIdData.get(MOCK_DATASET_KEY)!.valueToIds.get(BOOLEAN_VALUE_TRUE)).toEqual(
+        new Set([0, 1, 2, 7])
+      );
 
-      expect(labels[1].ids).toEqual(new Set([0, 1, 2, 7]));
-      expect(labels[1].valueToIds).to.deep.equal(
+      expect(labels[1].datasetToIdData.get(MOCK_DATASET_KEY)!.ids).toEqual(new Set([0, 1, 2, 7]));
+      expect(labels[1].datasetToIdData.get(MOCK_DATASET_KEY)!.valueToIds).to.deep.equal(
         new Map([
           ["1", new Set([0])],
           ["2", new Set([1])],
@@ -373,7 +376,7 @@ describe("AnnotationData", () => {
           ["4", new Set([7])],
         ])
       );
-      expect(labels[1].idToValue).to.deep.equal(
+      expect(labels[1].datasetToIdData.get(MOCK_DATASET_KEY)!.idToValue).to.deep.equal(
         new Map([
           [0, "1"],
           [1, "2"],
@@ -382,8 +385,8 @@ describe("AnnotationData", () => {
         ])
       );
 
-      expect(labels[2].ids).toEqual(new Set([0, 1, 2, 7]));
-      expect(labels[2].valueToIds).to.deep.equal(
+      expect(labels[2].datasetToIdData.get(MOCK_DATASET_KEY)!.ids).toEqual(new Set([0, 1, 2, 7]));
+      expect(labels[2].datasetToIdData.get(MOCK_DATASET_KEY)!.valueToIds).to.deep.equal(
         new Map([
           ["A", new Set([0])],
           ["B", new Set([1])],
@@ -391,7 +394,7 @@ describe("AnnotationData", () => {
           ["D", new Set([7])],
         ])
       );
-      expect(labels[2].idToValue).to.deep.equal(
+      expect(labels[2].datasetToIdData.get(MOCK_DATASET_KEY)!.idToValue).to.deep.equal(
         new Map([
           [0, "A"],
           [1, "B"],
@@ -409,7 +412,7 @@ describe("AnnotationData", () => {
         `2,0,2,                      ,3,"C"\r\n` +
         `7,2,7,${BOOLEAN_VALUE_TRUE} ,4,\r\n`;
       const mockCsv = mockCsvHeaders + mockCsvData;
-      const result = AnnotationData.fromCsv(MOCK_DATASET, mockCsv);
+      const result = AnnotationData.fromCsv(MOCK_DATASET_KEY, MOCK_DATASET, mockCsv);
       const annotationData = result.annotationData;
 
       const labels = annotationData.getLabels();
@@ -422,18 +425,20 @@ describe("AnnotationData", () => {
       expect(labels[2].options.type).toBe(LabelType.CUSTOM);
 
       // Check ID + value to ID mappings
-      expect(labels[0].ids).toEqual(new Set([0, 7]));
-      expect(labels[0].valueToIds.get(BOOLEAN_VALUE_TRUE)).toEqual(new Set([0, 7]));
+      expect(labels[0].datasetToIdData.get(MOCK_DATASET_KEY)!.ids).toEqual(new Set([0, 7]));
+      expect(labels[0].datasetToIdData.get(MOCK_DATASET_KEY)!.valueToIds.get(BOOLEAN_VALUE_TRUE)).toEqual(
+        new Set([0, 7])
+      );
 
-      expect(labels[1].ids).toEqual(new Set([1, 2, 7]));
-      expect(labels[1].valueToIds).to.deep.equal(
+      expect(labels[1].datasetToIdData.get(MOCK_DATASET_KEY)!.ids).toEqual(new Set([1, 2, 7]));
+      expect(labels[1].datasetToIdData.get(MOCK_DATASET_KEY)!.valueToIds).to.deep.equal(
         new Map([
           ["2", new Set([1])],
           ["3", new Set([2])],
           ["4", new Set([7])],
         ])
       );
-      expect(labels[1].idToValue).to.deep.equal(
+      expect(labels[1].datasetToIdData.get(MOCK_DATASET_KEY)!.idToValue).to.deep.equal(
         new Map([
           [1, "2"],
           [2, "3"],
@@ -441,14 +446,14 @@ describe("AnnotationData", () => {
         ])
       );
 
-      expect(labels[2].ids).toEqual(new Set([0, 2]));
-      expect(labels[2].valueToIds).to.deep.equal(
+      expect(labels[2].datasetToIdData.get(MOCK_DATASET_KEY)!.ids).toEqual(new Set([0, 2]));
+      expect(labels[2].datasetToIdData.get(MOCK_DATASET_KEY)!.valueToIds).to.deep.equal(
         new Map([
           ["A", new Set([0])],
           ["C", new Set([2])],
         ])
       );
-      expect(labels[2].idToValue).to.deep.equal(
+      expect(labels[2].datasetToIdData.get(MOCK_DATASET_KEY)!.idToValue).to.deep.equal(
         new Map([
           [0, "A"],
           [2, "C"],
@@ -466,14 +471,16 @@ describe("AnnotationData", () => {
         `4,1,4,False\r\n` +
         `5,1,5,FALSE\r\n`;
       const mockCsv = mockCsvHeaders + mockCsvData;
-      const result = AnnotationData.fromCsv(MOCK_DATASET, mockCsv);
+      const result = AnnotationData.fromCsv(MOCK_DATASET_KEY, MOCK_DATASET, mockCsv);
       const annotationData = result.annotationData;
       const labels = annotationData.getLabels();
       expect(labels.length).toBe(1);
       expect(labels[0].options.name).toBe(booleanLabelKey);
       expect(labels[0].options.type).toBe(LabelType.BOOLEAN);
-      expect(labels[0].ids).toEqual(new Set([0, 1, 2]));
-      expect(labels[0].valueToIds.get(BOOLEAN_VALUE_TRUE)).toEqual(new Set([0, 1, 2]));
+      expect(labels[0].datasetToIdData.get(MOCK_DATASET_KEY)!.ids).toEqual(new Set([0, 1, 2]));
+      expect(labels[0].datasetToIdData.get(MOCK_DATASET_KEY)!.valueToIds.get(BOOLEAN_VALUE_TRUE)).toEqual(
+        new Set([0, 1, 2])
+      );
     });
 
     it("parses label ID as a column", () => {
@@ -484,14 +491,14 @@ describe("AnnotationData", () => {
         `2,2,0,2,${BOOLEAN_VALUE_TRUE}\r\n` +
         `3,3,1,3,${BOOLEAN_VALUE_TRUE}\r\n`;
       const mockCsv = mockCsvHeaders + mockCsvData;
-      const result = AnnotationData.fromCsv(MOCK_DATASET, mockCsv);
+      const result = AnnotationData.fromCsv(MOCK_DATASET_KEY, MOCK_DATASET, mockCsv);
       const annotationData = result.annotationData;
 
       // Does not parse label ID as an annotation, just as metadata
       const labels = annotationData.getLabels();
       expect(labels.length).toBe(1);
       expect(labels[0].options.name).toBe(booleanLabelKey);
-      expect(labels[0].ids).toEqual(new Set([0, 1, 2, 3]));
+      expect(labels[0].datasetToIdData.get(MOCK_DATASET_KEY)!.ids).toEqual(new Set([0, 1, 2, 3]));
     });
 
     it("detects mismatches on label ID", () => {
@@ -502,7 +509,7 @@ describe("AnnotationData", () => {
         `2,2,0,2,${BOOLEAN_VALUE_TRUE}\r\n` +
         `3,15,1,3,${BOOLEAN_VALUE_TRUE}\r\n`; // Mismatch on this line
       const mockCsv = mockCsvHeaders + mockCsvData;
-      const result = AnnotationData.fromCsv(MOCK_DATASET, mockCsv);
+      const result = AnnotationData.fromCsv(MOCK_DATASET_KEY, MOCK_DATASET, mockCsv);
 
       expect(result.mismatchedLabels).toEqual(1);
       expect(result.annotationData.getLabels().length).toBe(1);
@@ -516,7 +523,7 @@ describe("AnnotationData", () => {
         `2,2,0,2,${BOOLEAN_VALUE_TRUE}\r\n` +
         `3,,1,3,${BOOLEAN_VALUE_TRUE}\r\n`; // Empty on this line
       const mockCsv = mockCsvHeaders + mockCsvData;
-      const result = AnnotationData.fromCsv(MOCK_DATASET, mockCsv);
+      const result = AnnotationData.fromCsv(MOCK_DATASET_KEY, MOCK_DATASET, mockCsv);
 
       expect(result.mismatchedLabels).toEqual(0);
       expect(result.unparseableRows).toEqual(0);
@@ -530,15 +537,15 @@ describe("AnnotationData", () => {
     const getExampleAnnotationData1 = (): AnnotationData => {
       const annotationData = new AnnotationData();
       annotationData.createNewLabel({ name: customLabelKey, type: LabelType.CUSTOM });
-      annotationData.setLabelValueOnIds(0, [0, 1, 2], "a");
-      annotationData.setLabelValueOnIds(0, [3], "b");
+      annotationData.setLabelValueOnIds(MOCK_DATASET_KEY, 0, [0, 1, 2], "a");
+      annotationData.setLabelValueOnIds(MOCK_DATASET_KEY, 0, [3], "b");
       return annotationData;
     };
 
     const getExampleAnnotationData2 = (): AnnotationData => {
       const annotationData = new AnnotationData();
       annotationData.createNewLabel({ name: booleanLabelKey, type: LabelType.BOOLEAN });
-      annotationData.setLabelValueOnIds(0, [0, 1, 4], BOOLEAN_VALUE_TRUE);
+      annotationData.setLabelValueOnIds(MOCK_DATASET_KEY, 0, [0, 1, 4], BOOLEAN_VALUE_TRUE);
       return annotationData;
     };
 
@@ -554,8 +561,12 @@ describe("AnnotationData", () => {
       const newLabel = labels[0];
       expect(newLabel.options.name).toBe(originalLabel.options.name);
       expect(newLabel.options.type).toBe(originalLabel.options.type);
-      expect(newLabel.ids).toEqual(originalLabel.ids);
-      expect(newLabel.valueToIds.get(BOOLEAN_VALUE_TRUE)).toEqual(new Set([0, 1, 4]));
+      expect(newLabel.datasetToIdData.get(MOCK_DATASET_KEY)!.ids).toEqual(
+        originalLabel.datasetToIdData.get(MOCK_DATASET_KEY)!.ids
+      );
+      expect(newLabel.datasetToIdData.get(MOCK_DATASET_KEY)!.valueToIds.get(BOOLEAN_VALUE_TRUE)).toEqual(
+        new Set([0, 1, 4])
+      );
     });
 
     it("makes a deep copy of merged data", () => {
@@ -568,13 +579,13 @@ describe("AnnotationData", () => {
       expect(labels.length).toBe(1);
 
       annotationData1.createNewLabel({ name: "New Label", type: LabelType.CUSTOM });
-      annotationData1.setLabelValueOnIds(0, [0], "new value");
+      annotationData1.setLabelValueOnIds(MOCK_DATASET_KEY, 0, [0], "new value");
 
       annotationData2.createNewLabel({ name: "Another New Label", type: LabelType.CUSTOM });
-      annotationData2.removeLabelOnIds(0, [0, 1, 4]);
+      annotationData2.removeLabelOnIds(MOCK_DATASET_KEY, 0, [0, 1, 4]);
 
       expect(mergedData.getLabels().length).toBe(1);
-      expect(mergedData.getLabels()[0].ids).toEqual(new Set([0, 1, 4]));
+      expect(mergedData.getLabels()[0].datasetToIdData.get(MOCK_DATASET_KEY)!.ids).toEqual(new Set([0, 1, 4]));
     });
 
     it("can append data", () => {
@@ -586,13 +597,15 @@ describe("AnnotationData", () => {
       expect(labels.length).toBe(2);
       expect(labels[0].options.name).toBe(customLabelKey);
       expect(labels[0].options.type).toBe(LabelType.CUSTOM);
-      expect(labels[0].ids).toEqual(new Set([0, 1, 2, 3]));
-      expect(labels[0].valueToIds.get("a")).toEqual(new Set([0, 1, 2]));
-      expect(labels[0].valueToIds.get("b")).toEqual(new Set([3]));
+      expect(labels[0].datasetToIdData.get(MOCK_DATASET_KEY)!.ids).toEqual(new Set([0, 1, 2, 3]));
+      expect(labels[0].datasetToIdData.get(MOCK_DATASET_KEY)!.valueToIds.get("a")).toEqual(new Set([0, 1, 2]));
+      expect(labels[0].datasetToIdData.get(MOCK_DATASET_KEY)!.valueToIds.get("b")).toEqual(new Set([3]));
       expect(labels[1].options.name).toBe(booleanLabelKey);
       expect(labels[1].options.type).toBe(LabelType.BOOLEAN);
-      expect(labels[1].ids).toEqual(new Set([0, 1, 4]));
-      expect(labels[1].valueToIds.get(BOOLEAN_VALUE_TRUE)).toEqual(new Set([0, 1, 4]));
+      expect(labels[1].datasetToIdData.get(MOCK_DATASET_KEY)!.ids).toEqual(new Set([0, 1, 4]));
+      expect(labels[1].datasetToIdData.get(MOCK_DATASET_KEY)!.valueToIds.get(BOOLEAN_VALUE_TRUE)).toEqual(
+        new Set([0, 1, 4])
+      );
     });
 
     it("can merge data", () => {
@@ -600,35 +613,35 @@ describe("AnnotationData", () => {
 
       const annotationData2 = new AnnotationData();
       annotationData2.createNewLabel({ name: customLabelKey, type: LabelType.CUSTOM });
-      annotationData2.setLabelValueOnIds(0, [5, 6, 7], "c");
-      annotationData2.setLabelValueOnIds(0, [4], "a");
+      annotationData2.setLabelValueOnIds(MOCK_DATASET_KEY, 0, [5, 6, 7], "c");
+      annotationData2.setLabelValueOnIds(MOCK_DATASET_KEY, 0, [4], "a");
 
       const mergedData = AnnotationData.merge(annotationData1, annotationData2, AnnotationMergeMode.MERGE);
       const labels = mergedData.getLabels();
       expect(labels.length).toBe(1);
       expect(labels[0].options.name).toBe(customLabelKey);
       expect(labels[0].options.type).toBe(LabelType.CUSTOM);
-      expect(labels[0].ids).toEqual(new Set([0, 1, 2, 3, 4, 5, 6, 7]));
-      expect(labels[0].valueToIds.get("a")).toEqual(new Set([0, 1, 2, 4]));
-      expect(labels[0].valueToIds.get("b")).toEqual(new Set([3]));
-      expect(labels[0].valueToIds.get("c")).toEqual(new Set([5, 6, 7]));
+      expect(labels[0].datasetToIdData.get(MOCK_DATASET_KEY)!.ids).toEqual(new Set([0, 1, 2, 3, 4, 5, 6, 7]));
+      expect(labels[0].datasetToIdData.get(MOCK_DATASET_KEY)!.valueToIds.get("a")).toEqual(new Set([0, 1, 2, 4]));
+      expect(labels[0].datasetToIdData.get(MOCK_DATASET_KEY)!.valueToIds.get("b")).toEqual(new Set([3]));
+      expect(labels[0].datasetToIdData.get(MOCK_DATASET_KEY)!.valueToIds.get("c")).toEqual(new Set([5, 6, 7]));
     });
 
     it("does not merge matching labels with different types", () => {
       const annotationData1 = getExampleAnnotationData1();
       const annotationData2 = new AnnotationData();
       annotationData2.createNewLabel({ name: customLabelKey, type: LabelType.BOOLEAN });
-      annotationData2.setLabelValueOnIds(0, [5, 6, 7], BOOLEAN_VALUE_TRUE);
+      annotationData2.setLabelValueOnIds(MOCK_DATASET_KEY, 0, [5, 6, 7], BOOLEAN_VALUE_TRUE);
 
       const mergedData = AnnotationData.merge(annotationData1, annotationData2, AnnotationMergeMode.MERGE);
       const labels = mergedData.getLabels();
       expect(labels.length).toBe(2);
       expect(labels[0].options.name).toBe(customLabelKey);
       expect(labels[0].options.type).toBe(LabelType.CUSTOM);
-      expect(labels[0].ids).toEqual(new Set([0, 1, 2, 3]));
+      expect(labels[0].datasetToIdData.get(MOCK_DATASET_KEY)!.ids).toEqual(new Set([0, 1, 2, 3]));
       expect(labels[1].options.name).toBe(customLabelKey);
       expect(labels[1].options.type).toBe(LabelType.BOOLEAN);
-      expect(labels[1].ids).toEqual(new Set([5, 6, 7]));
+      expect(labels[1].datasetToIdData.get(MOCK_DATASET_KEY)!.ids).toEqual(new Set([5, 6, 7]));
     });
 
     it("overwrites conflicting values during merge", () => {
@@ -636,17 +649,17 @@ describe("AnnotationData", () => {
 
       const annotationData2 = new AnnotationData();
       annotationData2.createNewLabel({ name: customLabelKey, type: LabelType.CUSTOM });
-      annotationData2.setLabelValueOnIds(0, [0, 1, 4, 5], "c");
+      annotationData2.setLabelValueOnIds(MOCK_DATASET_KEY, 0, [0, 1, 4, 5], "c");
 
       const mergedData = AnnotationData.merge(annotationData1, annotationData2, AnnotationMergeMode.MERGE);
       const labels = mergedData.getLabels();
       expect(labels.length).toBe(1);
       expect(labels[0].options.name).toBe(customLabelKey);
       expect(labels[0].options.type).toBe(LabelType.CUSTOM);
-      expect(labels[0].ids).toEqual(new Set([0, 1, 2, 3, 4, 5]));
-      expect(labels[0].valueToIds.get("a")).toEqual(new Set([2]));
-      expect(labels[0].valueToIds.get("b")).toEqual(new Set([3]));
-      expect(labels[0].valueToIds.get("c")).toEqual(new Set([0, 1, 4, 5]));
+      expect(labels[0].datasetToIdData.get(MOCK_DATASET_KEY)!.ids).toEqual(new Set([0, 1, 2, 3, 4, 5]));
+      expect(labels[0].datasetToIdData.get(MOCK_DATASET_KEY)!.valueToIds.get("a")).toEqual(new Set([2]));
+      expect(labels[0].datasetToIdData.get(MOCK_DATASET_KEY)!.valueToIds.get("b")).toEqual(new Set([3]));
+      expect(labels[0].datasetToIdData.get(MOCK_DATASET_KEY)!.valueToIds.get("c")).toEqual(new Set([0, 1, 4, 5]));
     });
   });
 });

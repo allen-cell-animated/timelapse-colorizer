@@ -166,7 +166,7 @@ export interface IAnnotationDataGetters {
    * timeToLabelMap.get(577); // { 1: [14, 15]}
    * ```
    * */
-  getTimeToLabelIdMap(dataset: Dataset, datasetKey: string): Map<number, Record<number, number[]>>;
+  getTimeToLabelIdMap(datasetKey: string, dataset: Dataset): Map<number, Record<number, number[]>>;
 
   /**
    * Returns the next default label settings, including name and color. Useful
@@ -284,7 +284,7 @@ export class AnnotationData implements IAnnotationData {
     return labelIdData ? Array.from(labelIdData.ids) : [];
   }
 
-  getTimeToLabelIdMap(dataset: Dataset, datasetKey: string): Map<number, Record<number, number[]>> {
+  getTimeToLabelIdMap(datasetKey: string, dataset: Dataset): Map<number, Record<number, number[]>> {
     if (this.timeToLabelIdMap.has(datasetKey)) {
       return this.timeToLabelIdMap.get(datasetKey)!;
     }
