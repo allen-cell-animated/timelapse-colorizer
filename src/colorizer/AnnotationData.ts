@@ -6,7 +6,7 @@ import { CSV_COL_DATASET, CSV_COL_ID, CSV_COL_SEG_ID, CSV_COL_TIME, CSV_COL_TRAC
 import type Dataset from "src/colorizer/Dataset";
 import { removeUndefinedProperties } from "src/colorizer/utils/data_utils";
 
-import { cloneLabelData, getLabelTypeFromParsedCsv } from "./annotation/utils";
+import { cloneLabelData, getLabelTypeFromParsedCsv } from "./utils/data_utils";
 
 export const BOOLEAN_VALUE_TRUE = "true";
 export const BOOLEAN_VALUE_FALSE = "false";
