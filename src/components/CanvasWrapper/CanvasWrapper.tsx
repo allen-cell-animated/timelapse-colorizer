@@ -534,23 +534,33 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       const id = canv.getIdAtPixel(x, y);
       props.onMouseHover(id);
     },
-    [dataset, canv]
+    [dataset, canv, props.onMouseHover, canv]
   );
 
   /** Track whether the canvas is hovered, so we can determine whether to send updates about the
    * hovered value when the canvas frame updates.
    */
   useEffect(() => {
-    canv.domElement.addEventListener("mouseenter", () => (isMouseOverCanvas.current = true));
-    canv.domElement.addEventListener("mouseleave", () => (isMouseOverCanvas.current = false));
-  });
+    const onMouseEnter = (): void => {
+      isMouseOverCanvas.current = true;
+    };
+    const onMouseLeave = (): void => {
+      isMouseOverCanvas.current = false;
+    };
+    canv.domElement.addEventListener("mouseenter", onMouseEnter);
+    canv.domElement.addEventListener("mouseleave", onMouseLeave);
+    return () => {
+      canv.domElement.removeEventListener("mouseenter", onMouseEnter);
+      canv.domElement.removeEventListener("mouseleave", onMouseLeave);
+    };
+  }, []);
 
   /** Update hovered id when the canvas updates the current frame */
   useEffect(() => {
     if (isMouseOverCanvas.current) {
       reportHoveredIdAtPixel(lastMousePositionPx.current.x, lastMousePositionPx.current.y);
     }
-  }, [currentFrame]);
+  }, [reportHoveredIdAtPixel, currentFrame]);
 
   useEffect(() => {
     const onMouseMove = (event: MouseEvent): void => {
@@ -564,7 +574,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       canv.domElement.removeEventListener("mousemove", onMouseMove);
       canv.domElement.removeEventListener("mouseleave", props.onMouseLeave);
     };
-  }, [dataset, canv]);
+  }, [reportHoveredIdAtPixel, dataset, canv]);
 
   // RENDERING /////////////////////////////////////////////////
 
