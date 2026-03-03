@@ -200,7 +200,10 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
           featureValueToColor: ramp.texture,
           useRepeatingColor: ramp.type === ColorRampType.CATEGORICAL,
           inRangeIds: packDataTexture(Array.from(this.params.inRangeLUT), FeatureDataType.U8),
-          outlierData: packDataTexture(Array.from(dataset.outliers ?? [0]), FeatureDataType.U8),
+          outlierData: packDataTexture(
+            Array.from(dataset.outliers ?? Array(dataset.numObjects).fill(0)),
+            FeatureDataType.U8
+          ),
           featureMin: range[0],
           featureMax: range[1],
           outlineColor: this.params.outlineColor.clone().convertLinearToSRGB(),
@@ -496,7 +499,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     if (hasPropertyChanged(params, prevParams, ["tracks"])) {
       const prevTracks = new Set(prevParams ? prevParams.tracks.values() : []);
       const newTracks = new Set(params.tracks.values());
-      const [newTrackPaths, addedTracks, removedTracks] = reassignTrackPaths(
+      const [newTrackPaths, addedTrackPaths, removedTrackPaths] = reassignTrackPaths(
         prevTracks,
         newTracks,
         this.trackPaths,
@@ -505,14 +508,14 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
       this.trackPaths = newTrackPaths;
 
       // Remove unused track paths from scene
-      removedTracks.forEach((trackPath) => {
+      removedTrackPaths.forEach((trackPath) => {
         trackPath.getSceneObjects().forEach((obj) => {
           this.view3d.removeDrawableObject(obj);
         });
         trackPath.dispose();
       });
       // Configure added track paths
-      addedTracks.forEach((trackPath) => {
+      addedTrackPaths.forEach((trackPath) => {
         trackPath.setVolumePhysicalSize(this.volume ? this.volume.physicalSize : new Vector3(1, 1, 1));
         trackPath.getSceneObjects().forEach((obj) => {
           this.view3d.addDrawableObject(obj);

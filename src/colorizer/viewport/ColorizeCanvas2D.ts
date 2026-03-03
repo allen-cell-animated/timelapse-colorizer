@@ -503,7 +503,7 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     if (hasPropertyChanged(params, prevParams, ["tracks"])) {
       const prevTracks = new Set(prevParams ? prevParams.tracks.values() : []);
       const newTracks = new Set(params.tracks.values());
-      const [newTrackPaths, addedTracks, removedTracks] = reassignTrackPaths(
+      const [newTrackPaths, addedTrackPaths, removedTrackPaths] = reassignTrackPaths(
         prevTracks,
         newTracks,
         this.trackPaths,
@@ -511,12 +511,12 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
       );
       this.trackPaths = newTrackPaths;
       // Remove + dispose of unused tracks
-      for (const removedTrackPath of removedTracks) {
+      for (const removedTrackPath of removedTrackPaths) {
         this.scene.remove(...removedTrackPath.getSceneObjects());
         removedTrackPath.dispose();
       }
       // Configure newly-added track paths
-      for (const addedTrack of addedTracks) {
+      for (const addedTrack of addedTrackPaths) {
         // Track will be assigned to params below; dataset must be set for
         // zoom/position and scale calculations.
         addedTrack.setParams({ ...params, track: null });
