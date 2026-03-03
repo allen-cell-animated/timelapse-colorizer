@@ -703,6 +703,9 @@ export class AnnotationData implements IAnnotationData {
     return mergedAnnotationData;
   }
 
+  // TODO: Store track, time, and segId information for annotated dataset IDs so we don't
+  // have missing/empty metadata in CSV exports. This would take up more memory,
+  // but it's maybe not feasible to load in each of those Datasets just for CSV export.
   toCsv(datasetKey: string, dataset: Dataset, delimiter: string = ","): string {
     const idsToLabels = this.getIdsToLabels(datasetKey);
     const headerRow = [CSV_COL_ID, CSV_COL_SEG_ID, CSV_COL_TRACK, CSV_COL_TIME];
