@@ -94,7 +94,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     return null;
   }, [props.hoveredId, store.dataset, props.annotationState.selectionMode, props.annotationState.getSelectRangeFromId]);
 
-  const onClickEnableAnnotationMode = useCallback(() => {
+  const onClickEnableAnnotationMode = () => {
     // If no labels are defined, prompt the user to create a new label
     // before enabling annotation mode.
     if (annotationData.getLabels().length === 0) {
@@ -102,7 +102,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     } else {
       setIsAnnotationModeEnabled(!isAnnotationModeEnabled);
     }
-  }, [isAnnotationModeEnabled, annotationData]);
+  };
 
   const onSelectLabelIdx = (idx: string): void => {
     startTransition(() => {
@@ -121,7 +121,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
         deleteLabel(currentLabelIdx);
       });
     }
-  }, [currentLabelIdx]);
+  }, [deleteLabel, currentLabelIdx]);
 
   const onClickObjectRow = useCallback(
     (record: TableDataType): void => {
@@ -172,8 +172,9 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   const hasAnnotations = labels.length > 0;
 
   const tableIds = useMemo(() => {
+    const isInitialized = currentLabelIdx !== null && datasetKey !== null;
     return isInitialized ? annotationData.getLabeledIds(datasetKey, currentLabelIdx) : [];
-  }, [currentLabelIdx, annotationData]);
+  }, [currentLabelIdx, annotationData, datasetKey]);
   const isMultiValueLabel = selectedLabel && selectedLabelData && selectedLabel?.options.type !== LabelType.BOOLEAN;
   const idToValue = isMultiValueLabel ? selectedLabelData.idToValue : undefined;
   const valueToIds = isMultiValueLabel ? selectedLabelData.valueToIds : undefined;

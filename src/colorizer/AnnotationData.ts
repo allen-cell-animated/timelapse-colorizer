@@ -332,14 +332,10 @@ export class AnnotationData implements IAnnotationData {
   }
 
   getValueFromId(datasetKey: string, labelIdx: number, id: number): string | null {
-    // This lookup may be too slow. May need to cache lookup from ID to value.
     this.validateIndex(labelIdx);
     const labelIdData = this.labelData[labelIdx].datasetToIdData.get(datasetKey);
-    if (labelIdData?.ids.has(id)) {
-      return labelIdData.idToValue.get(id) ?? null;
-    } else {
-      return null;
-    }
+    const value = labelIdData?.idToValue.get(id);
+    return value ?? null;
   }
 
   getNextDefaultLabelSettings(): LabelOptions {
@@ -538,7 +534,11 @@ export class AnnotationData implements IAnnotationData {
     // Remove the metadata columns
     const labelNames = headers.filter(
       (header) =>
-        header !== CSV_COL_ID && header !== CSV_COL_TRACK && header !== CSV_COL_TIME && header !== CSV_COL_SEG_ID
+        header !== CSV_COL_DATASET &&
+        header !== CSV_COL_ID &&
+        header !== CSV_COL_TRACK &&
+        header !== CSV_COL_TIME &&
+        header !== CSV_COL_SEG_ID
     );
     const labelNameToType = getLabelTypeFromParsedCsv(headers, data);
 
@@ -562,11 +562,16 @@ export class AnnotationData implements IAnnotationData {
       // annotation export was first introduced.
       const segId = parseInt(row[CSV_COL_SEG_ID], 10);
 
-      if (isNaN(id) || isNaN(track) || isNaN(time)) {
+      if (isNaN(id)) {
+        // Only check track + time for current dataset.
         unparseableRows++;
         continue;
       }
       if (datasetCol === datasetKey) {
+        if (isNaN(track) || isNaN(time)) {
+          unparseableRows++;
+          continue;
+        }
         // Only validate IDs that match currently loaded data
         if (id < 0 || dataset.numObjects <= id) {
           invalidIds++;
@@ -703,12 +708,18 @@ export class AnnotationData implements IAnnotationData {
     return mergedAnnotationData;
   }
 
-  // TODO: Store track, time, and segId information for annotated dataset IDs so we don't
-  // have missing/empty metadata in CSV exports. This would take up more memory,
-  // but it's maybe not feasible to load in each of those Datasets just for CSV export.
+  public get datasetKeys(): Set<string> {
+    const datasetKeys = new Set<string>();
+    for (const labelData of this.labelData) {
+      for (const datasetKey of labelData.datasetToIdData.keys()) {
+        datasetKeys.add(datasetKey);
+      }
+    }
+    return datasetKeys;
+  }
+
   toCsv(datasetKey: string, dataset: Dataset, delimiter: string = ","): string {
-    const idsToLabels = this.getIdsToLabels(datasetKey);
-    const headerRow = [CSV_COL_ID, CSV_COL_SEG_ID, CSV_COL_TRACK, CSV_COL_TIME];
+    const headerRow = [CSV_COL_DATASET, CSV_COL_ID, CSV_COL_SEG_ID, CSV_COL_TRACK, CSV_COL_TIME];
 
     headerRow.push(...this.labelData.map((label) => label.options.name.trim()));
 
@@ -717,22 +728,29 @@ export class AnnotationData implements IAnnotationData {
     // and every ID is labeled with each. In this case, getValueFromId can be
     // O(N), which makes this for loop O(N^3)). Consider caching the lookup (ID
     // -> value) if the CSV export step is slow.
-    for (const [id, labels] of idsToLabels) {
-      const segId = dataset.getSegmentationId(id);
-      const track = dataset.getTrackId(id);
-      const time = dataset.getTime(id);
+    for (const key of this.datasetKeys) {
+      // TODO: Store track, time, and segId information for annotated dataset IDs so we don't
+      // have missing/empty metadata in CSV exports. This would take up more memory,
+      // but it's not feasible to load in each of those Datasets just for CSV export.
+      const currDataset = datasetKey === key ? dataset : undefined;
+      const idsToLabels = this.getIdsToLabels(key);
+      for (const [id, labels] of idsToLabels) {
+        const segId = currDataset?.getSegmentationId(id) ?? "";
+        const track = currDataset?.getTrackId(id) ?? "";
+        const time = currDataset?.getTime(id) ?? "";
 
-      const row: (string | number)[] = [id, segId, track, time];
-      for (let labelIdx = 0; labelIdx < this.labelData.length; labelIdx++) {
-        if (labels.includes(labelIdx)) {
-          row.push(this.getValueFromId(datasetKey, labelIdx, id) ?? "");
-        } else if (this.labelData[labelIdx].options.type === LabelType.BOOLEAN) {
-          row.push(BOOLEAN_VALUE_FALSE);
-        } else {
-          row.push("");
+        const row: (string | number)[] = [key, id, segId, track, time];
+        for (let labelIdx = 0; labelIdx < this.labelData.length; labelIdx++) {
+          if (labels.includes(labelIdx)) {
+            row.push(this.getValueFromId(key, labelIdx, id) ?? "");
+          } else if (this.labelData[labelIdx].options.type === LabelType.BOOLEAN) {
+            row.push(BOOLEAN_VALUE_FALSE);
+          } else {
+            row.push("");
+          }
         }
+        csvRows.push(row);
       }
-      csvRows.push(row);
     }
 
     const csvString = unparse(

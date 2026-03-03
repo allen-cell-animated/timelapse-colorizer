@@ -25,6 +25,7 @@ export function useAnnotationDatasetWarning<A extends unknown[], B>(
   callback: (...args: A) => Promise<B>,
   annotationState?: AnnotationState
 ): [popupEl: ReactElement, wrappedCallback: (...args: A) => Promise<B>] {
+  const collection = useViewerStateStore((state) => state.collection);
   const dataset = useViewerStateStore((state) => state.dataset);
   const datasetKey = useViewerStateStore((state) => state.datasetKey);
   const modalContainerRef = useRef<HTMLDivElement>(null);
@@ -83,10 +84,11 @@ export function useAnnotationDatasetWarning<A extends unknown[], B>(
 
   const onConfirm = async (download: boolean): Promise<void> => {
     if (annotationState) {
-      if (download && dataset && datasetKey) {
+      if (download && dataset && datasetKey !== null) {
         const csvData = annotationState.data.toCsv(datasetKey, dataset);
-        const name = datasetKey ? `${datasetKey}-annotations.csv` : "annotations.csv";
-        downloadCsv(name, csvData);
+        const collectionName = collection?.metadata.name;
+        const csvName = collectionName ? `${collectionName}-annotations.csv` : "annotations.csv";
+        downloadCsv(csvName, csvData);
       }
       annotationState.clear();
     }
@@ -119,7 +121,7 @@ export function useAnnotationDatasetWarning<A extends unknown[], B>(
           </FlexRowAlignCenter>
         }
       >
-        <p>Annotations are not preserved between datasets.</p>
+        <p>Annotations are not preserved between collections.</p>
         <p>To keep your work, export annotations as a .csv file before proceeding and reimport them later.</p>
       </StyledModal>
     </div>
