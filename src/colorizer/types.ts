@@ -110,9 +110,8 @@ export const isDrawMode = (mode: number): mode is DrawMode => {
 };
 
 export const enum SelectionOutlineColorMode {
-  USE_AUTO_COLOR = 0,
+  USE_PALETTE = 0,
   USE_CUSTOM_COLOR = 1,
-  USE_PALETTE = 2,
 }
 
 export const enum TrackPathColorMode {

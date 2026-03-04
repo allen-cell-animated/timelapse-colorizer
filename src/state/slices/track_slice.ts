@@ -1,7 +1,7 @@
 import type { Color } from "three";
 import type { StateCreator } from "zustand";
 
-import { type ColorRamp, MAX_FEATURE_CATEGORIES, type Track } from "src/colorizer";
+import { type ColorRamp, MAX_FEATURE_CATEGORIES, SelectionOutlineColorMode, type Track } from "src/colorizer";
 import { arrayElementsAreEqual } from "src/colorizer/utils/data_utils";
 import { decodeTracks, encodeTracks, UrlParam } from "src/colorizer/utils/url_utils";
 import type { ConfigSlice } from "src/state/slices/config_slice";
@@ -281,7 +281,10 @@ export const selectTrackSliceSerializationDeps = (slice: TrackSlice): TrackSlice
   trackToColorId: slice.trackToColorId,
 });
 
-export const loadTrackSliceFromParams = (slice: TrackSlice & DatasetSlice, params: URLSearchParams): void => {
+export const loadTrackSliceFromParams = (
+  slice: TrackSlice & DatasetSlice & ConfigSlice,
+  params: URLSearchParams
+): void => {
   const dataset = slice.dataset;
   if (!dataset) {
     return;
@@ -299,6 +302,16 @@ export const loadTrackSliceFromParams = (slice: TrackSlice & DatasetSlice, param
         tracks.push(track);
         colors.push(colorIdxFromParams?.[i] ?? i);
       }
+    }
+    // For backwards compatibility, use a solid color outline in URLs likely
+    // from legacy versions of TFE, when only one track could be selected at a
+    // time.
+    if (
+      tracks.length === 1 &&
+      params.get(UrlParam.OUTLINE_COLOR_MODE) === null &&
+      params.get(UrlParam.OUTLINE_COLOR) !== null
+    ) {
+      slice.setOutlineColorMode(SelectionOutlineColorMode.USE_CUSTOM_COLOR);
     }
     slice.setTracks(tracks, colors);
   }
