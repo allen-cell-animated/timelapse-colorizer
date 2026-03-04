@@ -2,6 +2,7 @@ import { Line3d } from "@aics/vole-core";
 import type { IDrawableObject } from "@aics/vole-core/es/types/types";
 import { Color, Vector3 } from "three";
 
+import type Track from "src/colorizer/Track";
 import { TrackPathColorMode } from "src/colorizer/types";
 import {
   computeTrackLinePointsAndIds,
@@ -116,6 +117,10 @@ export default class TrackPath3D {
       this.updateLineMaterial();
     }
     return needsRender;
+  }
+
+  public get track(): Track | null {
+    return this.params?.track ?? null;
   }
 
   public forceUpdate(): void {

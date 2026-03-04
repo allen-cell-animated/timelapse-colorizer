@@ -62,8 +62,6 @@ export type RenderCanvasStateParams = {
   viewMode: ViewMode;
   pendingFrame: number;
   featureKey: string | null;
-  /** @deprecated will be removed in a future update */
-  track: Track | null;
   tracks: Map<number, Track>;
   trackColors: Map<number, Color>;
   showTrackPath: boolean;
