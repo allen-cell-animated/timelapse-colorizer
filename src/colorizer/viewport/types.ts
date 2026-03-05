@@ -77,7 +77,7 @@ export type RenderCanvasStateParams = {
   edgeColor: Color;
   edgeColorAlpha: number;
   edgeMode: DrawMode;
-  selectedTracksPaletteRamp: ColorRamp;
+  outlinePaletteRamp: ColorRamp;
   trackPathColor: Color;
   trackPathWidthPx: number;
   trackPathColorMode: TrackPathColorMode;

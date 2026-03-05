@@ -51,6 +51,7 @@ export enum UrlParam {
   FILTERED_COLOR = "filter-color",
   OUTLINE_COLOR = "outline-color",
   OUTLINE_COLOR_MODE = "outline-mode",
+  OUTLINE_PALETTE_KEY = "outline-palette-key",
   EDGE_COLOR = "edge-color",
   EDGE_MODE = "edge",
   SHOW_PATH = "path",
@@ -455,7 +456,7 @@ export function parseDrawSettings(
 export function parseTrackOutlineColorMode(mode: string | null): SelectionOutlineColorMode | undefined {
   const modeInt = parseInt(mode || "-1", 10);
   const isTrackOutlineColorMode =
-    modeInt === SelectionOutlineColorMode.USE_CUSTOM_COLOR || modeInt === SelectionOutlineColorMode.USE_AUTO_COLOR;
+    modeInt === SelectionOutlineColorMode.USE_CUSTOM_COLOR || modeInt === SelectionOutlineColorMode.USE_PALETTE;
   return mode && isTrackOutlineColorMode ? (modeInt as SelectionOutlineColorMode) : undefined;
 }
 
