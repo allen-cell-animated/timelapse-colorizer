@@ -249,7 +249,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
                 if (datasetKey === null) {
                   return;
                 }
-                const csvData = props.annotationState.data.toCsv(datasetKey, dataset!);
+                const csvData = props.annotationState.data.toCsv();
                 const name = datasetKey ? `${datasetKey}-annotations.csv` : "annotations.csv";
                 downloadCsv(name, csvData);
               }}
