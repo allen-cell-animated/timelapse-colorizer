@@ -12,6 +12,10 @@ import {
 import { MOCK_DATASET, MOCK_DATASET_KEY } from "tests/constants";
 import { compareRecord } from "tests/state/ViewerState/utils";
 
+const BOOLEAN_LABEL_KEY = "Boolean Label";
+const INTEGER_LABEL_KEY = "Integer Label";
+const CUSTOM_LABEL_KEY = "Custom Label";
+
 describe("AnnotationData", () => {
   const defaultPalette = KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_KEY)!;
 
@@ -321,16 +325,24 @@ describe("AnnotationData", () => {
       annotationData.setLabelValueOnIds("dataset_1", 0, [0], BOOLEAN_VALUE_TRUE);
       annotationData.setLabelValueOnIds("dataset_2", 1, [1], "yahaha");
       annotationData.setLabelValueOnIds("dataset_2", 1, [2], "yahaha");
+
+      const csv = annotationData.toCsv("dataset_1", mockDataset);
+      const booleanTrue = BOOLEAN_VALUE_TRUE;
+      const booleanFalse = BOOLEAN_VALUE_FALSE;
+      // TODO: For now, datasets other than the active one will have empty
+      // ID/Track/Frame columns. Fix this to include all metadata!
+      expect(csv).to.equal(
+        `Dataset,ID,Label,Track,Frame,Label 1,Label 2\r\n` +
+          `dataset_1,0,0,0,0,${booleanTrue},\r\n` +
+          `dataset_2,1,,,,${booleanFalse},yahaha\r\n` +
+          `dataset_2,2,,,,${booleanFalse},yahaha`
+      );
     });
   });
 
   describe("fromCsv", () => {
-    const booleanLabelKey = "Boolean Label";
-    const integerLabelKey = "Integer Label";
-    const customLabelKey = "Custom Label";
-
     it("parses a basic CSV to an AnnotationData object", () => {
-      const mockCsvHeaders = `ID,Track,Frame,${booleanLabelKey}\r\n`;
+      const mockCsvHeaders = `ID,Track,Frame,${BOOLEAN_LABEL_KEY}\r\n`;
       const mockCsvData =
         `0,0,0,${BOOLEAN_VALUE_TRUE}\r\n` +
         `1,0,1,${BOOLEAN_VALUE_TRUE}\r\n` +
@@ -343,7 +355,7 @@ describe("AnnotationData", () => {
       const labels = annotationData.getLabels();
       const labelData = labels[0];
       expect(labels.length).toBe(1);
-      expect(labelData.options.name).toBe(booleanLabelKey);
+      expect(labelData.options.name).toBe(BOOLEAN_LABEL_KEY);
       expect(labelData.options.color).toEqual(defaultPalette.colors[0]);
       expect(labelData.options.type).toBe(LabelType.BOOLEAN);
 
@@ -360,7 +372,7 @@ describe("AnnotationData", () => {
     it("handles dataset column", () => {
       const datasetKey1 = "dataset_1";
       const datasetKey2 = "dataset_2";
-      const mockCsvHeaders = `Dataset,ID,Track,Frame,${booleanLabelKey}\r\n`;
+      const mockCsvHeaders = `Dataset,ID,Track,Frame,${BOOLEAN_LABEL_KEY}\r\n`;
       const mockCsvData =
         `${datasetKey1},0,0,0,${BOOLEAN_VALUE_TRUE}\r\n` +
         `${datasetKey1},1,0,1,${BOOLEAN_VALUE_TRUE}\r\n` +
@@ -386,8 +398,44 @@ describe("AnnotationData", () => {
       expect(labels[0].datasetToIdData.get(datasetKey2)!.ids).toEqual(new Set([4, 6]));
     });
 
+    it("falls back to provided dataset key when Dataset column is empty", () => {
+      const datasetKey1 = "dataset_1";
+      const datasetKey2 = "dataset_2";
+      const mockCsvHeaders = `Dataset,ID,Track,Frame,${BOOLEAN_LABEL_KEY}\r\n`;
+      const mockCsvData =
+        `,0,0,0,${BOOLEAN_VALUE_TRUE}\r\n` +
+        `${datasetKey2},1,0,1,${BOOLEAN_VALUE_TRUE}\r\n` +
+        `,2,0,2,${BOOLEAN_VALUE_FALSE}\r\n`;
+
+      const result = AnnotationData.fromCsv(datasetKey1, MOCK_DATASET, mockCsvHeaders + mockCsvData);
+
+      expect(result.unvalidatedIds).toEqual(1);
+      expect(result.annotationData.isLabelOnId(datasetKey1, 0, 0)).toBe(true);
+      expect(result.annotationData.isLabelOnId(datasetKey1, 0, 1)).toBe(false);
+      expect(result.annotationData.isLabelOnId(datasetKey1, 0, 2)).toBe(false);
+      expect(result.annotationData.isLabelOnId(datasetKey2, 0, 1)).toBe(true);
+    });
+
+    it("only validates track and frame for the provided dataset", () => {
+      const datasetKey1 = "dataset_1";
+      const datasetKey2 = "dataset_2";
+      const mockCsvHeaders = `Dataset,ID,Track,Frame,${BOOLEAN_LABEL_KEY}\r\n`;
+      const mockCsvData =
+        `${datasetKey1},0,999,999,${BOOLEAN_VALUE_TRUE}\r\n` +
+        `${datasetKey2},1,not_a_number,not_a_number,${BOOLEAN_VALUE_TRUE}\r\n`;
+
+      const result = AnnotationData.fromCsv(datasetKey1, MOCK_DATASET, mockCsvHeaders + mockCsvData);
+
+      expect(result.mismatchedTracks).toEqual(1);
+      expect(result.mismatchedTimes).toEqual(1);
+      expect(result.unparseableRows).toEqual(0);
+      expect(result.unvalidatedIds).toEqual(1);
+      expect(result.annotationData.isLabelOnId(datasetKey1, 0, 0)).toBe(true);
+      expect(result.annotationData.isLabelOnId(datasetKey2, 0, 1)).toBe(true);
+    });
+
     it("determines and parses multiple labels", () => {
-      const mockCsvHeaders = `ID,Track,Frame,${booleanLabelKey},${integerLabelKey},${customLabelKey}\r\n`;
+      const mockCsvHeaders = `ID,Track,Frame,${BOOLEAN_LABEL_KEY},${INTEGER_LABEL_KEY},${CUSTOM_LABEL_KEY}\r\n`;
       const mockCsvData =
         `0,0,0,${BOOLEAN_VALUE_TRUE},1,"A"\r\n` +
         `1,0,1,${BOOLEAN_VALUE_TRUE},2,"B"\r\n` +
@@ -399,11 +447,11 @@ describe("AnnotationData", () => {
 
       const labels = annotationData.getLabels();
       expect(labels.length).toBe(3);
-      expect(labels[0].options.name).toBe(booleanLabelKey);
+      expect(labels[0].options.name).toBe(BOOLEAN_LABEL_KEY);
       expect(labels[0].options.type).toBe(LabelType.BOOLEAN);
-      expect(labels[1].options.name).toBe(integerLabelKey);
+      expect(labels[1].options.name).toBe(INTEGER_LABEL_KEY);
       expect(labels[1].options.type).toBe(LabelType.INTEGER);
-      expect(labels[2].options.name).toBe(customLabelKey);
+      expect(labels[2].options.name).toBe(CUSTOM_LABEL_KEY);
       expect(labels[2].options.type).toBe(LabelType.CUSTOM);
 
       // Check ID + value to ID mappings
@@ -450,7 +498,7 @@ describe("AnnotationData", () => {
     });
 
     it("handles empty/missing/falsy lines", () => {
-      const mockCsvHeaders = `ID,Track,Frame,${booleanLabelKey},${integerLabelKey},${customLabelKey}\r\n`;
+      const mockCsvHeaders = `ID,Track,Frame,${BOOLEAN_LABEL_KEY},${INTEGER_LABEL_KEY},${CUSTOM_LABEL_KEY}\r\n`;
       const mockCsvData =
         `0,0,0,${BOOLEAN_VALUE_TRUE} , ,"A"\r\n` +
         `1,0,1,${BOOLEAN_VALUE_FALSE},2,""\r\n` +
@@ -462,11 +510,11 @@ describe("AnnotationData", () => {
 
       const labels = annotationData.getLabels();
       expect(labels.length).toBe(3);
-      expect(labels[0].options.name).toBe(booleanLabelKey);
+      expect(labels[0].options.name).toBe(BOOLEAN_LABEL_KEY);
       expect(labels[0].options.type).toBe(LabelType.BOOLEAN);
-      expect(labels[1].options.name).toBe(integerLabelKey);
+      expect(labels[1].options.name).toBe(INTEGER_LABEL_KEY);
       expect(labels[1].options.type).toBe(LabelType.INTEGER);
-      expect(labels[2].options.name).toBe(customLabelKey);
+      expect(labels[2].options.name).toBe(CUSTOM_LABEL_KEY);
       expect(labels[2].options.type).toBe(LabelType.CUSTOM);
 
       // Check ID + value to ID mappings
@@ -507,7 +555,7 @@ describe("AnnotationData", () => {
     });
 
     it("handles mixed boolean capitalization", () => {
-      const mockCsvHeaders = `ID,Track,Frame,${booleanLabelKey}\r\n`;
+      const mockCsvHeaders = `ID,Track,Frame,${BOOLEAN_LABEL_KEY}\r\n`;
       const mockCsvData =
         `0,0,0,true\r\n` +
         `1,0,1,True\r\n` +
@@ -520,7 +568,7 @@ describe("AnnotationData", () => {
       const annotationData = result.annotationData;
       const labels = annotationData.getLabels();
       expect(labels.length).toBe(1);
-      expect(labels[0].options.name).toBe(booleanLabelKey);
+      expect(labels[0].options.name).toBe(BOOLEAN_LABEL_KEY);
       expect(labels[0].options.type).toBe(LabelType.BOOLEAN);
       expect(labels[0].datasetToIdData.get(MOCK_DATASET_KEY)!.ids).toEqual(new Set([0, 1, 2]));
       expect(labels[0].datasetToIdData.get(MOCK_DATASET_KEY)!.valueToIds.get(BOOLEAN_VALUE_TRUE)).toEqual(
@@ -529,7 +577,7 @@ describe("AnnotationData", () => {
     });
 
     it("parses label ID as a column", () => {
-      const mockCsvHeaders = `ID,Label,Track,Frame,${booleanLabelKey}\r\n`;
+      const mockCsvHeaders = `ID,Label,Track,Frame,${BOOLEAN_LABEL_KEY}\r\n`;
       const mockCsvData =
         `0,0,0,0,${BOOLEAN_VALUE_TRUE}\r\n` +
         `1,1,0,1,${BOOLEAN_VALUE_TRUE}\r\n` +
@@ -542,12 +590,12 @@ describe("AnnotationData", () => {
       // Does not parse label ID as an annotation, just as metadata
       const labels = annotationData.getLabels();
       expect(labels.length).toBe(1);
-      expect(labels[0].options.name).toBe(booleanLabelKey);
+      expect(labels[0].options.name).toBe(BOOLEAN_LABEL_KEY);
       expect(labels[0].datasetToIdData.get(MOCK_DATASET_KEY)!.ids).toEqual(new Set([0, 1, 2, 3]));
     });
 
     it("detects mismatches on label ID", () => {
-      const mockCsvHeaders = `ID,Label,Track,Frame,${booleanLabelKey}\r\n`;
+      const mockCsvHeaders = `ID,Label,Track,Frame,${BOOLEAN_LABEL_KEY}\r\n`;
       const mockCsvData =
         `0,0,0,0,${BOOLEAN_VALUE_TRUE}\r\n` +
         `1,1,0,1,${BOOLEAN_VALUE_TRUE}\r\n` +
@@ -561,7 +609,7 @@ describe("AnnotationData", () => {
     });
 
     it("allows empty/NaN label IDs", () => {
-      const mockCsvHeaders = `ID,Label,Track,Frame,${booleanLabelKey}\r\n`;
+      const mockCsvHeaders = `ID,Label,Track,Frame,${BOOLEAN_LABEL_KEY}\r\n`;
       const mockCsvData =
         `0,0,0,0,${BOOLEAN_VALUE_TRUE}\r\n` +
         `1,1,0,1,${BOOLEAN_VALUE_TRUE}\r\n` +
@@ -572,6 +620,42 @@ describe("AnnotationData", () => {
 
       expect(result.mismatchedLabels).toEqual(0);
       expect(result.unparseableRows).toEqual(0);
+    });
+  });
+
+  describe("toCsv + fromCsv integration", () => {
+    it("preserves annotation data", () => {
+      const sourceAnnotations = new AnnotationData();
+      sourceAnnotations.createNewLabel({ name: BOOLEAN_LABEL_KEY, type: LabelType.BOOLEAN });
+      sourceAnnotations.createNewLabel({ name: CUSTOM_LABEL_KEY, type: LabelType.CUSTOM });
+
+      sourceAnnotations.setLabelValueOnIds("dataset_1", 0, [0, 2], BOOLEAN_VALUE_TRUE);
+      sourceAnnotations.setLabelValueOnIds("dataset_2", 0, [4], BOOLEAN_VALUE_TRUE);
+      sourceAnnotations.setLabelValueOnIds("dataset_1", 1, [1], "A");
+      sourceAnnotations.setLabelValueOnIds("dataset_2", 1, [5], "B");
+
+      const csv = sourceAnnotations.toCsv("dataset_1", MOCK_DATASET);
+      const parseResult = AnnotationData.fromCsv("dataset_1", MOCK_DATASET, csv);
+      const parsedAnnotations = parseResult.annotationData;
+      const labels = parsedAnnotations.getLabels();
+
+      expect(labels.length).toBe(2);
+      expect(labels[0].options.name).toBe(BOOLEAN_LABEL_KEY);
+      expect(labels[0].options.type).toBe(LabelType.BOOLEAN);
+      expect(labels[1].options.name).toBe(CUSTOM_LABEL_KEY);
+      expect(labels[1].options.type).toBe(LabelType.CUSTOM);
+
+      expect(parsedAnnotations.isLabelOnId("dataset_1", 0, 0)).toBe(true);
+      expect(parsedAnnotations.isLabelOnId("dataset_1", 0, 2)).toBe(true);
+      expect(parsedAnnotations.isLabelOnId("dataset_1", 0, 1)).toBe(false);
+      expect(parsedAnnotations.isLabelOnId("dataset_2", 0, 4)).toBe(true);
+
+      expect(parsedAnnotations.getValueFromId("dataset_1", 1, 1)).toBe("A");
+      expect(parsedAnnotations.getValueFromId("dataset_2", 1, 5)).toBe("B");
+      expect(parsedAnnotations.getValueFromId("dataset_1", 1, 0)).toBeNull();
+
+      expect(parseResult.unparseableRows).toEqual(0);
+      expect(parseResult.invalidIds).toEqual(0);
     });
   });
 
