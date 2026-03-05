@@ -4,8 +4,8 @@ import {
   BOOLEAN_VALUE_FALSE,
   BOOLEAN_VALUE_TRUE,
   type LabelData,
+  type LabelIdData,
   LabelType,
-  type PerDatasetLabelData,
 } from "src/colorizer/AnnotationData";
 import ColorRamp, { ColorRampType } from "src/colorizer/ColorRamp";
 import type { ColorRampData } from "src/colorizer/colors/color_ramps";
@@ -420,7 +420,7 @@ export function getLabelTypeFromParsedCsv(
   return labelTypeMap;
 }
 
-function clonePerDatasetLabelData(labelIdData: PerDatasetLabelData): PerDatasetLabelData {
+function cloneLabelIdData(labelIdData: LabelIdData): LabelIdData {
   const valueToIds = new Map<string, Set<number>>();
   for (const [value, ids] of labelIdData.valueToIds.entries()) {
     valueToIds.set(value, new Set(ids));
@@ -434,10 +434,10 @@ function clonePerDatasetLabelData(labelIdData: PerDatasetLabelData): PerDatasetL
 
 export function cloneLabelData(label: LabelData): LabelData {
   const datasetToIdData = label.datasetToIdData;
-  const newDatasetToIdData = new Map<string, PerDatasetLabelData>();
+  const newDatasetToIdData = new Map<string, LabelIdData>();
 
-  for (const [datasetId, perDatasetData] of datasetToIdData.entries()) {
-    newDatasetToIdData.set(datasetId, clonePerDatasetLabelData(perDatasetData));
+  for (const [datasetKey, labelIdData] of datasetToIdData.entries()) {
+    newDatasetToIdData.set(datasetKey, cloneLabelIdData(labelIdData));
   }
 
   return {

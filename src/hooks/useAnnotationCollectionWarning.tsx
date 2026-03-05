@@ -11,17 +11,17 @@ import { areAnyHotkeysPressed } from "src/utils/user_input";
 
 /**
  * Wraps a callback to show a confirmation popup if there are existing
- * annotations that might be mismatched after changing datasets. Gives an option
- * to keep annotations or download and clear them.
+ * annotations that will be lost after changing collections. Gives an option to
+ * keep annotations or download and clear them.
  * @param annotationState Current annotation state.
  * @param callback Callback to wrap.
  * @returns An array with two elements:
  *   - popupEl: A React element containing the confirmation popup. Place this
  *     after the component that triggers the action (e.g. a load button).
  *  - wrappedCallback: The wrapped callback to use in place of the original
- *    callback. Use this for the action that triggers the dataset change.
+ *    callback. Use this for the action that triggers the collection change.
  */
-export function useAnnotationDatasetWarning<A extends unknown[], B>(
+export function useAnnotationCollectionWarning<A extends unknown[], B>(
   callback: (...args: A) => Promise<B>,
   annotationState?: AnnotationState
 ): [popupEl: ReactElement, wrappedCallback: (...args: A) => Promise<B>] {
@@ -86,7 +86,7 @@ export function useAnnotationDatasetWarning<A extends unknown[], B>(
     if (annotationState) {
       if (download && dataset && datasetKey !== null) {
         const csvData = annotationState.data.toCsv(datasetKey, dataset);
-        const collectionName = collection?.metadata.name;
+        const collectionName = collection?.metadata.name ?? collection?.getUrl();
         const csvName = collectionName ? `${collectionName}-annotations.csv` : "annotations.csv";
         downloadCsv(csvName, csvData);
       }

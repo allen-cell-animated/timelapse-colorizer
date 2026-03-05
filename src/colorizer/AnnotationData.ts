@@ -4,9 +4,7 @@ import { Color } from "three";
 import { DEFAULT_CATEGORICAL_PALETTE_KEY, KNOWN_CATEGORICAL_PALETTES } from "src/colorizer/colors/categorical_palettes";
 import { CSV_COL_DATASET, CSV_COL_ID, CSV_COL_SEG_ID, CSV_COL_TIME, CSV_COL_TRACK } from "src/colorizer/constants";
 import type Dataset from "src/colorizer/Dataset";
-import { cloneLabelData, getLabelTypeFromParsedCsv,removeUndefinedProperties  } from "src/colorizer/utils/data_utils";
-
-
+import { cloneLabelData, getLabelTypeFromParsedCsv, removeUndefinedProperties } from "src/colorizer/utils/data_utils";
 
 export const BOOLEAN_VALUE_TRUE = "true";
 export const BOOLEAN_VALUE_FALSE = "false";
@@ -40,7 +38,7 @@ export type LabelOptions = {
 };
 
 // TODO: Move to a separate types file
-export type PerDatasetLabelData = {
+export type LabelIdData = {
   ids: Set<number>;
   // Bidirectional mapping between IDs and values.
   valueToIds: Map<string, Set<number>>;
@@ -51,7 +49,7 @@ export type LabelData = {
   options: LabelOptions;
   lastValue: string | null;
 
-  datasetToIdData: Map<string, PerDatasetLabelData>;
+  datasetToIdData: Map<string, LabelIdData>;
 
   // TODO: Store recently used values? Save values even if all IDs with them
   // have been removed?
@@ -151,8 +149,8 @@ export interface IAnnotationDataGetters {
    * 0, would return `{0: {0: [0]}}`, in the format `{time: {labelId:
    * [objectIds]}}`.
    *
-   * @param dataset The dataset to use for time information.
    * @param datasetKey The key of the dataset to look up.
+   * @param dataset The dataset to use for time information.
    * @returns a map from time to a record of label indices to IDs.
    * @example
    * ```typescript
@@ -161,7 +159,7 @@ export interface IAnnotationDataGetters {
    * // Label 0 has been applied to objects 11, 12, and 13.
    * // Label 1 has been applied to objects 13, 14, and 15.
    *
-   * const timeToLabelMap = getTimeToLabelIdMap(some_dataset, some_dataset_key);
+   * const timeToLabelMap = getTimeToLabelIdMap(some_dataset_key, some_dataset);
    * timeToLabelMap.get(234); // { 0: [11, 12, 13], 1: [13] }
    * timeToLabelMap.get(577); // { 1: [14, 15]}
    * ```
@@ -230,12 +228,12 @@ export class AnnotationData implements IAnnotationData {
    * invalidated when labels are removed, or if annotations are applied to or
    * removed from objects.
    */
-  private timeToLabelIdMap: Map<string, Map<number, Record<number, number[]>>>;
+  private datasetToTimeToLabelIdMap: Map<string, Map<number, Record<number, number[]>>>;
 
   constructor() {
     this.labelData = [];
     this.numLabelsCreated = 0;
-    this.timeToLabelIdMap = new Map();
+    this.datasetToTimeToLabelIdMap = new Map();
 
     this.getLabelsAppliedToId = this.getLabelsAppliedToId.bind(this);
     this.getLabeledIds = this.getLabeledIds.bind(this);
@@ -285,8 +283,8 @@ export class AnnotationData implements IAnnotationData {
   }
 
   getTimeToLabelIdMap(datasetKey: string, dataset: Dataset): Map<number, Record<number, number[]>> {
-    if (this.timeToLabelIdMap.has(datasetKey)) {
-      return this.timeToLabelIdMap.get(datasetKey)!;
+    if (this.datasetToTimeToLabelIdMap.has(datasetKey)) {
+      return this.datasetToTimeToLabelIdMap.get(datasetKey)!;
     }
 
     const timeToLabelIdMap = new Map<number, Record<number, number[]>>();
@@ -310,7 +308,7 @@ export class AnnotationData implements IAnnotationData {
         timeToLabelIdMap.get(time)![labelIdx].push(id);
       }
     }
-    this.timeToLabelIdMap.set(datasetKey, timeToLabelIdMap);
+    this.datasetToTimeToLabelIdMap.set(datasetKey, timeToLabelIdMap);
     return timeToLabelIdMap;
   }
 
@@ -372,15 +370,16 @@ export class AnnotationData implements IAnnotationData {
 
   private markIdMapAsDirty(datasetKey?: string): void {
     if (datasetKey === undefined) {
-      this.timeToLabelIdMap.clear();
+      this.datasetToTimeToLabelIdMap.clear();
     } else {
-      this.timeToLabelIdMap.delete(datasetKey);
+      this.datasetToTimeToLabelIdMap.delete(datasetKey);
     }
   }
 
-  private getOrCreatePerDatasetLabelData(labelIdx: number, datasetKey: string): PerDatasetLabelData {
+  private getLabelIdData(labelIdx: number, datasetKey: string): LabelIdData {
     const labelData = this.labelData[labelIdx];
     if (!labelData.datasetToIdData.has(datasetKey)) {
+      // Create new per-dataset ID data if it does not exist.
       labelData.datasetToIdData.set(datasetKey, {
         ids: new Set<number>(),
         valueToIds: new Map<string, Set<number>>(),
@@ -395,7 +394,7 @@ export class AnnotationData implements IAnnotationData {
     options = removeUndefinedProperties(options);
     this.labelData.push({
       options: { ...this.getNextDefaultLabelSettings(), ...options },
-      datasetToIdData: new Map<string, PerDatasetLabelData>(),
+      datasetToIdData: new Map<string, LabelIdData>(),
       lastValue: null,
     });
 
@@ -424,45 +423,41 @@ export class AnnotationData implements IAnnotationData {
   }
 
   /**
-   * Removes a single ID from the valueToIds map for a label. If the ID is the last
-   * one in the set, the value is removed from the map as well.
+   * Removes a single ID from a label, updating the internal maps (valueToIds,
+   * ids, and idToValue).
    */
-  private removeIdFromValue(datasetKey: string, labelIdx: number, id: number, value: string): void {
+  private removeId(datasetKey: string, labelIdx: number, id: number): void {
     const labelIdData = this.labelData[labelIdx].datasetToIdData.get(datasetKey);
     if (!labelIdData) {
       return;
     }
 
-    if (labelIdData.valueToIds.has(value)) {
-      const ids = labelIdData.valueToIds.get(value)!;
-      ids.delete(id);
-      if (ids.size === 0) {
-        labelIdData.valueToIds.delete(value);
-      }
-    }
-    if (labelIdData.idToValue.has(id)) {
-      labelIdData.idToValue.delete(id);
-    }
+    this.markIdMapAsDirty(datasetKey);
     labelIdData.ids.delete(id);
 
-    if (labelIdData.ids.size === 0) {
-      this.labelData[labelIdx].datasetToIdData.delete(datasetKey);
+    // Update value to ID mappings
+    const value = labelIdData.idToValue.get(id);
+    if (value !== undefined) {
+      if (labelIdData.valueToIds.has(value)) {
+        const ids = labelIdData.valueToIds.get(value)!;
+        ids.delete(id);
+        if (ids.size === 0) {
+          labelIdData.valueToIds.delete(value);
+        }
+      }
+      if (labelIdData.idToValue.has(id)) {
+        labelIdData.idToValue.delete(id);
+      }
     }
-    this.markIdMapAsDirty(datasetKey);
   }
 
   private setLabelValueOnId(datasetKey: string, labelIdx: number, id: number, value: string): void {
     this.validateIndex(labelIdx);
 
     const labelData = this.labelData[labelIdx];
-    const labelIdData = this.getOrCreatePerDatasetLabelData(labelIdx, datasetKey);
+    const labelIdData = this.getLabelIdData(labelIdx, datasetKey);
     if (labelIdData.ids.has(id)) {
-      // If this ID is already labeled, remove it from the old value to reassign
-      // it.
-      const oldValue = this.getValueFromId(datasetKey, labelIdx, id);
-      if (oldValue !== null && oldValue !== value) {
-        this.removeIdFromValue(datasetKey, labelIdx, id, oldValue);
-      }
+      this.removeId(datasetKey, labelIdx, id);
     }
     if (!labelIdData.valueToIds.has(value)) {
       labelIdData.valueToIds.set(value, new Set());
@@ -489,18 +484,11 @@ export class AnnotationData implements IAnnotationData {
     if (!labelIdData) {
       return;
     }
-    labelIdData.ids.delete(id);
-
-    // Remove id <-> value mapping.
-    const value = labelIdData.idToValue.get(id);
-    if (value !== undefined) {
-      this.removeIdFromValue(datasetKey, labelIdx, id, value);
-    } else {
-      if (labelIdData.ids.size === 0) {
-        this.labelData[labelIdx].datasetToIdData.delete(datasetKey);
-      }
-      this.markIdMapAsDirty(datasetKey);
+    this.removeId(datasetKey, labelIdx, id);
+    if (labelIdData.ids.size === 0) {
+      this.labelData[labelIdx].datasetToIdData.delete(datasetKey);
     }
+    this.markIdMapAsDirty(datasetKey);
   }
 
   removeLabelOnIds(datasetKey: string, labelIdx: number, ids: number[]): void {
@@ -553,7 +541,6 @@ export class AnnotationData implements IAnnotationData {
     }
 
     for (const row of data) {
-      // If dataset
       const datasetCol = row[CSV_COL_DATASET] || datasetKey;
       const id = parseInt(row[CSV_COL_ID], 10);
       const track = parseInt(row[CSV_COL_TRACK], 10);
@@ -563,11 +550,14 @@ export class AnnotationData implements IAnnotationData {
       const segId = parseInt(row[CSV_COL_SEG_ID], 10);
 
       if (isNaN(id)) {
-        // Only check track + time for current dataset.
         unparseableRows++;
         continue;
       }
-      if (datasetCol === datasetKey) {
+      if (datasetCol !== datasetKey) {
+        unvalidatedIds++;
+      } else {
+        // Only check track + time for current dataset.
+        // TODO: Fix once dataset metadata is written to CSV for all datasets.
         if (isNaN(track) || isNaN(time)) {
           unparseableRows++;
           continue;
@@ -586,8 +576,6 @@ export class AnnotationData implements IAnnotationData {
         if (!Number.isNaN(segId) && dataset.segIds?.[id] !== segId) {
           mismatchedLabels++;
         }
-      } else {
-        unvalidatedIds++;
       }
       // Push row data to the labels.
       for (let labelIdx = 0; labelIdx < labelNames.length; labelIdx++) {
@@ -602,7 +590,6 @@ export class AnnotationData implements IAnnotationData {
         if (isBoolean) {
           value = BOOLEAN_VALUE_TRUE;
         }
-        // TODO: Retrieve dataset key column
         annotationData.setLabelValueOnId(datasetCol, labelIdx, id, value);
       }
     }
@@ -709,11 +696,9 @@ export class AnnotationData implements IAnnotationData {
   }
 
   public get datasetKeys(): Set<string> {
-    const datasetKeys = new Set<string>();
+    let datasetKeys = new Set<string>();
     for (const labelData of this.labelData) {
-      for (const datasetKey of labelData.datasetToIdData.keys()) {
-        datasetKeys.add(datasetKey);
-      }
+      datasetKeys = datasetKeys.union(new Set(labelData.datasetToIdData.keys()));
     }
     return datasetKeys;
   }
@@ -730,8 +715,7 @@ export class AnnotationData implements IAnnotationData {
     // -> value) if the CSV export step is slow.
     for (const key of this.datasetKeys) {
       // TODO: Store track, time, and segId information for annotated dataset IDs so we don't
-      // have missing/empty metadata in CSV exports. This would take up more memory,
-      // but it's not feasible to load in each of those Datasets just for CSV export.
+      // have missing/empty metadata in CSV exports.
       const currDataset = datasetKey === key ? dataset : undefined;
       const idsToLabels = this.getIdsToLabels(key);
       for (const [id, labels] of idsToLabels) {

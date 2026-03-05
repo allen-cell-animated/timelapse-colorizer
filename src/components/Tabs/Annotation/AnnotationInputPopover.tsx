@@ -104,8 +104,8 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
       setInputValue(value);
       originalValueRef.current = value;
       // Update the autocomplete options only when editing starts.
-      const labelData = annotationData.getLabels()[currentLabelIdx].datasetToIdData.get(datasetKey);
-      originalOptionsRef.current = Array.from(labelData?.valueToIds.keys() ?? []).map((value) => ({
+      const labelIdData = annotationData.getLabels()[currentLabelIdx].datasetToIdData.get(datasetKey);
+      originalOptionsRef.current = Array.from(labelIdData?.valueToIds.keys() ?? []).map((value) => ({
         value,
         label: value,
       }));
