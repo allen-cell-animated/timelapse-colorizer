@@ -53,12 +53,12 @@
           { "selector": "function", "format": ["camelCase", "PascalCase"] },
           // Allow const variables to use PascalCase (specifically for styled-components)
           {
-            "selector": ["variable" ],
+            "selector": ["variable"],
             "modifiers": ["const"],
             "format": ["camelCase", "UPPER_CASE", "PascalCase"],
             "leadingUnderscore": "allow"
           },
-          // Be permissive for imports
+          // Be permissive for imports (otherwise it uses the default rule)
           {"selector": ["import"], "format": ["camelCase","PascalCase", "UPPER_CASE"] },
           { "selector": "objectLiteralProperty", "format": ["camelCase", "PascalCase"] },
           { "selector": "typeLike", "format": ["PascalCase"] }
