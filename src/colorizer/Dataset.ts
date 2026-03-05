@@ -205,7 +205,10 @@ export default class Dataset {
     return this.pathResolver.resolve(this.baseUrl, url);
   };
 
-  private parseFeatureType(inputType: string | undefined, defaultType = FeatureType.CONTINUOUS): FeatureType {
+  private parseFeatureType(
+    inputType: string | undefined,
+    defaultType: FeatureType = FeatureType.CONTINUOUS
+  ): FeatureType {
     const isFeatureType = (inputType: string): inputType is FeatureType => {
       return Object.values(FeatureType).includes(inputType as FeatureType);
     };

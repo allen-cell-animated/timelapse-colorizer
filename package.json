@@ -29,6 +29,7 @@
     "@types/react": "^18.2.20",
     "@types/react-dom": "^18.2.7",
     "@types/react-window": "^1.8.8",
+    "@types/semver": "^7.7.1",
     "@types/styled-components": "^5.1.28",
     "@types/three": "^0.171.0",
     "@typescript-eslint/eslint-plugin": "^8.56.1",
