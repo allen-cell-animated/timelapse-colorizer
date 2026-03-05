@@ -31,6 +31,9 @@
         "alwaysTryTypes": true
       },
       "node": true
+    },
+    "react": {
+      "version": "detect"
     }
   },
   "overrides": [
