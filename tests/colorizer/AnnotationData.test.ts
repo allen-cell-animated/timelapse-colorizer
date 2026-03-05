@@ -218,10 +218,10 @@ describe("AnnotationData", () => {
       const booleanTrue = BOOLEAN_VALUE_TRUE;
       const booleanFalse = BOOLEAN_VALUE_FALSE;
       expect(csv).to.equal(
-        `ID,Label,Track,Frame,Label 1,Label 2,Label 3\r\n` +
-          `0,0,0,0,${booleanTrue},${booleanFalse},${booleanFalse}\r\n` +
-          `1,1,1,1,${booleanFalse},${booleanTrue},${booleanFalse}\r\n` +
-          `2,2,2,2,${booleanFalse},${booleanFalse},${booleanTrue}`
+        `Dataset,ID,Label,Track,Frame,Label 1,Label 2,Label 3\r\n` +
+          `${MOCK_DATASET_KEY},0,0,0,0,${booleanTrue},${booleanFalse},${booleanFalse}\r\n` +
+          `${MOCK_DATASET_KEY},1,1,1,1,${booleanFalse},${booleanTrue},${booleanFalse}\r\n` +
+          `${MOCK_DATASET_KEY},2,2,2,2,${booleanFalse},${booleanFalse},${booleanTrue}`
       );
     });
 
@@ -235,7 +235,11 @@ describe("AnnotationData", () => {
 
       const csv = annotationData.toCsv(MOCK_DATASET_KEY, mockDataset);
       expect(csv).to.equal(
-        `ID,Label,Track,Frame,Label 1\r\n` + `0,0,0,0,A\r\n` + `1,1,1,1,A\r\n` + `2,2,2,2,B\r\n` + `3,3,3,3,C`
+        `Dataset,ID,Label,Track,Frame,Label 1\r\n` +
+          `${MOCK_DATASET_KEY},0,0,0,0,A\r\n` +
+          `${MOCK_DATASET_KEY},1,1,1,1,A\r\n` +
+          `${MOCK_DATASET_KEY},2,2,2,2,B\r\n` +
+          `${MOCK_DATASET_KEY},3,3,3,3,C`
       );
     });
 
@@ -258,11 +262,11 @@ describe("AnnotationData", () => {
       const booleanTrue = BOOLEAN_VALUE_TRUE;
       const booleanFalse = BOOLEAN_VALUE_FALSE;
       expect(csv).to.equal(
-        `ID,Label,Track,Frame,"""label",",,,,,","a"",""fake label",""","""\r\n` +
-          `0,0,0,0,${booleanTrue},${booleanFalse},${booleanFalse},${booleanFalse}\r\n` +
-          `1,1,1,1,${booleanFalse},${booleanTrue},${booleanFalse},${booleanFalse}\r\n` +
-          `2,2,2,2,${booleanFalse},${booleanFalse},${booleanTrue},${booleanFalse}\r\n` +
-          `3,3,3,3,${booleanFalse},${booleanFalse},${booleanFalse},${booleanTrue}`
+        `Dataset,ID,Label,Track,Frame,"""label",",,,,,","a"",""fake label",""","""\r\n` +
+          `${MOCK_DATASET_KEY},0,0,0,0,${booleanTrue},${booleanFalse},${booleanFalse},${booleanFalse}\r\n` +
+          `${MOCK_DATASET_KEY},1,1,1,1,${booleanFalse},${booleanTrue},${booleanFalse},${booleanFalse}\r\n` +
+          `${MOCK_DATASET_KEY},2,2,2,2,${booleanFalse},${booleanFalse},${booleanTrue},${booleanFalse}\r\n` +
+          `${MOCK_DATASET_KEY},3,3,3,3,${booleanFalse},${booleanFalse},${booleanFalse},${booleanTrue}`
       );
     });
 
@@ -276,10 +280,10 @@ describe("AnnotationData", () => {
 
       const csv = annotationData.toCsv(MOCK_DATASET_KEY, mockDataset);
       expect(csv).to.equal(
-        `ID,Label,Track,Frame,Label 1\r\n` +
-          `0,0,0,0,"""value"""\r\n` +
-          `1,1,1,1,"value,value,value"\r\n` +
-          `2,2,2,2,",,,"`
+        `Dataset,ID,Label,Track,Frame,Label 1\r\n` +
+          `${MOCK_DATASET_KEY},0,0,0,0,"""value"""\r\n` +
+          `${MOCK_DATASET_KEY},1,1,1,1,"value,value,value"\r\n` +
+          `${MOCK_DATASET_KEY},2,2,2,2,",,,"`
       );
     });
 
@@ -290,7 +294,7 @@ describe("AnnotationData", () => {
       annotationData.createNewLabel({ name: "\t\tLabel 3 \t " });
 
       const csv = annotationData.toCsv(MOCK_DATASET_KEY, mockDataset);
-      expect(csv).to.equal(`ID,Label,Track,Frame,Label 1,Label 2,Label 3\r\n`);
+      expect(csv).to.equal(`Dataset,ID,Label,Track,Frame,Label 1,Label 2,Label 3\r\n`);
     });
 
     it("escapes column names starting with special characters", () => {
@@ -304,7 +308,19 @@ describe("AnnotationData", () => {
       annotationData.createNewLabel({ name: "\rlabel 2" });
 
       const csv = annotationData.toCsv(MOCK_DATASET_KEY, mockDataset);
-      expect(csv).to.equal(`ID,Label,Track,Frame,"'=SUM(A2:A5)","'@label","'+label","'-label",label 1,label 2\r\n`);
+      expect(csv).to.equal(
+        `Dataset,ID,Label,Track,Frame,"'=SUM(A2:A5)","'@label","'+label","'-label",label 1,label 2\r\n`
+      );
+    });
+
+    it("includes annotations from all dataset keys", () => {
+      const annotationData = new AnnotationData();
+      annotationData.createNewLabel({ name: "Label 1" });
+      annotationData.createNewLabel({ name: "Label 2", type: LabelType.CUSTOM });
+
+      annotationData.setLabelValueOnIds("dataset_1", 0, [0], BOOLEAN_VALUE_TRUE);
+      annotationData.setLabelValueOnIds("dataset_2", 1, [1], "yahaha");
+      annotationData.setLabelValueOnIds("dataset_2", 1, [2], "yahaha");
     });
   });
 
@@ -339,6 +355,35 @@ describe("AnnotationData", () => {
       expect(labelData.datasetToIdData.get(MOCK_DATASET_KEY)!.idToValue.get(0)).toEqual(BOOLEAN_VALUE_TRUE);
       expect(labelData.datasetToIdData.get(MOCK_DATASET_KEY)!.idToValue.get(1)).toEqual(BOOLEAN_VALUE_TRUE);
       expect(labelData.datasetToIdData.get(MOCK_DATASET_KEY)!.idToValue.get(2)).toEqual(BOOLEAN_VALUE_TRUE);
+    });
+
+    it("handles dataset column", () => {
+      const datasetKey1 = "dataset_1";
+      const datasetKey2 = "dataset_2";
+      const mockCsvHeaders = `Dataset,ID,Track,Frame,${booleanLabelKey}\r\n`;
+      const mockCsvData =
+        `${datasetKey1},0,0,0,${BOOLEAN_VALUE_TRUE}\r\n` +
+        `${datasetKey1},1,0,1,${BOOLEAN_VALUE_TRUE}\r\n` +
+        `${datasetKey1},2,0,2,${BOOLEAN_VALUE_TRUE}\r\n` +
+        `${datasetKey1},3,1,3,${BOOLEAN_VALUE_FALSE}\r\n` +
+        `${datasetKey2},4,2,0,${BOOLEAN_VALUE_TRUE}\r\n` +
+        `${datasetKey2},5,2,1,${BOOLEAN_VALUE_FALSE}\r\n` +
+        `${datasetKey2},6,2,2,${BOOLEAN_VALUE_TRUE}\r\n`;
+
+      const mockCsv = mockCsvHeaders + mockCsvData;
+      const result = AnnotationData.fromCsv(MOCK_DATASET_KEY, MOCK_DATASET, mockCsv);
+      const annotationData = result.annotationData;
+      const labels = annotationData.getLabels();
+      expect(labels.length).toBe(1);
+      expect(annotationData.isLabelOnId(datasetKey1, 0, 0)).toBe(true);
+      expect(annotationData.isLabelOnId(datasetKey1, 0, 1)).toBe(true);
+      expect(annotationData.isLabelOnId(datasetKey1, 0, 2)).toBe(true);
+      expect(annotationData.isLabelOnId(datasetKey1, 0, 3)).toBe(false);
+      expect(annotationData.isLabelOnId(datasetKey2, 0, 4)).toBe(true);
+      expect(annotationData.isLabelOnId(datasetKey2, 0, 5)).toBe(false);
+      expect(annotationData.isLabelOnId(datasetKey2, 0, 6)).toBe(true);
+      expect(labels[0].datasetToIdData.get(datasetKey1)!.ids).toEqual(new Set([0, 1, 2]));
+      expect(labels[0].datasetToIdData.get(datasetKey2)!.ids).toEqual(new Set([4, 6]));
     });
 
     it("determines and parses multiple labels", () => {
