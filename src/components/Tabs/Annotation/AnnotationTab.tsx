@@ -84,7 +84,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     return null;
   }, [props.hoveredId, dataset, props.annotationState.selectionMode, props.annotationState.getSelectRangeFromId]);
 
-  const onClickEnableAnnotationMode = () => {
+  const onClickEnableAnnotationMode = (): void => {
     // If no labels are defined, prompt the user to create a new label
     // before enabling annotation mode.
     if (annotationData.getLabels().length === 0) {

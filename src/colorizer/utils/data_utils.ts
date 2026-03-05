@@ -5,7 +5,7 @@ import {
   BOOLEAN_VALUE_TRUE,
   type LabelData,
   LabelType,
-  PerDatasetLabelData,
+  type PerDatasetLabelData,
 } from "src/colorizer/AnnotationData";
 import ColorRamp, { ColorRampType } from "src/colorizer/ColorRamp";
 import type { ColorRampData } from "src/colorizer/colors/color_ramps";

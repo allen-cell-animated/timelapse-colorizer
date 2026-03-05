@@ -4,9 +4,9 @@ import { Color } from "three";
 import { DEFAULT_CATEGORICAL_PALETTE_KEY, KNOWN_CATEGORICAL_PALETTES } from "src/colorizer/colors/categorical_palettes";
 import { CSV_COL_DATASET, CSV_COL_ID, CSV_COL_SEG_ID, CSV_COL_TIME, CSV_COL_TRACK } from "src/colorizer/constants";
 import type Dataset from "src/colorizer/Dataset";
-import { removeUndefinedProperties } from "src/colorizer/utils/data_utils";
+import { cloneLabelData, getLabelTypeFromParsedCsv,removeUndefinedProperties  } from "src/colorizer/utils/data_utils";
 
-import { cloneLabelData, getLabelTypeFromParsedCsv } from "./utils/data_utils";
+
 
 export const BOOLEAN_VALUE_TRUE = "true";
 export const BOOLEAN_VALUE_FALSE = "false";

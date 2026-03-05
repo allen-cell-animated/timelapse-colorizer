@@ -1,4 +1,4 @@
-import { LabelData } from "src/colorizer/AnnotationData";
+import type { LabelData } from "src/colorizer/AnnotationData";
 import type Dataset from "src/colorizer/Dataset";
 
 export type LookupInfo = {

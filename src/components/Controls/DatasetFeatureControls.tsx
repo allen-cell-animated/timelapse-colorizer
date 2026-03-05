@@ -4,7 +4,7 @@ import type { Dataset } from "src/colorizer";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import type { SelectItem } from "src/components/Dropdowns/types";
 import GlossaryPanel from "src/components/GlossaryPanel";
-import { type AnnotationState } from "src/hooks";
+import type { AnnotationState } from "src/hooks";
 import { useViewerStateStore } from "src/state";
 import { FlexRow } from "src/styles/utils";
 
