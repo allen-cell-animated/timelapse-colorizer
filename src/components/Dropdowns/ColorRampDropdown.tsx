@@ -154,7 +154,7 @@ export type ColorRampSelectionProps = {
   mirror?: boolean;
   onChangeRamp?: (colorRampKey: string, reversed: boolean) => void;
   /** The keys of the color ramps to display, in order. */
-  colorRampsToDisplay?: string[];
+  colorRampsToDisplay?: readonly string[];
   /**
    * All known and displayable color ramps. This is a superset of
    * `colorRampsToDisplay` and may include additional ramps, such as deprecated
@@ -170,7 +170,7 @@ export type ColorRampSelectionProps = {
   selectedPaletteKey?: string | null;
   onChangePalette?: (newPalette: Color[], key: string) => void;
   numCategories?: number;
-  categoricalPalettesToDisplay?: string[];
+  categoricalPalettesToDisplay?: readonly string[];
   knownCategoricalPalettes?: Map<string, PaletteData>;
 };
 

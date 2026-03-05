@@ -456,7 +456,7 @@ export function parseDrawSettings(
 export function parseTrackOutlineColorMode(mode: string | null): SelectionOutlineColorMode | undefined {
   const modeInt = parseInt(mode || "-1", 10);
   const isTrackOutlineColorMode =
-    modeInt === SelectionOutlineColorMode.USE_CUSTOM_COLOR || modeInt === SelectionOutlineColorMode.USE_AUTO_COLOR;
+    modeInt === SelectionOutlineColorMode.USE_CUSTOM_COLOR || modeInt === SelectionOutlineColorMode.USE_PALETTE;
   return mode && isTrackOutlineColorMode ? (modeInt as SelectionOutlineColorMode) : undefined;
 }
 
