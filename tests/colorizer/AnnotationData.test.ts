@@ -16,12 +16,6 @@ const BOOLEAN_LABEL_KEY = "Boolean Label";
 const INTEGER_LABEL_KEY = "Integer Label";
 const CUSTOM_LABEL_KEY = "Custom Label";
 
-const METADATA = {
-  time: 0,
-  track: 0,
-  segId: 0,
-};
-
 describe("AnnotationData", () => {
   const defaultPalette = KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_KEY)!;
 
@@ -213,12 +207,6 @@ describe("AnnotationData", () => {
       getSegmentationId: (id: number): number => [0, 1, 2, 3][id],
       getTrackId: (id: number) => [0, 1, 2, 3][id],
     } as unknown as Dataset;
-
-    const mockDataset2 = {
-      getTime: (id: number): number => [4, 5, 6][id],
-      getSegmentationId: (id: number): number => [4, 5, 6][id],
-      getTrackId: (id: number) => [4, 5, 6][id],
-    };
 
     describe("toCsv", () => {
       it("exports to CSV", () => {
