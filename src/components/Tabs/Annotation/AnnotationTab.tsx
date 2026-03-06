@@ -50,6 +50,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   } = props.annotationState;
   const datasetKey = useViewerStateStore((state) => state.datasetKey);
   const frame = useViewerStateStore((state) => state.currentFrame);
+  const collection = useViewerStateStore((state) => state.collection);
   const dataset = useViewerStateStore((state) => state.dataset);
   const tracks = useViewerStateStore((state) => state.tracks);
   const setTracks = useViewerStateStore((state) => state.setTracks);
@@ -84,7 +85,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     return null;
   }, [props.hoveredId, dataset, props.annotationState.selectionMode, props.annotationState.getSelectRangeFromId]);
 
-  const onClickEnableAnnotationMode = () => {
+  const onClickEnableAnnotationMode = (): void => {
     // If no labels are defined, prompt the user to create a new label
     // before enabling annotation mode.
     if (annotationData.getLabels().length === 0) {
@@ -148,7 +149,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   const selectLabelOptions: SelectItem[] = useMemo(
     () =>
       labels.map((label, index) => {
-        const idCount = datasetKey && label.datasetToIdData.get(datasetKey)?.ids.size;
+        const idCount = datasetKey !== null && label.datasetToIdData.get(datasetKey)?.ids.size;
         return {
           value: index.toString(),
           label: idCount ? `${label.options.name} (${idCount})` : label.options.name,
@@ -161,10 +162,10 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
 
   const hasAnnotations = labels.length > 0;
 
-  const tableIds = useMemo(() => {
-    const isInitialized = currentLabelIdx !== null && datasetKey !== null;
-    return isInitialized ? annotationData.getLabeledIds(datasetKey, currentLabelIdx) : [];
-  }, [currentLabelIdx, annotationData, datasetKey]);
+  const tableIds = useMemo(
+    () => (isInitialized ? annotationData.getLabeledIds(datasetKey, currentLabelIdx) : []),
+    [isInitialized, currentLabelIdx, annotationData, datasetKey]
+  );
   const isMultiValueLabel = selectedLabel && selectedLabelData && selectedLabel?.options.type !== LabelType.BOOLEAN;
   const idToValue = isMultiValueLabel ? selectedLabelData.idToValue : undefined;
   const valueToIds = isMultiValueLabel ? selectedLabelData.valueToIds : undefined;
@@ -246,12 +247,13 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           >
             <TextButton
               onClick={() => {
-                if (datasetKey === null) {
+                if (datasetKey === null || !dataset) {
                   return;
                 }
                 const csvData = props.annotationState.data.toCsv();
-                const name = datasetKey ? `${datasetKey}-annotations.csv` : "annotations.csv";
-                downloadCsv(name, csvData);
+                const collectionName = collection?.metadata.name ?? collection?.getUrl();
+                const csvName = collectionName ? `${collectionName}-annotations.csv` : "annotations.csv";
+                downloadCsv(csvName, csvData);
               }}
               disabled={!hasAnnotations}
             >

@@ -48,7 +48,7 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
     setParseResult(null);
     setErrorText("");
     const isCsv = file.type === "text/csv" || file.name.endsWith(".csv");
-    if (!dataset || !datasetKey) {
+    if (!dataset || datasetKey === null) {
       setUploadedFile(file);
       setErrorText("No dataset loaded.");
       return;
