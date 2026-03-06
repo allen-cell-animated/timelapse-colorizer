@@ -14,7 +14,7 @@ import TextButton from "src/components/Buttons/TextButton";
 import StyledInlineProgress from "src/components/Feedback/StyledInlineProgress";
 import MessageCard from "src/components/MessageCard";
 import StyledModal from "src/components/Modals/StyledModal";
-import { type AnnotationState, useAnnotationDatasetWarning, useRecentCollections } from "src/hooks";
+import { type AnnotationState, useAnnotationCollectionWarning, useRecentCollections } from "src/hooks";
 import { useJsxText } from "src/hooks/useJsxText";
 import { useViewerStateStore } from "src/state";
 import { AppThemeContext } from "src/styles/AppStyle";
@@ -290,11 +290,11 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
     );
   }, [urlInput, props.onLoad, clearSourceZipName]);
 
-  const [loadButtonPopupEl, wrappedHandleLoadClicked] = useAnnotationDatasetWarning(
+  const [loadButtonPopupEl, wrappedHandleLoadClicked] = useAnnotationCollectionWarning(
     handleLoadClicked,
     props.annotationState
   );
-  const [loadZipPopupEl, wrappedHandleLoadZipClicked] = useAnnotationDatasetWarning(
+  const [loadZipPopupEl, wrappedHandleLoadZipClicked] = useAnnotationCollectionWarning(
     handleLoadZipClicked,
     props.annotationState
   );

@@ -11,20 +11,21 @@ import { areAnyHotkeysPressed } from "src/utils/user_input";
 
 /**
  * Wraps a callback to show a confirmation popup if there are existing
- * annotations that might be mismatched after changing datasets. Gives an option
- * to keep annotations or download and clear them.
+ * annotations that will be lost after changing collections. Gives an option to
+ * keep annotations or download and clear them.
  * @param annotationState Current annotation state.
  * @param callback Callback to wrap.
  * @returns An array with two elements:
  *   - popupEl: A React element containing the confirmation popup. Place this
  *     after the component that triggers the action (e.g. a load button).
  *  - wrappedCallback: The wrapped callback to use in place of the original
- *    callback. Use this for the action that triggers the dataset change.
+ *    callback. Use this for the action that triggers the collection change.
  */
-export function useAnnotationDatasetWarning<A extends unknown[], B>(
+export function useAnnotationCollectionWarning<A extends unknown[], B>(
   callback: (...args: A) => Promise<B>,
   annotationState?: AnnotationState
 ): [popupEl: ReactElement, wrappedCallback: (...args: A) => Promise<B>] {
+  const collection = useViewerStateStore((state) => state.collection);
   const dataset = useViewerStateStore((state) => state.dataset);
   const datasetKey = useViewerStateStore((state) => state.datasetKey);
   const modalContainerRef = useRef<HTMLDivElement>(null);
@@ -83,10 +84,11 @@ export function useAnnotationDatasetWarning<A extends unknown[], B>(
 
   const onConfirm = async (download: boolean): Promise<void> => {
     if (annotationState) {
-      if (download && dataset) {
-        const csvData = annotationState.data.toCsv(dataset);
-        const name = datasetKey ? `${datasetKey}-annotations.csv` : "annotations.csv";
-        downloadCsv(name, csvData);
+      if (download && dataset && datasetKey !== null) {
+        const csvData = annotationState.data.toCsv(datasetKey, dataset);
+        const collectionName = collection?.metadata.name ?? collection?.getUrl();
+        const csvName = collectionName ? `${collectionName}-annotations.csv` : "annotations.csv";
+        downloadCsv(csvName, csvData);
       }
       annotationState.clear();
     }
@@ -119,7 +121,7 @@ export function useAnnotationDatasetWarning<A extends unknown[], B>(
           </FlexRowAlignCenter>
         }
       >
-        <p>Annotations are not preserved between datasets.</p>
+        <p>Annotations are not preserved between collections.</p>
         <p>To keep your work, export annotations as a .csv file before proceeding and reimport them later.</p>
       </StyledModal>
     </div>
