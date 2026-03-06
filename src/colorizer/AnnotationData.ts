@@ -635,7 +635,9 @@ export class AnnotationData implements IAnnotationData {
         unparseableRows++;
         continue;
       }
-      if (datasetCol === datasetKey) {
+      if (datasetCol !== datasetKey) {
+        unvalidatedIds++;
+      } else {
         // Only validate IDs that match currently loaded data
         if (id < 0 || dataset.numObjects <= id) {
           invalidIds++;
