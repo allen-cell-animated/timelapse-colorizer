@@ -698,7 +698,7 @@ export class AnnotationData implements IAnnotationData {
   public get datasetKeys(): Set<string> {
     let datasetKeys = new Set<string>();
     for (const labelData of this.labelData) {
-      datasetKeys = datasetKeys.union(new Set(labelData.datasetToIdData.keys()));
+      datasetKeys = new Set([...datasetKeys, ...labelData.datasetToIdData.keys()]);
     }
     return datasetKeys;
   }
