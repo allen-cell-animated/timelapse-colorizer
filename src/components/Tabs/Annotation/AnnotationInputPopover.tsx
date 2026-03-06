@@ -1,6 +1,6 @@
 import { DeleteOutlined } from "@ant-design/icons";
 import { AutoComplete, Card } from "antd";
-import React, { type ReactElement, useCallback, useContext, useEffect, useRef, useState } from "react";
+import React, { type ReactElement, useContext, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 
 import { LabelType } from "src/colorizer/AnnotationData";
@@ -157,13 +157,13 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
   };
 
   // Reset to original value and close the popover when escape is pressed.
-  const handleEscape = useCallback((): void => {
+  const handleEscape = (): void => {
     if (originalValueRef.current !== null && datasetKey !== null && hasValidData) {
       setInputValue(originalValueRef.current);
       props.annotationState.setLabelValueOnIds(datasetKey, currentLabelIdx, activeEditRange, originalValueRef.current);
     }
     clearActiveEditRange();
-  }, [hasValidData]);
+  };
 
   const handleKeyInput: React.KeyboardEventHandler = (e): void => {
     if (currentLabelIdx === null || activeEditRange === null) {
