@@ -1,30 +1,27 @@
 import type { PresetsItem } from "antd/es/color-picker/interface";
 import React, { type ReactElement } from "react";
-import { Color, type ColorRepresentation } from "three";
+import type { Color } from "three";
 
-import { DrawMode, OUTLINE_COLOR_DEFAULT } from "src/colorizer";
+import { DrawMode, SelectionOutlineColorMode } from "src/colorizer";
 import DropdownWithColorPicker from "src/components/Dropdowns/DropdownWithColorPicker";
 import type { SelectItem } from "src/components/Dropdowns/types";
-import WrappedColorPicker from "src/components/Inputs/WrappedColorPicker";
 import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
 import ToggleCollapse from "src/components/ToggleCollapse";
 import { useViewerStateStore } from "src/state";
-import { threeToAntColor } from "src/utils/color_utils";
 
 import { DEFAULT_OUTLINE_COLOR_PRESETS, SETTINGS_GAP_PX } from "./constants";
 
 const enum ObjectSettingsHtmlIds {
-  HIGHLIGHT_COLOR_PICKER = "highlight-color-picker",
+  OUTLINE_COLOR_SELECT = "outline-color-select",
   EDGE_COLOR_SELECT = "edge-color-select",
   OUTLIER_OBJECT_COLOR_SELECT = "outlier-object-color-select",
-  OUTLIER_OBJECT_COLOR_PICKER = "outlier-object-color-picker",
   OUT_OF_RANGE_OBJECT_COLOR_SELECT = "out-of-range-object-color-select",
 }
 
-const DRAW_MODE_ITEMS: SelectItem[] = [
+const DRAW_MODE_ITEMS = [
   { value: DrawMode.HIDE.toString(), label: "Hide" },
   { value: DrawMode.USE_COLOR.toString(), label: "Use color" },
-];
+] as const satisfies SelectItem[];
 
 const DRAW_MODE_COLOR_PRESETS: PresetsItem[] = [
   {
@@ -51,36 +48,44 @@ const EDGE_COLOR_PRESETS: PresetsItem[] = [
   },
 ];
 
+const OUTLINE_COLOR_MODE_ITEMS = [
+  { value: SelectionOutlineColorMode.USE_AUTO_COLOR.toString(), label: "Auto" },
+  { value: SelectionOutlineColorMode.USE_CUSTOM_COLOR.toString(), label: "Use color" },
+] as const satisfies SelectItem[];
+
 export default function ObjectSettings(): ReactElement {
   const edgeColor = useViewerStateStore((state) => state.edgeColor);
   const edgeColorAlpha = useViewerStateStore((state) => state.edgeColorAlpha);
   const edgeMode = useViewerStateStore((state) => state.edgeMode);
   const outlierDrawSettings = useViewerStateStore((state) => state.outlierDrawSettings);
   const outlineColor = useViewerStateStore((state) => state.outlineColor);
+  const outlineColorMode = useViewerStateStore((state) => state.outlineColorMode);
   const outOfRangeDrawSettings = useViewerStateStore((state) => state.outOfRangeDrawSettings);
   const setEdgeColor = useViewerStateStore((state) => state.setEdgeColor);
   const setEdgeMode = useViewerStateStore((state) => state.setEdgeMode);
   const setOutlierDrawSettings = useViewerStateStore((state) => state.setOutlierDrawSettings);
   const setOutlineColor = useViewerStateStore((state) => state.setOutlineColor);
+  const setOutlineColorMode = useViewerStateStore((state) => state.setOutlineColorMode);
   const setOutOfRangeDrawSettings = useViewerStateStore((state) => state.setOutOfRangeDrawSettings);
 
   return (
     <ToggleCollapse label="Objects">
       <SettingsContainer gapPx={SETTINGS_GAP_PX}>
-        <SettingsItem label="Highlight" htmlFor={ObjectSettingsHtmlIds.HIGHLIGHT_COLOR_PICKER}>
-          {/* NOTE: 'Highlight color' is 'outline' internally, and 'Outline color' is 'edge' for legacy reasons. */}
-          <WrappedColorPicker
-            id={ObjectSettingsHtmlIds.HIGHLIGHT_COLOR_PICKER}
-            style={{ width: "min-content" }}
-            size="small"
-            disabledAlpha={true}
-            defaultValue={OUTLINE_COLOR_DEFAULT}
-            onChange={(_color, hex) => setOutlineColor(new Color(hex as ColorRepresentation))}
-            value={threeToAntColor(outlineColor)}
+        <SettingsItem label="Selected outline" htmlFor={ObjectSettingsHtmlIds.OUTLINE_COLOR_SELECT}>
+          <DropdownWithColorPicker
+            id={ObjectSettingsHtmlIds.OUTLINE_COLOR_SELECT}
+            selected={outlineColorMode.toString()}
+            items={OUTLINE_COLOR_MODE_ITEMS}
+            onValueChange={(mode: string) => {
+              setOutlineColorMode(Number.parseInt(mode, 10) as SelectionOutlineColorMode);
+            }}
+            showColorPicker={true}
+            color={outlineColor}
+            onColorChange={setOutlineColor}
             presets={DEFAULT_OUTLINE_COLOR_PRESETS}
-          />
+          ></DropdownWithColorPicker>
         </SettingsItem>
-        <SettingsItem label="Outline" htmlFor={ObjectSettingsHtmlIds.EDGE_COLOR_SELECT}>
+        <SettingsItem label="Edge" htmlFor={ObjectSettingsHtmlIds.EDGE_COLOR_SELECT}>
           <DropdownWithColorPicker
             id={ObjectSettingsHtmlIds.EDGE_COLOR_SELECT}
             selected={edgeMode.toString()}
