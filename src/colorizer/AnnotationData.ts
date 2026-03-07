@@ -18,12 +18,6 @@ function getDefaultColor(index: number): Color {
   return new Color(DEFAULT_ANNOTATION_LABEL_COLORS[index % DEFAULT_ANNOTATION_LABEL_COLORS.length]);
 }
 
-const METADATA_COL_TO_INDEX = {
-  [CSV_COL_TRACK]: 0,
-  [CSV_COL_TIME]: 1,
-  [CSV_COL_SEG_ID]: 2,
-} as const;
-
 export enum LabelType {
   BOOLEAN = "boolean",
   INTEGER = "integer",
@@ -236,6 +230,14 @@ export class AnnotationData implements IAnnotationData {
    */
   private datasetToTimeToLabelIdMap: Map<string, Map<number, Record<number, number[]>>>;
 
+  /**
+   * Stored metadata for labeled IDs, per dataset. Maps from dataset key => ID
+   * => metadata, where metadata is a length-3 Uint32Array containing `[track,
+   * time, segId]` in that order. Used for CSV export.
+   *
+   * Uses a Uint32Array for compact memory use compared to an object or regular
+   * Array (smaller + guaranteed to be adjacent in memory).
+   */
   private datasetToIdMetadataMap: Map<string, Map<number, Uint32Array>>;
 
   constructor() {
@@ -439,6 +441,8 @@ export class AnnotationData implements IAnnotationData {
     this.markIdMapAsDirty();
   }
 
+  //// ID Metadata ////
+
   private getStoredIdMetadata(datasetKey: string, id: number): { track: number; time: number; segId: number } {
     const idMetadataMap = this.datasetToIdMetadataMap.get(datasetKey);
     const metadata = idMetadataMap?.get(id) ?? null;
@@ -446,9 +450,9 @@ export class AnnotationData implements IAnnotationData {
       return { track: NaN, time: NaN, segId: NaN };
     }
     return {
-      track: metadata[METADATA_COL_TO_INDEX[CSV_COL_TRACK]],
-      time: metadata[METADATA_COL_TO_INDEX[CSV_COL_TIME]],
-      segId: metadata[METADATA_COL_TO_INDEX[CSV_COL_SEG_ID]],
+      track: metadata[0],
+      time: metadata[1],
+      segId: metadata[2],
     };
   }
 
@@ -478,6 +482,8 @@ export class AnnotationData implements IAnnotationData {
     }
     idMetadataMap.delete(id);
   }
+
+  ////
 
   private isIdLabeled(datasetKey: string, id: number): boolean {
     for (let i = 0; i < this.labelData.length; i++) {
