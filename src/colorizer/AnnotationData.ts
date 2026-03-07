@@ -276,6 +276,16 @@ export class AnnotationData implements IAnnotationData {
     return labelIdData?.ids.has(id) ?? false;
   }
 
+  /** Returns true if the ID is labeled in any label. */
+  private isIdLabeled(datasetKey: string, id: number): boolean {
+    for (let i = 0; i < this.labelData.length; i++) {
+      if (this.isLabelOnId(datasetKey, i, id)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   getLabelsAppliedToId(datasetKey: string, id: number): number[] {
     const labelIdxs: number[] = [];
     for (let i = 0; i < this.labelData.length; i++) {
@@ -429,9 +439,9 @@ export class AnnotationData implements IAnnotationData {
 
   deleteLabel(labelIdx: number): void {
     this.validateIndex(labelIdx);
-    const label = this.labelData.splice(labelIdx, 1);
-    // Check for and remove unused metadata
-    for (const [datasetKey, labelData] of label[0].datasetToIdData.entries()) {
+    const label = this.labelData.splice(labelIdx, 1)[0];
+    // Check for and remove unused metadata for IDs that are no longer labeled.
+    for (const [datasetKey, labelData] of label.datasetToIdData.entries()) {
       for (const id of labelData.ids) {
         if (!this.isIdLabeled(datasetKey, id)) {
           this.removeStoredIdMetadata(datasetKey, id);
@@ -442,12 +452,23 @@ export class AnnotationData implements IAnnotationData {
   }
 
   //// ID Metadata ////
+  // Used for storing track, time, and segmentation ID info for CSV export.
+
+  private addStoredIdMetadata(datasetKey: string, id: number, track: number, time: number, segId: number): void {
+    if (!this.datasetToIdMetadataMap.has(datasetKey)) {
+      this.datasetToIdMetadataMap.set(datasetKey, new Map());
+    }
+    const idMetadataMap = this.datasetToIdMetadataMap.get(datasetKey)!;
+    // Always stored in track, time, segId order.
+    idMetadataMap.set(id, new Uint32Array([track, time, segId]));
+  }
 
   private getStoredIdMetadata(datasetKey: string, id: number): { track: number; time: number; segId: number } {
     const idMetadataMap = this.datasetToIdMetadataMap.get(datasetKey);
     const metadata = idMetadataMap?.get(id) ?? null;
     if (!metadata) {
-      return { track: NaN, time: NaN, segId: NaN };
+      // -1 values will flag as mismatched during CSV import.
+      return { track: -1, time: -1, segId: -1 };
     }
     return {
       track: metadata[0],
@@ -456,20 +477,16 @@ export class AnnotationData implements IAnnotationData {
     };
   }
 
-  private addStoredIdMetadata(datasetKey: string, id: number, track: number, time: number, segId: number): void {
-    if (!this.datasetToIdMetadataMap.has(datasetKey)) {
-      this.datasetToIdMetadataMap.set(datasetKey, new Map());
-    }
-    const idMetadataMap = this.datasetToIdMetadataMap.get(datasetKey)!;
-    idMetadataMap.set(id, new Uint32Array([track, time, segId]));
-  }
-
+  /**
+   * Copies stored ID metadata from the provided map into the internal map.
+   * Overrides existing metadata for IDs that are already present.
+   */
   private applyStoredIdMetadata(datasetToIdMetadataMap: Map<string, Map<number, Uint32Array>>): void {
-    for (const [datasetKey, idMetadataMap] of datasetToIdMetadataMap.entries()) {
+    for (const [datasetKey, idToMetadata] of datasetToIdMetadataMap.entries()) {
       if (!this.datasetToIdMetadataMap.has(datasetKey)) {
         this.datasetToIdMetadataMap.set(datasetKey, new Map());
       }
-      for (const [id, metadata] of idMetadataMap.entries()) {
+      for (const [id, metadata] of idToMetadata.entries()) {
         this.datasetToIdMetadataMap.get(datasetKey)!.set(id, metadata);
       }
     }
@@ -484,15 +501,6 @@ export class AnnotationData implements IAnnotationData {
   }
 
   ////
-
-  private isIdLabeled(datasetKey: string, id: number): boolean {
-    for (let i = 0; i < this.labelData.length; i++) {
-      if (this.isLabelOnId(datasetKey, i, id)) {
-        return true;
-      }
-    }
-    return false;
-  }
 
   /**
    * Removes a single ID from a label, updating the internal maps (valueToIds,
@@ -631,11 +639,11 @@ export class AnnotationData implements IAnnotationData {
     for (const row of data) {
       const datasetCol = row[CSV_COL_DATASET] || datasetKey;
       const id = parseInt(row[CSV_COL_ID], 10);
-      const track = parseInt(row[CSV_COL_TRACK], 10);
-      const time = parseInt(row[CSV_COL_TIME], 10);
+      let track = parseInt(row[CSV_COL_TRACK], 10);
+      let time = parseInt(row[CSV_COL_TIME], 10);
       // Seg ID is optional/can be NaN because it was added as a column after
       // annotation export was first introduced.
-      const segId = parseInt(row[CSV_COL_SEG_ID], 10);
+      let segId = parseInt(row[CSV_COL_SEG_ID], 10);
 
       if (isNaN(id) || isNaN(track) || isNaN(time)) {
         unparseableRows++;
@@ -649,14 +657,23 @@ export class AnnotationData implements IAnnotationData {
           invalidIds++;
           continue;
         }
-        if (dataset.times?.[id] !== time) {
+        // Check for mismatched metadata and update to the dataset values.
+        const datasetTime = dataset.getTime(id);
+        const datasetTrack = dataset.getTrackId(id);
+        const datasetSegId = dataset.getSegmentationId(id);
+        if (datasetTime !== time) {
           mismatchedTimes++;
+          time = datasetTime;
         }
-        if (dataset.trackIds?.[id] !== track) {
+        if (datasetTrack !== track) {
           mismatchedTracks++;
+          track = datasetTrack;
         }
-        if (!Number.isNaN(segId) && dataset.segIds?.[id] !== segId) {
-          mismatchedLabels++;
+        if (datasetSegId !== segId) {
+          if (!Number.isNaN(segId)) {
+            mismatchedLabels++;
+          }
+          segId = datasetSegId;
         }
       }
       // Push row data to the labels.

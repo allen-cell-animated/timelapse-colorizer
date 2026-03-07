@@ -625,38 +625,44 @@ describe("AnnotationData", () => {
     });
   });
 
-  it("preserves annotation data", () => {
-    const sourceAnnotations = new AnnotationData();
-    sourceAnnotations.createNewLabel({ name: BOOLEAN_LABEL_KEY, type: LabelType.BOOLEAN });
-    sourceAnnotations.createNewLabel({ name: CUSTOM_LABEL_KEY, type: LabelType.CUSTOM });
+  describe("toCsv + fromCsv integration", () => {
+    it("toCsv + fromCsv preserves annotation data", () => {
+      const sourceAnnotations = new AnnotationData();
+      sourceAnnotations.createNewLabel({ name: BOOLEAN_LABEL_KEY, type: LabelType.BOOLEAN });
+      sourceAnnotations.createNewLabel({ name: CUSTOM_LABEL_KEY, type: LabelType.CUSTOM });
 
-    sourceAnnotations.setLabelValueOnIds("dataset_1", MOCK_DATASET, 0, [0, 2], BOOLEAN_VALUE_TRUE);
-    sourceAnnotations.setLabelValueOnIds("dataset_2", MOCK_DATASET, 0, [4], BOOLEAN_VALUE_TRUE);
-    sourceAnnotations.setLabelValueOnIds("dataset_1", MOCK_DATASET, 1, [1], "A");
-    sourceAnnotations.setLabelValueOnIds("dataset_2", MOCK_DATASET, 1, [5], "B");
+      sourceAnnotations.setLabelValueOnIds("dataset_1", MOCK_DATASET, 0, [0, 2], BOOLEAN_VALUE_TRUE);
+      sourceAnnotations.setLabelValueOnIds("dataset_2", MOCK_DATASET, 0, [4], BOOLEAN_VALUE_TRUE);
+      sourceAnnotations.setLabelValueOnIds("dataset_1", MOCK_DATASET, 1, [1], "A");
+      sourceAnnotations.setLabelValueOnIds("dataset_2", MOCK_DATASET, 1, [5], "B");
 
-    const csv = sourceAnnotations.toCsv();
-    const parseResult = AnnotationData.fromCsv("dataset_1", MOCK_DATASET, csv);
-    const parsedAnnotations = parseResult.annotationData;
-    const labels = parsedAnnotations.getLabels();
+      const csv = sourceAnnotations.toCsv();
+      const parseResult = AnnotationData.fromCsv("dataset_1", MOCK_DATASET, csv);
+      const parsedAnnotations = parseResult.annotationData;
+      const labels = parsedAnnotations.getLabels();
 
-    expect(labels.length).toBe(2);
-    expect(labels[0].options.name).toBe(BOOLEAN_LABEL_KEY);
-    expect(labels[0].options.type).toBe(LabelType.BOOLEAN);
-    expect(labels[1].options.name).toBe(CUSTOM_LABEL_KEY);
-    expect(labels[1].options.type).toBe(LabelType.CUSTOM);
+      expect(labels.length).toBe(2);
+      expect(labels[0].options.name).toBe(BOOLEAN_LABEL_KEY);
+      expect(labels[0].options.type).toBe(LabelType.BOOLEAN);
+      expect(labels[1].options.name).toBe(CUSTOM_LABEL_KEY);
+      expect(labels[1].options.type).toBe(LabelType.CUSTOM);
 
-    expect(parsedAnnotations.isLabelOnId("dataset_1", 0, 0)).toBe(true);
-    expect(parsedAnnotations.isLabelOnId("dataset_1", 0, 2)).toBe(true);
-    expect(parsedAnnotations.isLabelOnId("dataset_1", 0, 1)).toBe(false);
-    expect(parsedAnnotations.isLabelOnId("dataset_2", 0, 4)).toBe(true);
+      expect(parsedAnnotations.isLabelOnId("dataset_1", 0, 0)).toBe(true);
+      expect(parsedAnnotations.isLabelOnId("dataset_1", 0, 2)).toBe(true);
+      expect(parsedAnnotations.isLabelOnId("dataset_1", 0, 1)).toBe(false);
+      expect(parsedAnnotations.isLabelOnId("dataset_2", 0, 4)).toBe(true);
 
-    expect(parsedAnnotations.getValueFromId("dataset_1", 1, 1)).toBe("A");
-    expect(parsedAnnotations.getValueFromId("dataset_2", 1, 5)).toBe("B");
-    expect(parsedAnnotations.getValueFromId("dataset_1", 1, 0)).toBeNull();
+      expect(parsedAnnotations.getValueFromId("dataset_1", 1, 1)).toBe("A");
+      expect(parsedAnnotations.getValueFromId("dataset_2", 1, 5)).toBe("B");
+      expect(parsedAnnotations.getValueFromId("dataset_1", 1, 0)).toBeNull();
 
-    expect(parseResult.unparseableRows).toEqual(0);
-    expect(parseResult.invalidIds).toEqual(0);
+      expect(parseResult.unparseableRows).toEqual(0);
+      expect(parseResult.invalidIds).toEqual(0);
+    });
+
+    it("fromCsv + toCsv replaces mismatched metadata values", () => {
+      // TODO
+    });
   });
 
   describe("merge", () => {
