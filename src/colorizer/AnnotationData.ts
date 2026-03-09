@@ -812,6 +812,19 @@ export class AnnotationData implements IAnnotationData {
     return datasetKeys;
   }
 
+  public getLabeledIdsInDataset(datasetKey: string): Set<number> {
+    const ids = new Set<number>();
+    for (const labelData of this.labelData) {
+      const labelIdData = labelData.datasetToIdData.get(datasetKey);
+      if (labelIdData) {
+        for (const id of labelIdData.ids) {
+          ids.add(id);
+        }
+      }
+    }
+    return ids;
+  }
+
   toCsv(delimiter: string = ","): string {
     const headerRow = [CSV_COL_DATASET, CSV_COL_ID, CSV_COL_SEG_ID, CSV_COL_TRACK, CSV_COL_TIME];
 
