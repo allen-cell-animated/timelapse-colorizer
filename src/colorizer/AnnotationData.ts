@@ -721,7 +721,7 @@ export class AnnotationData implements IAnnotationData {
    * Merges two annotation data objects and returns a new, resulting object,
    * based on the merge mode. Data is deep-copied, so the original objects are
    * not modified.
-   * @param annotationData1 The first annotation data object.)
+   * @param annotationData1 The first annotation data object.
    * @param annotationData2 The second annotation data object.
    * @param mergeMode The merge mode to use. Can be one of:
    * - `AnnotationMergeMode.APPEND`: Appends the labels from the second

@@ -660,8 +660,28 @@ describe("AnnotationData", () => {
       expect(parseResult.invalidIds).toEqual(0);
     });
 
-    it("fromCsv + toCsv replaces mismatched metadata values", () => {
-      // TODO
+    it("fromCsv replaces mismatched metadata values", () => {
+      const mockCsvHeaders = `Dataset,ID,Label,Track,Frame,${BOOLEAN_LABEL_KEY}\r\n`;
+      // TODO: In the case of a mismatch, and a matching track + time + seg ID
+      // is found, should the ID be replaced instead?
+      const mockCsvData =
+        `${MOCK_DATASET_KEY},0,-40,30,20,${BOOLEAN_VALUE_TRUE}\r\n` +
+        `${MOCK_DATASET_KEY},1,5,5,5,${BOOLEAN_VALUE_TRUE}\r\n` +
+        `${MOCK_DATASET_KEY},2,6,7,8,${BOOLEAN_VALUE_TRUE}\r\n` +
+        `${MOCK_DATASET_KEY},3,9,10,11,${BOOLEAN_VALUE_TRUE}\r\n`;
+
+      const mockCsv = mockCsvHeaders + mockCsvData;
+      const result = AnnotationData.fromCsv(MOCK_DATASET_KEY, mockDataset, mockCsv);
+      const annotationData = result.annotationData;
+      const csv = annotationData.toCsv();
+      const parsedLines = csv.split("\r\n");
+      expect(parsedLines.length).toBe(5); // header + 4 data lines
+      // Metadata columns should match the dataset values instead of the
+      // original CSV values
+      expect(parsedLines[1]).toEqual(`${MOCK_DATASET_KEY},0,0,0,0,true`);
+      expect(parsedLines[2]).toEqual(`${MOCK_DATASET_KEY},1,1,1,1,true`);
+      expect(parsedLines[3]).toEqual(`${MOCK_DATASET_KEY},2,2,2,2,true`);
+      expect(parsedLines[4]).toEqual(`${MOCK_DATASET_KEY},3,3,3,3,true`);
     });
   });
 
