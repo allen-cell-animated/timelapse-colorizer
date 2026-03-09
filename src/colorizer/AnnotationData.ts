@@ -235,8 +235,8 @@ export class AnnotationData implements IAnnotationData {
    * => metadata, where metadata is a length-3 Uint32Array containing `[track,
    * time, segId]` in that order. Used for CSV export.
    *
-   * Uses a Uint32Array for compact memory use compared to an object or regular
-   * Array (smaller + guaranteed to be adjacent in memory).
+   * Note: Metadata is stored as a Uint32Array for compact memory use compared
+   * to an object or regular Array (since Array uses pointers).
    */
   private datasetToIdMetadataMap: Map<string, Map<number, Uint32Array>>;
 
@@ -454,20 +454,23 @@ export class AnnotationData implements IAnnotationData {
   //// ID Metadata ////
   // Used for storing track, time, and segmentation ID info for CSV export.
 
-  private addStoredIdMetadata(datasetKey: string, id: number, track: number, time: number, segId: number): void {
+  private addStoredIdMetadata(
+    datasetKey: string,
+    id: number,
+    metadata: { track: number; time: number; segId: number }
+  ): void {
     if (!this.datasetToIdMetadataMap.has(datasetKey)) {
       this.datasetToIdMetadataMap.set(datasetKey, new Map());
     }
     const idMetadataMap = this.datasetToIdMetadataMap.get(datasetKey)!;
     // Always stored in track, time, segId order.
-    idMetadataMap.set(id, new Uint32Array([track, time, segId]));
+    idMetadataMap.set(id, new Uint32Array([metadata.track, metadata.time, metadata.segId]));
   }
 
   private getStoredIdMetadata(datasetKey: string, id: number): { track: number; time: number; segId: number } {
     const idMetadataMap = this.datasetToIdMetadataMap.get(datasetKey);
     const metadata = idMetadataMap?.get(id) ?? null;
     if (!metadata) {
-      // -1 values will flag as mismatched during CSV import.
       return { track: -1, time: -1, segId: -1 };
     }
     return {
@@ -494,10 +497,7 @@ export class AnnotationData implements IAnnotationData {
 
   private removeStoredIdMetadata(datasetKey: string, id: number): void {
     const idMetadataMap = this.datasetToIdMetadataMap.get(datasetKey);
-    if (!idMetadataMap) {
-      return;
-    }
-    idMetadataMap.delete(id);
+    idMetadataMap?.delete(id);
   }
 
   ////
@@ -554,7 +554,7 @@ export class AnnotationData implements IAnnotationData {
     labelIdData.ids.add(id);
     labelData.lastValue = value;
 
-    this.addStoredIdMetadata(datasetKey, id, metadata.track, metadata.time, metadata.segId);
+    this.addStoredIdMetadata(datasetKey, id, metadata);
     this.markIdMapAsDirty(datasetKey);
   }
 
@@ -721,7 +721,7 @@ export class AnnotationData implements IAnnotationData {
    * Merges two annotation data objects and returns a new, resulting object,
    * based on the merge mode. Data is deep-copied, so the original objects are
    * not modified.
-   * @param annotationData1 The first annotation data object.
+   * @param annotationData1 The first annotation data object.)
    * @param annotationData2 The second annotation data object.
    * @param mergeMode The merge mode to use. Can be one of:
    * - `AnnotationMergeMode.APPEND`: Appends the labels from the second
@@ -764,8 +764,10 @@ export class AnnotationData implements IAnnotationData {
           mergedAnnotationData.labelData[i].options.color = getDefaultColor(i);
         }
       }
-      mergedAnnotationData.applyStoredIdMetadata(annotationData1.datasetToIdMetadataMap);
+      // Keep precedence of annotationData1's metadata-- if both have
+      // (conflicting) metadata for the same ID, annotationData1's will be used.
       mergedAnnotationData.applyStoredIdMetadata(annotationData2.datasetToIdMetadataMap);
+      mergedAnnotationData.applyStoredIdMetadata(annotationData1.datasetToIdMetadataMap);
       mergedAnnotationData.numLabelsCreated = annotationData1.numLabelsCreated + annotationData2.numLabelsCreated;
     } else {
       // Merge
@@ -796,8 +798,8 @@ export class AnnotationData implements IAnnotationData {
           mergedAnnotationData.numLabelsCreated++;
         }
       }
-      mergedAnnotationData.applyStoredIdMetadata(annotationData1.datasetToIdMetadataMap);
       mergedAnnotationData.applyStoredIdMetadata(annotationData2.datasetToIdMetadataMap);
+      mergedAnnotationData.applyStoredIdMetadata(annotationData1.datasetToIdMetadataMap);
     }
     return mergedAnnotationData;
   }
