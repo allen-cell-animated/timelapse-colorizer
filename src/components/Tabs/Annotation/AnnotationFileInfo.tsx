@@ -72,13 +72,9 @@ export default function AnnotationFileInfo(props: AnnotationFileInfoProps): Reac
         conversionWarnings.push(
           `- ${formatQuantityString(
             invalidDatasetKeys.length,
-            "dataset",
-            "datasets"
-          )} are not in the current collection (total of ${formatQuantityString(
-            totalInvalidIds,
-            "object",
-            "objects"
-          )}).`
+            "dataset is",
+            "datasets are"
+          )} not in the current collection (total of ${formatQuantityString(totalInvalidIds, "object", "objects")}).`
         );
       }
     }
@@ -93,7 +89,7 @@ export default function AnnotationFileInfo(props: AnnotationFileInfoProps): Reac
         </div>
       );
     }
-  }, [parseResult]);
+  }, [parseResult, collection]);
 
   const fileInfoContents = useMemo((): ReactNode => {
     if (!parseResult) {
@@ -103,13 +99,13 @@ export default function AnnotationFileInfo(props: AnnotationFileInfoProps): Reac
     const totalObjects = parseResult.totalRows;
     const parsedObjectsText = formatTotalQuantityString(parsedObjects, totalObjects, "object", "objects");
     const labels = parseResult.annotationData.getLabels();
-    const annotationCountText = formatQuantityString(labels.length, "annotation", "annotations");
+    const annotationCountText = formatQuantityString(labels.length, "annotation was", "annotations were");
     const datasetCountText = formatQuantityString(parseResult.annotationData.datasetKeys.size, "dataset", "datasets");
 
     return (
       <FlexColumn>
         <p>
-          {annotationCountText} were parsed for {parsedObjectsText} in {datasetCountText}:
+          {annotationCountText} parsed for {parsedObjectsText} in {datasetCountText}:
         </p>
         <ExpandableList collapsedHeightPx={66} expandedMaxHeightPx={300} buttonStyle={{ marginLeft: "15px" }}>
           <ol style={{ margin: "0", paddingLeft: "30px" }}>
