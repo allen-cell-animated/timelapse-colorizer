@@ -38,7 +38,7 @@ import {
   FeatureDataType,
   type FrameLoadResult,
   type PixelIdInfo,
-  VolumeLoadResult,
+  type VolumeLoadResult,
 } from "src/colorizer/types";
 import { getGlobalIdFromSegId, hasPropertyChanged } from "src/colorizer/utils/data_utils";
 import { convertCanvasOffsetPxToFrameCoords, getFrameSizeInScreenPx } from "src/colorizer/utils/math_utils";

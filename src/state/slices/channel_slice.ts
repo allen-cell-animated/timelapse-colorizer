@@ -2,7 +2,7 @@ import { Color } from "three";
 import type { StateCreator } from "zustand";
 
 import type { Backdrop3dData } from "src/colorizer/Dataset";
-import { ChannelRangePreset, ChannelSetting, VolumeLoadResult } from "src/colorizer/types";
+import { ChannelRangePreset, type ChannelSetting, type VolumeLoadResult } from "src/colorizer/types";
 import { decodeMaybeChannelSetting, encodeChannelSetting, isChannelKey } from "src/colorizer/utils/url_utils";
 import type { SerializedStoreData, SubscribableStore } from "src/state/types";
 import { addDerivedStateSubscriber } from "src/state/utils/store_utils";
@@ -61,12 +61,12 @@ export type ChannelSliceActions = {
    * Initializes the channel range settings using loaded volume data if not
    * already set.
    */
-  initializeChannelRange: (loadResult: VolumeLoadResult) => void;
+  updateChannelRangeWithVolumeData: (loadResult: VolumeLoadResult) => void;
 };
 
 export type ChannelSlice = ChannelSliceState & ChannelSliceActions;
 
-export const createChannelSlice: StateCreator<ChannelSlice, [], [], ChannelSlice> = (set, _get) => ({
+export const createChannelSlice: StateCreator<ChannelSlice, [], [], ChannelSlice> = (set, get) => ({
   channelSettings: [],
   getChannelDataRange: () => {
     return null;
@@ -83,21 +83,24 @@ export const createChannelSlice: StateCreator<ChannelSlice, [], [], ChannelSlice
       return { channelSettings: newSettings };
     });
   },
-  initializeChannelRange: (loadResult: VolumeLoadResult) => {
+  updateChannelRangeWithVolumeData: (loadResult: VolumeLoadResult) => {
+    const channelSetting = get().channelSettings[loadResult.backdropIdx];
+    // Apply IJ Auto range preset to range if not set. (This needs to happen
+    // outside of `set()` since `applyChannelRangePreset()` also updates state.)
+    if (channelSetting.min === null || channelSetting.max === null) {
+      get().applyChannelRangePreset(loadResult.backdropIdx, ChannelRangePreset.IJ_AUTO);
+    }
+    // Update data min and max with new loaded data, so they represent the min
+    // + max across all previously loaded volumes.
     set((state) => {
-      const channelSetting = state.channelSettings[loadResult.backdropIdx];
-
-      // Apply IJ Auto range preset if not set
-      if (channelSetting.min === null || channelSetting.max === null) {
-        state.applyChannelRangePreset(loadResult.backdropIdx, ChannelRangePreset.IJ_AUTO);
-      }
-      // Update data min and max if uninitialized
-      if (channelSetting.dataMin === null || channelSetting.dataMax === null) {
+      const dataMin = Math.min(channelSetting.dataMin ?? loadResult.dataMin, loadResult.dataMin);
+      const dataMax = Math.max(channelSetting.dataMax ?? loadResult.dataMax, loadResult.dataMax);
+      if (channelSetting.dataMin !== dataMin || channelSetting.dataMax !== dataMax) {
         const newSettings = [...state.channelSettings];
         newSettings[loadResult.backdropIdx] = {
           ...newSettings[loadResult.backdropIdx],
-          dataMin: loadResult.dataMin,
-          dataMax: loadResult.dataMax,
+          dataMin,
+          dataMax,
         };
         return { channelSettings: newSettings };
       }

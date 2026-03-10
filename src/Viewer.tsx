@@ -92,7 +92,7 @@ function Viewer(): ReactElement {
       useViewerStateStore.setState({ currentFrame: result.frame });
     });
     canvas.setOnVolumeLoadCallback((result) => {
-      useViewerStateStore.getState().initializeChannelRange(result);
+      useViewerStateStore.getState().updateChannelRangeWithVolumeData(result);
     });
     useViewerStateStore.getState().setFrameLoadCallback(async (frame: number) => await canvas.setFrame(frame));
     return canvas;

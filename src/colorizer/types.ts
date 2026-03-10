@@ -331,8 +331,24 @@ export type ChannelSetting = {
   visible: boolean;
   color: Color;
   opacity: number;
+  /**
+   * Minimum intensity value for the channel's ramp. If `null`, the value will
+   * be initialized with the AutoIJ preset once volume data is loaded.
+   */
   min: number | null;
+  /**
+   * Maximum intensity value for the channel's ramp. If `null`, the value will
+   * be initialized with the AutoIJ preset once volume data is loaded.
+   */
   max: number | null;
+  /**
+   * Minimum value of the channel's data range. If `null`, will be set to the
+   * data min once volume data is loaded.
+   */
   dataMin: number | null;
+  /**
+   * Maximum value of the channel's data range. If `null`, will be set to the
+   * data max once volume data is loaded.
+   */
   dataMax: number | null;
 };

@@ -26,7 +26,7 @@ import {
   type FrameLoadResult,
   type FrameVectorData,
   type PixelIdInfo,
-  VolumeLoadResult,
+  type VolumeLoadResult,
 } from "src/colorizer/types";
 import { getRelativeToAbsoluteChannelIndexMap, getVolumeSources } from "src/colorizer/utils/channels";
 import { bucketVectorDataByTime, getGlobalIdFromSegId, hasPropertyChanged } from "src/colorizer/utils/data_utils";

@@ -494,7 +494,7 @@ export function encodeChannelSetting(setting: ChannelSetting): string {
 
 /**
  * Decodes a string to a float value, returning `null` instead if the value is
- * NaN, undefined, or null.
+ * `NaN`, `undefined`, or `null`.
  */
 export function decodeFloatOrNull(value: string | undefined | null): number | null {
   if (value === null || value === undefined) {
@@ -526,6 +526,8 @@ export function decodeMaybeChannelSetting(settingString: string | null): Partial
         break;
       }
       case ChannelSettingUrlParam.RAMP:
+        // Setting to `null` indicates that the value needs to be initialized
+        // once data is loaded.
         setting.min = decodeFloatOrNull(valueParts[0]);
         setting.max = decodeFloatOrNull(valueParts[1]);
         break;
