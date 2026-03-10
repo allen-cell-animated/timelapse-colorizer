@@ -2,7 +2,7 @@ import type { PresetsItem } from "antd/es/color-picker/interface";
 import React, { type ReactElement } from "react";
 import type { Color } from "three";
 
-import { DrawMode, SelectionOutlineColorMode } from "src/colorizer";
+import { DrawMode, KNOWN_CATEGORICAL_PALETTES, SelectionOutlineColorMode } from "src/colorizer";
 import DropdownWithColorPicker from "src/components/Dropdowns/DropdownWithColorPicker";
 import type { SelectItem } from "src/components/Dropdowns/types";
 import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
@@ -49,7 +49,7 @@ const EDGE_COLOR_PRESETS: PresetsItem[] = [
 ];
 
 const OUTLINE_COLOR_MODE_ITEMS = [
-  { value: SelectionOutlineColorMode.USE_AUTO_COLOR.toString(), label: "Auto" },
+  { value: SelectionOutlineColorMode.USE_PALETTE.toString(), label: "Use palette" },
   { value: SelectionOutlineColorMode.USE_CUSTOM_COLOR.toString(), label: "Use color" },
 ] as const satisfies SelectItem[];
 
@@ -61,12 +61,14 @@ export default function ObjectSettings(): ReactElement {
   const outlineColor = useViewerStateStore((state) => state.outlineColor);
   const outlineColorMode = useViewerStateStore((state) => state.outlineColorMode);
   const outOfRangeDrawSettings = useViewerStateStore((state) => state.outOfRangeDrawSettings);
+  const outlinePaletteKey = useViewerStateStore((state) => state.outlinePaletteKey);
   const setEdgeColor = useViewerStateStore((state) => state.setEdgeColor);
   const setEdgeMode = useViewerStateStore((state) => state.setEdgeMode);
   const setOutlierDrawSettings = useViewerStateStore((state) => state.setOutlierDrawSettings);
   const setOutlineColor = useViewerStateStore((state) => state.setOutlineColor);
   const setOutlineColorMode = useViewerStateStore((state) => state.setOutlineColorMode);
   const setOutOfRangeDrawSettings = useViewerStateStore((state) => state.setOutOfRangeDrawSettings);
+  const setOutlinePaletteKey = useViewerStateStore((state) => state.setOutlinePaletteKey);
 
   return (
     <ToggleCollapse label="Objects">
@@ -82,14 +84,21 @@ export default function ObjectSettings(): ReactElement {
               },
             }}
             // Color picker
-            showColorPicker={
-              outlineColorMode === SelectionOutlineColorMode.USE_AUTO_COLOR ||
-              outlineColorMode === SelectionOutlineColorMode.USE_CUSTOM_COLOR
-            }
+            showColorPicker={outlineColorMode === SelectionOutlineColorMode.USE_CUSTOM_COLOR}
             colorPickerProps={{
               color: outlineColor,
               onChange: setOutlineColor,
               presets: DEFAULT_OUTLINE_COLOR_PRESETS,
+            }}
+            // Color ramp picker
+            showColorRamp={outlineColorMode === SelectionOutlineColorMode.USE_PALETTE}
+            colorRampProps={{
+              useCategoricalPalettes: true,
+              selectedPalette: KNOWN_CATEGORICAL_PALETTES.get(outlinePaletteKey)?.colors,
+              selectedPaletteKey: outlinePaletteKey,
+              onChangePalette: (_, key) => setOutlinePaletteKey(key),
+              numCategories: 12,
+              showReverseButton: false,
             }}
           ></DropdownWithColorPicker>
         </SettingsItem>

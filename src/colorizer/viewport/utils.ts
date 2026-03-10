@@ -52,16 +52,12 @@ export function get2DCanvasScaling(
   };
 }
 
-export function shouldUsePerTrackPathColors(params: RenderCanvasStateParams): boolean {
-  return params.tracks.size > 1 && params.outlineColorMode === SelectionOutlineColorMode.USE_AUTO_COLOR;
-}
-
 /**
  * Handles "auto" behavior for track path colors. Switches from default outline
  * color to per-track colors if there are multiple tracks selected.
  */
 export function getTrackPathColor(track: Track | null, params: RenderCanvasStateParams): Color {
-  if (shouldUsePerTrackPathColors(params) && track !== null) {
+  if (params.outlineColorMode === SelectionOutlineColorMode.USE_PALETTE && track !== null) {
     return params.trackColors.get(track.trackId) ?? params.outlineColor;
   }
   return params.outlineColor;
