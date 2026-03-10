@@ -17,7 +17,7 @@ export const useIsHotkeyHeld = (hotkey: string | string[]): boolean => {
   // Handle case where the keyup event is missed if the user switches to another
   // window or tab; check for key state when window is focused again.
   useEffect(() => {
-    const onFocus = () => {
+    const onFocus = (): void => {
       setIsHotkeyHeld(areAnyHotkeysPressed(hotkey));
     };
     window.addEventListener("focus", onFocus);
