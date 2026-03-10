@@ -4,6 +4,7 @@ import type { AnnotationParseResult } from "src/colorizer/AnnotationData";
 import { getTotalLabeledIds } from "src/colorizer/utils/annotation_utils";
 import ExpandableList from "src/components/ExpandableList";
 import FileInfoCard from "src/components/Inputs/FileInfoCard";
+import { useViewerStateStore } from "src/state";
 import { AppThemeContext } from "src/styles/AppStyle";
 import { FlexColumn } from "src/styles/utils";
 import { formatQuantityString, renderStringArrayAsJsx } from "src/utils/formatting";
@@ -31,6 +32,7 @@ export default function AnnotationFileInfo(props: AnnotationFileInfoProps): Reac
   const theme = useContext(AppThemeContext);
 
   const errorText = props.errorText ?? (props.parseResult === null && "File could not be parsed.");
+  const collection = useViewerStateStore((state) => state.collection);
 
   const conversionWarningText = useMemo((): ReactNode => {
     if (!parseResult) {
@@ -55,18 +57,39 @@ export default function AnnotationFileInfo(props: AnnotationFileInfoProps): Reac
       );
       conversionWarnings.push(`- ${warningText} not match the current dataset.`);
     }
+    if (collection !== null) {
+      // Check for + report dataset keys that are not in the collection
+      const datasetKeys = collection.getDatasetKeys();
+      const annotationDatasetKeys = parseResult.annotationData.datasetKeys;
+      const invalidDatasetKeys = Array.from(annotationDatasetKeys).filter(
+        (datasetKey) => !datasetKeys.includes(datasetKey)
+      );
+      const totalInvalidIds = invalidDatasetKeys.reduce((total, datasetKey) => {
+        const numIds = parseResult.annotationData.getLabeledIdsInDataset(datasetKey).size;
+        return total + numIds;
+      }, 0);
+      if (invalidDatasetKeys.length > 0) {
+        conversionWarnings.push(
+          `- ${formatQuantityString(
+            invalidDatasetKeys.length,
+            "dataset is",
+            "datasets are"
+          )} not in the current collection (total of ${formatQuantityString(totalInvalidIds, "object", "objects")}).`
+        );
+      }
+    }
     if (conversionWarnings.length === 0) {
       return null;
     } else {
       return (
         <div>
           Some data mismatches were detected in the CSV file. This may indicate that the annotations are from another
-          dataset.
+          collection.
           {renderStringArrayAsJsx(conversionWarnings)}
         </div>
       );
     }
-  }, [parseResult]);
+  }, [parseResult, collection]);
 
   const fileInfoContents = useMemo((): ReactNode => {
     if (!parseResult) {
@@ -76,12 +99,13 @@ export default function AnnotationFileInfo(props: AnnotationFileInfoProps): Reac
     const totalObjects = parseResult.totalRows;
     const parsedObjectsText = formatTotalQuantityString(parsedObjects, totalObjects, "object", "objects");
     const labels = parseResult.annotationData.getLabels();
+    const annotationCountText = formatQuantityString(labels.length, "annotation was", "annotations were");
+    const datasetCountText = formatQuantityString(parseResult.annotationData.datasetKeys.size, "dataset", "datasets");
 
     return (
       <FlexColumn>
         <p>
-          Annotations were parsed for {parsedObjectsText} with{" "}
-          {formatQuantityString(labels.length, "annotation", "annotations")}:
+          {annotationCountText} parsed for {parsedObjectsText} in {datasetCountText}:
         </p>
         <ExpandableList collapsedHeightPx={66} expandedMaxHeightPx={300} buttonStyle={{ marginLeft: "15px" }}>
           <ol style={{ margin: "0", paddingLeft: "30px" }}>
