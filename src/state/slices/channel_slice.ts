@@ -32,7 +32,7 @@ function getDefaultColorForChannel(index: number, totalChannels: number): Color 
 
 function getDefaultChannelSetting(index: number, totalChannels: number, backdropData?: Backdrop3dData): ChannelSetting {
   return {
-    visible: index < 3,
+    visible: false,
     color: getDefaultColorForChannel(index, totalChannels),
     opacity: 1,
     // Null values mean that this should be initialized with loaded data
