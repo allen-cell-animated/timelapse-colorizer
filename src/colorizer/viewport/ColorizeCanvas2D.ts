@@ -33,7 +33,13 @@ import {
   OUTLINE_COLOR_DEFAULT,
 } from "src/colorizer/constants";
 import type Dataset from "src/colorizer/Dataset";
-import { DrawMode, FeatureDataType, type FrameLoadResult, type PixelIdInfo } from "src/colorizer/types";
+import {
+  DrawMode,
+  FeatureDataType,
+  type FrameLoadResult,
+  type PixelIdInfo,
+  VolumeLoadResult,
+} from "src/colorizer/types";
 import { getGlobalIdFromSegId, hasPropertyChanged } from "src/colorizer/utils/data_utils";
 import { convertCanvasOffsetPxToFrameCoords, getFrameSizeInScreenPx } from "src/colorizer/utils/math_utils";
 import { packDataTexture } from "src/colorizer/utils/texture_utils";
@@ -489,6 +495,10 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
 
   public setOnFrameLoadCallback(callback: (result: FrameLoadResult) => void): void {
     this.onFrameLoadCallback = callback;
+  }
+
+  public setOnVolumeLoadCallback(_callback: (result: VolumeLoadResult) => void): void {
+    // no-op
   }
 
   public setOnRenderCallback(callback: null | (() => void)): void {

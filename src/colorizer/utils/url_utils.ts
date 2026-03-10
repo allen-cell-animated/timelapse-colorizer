@@ -492,6 +492,18 @@ export function encodeChannelSetting(setting: ChannelSetting): string {
   return encodedChannel;
 }
 
+/**
+ * Decodes a string to a float value, returning `null` instead if the value is
+ * NaN, undefined, or null.
+ */
+export function decodeFloatOrNull(value: string | undefined | null): number | null {
+  if (value === null || value === undefined) {
+    return null;
+  }
+  const floatValue = parseFloat(value);
+  return Number.isNaN(floatValue) ? null : floatValue;
+}
+
 export function decodeMaybeChannelSetting(settingString: string | null): Partial<ChannelSetting> | undefined {
   if (settingString === null) {
     return undefined;
@@ -514,12 +526,12 @@ export function decodeMaybeChannelSetting(settingString: string | null): Partial
         break;
       }
       case ChannelSettingUrlParam.RAMP:
-        setting.min = decodeFloat(valueParts[0]);
-        setting.max = decodeFloat(valueParts[1]);
+        setting.min = decodeFloatOrNull(valueParts[0]);
+        setting.max = decodeFloatOrNull(valueParts[1]);
         break;
       case ChannelSettingUrlParam.RANGE:
-        setting.dataMin = decodeFloat(valueParts[0]);
-        setting.dataMax = decodeFloat(valueParts[1]);
+        setting.dataMin = decodeFloatOrNull(valueParts[0]);
+        setting.dataMax = decodeFloatOrNull(valueParts[1]);
         break;
       default:
         console.warn(`url_utils.decodeMaybeChannelSetting: Unknown channel setting key: '${key}'`);

@@ -1,7 +1,7 @@
 import { Vector2 } from "three";
 
 import type { LabelData } from "src/colorizer/AnnotationData";
-import type { ChannelRangePreset, FrameLoadResult, PixelIdInfo } from "src/colorizer/types";
+import type { ChannelRangePreset, FrameLoadResult, PixelIdInfo, VolumeLoadResult } from "src/colorizer/types";
 import { ViewMode } from "src/colorizer/types";
 import { hasPropertyChanged } from "src/colorizer/utils/data_utils";
 
@@ -77,6 +77,7 @@ export default class CanvasOverlay implements IRenderCanvas {
   private currentFrame: number;
   private params: RenderCanvasStateParams;
   private onFrameLoadCallback: (result: FrameLoadResult) => void;
+  private onVolumeLoadCallback: (result: VolumeLoadResult) => void;
 
   private labelData: LabelData[];
   private timeToLabelIds: Map<number, Record<number, number[]>>;
@@ -148,6 +149,7 @@ export default class CanvasOverlay implements IRenderCanvas {
     this.canvasContainerDiv.appendChild(this.canvasElement);
 
     this.onFrameLoadCallback = () => {};
+    this.onVolumeLoadCallback = () => {};
 
     this.params = params;
     this.currentFrame = -1;
@@ -207,6 +209,11 @@ export default class CanvasOverlay implements IRenderCanvas {
   public setOnFrameLoadCallback(callback: (result: FrameLoadResult) => void): void {
     this.onFrameLoadCallback = callback;
     this.innerCanvas.setOnFrameLoadCallback(callback);
+  }
+
+  public setOnVolumeLoadCallback(callback: (result: VolumeLoadResult) => void): void {
+    this.onVolumeLoadCallback = callback;
+    this.innerCanvas.setOnVolumeLoadCallback(callback);
   }
 
   dispose(): void {
@@ -337,6 +344,7 @@ export default class CanvasOverlay implements IRenderCanvas {
     this.innerCanvasContainerDiv.appendChild(this.innerCanvas.domElement);
     this.innerCanvas.setResolution(this.innerCanvasSize.x, this.innerCanvasSize.y);
     this.innerCanvas.setOnFrameLoadCallback(this.onFrameLoadCallback);
+    this.innerCanvas.setOnVolumeLoadCallback(this.onVolumeLoadCallback);
     this.innerCanvas.resetView();
     this.innerCanvas.setOnRenderCallback(this.onInnerCanvasRender);
     await this.innerCanvas.setParams(this.params);

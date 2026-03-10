@@ -2,7 +2,7 @@ import { Color } from "three";
 import type { StateCreator } from "zustand";
 
 import type { Backdrop3dData } from "src/colorizer/Dataset";
-import type { ChannelRangePreset, ChannelSetting } from "src/colorizer/types";
+import { ChannelRangePreset, ChannelSetting, VolumeLoadResult } from "src/colorizer/types";
 import { decodeMaybeChannelSetting, encodeChannelSetting, isChannelKey } from "src/colorizer/utils/url_utils";
 import type { SerializedStoreData, SubscribableStore } from "src/state/types";
 import { addDerivedStateSubscriber } from "src/state/utils/store_utils";
@@ -35,10 +35,11 @@ function getDefaultChannelSetting(index: number, totalChannels: number, backdrop
     visible: index < 3,
     color: getDefaultColorForChannel(index, totalChannels),
     opacity: 1,
-    min: backdropData?.min ?? 0,
-    max: backdropData?.max ?? 255,
-    dataMin: backdropData?.min ?? 0,
-    dataMax: backdropData?.max ?? 255,
+    // Null values mean that this should be initialized with loaded data
+    min: backdropData?.min ?? null,
+    max: backdropData?.max ?? null,
+    dataMin: null,
+    dataMax: null,
   };
 }
 
@@ -56,6 +57,11 @@ export type ChannelSliceActions = {
   updateChannelSettings: (index: number, settings: Partial<ChannelSetting>) => void;
   setGetChannelDataRangeCallback: (callback: (channelIndex: number) => null | [number, number]) => void;
   setApplyChannelRangePresetCallback: (callback: (channelIndex: number, preset: ChannelRangePreset) => void) => void;
+  /**
+   * Initializes the channel range settings using loaded volume data if not
+   * already set.
+   */
+  initializeChannelRange: (loadResult: VolumeLoadResult) => void;
 };
 
 export type ChannelSlice = ChannelSliceState & ChannelSliceActions;
@@ -75,6 +81,27 @@ export const createChannelSlice: StateCreator<ChannelSlice, [], [], ChannelSlice
         newSettings[index] = { ...newSettings[index], ...settings };
       }
       return { channelSettings: newSettings };
+    });
+  },
+  initializeChannelRange: (loadResult: VolumeLoadResult) => {
+    set((state) => {
+      const channelSetting = state.channelSettings[loadResult.backdropIdx];
+
+      // Apply IJ Auto range preset if not set
+      if (channelSetting.min === null || channelSetting.max === null) {
+        state.applyChannelRangePreset(loadResult.backdropIdx, ChannelRangePreset.IJ_AUTO);
+      }
+      // Update data min and max if uninitialized
+      if (channelSetting.dataMin === null || channelSetting.dataMax === null) {
+        const newSettings = [...state.channelSettings];
+        newSettings[loadResult.backdropIdx] = {
+          ...newSettings[loadResult.backdropIdx],
+          dataMin: loadResult.dataMin,
+          dataMax: loadResult.dataMax,
+        };
+        return { channelSettings: newSettings };
+      }
+      return {};
     });
   },
   // Callback setters
