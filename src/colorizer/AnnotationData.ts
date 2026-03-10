@@ -869,6 +869,7 @@ export class AnnotationData implements IAnnotationData {
   clear(): void {
     this.labelData = [];
     this.numLabelsCreated = 0;
+    this.datasetToIdMetadataMap.clear();
     this.markIdMapAsDirty();
   }
 }
