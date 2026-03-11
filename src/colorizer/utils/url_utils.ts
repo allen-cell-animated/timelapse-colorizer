@@ -14,6 +14,7 @@ import {
   LoadErrorMessage,
   LoadTroubleshooting,
   PlotRangeType,
+  SelectionOutlineColorMode,
   ThresholdType,
   TrackPathColorMode,
 } from "src/colorizer/types";
@@ -49,6 +50,7 @@ export enum UrlParam {
   FILTERED_MODE = "filter-mode",
   FILTERED_COLOR = "filter-color",
   OUTLINE_COLOR = "outline-color",
+  OUTLINE_COLOR_MODE = "outline-mode",
   EDGE_COLOR = "edge-color",
   EDGE_MODE = "edge",
   SHOW_PATH = "path",
@@ -399,14 +401,37 @@ export function decodeInt(value: string | null): number | undefined {
   return value === null ? undefined : parseInt(value, 10);
 }
 
-export function decodeTracks(value: string | null): number[] | undefined {
+/**
+ * Serializes a list of track IDs and their associated color indices.
+ * @returns A comma-separated list of trackID:colorIdx entries.
+ */
+export function encodeTracks(trackIds: number[], trackToColorIdx?: Map<number, number>): string {
+  const tracksAndColorIdx = trackIds.map((trackId, index) => {
+    const colorId = trackToColorIdx?.get(trackId) ?? index;
+    return `${trackId}:${colorId}`;
+  });
+  return tracksAndColorIdx.join(",");
+}
+
+export function decodeTracks(value: string | null): { trackIds: number[]; colorIdx: number[] } | undefined {
   if (value === null) {
     return undefined;
   }
-  return value
-    .split(",")
-    .map((trackIdStr) => parseInt(trackIdStr, 10))
-    .filter((trackId) => !Number.isNaN(trackId));
+  const trackInfo = value.split(",");
+  const trackIds: number[] = [];
+  const colorIdx: number[] = [];
+  for (let i = 0; i < trackInfo.length; i++) {
+    const info = trackInfo[i];
+    const [trackIdStr, colorIdStr] = info.split(":");
+    const trackId = parseInt(trackIdStr, 10);
+    const parsedColorId = colorIdStr ? parseInt(colorIdStr, 10) : i;
+    const colorId = Number.isInteger(parsedColorId) ? parsedColorId : i;
+    if (Number.isInteger(trackId) && trackId >= 0) {
+      trackIds.push(trackId);
+      colorIdx.push(colorId);
+    }
+  }
+  return { trackIds, colorIdx };
 }
 
 export function parseDrawMode(mode: string | null): DrawMode | undefined {
@@ -425,6 +450,13 @@ export function parseDrawSettings(
     color: isHexColor(hexColor) ? new Color(hexColor) : defaultSettings.color,
     mode: mode && isDrawMode(modeInt) ? modeInt : defaultSettings.mode,
   };
+}
+
+export function parseTrackOutlineColorMode(mode: string | null): SelectionOutlineColorMode | undefined {
+  const modeInt = parseInt(mode || "-1", 10);
+  const isTrackOutlineColorMode =
+    modeInt === SelectionOutlineColorMode.USE_CUSTOM_COLOR || modeInt === SelectionOutlineColorMode.USE_AUTO_COLOR;
+  return mode && isTrackOutlineColorMode ? (modeInt as SelectionOutlineColorMode) : undefined;
 }
 
 export function parseTrackPathMode(mode: string | null): TrackPathColorMode | undefined {

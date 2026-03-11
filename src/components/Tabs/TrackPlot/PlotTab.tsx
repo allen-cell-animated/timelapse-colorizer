@@ -1,6 +1,6 @@
 import { PlusOutlined } from "@ant-design/icons";
 import { Input } from "antd";
-import React, { type ReactElement, useEffect, useState } from "react";
+import React, { type ReactElement, useEffect, useMemo, useState } from "react";
 import styled from "styled-components";
 
 import IconButton from "src/components/Buttons/IconButton";
@@ -39,6 +39,13 @@ export default function PlotTab(props: PlotTabProps): ReactElement {
   const setFrame = useViewerStateStore((state) => state.setFrame);
   const addTracks = useViewerStateStore((state) => state.addTracks);
   const viewMode = useViewerStateStore((state) => state.viewMode);
+  const trackToColorMap = useViewerStateStore((state) => state.trackColors);
+
+  const trackColors = useMemo(() => {
+    return Array.from(tracks.keys())
+      .map((key) => trackToColorMap.get(key))
+      .map((color) => "#" + (color?.getHexString() || "ff00ff"));
+  }, [tracks, trackToColorMap]);
 
   const [findTrackInput, setFindTrackInput] = useState("");
 
@@ -112,6 +119,7 @@ export default function PlotTab(props: PlotTabProps): ReactElement {
             featureKey={featureKey}
             tracks={tracks}
             viewMode={viewMode}
+            trackColors={trackColors}
           />
         </LoadingSpinner>
       </div>

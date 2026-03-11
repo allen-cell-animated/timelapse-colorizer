@@ -18,6 +18,7 @@ type DropdownWithColorPickerProps = {
   selected: string;
   items: { value: string; label: string }[];
   onValueChange: (mode: string) => void;
+  controlWidth?: string;
 
   // Color picker
   showColorPicker?: boolean;
@@ -38,6 +39,7 @@ type DropdownWithColorPickerProps = {
 
 const defaultProps: Partial<DropdownWithColorPickerProps> = {
   disabled: false,
+  controlWidth: "105px",
   showColorPicker: true,
   showColorRamp: false,
   selectedRampKey: DEFAULT_COLOR_RAMP_KEY,
@@ -78,7 +80,7 @@ export default function DropdownWithColorPicker(propsInput: DropdownWithColorPic
         showSelectedItemTooltip={false}
         onChange={props.onValueChange}
         disabled={props.disabled}
-        controlWidth={"105px"}
+        controlWidth={props.controlWidth}
       ></SelectionDropdown>
       <FlexRow style={{ position: "relative" }} $gap={6}>
         <div
