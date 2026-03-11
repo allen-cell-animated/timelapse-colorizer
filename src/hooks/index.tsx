@@ -1,4 +1,4 @@
-export { useAnnotationDatasetWarning } from "./useAnnotationDatasetWarning";
+export { useAnnotationCollectionWarning } from "./useAnnotationCollectionWarning";
 export type { AnnotationState } from "./useAnnotations";
 export { useAnnotations } from "./useAnnotations";
 export { useBackdropShortcuts } from "./useBackdropShortcuts";

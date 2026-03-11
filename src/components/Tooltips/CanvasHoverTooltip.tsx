@@ -48,6 +48,7 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
   const { lastValidHoveredId: lastHoveredId } = props;
 
   const dataset = useViewerStateStore((state) => state.dataset);
+  const datasetKey = useViewerStateStore((state) => state.datasetKey);
   const featureKey = useViewerStateStore((state) => state.featureKey);
   const motionDeltas = useViewerStateStore((state) => state.vectorMotionDeltas);
   const vectorConfig = useViewerStateStore(useShallow(selectVectorConfigFromState));
@@ -135,8 +136,8 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
   // Show all current labels applied to the hovered object
   const labelData = props.annotationState.data.getLabels();
   const lastHoveredGlobalId = lastHoveredId.globalId;
-  if (lastHoveredGlobalId !== undefined) {
-    const labels = props.annotationState.data.getLabelsAppliedToId(lastHoveredGlobalId);
+  if (lastHoveredGlobalId !== undefined && datasetKey !== null) {
+    const labels = props.annotationState.data.getLabelsAppliedToId(datasetKey, lastHoveredGlobalId);
     if (labels.length > 0 && props.annotationState.visible) {
       objectInfoContent.push(
         <div style={{ lineHeight: "28px" }}>
@@ -144,7 +145,7 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
             const label = labelData[labelIdx];
             const value =
               label.options.type !== LabelType.BOOLEAN
-                ? props.annotationState.data.getValueFromId(labelIdx, lastHoveredGlobalId)
+                ? props.annotationState.data.getValueFromId(datasetKey, labelIdx, lastHoveredGlobalId)
                 : undefined;
             return (
               // TODO: Tags do not change their text color based on the background color.
@@ -188,8 +189,12 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
       </>
     );
 
-    if (lastHoveredId.globalId !== undefined) {
-      const isHoveredIdLabeled = props.annotationState.data.isLabelOnId(currentLabelIdx, lastHoveredId.globalId);
+    if (lastHoveredId.globalId !== undefined && datasetKey !== null) {
+      const isHoveredIdLabeled = props.annotationState.data.isLabelOnId(
+        datasetKey,
+        currentLabelIdx,
+        lastHoveredId.globalId
+      );
       const isLabelBoolean = currentLabelData.options.type === LabelType.BOOLEAN;
       const verb = isHoveredIdLabeled ? (isLabelBoolean ? "clear" : "edit") : "annotate";
       if (props.annotationState.selectionMode === AnnotationSelectionMode.TRACK) {
