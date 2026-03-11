@@ -41,7 +41,7 @@ const deepCopyChannelSettings = (settings: ChannelSetting[]): ChannelSetting[] =
 };
 
 describe("ChannelSlice", () => {
-  describe("updateChannelRangeWithVolumeData", async () => {
+  describe("updateChannelRangeWithVolumeData", () => {
     it("sets data min and max to loaded data range", async () => {
       const { result } = renderHook(() => useViewerStateStore());
       await setDatasetAsync(result, await makeDatasetWithNChannels(2));
