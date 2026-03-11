@@ -58,8 +58,9 @@ export type ChannelSliceActions = {
   setGetChannelDataRangeCallback: (callback: (channelIndex: number) => null | [number, number]) => void;
   setApplyChannelRangePresetCallback: (callback: (channelIndex: number, preset: ChannelRangePreset) => void) => void;
   /**
-   * Initializes the channel range settings using loaded volume data if not
-   * already set.
+   * Updates the channel range settings using loaded volume data. Initializes
+   * min and max ramp if not already set, and updates dataMin and dataMax to
+   * reflect the min and max across all loaded volumes.
    */
   updateChannelRangeWithVolumeData: (loadResult: VolumeLoadResult) => void;
 };
@@ -86,7 +87,7 @@ export const createChannelSlice: StateCreator<ChannelSlice, [], [], ChannelSlice
   updateChannelRangeWithVolumeData: (loadResult: VolumeLoadResult) => {
     const channelSetting = get().channelSettings[loadResult.backdropIdx];
     // Apply IJ Auto range preset to range if not set. (This needs to happen
-    // outside of `set()` since `applyChannelRangePreset()` also updates state.)
+    // outside of `set()` since `applyChannelRangePreset()` updates state.)
     if (channelSetting.min === null || channelSetting.max === null) {
       get().applyChannelRangePreset(loadResult.backdropIdx, ChannelRangePreset.IJ_AUTO);
     }
