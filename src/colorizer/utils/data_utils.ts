@@ -272,6 +272,23 @@ export function getIntervals(values: number[]): [number, number][] {
   return intervals;
 }
 
+export function hasAnyValueChanged<T extends Array<unknown>>(curr: T | null, prev: T | null): boolean {
+  if (!curr && !prev) {
+    return false;
+  } else if (!curr || !prev) {
+    return true;
+  }
+  if (curr.length !== prev.length) {
+    return true;
+  }
+  for (let i = 0; i < curr.length; i++) {
+    if (curr[i] !== prev[i]) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export function hasPropertyChanged<T extends Record<string, unknown>>(
   curr: T | null,
   prev: T | null,

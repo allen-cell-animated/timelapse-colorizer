@@ -1,6 +1,5 @@
 import { unparse } from "papaparse";
-import type Plotly from "plotly.js-dist-min";
-import type { PlotData } from "plotly.js-dist-min";
+import Plotly from "plotly.js-dist-min";
 import type { Color } from "three";
 
 import {
@@ -172,37 +171,40 @@ export function makeLineTrace(
   };
 }
 
-// TODO: Crosshairs can be rendered using Plotly's layout shapes instead of traces,
-// which means time playback can run faster (assuming other plot params don't change).
-// See `Plotting.ts` for an example, and also https://plotly.com/javascript/reference/layout/shapes/.
-/**
- * Returns an array of Plotly traces that render a crosshair at the X,Y coordinates.
- */
-export function drawCrosshair(x: number, y: number): Partial<PlotData>[] {
-  const crosshair: Partial<PlotData> = {
-    x: [x],
-    y: [y],
-    type: "scattergl",
-    mode: "markers",
-    marker: {
-      size: 10,
-      line: {
-        color: "#000",
-        width: 1,
-      },
-      symbol: "cross-thin",
-    },
-  };
-  // Add a transparent white outline behind the marker for contrast.
-  const crosshairBg = { ...crosshair };
-  crosshairBg.marker = {
-    ...crosshairBg.marker,
+function getLineShape(
+  x: number,
+  y: number,
+  xDim: number,
+  yDim: number,
+  color: string,
+  width: number
+): Partial<Plotly.Shape> {
+  return {
+    xanchor: x,
+    yanchor: y,
+    x0: -xDim / 2,
+    x1: +xDim / 2,
+    y0: -yDim / 2,
+    y1: +yDim / 2,
+    xsizemode: "pixel",
+    ysizemode: "pixel",
+    type: "line",
+    layer: "above",
     line: {
-      color: "#ffffffa0",
-      width: 4,
+      color,
+      width,
     },
   };
-  return [crosshairBg, crosshair];
+}
+
+export function drawCrosshairShapes(x: number, y: number): Partial<Plotly.Shape>[] {
+  // Draws a black crosshair with a white transparent outline for contrast.
+  return [
+    getLineShape(x, y, 12, 0, "#ffffffa0", 4),
+    getLineShape(x, y, 0, 12, "#ffffffa0", 4),
+    getLineShape(x, y, 12, 0, "#000", 1.2),
+    getLineShape(x, y, 0, 12, "#000", 1.2),
+  ];
 }
 
 function isValueOutOfRange(value: number, range?: [number, number]): boolean {

@@ -9,6 +9,7 @@ import { SwitchIconSVG } from "src/assets";
 import { ColorRampType, type Dataset, type Track } from "src/colorizer";
 import { CENTROID_Y_FEATURE_KEY, TIME_FEATURE_KEY } from "src/colorizer/Dataset";
 import { DrawMode, type HexColorString, PlotRangeType, ViewMode } from "src/colorizer/types";
+import { hasAnyValueChanged } from "src/colorizer/utils/data_utils";
 import type { ShowAlertBannerCallback } from "src/components/Banner/hooks";
 import IconButton from "src/components/Buttons/IconButton";
 import TextButton from "src/components/Buttons/TextButton";
@@ -22,7 +23,7 @@ import { FlexRow, FlexRowAlignCenter } from "src/styles/utils";
 import { downloadCsv } from "src/utils/file_io";
 import {
   type DataArray,
-  drawCrosshair,
+  drawCrosshairShapes,
   getBucketIndex,
   getHoverTemplate,
   getScatterplotDataAsCsv,
@@ -290,13 +291,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     const hasRangeChanged = lastState.rangeType !== rangeType;
     const hasDatasetChanged = lastState.dataset !== dataset;
     return haveAxesChanged || hasRangeChanged || hasDatasetChanged;
-  };
-
-  /** Whether to ignore the render request until later (but continue to show as pending.) */
-  const shouldDelayRender = (): boolean => {
-    // Don't render when tab is not visible.
-    // Also, don't render updates during playback, to prevent blocking the UI.
-    return !props.isVisible || (isPlaying && rangeType === PlotRangeType.ALL_TIME);
   };
 
   const clearPlotAndStopRender = (): void => {
@@ -688,12 +682,11 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   // Plot Rendering
   //////////////////////////////////
 
-  const plotDependencies = [
+  const basePlotDependencies = [
     dataset,
     xAxisFeatureKey,
     yAxisFeatureKey,
     rangeType,
-    currentFrame,
     tracks,
     isVisible,
     isPlaying,
@@ -710,9 +703,42 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     resetYAxisPlotRange,
   ];
 
+  const prevDependenciesRef = useRef<typeof basePlotDependencies | null>(null);
+  const rawXDataRef = useRef<Uint32Array | Float32Array | undefined>(undefined);
+  const rawYDataRef = useRef<Uint32Array | Float32Array | undefined>(undefined);
+
+  const getCrosshairShapes = useCallback((): Partial<Plotly.Shape>[] => {
+    const shapes: Partial<Plotly.Shape>[] = [];
+    if (!rawXDataRef.current || !rawYDataRef.current) {
+      return shapes;
+    }
+    for (const track of tracks.values()) {
+      const currentObjectId = track.getIdAtTime(currentFrame);
+      if (currentObjectId !== -1) {
+        shapes.push(...drawCrosshairShapes(rawXDataRef.current[currentObjectId], rawYDataRef.current[currentObjectId]));
+        // TODO: Should this point still be drawn?
+        // Extra single point, so the point is still visible over the crosshair.
+        // traces.push(
+        //   ...colorizeScatterplotPoints(
+        //     [rawXData[currentObjectId]],
+        //     [rawYData[currentObjectId]],
+        //     [currentObjectId],
+        //     [dataset.getSegmentationId(currentObjectId)],
+        //     [track.trackId],
+        //     { size: 4 }
+        //   )
+        // );
+      }
+    }
+    return shapes;
+  }, [tracks, currentFrame]);
+
   const renderPlot = (forceRelayout: boolean = false): void => {
     const rawXData = getData(xAxisFeatureKey, dataset);
     const rawYData = getData(yAxisFeatureKey, dataset);
+    // Save raw data for drawing layout traces
+    rawXDataRef.current = rawXData;
+    rawYDataRef.current = rawYData;
 
     if (!rawXData || !rawYData || !xAxisFeatureKey || !yAxisFeatureKey || !dataset || !plotDivRef.current) {
       clearPlotAndStopRender();
@@ -749,6 +775,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       // disable hover for all points other than the track when one is selected
       tracks.size === 0 || rangeType !== PlotRangeType.ALL_TIME
     );
+    const shapes = [];
 
     const xHistogram: Partial<Plotly.PlotData> = {
       x: xData,
@@ -803,23 +830,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     }
 
     // Render crosshair at the current time for all tracks.
-    for (const track of tracks.values()) {
-      const currentObjectId = track.getIdAtTime(currentFrame);
-      if (currentObjectId !== -1) {
-        traces.push(...drawCrosshair(rawXData[currentObjectId], rawYData[currentObjectId]));
-        // Extra single point, so the point is still visible over the crosshair.
-        traces.push(
-          ...colorizeScatterplotPoints(
-            [rawXData[currentObjectId]],
-            [rawYData[currentObjectId]],
-            [currentObjectId],
-            [dataset.getSegmentationId(currentObjectId)],
-            [track.trackId],
-            { size: 4 }
-          )
-        );
-      }
-    }
+    shapes.push(...getCrosshairShapes());
 
     // Format axes
     const { scatterPlotAxis: scatterPlotXAxis, histogramAxis: histogramXAxis } = getAxisLayoutsFromRange(
@@ -855,6 +866,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         // family: theme.font.family,
         size: 12,
       },
+      shapes,
     };
 
     if (forceRelayout || shouldPlotUiReset()) {
@@ -897,11 +909,21 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
    * Re-render the plot when the relevant props change.
    */
   useEffect(() => {
-    if (shouldDelayRender()) {
+    if (!isVisible) {
+      return;
+    }
+    const haveBaseDependenciesChanged = hasAnyValueChanged(basePlotDependencies, prevDependenciesRef.current);
+    const ignoreFrameChangeRender =
+      (rangeType === PlotRangeType.ALL_TIME || rangeType === PlotRangeType.CURRENT_TRACK) &&
+      !haveBaseDependenciesChanged;
+    if (ignoreFrameChangeRender && plotDivRef.current !== null) {
+      // Only the frame changed, so we can skip the render and just do a relayout instead.
+      Plotly.relayout(plotDivRef.current, { shapes: getCrosshairShapes() });
       return;
     }
     renderPlot();
-  }, plotDependencies);
+    prevDependenciesRef.current = basePlotDependencies;
+  }, [...basePlotDependencies, currentFrame, getCrosshairShapes]);
 
   //////////////////////////////////
   // Component Rendering
