@@ -4,7 +4,7 @@ import React, { type ReactElement, useMemo } from "react";
 import { Color, type ColorRepresentation } from "three";
 
 import { VECTOR_KEY_MOTION_DELTA } from "src/colorizer/constants";
-import { VectorTooltipMode } from "src/colorizer/types";
+import { VectorTooltipMode, ViewMode } from "src/colorizer/types";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import LabeledSlider from "src/components/Inputs/LabeledSlider";
 import WrappedColorPicker from "src/components/Inputs/WrappedColorPicker";
@@ -32,12 +32,9 @@ const enum VectorSettingsHtmlIds {
   VECTOR_TOOLTIP_MODE_RADIO = "vector-tooltip-mode-radio",
 }
 
-type VectorFieldSettingsProps = {
-  isDataset3d: boolean;
-};
-
-export default function VectorFieldSettings(props: VectorFieldSettingsProps): ReactElement {
+export default function VectorFieldSettings(): ReactElement {
   const dataset = useViewerStateStore((state) => state.dataset);
+  const viewMode = useViewerStateStore((state) => state.viewMode);
   const setVectorColor = useViewerStateStore((state) => state.setVectorColor);
   const setVectorKey = useViewerStateStore((state) => state.setVectorKey);
   const setVectorMotionTimeIntervals = useViewerStateStore((state) => state.setVectorMotionTimeIntervals);
@@ -58,6 +55,8 @@ export default function VectorFieldSettings(props: VectorFieldSettingsProps): Re
   // TODO: Add additional vectors here when support for user vector data is added.
   const vectorOptions = useMemo(() => [VECTOR_OPTION_MOTION], []);
   const vectorOptionsEnabled = vectorVisible && dataset !== null;
+
+  const is3dDataset = viewMode === ViewMode.VIEW_3D;
 
   return (
     <ToggleCollapse label="Vector arrows" toggleChecked={vectorVisible} onToggleChange={setVectorVisible}>
@@ -127,7 +126,7 @@ export default function VectorFieldSettings(props: VectorFieldSettingsProps): Re
             />
           </div>
         </SettingsItem>
-        {props.isDataset3d && (
+        {is3dDataset && (
           // 3D-specific vector settings:
           <>
             <SettingsItem label="Thickness" htmlFor={VectorSettingsHtmlIds.VECTOR_THICKNESS_SLIDER}>

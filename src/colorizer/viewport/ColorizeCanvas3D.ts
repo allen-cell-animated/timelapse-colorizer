@@ -245,7 +245,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
 
   private handleDatasetUpdate(prevParams: RenderCanvasStateParams | null, params: RenderCanvasStateParams): boolean {
     if (hasPropertyChanged(params, prevParams, ["dataset"])) {
-      if (params.dataset !== null && params.dataset.has3dFrames() && params.dataset.frames3d) {
+      if (params.dataset !== null && params.dataset.frames3d) {
         if (this.volume) {
           // Remove 3D objects so they are not cleaned up with the old volume
           // and can be reused.
@@ -679,13 +679,15 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
       return new Matrix4();
     }
 
-    // 1. Normalize from volume voxel coordinates to world space. Also,
+    // 1. Normalize from volume physical coordinates to world space. Also,
     //    translate so that the center of the volume is at (0, 0, 0).
-    const volumeScale = new Vector3(1, 1, 1)
-      .multiply(this.volume.physicalPixelSize)
-      .divideScalar(this.volume.physicalScale);
+    // TODO: Note that TFE currently requires centroids to be given in physical
+    // units. This should be updated in a future PR to allow using either voxels
+    // or physical units.
+    const volumeScale = new Vector3(1, 1, 1).divideScalar(this.volume.physicalScale);
     const normalizeVoxelToWorld = new Matrix4().compose(
-      this.volume.normPhysicalSize.clone().multiplyScalar(-0.5), // Translate to center
+      // Translate to center in world space coords
+      this.volume.normPhysicalSize.clone().multiplyScalar(-0.5),
       new Quaternion(0, 0, 0, 1),
       volumeScale
     );

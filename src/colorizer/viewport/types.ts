@@ -10,6 +10,7 @@ import type {
   DrawSettings,
   SelectionOutlineColorMode,
   TrackPathColorMode,
+  ViewMode,
 } from "src/colorizer/types";
 
 export const enum CanvasType {
@@ -58,6 +59,7 @@ export type RenderCanvasStateParams = {
   dataset: Dataset | null;
   collection: Collection | null;
   datasetKey: string | null;
+  viewMode: ViewMode;
   pendingFrame: number;
   featureKey: string | null;
   /** @deprecated will be removed in a future update */

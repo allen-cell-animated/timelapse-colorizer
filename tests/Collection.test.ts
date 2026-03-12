@@ -151,7 +151,7 @@ describe("Collection", () => {
       const url = "https://e.com/collection.json";
       const mockFetch = makeMockFetchMethod(url, { datasets: [] });
       const tryLoad = Collection.loadCollection(url, { fetchMethod: mockFetch });
-      expect(tryLoad).rejects.toMatch(ANY_ERROR);
+      expect(tryLoad).rejects.toThrow(ANY_ERROR);
     });
   });
 

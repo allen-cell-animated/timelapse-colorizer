@@ -22,6 +22,7 @@ import {
   LoadTroubleshooting,
   type PixelIdInfo,
   TabType,
+  ViewMode,
 } from "src/colorizer/types";
 import type CanvasOverlay from "src/colorizer/viewport/CanvasOverlay";
 import type { AlertBannerProps } from "src/components/Banner";
@@ -152,6 +153,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const showScaleBar = useViewerStateStore((state) => state.showScaleBar);
   const showTimestamp = useViewerStateStore((state) => state.showTimestamp);
   const frameLoadResult = useViewerStateStore((state) => state.frameLoadResult);
+  const viewMode = useViewerStateStore((state) => state.viewMode);
 
   const isAnnotationModeEnabled = props.annotationState.isAnnotationModeEnabled;
 
@@ -188,8 +190,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   const isMissingFile = frameLoadResult !== null && (frameLoadResult.frameError || frameLoadResult.backdropError);
 
-  // TODO: This should be a property in state and not derived here and in CanvasOverlay.
-  const isDataset3d = dataset?.frames3d !== undefined;
+  const isDataset3d = viewMode === ViewMode.VIEW_3D;
 
   // CANVAS PROPERTIES /////////////////////////////////////////////////
 
@@ -533,23 +534,33 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       const id = canv.getIdAtPixel(x, y);
       props.onMouseHover(id);
     },
-    [dataset, canv]
+    [dataset, canv, props.onMouseHover, canv]
   );
 
   /** Track whether the canvas is hovered, so we can determine whether to send updates about the
    * hovered value when the canvas frame updates.
    */
   useEffect(() => {
-    canv.domElement.addEventListener("mouseenter", () => (isMouseOverCanvas.current = true));
-    canv.domElement.addEventListener("mouseleave", () => (isMouseOverCanvas.current = false));
-  });
+    const onMouseEnter = (): void => {
+      isMouseOverCanvas.current = true;
+    };
+    const onMouseLeave = (): void => {
+      isMouseOverCanvas.current = false;
+    };
+    canv.domElement.addEventListener("mouseenter", onMouseEnter);
+    canv.domElement.addEventListener("mouseleave", onMouseLeave);
+    return () => {
+      canv.domElement.removeEventListener("mouseenter", onMouseEnter);
+      canv.domElement.removeEventListener("mouseleave", onMouseLeave);
+    };
+  }, []);
 
   /** Update hovered id when the canvas updates the current frame */
   useEffect(() => {
     if (isMouseOverCanvas.current) {
       reportHoveredIdAtPixel(lastMousePositionPx.current.x, lastMousePositionPx.current.y);
     }
-  }, [currentFrame]);
+  }, [reportHoveredIdAtPixel, currentFrame]);
 
   useEffect(() => {
     const onMouseMove = (event: MouseEvent): void => {
@@ -563,7 +574,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       canv.domElement.removeEventListener("mousemove", onMouseMove);
       canv.domElement.removeEventListener("mouseleave", props.onMouseLeave);
     };
-  }, [dataset, canv]);
+  }, [reportHoveredIdAtPixel, dataset, canv]);
 
   // RENDERING /////////////////////////////////////////////////
 

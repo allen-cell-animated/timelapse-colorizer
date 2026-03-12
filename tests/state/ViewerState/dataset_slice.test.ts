@@ -1,12 +1,14 @@
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
+import { ViewMode } from "src/colorizer";
 import { UrlParam } from "src/colorizer/utils/url_utils";
 import { loadDatasetSliceFromParams, serializeDatasetSlice } from "src/state/slices";
 import { useViewerStateStore } from "src/state/ViewerState";
 import {
   DEFAULT_INITIAL_FEATURE_KEY,
   MOCK_DATASET,
+  MOCK_DATASET_2D_ONLY,
   MOCK_DATASET_DEFAULT_TRACK,
   MOCK_DATASET_WITHOUT_BACKDROP,
   MockBackdropKeys,
@@ -49,6 +51,18 @@ describe("useViewerStateStore: DatasetSlice", () => {
 
       await setDatasetAsync(result, MOCK_DATASET_WITHOUT_BACKDROP, "some-other-key");
       expect(result.current.backdropVisible).toBe(false);
+    });
+
+    it("updates the viewMode based on the dataset type", async () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      // Default is 2D
+      expect(result.current.viewMode).equals(ViewMode.VIEW_2D);
+
+      await setDatasetAsync(result, MOCK_DATASET, "some-key");
+      expect(result.current.viewMode).equals(ViewMode.VIEW_3D);
+
+      await setDatasetAsync(result, MOCK_DATASET_2D_ONLY, "some-other-key");
+      expect(result.current.viewMode).equals(ViewMode.VIEW_2D);
     });
   });
 
