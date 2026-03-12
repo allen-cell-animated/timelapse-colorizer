@@ -17,7 +17,7 @@ import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import type { SelectItem } from "src/components/Dropdowns/types";
 import LoadingSpinner from "src/components/LoadingSpinner";
 import { SHORTCUT_KEYS } from "src/constants";
-import { useDebounce } from "src/hooks";
+import { useDebounce, useIsMouseButtonDownRef } from "src/hooks";
 import { useViewerStateStore } from "src/state/ViewerState";
 import { AppThemeContext } from "src/styles/AppStyle";
 import { FlexRow, FlexRowAlignCenter } from "src/styles/utils";
@@ -50,7 +50,6 @@ const COLOR_RAMP_SUBSAMPLES = 100;
 const NUM_RESERVED_BUCKETS = 2;
 const BUCKET_INDEX_OUTOFRANGE = 0;
 const BUCKET_INDEX_OUTLIERS = 1;
-const PLOTLY_CLICK_TIMEOUT_MS = 10;
 
 const DEFAULT_RANGE_TYPE = PlotRangeType.ALL_TIME;
 
@@ -148,41 +147,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   /** Incrementing UI revision number. Updated whenever a breaking UI change happens and the view must be reset. */
   const uiRevision = useRef(0);
 
-  // Plotly doesn't report click events if empty parts of the canvas are clicked. See
-  // https://github.com/plotly/plotly.js/issues/2696. To detect clicks on blank areas of the plot,
-  // we have to detect ANY click event and see if a plotly click event is reported within a short
-  // time frame. This can happen before OR after plotly reports it, so we need to handle both cases.
-  // If no plotly click event was reported, we assume the click was on a blank area of the plot.
-  const timeOfLastPointClicked = useRef<number>(0);
-  const emptyClickTimeout = useRef<number | null>(null);
   const currentRangeType = useRef<PlotRangeType>(rangeType);
   currentRangeType.current = rangeType;
-
-  useEffect(() => {
-    const onClick = (): void => {
-      if (
-        timeOfLastPointClicked.current + PLOTLY_CLICK_TIMEOUT_MS > Date.now() ||
-        currentRangeType.current === PlotRangeType.CURRENT_TRACK ||
-        areAnyHotkeysPressed(SHORTCUT_KEYS.viewport.multiTrackSelect.keycode)
-      ) {
-        // Skip if a point was recently clicked, or if the tracks should not be cleared
-        // (e.g. during multi-select mode or in current track range view).
-        return;
-      }
-      // Start a timeout to clear the track, which will be cleared if a plotly
-      // click event occurs.
-      emptyClickTimeout.current = window.setTimeout(() => {
-        clearTracks();
-      }, PLOTLY_CLICK_TIMEOUT_MS);
-    };
-
-    // Attach listener to the XY plot only (and not the histogram or axes)
-    const xyPlotDiv = plotDivRef.current?.querySelector(".plot-container .xy");
-    xyPlotDiv?.addEventListener("click", onClick);
-    return () => {
-      xyPlotDiv?.removeEventListener("click", onClick);
-    };
-  }, [plotDivRef.current, clearTracks]);
 
   // Trigger render spinner when playback starts, but only if the render is being delayed.
   // If a render is allowed to happen (such as in the current-track- or current-frame-only
@@ -216,23 +182,46 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   // Event Handlers
   //////////////////////////////////
 
-  // Add click event listeners to the plot. When clicking a point, find the track and jump to
-  // that frame.
+  const isLeftMouseButtonDownRef = useIsMouseButtonDownRef(0);
+
+  // Store the currently hovered ID in a ref; this will be used to handle click
+  // events and tell if the user clicked on a point or not.
+  const hoveredIdRef = useRef<number | null>(null);
   useEffect(() => {
-    const onClickPlot = async (eventData: Plotly.PlotMouseEvent): Promise<void> => {
-      if (!dataset || eventData.points.length === 0 || isHistogramEvent(eventData)) {
+    const onHoverPlot = (eventData: Plotly.PlotMouseEvent): void => {
+      if (eventData.points.length === 0 || isHistogramEvent(eventData)) {
+        hoveredIdRef.current = null;
         return;
       }
-
-      // Clear any timeouts for detecting clicks on blank areas of the plot.
-      if (emptyClickTimeout.current !== null) {
-        clearTimeout(emptyClickTimeout.current);
-        emptyClickTimeout.current = null;
-      }
-      timeOfLastPointClicked.current = Date.now();
-
       const point = eventData.points[0];
       const objectId = Number.parseInt(point.data.ids[point.pointNumber], 10);
+      hoveredIdRef.current = objectId;
+    };
+    const onUnhoverPlot = (): void => {
+      // Ignore unhover during mouse left mouse clicks. If the plot is
+      // re-rendered (e.g. `Plotly.relayout`) while the mouse is held down, the
+      // hover popup disappears and an erroneous "unhover" event is fired, even
+      // if a point is still under the cursor.
+      if (isLeftMouseButtonDownRef.current) {
+        return;
+      }
+      hoveredIdRef.current = null;
+    };
+
+    plotRef?.on("plotly_hover", onHoverPlot);
+    plotRef?.on("plotly_unhover", onUnhoverPlot);
+    return () => {
+      plotRef?.removeAllListeners("plotly_hover");
+      plotRef?.removeAllListeners("plotly_unhover");
+    };
+  }, [plotRef]);
+
+  const handleIdClicked = useCallback(
+    async (objectId: number) => {
+      // Select the clicked track and jump to the corresponding time.
+      if (dataset === null) {
+        return;
+      }
       const trackId = dataset.getTrackId(objectId);
       const track = dataset.getTrack(trackId);
       if (!track) {
@@ -252,13 +241,40 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         // a different timepoint in the same track.
         addTracks(track);
       }
-    };
+    },
+    [dataset, setFrame, toggleTrack, setTracks, addTracks]
+  );
 
-    plotRef?.on("plotly_click", onClickPlot);
-    return () => {
-      plotRef?.removeAllListeners("plotly_click");
+  const handleBgClicked = useCallback((): void => {
+    if (
+      currentRangeType.current !== PlotRangeType.CURRENT_TRACK &&
+      !areAnyHotkeysPressed(SHORTCUT_KEYS.viewport.multiTrackSelect.keycode)
+    ) {
+      // Clear tracks when not in multiselect mode and not in current-track mode.
+      clearTracks();
+    }
+  }, [clearTracks]);
+
+  // Handle click events on the XY plot component directly instead of the
+  // `plotly_click` event, since it more reliably detects mouse events and also
+  // reports clicks on empty space while ignoring axis/histogram clicks. Because
+  // the click event does not provide point data, we also must track the
+  // currently hovered point separately.
+  useEffect(() => {
+    const onClick = async (): Promise<void> => {
+      const objectId = hoveredIdRef.current;
+      if (objectId) {
+        handleIdClicked(objectId);
+      } else {
+        handleBgClicked();
+      }
     };
-  }, [plotRef, dataset, addTracks, setFrame, toggleTrack, setTracks]);
+    const xyPlotDiv = plotDivRef.current?.querySelector(".plot-container .xy");
+    xyPlotDiv?.addEventListener("click", onClick);
+    return () => {
+      xyPlotDiv?.removeEventListener("click", onClick);
+    };
+  }, [plotDivRef.current, handleIdClicked, handleBgClicked]);
 
   // Sync axis ranges on relayout events (zoom)
   useEffect(() => {

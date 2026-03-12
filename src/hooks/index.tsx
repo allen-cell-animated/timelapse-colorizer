@@ -5,6 +5,7 @@ export { useBackdropShortcuts } from "./useBackdropShortcuts";
 export { useConstructor } from "./useConstructor";
 export { useDebounce } from "./useDebounce";
 export { useIsHotkeyHeld } from "./useIsHotkeyHeld";
+export { useIsMouseButtonDownRef } from "./useIsMouseButtonDownRef";
 export { useJsxText } from "./useJsxText";
 export { useLongPress } from "./useLongPress";
 export type { RecentCollection } from "./useRecentCollections";
