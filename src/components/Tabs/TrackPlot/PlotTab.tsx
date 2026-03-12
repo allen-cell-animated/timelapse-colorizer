@@ -118,8 +118,8 @@ export default function PlotTab(props: PlotTabProps): ReactElement {
             dataset={dataset}
             featureKey={featureKey}
             tracks={tracks}
-            viewMode={viewMode}
             trackColors={trackColors}
+            viewMode={viewMode}
           />
         </LoadingSpinner>
       </div>

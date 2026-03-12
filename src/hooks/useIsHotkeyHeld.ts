@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 
 import { areAnyHotkeysPressed } from "src/utils/user_input";
@@ -13,6 +13,18 @@ export const useIsHotkeyHeld = (hotkey: string | string[]): boolean => {
   const [isHotkeyHeld, setIsHotkeyHeld] = useState(areAnyHotkeysPressed(hotkey));
   useHotkeys(hotkey, () => setIsHotkeyHeld(true), { keydown: true });
   useHotkeys(hotkey, () => setIsHotkeyHeld(false), { keyup: true });
+
+  // Handle case where the keyup event is missed if the user switches to another
+  // window or tab; check for key state when window is focused again.
+  useEffect(() => {
+    const onFocus = (): void => {
+      setIsHotkeyHeld(areAnyHotkeysPressed(hotkey));
+    };
+    window.addEventListener("focus", onFocus);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [hotkey]);
 
   return isHotkeyHeld;
 };
