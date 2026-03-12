@@ -9,6 +9,8 @@ import {
   ColorRamp,
   type ColorRampData,
   ColorRampType,
+  DEFAULT_CATEGORICAL_PALETTE_KEY,
+  DISPLAY_CATEGORICAL_PALETTE_KEYS,
   KNOWN_CATEGORICAL_PALETTES,
   KNOWN_COLOR_RAMPS,
   type PaletteData,
@@ -137,7 +139,16 @@ const DropdownStyleContainer = styled.div<{ $categorical: boolean }>`
 `;
 
 type ColorRampSelectionProps = {
+  // Config
+  id: string | undefined;
+  label?: string;
+  disabled?: boolean;
+  colorRampToImageUrl?: (colorRamp: ColorRamp) => string;
+
+  // Color ramp
   selectedRamp: string;
+  reversed?: boolean;
+  mirror?: boolean;
   onChangeRamp: (colorRampKey: string, reversed: boolean) => void;
   /** The keys of the color ramps to display, in order. */
   colorRampsToDisplay: string[];
@@ -148,20 +159,16 @@ type ColorRampSelectionProps = {
    */
   knownColorRamps?: Map<string, ColorRampData>;
 
-  selectedPalette: Color[];
-  selectedPaletteKey: string | null;
-  onChangePalette: (newPalette: Color[]) => void;
-  numCategories: number;
-  categoricalPalettesToDisplay: string[];
-  knownCategoricalPalettes?: Map<string, PaletteData>;
-
+  // Categorical palette selection
   /** If true, shows the categorical palettes and selected palette instead of
    * the color ramps. */
   useCategoricalPalettes?: boolean;
-  disabled?: boolean;
-  reversed?: boolean;
-  id: string | undefined;
-  label?: string;
+  selectedPalette?: Color[];
+  selectedPaletteKey?: string | null;
+  onChangePalette?: (newPalette: Color[]) => void;
+  numCategories?: number;
+  categoricalPalettesToDisplay?: string[];
+  knownCategoricalPalettes?: Map<string, PaletteData>;
 };
 
 const defaultProps: Partial<ColorRampSelectionProps> = {
@@ -169,6 +176,10 @@ const defaultProps: Partial<ColorRampSelectionProps> = {
   disabled: false,
   useCategoricalPalettes: false,
   knownCategoricalPalettes: KNOWN_CATEGORICAL_PALETTES,
+  selectedPalette: KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_KEY)!.colors,
+  selectedPaletteKey: DEFAULT_CATEGORICAL_PALETTE_KEY,
+  numCategories: 5,
+  categoricalPalettesToDisplay: DISPLAY_CATEGORICAL_PALETTE_KEYS,
 };
 
 export default function ColorRampSelection(inputProps: ColorRampSelectionProps): ReactElement {
@@ -192,6 +203,7 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
         image: rampData.colorRamp
           .createGradientCanvas(gradientWidthPx, theme.controls.height, {
             reverse: rampData.reverseByDefault,
+            mirror: props.mirror,
           })
           .toDataURL(),
         tooltip: rampData.name,
@@ -207,10 +219,12 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
       const visibleColors = paletteData.colors.slice(0, Math.max(1, props.numCategories));
       const colorRamp = new ColorRamp(visibleColors, ColorRampType.CATEGORICAL);
       const gradientWidthPx = DROPDOWN_MENU_WIDTH_PX - 2 * DROPDOWN_CATEGORICAL_BORDER_PX;
+      const dataUrl = colorRamp.createGradientCanvas(gradientWidthPx, theme.controls.height).toDataURL();
+      colorRamp.dispose();
       return {
         value: key,
         label: paletteData.name,
-        image: colorRamp.createGradientCanvas(gradientWidthPx, theme.controls.height).toDataURL(),
+        image: dataUrl,
         tooltip: paletteData.name,
       };
     });
@@ -234,11 +248,16 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
       borderWidthPx = DROPDOWN_CATEGORICAL_BORDER_PX;
       // Clamp number of colors due to smaller dropdown size
       const visibleColors = selectedRamp.colorStops.slice(0, DROPDOWN_CONTROL_MAX_COLORS);
+      selectedRamp.dispose();
       selectedRamp = new ColorRamp(visibleColors, ColorRampType.CATEGORICAL);
     }
     const gradientWidthPx = DROPDOWN_MENU_WIDTH_PX - 2 * borderWidthPx;
-    return selectedRamp.createGradientCanvas(gradientWidthPx, theme.controls.height).toDataURL();
-  }, [props.selectedRamp, props.reversed]);
+    const dataUrl = selectedRamp
+      .createGradientCanvas(gradientWidthPx, theme.controls.height, { mirror: props.mirror })
+      .toDataURL();
+    selectedRamp.dispose();
+    return dataUrl;
+  }, [props.selectedRamp, props.reversed, props.mirror]);
 
   const showAsReversed = props.reversed !== !!selectedRampData.reverseByDefault;
   const selectedRampItem = {
@@ -252,9 +271,11 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
     const visibleColorCount = clamp(props.numCategories, 1, DROPDOWN_CONTROL_MAX_COLORS);
     const visibleColors = props.selectedPalette.slice(0, visibleColorCount);
     const colorRamp = new ColorRamp(visibleColors, ColorRampType.CATEGORICAL);
-    return colorRamp
+    const dataUrl = colorRamp
       .createGradientCanvas(DROPDOWN_MENU_WIDTH_PX - DROPDOWN_CATEGORICAL_BORDER_PX, theme.controls.height)
       .toDataURL();
+    colorRamp.dispose();
+    return dataUrl;
   }, [props.useCategoricalPalettes, props.numCategories, props.selectedPalette]);
 
   // Check if palette colors match an existing one; otherwise, mark it as being

@@ -9,6 +9,11 @@ uniform usampler2D outlierData;
  * is within the threshold range. Note that data is packed into a square texture.
  */
 uniform usampler2D inRangeIds;
+/** 
+ * A mapping of IDs that are selected in the current track(s). If an object's
+ * index is `i`, `selectedIds[i] = 1` if the object is selected.
+*/
+uniform usampler2D selectedIds;
 /** Min and max feature values that define the endpoints of the color map. Values
  * outside the range will be clamped to the nearest endpoint.
  */
@@ -50,7 +55,6 @@ const uint DRAW_MODE_COLOR = 1u;
 const uint RAW_BACKGROUND_ID = 0u;
 const int MISSING_DATA_ID = -1;
 const int ID_OFFSET = 1;
-const int NO_HIGHLIGHT_ID = -1;
 const float OUTLINE_WIDTH_PX = 2.0;
 const float EDGE_WIDTH_PX = 1.0;
 
@@ -58,8 +62,6 @@ uniform vec3 outlierColor;
 uniform uint outlierDrawMode;
 uniform vec3 outOfRangeColor;
 uniform uint outOfRangeDrawMode;
-
-uniform int highlightedId;
 
 uniform bool useRepeatingCategoricalColors;
 
@@ -224,7 +226,8 @@ vec4 getObjectColor(vec2 sUv, float opacity) {
   }
 
   // do an outline around highlighted object
-  if (highlightedId != NO_HIGHLIGHT_ID && id == highlightedId) {
+  bool isSelected = getUintFromTex(selectedIds, id).r == 1u;
+  if (isSelected) {
     if (isEdge(sUv, labelId, OUTLINE_WIDTH_PX)) {
       // ignore opacity for edge color
       return vec4(outlineColor, 1.0);

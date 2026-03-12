@@ -69,10 +69,17 @@ const theme = {
       linkHover: palette.linkDark,
       darkLink: palette.gray20,
       darkLinkHover: palette.gray10,
+      shortcutKey: {
+        dark: {
+          background: palette.gray60,
+          border: palette.gray40,
+        },
+      },
     },
     layout: {
       background: palette.gray0,
       backgroundAlt: palette.gray7,
+      backgroundAltTransparent: "rgba(240, 240, 240, 0.5)",
       tabBackground: palette.gray5,
       dividers: palette.gray15,
       borders: palette.gray20,
@@ -128,6 +135,10 @@ const theme = {
         success: palette.successLight,
         info: palette.infoLight,
       },
+    },
+    plots: {
+      histogram: palette.gray10,
+      histogramOutline: palette.gray30,
     },
   },
   font: {
@@ -188,8 +199,9 @@ const CssContainer = styled.div`
   --color-text-link-hover: ${theme.color.text.linkHover};
 
   /* Layout */
-  --color-background-alt: ${theme.color.layout.backgroundAlt};
   --color-background: ${theme.color.layout.background};
+  --color-background-alt: ${theme.color.layout.backgroundAlt};
+  --color-background-alt-transparent: ${theme.color.layout.backgroundAltTransparent};
   --color-dividers: ${theme.color.layout.dividers};
   --color-borders: ${theme.color.layout.borders};
   --color-modal-overlay: ${theme.color.layout.modalOverlay};

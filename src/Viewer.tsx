@@ -1,4 +1,4 @@
-import { CheckCircleOutlined, EllipsisOutlined, ShareAltOutlined } from "@ant-design/icons";
+import { EllipsisOutlined } from "@ant-design/icons";
 import { notification, Tabs } from "antd";
 import type { NotificationConfig } from "antd/es/notification/interface";
 import React, {
@@ -29,7 +29,7 @@ import CanvasOverlay from "src/colorizer/viewport/CanvasOverlay";
 import { getSharedWorkerPool } from "src/colorizer/workers/SharedWorkerPool";
 import { useAlertBanner } from "src/components/Banner";
 import { showFailedUrlParseAlert } from "src/components/Banner/alert_templates";
-import TextButton from "src/components/Buttons/TextButton";
+import ShareUrlButton from "src/components/Buttons/ShareUrlButton";
 import CanvasWrapper from "src/components/CanvasWrapper";
 import ColorizeControls from "src/components/Controls/ColorizeControls";
 import DatasetFeatureControls from "src/components/Controls/DatasetFeatureControls";
@@ -50,7 +50,7 @@ import {
 } from "src/components/Tabs";
 import CanvasHoverTooltip from "src/components/Tooltips/CanvasHoverTooltip";
 import { INTERNAL_BUILD } from "src/constants";
-import { useAnnotations, useConstructor, useRecentCollections } from "src/hooks";
+import { useAnnotations, useBackdropShortcuts, useConstructor, useRecentCollections } from "src/hooks";
 import { renderCanvasStateParamsSelector } from "src/state";
 import { getDifferingProperties } from "src/state/utils/data_validation";
 import {
@@ -153,6 +153,11 @@ function Viewer(): ReactElement {
   const currentHoveredId = showObjectHoverInfo ? lastValidHoveredId : null;
 
   // EVENT LISTENERS ////////////////////////////////////////////////////////
+
+  // Hooks for shortcut keys
+  useBackdropShortcuts();
+
+  // URL handling
   const updateUrlParams = useCallback(
     makeDebouncedCallback(() => {
       if (isInitialDatasetLoaded) {
@@ -497,20 +502,6 @@ function Viewer(): ReactElement {
 
   // RENDERING /////////////////////////////////////////////////////////////
 
-  const openCopyNotification = (): void => {
-    navigator.clipboard.writeText(document.URL);
-    notificationApi["success"]({
-      message: "URL copied to clipboard",
-      placement: "bottomLeft",
-      duration: 4,
-      icon: <CheckCircleOutlined style={{ color: theme.color.text.success }} />,
-      style: {
-        backgroundColor: theme.color.alert.fill.success,
-        border: `1px solid ${theme.color.alert.border.success}`,
-      },
-    });
-  };
-
   const disableUi: boolean = isRecording || !datasetOpen;
 
   const allTabItems: TabItem[] = [
@@ -602,6 +593,7 @@ function Viewer(): ReactElement {
                 onLoad={handleDatasetLoad}
                 currentResourceUrl={collection?.sourcePath ?? datasetKey ?? ""}
                 reportWarning={showDatasetLoadWarning}
+                annotationState={annotationState}
               />
               <LoadZipModal
                 sourceZipName={sourceZipName ?? ""}
@@ -624,10 +616,7 @@ function Viewer(): ReactElement {
               disabled={dataset === null}
               setIsRecording={setIsRecording}
             />
-            <TextButton onClick={openCopyNotification}>
-              <ShareAltOutlined />
-              <p>Share</p>
-            </TextButton>
+            <ShareUrlButton notificationApi={notificationApi} />
           </FlexRowAlignCenter>
           <HelpDropdown />
         </FlexRowAlignCenter>
@@ -645,6 +634,7 @@ function Viewer(): ReactElement {
                 onSelectDataset={handleDatasetChange}
                 onSelectFeature={reportFeatureSelected}
                 disabled={disableUi}
+                annotationState={annotationState}
               />
               <ColorizeControls disabled={disableUi} />
             </FlexColumn>

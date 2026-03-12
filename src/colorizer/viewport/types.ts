@@ -4,7 +4,7 @@ import type Collection from "src/colorizer/Collection";
 import type ColorRamp from "src/colorizer/ColorRamp";
 import type Dataset from "src/colorizer/Dataset";
 import type Track from "src/colorizer/Track";
-import type { ChannelSetting, DrawMode, DrawSettings, TrackPathColorMode } from "src/colorizer/types";
+import type { ChannelSetting, DrawMode, DrawSettings, TrackPathColorMode, ViewMode } from "src/colorizer/types";
 
 export const enum CanvasType {
   CANVAS_2D = "2D",
@@ -52,11 +52,15 @@ export type RenderCanvasStateParams = {
   dataset: Dataset | null;
   collection: Collection | null;
   datasetKey: string | null;
+  viewMode: ViewMode;
   pendingFrame: number;
   featureKey: string | null;
+  /** @deprecated will be removed in a future update */
   track: Track | null;
+  tracks: Map<number, Track>;
   showTrackPath: boolean;
   showTrackPathBreaks: boolean;
+  trackPathColorRamp: ColorRamp;
   colorRamp: ColorRamp;
   colorRampRange: [number, number];
   categoricalPaletteRamp: ColorRamp;
@@ -75,6 +79,7 @@ export type RenderCanvasStateParams = {
   outlierDrawSettings: DrawSettings;
   outOfRangeDrawSettings: DrawSettings;
   inRangeLUT: Uint8Array;
+  isSelectedLut: Uint8Array;
   vectorMotionDeltas: Float32Array | null;
   vectorVisible: boolean;
   vectorColor: Color;

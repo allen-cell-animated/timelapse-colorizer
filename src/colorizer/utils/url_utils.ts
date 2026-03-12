@@ -53,6 +53,7 @@ export enum UrlParam {
   EDGE_MODE = "edge",
   SHOW_PATH = "path",
   PATH_COLOR = "path-color",
+  PATH_COLOR_RAMP = "path-ramp",
   PATH_WIDTH = "path-width",
   PATH_COLOR_MODE = "path-mode",
   SHOW_PATH_BREAKS = "path-breaks",
@@ -102,10 +103,13 @@ export const isChannelKey = (key: string): key is ChannelSettingParamKey => {
 const TRACK_PATH_STEPS_REGEX = /^(\d+)!?,(\d+)!?$/;
 
 const ALLEN_FILE_PREFIX = "/allen/";
+export const VAST_FILES_URL = "https://vast-files.int.allencell.org/";
 const ALLEN_PREFIX_TO_HTTPS: Record<string, string> = {
   // eslint-disable-next-line @typescript-eslint/naming-convention
-  "/allen/aics/": "https://vast-files.int.allencell.org/",
+  "/allen/aics/": VAST_FILES_URL,
 };
+
+export const PUBLIC_TFE_URL = "https://timelapse.allencell.org/";
 
 export const DEFAULT_FETCH_TIMEOUT_MS = 2000;
 
@@ -395,6 +399,16 @@ export function decodeInt(value: string | null): number | undefined {
   return value === null ? undefined : parseInt(value, 10);
 }
 
+export function decodeTracks(value: string | null): number[] | undefined {
+  if (value === null) {
+    return undefined;
+  }
+  return value
+    .split(",")
+    .map((trackIdStr) => parseInt(trackIdStr, 10))
+    .filter((trackId) => !Number.isNaN(trackId));
+}
+
 export function parseDrawMode(mode: string | null): DrawMode | undefined {
   const modeInt = parseInt(mode || "-1", 10);
   return mode && isDrawMode(modeInt) ? modeInt : undefined;
@@ -416,7 +430,10 @@ export function parseDrawSettings(
 export function parseTrackPathMode(mode: string | null): TrackPathColorMode | undefined {
   const modeInt = parseInt(mode || "-1", 10);
   const isTrackPathColorMode =
-    modeInt === TrackPathColorMode.USE_CUSTOM_COLOR || modeInt === TrackPathColorMode.USE_OUTLINE_COLOR;
+    modeInt === TrackPathColorMode.USE_CUSTOM_COLOR ||
+    modeInt === TrackPathColorMode.USE_OUTLINE_COLOR ||
+    modeInt === TrackPathColorMode.USE_FEATURE_COLOR ||
+    modeInt === TrackPathColorMode.USE_COLOR_MAP;
   return mode && isTrackPathColorMode ? (modeInt as TrackPathColorMode) : undefined;
 }
 
@@ -553,10 +570,11 @@ export function isAllenPath(input: string): boolean {
  * otherwise, returns an HTTPS resource path.
  */
 export function convertAllenPathToHttps(input: string): string | null {
-  input = normalizeFilePathSlashes(input);
-  for (const prefix of Object.keys(ALLEN_PREFIX_TO_HTTPS)) {
-    if (input.startsWith(prefix)) {
-      return input.replace(prefix, ALLEN_PREFIX_TO_HTTPS[prefix]);
+  // Escape special characters in the path, except for slashes
+  const escapedInput = encodeURIComponent(normalizeFilePathSlashes(input)).replaceAll("%2F", "/");
+  for (const [prefix, httpsPrefix] of Object.entries(ALLEN_PREFIX_TO_HTTPS)) {
+    if (escapedInput.startsWith(prefix)) {
+      return escapedInput.replace(prefix, httpsPrefix);
     }
   }
   return null;

@@ -171,7 +171,7 @@ export default function CreateLabelForm(inputProps: CreateLabelFormProps): React
             <TooltipWithSubtitle
               trigger={["hover", "focus"]}
               title="Increments the value on each click"
-              subtitle="Hold Ctrl to reuse last value"
+              subtitle="Hold Alt to reuse last value"
               placement="right"
               getPopupContainer={() => autoIncrementContainerRef.current ?? document.body}
             >

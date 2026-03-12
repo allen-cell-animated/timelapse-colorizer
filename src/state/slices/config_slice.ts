@@ -3,17 +3,21 @@ import { clamp } from "three/src/math/MathUtils";
 import type { StateCreator } from "zustand";
 
 import {
+  type ColorRamp,
+  DEFAULT_DIVERGING_COLOR_RAMP_KEY,
   DrawMode,
   type DrawSettings,
   EDGE_COLOR_ALPHA_DEFAULT,
   EDGE_COLOR_DEFAULT,
   isTabType,
+  KNOWN_COLOR_RAMPS,
   OUT_OF_RANGE_COLOR_DEFAULT,
   OUTLIER_COLOR_DEFAULT,
   OUTLINE_COLOR_DEFAULT,
   TabType,
   TrackPathColorMode,
 } from "src/colorizer";
+import { getColorMap } from "src/colorizer/utils/data_utils";
 import {
   decodeBoolean,
   decodeFloat,
@@ -28,10 +32,12 @@ import {
   parseDrawSettings,
   parseTrackPathMode,
   serializeTrackPathSteps,
+  URL_COLOR_RAMP_REVERSED_SUFFIX,
   UrlParam,
 } from "src/colorizer/utils/url_utils";
-import type { SerializedStoreData } from "src/state/types";
+import type { SerializedStoreData, SubscribableStore } from "src/state/types";
 import { setValueIfDefined } from "src/state/utils/data_validation";
+import { addDerivedStateSubscriber } from "src/state/utils/store_utils";
 
 const OUT_OF_RANGE_DRAW_SETTINGS_DEFAULT: DrawSettings = {
   color: new Color(OUT_OF_RANGE_COLOR_DEFAULT),
@@ -47,6 +53,10 @@ export type ConfigSliceState = {
   // Track settings
   showTrackPath: boolean;
   trackPathColor: Color;
+  trackPathColorRampKey: string;
+  /** Derived from the track path color ramp key and reversed state. */
+  trackPathColorRamp: ColorRamp;
+  trackPathIsColorRampReversed: boolean;
   trackPathColorMode: TrackPathColorMode;
   trackPathWidthPx: number;
   showTrackPathBreaks: boolean;
@@ -88,6 +98,8 @@ export type ConfigSliceSerializableState = Pick<
   | "showTrackPath"
   | "trackPathColor"
   | "trackPathColorMode"
+  | "trackPathColorRampKey"
+  | "trackPathIsColorRampReversed"
   | "trackPathWidthPx"
   | "showTrackPathBreaks"
   | "trackPathFutureSteps"
@@ -111,6 +123,8 @@ export type ConfigSliceActions = {
   setShowTrackPath: (showTrackPath: boolean) => void;
   setTrackPathColor: (trackPathColor: Color) => void;
   setTrackPathWidthPx: (trackPathWidthPx: number) => void;
+  setTrackPathColorRampKey: (trackPathColorRampKey: string) => void;
+  setTrackPathIsColorRampReversed: (trackPathIsColorRampReversed: boolean) => void;
   setTrackPathColorMode: (trackPathColorMode: TrackPathColorMode) => void;
   setShowTrackPathBreaks: (showTrackPathDiscontinuities: boolean) => void;
   setTrackPathFutureSteps: (trackPathFutureSteps: number) => void;
@@ -131,6 +145,17 @@ export type ConfigSliceActions = {
   setInterpolate3d: (interpolate3d: boolean) => void;
 };
 
+export const addConfigDerivedStateSubscribers = (store: SubscribableStore<ConfigSlice>): void => {
+  addDerivedStateSubscriber(
+    store,
+    (state) => [state.trackPathColorRampKey, state.trackPathIsColorRampReversed],
+    ([key, reversed]) => {
+      store.getState().trackPathColorRamp.dispose();
+      return { trackPathColorRamp: getColorMap(KNOWN_COLOR_RAMPS, key, { reversed, mirrored: true }) };
+    }
+  );
+};
+
 export type ConfigSlice = ConfigSliceState & ConfigSliceActions;
 
 export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> = (set) => ({
@@ -138,6 +163,9 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   showTrackPath: true,
   trackPathColor: new Color(OUTLINE_COLOR_DEFAULT),
   trackPathWidthPx: 1.5,
+  trackPathColorRampKey: DEFAULT_DIVERGING_COLOR_RAMP_KEY,
+  trackPathColorRamp: getColorMap(KNOWN_COLOR_RAMPS, DEFAULT_DIVERGING_COLOR_RAMP_KEY, { mirrored: true }),
+  trackPathIsColorRampReversed: false,
   trackPathColorMode: TrackPathColorMode.USE_OUTLINE_COLOR,
   showTrackPathBreaks: false,
   trackPathFutureSteps: 0,
@@ -166,6 +194,19 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   setShowTrackPath: (showTrackPath) => set({ showTrackPath }),
   setTrackPathColor: (trackPathColor) => set({ trackPathColor }),
   setTrackPathWidthPx: (trackPathWidthPx) => set({ trackPathWidthPx: clamp(trackPathWidthPx, 0, 100) }),
+  setTrackPathColorRampKey: (key) =>
+    set((state) => {
+      if (!KNOWN_COLOR_RAMPS.has(key)) {
+        throw new Error(`Unknown color ramp key: ${key}`);
+      } else if (key === state.trackPathColorRampKey) {
+        return {};
+      }
+      return {
+        trackPathColorRampKey: key,
+        trackPathIsColorRampReversed: false,
+      };
+    }),
+  setTrackPathIsColorRampReversed: (trackPathIsColorRampReversed) => set({ trackPathIsColorRampReversed }),
   setTrackPathColorMode: (trackPathColorMode) => set({ trackPathColorMode }),
   setShowTrackPathBreaks: (showTrackPathDiscontinuities) => set({ showTrackPathBreaks: showTrackPathDiscontinuities }),
   setTrackPathFutureSteps: (trackPathFutureSteps) =>
@@ -194,6 +235,9 @@ export const serializeConfigSlice = (slice: Partial<ConfigSliceSerializableState
     [UrlParam.SHOW_PATH]: encodeMaybeBoolean(slice.showTrackPath),
     [UrlParam.PATH_COLOR]: encodeMaybeColor(slice.trackPathColor),
     [UrlParam.PATH_WIDTH]: encodeMaybeNumber(slice.trackPathWidthPx),
+    [UrlParam.PATH_COLOR_RAMP]: slice.trackPathColorRampKey
+      ? slice.trackPathColorRampKey + (slice.trackPathIsColorRampReversed ? URL_COLOR_RAMP_REVERSED_SUFFIX : "")
+      : undefined,
     [UrlParam.PATH_COLOR_MODE]: slice.trackPathColorMode?.toString(),
     [UrlParam.SHOW_PATH_BREAKS]: encodeMaybeBoolean(slice.showTrackPathBreaks),
     [UrlParam.PATH_STEPS]: serializeTrackPathSteps(
@@ -223,6 +267,8 @@ export const selectConfigSliceSerializationDeps = (slice: ConfigSlice): ConfigSl
   showTrackPath: slice.showTrackPath,
   trackPathColor: slice.trackPathColor,
   trackPathWidthPx: slice.trackPathWidthPx,
+  trackPathColorRampKey: slice.trackPathColorRampKey,
+  trackPathIsColorRampReversed: slice.trackPathIsColorRampReversed,
   trackPathColorMode: slice.trackPathColorMode,
   showTrackPathBreaks: slice.showTrackPathBreaks,
   showScaleBar: slice.showScaleBar,
@@ -276,6 +322,16 @@ export const loadConfigSliceFromParams = (slice: ConfigSlice, params: URLSearchP
   if (trackPathColorParam) {
     slice.setTrackPathColor(new Color(trackPathColorParam));
   }
+
+  const trackPathColorRampParam = params.get(UrlParam.PATH_COLOR_RAMP);
+  if (trackPathColorRampParam) {
+    const [key, reversed] = trackPathColorRampParam.split(URL_COLOR_RAMP_REVERSED_SUFFIX);
+    if (KNOWN_COLOR_RAMPS.has(key)) {
+      slice.setTrackPathColorRampKey(key);
+      slice.setTrackPathIsColorRampReversed(reversed !== undefined);
+    }
+  }
+
   const trackPathColorModeParam = parseTrackPathMode(params.get(UrlParam.PATH_COLOR_MODE));
   if (trackPathColorModeParam !== undefined) {
     slice.setTrackPathColorMode(trackPathColorModeParam);

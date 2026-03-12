@@ -1,8 +1,7 @@
 import type { Color } from "three";
 
 import { BOOLEAN_VALUE_FALSE, BOOLEAN_VALUE_TRUE, type LabelData, LabelType } from "src/colorizer/AnnotationData";
-import type ColorRamp from "src/colorizer/ColorRamp";
-import { ColorRampType } from "src/colorizer/ColorRamp";
+import ColorRamp, { ColorRampType } from "src/colorizer/ColorRamp";
 import type { ColorRampData } from "src/colorizer/colors/color_ramps";
 import { MAX_FEATURE_CATEGORIES } from "src/colorizer/constants";
 import type Dataset from "src/colorizer/Dataset";
@@ -53,14 +52,34 @@ export function thresholdMatchFinder(featureKey: string, unit: string): (thresho
 }
 
 /**
- * Convenience method for getting a single ramp from a map of strings to ramps, optionally reversing it.
+ * Convenience method for getting a single ramp from a map of strings to ramps,
+ * optionally reversing or mirroring it. Always returns a *new* ColorRamp
+ * instance that should be disposed of when no longer needed.
  */
-export function getColorMap(colorRampData: Map<string, ColorRampData>, key: string, reversed = false): ColorRamp {
-  const colorRamp = colorRampData.get(key)?.colorRamp;
-  if (!colorRamp) {
+export function getColorMap(
+  colorRampDataMap: Map<string, ColorRampData>,
+  key: string,
+  options: {
+    reversed?: boolean;
+    mirrored?: boolean;
+  } = {}
+): ColorRamp {
+  const colorRampData = colorRampDataMap.get(key);
+  if (!colorRampData) {
     throw new Error("Could not find data for color ramp '" + key + "'");
   }
-  return colorRamp && reversed ? colorRamp.reverse() : colorRamp;
+  let colorStops = [...colorRampData.colorStops];
+  if (options.reversed) {
+    colorStops.reverse();
+  }
+  if (options.mirrored && colorRampData.type === ColorRampType.LINEAR) {
+    // Reverse + remove color at the beginning so the color stop isn't repeated
+    // ex: 123 => 12321 (3 is not repeated)
+    const reversedColorStops = [...colorStops].reverse();
+    reversedColorStops.shift();
+    colorStops = [...colorStops, ...reversedColorStops];
+  }
+  return new ColorRamp(colorStops, colorRampData.type);
 }
 
 /**
@@ -567,6 +586,7 @@ const LINE_VERTEX_COLOR_DEPS: (keyof TrackPathParams)[] = [
 const LINE_MATERIAL_DEPS: (keyof TrackPathParams)[] = [
   "trackPathColorMode",
   "trackPathColor",
+  "trackPathColorRamp",
   "outlineColor",
   "trackPathWidthPx",
 ];
@@ -592,7 +612,8 @@ export function getLineUpdateFlags(
 } {
   const geometryNeedsUpdate = hasPropertyChanged(prevParams, params, LINE_GEOMETRY_DEPS);
   const vertexColorNeedsUpdate =
-    params.trackPathColorMode === TrackPathColorMode.USE_FEATURE_COLOR &&
+    (params.trackPathColorMode === TrackPathColorMode.USE_COLOR_MAP ||
+      params.trackPathColorMode === TrackPathColorMode.USE_FEATURE_COLOR) &&
     hasPropertyChanged(prevParams, params, LINE_VERTEX_COLOR_DEPS);
   const materialNeedsUpdate = vertexColorNeedsUpdate || hasPropertyChanged(prevParams, params, LINE_MATERIAL_DEPS);
   const needsRender =
@@ -608,6 +629,76 @@ export function getLineUpdateFlags(
     needsRender,
   };
 }
+
+/**
+ * Calculates rendering information for a track path, including the range of
+ * visible path instances to show and how to apply the color ramp.
+ * @returns An object containing:
+ *  - `rampScale`: The number of vertices the color ramp spans.
+ *  - `rampOffset`: The vertex index that the color ramp is centered on (usually
+ *    corresponding with the current frame in the track).
+ *  - `startingInstance`: The index of the first path instance to show, where an
+ *    instance is a line segment between two frames.
+ *  - `endingInstance`: The index of the last path instance to show.
+ */
+export function getTrackPathRenderInfo(
+  params: TrackPathParams | null,
+  currentFrame: number
+): {
+  rampScale: number;
+  rampOffset: number;
+  startingInstance: number;
+  endingInstance: number;
+} {
+  const track = params?.track;
+  // Show nothing if track doesn't exist or doesn't have centroid data
+  if (!track || !track.centroids || !params?.showTrackPath) {
+    return {
+      rampScale: 1,
+      rampOffset: 0,
+      startingInstance: 0,
+      endingInstance: 0,
+    };
+  }
+
+  const trackStepIdx = currentFrame - track.startTime();
+  let endingInstance;
+  let startingInstance;
+  if (params.showAllTrackPathPastSteps) {
+    startingInstance = 0;
+  } else {
+    startingInstance = Math.max(0, trackStepIdx - params.trackPathPastSteps);
+  }
+
+  if (params.showAllTrackPathFutureSteps) {
+    endingInstance = track.duration();
+  } else {
+    endingInstance = Math.min(trackStepIdx + params.trackPathFutureSteps, track.duration());
+  }
+
+  // Check if the path should be hidden entirely because it is outside of the
+  // range. This happens when all past paths are shown and the track has ended,
+  // or if all future paths are shown and the track has not yet started.
+  if (!params.persistTrackPathWhenOutOfRange) {
+    const isVisiblePastEnd = params.showAllTrackPathPastSteps && trackStepIdx >= track.duration();
+    const isVisibleBeforeStart = params.showAllTrackPathFutureSteps && trackStepIdx < 0;
+    if (isVisiblePastEnd || isVisibleBeforeStart) {
+      startingInstance = 0;
+      endingInstance = 0;
+    }
+  }
+
+  const maxTrackLength = params.dataset?.getMaxTrackLength() || track.duration();
+  const pastSteps = params.showAllTrackPathPastSteps ? maxTrackLength : params.trackPathPastSteps;
+  const futureSteps = params.showAllTrackPathFutureSteps ? maxTrackLength : params.trackPathFutureSteps;
+  return {
+    rampScale: Math.max(pastSteps, futureSteps) * 2,
+    rampOffset: trackStepIdx,
+    startingInstance,
+    endingInstance: Math.max(0, endingInstance),
+  };
+}
+
 /**
  * Returns a copy of an object where any properties with a value of `undefined`
  * are not included.

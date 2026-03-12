@@ -12,6 +12,7 @@ import {
   computeTrackLinePointsAndIds,
   computeVertexColorsFromIds,
   getLineUpdateFlags,
+  getTrackPathRenderInfo,
 } from "src/colorizer/utils/data_utils";
 import SubrangeLineMaterial from "src/colorizer/viewport/tracks/SubrangeLineMaterial";
 
@@ -112,24 +113,31 @@ export default class TrackPath2D {
     if (!this.params) {
       return;
     }
-    const { trackPathColorMode, outlineColor, trackPathColor, trackPathWidthPx } = this.params;
+    const { trackPathColorMode, trackPathColorRamp, outlineColor, trackPathColor, trackPathWidthPx } = this.params;
     const modeToColor = {
       [TrackPathColorMode.USE_FEATURE_COLOR]: FEATURE_BASE_COLOR,
       [TrackPathColorMode.USE_OUTLINE_COLOR]: outlineColor,
       [TrackPathColorMode.USE_CUSTOM_COLOR]: trackPathColor,
+      [TrackPathColorMode.USE_COLOR_MAP]: FEATURE_BASE_COLOR,
     };
     const color = modeToColor[trackPathColorMode];
     const isColoredByFeature = trackPathColorMode === TrackPathColorMode.USE_FEATURE_COLOR;
+    const isColoredByRamp = trackPathColorMode === TrackPathColorMode.USE_COLOR_MAP;
 
     // Scale line width slightly with zoom.
     const baseLineWidth = trackPathWidthPx + (this.zoomMultiplier - 1.0) * 0.5;
     this.line.material.color = color;
     this.line.material.linewidth = baseLineWidth;
-    this.line.material.vertexColors = isColoredByFeature;
-    this.line.material.needsUpdate = true;
+    this.line.material.vertexColors = isColoredByFeature || isColoredByRamp;
+
+    // Apply color ramp
+    (this.line.material as SubrangeLineMaterial).useColorRamp = isColoredByRamp;
+    (this.line.material as SubrangeLineMaterial).colorRamp = trackPathColorRamp.textureLinearSRGB;
 
     // Show line outline only when coloring by feature color
     this.bgLine.material.linewidth = isColoredByFeature ? baseLineWidth + 2 : 0;
+
+    this.line.material.needsUpdate = true;
     this.bgLine.material.needsUpdate = true;
   }
 
@@ -197,44 +205,19 @@ export default class TrackPath2D {
    * @param currentFrame The current frame index.
    */
   public updateVisibleRange(currentFrame: number): void {
-    const track = this.params?.track;
-    // Show nothing if track doesn't exist or doesn't have centroid data
-    if (!track || !track.centroids || !this.params?.showTrackPath) {
-      this.line.geometry.instanceCount = 0;
-      return;
-    }
-
-    const trackStepIdx = currentFrame - track.startTime();
-    let endingInstance;
-    let startingInstance;
-
-    if (this.params.showAllTrackPathPastSteps) {
-      startingInstance = 0;
-    } else {
-      startingInstance = Math.max(0, trackStepIdx - this.params.trackPathPastSteps);
-    }
-
-    if (this.params.showAllTrackPathFutureSteps) {
-      endingInstance = track.duration();
-    } else {
-      endingInstance = Math.min(trackStepIdx + this.params.trackPathFutureSteps, track.duration());
-    }
-
-    // Check if the path should be hidden entirely because it is outside of the
-    // range. This happens when all past paths are shown and the track has ended,
-    // or if all future paths are shown and the track has not yet started.
-    if (!this.params.persistTrackPathWhenOutOfRange) {
-      const isVisiblePastEnd = this.params.showAllTrackPathPastSteps && trackStepIdx >= track.duration();
-      const isVisibleBeforeStart = this.params.showAllTrackPathFutureSteps && trackStepIdx < 0;
-      if (isVisiblePastEnd || isVisibleBeforeStart) {
-        startingInstance = 0;
-        endingInstance = 0;
-      }
-    }
-
+    const { rampScale, rampOffset, startingInstance, endingInstance } = getTrackPathRenderInfo(
+      this.params,
+      currentFrame
+    );
+    (this.line.material as SubrangeLineMaterial).colorRampVertexScale = rampScale;
+    (this.line.material as SubrangeLineMaterial).colorRampVertexOffset = rampOffset;
     (this.line.material as SubrangeLineMaterial).minInstance = startingInstance;
+    this.line.geometry.instanceCount = endingInstance;
+    this.line.material.needsUpdate = true;
+
     (this.bgLine.material as SubrangeLineMaterial).minInstance = startingInstance;
-    this.line.geometry.instanceCount = Math.max(0, endingInstance);
+    this.bgLine.geometry.instanceCount = endingInstance;
+    this.bgLine.material.needsUpdate = true;
   }
 
   /**
