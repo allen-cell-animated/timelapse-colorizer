@@ -283,7 +283,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   useEffect(() => {
     const boundGetBackdropChannelDataRange = canv.getBackdropChannelDataRange.bind(canv);
     setGetChannelDataRangeCallback(boundGetBackdropChannelDataRange);
-  }, [canv, setGetChannelDataRangeCallback, updateChannelSettings]);
+  }, [canv, setGetChannelDataRangeCallback]);
 
   // CANVAS RESIZING /////////////////////////////////////////////////
 

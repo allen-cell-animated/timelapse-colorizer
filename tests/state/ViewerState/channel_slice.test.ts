@@ -2,7 +2,7 @@ import { act, renderHook } from "@testing-library/react";
 import { Color } from "three";
 import { describe, expect, it } from "vitest";
 
-import type { ChannelSetting, Dataset } from "src/colorizer";
+import { ChannelRangePreset, type ChannelSetting, type Dataset } from "src/colorizer";
 import type { ManifestFile } from "src/colorizer/utils/dataset_utils";
 import { useViewerStateStore } from "src/state";
 import { loadChannelSliceFromParams, serializeChannelSlice } from "src/state/slices";
@@ -41,6 +41,128 @@ const deepCopyChannelSettings = (settings: ChannelSetting[]): ChannelSetting[] =
 };
 
 describe("ChannelSlice", () => {
+  describe("updateChannelRangeWithVolumeData", () => {
+    it("sets data min and max to loaded data range", async () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      await setDatasetAsync(result, await makeDatasetWithNChannels(2));
+
+      expect(result.current.channelSettings.length).toBe(2);
+      expect(result.current.channelSettings[0].dataMin).toBeNull();
+      expect(result.current.channelSettings[0].dataMax).toBeNull();
+      expect(result.current.channelSettings[1].dataMin).toBeNull();
+      expect(result.current.channelSettings[1].dataMax).toBeNull();
+      act(() => {
+        useViewerStateStore.getState().updateChannelRangeWithVolumeData({
+          backdropIdx: 0,
+          dataMin: 5,
+          dataMax: 15,
+        });
+      });
+      expect(result.current.channelSettings[0].dataMin).toBe(5);
+      expect(result.current.channelSettings[0].dataMax).toBe(15);
+      expect(result.current.channelSettings[1].dataMin).toBeNull();
+      expect(result.current.channelSettings[1].dataMax).toBeNull();
+      act(() => {
+        useViewerStateStore.getState().updateChannelRangeWithVolumeData({
+          backdropIdx: 1,
+          dataMin: 20,
+          dataMax: 30,
+        });
+      });
+      expect(result.current.channelSettings[0].dataMin).toBe(5);
+      expect(result.current.channelSettings[0].dataMax).toBe(15);
+      expect(result.current.channelSettings[1].dataMin).toBe(20);
+      expect(result.current.channelSettings[1].dataMax).toBe(30);
+    });
+
+    it("sets data min and max to be range across multiple volumes", async () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      await setDatasetAsync(result, await makeDatasetWithNChannels(1));
+      expect(result.current.channelSettings[0].dataMin).toBeNull();
+      expect(result.current.channelSettings[0].dataMax).toBeNull();
+      act(() => {
+        useViewerStateStore.getState().updateChannelRangeWithVolumeData({
+          backdropIdx: 0,
+          dataMin: 5,
+          dataMax: 15,
+        });
+      });
+      expect(result.current.channelSettings[0].dataMin).toBe(5);
+      expect(result.current.channelSettings[0].dataMax).toBe(15);
+      act(() => {
+        useViewerStateStore.getState().updateChannelRangeWithVolumeData({
+          backdropIdx: 0,
+          dataMin: 3,
+          dataMax: 18,
+        });
+      });
+      expect(result.current.channelSettings[0].dataMin).toBe(3);
+      expect(result.current.channelSettings[0].dataMax).toBe(18);
+      act(() => {
+        useViewerStateStore.getState().updateChannelRangeWithVolumeData({
+          backdropIdx: 0,
+          dataMin: 6,
+          dataMax: 15,
+        });
+      });
+      expect(result.current.channelSettings[0].dataMin).toBe(3);
+      expect(result.current.channelSettings[0].dataMax).toBe(18);
+    });
+
+    it("applies the IJ Auto threshold if there is no min/max value set", async () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      await setDatasetAsync(result, await makeDatasetWithNChannels(2));
+      // Mock out the applyChannelRangePreset to set specific min/max values
+      const mockApplyChannelRangePreset = (index: number, preset: ChannelRangePreset): void => {
+        if (index === 0 && preset === ChannelRangePreset.IJ_AUTO) {
+          result.current.updateChannelSettings(0, { min: 10, max: 20 });
+          return;
+        } else if (index === 1 && preset === ChannelRangePreset.IJ_AUTO) {
+          result.current.updateChannelSettings(1, { min: 25, max: 35 });
+          return;
+        }
+        throw new Error("Unexpected preset application");
+      };
+
+      act(() => {
+        useViewerStateStore.getState().setApplyChannelRangePresetCallback(mockApplyChannelRangePreset);
+      });
+
+      expect(result.current.channelSettings.length).toBe(2);
+      expect(result.current.channelSettings[0].dataMin).toBeNull();
+      expect(result.current.channelSettings[0].dataMax).toBeNull();
+      expect(result.current.channelSettings[1].dataMin).toBeNull();
+      expect(result.current.channelSettings[1].dataMax).toBeNull();
+      act(() => {
+        useViewerStateStore.getState().updateChannelRangeWithVolumeData({
+          backdropIdx: 0,
+          dataMin: 5,
+          dataMax: 15,
+        });
+      });
+      expect(result.current.channelSettings[0].min).toBe(10);
+      expect(result.current.channelSettings[0].max).toBe(20);
+      expect(result.current.channelSettings[0].dataMin).toBe(5);
+      expect(result.current.channelSettings[0].dataMax).toBe(15);
+      // Second channel should be unchanged
+      expect(result.current.channelSettings[1].min).toBeNull();
+      expect(result.current.channelSettings[1].max).toBeNull();
+      expect(result.current.channelSettings[1].dataMin).toBeNull();
+      expect(result.current.channelSettings[1].dataMax).toBeNull();
+      act(() => {
+        useViewerStateStore.getState().updateChannelRangeWithVolumeData({
+          backdropIdx: 1,
+          dataMin: 20,
+          dataMax: 30,
+        });
+      });
+      expect(result.current.channelSettings[1].min).toBe(25);
+      expect(result.current.channelSettings[1].max).toBe(35);
+      expect(result.current.channelSettings[1].dataMin).toBe(20);
+      expect(result.current.channelSettings[1].dataMax).toBe(30);
+    });
+  });
+
   describe("state subscribers", () => {
     describe("resets channel settings when dataset changes", () => {
       it("defaults to white for single-channel datasets", async () => {
