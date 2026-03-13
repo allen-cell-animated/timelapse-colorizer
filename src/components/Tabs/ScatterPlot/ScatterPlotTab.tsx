@@ -256,7 +256,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   useEffect(() => {
     const onClick = async (): Promise<void> => {
       const objectId = hoveredIdRef.current;
-      if (objectId) {
+      if (objectId !== null) {
         handleIdClicked(objectId);
       } else {
         handleBgClicked();
@@ -962,6 +962,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       Plotly.relayout(plotDivRef.current, { shapes: getCurrentFrameShapes() });
       return;
     }
+    setIsRendering(true);
     renderPlot();
     prevDependenciesRef.current = basePlotDependencies;
   }, [...basePlotDependencies, currentFrame]);

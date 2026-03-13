@@ -282,7 +282,7 @@ export function hasAnyValueChanged<T extends Array<unknown>>(curr: T | null, pre
     return true;
   }
   for (let i = 0; i < curr.length; i++) {
-    if (curr[i] !== prev[i]) {
+    if (!Object.is(curr[i], prev[i])) {
       return true;
     }
   }
