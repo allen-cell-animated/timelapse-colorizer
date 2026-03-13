@@ -58,7 +58,6 @@ const PLOT_RANGE_SELECT_ITEMS = Object.values(PlotRangeType);
 
 type ScatterPlotTabProps = {
   isVisible: boolean;
-  isPlaying: boolean;
   showAlert: ShowAlertBannerCallback;
 };
 
@@ -122,7 +121,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const isDebouncePending =
     dataset !== rawDataset || colorRampMin !== rawColorRampRange[0] || colorRampMax !== rawColorRampRange[1];
 
-  const { isPlaying, isVisible } = props;
+  const { isVisible } = props;
 
   // TODO: `isRendering` sometimes doesn't trigger the loading spinner.
   const [isRendering, setIsRendering] = useState(false);
@@ -150,15 +149,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
   const currentRangeType = useRef<PlotRangeType>(rangeType);
   currentRangeType.current = rangeType;
-
-  // Trigger render spinner when playback starts, but only if the render is being delayed.
-  // If a render is allowed to happen (such as in the current-track- or current-frame-only
-  // range types), `isRendering` will be set to false immediately and the spinner will be hidden again.
-  useEffect(() => {
-    if (isPlaying) {
-      setIsRendering(true);
-    }
-  }, [isPlaying]);
 
   // Track last rendered props + state to make optimizations on re-renders
   const lastRenderedState = useRef({
@@ -217,9 +207,9 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     };
   }, [plotRef]);
 
+  /** Selects the clicked track and jumps to the corresponding time. */
   const handleIdClicked = useCallback(
     async (objectId: number) => {
-      // Select the clicked track and jump to the corresponding time.
       if (dataset === null) {
         return;
       }
@@ -246,21 +236,23 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     [dataset, setFrame, toggleTrack, setTracks, addTracks]
   );
 
+  /**
+   * Clears the selected tracks (if not in multi-select mode or current-track
+   * mode).
+   */
   const handleBgClicked = useCallback((): void => {
     if (
       currentRangeType.current !== PlotRangeType.CURRENT_TRACK &&
       !areAnyHotkeysPressed(SHORTCUT_KEYS.viewport.multiTrackSelect.keycode)
     ) {
-      // Clear tracks when not in multiselect mode and not in current-track mode.
       clearTracks();
     }
   }, [clearTracks]);
 
   // Handle click events on the XY plot component directly instead of the
-  // `plotly_click` event, since it more reliably detects mouse events and also
-  // reports clicks on empty space while ignoring axis/histogram clicks. Because
-  // the click event does not provide point data, we also must track the
-  // currently hovered point separately.
+  // `plotly_click` event, since it (1) more reliably detects mouse events
+  // during time playback, (2) reports clicks on empty space, and (3) ignores
+  // axis/histogram clicks.
   useEffect(() => {
     const onClick = async (): Promise<void> => {
       const objectId = hoveredIdRef.current;
@@ -716,6 +708,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   // Plot Rendering
   //////////////////////////////////
 
+  // Plot dependencies, not including time.
   const basePlotDependencies = [
     dataset,
     xAxisFeatureKey,
@@ -723,7 +716,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     rangeType,
     tracks,
     isVisible,
-    isPlaying,
     plotDivRef.current,
     outlierDrawSettings,
     outOfRangeDrawSettings,
@@ -745,7 +737,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
    * Returns an array of shapes that draw a crosshair + colored scatterplot dot over the
    * points in selected tracks visible in the current frame.
    */
-  const getCurrentFrameShapes = useCallback((): Partial<Plotly.Shape>[] => {
+  const getCurrentFrameShapes = (): Partial<Plotly.Shape>[] => {
     const crosshairShapes: Partial<Plotly.Shape>[] = [];
     if (!rawXDataRef.current || !rawYDataRef.current || !dataset) {
       return [];
@@ -758,6 +750,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     for (const track of tracks.values()) {
       const currentObjectId = track.getIdAtTime(currentFrame);
       if (currentObjectId !== -1) {
+        // Get crosshair for this shape and store data for rendering the dots
         crosshairShapes.push(
           ...getCrosshairShapes(rawXDataRef.current[currentObjectId], rawYDataRef.current[currentObjectId])
         );
@@ -770,6 +763,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     }
     const outOfRangeOutlineColor = outOfRangeDrawSettings.color.clone().multiplyScalar(0.8);
 
+    // Render the dots. See TODO in `scatterplotTraceToShapes` for refactoring
+    // `colorizeScatterplotPoints`.
     const pointShapes = scatterplotTraceToShapes(
       colorizeScatterplotPoints(xData, yData, ids, segIds, trackIds, {
         outOfRange: {
@@ -779,7 +774,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       })
     );
     return crosshairShapes.concat(pointShapes);
-  }, [tracks, currentFrame, dataset, categoricalPalette, colorRamp, inRangeLUT, colorRampMin, colorRampMax]);
+  };
 
   const renderPlot = (forceRelayout: boolean = false): void => {
     const rawXData = getData(xAxisFeatureKey, dataset);
@@ -960,18 +955,16 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     if (!isVisible) {
       return;
     }
-    const haveBaseDependenciesChanged = hasAnyValueChanged(basePlotDependencies, prevDependenciesRef.current);
-    const ignoreFrameChangeRender =
-      (rangeType === PlotRangeType.ALL_TIME || rangeType === PlotRangeType.CURRENT_TRACK) &&
-      !haveBaseDependenciesChanged;
-    if (ignoreFrameChangeRender && plotDivRef.current !== null) {
+    const hasOnlyFrameChanged = !hasAnyValueChanged(basePlotDependencies, prevDependenciesRef.current);
+    const shouldSkipFrameChangeRender = hasOnlyFrameChanged && rangeType === PlotRangeType.ALL_TIME;
+    if (shouldSkipFrameChangeRender && plotDivRef.current !== null) {
       // Only the frame changed, so we can skip the render and just do a relayout instead.
       Plotly.relayout(plotDivRef.current, { shapes: getCurrentFrameShapes() });
       return;
     }
     renderPlot();
     prevDependenciesRef.current = basePlotDependencies;
-  }, [...basePlotDependencies, currentFrame, getCurrentFrameShapes]);
+  }, [...basePlotDependencies, currentFrame]);
 
   //////////////////////////////////
   // Component Rendering

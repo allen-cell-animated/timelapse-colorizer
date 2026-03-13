@@ -273,9 +273,9 @@ export function getIntervals(values: number[]): [number, number][] {
 }
 
 export function hasAnyValueChanged<T extends Array<unknown>>(curr: T | null, prev: T | null): boolean {
-  if (!curr && !prev) {
+  if (curr === null && prev === null) {
     return false;
-  } else if (!curr || !prev) {
+  } else if (curr === null || prev === null) {
     return true;
   }
   if (curr.length !== prev.length) {

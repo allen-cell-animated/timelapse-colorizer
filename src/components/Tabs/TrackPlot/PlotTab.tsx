@@ -38,8 +38,8 @@ export default function PlotTab(props: PlotTabProps): ReactElement {
   const tracks = useViewerStateStore((state) => state.tracks);
   const setFrame = useViewerStateStore((state) => state.setFrame);
   const addTracks = useViewerStateStore((state) => state.addTracks);
-  const viewMode = useViewerStateStore((state) => state.viewMode);
   const trackToColorMap = useViewerStateStore((state) => state.trackColors);
+  const viewMode = useViewerStateStore((state) => state.viewMode);
 
   const trackColors = useMemo(() => {
     return Array.from(tracks.keys())
