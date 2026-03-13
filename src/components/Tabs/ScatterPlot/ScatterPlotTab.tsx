@@ -9,6 +9,7 @@ import { SwitchIconSVG } from "src/assets";
 import { ColorRampType, type Dataset, type Track } from "src/colorizer";
 import { CENTROID_Y_FEATURE_KEY, TIME_FEATURE_KEY } from "src/colorizer/Dataset";
 import { DrawMode, type HexColorString, PlotRangeType, ViewMode } from "src/colorizer/types";
+import { hasAnyValueChanged } from "src/colorizer/utils/data_utils";
 import type { ShowAlertBannerCallback } from "src/components/Banner/hooks";
 import IconButton from "src/components/Buttons/IconButton";
 import TextButton from "src/components/Buttons/TextButton";
@@ -16,21 +17,22 @@ import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import type { SelectItem } from "src/components/Dropdowns/types";
 import LoadingSpinner from "src/components/LoadingSpinner";
 import { SHORTCUT_KEYS } from "src/constants";
-import { useDebounce } from "src/hooks";
+import { useDebounce, useIsMouseButtonDownRef } from "src/hooks";
 import { useViewerStateStore } from "src/state/ViewerState";
 import { AppThemeContext } from "src/styles/AppStyle";
 import { FlexRow, FlexRowAlignCenter } from "src/styles/utils";
 import { downloadCsv } from "src/utils/file_io";
 import {
   type DataArray,
-  drawCrosshair,
   getBucketIndex,
+  getCrosshairShapes,
   getHoverTemplate,
   getScatterplotDataAsCsv,
   isHistogramEvent,
   makeEmptyTraceData,
   makeLineTrace,
   scaleColorOpacityByMarkerCount,
+  scatterplotTraceToShapes,
   splitTraceData,
   subsampleColorRamp,
   type TraceData,
@@ -49,7 +51,6 @@ const COLOR_RAMP_SUBSAMPLES = 100;
 const NUM_RESERVED_BUCKETS = 2;
 const BUCKET_INDEX_OUTOFRANGE = 0;
 const BUCKET_INDEX_OUTLIERS = 1;
-const PLOTLY_CLICK_TIMEOUT_MS = 10;
 
 const DEFAULT_RANGE_TYPE = PlotRangeType.ALL_TIME;
 
@@ -57,7 +58,6 @@ const PLOT_RANGE_SELECT_ITEMS = Object.values(PlotRangeType);
 
 type ScatterPlotTabProps = {
   isVisible: boolean;
-  isPlaying: boolean;
   showAlert: ShowAlertBannerCallback;
 };
 
@@ -121,7 +121,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const isDebouncePending =
     dataset !== rawDataset || colorRampMin !== rawColorRampRange[0] || colorRampMax !== rawColorRampRange[1];
 
-  const { isPlaying, isVisible } = props;
+  const { isVisible } = props;
 
   // TODO: `isRendering` sometimes doesn't trigger the loading spinner.
   const [isRendering, setIsRendering] = useState(false);
@@ -147,50 +147,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   /** Incrementing UI revision number. Updated whenever a breaking UI change happens and the view must be reset. */
   const uiRevision = useRef(0);
 
-  // Plotly doesn't report click events if empty parts of the canvas are clicked. See
-  // https://github.com/plotly/plotly.js/issues/2696. To detect clicks on blank areas of the plot,
-  // we have to detect ANY click event and see if a plotly click event is reported within a short
-  // time frame. This can happen before OR after plotly reports it, so we need to handle both cases.
-  // If no plotly click event was reported, we assume the click was on a blank area of the plot.
-  const timeOfLastPointClicked = useRef<number>(0);
-  const emptyClickTimeout = useRef<number | null>(null);
   const currentRangeType = useRef<PlotRangeType>(rangeType);
   currentRangeType.current = rangeType;
-
-  useEffect(() => {
-    const onClick = (): void => {
-      if (
-        timeOfLastPointClicked.current + PLOTLY_CLICK_TIMEOUT_MS > Date.now() ||
-        currentRangeType.current === PlotRangeType.CURRENT_TRACK ||
-        areAnyHotkeysPressed(SHORTCUT_KEYS.viewport.multiTrackSelect.keycode)
-      ) {
-        // Skip if a point was recently clicked, or if the tracks should not be cleared
-        // (e.g. during multi-select mode or in current track range view).
-        return;
-      }
-      // Start a timeout to clear the track, which will be cleared if a plotly
-      // click event occurs.
-      emptyClickTimeout.current = window.setTimeout(() => {
-        clearTracks();
-      }, PLOTLY_CLICK_TIMEOUT_MS);
-    };
-
-    // Attach listener to the XY plot only (and not the histogram or axes)
-    const xyPlotDiv = plotDivRef.current?.querySelector(".plot-container .xy");
-    xyPlotDiv?.addEventListener("click", onClick);
-    return () => {
-      xyPlotDiv?.removeEventListener("click", onClick);
-    };
-  }, [plotDivRef.current, clearTracks]);
-
-  // Trigger render spinner when playback starts, but only if the render is being delayed.
-  // If a render is allowed to happen (such as in the current-track- or current-frame-only
-  // range types), `isRendering` will be set to false immediately and the spinner will be hidden again.
-  useEffect(() => {
-    if (isPlaying) {
-      setIsRendering(true);
-    }
-  }, [isPlaying]);
 
   // Track last rendered props + state to make optimizations on re-renders
   const lastRenderedState = useRef({
@@ -215,23 +173,46 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   // Event Handlers
   //////////////////////////////////
 
-  // Add click event listeners to the plot. When clicking a point, find the track and jump to
-  // that frame.
+  const isLeftMouseButtonDownRef = useIsMouseButtonDownRef(0);
+
+  // Store the currently hovered ID in a ref; this will be used to handle click
+  // events and tell if the user clicked on a point or not.
+  const hoveredIdRef = useRef<number | null>(null);
   useEffect(() => {
-    const onClickPlot = async (eventData: Plotly.PlotMouseEvent): Promise<void> => {
-      if (!dataset || eventData.points.length === 0 || isHistogramEvent(eventData)) {
+    const onHoverPlot = (eventData: Plotly.PlotMouseEvent): void => {
+      if (eventData.points.length === 0 || isHistogramEvent(eventData)) {
+        hoveredIdRef.current = null;
         return;
       }
-
-      // Clear any timeouts for detecting clicks on blank areas of the plot.
-      if (emptyClickTimeout.current !== null) {
-        clearTimeout(emptyClickTimeout.current);
-        emptyClickTimeout.current = null;
-      }
-      timeOfLastPointClicked.current = Date.now();
-
       const point = eventData.points[0];
       const objectId = Number.parseInt(point.data.ids[point.pointNumber], 10);
+      hoveredIdRef.current = objectId;
+    };
+    const onUnhoverPlot = (): void => {
+      // Ignore unhover during mouse left mouse clicks. If the plot is
+      // re-rendered (e.g. `Plotly.relayout`) while the mouse is held down, the
+      // hover popup disappears and an erroneous "unhover" event is fired, even
+      // if a point is still under the cursor.
+      if (isLeftMouseButtonDownRef.current) {
+        return;
+      }
+      hoveredIdRef.current = null;
+    };
+
+    plotRef?.on("plotly_hover", onHoverPlot);
+    plotRef?.on("plotly_unhover", onUnhoverPlot);
+    return () => {
+      plotRef?.removeAllListeners("plotly_hover");
+      plotRef?.removeAllListeners("plotly_unhover");
+    };
+  }, [plotRef]);
+
+  /** Selects the clicked track and jumps to the corresponding time. */
+  const handleIdClicked = useCallback(
+    async (objectId: number) => {
+      if (dataset === null) {
+        return;
+      }
       const trackId = dataset.getTrackId(objectId);
       const track = dataset.getTrack(trackId);
       if (!track) {
@@ -251,13 +232,42 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         // a different timepoint in the same track.
         addTracks(track);
       }
-    };
+    },
+    [dataset, setFrame, toggleTrack, setTracks, addTracks]
+  );
 
-    plotRef?.on("plotly_click", onClickPlot);
-    return () => {
-      plotRef?.removeAllListeners("plotly_click");
+  /**
+   * Clears the selected tracks (if not in multi-select mode or current-track
+   * mode).
+   */
+  const handleBgClicked = useCallback((): void => {
+    if (
+      currentRangeType.current !== PlotRangeType.CURRENT_TRACK &&
+      !areAnyHotkeysPressed(SHORTCUT_KEYS.viewport.multiTrackSelect.keycode)
+    ) {
+      clearTracks();
+    }
+  }, [clearTracks]);
+
+  // Handle click events on the XY plot component directly instead of the
+  // `plotly_click` event, since it (1) more reliably detects mouse events
+  // during time playback, (2) reports clicks on empty space, and (3) ignores
+  // axis/histogram clicks.
+  useEffect(() => {
+    const onClick = async (): Promise<void> => {
+      const objectId = hoveredIdRef.current;
+      if (objectId !== null) {
+        handleIdClicked(objectId);
+      } else {
+        handleBgClicked();
+      }
     };
-  }, [plotRef, dataset, addTracks, setFrame, toggleTrack, setTracks]);
+    const xyPlotDiv = plotDivRef.current?.querySelector(".plot-container .xy");
+    xyPlotDiv?.addEventListener("click", onClick);
+    return () => {
+      xyPlotDiv?.removeEventListener("click", onClick);
+    };
+  }, [plotDivRef.current, handleIdClicked, handleBgClicked]);
 
   // Sync axis ranges on relayout events (zoom)
   useEffect(() => {
@@ -307,13 +317,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     const hasRangeChanged = lastState.rangeType !== rangeType;
     const hasDatasetChanged = lastState.dataset !== dataset;
     return haveAxesChanged || hasRangeChanged || hasDatasetChanged;
-  };
-
-  /** Whether to ignore the render request until later (but continue to show as pending.) */
-  const shouldDelayRender = (): boolean => {
-    // Don't render when tab is not visible.
-    // Also, don't render updates during playback, to prevent blocking the UI.
-    return !props.isVisible || (isPlaying && rangeType === PlotRangeType.ALL_TIME);
   };
 
   const clearPlotAndStopRender = (): void => {
@@ -705,15 +708,14 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   // Plot Rendering
   //////////////////////////////////
 
-  const plotDependencies = [
+  // Plot dependencies, not including time.
+  const basePlotDependencies = [
     dataset,
     xAxisFeatureKey,
     yAxisFeatureKey,
     rangeType,
-    currentFrame,
     tracks,
     isVisible,
-    isPlaying,
     plotDivRef.current,
     outlierDrawSettings,
     outOfRangeDrawSettings,
@@ -727,9 +729,59 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     resetYAxisPlotRange,
   ];
 
+  const prevDependenciesRef = useRef<typeof basePlotDependencies | null>(null);
+  const rawXDataRef = useRef<Uint32Array | Float32Array | undefined>(undefined);
+  const rawYDataRef = useRef<Uint32Array | Float32Array | undefined>(undefined);
+
+  /**
+   * Returns an array of shapes that draw a crosshair + colored scatterplot dot over the
+   * points in selected tracks visible in the current frame.
+   */
+  const getCurrentFrameShapes = (): Partial<Plotly.Shape>[] => {
+    const crosshairShapes: Partial<Plotly.Shape>[] = [];
+    if (!rawXDataRef.current || !rawYDataRef.current || !dataset) {
+      return [];
+    }
+    const xData: number[] = [];
+    const yData: number[] = [];
+    const ids: number[] = [];
+    const segIds: number[] = [];
+    const trackIds: number[] = [];
+    for (const track of tracks.values()) {
+      const currentObjectId = track.getIdAtTime(currentFrame);
+      if (currentObjectId !== -1) {
+        // Get crosshair for this shape and store data for rendering the dots
+        crosshairShapes.push(
+          ...getCrosshairShapes(rawXDataRef.current[currentObjectId], rawYDataRef.current[currentObjectId])
+        );
+        xData.push(rawXDataRef.current[currentObjectId]);
+        yData.push(rawYDataRef.current[currentObjectId]);
+        ids.push(currentObjectId);
+        segIds.push(dataset!.getSegmentationId(currentObjectId));
+        trackIds.push(track.trackId);
+      }
+    }
+    const outOfRangeOutlineColor = outOfRangeDrawSettings.color.clone().multiplyScalar(0.8);
+
+    // Render the dots. See TODO in `scatterplotTraceToShapes` for refactoring
+    // `colorizeScatterplotPoints`.
+    const pointShapes = scatterplotTraceToShapes(
+      colorizeScatterplotPoints(xData, yData, ids, segIds, trackIds, {
+        outOfRange: {
+          color: theme.color.layout.background,
+          line: { width: 2, color: "#" + outOfRangeOutlineColor.getHexString() + "40" },
+        },
+      })
+    );
+    return crosshairShapes.concat(pointShapes);
+  };
+
   const renderPlot = (forceRelayout: boolean = false): void => {
     const rawXData = getData(xAxisFeatureKey, dataset);
     const rawYData = getData(yAxisFeatureKey, dataset);
+    // Save raw data for drawing layout traces
+    rawXDataRef.current = rawXData;
+    rawYDataRef.current = rawYData;
 
     if (!rawXData || !rawYData || !xAxisFeatureKey || !yAxisFeatureKey || !dataset || !plotDivRef.current) {
       clearPlotAndStopRender();
@@ -766,6 +818,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       // disable hover for all points other than the track when one is selected
       tracks.size === 0 || rangeType !== PlotRangeType.ALL_TIME
     );
+    const shapes: Partial<Plotly.Shape>[] = [];
 
     const xHistogram: Partial<Plotly.PlotData> = {
       x: xData,
@@ -820,23 +873,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     }
 
     // Render crosshair at the current time for all tracks.
-    for (const track of tracks.values()) {
-      const currentObjectId = track.getIdAtTime(currentFrame);
-      if (currentObjectId !== -1) {
-        traces.push(...drawCrosshair(rawXData[currentObjectId], rawYData[currentObjectId]));
-        // Extra single point, so the point is still visible over the crosshair.
-        traces.push(
-          ...colorizeScatterplotPoints(
-            [rawXData[currentObjectId]],
-            [rawYData[currentObjectId]],
-            [currentObjectId],
-            [dataset.getSegmentationId(currentObjectId)],
-            [track.trackId],
-            { size: 4 }
-          )
-        );
-      }
-    }
+    shapes.push(...getCurrentFrameShapes());
 
     // Format axes
     const { scatterPlotAxis: scatterPlotXAxis, histogramAxis: histogramXAxis } = getAxisLayoutsFromRange(
@@ -872,6 +909,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         // family: theme.font.family,
         size: 12,
       },
+      shapes,
     };
 
     if (forceRelayout || shouldPlotUiReset()) {
@@ -914,11 +952,20 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
    * Re-render the plot when the relevant props change.
    */
   useEffect(() => {
-    if (shouldDelayRender()) {
+    if (!isVisible) {
       return;
     }
+    const hasOnlyFrameChanged = !hasAnyValueChanged(basePlotDependencies, prevDependenciesRef.current);
+    const shouldSkipFrameChangeRender = hasOnlyFrameChanged && rangeType === PlotRangeType.ALL_TIME;
+    if (shouldSkipFrameChangeRender && plotDivRef.current !== null) {
+      // Only the frame changed, so we can skip the render and just do a relayout instead.
+      Plotly.relayout(plotDivRef.current, { shapes: getCurrentFrameShapes() });
+      return;
+    }
+    setIsRendering(true);
     renderPlot();
-  }, plotDependencies);
+    prevDependenciesRef.current = basePlotDependencies;
+  }, [...basePlotDependencies, currentFrame]);
 
   //////////////////////////////////
   // Component Rendering
