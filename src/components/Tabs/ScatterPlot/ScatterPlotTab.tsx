@@ -24,14 +24,15 @@ import { FlexRow, FlexRowAlignCenter } from "src/styles/utils";
 import { downloadCsv } from "src/utils/file_io";
 import {
   type DataArray,
-  drawCrosshairShapes,
   getBucketIndex,
+  getCrosshairShapes,
   getHoverTemplate,
   getScatterplotDataAsCsv,
   isHistogramEvent,
   makeEmptyTraceData,
   makeLineTrace,
   scaleColorOpacityByMarkerCount,
+  scatterplotTraceToShapes,
   splitTraceData,
   subsampleColorRamp,
   type TraceData,
@@ -740,31 +741,45 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const rawXDataRef = useRef<Uint32Array | Float32Array | undefined>(undefined);
   const rawYDataRef = useRef<Uint32Array | Float32Array | undefined>(undefined);
 
-  const getCrosshairShapes = useCallback((): Partial<Plotly.Shape>[] => {
-    const shapes: Partial<Plotly.Shape>[] = [];
-    if (!rawXDataRef.current || !rawYDataRef.current) {
-      return shapes;
+  /**
+   * Returns an array of shapes that draw a crosshair + colored scatterplot dot over the
+   * points in selected tracks visible in the current frame.
+   */
+  const getCurrentFrameShapes = useCallback((): Partial<Plotly.Shape>[] => {
+    const crosshairShapes: Partial<Plotly.Shape>[] = [];
+    if (!rawXDataRef.current || !rawYDataRef.current || !dataset) {
+      return [];
     }
+    const xData: number[] = [];
+    const yData: number[] = [];
+    const ids: number[] = [];
+    const segIds: number[] = [];
+    const trackIds: number[] = [];
     for (const track of tracks.values()) {
       const currentObjectId = track.getIdAtTime(currentFrame);
       if (currentObjectId !== -1) {
-        shapes.push(...drawCrosshairShapes(rawXDataRef.current[currentObjectId], rawYDataRef.current[currentObjectId]));
-        // TODO: Should this point still be drawn?
-        // Extra single point, so the point is still visible over the crosshair.
-        // traces.push(
-        //   ...colorizeScatterplotPoints(
-        //     [rawXData[currentObjectId]],
-        //     [rawYData[currentObjectId]],
-        //     [currentObjectId],
-        //     [dataset.getSegmentationId(currentObjectId)],
-        //     [track.trackId],
-        //     { size: 4 }
-        //   )
-        // );
+        crosshairShapes.push(
+          ...getCrosshairShapes(rawXDataRef.current[currentObjectId], rawYDataRef.current[currentObjectId])
+        );
+        xData.push(rawXDataRef.current[currentObjectId]);
+        yData.push(rawYDataRef.current[currentObjectId]);
+        ids.push(currentObjectId);
+        segIds.push(dataset!.getSegmentationId(currentObjectId));
+        trackIds.push(track.trackId);
       }
     }
-    return shapes;
-  }, [tracks, currentFrame]);
+    const outOfRangeOutlineColor = outOfRangeDrawSettings.color.clone().multiplyScalar(0.8);
+
+    const pointShapes = scatterplotTraceToShapes(
+      colorizeScatterplotPoints(xData, yData, ids, segIds, trackIds, {
+        outOfRange: {
+          color: theme.color.layout.background,
+          line: { width: 2, color: "#" + outOfRangeOutlineColor.getHexString() + "40" },
+        },
+      })
+    );
+    return crosshairShapes.concat(pointShapes);
+  }, [tracks, currentFrame, dataset, categoricalPalette, colorRamp, inRangeLUT, colorRampMin, colorRampMax]);
 
   const renderPlot = (forceRelayout: boolean = false): void => {
     const rawXData = getData(xAxisFeatureKey, dataset);
@@ -863,7 +878,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     }
 
     // Render crosshair at the current time for all tracks.
-    shapes.push(...getCrosshairShapes());
+    shapes.push(...getCurrentFrameShapes());
 
     // Format axes
     const { scatterPlotAxis: scatterPlotXAxis, histogramAxis: histogramXAxis } = getAxisLayoutsFromRange(
@@ -951,12 +966,12 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       !haveBaseDependenciesChanged;
     if (ignoreFrameChangeRender && plotDivRef.current !== null) {
       // Only the frame changed, so we can skip the render and just do a relayout instead.
-      Plotly.relayout(plotDivRef.current, { shapes: getCrosshairShapes() });
+      Plotly.relayout(plotDivRef.current, { shapes: getCurrentFrameShapes() });
       return;
     }
     renderPlot();
     prevDependenciesRef.current = basePlotDependencies;
-  }, [...basePlotDependencies, currentFrame, getCrosshairShapes]);
+  }, [...basePlotDependencies, currentFrame, getCurrentFrameShapes]);
 
   //////////////////////////////////
   // Component Rendering

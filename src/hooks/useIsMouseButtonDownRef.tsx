@@ -1,4 +1,5 @@
-import React, { useEffect, useRef } from "react";
+import type React from "react";
+import { useEffect, useRef } from "react";
 
 /** Returns a ref that tracks whether the specified mouse button is held. */
 export const useIsMouseButtonDownRef = (mouseButton: number = 0): React.MutableRefObject<boolean> => {
