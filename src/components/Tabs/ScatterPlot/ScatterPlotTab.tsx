@@ -818,7 +818,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       // disable hover for all points other than the track when one is selected
       tracks.size === 0 || rangeType !== PlotRangeType.ALL_TIME
     );
-    const shapes = [];
+    const shapes: Partial<Plotly.Shape>[] = [];
 
     const xHistogram: Partial<Plotly.PlotData> = {
       x: xData,

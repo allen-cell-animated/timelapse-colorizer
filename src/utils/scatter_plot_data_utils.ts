@@ -217,11 +217,11 @@ export function scatterplotTraceToShapes(traces: Partial<PlotData>[]): Partial<S
     for (let i = 0; i < count; i++) {
       const x = (trace.x as number[])[i];
       const y = (trace.y as number[])[i];
-      const color = (trace.marker?.color as string) || "#000";
+      const color = (trace.marker?.color as string) ?? "#000";
       const line = trace.marker?.line;
-      const lineColor = (line?.color as string) || "#0000";
-      const lineWidth = (line?.width as number) || 0;
-      const radius = ((trace.marker?.size as number) || 4) / 2;
+      const lineColor = (line?.color as string) ?? "#0000";
+      const lineWidth = (line?.width as number) ?? 0;
+      const radius = ((trace.marker?.size as number) ?? 4) / 2;
 
       shapes.push({
         xanchor: x,
