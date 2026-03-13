@@ -202,7 +202,8 @@ export function getCrosshairShapes(x: number, y: number): Partial<Shape>[] {
 
 /**
  * Transforms an array of PlotData scatterplot points into shapes that can be
- * drawn on a Plotly plot as overlays (e.g., for crosshairs).
+ * drawn on a Plotly plot as overlays (e.g., for track dots in the crosshair
+ * pass).
  */
 export function scatterplotTraceToShapes(traces: Partial<PlotData>[]): Partial<Shape>[] {
   // TODO: This is hacky since we're discarding a bunch of extra work that
