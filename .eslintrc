@@ -31,6 +31,9 @@
         "alwaysTryTypes": true
       },
       "node": true
+    },
+    "react": {
+      "version": "detect"
     }
   },
   "overrides": [
@@ -55,6 +58,8 @@
             "format": ["camelCase", "UPPER_CASE", "PascalCase"],
             "leadingUnderscore": "allow"
           },
+          // Be permissive for imports (otherwise it uses the default rule)
+          {"selector": ["import"], "format": ["camelCase","PascalCase", "UPPER_CASE"] },
           { "selector": "objectLiteralProperty", "format": ["camelCase", "PascalCase"] },
           { "selector": "typeLike", "format": ["PascalCase"] }
         ]
@@ -115,7 +120,7 @@
     ],
     "@typescript-eslint/explicit-function-return-type": ["error", { "allowExpressions": true }],
     "@typescript-eslint/no-duplicate-enum-values": "error",
-    "@typescript-eslint/typedef": ["error", { "parameters": true }],
+    "@typescript-eslint/typedef": ["error", { "parameter": true }],
     "@typescript-eslint/consistent-type-imports": [
       "warn",
       {

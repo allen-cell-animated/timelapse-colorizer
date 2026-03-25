@@ -398,7 +398,7 @@ export default class Collection {
     try {
       const fetchMethod = options.fetchMethod ?? fetchWithTimeout;
       response = await fetchMethod(collectionPath, DEFAULT_FETCH_TIMEOUT_MS);
-    } catch (e) {
+    } catch {
       throw new Error(LoadErrorMessage.UNREACHABLE_COLLECTION + " " + LoadTroubleshooting.CHECK_NETWORK);
     }
     if (!response.ok) {
