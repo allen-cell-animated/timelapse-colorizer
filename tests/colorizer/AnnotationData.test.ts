@@ -420,7 +420,7 @@ describe("AnnotationData", () => {
       const mockCsvHeaders = `Dataset,ID,Track,Frame,${BOOLEAN_LABEL_KEY}\r\n`;
       const mockCsvData =
         `${datasetKey1},0,0,0,${BOOLEAN_VALUE_TRUE}\r\n` + // valid
-        `${datasetKey2},1,not_a_number,not_a_number,${BOOLEAN_VALUE_TRUE}\r\n` + // unparseable
+        `${datasetKey2},not_a_number,not_a_number,not_a_number,${BOOLEAN_VALUE_TRUE}\r\n` + // unparseable
         `${datasetKey1},2,999,999,${BOOLEAN_VALUE_TRUE}\r\n` + // mismatched
         `${datasetKey2},3,0,1,${BOOLEAN_VALUE_TRUE}\r\n`; // valid but not validated
 
