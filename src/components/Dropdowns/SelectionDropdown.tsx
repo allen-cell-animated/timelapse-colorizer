@@ -9,7 +9,7 @@ import { FlexRowAlignCenter } from "src/styles/utils";
 import StyledSelect from "./StyledSelect";
 import type { SelectItem } from "./types";
 
-type SelectionDropdownProps = {
+export type SelectionDropdownProps = {
   /** Text label to include with the dropdown. If null or undefined, hides the label. */
   label?: string | null;
   id?: string;

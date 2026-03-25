@@ -10,7 +10,9 @@ import {
   type ColorRampData,
   ColorRampType,
   DEFAULT_CATEGORICAL_PALETTE_KEY,
+  DEFAULT_COLOR_RAMP_KEY,
   DISPLAY_CATEGORICAL_PALETTE_KEYS,
+  DISPLAY_COLOR_RAMP_KEYS,
   KNOWN_CATEGORICAL_PALETTES,
   KNOWN_COLOR_RAMPS,
   type PaletteData,
@@ -138,20 +140,20 @@ const DropdownStyleContainer = styled.div<{ $categorical: boolean }>`
   }
 `;
 
-type ColorRampSelectionProps = {
+export type ColorRampSelectionProps = {
   // Config
-  id: string | undefined;
+  id?: string;
   label?: string;
   disabled?: boolean;
   colorRampToImageUrl?: (colorRamp: ColorRamp) => string;
 
   // Color ramp
-  selectedRamp: string;
+  selectedRamp?: string;
   reversed?: boolean;
   mirror?: boolean;
-  onChangeRamp: (colorRampKey: string, reversed: boolean) => void;
+  onChangeRamp?: (colorRampKey: string, reversed: boolean) => void;
   /** The keys of the color ramps to display, in order. */
-  colorRampsToDisplay: string[];
+  colorRampsToDisplay?: string[];
   /**
    * All known and displayable color ramps. This is a superset of
    * `colorRampsToDisplay` and may include additional ramps, such as deprecated
@@ -165,15 +167,22 @@ type ColorRampSelectionProps = {
   useCategoricalPalettes?: boolean;
   selectedPalette?: Color[];
   selectedPaletteKey?: string | null;
-  onChangePalette?: (newPalette: Color[]) => void;
+  onChangePalette?: (newPalette: Color[], key: string) => void;
   numCategories?: number;
   categoricalPalettesToDisplay?: string[];
   knownCategoricalPalettes?: Map<string, PaletteData>;
 };
 
 const defaultProps: Partial<ColorRampSelectionProps> = {
-  knownColorRamps: KNOWN_COLOR_RAMPS,
   disabled: false,
+
+  // Color ramps
+  selectedRamp: DEFAULT_COLOR_RAMP_KEY,
+  onChangeRamp: () => {},
+  colorRampsToDisplay: DISPLAY_COLOR_RAMP_KEYS,
+  knownColorRamps: KNOWN_COLOR_RAMPS,
+
+  // Palettes
   useCategoricalPalettes: false,
   knownCategoricalPalettes: KNOWN_CATEGORICAL_PALETTES,
   selectedPalette: KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_KEY)!.colors,
@@ -295,7 +304,7 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
     if (!paletteData) {
       throw new Error(`Invalid categorical palette key '${key}'`);
     }
-    props.onChangePalette(paletteData.colors);
+    props.onChangePalette(paletteData.colors, key);
   };
 
   const onChangeRamp = (key: string): void => {
