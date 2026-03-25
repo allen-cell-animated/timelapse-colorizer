@@ -29,6 +29,7 @@ const EXAMPLE_SLICE_1: Partial<ConfigSlice> = {
   outOfRangeDrawSettings: { color: new Color(0xff0000), mode: DrawMode.USE_COLOR },
   outlierDrawSettings: { color: new Color(0x00ff00), mode: DrawMode.USE_COLOR },
   outlineColor: new Color(0x0000ff),
+  outlinePaletteKey: "neon",
   edgeColor: new Color(0x808080),
   edgeColorAlpha: 128 / 255, // 0x80
   edgeMode: DrawMode.USE_COLOR,
@@ -52,6 +53,7 @@ const EXAMPLE_SLICE_1_PARAMS: SerializedStoreData = {
   [UrlParam.OUTLIER_COLOR]: "00ff00",
   [UrlParam.OUTLIER_MODE]: DrawMode.USE_COLOR.toString(),
   [UrlParam.OUTLINE_COLOR]: "0000ff",
+  [UrlParam.OUTLINE_PALETTE_KEY]: "neon",
   [UrlParam.EDGE_COLOR]: "80808080",
   [UrlParam.EDGE_MODE]: "1",
   [UrlParam.OPEN_TAB]: TabType.SCATTER_PLOT,
@@ -76,6 +78,7 @@ const EXAMPLE_SLICE_2: Partial<ConfigSlice> = {
   outOfRangeDrawSettings: { color: new Color(0xffff00), mode: DrawMode.HIDE },
   outlierDrawSettings: { color: new Color(0x00ffff), mode: DrawMode.HIDE },
   outlineColor: new Color(0xff00ff),
+  outlinePaletteKey: "adobe",
   edgeColor: new Color(0xa0b0c0),
   edgeColorAlpha: 208 / 255, // 0xd0
   edgeMode: DrawMode.HIDE,
@@ -99,6 +102,7 @@ const EXAMPLE_SLICE_2_PARAMS: SerializedStoreData = {
   [UrlParam.OUTLIER_COLOR]: "00ffff",
   [UrlParam.OUTLIER_MODE]: DrawMode.HIDE.toString(),
   [UrlParam.OUTLINE_COLOR]: "ff00ff",
+  [UrlParam.OUTLINE_PALETTE_KEY]: "adobe",
   [UrlParam.EDGE_COLOR]: "a0b0c0d0",
   [UrlParam.EDGE_MODE]: DrawMode.HIDE.toString(),
   [UrlParam.OPEN_TAB]: TabType.SETTINGS,
@@ -121,6 +125,7 @@ describe("ConfigSlice", () => {
       result.current.setOutOfRangeDrawSettings({ color: new Color(0xff0000), mode: DrawMode.USE_COLOR });
       result.current.setOutlierDrawSettings({ color: new Color(0x00ff00), mode: DrawMode.USE_COLOR });
       result.current.setOutlineColor(new Color(0x0000ff));
+      result.current.setOutlinePaletteKey("neon");
       result.current.setEdgeColor(new Color(0x808080), 128 / 255); // 0x80
       result.current.setEdgeMode(DrawMode.USE_COLOR);
       result.current.setOpenTab(TabType.FILTERS);
@@ -138,6 +143,7 @@ describe("ConfigSlice", () => {
     expect(result.current.outOfRangeDrawSettings).toEqual({ color: new Color(0xff0000), mode: DrawMode.USE_COLOR });
     expect(result.current.outlierDrawSettings).toEqual({ color: new Color(0x00ff00), mode: DrawMode.USE_COLOR });
     expect(result.current.outlineColor).toEqual(new Color(0x0000ff));
+    expect(result.current.outlinePaletteKey).toBe("neon");
     expect(result.current.edgeColor).toEqual(new Color(0x808080));
     expect(result.current.edgeColorAlpha).toBe(128 / 255);
     expect(result.current.edgeMode).toBe(DrawMode.USE_COLOR);
@@ -156,6 +162,7 @@ describe("ConfigSlice", () => {
       result.current.setOutOfRangeDrawSettings({ color: new Color(0x00ff00), mode: DrawMode.HIDE });
       result.current.setOutlierDrawSettings({ color: new Color(0xff0000), mode: DrawMode.HIDE });
       result.current.setOutlineColor(new Color(0x00ff00));
+      result.current.setOutlinePaletteKey("adobe");
       result.current.setEdgeColor(new Color(0xa0b0c0), 208 / 255); // 0xd0
       result.current.setEdgeMode(DrawMode.HIDE);
       result.current.setOpenTab(TabType.TRACK_PLOT);
@@ -172,6 +179,7 @@ describe("ConfigSlice", () => {
     expect(result.current.outOfRangeDrawSettings).toEqual({ color: new Color(0x00ff00), mode: DrawMode.HIDE });
     expect(result.current.outlierDrawSettings).toEqual({ color: new Color(0xff0000), mode: DrawMode.HIDE });
     expect(result.current.outlineColor).toEqual(new Color(0x00ff00));
+    expect(result.current.outlinePaletteKey).toBe("adobe");
     expect(result.current.edgeColor).toEqual(new Color(0xa0b0c0));
     expect(result.current.edgeColorAlpha).toBe(208 / 255);
     expect(result.current.openTab).toBe(TabType.TRACK_PLOT);

@@ -2,7 +2,7 @@ import type { PresetsItem } from "antd/es/color-picker/interface";
 import React, { type ReactElement } from "react";
 import type { Color } from "three";
 
-import { DrawMode, SelectionOutlineColorMode } from "src/colorizer";
+import { DrawMode, KNOWN_CATEGORICAL_PALETTES, SelectionOutlineColorMode } from "src/colorizer";
 import DropdownWithColorPicker from "src/components/Dropdowns/DropdownWithColorPicker";
 import type { SelectItem } from "src/components/Dropdowns/types";
 import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
@@ -49,7 +49,7 @@ const EDGE_COLOR_PRESETS: PresetsItem[] = [
 ];
 
 const OUTLINE_COLOR_MODE_ITEMS = [
-  { value: SelectionOutlineColorMode.USE_AUTO_COLOR.toString(), label: "Auto" },
+  { value: SelectionOutlineColorMode.USE_PALETTE.toString(), label: "Use palette" },
   { value: SelectionOutlineColorMode.USE_CUSTOM_COLOR.toString(), label: "Use color" },
 ] as const satisfies SelectItem[];
 
@@ -61,12 +61,14 @@ export default function ObjectSettings(): ReactElement {
   const outlineColor = useViewerStateStore((state) => state.outlineColor);
   const outlineColorMode = useViewerStateStore((state) => state.outlineColorMode);
   const outOfRangeDrawSettings = useViewerStateStore((state) => state.outOfRangeDrawSettings);
+  const outlinePaletteKey = useViewerStateStore((state) => state.outlinePaletteKey);
   const setEdgeColor = useViewerStateStore((state) => state.setEdgeColor);
   const setEdgeMode = useViewerStateStore((state) => state.setEdgeMode);
   const setOutlierDrawSettings = useViewerStateStore((state) => state.setOutlierDrawSettings);
   const setOutlineColor = useViewerStateStore((state) => state.setOutlineColor);
   const setOutlineColorMode = useViewerStateStore((state) => state.setOutlineColorMode);
   const setOutOfRangeDrawSettings = useViewerStateStore((state) => state.setOutOfRangeDrawSettings);
+  const setOutlinePaletteKey = useViewerStateStore((state) => state.setOutlinePaletteKey);
 
   return (
     <ToggleCollapse label="Objects">
@@ -74,62 +76,89 @@ export default function ObjectSettings(): ReactElement {
         <SettingsItem label="Selected outline" htmlFor={ObjectSettingsHtmlIds.OUTLINE_COLOR_SELECT}>
           <DropdownWithColorPicker
             id={ObjectSettingsHtmlIds.OUTLINE_COLOR_SELECT}
-            selected={outlineColorMode.toString()}
-            items={OUTLINE_COLOR_MODE_ITEMS}
-            onValueChange={(mode: string) => {
-              setOutlineColorMode(Number.parseInt(mode, 10) as SelectionOutlineColorMode);
+            dropdownProps={{
+              selected: outlineColorMode.toString(),
+              items: OUTLINE_COLOR_MODE_ITEMS,
+              onChange: (mode: string) => {
+                setOutlineColorMode(Number.parseInt(mode, 10) as SelectionOutlineColorMode);
+              },
             }}
-            showColorPicker={true}
-            color={outlineColor}
-            onColorChange={setOutlineColor}
-            presets={DEFAULT_OUTLINE_COLOR_PRESETS}
+            // Color picker
+            showColorPicker={outlineColorMode === SelectionOutlineColorMode.USE_CUSTOM_COLOR}
+            colorPickerProps={{
+              color: outlineColor,
+              onChange: setOutlineColor,
+              presets: DEFAULT_OUTLINE_COLOR_PRESETS,
+            }}
+            // Color ramp picker
+            showColorRamp={outlineColorMode === SelectionOutlineColorMode.USE_PALETTE}
+            colorRampProps={{
+              useCategoricalPalettes: true,
+              selectedPalette: KNOWN_CATEGORICAL_PALETTES.get(outlinePaletteKey)?.colors,
+              selectedPaletteKey: outlinePaletteKey,
+              onChangePalette: (_, key) => setOutlinePaletteKey(key),
+              numCategories: 12,
+              showReverseButton: false,
+            }}
           ></DropdownWithColorPicker>
         </SettingsItem>
         <SettingsItem label="Edge" htmlFor={ObjectSettingsHtmlIds.EDGE_COLOR_SELECT}>
           <DropdownWithColorPicker
             id={ObjectSettingsHtmlIds.EDGE_COLOR_SELECT}
-            selected={edgeMode.toString()}
-            items={DRAW_MODE_ITEMS}
-            onValueChange={(mode: string) => {
-              setEdgeMode(Number.parseInt(mode, 10) as DrawMode);
+            dropdownProps={{
+              selected: edgeMode.toString(),
+              items: DRAW_MODE_ITEMS,
+              onChange: (mode: string) => {
+                setEdgeMode(Number.parseInt(mode, 10) as DrawMode);
+              },
             }}
             showColorPicker={edgeMode === DrawMode.USE_COLOR}
-            color={edgeColor}
-            alpha={edgeColorAlpha}
-            onColorChange={setEdgeColor}
-            presets={EDGE_COLOR_PRESETS}
+            colorPickerProps={{
+              color: edgeColor,
+              alpha: edgeColorAlpha,
+              onChange: setEdgeColor,
+              presets: EDGE_COLOR_PRESETS,
+            }}
           />
         </SettingsItem>
         <SettingsItem label="Filtered objects" htmlFor={ObjectSettingsHtmlIds.OUT_OF_RANGE_OBJECT_COLOR_SELECT}>
           <DropdownWithColorPicker
             id={ObjectSettingsHtmlIds.OUT_OF_RANGE_OBJECT_COLOR_SELECT}
-            selected={outOfRangeDrawSettings.mode.toString()}
-            color={outOfRangeDrawSettings.color}
-            onValueChange={(mode: string) => {
-              setOutOfRangeDrawSettings({ ...outOfRangeDrawSettings, mode: Number.parseInt(mode, 10) as DrawMode });
+            dropdownProps={{
+              selected: outOfRangeDrawSettings.mode.toString(),
+              onChange: (mode: string) => {
+                setOutOfRangeDrawSettings({ ...outOfRangeDrawSettings, mode: Number.parseInt(mode, 10) as DrawMode });
+              },
+              items: DRAW_MODE_ITEMS,
             }}
-            onColorChange={(color: Color) => {
-              setOutOfRangeDrawSettings({ ...outOfRangeDrawSettings, color });
+            colorPickerProps={{
+              color: outOfRangeDrawSettings.color,
+              onChange: (color: Color) => {
+                setOutOfRangeDrawSettings({ ...outOfRangeDrawSettings, color });
+              },
+              presets: DRAW_MODE_COLOR_PRESETS,
             }}
             showColorPicker={outOfRangeDrawSettings.mode === DrawMode.USE_COLOR}
-            items={DRAW_MODE_ITEMS}
-            presets={DRAW_MODE_COLOR_PRESETS}
           />
         </SettingsItem>
         <SettingsItem label="Outliers" htmlFor={ObjectSettingsHtmlIds.OUTLIER_OBJECT_COLOR_SELECT}>
           <DropdownWithColorPicker
             id={ObjectSettingsHtmlIds.OUTLIER_OBJECT_COLOR_SELECT}
-            selected={outlierDrawSettings.mode.toString()}
-            color={outlierDrawSettings.color}
-            onValueChange={(mode: string) => {
-              setOutlierDrawSettings({ ...outlierDrawSettings, mode: Number.parseInt(mode, 10) as DrawMode });
+            dropdownProps={{
+              selected: outlierDrawSettings.mode.toString(),
+              onChange: (mode: string) => {
+                setOutlierDrawSettings({ ...outlierDrawSettings, mode: Number.parseInt(mode, 10) as DrawMode });
+              },
+              items: DRAW_MODE_ITEMS,
             }}
-            onColorChange={(color: Color) => {
-              setOutlierDrawSettings({ ...outlierDrawSettings, color });
+            colorPickerProps={{
+              color: outlierDrawSettings.color,
+              onChange: (color: Color) => {
+                setOutlierDrawSettings({ ...outlierDrawSettings, color });
+              },
+              presets: DRAW_MODE_COLOR_PRESETS,
             }}
             showColorPicker={outlierDrawSettings.mode === DrawMode.USE_COLOR}
-            items={DRAW_MODE_ITEMS}
-            presets={DRAW_MODE_COLOR_PRESETS}
           />
         </SettingsItem>
       </SettingsContainer>
