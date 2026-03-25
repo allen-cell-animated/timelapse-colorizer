@@ -142,6 +142,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const currentFrame = useViewerStateStore((state) => state.currentFrame);
   const collection = useViewerStateStore((state) => state.collection);
   const dataset = useViewerStateStore((state) => state.dataset);
+  const datasetKey = useViewerStateStore((state) => state.datasetKey);
   const updateChannelSettings = useViewerStateStore((state) => state.updateChannelSettings);
   const setGetChannelDataRangeCallback = useViewerStateStore((state) => state.setGetChannelDataRangeCallback);
   const setApplyChannelRangePresetCallback = useViewerStateStore((state) => state.setApplyChannelRangePresetCallback);
@@ -252,7 +253,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   useMemo(() => {
     const annotationLabels = props.annotationState.data.getLabels();
-    const timeToAnnotationLabelIds = dataset ? props.annotationState.data.getTimeToLabelIdMap(dataset) : new Map();
+    const timeToAnnotationLabelIds =
+      dataset && datasetKey !== null ? props.annotationState.data.getTimeToLabelIdMap(datasetKey, dataset) : new Map();
     canv.isAnnotationVisible = props.annotationState.visible;
     canv.setAnnotationData(
       annotationLabels,
@@ -262,6 +264,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     );
   }, [
     dataset,
+    datasetKey,
     props.annotationState.data,
     props.annotationState.rangeStartId,
     props.annotationState.currentLabelIdx,
@@ -341,11 +344,15 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         // Check if mouse is over an object, and if it's labeled with an editable label.
         // If so, show the edit cursor.
         const labelIdx = props.annotationState.currentLabelIdx;
-        if (labelIdx !== null) {
+        if (labelIdx !== null && datasetKey !== null) {
           const labelData = props.annotationState.data.getLabels()[labelIdx];
           if (labelData.options.type !== LabelType.BOOLEAN) {
             const id = canv.getIdAtPixel(offsetX, offsetY);
-            if (id !== null && id.globalId !== undefined && labelData.ids.has(id.globalId)) {
+            if (
+              id !== null &&
+              id.globalId !== undefined &&
+              labelData.datasetToIdData.get(datasetKey)?.ids.has(id.globalId)
+            ) {
               canv.domElement.style.cursor = "text";
               return;
             }
@@ -363,6 +370,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     },
     [
       isMouseDragging,
+      datasetKey,
       props.annotationState.isAnnotationModeEnabled,
       props.annotationState.data,
       props.annotationState.selectionMode,

@@ -5,6 +5,7 @@ import React, { type PropsWithChildren, type ReactElement, useContext, useEffect
 import { TagAddIconSVG } from "src/assets";
 import { AnnotationSelectionMode } from "src/colorizer";
 import type { LabelData, LabelOptions } from "src/colorizer/AnnotationData";
+import { getTotalLabeledIds } from "src/colorizer/utils/annotation_utils";
 import IconButton from "src/components/Buttons/IconButton";
 import { TooltipWithSubtitle } from "src/components/Tooltips/TooltipWithSubtitle";
 import { AppThemeContext } from "src/styles/AppStyle";
@@ -179,7 +180,7 @@ export default function LabelEditControls(props: PropsWithChildren<LabelEditCont
         open={showEditPopover}
         onOpenChange={createOpenChangeHandler(setShowEditPopover)}
         getPopupContainer={() => editPopoverContainerRef.current!}
-        destroyTooltipOnHide={true}
+        destroyOnHidden={true}
       >
         <div ref={editPopoverContainerRef}>
           <Tooltip title="Edit annotation" placement="top">
@@ -190,7 +191,11 @@ export default function LabelEditControls(props: PropsWithChildren<LabelEditCont
         </div>
       </Popover>
       <Popconfirm
-        title={`Delete annotation with ${formatQuantityString(props.selectedLabel.ids.size, "object", "objects")}?`}
+        title={`Delete annotation with ${formatQuantityString(
+          getTotalLabeledIds(props.selectedLabel),
+          "object",
+          "objects"
+        )}?`}
         description={"This cannot be undone."}
         open={showDeletePopup}
         onOpenChange={createOpenChangeHandler(setShowDeletePopup)}

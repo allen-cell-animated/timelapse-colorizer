@@ -486,13 +486,13 @@ function Viewer(): ReactElement {
     // contains the segmentation ID (raw image pixel value) and the global ID.
     // The global ID is undefined if the object does not exist in the dataset.
     (info: PixelIdInfo | null) => {
-      if (dataset) {
+      if (dataset && datasetKey !== null) {
         // Pass null if the user clicked on something non-interactive
         // (background or a non-existent object).
-        annotationState.handleAnnotationClick(dataset, info?.globalId ?? null);
+        annotationState.handleAnnotationClick(datasetKey, dataset, info?.globalId ?? null);
       }
     },
-    [dataset, annotationState.handleAnnotationClick]
+    [dataset, datasetKey, annotationState.handleAnnotationClick]
   );
 
   const onClickExport = useCallback((): void => {

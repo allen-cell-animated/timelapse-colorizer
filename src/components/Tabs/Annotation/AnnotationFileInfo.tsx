@@ -1,6 +1,7 @@
 import React, { type ReactElement, type ReactNode, useContext, useMemo } from "react";
 
 import type { AnnotationParseResult } from "src/colorizer/AnnotationData";
+import { getTotalLabeledIds } from "src/colorizer/utils/annotation_utils";
 import ExpandableList from "src/components/ExpandableList";
 import FileInfoCard from "src/components/Inputs/FileInfoCard";
 import { AppThemeContext } from "src/styles/AppStyle";
@@ -88,7 +89,7 @@ export default function AnnotationFileInfo(props: AnnotationFileInfoProps): Reac
               return (
                 <li key={index}>
                   <span>{label.options.name}</span>{" "}
-                  <span style={{ color: theme.color.text.hint }}>({label.ids.size})</span>
+                  <span style={{ color: theme.color.text.hint }}>({getTotalLabeledIds(label)})</span>
                 </li>
               );
             })}

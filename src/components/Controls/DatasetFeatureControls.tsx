@@ -4,7 +4,7 @@ import type { Dataset } from "src/colorizer";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import type { SelectItem } from "src/components/Dropdowns/types";
 import GlossaryPanel from "src/components/GlossaryPanel";
-import { type AnnotationState, useAnnotationDatasetWarning } from "src/hooks";
+import type { AnnotationState } from "src/hooks";
 import { useViewerStateStore } from "src/state";
 import { FlexRow } from "src/styles/utils";
 
@@ -23,15 +23,13 @@ export default function DatasetFeatureControls(props: DatasetFeatureControlsProp
   const featureKey = useViewerStateStore((state) => state.featureKey);
   const collection = useViewerStateStore((state) => state.collection);
 
-  const [popupEl, wrappedOnSelectDataset] = useAnnotationDatasetWarning(props.onSelectDataset, props.annotationState);
-
   // Wrap the returned callback one more time to skip if the selected dataset
   // is the same.
   const onSelectedDatasetValue = async (key: string): Promise<void> => {
     if (key === datasetKey) {
       return;
     }
-    return await wrappedOnSelectDataset(key);
+    return await props.onSelectDataset(key);
   };
 
   const datasetDropdownData = useMemo(() => collection?.getDatasetKeys() || [], [collection]);
@@ -57,7 +55,6 @@ export default function DatasetFeatureControls(props: DatasetFeatureControlsProp
           onChange={onSelectedDatasetValue}
           controlWidth={"100%"}
         />
-        {popupEl}
       </div>
 
       <FlexRow $gap={6} style={{ width: "55%" }}>
