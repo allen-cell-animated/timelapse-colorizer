@@ -116,6 +116,11 @@ export function capitalizeFirstLetter(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
+/**
+ * Replaces special characters that might be used by file paths. Forward slashes
+ * (`/`) are replaced with `-` and all other special characters (`\?%*:|"<>`)
+ * are replaced with `_`.
+ */
 export function sanitizeFilename(filename: string): string {
   return filename.replace(/\//g, "-").replace(/[\\?%*:|"<>]/g, "_");
 }
