@@ -1,6 +1,9 @@
-import { Vector2 } from "three";
+import { type Color, Vector2 } from "three";
 
-import { type Canvas2DScaleInfo, CanvasType } from "./types";
+import type Track from "src/colorizer/Track";
+import { SelectionOutlineColorMode } from "src/colorizer/types";
+
+import { type Canvas2DScaleInfo, CanvasType, type RenderCanvasStateParams } from "./types";
 
 export function get2DCanvasScaling(
   frameResolution: Vector2,
@@ -47,4 +50,15 @@ export function get2DCanvasScaling(
     frameToCanvasCoordinates,
     panOffset: offset,
   };
+}
+
+/**
+ * Handles "auto" behavior for track path colors. Switches from default outline
+ * color to per-track colors if there are multiple tracks selected.
+ */
+export function getTrackPathColor(track: Track | null, params: RenderCanvasStateParams): Color {
+  if (params.outlineColorMode === SelectionOutlineColorMode.USE_PALETTE && track !== null) {
+    return params.trackColors.get(track.trackId) ?? params.outlineColor;
+  }
+  return params.outlineColor;
 }

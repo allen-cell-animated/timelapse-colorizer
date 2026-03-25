@@ -26,7 +26,7 @@ const enum TrackPathSettingsHtmlIds {
 }
 
 const TRACK_MODE_ITEMS: SelectItem[] = [
-  { value: TrackPathColorMode.USE_OUTLINE_COLOR.toString(), label: "Highlight" },
+  { value: TrackPathColorMode.USE_OUTLINE_COLOR.toString(), label: "Match outline" },
   { value: TrackPathColorMode.USE_CUSTOM_COLOR.toString(), label: "Custom" },
   { value: TrackPathColorMode.USE_FEATURE_COLOR.toString(), label: "Feature" },
   { value: TrackPathColorMode.USE_COLOR_MAP.toString(), label: "Colormap" },
@@ -67,28 +67,34 @@ export default function TrackPathSettings(): ReactElement {
         <SettingsItem label="Color" htmlFor={TrackPathSettingsHtmlIds.TRACK_PATH_COLOR_SELECT}>
           <DropdownWithColorPicker
             id={TrackPathSettingsHtmlIds.TRACK_PATH_COLOR_SELECT}
-            disabled={dataset === null}
             // Dropdown
-            selected={trackPathColorMode.toString()}
-            items={TRACK_MODE_ITEMS}
-            onValueChange={(value) => setTrackPathColorMode(Number.parseInt(value, 10) as TrackPathColorMode)}
+            dropdownProps={{
+              selected: trackPathColorMode.toString(),
+              items: TRACK_MODE_ITEMS,
+              controlWidth: "130px",
+              onChange: (value) => setTrackPathColorMode(Number.parseInt(value, 10) as TrackPathColorMode),
+            }}
             // Color picker
             showColorPicker={trackPathColorMode === TrackPathColorMode.USE_CUSTOM_COLOR}
-            color={trackPathColor}
-            onColorChange={setTrackPathColor}
-            presets={DEFAULT_OUTLINE_COLOR_PRESETS}
+            colorPickerProps={{
+              color: trackPathColor,
+              onChange: setTrackPathColor,
+              presets: DEFAULT_OUTLINE_COLOR_PRESETS,
+            }}
             // Ramp picker
             // TODO: Ramp picker is clipped by the containing scrollable div. Consider moving
             // it to a containing element outside of the clip group?
             showColorRamp={trackPathColorMode === TrackPathColorMode.USE_COLOR_MAP}
-            selectedRampKey={trackPathColorRampKey}
-            isRampReversed={trackPathIsColorRampReversed}
-            onRampChange={(key, reversed) => {
-              setTrackPathColorRampKey(key);
-              setTrackPathIsColorRampReversed(reversed);
+            colorRampProps={{
+              selectedRamp: trackPathColorRampKey,
+              reversed: trackPathIsColorRampReversed,
+              mirror: true,
+              onChangeRamp: (key, reversed) => {
+                setTrackPathColorRampKey(key);
+                setTrackPathIsColorRampReversed(reversed);
+              },
+              colorRampsToDisplay: COLOR_RAMP_KEYS_TO_DISPLAY,
             }}
-            colorRampsToDisplay={COLOR_RAMP_KEYS_TO_DISPLAY}
-            mirrorRamp={true}
           />
         </SettingsItem>
         <SettingsItem label="Width" htmlFor={TrackPathSettingsHtmlIds.TRACK_PATH_WIDTH_SLIDER}>

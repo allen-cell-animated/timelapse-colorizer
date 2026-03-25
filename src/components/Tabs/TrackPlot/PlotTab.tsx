@@ -1,9 +1,11 @@
 import { PlusOutlined } from "@ant-design/icons";
 import { Input } from "antd";
-import React, { type ReactElement, useEffect, useState } from "react";
+import React, { type ReactElement, useEffect, useMemo, useState } from "react";
 import styled from "styled-components";
 
+import { KNOWN_CATEGORICAL_PALETTES } from "src/colorizer/colors/categorical_palettes";
 import IconButton from "src/components/Buttons/IconButton";
+import ColorRampDropdown from "src/components/Dropdowns/ColorRampDropdown";
 import LoadingSpinner from "src/components/LoadingSpinner";
 import PlotWrapper from "src/components/Tabs/TrackPlot/PlotWrapper";
 import { useViewerStateStore } from "src/state";
@@ -36,9 +38,18 @@ export default function PlotTab(props: PlotTabProps): ReactElement {
   const featureKey = useViewerStateStore((state) => state.featureKey);
   const pendingFrame = useViewerStateStore((state) => state.pendingFrame);
   const tracks = useViewerStateStore((state) => state.tracks);
+  const outlinePaletteKey = useViewerStateStore((state) => state.outlinePaletteKey);
+  const setOutlinePaletteKey = useViewerStateStore((state) => state.setOutlinePaletteKey);
   const setFrame = useViewerStateStore((state) => state.setFrame);
   const addTracks = useViewerStateStore((state) => state.addTracks);
+  const trackToColorMap = useViewerStateStore((state) => state.trackColors);
   const viewMode = useViewerStateStore((state) => state.viewMode);
+
+  const trackColors = useMemo(() => {
+    return Array.from(tracks.keys())
+      .map((key) => trackToColorMap.get(key))
+      .map((color) => "#" + (color?.getHexString() ?? "ff00ff"));
+  }, [tracks, trackToColorMap]);
 
   const [findTrackInput, setFindTrackInput] = useState("");
 
@@ -79,7 +90,16 @@ export default function PlotTab(props: PlotTabProps): ReactElement {
 
   return (
     <>
-      <TrackTitleBar>
+      <TrackTitleBar $gap={12}>
+        <ColorRampDropdown
+          label={"Palette"}
+          useCategoricalPalettes={true}
+          selectedPaletteKey={outlinePaletteKey}
+          selectedPalette={KNOWN_CATEGORICAL_PALETTES.get(outlinePaletteKey)?.colors}
+          onChangePalette={(_colors, key) => setOutlinePaletteKey(key)}
+          numCategories={12}
+          showReverseButton={false}
+        ></ColorRampDropdown>
         <NoSpinnerContainer>
           <TrackSearch $gap={6}>
             <label htmlFor={TRACK_SEARCH_ID}>
@@ -111,6 +131,7 @@ export default function PlotTab(props: PlotTabProps): ReactElement {
             dataset={dataset}
             featureKey={featureKey}
             tracks={tracks}
+            trackColors={trackColors}
             viewMode={viewMode}
           />
         </LoadingSpinner>

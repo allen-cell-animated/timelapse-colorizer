@@ -645,7 +645,7 @@ export class AnnotationData implements IAnnotationData {
       // annotation export was first introduced.
       let segId = parseInt(row[CSV_COL_SEG_ID], 10);
 
-      if (isNaN(id) || isNaN(track) || isNaN(time)) {
+      if (isNaN(id)) {
         unparseableRows++;
         continue;
       }

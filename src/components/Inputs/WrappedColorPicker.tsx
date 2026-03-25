@@ -5,7 +5,7 @@ import styled from "styled-components";
 import { type AppTheme, AppThemeContext } from "src/styles/AppStyle";
 import { antToThreeColor } from "src/utils/color_utils";
 
-type WrappedColorPickerProps = ColorPickerProps & {
+export type WrappedColorPickerProps = ColorPickerProps & {
   id?: string;
   containerStyle?: React.CSSProperties;
 };
