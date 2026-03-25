@@ -243,7 +243,7 @@ export default function SelectionDropdown(inputProps: React.PropsWithChildren<Se
         onChange={(value) => {
           if (value && value.value) {
             setPendingValue(value);
-            Promise.allSettled([props.onChange(value.value)]).then(() => {
+            Promise.allSettled([props.onChange(value.value)]).finally(() => {
               setPendingValue(null);
             });
           }

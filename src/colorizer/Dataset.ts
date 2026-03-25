@@ -205,7 +205,10 @@ export default class Dataset {
     return this.pathResolver.resolve(this.baseUrl, url);
   };
 
-  private parseFeatureType(inputType: string | undefined, defaultType = FeatureType.CONTINUOUS): FeatureType {
+  private parseFeatureType(
+    inputType: string | undefined,
+    defaultType: FeatureType = FeatureType.CONTINUOUS
+  ): FeatureType {
     const isFeatureType = (inputType: string): inputType is FeatureType => {
       return Object.values(FeatureType).includes(inputType as FeatureType);
     };
@@ -786,16 +789,35 @@ export default class Dataset {
     // TODO: Pre-process feature data to handle outlier values by interpolating between known good values (#21)
   }
 
-  /** Frees the GPU resources held by this dataset */
+  /**
+   * Frees the GPU resources held by this dataset, and marks internal data
+   * structures for garbage collection.
+   */
   public dispose(): void {
-    Object.values(this.features).forEach(({ tex }) => tex.dispose());
     this.frames?.dispose();
     this.backdropFrames?.dispose();
     // Cleanup array loader if it was created in the constructor
     if (this.cleanupArrayLoaderOnDispose) {
       this.arrayLoader.dispose();
     }
+    this.features.forEach((feature) => {
+      feature.data = new Float32Array(0);
+      feature.tex.dispose();
+    });
+    this.features.clear();
     this.cachedTracks.clear();
+    this.frameToGlobalIdLookup?.clear();
+    this.bounds = null;
+    this.centroids = null;
+    this.outliers = null;
+    this.segIds = null;
+    this.times = null;
+    this.trackIds = null;
+    this.backdropData.clear();
+    this.frameFiles = undefined;
+    this.backdropFrames = null;
+    this.frames = null;
+    this.frames3d = undefined;
   }
 
   /** get frame index of a given cell id */
