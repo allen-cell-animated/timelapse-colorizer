@@ -49,9 +49,8 @@ const EDGE_COLOR_PRESETS: PresetsItem[] = [
 ];
 
 const OUTLINE_COLOR_MODE_ITEMS = [
-  { value: SelectionOutlineColorMode.USE_AUTO_COLOR.toString(), label: "Auto" },
-  { value: SelectionOutlineColorMode.USE_CUSTOM_COLOR.toString(), label: "Use color" },
   { value: SelectionOutlineColorMode.USE_PALETTE.toString(), label: "Use palette" },
+  { value: SelectionOutlineColorMode.USE_CUSTOM_COLOR.toString(), label: "Use color" },
 ] as const satisfies SelectItem[];
 
 export default function ObjectSettings(): ReactElement {
@@ -85,20 +84,14 @@ export default function ObjectSettings(): ReactElement {
               },
             }}
             // Color picker
-            showColorPicker={
-              outlineColorMode === SelectionOutlineColorMode.USE_AUTO_COLOR ||
-              outlineColorMode === SelectionOutlineColorMode.USE_CUSTOM_COLOR
-            }
+            showColorPicker={outlineColorMode === SelectionOutlineColorMode.USE_CUSTOM_COLOR}
             colorPickerProps={{
               color: outlineColor,
               onChange: setOutlineColor,
               presets: DEFAULT_OUTLINE_COLOR_PRESETS,
             }}
             // Color ramp picker
-            showColorRamp={
-              outlineColorMode === SelectionOutlineColorMode.USE_AUTO_COLOR ||
-              outlineColorMode === SelectionOutlineColorMode.USE_PALETTE
-            }
+            showColorRamp={outlineColorMode === SelectionOutlineColorMode.USE_PALETTE}
             colorRampProps={{
               useCategoricalPalettes: true,
               selectedPalette: KNOWN_CATEGORICAL_PALETTES.get(outlinePaletteKey)?.colors,

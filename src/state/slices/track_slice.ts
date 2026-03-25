@@ -1,7 +1,7 @@
 import type { Color } from "three";
 import type { StateCreator } from "zustand";
 
-import { type ColorRamp, MAX_FEATURE_CATEGORIES, type Track } from "src/colorizer";
+import { type ColorRamp, MAX_FEATURE_CATEGORIES, SelectionOutlineColorMode, type Track } from "src/colorizer";
 import { arrayElementsAreEqual } from "src/colorizer/utils/data_utils";
 import { decodeTracks, encodeTracks, UrlParam } from "src/colorizer/utils/url_utils";
 import type { ConfigSlice } from "src/state/slices/config_slice";
@@ -40,9 +40,13 @@ export type TrackSliceActions = {
   /** Toggles the selection state of a track. */
   toggleTrack: (track: Track) => void;
   /**
-   * Sets the current track selection to the specified tracks.
-   * Use in place of `clearTracks() => addTracks(tracks)` to avoid
-   * unnecessary state updates.
+   * Sets the current track selection to the specified tracks. Use in place of
+   * `clearTracks() => addTracks(tracks)` to avoid unnecessary state updates.
+   * @param tracks The track or array of tracks to set as the current selection.
+   * @param colorIdx Optional array of color indices to use for each track.
+   * These are indices into the current `selectedTracksPaletteRamp`. If not
+   * provided, the tracks will be assigned colors in ascending order starting
+   * from index 0.
    */
   setTracks: (tracks: Track | Track[], colorIdx?: number[]) => void;
   /**
@@ -170,6 +174,7 @@ export const createTrackSlice: StateCreator<TrackSlice & ConfigSlice, [], [], Tr
     // Ensure colors array matches length of tracks
     colors = colors ?? [];
     while (colors.length < tracks.length) {
+      // Fill with ascending indices; will be wrapped to the palette size
       colors.push(colors.length);
     }
 
@@ -269,7 +274,10 @@ export const selectTrackSliceSerializationDeps = (slice: TrackSlice): TrackSlice
   trackToColorId: slice.trackToColorId,
 });
 
-export const loadTrackSliceFromParams = (slice: TrackSlice & DatasetSlice, params: URLSearchParams): void => {
+export const loadTrackSliceFromParams = (
+  slice: TrackSlice & DatasetSlice & ConfigSlice,
+  params: URLSearchParams
+): void => {
   const dataset = slice.dataset;
   if (!dataset) {
     return;
@@ -287,6 +295,16 @@ export const loadTrackSliceFromParams = (slice: TrackSlice & DatasetSlice, param
         tracks.push(track);
         colors.push(colorIdxFromParams?.[i] ?? i);
       }
+    }
+    // For backwards compatibility, use a solid color outline in URLs likely
+    // from legacy versions of TFE, when only one track could be selected at a
+    // time.
+    if (
+      tracks.length === 1 &&
+      params.get(UrlParam.OUTLINE_COLOR_MODE) === null &&
+      params.get(UrlParam.OUTLINE_COLOR) !== null
+    ) {
+      slice.setOutlineColorMode(SelectionOutlineColorMode.USE_CUSTOM_COLOR);
     }
     slice.setTracks(tracks, colors);
   }

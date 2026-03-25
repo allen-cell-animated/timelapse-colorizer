@@ -414,6 +414,15 @@ export function encodeTracks(trackIds: number[], trackToColorIdx?: Map<number, n
   return tracksAndColorIdx.join(",");
 }
 
+/**
+ * Deserializes a string of track IDs, optionally including color indices, in
+ * the following formats:
+ *  - "{t1},{t2},..." (no color indices, )
+ *  - "{t1}:{c1},{t2}:{c2},..."
+ *
+ * where `ti` is the i-th track ID and `ci` is the color index for the i-th track. If color index
+ * data is not provided, it is set to `i` for each track.
+ */
 export function decodeTracks(value: string | null): { trackIds: number[]; colorIdx: number[] } | undefined {
   if (value === null) {
     return undefined;
@@ -456,7 +465,7 @@ export function parseDrawSettings(
 export function parseTrackOutlineColorMode(mode: string | null): SelectionOutlineColorMode | undefined {
   const modeInt = parseInt(mode || "-1", 10);
   const isTrackOutlineColorMode =
-    modeInt === SelectionOutlineColorMode.USE_CUSTOM_COLOR || modeInt === SelectionOutlineColorMode.USE_AUTO_COLOR;
+    modeInt === SelectionOutlineColorMode.USE_CUSTOM_COLOR || modeInt === SelectionOutlineColorMode.USE_PALETTE;
   return mode && isTrackOutlineColorMode ? (modeInt as SelectionOutlineColorMode) : undefined;
 }
 

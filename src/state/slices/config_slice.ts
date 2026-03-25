@@ -6,6 +6,7 @@ import {
   ColorRamp,
   ColorRampType,
   DEFAULT_DIVERGING_COLOR_RAMP_KEY,
+  type DISPLAY_CATEGORICAL_PALETTE_KEYS,
   DrawMode,
   type DrawSettings,
   EDGE_COLOR_ALPHA_DEFAULT,
@@ -43,7 +44,7 @@ import type { SerializedStoreData, SubscribableStore } from "src/state/types";
 import { setValueIfDefined } from "src/state/utils/data_validation";
 import { addDerivedStateSubscriber } from "src/state/utils/store_utils";
 
-const DEFAULT_OUTLINE_PALETTE_KEY = "adobe";
+const DEFAULT_OUTLINE_PALETTE_KEY: (typeof DISPLAY_CATEGORICAL_PALETTE_KEYS)[number] = "neon_reordered";
 const DEFAULT_OUTLINE_PALETTE = KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_OUTLINE_PALETTE_KEY)!;
 
 const OUT_OF_RANGE_DRAW_SETTINGS_DEFAULT: DrawSettings = {
@@ -209,7 +210,7 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   outOfRangeDrawSettings: OUT_OF_RANGE_DRAW_SETTINGS_DEFAULT,
   outlierDrawSettings: OUTLIER_DRAW_SETTINGS_DEFAULT,
   outlineColor: new Color(OUTLINE_COLOR_DEFAULT),
-  outlineColorMode: SelectionOutlineColorMode.USE_AUTO_COLOR,
+  outlineColorMode: SelectionOutlineColorMode.USE_PALETTE,
   outlinePaletteKey: DEFAULT_OUTLINE_PALETTE_KEY,
   outlinePaletteRamp: new ColorRamp(DEFAULT_OUTLINE_PALETTE.colorStops, ColorRampType.CATEGORICAL),
   edgeColor: new Color(EDGE_COLOR_DEFAULT),
