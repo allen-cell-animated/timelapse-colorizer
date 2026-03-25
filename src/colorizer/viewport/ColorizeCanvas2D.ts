@@ -259,7 +259,7 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     this.zoomMultiplier = 1;
     this.panOffset = new Vector2(0, 0);
 
-    this.onFrameLoadCallback = () => { };
+    this.onFrameLoadCallback = () => {};
     this.onRenderCallback = null;
 
     this.render = this.render.bind(this);
