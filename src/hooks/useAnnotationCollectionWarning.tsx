@@ -85,7 +85,7 @@ export function useAnnotationCollectionWarning<A extends unknown[], B>(
   const onConfirm = async (download: boolean): Promise<void> => {
     if (annotationState) {
       if (download && dataset && datasetKey !== null) {
-        const csvData = annotationState.data.toCsv(datasetKey, dataset);
+        const csvData = annotationState.data.toCsv();
         const collectionName = collection?.metadata.name ?? collection?.getUrl();
         const csvName = collectionName ? `${collectionName}-annotations.csv` : "annotations.csv";
         downloadCsv(csvName, csvData);

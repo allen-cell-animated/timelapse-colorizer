@@ -38,6 +38,7 @@ const StyledCard = styled(Card)`
 
 export default function AnnotationInputPopover(props: AnnotationInputPopoverProps): ReactElement {
   const theme = useContext(AppThemeContext);
+  const dataset = useViewerStateStore((state) => state.dataset);
   const datasetKey = useViewerStateStore((state) => state.datasetKey);
 
   const {
@@ -68,14 +69,14 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
     isAnnotationModeEnabled && activeEditRange !== null && lastClickedId !== null && currentLabelIdx !== null;
 
   const saveInputValue = (labelIdx: number, range: number[]): void => {
-    if (datasetKey === null) {
+    if (datasetKey === null || dataset === null) {
       return;
     }
     const newValue = inputValue.trim();
     if (newValue.length === 0) {
       props.annotationState.removeLabelOnIds(datasetKey, labelIdx, range);
     } else {
-      props.annotationState.setLabelValueOnIds(datasetKey, labelIdx, range, newValue);
+      props.annotationState.setLabelValueOnIds(datasetKey, dataset, labelIdx, range, newValue);
     }
   };
 
@@ -131,7 +132,7 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
 
   const handleInputChange = (value: string): void => {
     // Editing the input value directly updates the label value in the annotation state.
-    if (currentLabelIdx === null || datasetKey === null || activeEditRange === null) {
+    if (currentLabelIdx === null || datasetKey === null || dataset === null || activeEditRange === null) {
       return;
     }
     // Validate input based on label type.
@@ -145,7 +146,7 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
       }
     }
     setInputValue(value);
-    props.annotationState.setLabelValueOnIds(datasetKey, currentLabelIdx, activeEditRange, value);
+    props.annotationState.setLabelValueOnIds(datasetKey, dataset, currentLabelIdx, activeEditRange, value);
   };
 
   const handleDelete = (): void => {
@@ -158,9 +159,15 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
 
   // Reset to original value and close the popover when escape is pressed.
   const handleEscape = (): void => {
-    if (originalValueRef.current !== null && datasetKey !== null && hasValidData) {
+    if (originalValueRef.current !== null && datasetKey !== null && dataset !== null && hasValidData) {
       setInputValue(originalValueRef.current);
-      props.annotationState.setLabelValueOnIds(datasetKey, currentLabelIdx, activeEditRange, originalValueRef.current);
+      props.annotationState.setLabelValueOnIds(
+        datasetKey,
+        dataset,
+        currentLabelIdx,
+        activeEditRange,
+        originalValueRef.current
+      );
     }
     clearActiveEditRange();
   };

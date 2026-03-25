@@ -256,7 +256,7 @@ export const useAnnotations = (): AnnotationState => {
           // If clicking on a range that is already labeled, initiate editing of the label value for that range
           setActiveEditRange(range);
         } else {
-          annotationData.setLabelValueOnIds(datasetKey, currentLabelIdx, range, defaultValue);
+          annotationData.setLabelValueOnIds(datasetKey, dataset, currentLabelIdx, range, defaultValue);
           setActiveEditRange(null);
         }
       };
