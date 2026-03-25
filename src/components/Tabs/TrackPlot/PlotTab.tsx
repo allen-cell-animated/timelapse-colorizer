@@ -44,7 +44,7 @@ export default function PlotTab(props: PlotTabProps): ReactElement {
   const trackColors = useMemo(() => {
     return Array.from(tracks.keys())
       .map((key) => trackToColorMap.get(key))
-      .map((color) => "#" + (color?.getHexString() || "ff00ff"));
+      .map((color) => "#" + (color?.getHexString() ?? "ff00ff"));
   }, [tracks, trackToColorMap]);
 
   const [findTrackInput, setFindTrackInput] = useState("");

@@ -49,9 +49,13 @@ export type TrackSliceActions = {
   /** Toggles the selection state of a track. */
   toggleTrack: (track: Track) => void;
   /**
-   * Sets the current track selection to the specified tracks.
-   * Use in place of `clearTracks() => addTracks(tracks)` to avoid
-   * unnecessary state updates.
+   * Sets the current track selection to the specified tracks. Use in place of
+   * `clearTracks() => addTracks(tracks)` to avoid unnecessary state updates.
+   * @param tracks The track or array of tracks to set as the current selection.
+   * @param colorIdx Optional array of color indices to use for each track.
+   * These are indices into the current `selectedTracksPaletteRamp`. If not
+   * provided, the tracks will be assigned colors in ascending order starting
+   * from index 0.
    */
   setTracks: (tracks: Track | Track[], colorIdx?: number[]) => void;
   /**
@@ -189,6 +193,7 @@ export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (s
     // Ensure colors array matches length of tracks
     colors = colors ?? [];
     while (colors.length < tracks.length) {
+      // Fill with ascending indices; will be wrapped to the palette size
       colors.push(colors.length);
     }
 
