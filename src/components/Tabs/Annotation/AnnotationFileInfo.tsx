@@ -76,6 +76,10 @@ export default function AnnotationFileInfo(props: AnnotationFileInfoProps): Reac
             "datasets are"
           )} not in the current collection (total of ${formatQuantityString(totalInvalidIds, "object", "objects")}).`
         );
+        console.warn(
+          `Annotation file contains the following dataset keys that are not in the current collection, which may indicate mismatched data:`,
+          invalidDatasetKeys
+        );
       }
     }
     if (conversionWarnings.length === 0) {
