@@ -38,6 +38,7 @@ import {
   FeatureDataType,
   type FrameLoadResult,
   type PixelIdInfo,
+  SelectionOutlineColorMode,
   type VolumeLoadResult,
 } from "src/colorizer/types";
 import { getGlobalIdFromSegId, hasPropertyChanged } from "src/colorizer/utils/data_utils";
@@ -53,7 +54,7 @@ import {
 
 import type { IInnerRenderCanvas } from "./IInnerRenderCanvas";
 import TrackPath2D from "./tracks/TrackPath2D";
-import { get2DCanvasScaling } from "./utils";
+import { get2DCanvasScaling, getTrackPathColor } from "./utils";
 
 import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
 import vertexShader from "./shaders/colorize.vert";
@@ -81,6 +82,8 @@ type ColorizeUniformTypes = {
   outlierData: Texture;
   inRangeIds: Texture;
   selectedIds: Texture;
+  selectedTracksPalette: Texture;
+  useTracksPalette: boolean;
   /** LUT mapping from segmentation ID (raw pixel value) to the global ID. */
   segIdToGlobalId: DataTexture;
   segIdOffset: number;
@@ -131,6 +134,8 @@ const getDefaultUniforms = (): ColorizeUniforms => {
     outlierData: new Uniform(emptyOutliers),
     inRangeIds: new Uniform(emptyInRangeIds),
     selectedIds: new Uniform(emptyIsSelectedIds),
+    selectedTracksPalette: new Uniform(emptyColorRamp),
+    useTracksPalette: new Uniform(false),
     segIdToGlobalId: new Uniform(emptySegIdToGlobalId),
     segIdOffset: new Uniform(0),
     overlay: new Uniform(emptyOverlay),
@@ -552,7 +557,7 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     // Update params for all TrackPath2D objects.
     this.trackPaths.forEach((trackPath, trackId) => {
       const track = params.tracks.get(trackId) ?? null;
-      trackPath.setParams({ ...params, track });
+      trackPath.setParams({ ...params, track, outlineColor: getTrackPathColor(track, params) });
     });
   }
 
@@ -661,6 +666,12 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
 
     if (hasPropertyChanged(params, prevParams, ["isSelectedLut"])) {
       this.setUniform("selectedIds", packDataTexture(Array.from(params.isSelectedLut), FeatureDataType.U8));
+    }
+    if (hasPropertyChanged(params, prevParams, ["outlinePaletteRamp"])) {
+      this.setUniform("selectedTracksPalette", params.outlinePaletteRamp.texture);
+    }
+    if (hasPropertyChanged(params, prevParams, ["tracks", "outlineColorMode"])) {
+      this.setUniform("useTracksPalette", params.outlineColorMode === SelectionOutlineColorMode.USE_PALETTE);
     }
 
     this.render();

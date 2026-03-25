@@ -1,6 +1,6 @@
 import type Plotly from "plotly.js-dist-min";
 import type { PlotlyHTMLElement } from "plotly.js-dist-min";
-import React, { type ReactElement, useEffect, useMemo, useRef, useState } from "react";
+import React, { type ReactElement, useEffect, useRef, useState } from "react";
 
 import { type Dataset, type Track, ViewMode } from "src/colorizer";
 import { CENTROID_Y_FEATURE_KEY } from "src/colorizer/Dataset";
@@ -12,6 +12,7 @@ type PlotWrapperProps = {
   dataset: Dataset | null;
   featureKey: string | null;
   tracks: Map<number, Track>;
+  trackColors: string[];
   setFrame: (frame: number) => Promise<void>;
   viewMode: ViewMode;
 };
@@ -36,7 +37,7 @@ export default function PlotWrapper(inputProps: PlotWrapperProps): ReactElement 
   }, []);
 
   // Update dataset when it changes
-  useMemo(() => {
+  useEffect(() => {
     plot?.removePlot();
     if (props.dataset) {
       plot?.setDataset(props.dataset);
@@ -44,7 +45,7 @@ export default function PlotWrapper(inputProps: PlotWrapperProps): ReactElement 
   }, [props.dataset]);
 
   // Update time and hovered value in plot
-  useMemo(() => {
+  useEffect(() => {
     let hover;
     if (hoveredObjectId && props.featureKey !== null && props.dataset !== null) {
       const featureData = props.dataset.getFeatureData(props.featureKey);
@@ -65,7 +66,7 @@ export default function PlotWrapper(inputProps: PlotWrapperProps): ReactElement 
   }, [props.dataset, props.frame, props.tracks, props.featureKey, hoveredObjectId]);
 
   // Handle updates to selected track and feature, updating/clearing the plot accordingly.
-  useMemo(() => {
+  useEffect(() => {
     if (props.tracks.size > 0) {
       // In 2D mode, the viewport's image origin (0,0) is in the top left corner, versus in
       // plot the origin is in the bottom left by default. Reverse the Y-axis
@@ -73,11 +74,11 @@ export default function PlotWrapper(inputProps: PlotWrapperProps): ReactElement 
       const reverseYAxis = props.viewMode === ViewMode.VIEW_2D && props.featureKey === CENTROID_Y_FEATURE_KEY;
       const yAxisLayout = reverseYAxis ? { autorange: "reversed" as const } : {};
 
-      plot?.plot(props.tracks, props.featureKey, props.frame, { yaxis: yAxisLayout });
+      plot?.plot(props.tracks, props.featureKey, props.frame, props.trackColors, { yaxis: yAxisLayout });
     } else {
       plot?.removePlot();
     }
-  }, [props.tracks, props.featureKey, props.viewMode]);
+  }, [props.tracks, props.featureKey, props.viewMode, props.trackColors]);
 
   const updatePlotSize = (): void => {
     if (!plotDivRef.current) {

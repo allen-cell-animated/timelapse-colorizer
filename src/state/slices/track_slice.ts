@@ -1,22 +1,35 @@
+import type { Color } from "three";
 import type { StateCreator } from "zustand";
 
-import type { Track } from "src/colorizer";
+import { type ColorRamp, MAX_FEATURE_CATEGORIES, SelectionOutlineColorMode, type Track } from "src/colorizer";
 import { arrayElementsAreEqual } from "src/colorizer/utils/data_utils";
-import { decodeTracks, UrlParam } from "src/colorizer/utils/url_utils";
+import { decodeTracks, encodeTracks, UrlParam } from "src/colorizer/utils/url_utils";
+import type { ConfigSlice } from "src/state/slices/config_slice";
 import type { DatasetSlice } from "src/state/slices/dataset_slice";
 import type { SerializedStoreData, SubscribableStore } from "src/state/types";
 import { addDerivedStateSubscriber } from "src/state/utils/store_utils";
 
+const LUT_UNSELECTED = 0;
+const LUT_OFFSET = 1;
+
 export type TrackSliceState = {
   tracks: Map<number, Track>;
+  trackToColorId: Map<number, number>;
 
   /** Derived values */
   /** @deprecated */
   track: Track | null;
+  trackColors: Map<number, Color>;
+  /**
+   * LUT that maps from an object ID to whether it is selected (>=1) or not (0).
+   * Non-zero values represent the index of the track's color in the track path
+   * palette ramp + 1 because zero is reserved to represent unselected objects.
+   * Updated when tracks are added/removed from the selection.
+   */
   isSelectedLut: Uint8Array;
 };
 
-export type TrackSliceSerializableState = Pick<TrackSliceState, "tracks">;
+export type TrackSliceSerializableState = Pick<TrackSliceState, "tracks" | "trackToColorId">;
 
 export type TrackSliceActions = {
   /**
@@ -29,11 +42,15 @@ export type TrackSliceActions = {
   /** Toggles the selection state of a track. */
   toggleTrack: (track: Track) => void;
   /**
-   * Sets the current track selection to the specified tracks.
-   * Use in place of `clearTracks() => addTracks(tracks)` to avoid
-   * unnecessary state updates.
+   * Sets the current track selection to the specified tracks. Use in place of
+   * `clearTracks() => addTracks(tracks)` to avoid unnecessary state updates.
+   * @param tracks The track or array of tracks to set as the current selection.
+   * @param colorIdx Optional array of color indices to use for each track.
+   * These are indices into the current `selectedTracksPaletteRamp`. If not
+   * provided, the tracks will be assigned colors in ascending order starting
+   * from index 0.
    */
-  setTracks: (tracks: Track | Track[]) => void;
+  setTracks: (tracks: Track | Track[], colorIdx?: number[]) => void;
   /**
    * Removes all tracks from the current selection.
    * @param newLut For internal use when the dataset changes. Optional new
@@ -50,16 +67,38 @@ function getDefaultTrack(tracks: Map<number, Track>): Track | null {
   return trackValues[trackValues.length - 1] ?? null;
 }
 
+/**
+ * Gets the next color ID to assign. Chooses the next color after the color of
+ * the track that was last selected (e.g. the last track added to the Map).
+ *
+ * This behavior is deterministic based on the current state of track selection.
+ * This is so, if a user who opens a shared URL with tracks already selected
+ * makes a new selection, they will get the same color sequence as the user who
+ * created the URL.
+ */
+function getNextColorId(tracks: Map<number, Track>, trackToColorId: Map<number, number>): number {
+  const trackValues = Array.from(tracks.values());
+  const lastTrack = trackValues[trackValues.length - 1];
+  const lastColorId = lastTrack ? trackToColorId.get(lastTrack.trackId) ?? -1 : -1;
+  return (lastColorId + 1) % MAX_FEATURE_CATEGORIES;
+}
+
 /** Marks a track as selected/deselected in the provided LUT. */
-function applyTrackToSelectionLut(lut: Uint8Array, track: Track, selected: boolean): void {
+function applyTrackToSelectionLut(lut: Uint8Array, track: Track, colorIdx: number): void {
   for (const id of track.ids) {
-    lut[id] = selected ? 1 : 0;
+    lut[id] = colorIdx;
   }
 }
 
-export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (set, get) => ({
+function getTrackColors(trackToColorId: Map<number, number>, palette: ColorRamp): Map<number, Color> {
+  return new Map(Array.from(trackToColorId.entries()).map(([key, value]) => [key, palette.colorStops[value]]));
+}
+
+export const createTrackSlice: StateCreator<TrackSlice & ConfigSlice, [], [], TrackSlice> = (set, get) => ({
   tracks: new Map<number, Track>(),
+  trackToColorId: new Map<number, number>(),
   track: null,
+  trackColors: new Map<number, Color>(),
   isSelectedLut: new Uint8Array(0),
 
   addTracks: (tracks: Track | Track[]) => {
@@ -73,14 +112,24 @@ export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (s
       }
       const newTracks = new Map(state.tracks);
       const newSelectedLut = state.isSelectedLut.slice();
+      const newTrackToColorId = new Map(state.trackToColorId);
+      let nextColorId = getNextColorId(state.tracks, state.trackToColorId);
       for (const track of tracks) {
         if (newTracks.has(track.trackId)) {
           continue;
         }
         newTracks.set(track.trackId, track);
-        applyTrackToSelectionLut(newSelectedLut, track, true);
+        applyTrackToSelectionLut(newSelectedLut, track, nextColorId + LUT_OFFSET);
+        newTrackToColorId.set(track.trackId, nextColorId);
+        nextColorId = (nextColorId + 1) % state.outlinePaletteRamp.colorStops.length;
       }
-      return { tracks: newTracks, track: getDefaultTrack(newTracks), isSelectedLut: newSelectedLut };
+      return {
+        tracks: newTracks,
+        track: getDefaultTrack(newTracks),
+        isSelectedLut: newSelectedLut,
+        trackToColorId: newTrackToColorId,
+        trackColors: getTrackColors(newTrackToColorId, state.outlinePaletteRamp),
+      };
     });
   },
   removeTracks: (trackIds: number | number[]) => {
@@ -92,15 +141,23 @@ export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (s
       }
       const newTracks = new Map(state.tracks);
       const newSelectedLut = state.isSelectedLut.slice();
+      const newTrackToColorId = new Map(state.trackToColorId);
       for (const trackId of trackIds) {
         const track = newTracks.get(trackId);
         if (!track) {
           continue;
         }
         newTracks.delete(trackId);
-        applyTrackToSelectionLut(newSelectedLut, track, false);
+        newTrackToColorId.delete(trackId);
+        applyTrackToSelectionLut(newSelectedLut, track, LUT_UNSELECTED);
       }
-      return { tracks: newTracks, track: getDefaultTrack(newTracks), isSelectedLut: newSelectedLut };
+      return {
+        tracks: newTracks,
+        track: getDefaultTrack(newTracks),
+        isSelectedLut: newSelectedLut,
+        trackToColorId: newTrackToColorId,
+        trackColors: getTrackColors(newTrackToColorId, state.outlinePaletteRamp),
+      };
     });
   },
   toggleTrack: (track: Track) => {
@@ -114,23 +171,55 @@ export const createTrackSlice: StateCreator<TrackSlice, [], [], TrackSlice> = (s
     // Fill the selection LUT with zeros; because we also need to make a copy
     // of it to trigger relevant state updates, create a new Uint8Array to replace it.
     const newSelectedLut = newLut ?? new Uint8Array(get().isSelectedLut.length);
-    set({ tracks: new Map<number, Track>(), track: null, isSelectedLut: newSelectedLut });
+    set({
+      tracks: new Map<number, Track>(),
+      track: null,
+      isSelectedLut: newSelectedLut,
+      trackToColorId: new Map<number, number>(),
+      trackColors: new Map<number, Color>(),
+    });
   },
-  setTracks: (tracks: Track | Track[]) => {
+  setTracks: (tracks: Track | Track[], colors?: number[]) => {
     tracks = Array.isArray(tracks) ? tracks : [tracks];
+
+    // Ensure colors array matches length of tracks
+    colors = colors ?? [];
+    while (colors.length < tracks.length) {
+      // Fill with ascending indices; will be wrapped to the palette size
+      colors.push(colors.length);
+    }
+
     // Combines steps for `clearTracks` and `addTracks` into one state update
     // to prevent unnecessary re-rendering.
     const newTracks = new Map<number, Track>();
     const newSelectedLut = new Uint8Array(get().isSelectedLut.length);
-    for (const track of tracks) {
+    const newTrackToColorId = new Map<number, number>();
+    const numStops = get().outlinePaletteRamp.colorStops.length;
+    for (let i = 0; i < tracks.length; i++) {
+      const track = tracks[i];
       newTracks.set(track.trackId, track);
-      applyTrackToSelectionLut(newSelectedLut, track, true);
+
+      // Resolve color index value-- handle edge case of very large negative
+      // input numbers by adding multiples of numStops to make it positive
+      // before modulo operation.
+      let colorIdx = (Math.floor(colors[i]) + Math.ceil(Math.abs(colors[i] / numStops)) * numStops) % numStops;
+      colorIdx = Number.isInteger(colorIdx) ? colorIdx : i % numStops;
+      applyTrackToSelectionLut(newSelectedLut, track, colorIdx + LUT_OFFSET);
+      newTrackToColorId.set(track.trackId, colorIdx);
     }
-    set({ tracks: newTracks, track: getDefaultTrack(newTracks), isSelectedLut: newSelectedLut });
+    set((state) => ({
+      tracks: newTracks,
+      track: getDefaultTrack(newTracks),
+      isSelectedLut: newSelectedLut,
+      trackToColorId: newTrackToColorId,
+      trackColors: getTrackColors(newTrackToColorId, state.outlinePaletteRamp),
+    }));
   },
 });
 
-export const addTrackDerivedStateSubscribers = (store: SubscribableStore<TrackSlice & DatasetSlice>): void => {
+export const addTrackDerivedStateSubscribers = (
+  store: SubscribableStore<TrackSlice & DatasetSlice & ConfigSlice>
+): void => {
   // When the dataset changes, clear tracks if the dataset has a different
   // number of objects or if the selected tracks are not present in the new
   // dataset.
@@ -167,34 +256,68 @@ export const addTrackDerivedStateSubscribers = (store: SubscribableStore<TrackSl
       return {};
     }
   );
+
+  // Update track colors when the track palette ramp (in config slice) changes.
+  addDerivedStateSubscriber(
+    store,
+    (state) => ({
+      outlinePaletteRamp: state.outlinePaletteRamp,
+      trackToColorId: state.trackToColorId,
+    }),
+    ({ outlinePaletteRamp, trackToColorId }) => {
+      return {
+        trackColors: getTrackColors(trackToColorId, outlinePaletteRamp),
+      };
+    }
+  );
 };
 
 export const serializeTrackSlice = (slice: Partial<TrackSliceSerializableState>): SerializedStoreData => {
   const ret: SerializedStoreData = {};
   if (slice.tracks && slice.tracks.size > 0) {
-    ret[UrlParam.TRACK] = Array.from(slice.tracks.keys()).join(",");
+    const trackIds = Array.from(slice.tracks.keys());
+    ret[UrlParam.TRACK] = encodeTracks(trackIds, slice.trackToColorId);
   }
   return ret;
 };
 
 export const selectTrackSliceSerializationDeps = (slice: TrackSlice): TrackSliceSerializableState => ({
   tracks: slice.tracks,
+  trackToColorId: slice.trackToColorId,
 });
 
-export const loadTrackSliceFromParams = (slice: TrackSlice & DatasetSlice, params: URLSearchParams): void => {
+export const loadTrackSliceFromParams = (
+  slice: TrackSlice & DatasetSlice & ConfigSlice,
+  params: URLSearchParams
+): void => {
   const dataset = slice.dataset;
   if (!dataset) {
     return;
   }
-  const trackIdsParam = decodeTracks(params.get(UrlParam.TRACK));
-  if (trackIdsParam !== undefined) {
-    const validatedTracks: Track[] = [];
-    for (const trackId of trackIdsParam) {
+  const trackInfo = decodeTracks(params.get(UrlParam.TRACK));
+  if (trackInfo !== undefined) {
+    const tracks: Track[] = [];
+    const colors: number[] = [];
+
+    const { trackIds, colorIdx: colorIdxFromParams } = trackInfo;
+    for (let i = 0; i < trackIds.length; i++) {
+      const trackId = trackIds[i];
       const track = dataset.getTrack(trackId);
       if (track) {
-        validatedTracks.push(track);
+        tracks.push(track);
+        colors.push(colorIdxFromParams?.[i] ?? i);
       }
     }
-    slice.addTracks(validatedTracks);
+    // For backwards compatibility, use a solid color outline in URLs likely
+    // from legacy versions of TFE, when only one track could be selected at a
+    // time.
+    if (
+      tracks.length === 1 &&
+      params.get(UrlParam.OUTLINE_COLOR_MODE) === null &&
+      params.get(UrlParam.OUTLINE_COLOR) !== null
+    ) {
+      slice.setOutlineColorMode(SelectionOutlineColorMode.USE_CUSTOM_COLOR);
+    }
+    slice.setTracks(tracks, colors);
   }
 };

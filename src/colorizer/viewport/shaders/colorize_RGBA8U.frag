@@ -11,10 +11,22 @@ uniform usampler2D outlierData;
 uniform usampler2D inRangeIds;
 /** 
  * A mapping of IDs that are selected in the current track(s). If an object's
- * index is `i`, `selectedIds[i] = 1` if the object is selected.
-*/
+ * index is `i`, `selectedIds[i] >= 1` if the object is selected.
+ *
+ * For selected objects, `selectedIds[i] - 1` is the index into the
+ * `selectedTracksPalette` for the outline color that should be used when
+ * `useTracksPalette` is true.
+ */
 uniform usampler2D selectedIds;
-/** Min and max feature values that define the endpoints of the color map. Values
+/**
+ * If true, uses the `selectedTracksPalette` to outline selected tracks, and
+ * shows an additional inner outline. When false, uses `outlineColor` for
+ * outlines.
+ */
+uniform bool useTracksPalette;
+uniform sampler2D selectedTracksPalette;
+/** 
+ * Min and max feature values that define the endpoints of the color map. Values
  * outside the range will be clamped to the nearest endpoint.
  */
 uniform float featureColorRampMin;
@@ -26,7 +38,7 @@ uniform float featureColorRampMax;
  * 
  * For a given segmentation ID `segId`, the global ID is given by:
  * `segIdToGlobalId[segId - segIdOffset] - 1`.
-*/
+ */
 uniform usampler2D segIdToGlobalId;
 uniform uint segIdOffset;
 
@@ -143,6 +155,15 @@ vec4 getCategoricalColor(float featureValue) {
   return getColorRamp(modValue / (width - 1.0));
 }
 
+vec4 getOutlineColor(int colorIdx) {
+  if (!useTracksPalette) {
+    return vec4(outlineColor, 1);
+  }
+  float width = float(textureSize(selectedTracksPalette, 0).x);
+  float adjustedIdx = (0.5 + float(colorIdx)) / width;
+  return texture(selectedTracksPalette, vec2(adjustedIdx, 0.5));
+}
+
 /**
  * Returns true if the pixel at the given coordinates is at the edge of an object.
  * @param uv The scaled UV coordinates to check.
@@ -226,11 +247,17 @@ vec4 getObjectColor(vec2 sUv, float opacity) {
   }
 
   // do an outline around highlighted object
-  bool isSelected = getUintFromTex(selectedIds, id).r == 1u;
-  if (isSelected) {
+  uint selectionIdx = getUintFromTex(selectedIds, id).r;
+  if (selectionIdx > 0u) {
     if (isEdge(sUv, labelId, OUTLINE_WIDTH_PX)) {
-      // ignore opacity for edge color
-      return vec4(outlineColor, 1.0);
+      int colorIdx = int(selectionIdx) - 1;
+      vec4 color = getOutlineColor(colorIdx);
+      return vec4(color.rgb, 1.0);
+    } else if (isEdge(sUv, labelId, OUTLINE_WIDTH_PX + 2.0) && useTracksPalette) {
+      // When coloring with the track palette, apply an additional 2px inner
+      // outline using the background color for better contrast against the
+      // track outline color.
+      return vec4(backgroundColor, 1.0);
     }
   }
 
