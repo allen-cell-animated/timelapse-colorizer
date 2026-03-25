@@ -84,7 +84,7 @@ export default function DropdownWithColorPicker(propsInput: DropdownWithColorPic
         id={props.id}
         disabled={props.disabled}
         showSelectedItemTooltip={false}
-        controlWidth="105px"
+        controlWidth="115px"
         label={null}
         {...props.dropdownProps}
       ></SelectionDropdown>

@@ -1,6 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
+import { SelectionOutlineColorMode } from "src/colorizer";
 import { UrlParam } from "src/colorizer/utils/url_utils";
 import { useViewerStateStore } from "src/state";
 import { loadTrackSliceFromParams, serializeTrackSlice } from "src/state/slices";
@@ -441,6 +442,37 @@ describe("useViewerStateStore: TrackSlice", () => {
       });
       expect(result.current.tracks.size).toBe(1);
       expect(result.current.tracks.get(MOCK_DATASET_DEFAULT_TRACK.trackId)).toBe(MOCK_DATASET_DEFAULT_TRACK);
+    });
+
+    it("defaults to solid color outlines in legacy case", async () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      await setDatasetAsync(result, MOCK_DATASET);
+      act(() => {
+        loadTrackSliceFromParams(
+          result.current,
+          new URLSearchParams({
+            [UrlParam.TRACK]: `${MOCK_DATASET_TRACK_1.trackId}`,
+            [UrlParam.OUTLINE_COLOR]: "ff0000",
+          })
+        );
+      });
+      expect(result.current.outlineColorMode).toBe(SelectionOutlineColorMode.USE_CUSTOM_COLOR);
+    });
+
+    it("does not default to solid color outlines if color outline mode is provided", async () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      await setDatasetAsync(result, MOCK_DATASET);
+      act(() => {
+        loadTrackSliceFromParams(
+          result.current,
+          new URLSearchParams({
+            [UrlParam.TRACK]: `${MOCK_DATASET_TRACK_1.trackId}`,
+            [UrlParam.OUTLINE_COLOR]: "ff0000",
+            [UrlParam.OUTLINE_COLOR_MODE]: SelectionOutlineColorMode.USE_PALETTE.toString(),
+          })
+        );
+      });
+      expect(result.current.outlineColorMode).toBe(SelectionOutlineColorMode.USE_PALETTE);
     });
   });
 });
