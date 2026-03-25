@@ -15,6 +15,7 @@ import TextButton from "src/components/Buttons/TextButton";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import type { SelectItem } from "src/components/Dropdowns/types";
 import LoadingSpinner from "src/components/LoadingSpinner";
+import SpinBox from "src/components/SpinBox";
 import { SHORTCUT_KEYS } from "src/constants";
 import { useDebounce } from "src/hooks";
 import { useViewerStateStore } from "src/state/ViewerState";
@@ -25,6 +26,7 @@ import {
   type DataArray,
   drawCrosshair,
   getBucketIndex,
+  getHistogramBins,
   getHoverTemplate,
   getScatterplotDataAsCsv,
   isHistogramEvent,
@@ -95,10 +97,17 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const setYAxis = useViewerStateStore((state) => state.setScatterYAxis);
   const xAxisFeatureKey = useViewerStateStore((state) => state.scatterXAxis);
   const yAxisFeatureKey = useViewerStateStore((state) => state.scatterYAxis);
+  const setXAxisBins = useViewerStateStore((state) => state.setScatterXBins);
+  const setYAxisBins = useViewerStateStore((state) => state.setScatterYBins);
   const viewMode = useViewerStateStore((state) => state.viewMode);
 
   const xAxisPlotRange = useRef<[number, number]>([-Infinity, Infinity]);
   const yAxisPlotRange = useRef<[number, number]>([-Infinity, Infinity]);
+
+  const rawXAxisBins = useViewerStateStore((state) => state.scatterXBins);
+  const rawYAxisBins = useViewerStateStore((state) => state.scatterYBins);
+  const xAxisBins = useDebounce(rawXAxisBins, 200);
+  const yAxisBins = useDebounce(rawYAxisBins, 200);
 
   const resetXAxisPlotRange = useCallback((): void => {
     xAxisPlotRange.current = [-Infinity, Infinity];
@@ -709,6 +718,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     dataset,
     xAxisFeatureKey,
     yAxisFeatureKey,
+    xAxisBins,
+    yAxisBins,
     rangeType,
     currentFrame,
     tracks,
@@ -774,6 +785,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       yaxis: "y2",
       type: "histogram",
       // @ts-ignore. TODO: Update once the plotly types are updated.
+      xbins: getHistogramBins(dataset, xAxisFeatureKey, xAxisBins),
+      // @ts-ignore. TODO: Update once the plotly types are updated.
       nbinsx: 20,
     };
     const yHistogram: Partial<PlotData> = {
@@ -782,6 +795,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       marker: { color: theme.color.plots.histogram, line: { color: theme.color.plots.histogramOutline, width: 1 } },
       xaxis: "x2",
       type: "histogram",
+      // @ts-ignore. TODO: Update once the plotly types are updated.
+      ybins: getHistogramBins(dataset, yAxisFeatureKey, yAxisBins),
       // @ts-ignore. TODO: Update once the plotly types are updated.
       nbinsy: 20,
     };
@@ -963,7 +978,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const makeControlBar = (menuItems: SelectItem[]): ReactElement => {
     return (
       <FlexRow $gap={6}>
-        <FlexRowAlignCenter $gap={6} style={{ flexWrap: "wrap", width: "100%" }}>
+        <FlexRowAlignCenter $gap={8} style={{ flexWrap: "wrap", width: "100%" }}>
           <SelectionDropdown
             label={"X"}
             selected={xAxisFeatureKey || ""}
@@ -1002,6 +1017,26 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
               showSelectedItemTooltip={false}
             ></SelectionDropdown>
           </div>
+          <FlexRowAlignCenter $gap={6}>
+            <label>X bins</label>
+            <SpinBox
+              min={1}
+              value={rawXAxisBins}
+              onChange={setXAxisBins}
+              disabled={dataset?.isFeatureCategorical(xAxisFeatureKey ?? "")}
+              width="55px"
+            ></SpinBox>
+          </FlexRowAlignCenter>
+          <FlexRowAlignCenter $gap={6}>
+            <label>Y bins</label>
+            <SpinBox
+              min={1}
+              value={rawYAxisBins}
+              onChange={setYAxisBins}
+              disabled={dataset?.isFeatureCategorical(yAxisFeatureKey ?? "")}
+              width="55px"
+            ></SpinBox>
+          </FlexRowAlignCenter>
         </FlexRowAlignCenter>
         <TextButton onClick={downloadScatterPlotCsv} disabled={!canDownloadScatterPlotCsv}>
           <ExportOutlined style={{ marginRight: "2px" }} />
@@ -1044,7 +1079,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         <LoadingSpinner loading={isRendering || isDebouncePending} style={{ marginTop: "10px" }}>
           {makePlotButtons()}
           <ScatterPlotContainer
-            style={{ width: "calc(min(100%, 680px))", aspectRatio: "7 / 6", padding: "5px" }}
+            style={{ width: "calc(min(100%, 680px) - 40px)", aspectRatio: "7 / 6", padding: "5px" }}
             ref={plotDivRef}
           ></ScatterPlotContainer>
         </LoadingSpinner>

@@ -281,3 +281,22 @@ export function getScatterplotDataAsCsv(
   );
   return csvString;
 }
+
+export function getHistogramBins(dataset: Dataset, featureKey: string, numBins: number): PlotData["xbins"] | undefined {
+  const featureData = dataset.getFeatureData(featureKey);
+  if (!featureData) {
+    return undefined;
+  }
+  const min = featureData.min ?? 0;
+  const max = featureData.max ?? 0;
+  let bins = numBins;
+
+  if (dataset.isFeatureCategorical(featureKey)) {
+    return undefined;
+  }
+  return {
+    start: min,
+    end: max,
+    size: (max - min) / bins,
+  };
+}
