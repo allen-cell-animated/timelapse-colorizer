@@ -109,15 +109,15 @@ describe("ChannelSlice", () => {
       expect(result.current.channelSettings[0].dataMax).toBe(18);
     });
 
-    it("applies the IJ Auto threshold if there is no min/max value set", async () => {
+    it("applies the default threshold if there is no min/max value set", async () => {
       const { result } = renderHook(() => useViewerStateStore());
       await setDatasetAsync(result, await makeDatasetWithNChannels(2));
       // Mock out the applyChannelRangePreset to set specific min/max values
       const mockApplyChannelRangePreset = (index: number, preset: ChannelRangePreset): void => {
-        if (index === 0 && preset === ChannelRangePreset.IJ_AUTO) {
+        if (index === 0 && preset === ChannelRangePreset.DEFAULT) {
           result.current.updateChannelSettings(0, { min: 10, max: 20 });
           return;
-        } else if (index === 1 && preset === ChannelRangePreset.IJ_AUTO) {
+        } else if (index === 1 && preset === ChannelRangePreset.DEFAULT) {
           result.current.updateChannelSettings(1, { min: 25, max: 35 });
           return;
         }
