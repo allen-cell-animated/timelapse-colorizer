@@ -76,10 +76,10 @@ export function ChannelSettingControl(props: ChannelSettingControlProps): ReactE
                 <LabeledSlider
                   id={rangeSliderId}
                   type="range"
-                  min={settings.min}
-                  max={settings.max}
-                  minSliderBound={settings.dataMin}
-                  maxSliderBound={settings.dataMax}
+                  min={settings.min ?? NaN}
+                  max={settings.max ?? NaN}
+                  minSliderBound={settings.dataMin ?? NaN}
+                  maxSliderBound={settings.dataMax ?? NaN}
                   minInputBound={Number.MIN_SAFE_INTEGER}
                   maxInputBound={Number.MAX_SAFE_INTEGER}
                   step={1}

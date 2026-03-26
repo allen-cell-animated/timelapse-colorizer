@@ -39,6 +39,7 @@ import {
   type FrameLoadResult,
   type PixelIdInfo,
   SelectionOutlineColorMode,
+  type VolumeLoadResult,
 } from "src/colorizer/types";
 import { getGlobalIdFromSegId, hasPropertyChanged } from "src/colorizer/utils/data_utils";
 import { convertCanvasOffsetPxToFrameCoords, getFrameSizeInScreenPx } from "src/colorizer/utils/math_utils";
@@ -499,6 +500,10 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
 
   public setOnFrameLoadCallback(callback: (result: FrameLoadResult) => void): void {
     this.onFrameLoadCallback = callback;
+  }
+
+  public setOnVolumeLoadCallback(_callback: (result: VolumeLoadResult) => void): void {
+    // no-op
   }
 
   public setOnRenderCallback(callback: null | (() => void)): void {
