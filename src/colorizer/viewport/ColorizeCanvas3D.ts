@@ -365,11 +365,11 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
       let min = settings.min;
       let max = settings.max;
       if (min === null || max === null) {
-        // Compute IJ auto range as a placeholder for initial load if
+        // Compute default range as a placeholder for initial load if
         // min/max are not set.
-        const autoIjBins = histogram.findAutoIJBins();
-        min = min ?? histogram.getValueFromBinIndex(autoIjBins[0]);
-        max = max ?? histogram.getValueFromBinIndex(autoIjBins[1]);
+        const [presetMin, presetMax] = this.getBackdropChannelRangePreset(backdropIdx, ChannelRangePreset.DEFAULT)!;
+        min = min ?? presetMin;
+        max = max ?? presetMax;
       }
       const minBin = histogram.findFractionalBinOfValue(min);
       const maxBin = histogram.findFractionalBinOfValue(max);
