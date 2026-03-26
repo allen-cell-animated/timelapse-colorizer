@@ -539,7 +539,7 @@ export function encodeChannelSetting(setting: ChannelSetting): string {
  * `NaN`, `undefined`, or `null`.
  */
 export function decodeFloatOrNull(value: string | undefined | null): number | null {
-  if (value === null || value === undefined) {
+  if (!value) {
     return null;
   }
   const floatValue = parseFloat(value);
