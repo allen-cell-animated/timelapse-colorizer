@@ -89,10 +89,10 @@ export const createChannelSlice: StateCreator<ChannelSlice, [], [], ChannelSlice
     if (!channelSetting) {
       return;
     }
-    // Apply IJ Auto range preset to range if not set. (This needs to happen
+    // Apply default range preset to range if not set. (This needs to happen
     // outside of `set()` since `applyChannelRangePreset()` updates state.)
     if (channelSetting.min === null || channelSetting.max === null) {
-      get().applyChannelRangePreset(loadResult.backdropIdx, ChannelRangePreset.IJ_AUTO);
+      get().applyChannelRangePreset(loadResult.backdropIdx, ChannelRangePreset.DEFAULT);
     }
     // Update data min and max with new loaded data, so they represent the min
     // + max across all previously loaded volumes.
