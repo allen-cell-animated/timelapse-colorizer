@@ -322,6 +322,56 @@ const rawColorRampData: RawColorData[] = [
     ],
   },
   {
+    // colorcet.cyclic_mygbm_30_95_c78
+    key: "colorcet-cet_c2",
+    name: "Colorcet - CET_C2 (Cyclical)",
+    type: ColorRampType.CYCLICAL,
+    colorStops: [
+      "#ef55f1",
+      "#fb84ce",
+      "#fbafa1",
+      "#fcd471",
+      "#f0ed35",
+      "#c6e516",
+      "#96d310",
+      "#61c10b",
+      "#31ac28",
+      "#439064",
+      "#3d719a",
+      "#284ec8",
+      "#2e21ea",
+      "#6324f5",
+      "#9139fa",
+      "#c543fa",
+      "#ed52f3",
+    ],
+  },
+  {
+    // colorcet.cyclic_mygbm_50_90_c46
+    key: "colorcet-cet_c8",
+    name: "Colorcet - CET_C8 (Cyclical)",
+    type: ColorRampType.CYCLICAL,
+    colorStops: [
+      "#e89495",
+      "#efa683",
+      "#edb973",
+      "#e4cd65",
+      "#ccdd63",
+      "#a7dd7b",
+      "#86d495",
+      "#62c9ac",
+      "#3dbbc1",
+      "#16add2",
+      "#089ddf",
+      "#2d8ce8",
+      "#657be7",
+      "#9d77d4",
+      "#c07bbe",
+      "#d985a9",
+      "#e89296",
+    ],
+  },
+  {
     // TODO: Add an additional description field to describe how the categorical
     // repeating ramps function?
     key: "colorcet-glasbey",
@@ -373,7 +423,13 @@ export const DISPLAY_COLOR_RAMP_LINEAR_KEYS = [
   "matplotlib-turbo",
 ];
 export const DISPLAY_COLOR_RAMP_DIVERGING_KEYS = ["esri-blue_red_8", "esri-green_brown_1", "matplotlib-purple_orange"];
-export const DISPLAY_COLOR_RAMP_CYCLICAL_KEYS = ["fabio_crameri-romao", "fabio_crameri-viko", "fabio_crameri-broco"];
+export const DISPLAY_COLOR_RAMP_CYCLICAL_KEYS = [
+  "colorcet-cet_c8",
+  "colorcet-cet_c2",
+  "fabio_crameri-romao",
+  "fabio_crameri-viko",
+  "fabio_crameri-broco",
+];
 export const DISPLAY_COLOR_RAMP_CATEGORICAL_KEYS = [
   "colorcet-glasbey",
   "colorcet-glasbey_light",
