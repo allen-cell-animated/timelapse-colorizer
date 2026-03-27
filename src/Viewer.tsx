@@ -522,11 +522,7 @@ function Viewer(): ReactElement {
       key: TabType.SCATTER_PLOT,
       children: (
         <div className={styles.tabContent}>
-          <ScatterPlotTab
-            isVisible={openTab === TabType.SCATTER_PLOT}
-            isPlaying={timeControls.isPlaying() || isRecording}
-            showAlert={showAlert}
-          />
+          <ScatterPlotTab isVisible={openTab === TabType.SCATTER_PLOT} showAlert={showAlert} />
         </div>
       ),
     },

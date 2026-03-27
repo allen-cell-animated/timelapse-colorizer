@@ -278,6 +278,28 @@ export function getIntervals(values: number[]): [number, number][] {
   return intervals;
 }
 
+/**
+ * Checks if any value in a dependency array has changed. Note that shallow
+ * comparison is used (e.g. `Object.is` for each element).
+ */
+export function hasAnyValueChanged<T extends Array<unknown>>(curr: T | null, prev: T | null): boolean {
+  if (curr === null && prev === null) {
+    return false;
+  } else if (curr === null || prev === null) {
+    return true;
+  }
+  if (curr.length !== prev.length) {
+    return true;
+  }
+  for (let i = 0; i < curr.length; i++) {
+    // Shallow/ref comparison only
+    if (!Object.is(curr[i], prev[i])) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export function hasPropertyChanged<T extends Record<string, unknown>>(
   curr: T | null,
   prev: T | null,
