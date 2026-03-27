@@ -189,10 +189,10 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       hoveredIdRef.current = objectId;
     };
     const onUnhoverPlot = (): void => {
-      // Ignore unhover during mouse left mouse clicks. If the plot is
-      // re-rendered (e.g. `Plotly.relayout`) while the mouse is held down, the
-      // hover popup disappears and an erroneous "unhover" event is fired, even
-      // if a point is still under the cursor.
+      // Ignore unhover during left mouse clicks. If the plot is re-rendered
+      // (e.g. `Plotly.relayout`) while the mouse is held down, the hover popup
+      // disappears and an erroneous "unhover" event is fired, even if a point
+      // is still under the cursor.
       if (isLeftMouseButtonDownRef.current) {
         return;
       }
