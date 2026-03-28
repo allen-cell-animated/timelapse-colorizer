@@ -15,7 +15,6 @@ import TextButton from "src/components/Buttons/TextButton";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import type { SelectItem } from "src/components/Dropdowns/types";
 import LoadingSpinner from "src/components/LoadingSpinner";
-import SpinBox from "src/components/SpinBox";
 import { SHORTCUT_KEYS } from "src/constants";
 import { useDebounce } from "src/hooks";
 import { useViewerStateStore } from "src/state/ViewerState";
@@ -57,6 +56,8 @@ const DEFAULT_RANGE_TYPE = PlotRangeType.ALL_TIME;
 
 const PLOT_RANGE_SELECT_ITEMS = Object.values(PlotRangeType);
 
+const BIN_COUNTS = [20, 50, 100, 200];
+
 type ScatterPlotTabProps = {
   isVisible: boolean;
   isPlaying: boolean;
@@ -97,17 +98,12 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const setYAxis = useViewerStateStore((state) => state.setScatterYAxis);
   const xAxisFeatureKey = useViewerStateStore((state) => state.scatterXAxis);
   const yAxisFeatureKey = useViewerStateStore((state) => state.scatterYAxis);
-  const setXAxisBins = useViewerStateStore((state) => state.setScatterXBins);
-  const setYAxisBins = useViewerStateStore((state) => state.setScatterYBins);
+  const histogramBins = useViewerStateStore((state) => state.scatterHistogramBins);
+  const setScatterHistogramBins = useViewerStateStore((state) => state.setScatterHistogramBins);
   const viewMode = useViewerStateStore((state) => state.viewMode);
 
   const xAxisPlotRange = useRef<[number, number]>([-Infinity, Infinity]);
   const yAxisPlotRange = useRef<[number, number]>([-Infinity, Infinity]);
-
-  const rawXAxisBins = useViewerStateStore((state) => state.scatterXBins);
-  const rawYAxisBins = useViewerStateStore((state) => state.scatterYBins);
-  const xAxisBins = useDebounce(rawXAxisBins, 200);
-  const yAxisBins = useDebounce(rawYAxisBins, 200);
 
   const resetXAxisPlotRange = useCallback((): void => {
     xAxisPlotRange.current = [-Infinity, Infinity];
@@ -718,8 +714,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     dataset,
     xAxisFeatureKey,
     yAxisFeatureKey,
-    xAxisBins,
-    yAxisBins,
+    histogramBins,
     rangeType,
     currentFrame,
     tracks,
@@ -785,7 +780,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       yaxis: "y2",
       type: "histogram",
       // @ts-ignore. TODO: Update once the plotly types are updated.
-      xbins: getHistogramBins(dataset, xAxisFeatureKey, xAxisBins),
+      xbins: getHistogramBins(dataset, xAxisFeatureKey, histogramBins),
       // @ts-ignore. TODO: Update once the plotly types are updated.
       nbinsx: 20,
     };
@@ -796,7 +791,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       xaxis: "x2",
       type: "histogram",
       // @ts-ignore. TODO: Update once the plotly types are updated.
-      ybins: getHistogramBins(dataset, yAxisFeatureKey, yAxisBins),
+      ybins: getHistogramBins(dataset, yAxisFeatureKey, histogramBins),
       // @ts-ignore. TODO: Update once the plotly types are updated.
       nbinsy: 20,
     };
@@ -985,7 +980,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
             items={menuItems}
             onChange={setXAxis}
             controlWidth="100%"
-            containerStyle={{ flexGrow: 1, flexBasis: "200px", flexShrink: 1 }}
+            containerStyle={{ flexGrow: 1, flexBasis: "210px", flexShrink: 1 }}
           />
           <Tooltip title="Swap axes" trigger={["hover", "focus"]}>
             <IconButton
@@ -1005,9 +1000,9 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
             items={menuItems}
             onChange={setYAxis}
             controlWidth="100%"
-            containerStyle={{ flexGrow: 1, flexBasis: "200px", flexShrink: 1 }}
+            containerStyle={{ flexGrow: 1, flexBasis: "210px", flexShrink: 1 }}
           />
-          <div style={{ marginLeft: "10px" }}>
+          <div>
             <SelectionDropdown
               label={"Show objects from"}
               selected={rangeType}
@@ -1017,26 +1012,26 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
               showSelectedItemTooltip={false}
             ></SelectionDropdown>
           </div>
-          <FlexRowAlignCenter $gap={6}>
-            <label>X bins</label>
-            <SpinBox
-              min={1}
-              value={rawXAxisBins}
-              onChange={setXAxisBins}
-              disabled={dataset?.isFeatureCategorical(xAxisFeatureKey ?? "")}
-              width="55px"
-            ></SpinBox>
-          </FlexRowAlignCenter>
-          <FlexRowAlignCenter $gap={6}>
-            <label>Y bins</label>
-            <SpinBox
-              min={1}
-              value={rawYAxisBins}
-              onChange={setYAxisBins}
-              disabled={dataset?.isFeatureCategorical(yAxisFeatureKey ?? "")}
-              width="55px"
-            ></SpinBox>
-          </FlexRowAlignCenter>
+          <div style={{ marginLeft: 6 }}>
+            <SelectionDropdown
+              label="Histogram bins"
+              selected={histogramBins.toString()}
+              items={BIN_COUNTS.map((value) => ({ value: value.toString(), label: value.toString() }))}
+              isCreatable={true}
+              isValidNewOption={(value: string) => {
+                const bins = parseInt(value, 10);
+                return !isNaN(bins) && bins > 0 && BIN_COUNTS.indexOf(bins) === -1;
+              }}
+              onChange={function (value: string): void {
+                const bins = parseInt(value, 10);
+                if (!isNaN(bins) && bins > 0) {
+                  setScatterHistogramBins(bins);
+                }
+              }}
+              width="100px"
+              controlWidth="80px"
+            ></SelectionDropdown>
+          </div>
         </FlexRowAlignCenter>
         <TextButton onClick={downloadScatterPlotCsv} disabled={!canDownloadScatterPlotCsv}>
           <ExportOutlined style={{ marginRight: "2px" }} />

@@ -289,14 +289,12 @@ export function getHistogramBins(dataset: Dataset, featureKey: string, numBins: 
   }
   const min = featureData.min ?? 0;
   const max = featureData.max ?? 0;
-  let bins = numBins;
-
   if (dataset.isFeatureCategorical(featureKey)) {
     return undefined;
   }
   return {
     start: min,
     end: max,
-    size: (max - min) / bins,
+    size: (max - min) / numBins,
   };
 }

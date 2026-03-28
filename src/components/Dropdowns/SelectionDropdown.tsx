@@ -32,6 +32,8 @@ export type SelectionDropdownProps = {
   controlTooltipPlacement?: "top" | "bottom" | "left" | "right";
   disabled?: boolean;
   isSearchable?: boolean;
+  isCreatable?: boolean;
+  isValidNewOption?: (inputValue: string) => boolean;
   /**
    * The type of button to render for the dropdown. See Antd's button types:
    * https://ant.design/components/button#components-button-demo-basic
@@ -239,6 +241,8 @@ export default function SelectionDropdown(inputProps: React.PropsWithChildren<Se
         isDisabled={props.disabled}
         isClearable={false}
         isSearchable={props.isSearchable}
+        creatable={props.isCreatable}
+        isValidNewOption={props.isValidNewOption}
         isLoading={pendingValue !== null}
         onChange={(value) => {
           if (value && value.value) {
