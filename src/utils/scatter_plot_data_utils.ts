@@ -1,6 +1,5 @@
 import { unparse } from "papaparse";
-import type Plotly from "plotly.js-dist-min";
-import type { PlotData } from "plotly.js-dist-min";
+import type { PlotData, PlotMarker, PlotMouseEvent, Shape } from "plotly.js-dist-min";
 import type { Color } from "three";
 
 import {
@@ -25,7 +24,7 @@ export type TraceData = {
   segIds: number[];
   trackIds: number[];
   color: HexColorString;
-  marker: Partial<Plotly.PlotMarker>;
+  marker: Partial<PlotMarker>;
 };
 
 /**
@@ -70,7 +69,7 @@ export function getBucketIndex(value: number, minValue: number, maxValue: number
 }
 
 /** Returns a TraceData object with empty data arrays, and the specified color and marker data.*/
-export function makeEmptyTraceData(color: HexColorString, marker: Partial<Plotly.PlotMarker>): TraceData {
+export function makeEmptyTraceData(color: HexColorString, marker: Partial<PlotMarker>): TraceData {
   return {
     x: [],
     y: [],
@@ -114,7 +113,7 @@ export function splitTraceData(traceData: TraceData, maxPoints: number): TraceDa
 /**
  * Returns true if a Plotly mouse event took place over a histogram subplot.
  */
-export function isHistogramEvent(eventData: Plotly.PlotMouseEvent): boolean {
+export function isHistogramEvent(eventData: PlotMouseEvent): boolean {
   return eventData.points.length > 0 && eventData.points[0].data.type === "histogram";
 }
 
@@ -153,7 +152,7 @@ export function makeLineTrace(
   segIds: number[],
   trackIds: number[],
   hovertemplate?: string
-): Partial<Plotly.PlotData> {
+): Partial<PlotData> {
   const stackedCustomData = trackIds.map((id, index) => {
     return [id.toString(), segIds[index].toString()];
   });
@@ -172,37 +171,79 @@ export function makeLineTrace(
   };
 }
 
-// TODO: Crosshairs can be rendered using Plotly's layout shapes instead of traces,
-// which means time playback can run faster (assuming other plot params don't change).
-// See `Plotting.ts` for an example, and also https://plotly.com/javascript/reference/layout/shapes/.
-/**
- * Returns an array of Plotly traces that render a crosshair at the X,Y coordinates.
- */
-export function drawCrosshair(x: number, y: number): Partial<PlotData>[] {
-  const crosshair: Partial<PlotData> = {
-    x: [x],
-    y: [y],
-    type: "scattergl",
-    mode: "markers",
-    marker: {
-      size: 10,
-      line: {
-        color: "#000",
-        width: 1,
-      },
-      symbol: "cross-thin",
-    },
-  };
-  // Add a transparent white outline behind the marker for contrast.
-  const crosshairBg = { ...crosshair };
-  crosshairBg.marker = {
-    ...crosshairBg.marker,
+function getLineShape(x: number, y: number, xDim: number, yDim: number, color: string, width: number): Partial<Shape> {
+  return {
+    xanchor: x,
+    yanchor: y,
+    x0: -xDim / 2,
+    x1: +xDim / 2,
+    y0: -yDim / 2,
+    y1: +yDim / 2,
+    xsizemode: "pixel",
+    ysizemode: "pixel",
+    type: "line",
+    layer: "above",
     line: {
-      color: "#ffffffa0",
-      width: 4,
+      color,
+      width,
     },
   };
-  return [crosshairBg, crosshair];
+}
+
+export function getCrosshairShapes(x: number, y: number): Partial<Shape>[] {
+  // Draws a black crosshair with a white transparent outline for contrast.
+  return [
+    getLineShape(x, y, 12, 0, "#ffffffa0", 4),
+    getLineShape(x, y, 0, 12, "#ffffffa0", 4),
+    getLineShape(x, y, 12, 0, "#000", 1.2),
+    getLineShape(x, y, 0, 12, "#000", 1.2),
+  ];
+}
+
+/**
+ * Transforms an array of PlotData scatterplot points into shapes that can be
+ * drawn on a Plotly plot as overlays (e.g., for track dots in the crosshair
+ * pass).
+ */
+export function scatterplotTraceToShapes(traces: Partial<PlotData>[]): Partial<Shape>[] {
+  // TODO: This is hacky since we're discarding a bunch of extra work that
+  // `colorizeScatterplotPoints` is doing; consider breaking up
+  // `colorizeScatterplotPoints` into two separate functions
+  // (`getScatterplotTraceData` and `traceDataToTrace`) and changing this function
+  // to use the output from `getScatterplotTraceData` instead.
+  const shapes: Partial<Shape>[] = [];
+  for (const trace of traces) {
+    const count = trace.ids?.length ?? 0;
+    for (let i = 0; i < count; i++) {
+      const x = (trace.x as number[])[i];
+      const y = (trace.y as number[])[i];
+      const color = (trace.marker?.color as string) ?? "#000";
+      const line = trace.marker?.line;
+      const lineColor = (line?.color as string) ?? "#0000";
+      const lineWidth = (line?.width as number) ?? 0;
+      const radius = ((trace.marker?.size as number) ?? 4) / 2;
+
+      shapes.push({
+        xanchor: x,
+        yanchor: y,
+        x0: -radius,
+        x1: +radius,
+        y0: -radius,
+        y1: +radius,
+        xsizemode: "pixel",
+        ysizemode: "pixel",
+        type: "circle",
+        layer: "above",
+        fillcolor: color,
+        line: {
+          color: lineColor,
+          width: lineWidth,
+        },
+      });
+    }
+  }
+
+  return shapes;
 }
 
 function isValueOutOfRange(value: number, range?: [number, number]): boolean {

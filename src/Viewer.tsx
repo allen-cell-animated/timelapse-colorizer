@@ -91,6 +91,9 @@ function Viewer(): ReactElement {
       useViewerStateStore.getState().setFrameLoadResult(result);
       useViewerStateStore.setState({ currentFrame: result.frame });
     });
+    canvas.setOnVolumeLoadCallback((result) => {
+      useViewerStateStore.getState().updateChannelRangeWithVolumeData(result);
+    });
     useViewerStateStore.getState().setFrameLoadCallback(async (frame: number) => await canvas.setFrame(frame));
     return canvas;
   }).current;
@@ -519,11 +522,7 @@ function Viewer(): ReactElement {
       key: TabType.SCATTER_PLOT,
       children: (
         <div className={styles.tabContent}>
-          <ScatterPlotTab
-            isVisible={openTab === TabType.SCATTER_PLOT}
-            isPlaying={timeControls.isPlaying() || isRecording}
-            showAlert={showAlert}
-          />
+          <ScatterPlotTab isVisible={openTab === TabType.SCATTER_PLOT} showAlert={showAlert} />
         </div>
       ),
     },
