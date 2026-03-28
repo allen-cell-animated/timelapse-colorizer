@@ -26,6 +26,7 @@ import {
   type DataArray,
   getBucketIndex,
   getCrosshairShapes,
+  getHistogramBins,
   getHoverTemplate,
   getScatterplotDataAsCsv,
   isHistogramEvent,
@@ -55,6 +56,8 @@ const BUCKET_INDEX_OUTLIERS = 1;
 const DEFAULT_RANGE_TYPE = PlotRangeType.ALL_TIME;
 
 const PLOT_RANGE_SELECT_ITEMS = Object.values(PlotRangeType);
+
+const BIN_COUNTS = [20, 50, 100, 200];
 
 type ScatterPlotTabProps = {
   isVisible: boolean;
@@ -95,6 +98,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const setYAxis = useViewerStateStore((state) => state.setScatterYAxis);
   const xAxisFeatureKey = useViewerStateStore((state) => state.scatterXAxis);
   const yAxisFeatureKey = useViewerStateStore((state) => state.scatterYAxis);
+  const histogramBins = useViewerStateStore((state) => state.scatterHistogramBins);
+  const setScatterHistogramBins = useViewerStateStore((state) => state.setScatterHistogramBins);
   const viewMode = useViewerStateStore((state) => state.viewMode);
 
   const xAxisPlotRange = useRef<[number, number]>([-Infinity, Infinity]);
@@ -713,6 +718,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     dataset,
     xAxisFeatureKey,
     yAxisFeatureKey,
+    histogramBins,
     rangeType,
     tracks,
     isVisible,
@@ -827,6 +833,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       yaxis: "y2",
       type: "histogram",
       // @ts-ignore. TODO: Update once the plotly types are updated.
+      xbins: getHistogramBins(dataset, xAxisFeatureKey, histogramBins),
+      // @ts-ignore. TODO: Update once the plotly types are updated.
       nbinsx: 20,
     };
     const yHistogram: Partial<PlotData> = {
@@ -835,6 +843,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       marker: { color: theme.color.plots.histogram, line: { color: theme.color.plots.histogramOutline, width: 1 } },
       xaxis: "x2",
       type: "histogram",
+      // @ts-ignore. TODO: Update once the plotly types are updated.
+      ybins: getHistogramBins(dataset, yAxisFeatureKey, histogramBins),
       // @ts-ignore. TODO: Update once the plotly types are updated.
       nbinsy: 20,
     };
@@ -1010,14 +1020,14 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const makeControlBar = (menuItems: SelectItem[]): ReactElement => {
     return (
       <FlexRow $gap={6}>
-        <FlexRowAlignCenter $gap={6} style={{ flexWrap: "wrap", width: "100%" }}>
+        <FlexRowAlignCenter $gap={8} style={{ flexWrap: "wrap", width: "100%" }}>
           <SelectionDropdown
             label={"X"}
             selected={xAxisFeatureKey || ""}
             items={menuItems}
             onChange={setXAxis}
             controlWidth="100%"
-            containerStyle={{ flexGrow: 1, flexBasis: "200px", flexShrink: 1 }}
+            containerStyle={{ flexGrow: 1, flexBasis: "210px", flexShrink: 1 }}
           />
           <Tooltip title="Swap axes" trigger={["hover", "focus"]}>
             <IconButton
@@ -1037,9 +1047,9 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
             items={menuItems}
             onChange={setYAxis}
             controlWidth="100%"
-            containerStyle={{ flexGrow: 1, flexBasis: "200px", flexShrink: 1 }}
+            containerStyle={{ flexGrow: 1, flexBasis: "210px", flexShrink: 1 }}
           />
-          <div style={{ marginLeft: "10px" }}>
+          <div>
             <SelectionDropdown
               label={"Show objects from"}
               selected={rangeType}
@@ -1047,6 +1057,29 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
               controlWidth={"120px"}
               onChange={(value: string) => setRangeType(value as PlotRangeType)}
               showSelectedItemTooltip={false}
+            ></SelectionDropdown>
+          </div>
+          <div style={{ marginLeft: 6 }}>
+            <SelectionDropdown
+              label="Histogram bins"
+              selected={histogramBins.toString()}
+              items={BIN_COUNTS.map((value) => ({ value: value.toString(), label: value.toString() }))}
+              isCreatable={true}
+              isValidNewOption={(value: string) => {
+                const bins = parseFloat(value);
+                const integerBins = parseInt(value, 10);
+                // Has no decimal component and is a valid integer
+                const isIntegerString = bins == integerBins && integerBins.toString() === value;
+                return isIntegerString && bins > 0 && BIN_COUNTS.indexOf(bins) === -1;
+              }}
+              onChange={function (value: string): void {
+                const bins = parseInt(value, 10);
+                if (isFinite(bins) && bins > 0) {
+                  setScatterHistogramBins(bins);
+                }
+              }}
+              width="100px"
+              controlWidth="80px"
             ></SelectionDropdown>
           </div>
         </FlexRowAlignCenter>
@@ -1091,7 +1124,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         <LoadingSpinner loading={isRendering || isDebouncePending} style={{ marginTop: "10px" }}>
           {makePlotButtons()}
           <ScatterPlotContainer
-            style={{ width: "calc(min(100%, 680px))", aspectRatio: "7 / 6", padding: "5px" }}
+            style={{ width: "calc(min(100%, 680px) - 40px)", aspectRatio: "7 / 6", padding: "5px" }}
             ref={plotDivRef}
           ></ScatterPlotContainer>
         </LoadingSpinner>
