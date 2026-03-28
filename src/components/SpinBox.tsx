@@ -117,7 +117,7 @@ export default function SpinBox(propsInput: SpinBoxProps): ReactElement {
   return (
     <div
       className={styles.spinBox + " " + (props.disabled ? styles.disabled : "")}
-      style={props.width ? { maxWidth: props.width, minWidth: props.width } : undefined}
+      style={props.width ? { maxWidth: props.width } : undefined}
     >
       <input
         type="number"
@@ -132,7 +132,6 @@ export default function SpinBox(propsInput: SpinBoxProps): ReactElement {
         disabled={props.disabled}
         onBlur={syncInputValue}
         data-testid="spinbox-input"
-        style={{ width: props.width ? `calc(${props.width} - 20px)` : undefined }}
       ></input>
       <div className={styles.spinButtons + " " + (props.disabled ? styles.disabled : "")}>
         {/** Tab index -1 prevents spin handles from being selected via tab navigation */}

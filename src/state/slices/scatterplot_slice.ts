@@ -60,7 +60,7 @@ export const createScatterPlotSlice: StateCreator<DatasetSlice & ScatterPlotSlic
   },
   setScatterHistogramBins: (bins) => {
     bins = Math.round(bins);
-    if (bins < 0 || !isFinite(bins)) {
+    if (bins <= 0 || !isFinite(bins)) {
       return;
     }
     set({ scatterHistogramBins: bins });

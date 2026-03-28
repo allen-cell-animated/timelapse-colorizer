@@ -338,7 +338,7 @@ export default function AntStyledSelect<
     // Select default loading styling is overridden (since it is handled via
     // DropdownIndicator instead).
     isLoading: false,
-    formatCreateLabel: (value: string) => "+" + value,
+    formatCreateLabel: (value: string) => value,
   };
 
   return (

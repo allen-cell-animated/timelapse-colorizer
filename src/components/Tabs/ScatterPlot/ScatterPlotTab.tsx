@@ -1066,12 +1066,15 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
               items={BIN_COUNTS.map((value) => ({ value: value.toString(), label: value.toString() }))}
               isCreatable={true}
               isValidNewOption={(value: string) => {
-                const bins = parseInt(value, 10);
-                return !isNaN(bins) && bins > 0 && BIN_COUNTS.indexOf(bins) === -1;
+                const bins = parseFloat(value);
+                const integerBins = parseInt(value, 10);
+                // Has no decimal component and is a valid integer
+                const isIntegerString = bins == integerBins && integerBins.toString() === value;
+                return isIntegerString && bins > 0 && BIN_COUNTS.indexOf(bins) === -1;
               }}
               onChange={function (value: string): void {
                 const bins = parseInt(value, 10);
-                if (!isNaN(bins) && bins > 0) {
+                if (isFinite(bins) && bins > 0) {
                   setScatterHistogramBins(bins);
                 }
               }}
