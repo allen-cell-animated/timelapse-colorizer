@@ -816,3 +816,9 @@ export function bucketVectorDataByTime(
   }
   return { timeToVectorData, totalValidIds };
 }
+
+const POSITIVE_INTEGER_REGEX = /^[1-9]\d*$/;
+
+export function isPositiveInteger(value: string): boolean {
+  return POSITIVE_INTEGER_REGEX.test(value);
+}

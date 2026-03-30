@@ -9,7 +9,7 @@ import { SwitchIconSVG } from "src/assets";
 import { ColorRampType, type Dataset, type Track } from "src/colorizer";
 import { CENTROID_Y_FEATURE_KEY, TIME_FEATURE_KEY } from "src/colorizer/Dataset";
 import { DrawMode, type HexColorString, PlotRangeType, ViewMode } from "src/colorizer/types";
-import { hasAnyValueChanged } from "src/colorizer/utils/data_utils";
+import { hasAnyValueChanged, isPositiveInteger } from "src/colorizer/utils/data_utils";
 import type { ShowAlertBannerCallback } from "src/components/Banner/hooks";
 import IconButton from "src/components/Buttons/IconButton";
 import TextButton from "src/components/Buttons/TextButton";
@@ -834,6 +834,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       type: "histogram",
       // @ts-ignore. TODO: Update once the plotly types are updated.
       xbins: getHistogramBins(dataset, xAxisFeatureKey, histogramBins),
+      // When using categorical features, use a fallback of 20 bins for nicer
+      // spacing/alignment of auto-generated bins.
       // @ts-ignore. TODO: Update once the plotly types are updated.
       nbinsx: 20,
     };
@@ -1066,15 +1068,12 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
               items={BIN_COUNTS.map((value) => ({ value: value.toString(), label: value.toString() }))}
               isCreatable={true}
               isValidNewOption={(value: string) => {
-                const bins = parseFloat(value);
-                const integerBins = parseInt(value, 10);
-                // Has no decimal component and is a valid integer
-                const isIntegerString = bins == integerBins && integerBins.toString() === value;
-                return isIntegerString && bins > 0 && BIN_COUNTS.indexOf(bins) === -1;
+                const bins = parseInt(value);
+                return isPositiveInteger(value) && BIN_COUNTS.indexOf(bins) === -1;
               }}
               onChange={function (value: string): void {
                 const bins = parseInt(value, 10);
-                if (isFinite(bins) && bins > 0) {
+                if (isPositiveInteger(value)) {
                   setScatterHistogramBins(bins);
                 }
               }}

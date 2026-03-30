@@ -234,6 +234,7 @@ export default function SelectionDropdown(inputProps: React.PropsWithChildren<Se
         menuWidth={props.menuWidth}
         creatable={props.isCreatable}
         selectProps={{
+          // eslint-disable-next-line @typescript-eslint/naming-convention
           "aria-labelledby": labelId,
           inputId: selectId,
           classNamePrefix: "react-select",
