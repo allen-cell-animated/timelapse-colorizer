@@ -1,21 +1,21 @@
 import Plotly, { PlotlyHTMLElement } from "plotly.js-dist-min";
 import React, { ReactElement, useEffect, useRef, useState } from "react";
 
+import LabeledSlider from "src/components/Inputs/LabeledSlider";
+
 import {
   Dataset,
   DEFAULT_CATEGORICAL_PALETTE_KEY,
   DEFAULT_COLOR_RAMP_KEY,
   DISPLAY_CATEGORICAL_PALETTE_KEYS,
-  DISPLAY_LINEAR_RAMP_KEYS,
+  DISPLAY_COLOR_RAMP_LINEAR_KEYS,
   KNOWN_COLOR_RAMPS,
   TabType,
   Track,
 } from "../../colorizer";
 import { useViewerStateStore } from "../../state";
 import { FlexColumn, FlexRow, FlexRowAlignCenter } from "../../styles/utils";
-
 import ColorRampSelection from "../Dropdowns/ColorRampDropdown";
-import LabeledSlider from "../LabeledSlider";
 
 const CONFIG: Partial<Plotly.Config> = {
   responsive: true,
@@ -384,7 +384,7 @@ export default function Plot3dTab(): ReactElement {
               setConeColorRampReversed(reversed);
             }}
             reversed={coneColorRampReversed}
-            colorRampsToDisplay={DISPLAY_LINEAR_RAMP_KEYS}
+            colorRampsToDisplay={DISPLAY_COLOR_RAMP_LINEAR_KEYS}
             selectedPaletteKey={DEFAULT_CATEGORICAL_PALETTE_KEY}
             onChangePalette={() => {}}
             numCategories={0}
