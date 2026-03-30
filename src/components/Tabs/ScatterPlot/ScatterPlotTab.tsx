@@ -1068,7 +1068,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
               items={BIN_COUNTS.map((value) => ({ value: value.toString(), label: value.toString() }))}
               isCreatable={true}
               isValidNewOption={(value: string) => {
-                const bins = parseInt(value);
+                const bins = parseInt(value, 10);
                 return isPositiveInteger(value) && BIN_COUNTS.indexOf(bins) === -1;
               }}
               onChange={function (value: string): void {
