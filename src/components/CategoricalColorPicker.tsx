@@ -1,12 +1,13 @@
-import { ColorPicker, Tooltip } from "antd";
-import { Color as AntColor } from "antd/es/color-picker/color";
-import React, { ReactElement, useMemo } from "react";
+import { Tooltip } from "antd";
+import React, { type ReactElement, useMemo } from "react";
 import styled from "styled-components";
-import { Color, ColorRepresentation } from "three";
+import { Color, type ColorRepresentation } from "three";
 
-import { FlexRow, FlexRowAlignCenter } from "../styles/utils";
+import { useViewerStateStore } from "src/state/ViewerState";
+import { FlexRow, FlexRowAlignCenter } from "src/styles/utils";
+import type { AntColor } from "src/utils/color_utils";
 
-import { useViewerStateStore } from "../state/ViewerState";
+import WrappedColorPicker from "./Inputs/WrappedColorPicker";
 
 type CategoricalColorPickerProps = {
   categories: string[];
@@ -24,8 +25,6 @@ const ColorPickerContainer = styled(FlexRow)<{
 }>`
   gap: ${(props) => props.$itemGap};
   flex-wrap: wrap;
-  margin-top: 8px;
-  margin-bottom: 8px;
   margin-right: ${(props) => props.$itemGap};
   max-width: calc(
     ${(props) => `${props.$itemWidth} * ${props.$maxItemsPerRow} + ${props.$itemGap} * (${props.$maxItemsPerRow} - 1)`}
@@ -39,7 +38,8 @@ const ColorPickerContainer = styled(FlexRow)<{
     height: fit-content;
   }
 
-  & > div > span {
+  & > div > label,
+  & > div > label > span {
     // Text label, hide overflow as ellipsis
     white-space: nowrap;
     overflow: hidden;
@@ -58,18 +58,29 @@ export default function CategoricalColorPicker(inputProps: CategoricalColorPicke
     for (let i = 0; i < props.categories.length; i++) {
       const color = categoricalPalette[i];
       const label = props.categories[i];
-      const onChange = (_value: AntColor, hex: string): void => {
+      const onChange = (_color: AntColor, hex: string): void => {
         const newPalette = [...categoricalPalette];
         newPalette[i] = new Color(hex as ColorRepresentation);
         setCategoricalPalette(newPalette);
       };
+      const colorPickerId = `categorical-color-picker-${i}`;
 
       // Make the color picker component
       elements.push(
         <FlexRowAlignCenter key={i}>
-          <ColorPicker value={color.getHexString()} onChange={onChange} size={"small"} disabledAlpha={true} />
+          <WrappedColorPicker
+            id={colorPickerId}
+            value={color.getHexString()}
+            onChange={onChange}
+            size={"small"}
+            disabledAlpha={true}
+            // Necessary to prevent the color picker from going off the screen
+            placement="right"
+          />
           <Tooltip title={label} placement="top">
-            <span>{label}</span>
+            <label htmlFor={colorPickerId}>
+              <span>{label}</span>
+            </label>
           </Tooltip>
         </FlexRowAlignCenter>
       );

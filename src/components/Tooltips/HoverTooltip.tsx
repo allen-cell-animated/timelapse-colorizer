@@ -1,4 +1,4 @@
-import React, { PropsWithChildren, ReactElement, ReactNode, useEffect, useRef, useState } from "react";
+import React, { type PropsWithChildren, type ReactElement, type ReactNode, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 
 type HoverTooltipProps = {

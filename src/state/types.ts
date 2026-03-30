@@ -1,6 +1,6 @@
-import { Mutate, StoreApi, UseBoundStore } from "zustand";
+import type { Mutate, StoreApi, UseBoundStore } from "zustand";
 
-import { UrlParam } from "../colorizer/utils/url_utils";
+import type { ChannelSettingParamKey, UrlParam } from "src/colorizer/utils/url_utils";
 
 // Note: Zustand's repo maintainer says that 'subscribeWithSelector' is just for
 // compatibility, and the behavior can be replicated without needing the
@@ -23,4 +23,4 @@ export type SubscribableStore<T> = UseBoundStore<Mutate<StoreApi<T>, [["zustand/
 /** Alias for Zustand's store type. */
 export type Store<T> = UseBoundStore<StoreApi<T>>;
 
-export type SerializedStoreData = Partial<Record<UrlParam, string>>;
+export type SerializedStoreData = Partial<Record<UrlParam | ChannelSettingParamKey, string>>;

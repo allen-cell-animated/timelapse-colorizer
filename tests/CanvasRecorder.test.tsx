@@ -1,11 +1,12 @@
-import { describe, expect, it, Mock, vi } from "vitest";
+import { describe, expect, it, type Mock, vi } from "vitest";
 
-import { sleep } from "./test_utils";
+import CanvasRecorder, { type RecordingOptions } from "src/colorizer/recorders/CanvasRecorder";
+import { sleep } from "tests/utils";
 
-import CanvasRecorder, { RecordingOptions } from "../src/colorizer/recorders/CanvasRecorder";
+type MockOrReal<T extends (...args: any[]) => any> = Mock<T> | T;
 
-type MockOrReal = Mock<any, any> | (() => Promise<void>);
-type MockOrRealRecording = Mock<any, any> | ((frame: number) => Promise<void>);
+type MockOrRealVoid = MockOrReal<() => Promise<void>>;
+type MockOrRealRecording = MockOrReal<(frame: number) => Promise<void>>;
 
 // Extend CanvasRecorder to make it testable
 class TestCanvasRecorder extends CanvasRecorder {
@@ -16,7 +17,7 @@ class TestCanvasRecorder extends CanvasRecorder {
     setFrameAndRender: (frame: number) => Promise<void>,
     getCanvas: () => HTMLCanvasElement,
     options?: Partial<RecordingOptions>,
-    lifecycle?: Partial<{ onSetup: MockOrReal; onCompleted: MockOrReal; onRecordFrame: MockOrRealRecording }>
+    lifecycle?: Partial<{ onSetup: MockOrRealVoid; onCompleted: MockOrRealVoid; onRecordFrame: MockOrRealRecording }>
   ) {
     super(setFrameAndRender, getCanvas, options);
     this.onSetup = lifecycle?.onSetup || vi.fn();

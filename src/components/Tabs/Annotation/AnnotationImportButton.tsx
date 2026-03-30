@@ -1,15 +1,16 @@
 import { ImportOutlined, UploadOutlined } from "@ant-design/icons";
-import { Modal, Radio, Space, Upload, UploadFile } from "antd";
-import React, { ReactElement, useState } from "react";
+import { Modal, Radio, Space, type UploadFile } from "antd";
+import React, { type ReactElement, useRef, useState } from "react";
 import styled, { css } from "styled-components";
 
-import { AnnotationState } from "../../../colorizer/utils/react_utils";
-import { useViewerStateStore } from "../../../state";
-import { FlexColumn } from "../../../styles/utils";
+import { AnnotationData, AnnotationMergeMode, type AnnotationParseResult } from "src/colorizer/AnnotationData";
+import TextButton from "src/components/Buttons/TextButton";
+import { StyledUpload } from "src/components/Inputs/StyledUpload";
+import MessageCard from "src/components/MessageCard";
+import type { AnnotationState } from "src/hooks";
+import { useViewerStateStore } from "src/state";
+import { FlexColumn } from "src/styles/utils";
 
-import { AnnotationData, AnnotationMergeMode, AnnotationParseResult } from "../../../colorizer/AnnotationData";
-import TextButton from "../../Buttons/TextButton";
-import MessageCard from "../../MessageCard";
 import AnnotationFileInfo from "./AnnotationFileInfo";
 
 type AnnotationImportButtonProps = {
@@ -29,25 +30,9 @@ const MultilineRadio = styled(Radio)<{ $expanded?: boolean }>`
   }
 `;
 
-const StyledUpload = styled(Upload.Dragger)`
-  &&& {
-    color: var(--color-text-hint);
-    & * {
-      transition: all 0.2s ease-in-out;
-    }
-
-    & .ant-upload-drag-container span {
-      font-size: var(--font-size-header);
-    }
-
-    &:hover {
-      color: var(--color-text-theme);
-    }
-  }
-`;
-
 export default function AnnotationImportButton(props: AnnotationImportButtonProps): ReactElement {
   const dataset = useViewerStateStore((state) => state.dataset);
+  const datasetKey = useViewerStateStore((state) => state.datasetKey);
   const { annotationState } = props;
 
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -56,14 +41,20 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
   const [errorText, setErrorText] = useState("");
   const [mergeMode, setMergeMode] = useState(AnnotationMergeMode.APPEND);
 
-  const modalContainerRef = React.useRef<HTMLDivElement>(null);
+  const modalContainerRef = useRef<HTMLDivElement>(null);
 
   const handleFileUpload = (file: File): void => {
     setUploadedFile(null);
     setParseResult(null);
     setErrorText("");
     const isCsv = file.type === "text/csv" || file.name.endsWith(".csv");
-    if (!isCsv || !dataset) {
+    if (!dataset || datasetKey === null) {
+      setUploadedFile(file);
+      setErrorText("No dataset loaded.");
+      return;
+    }
+    if (!isCsv) {
+      setUploadedFile(file);
       setErrorText("Only CSV files are supported.");
       return;
     }
@@ -72,7 +63,7 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
       const text = e.target?.result as string;
       try {
         // TODO: Do this in a worker to avoid blocking the UI thread?
-        const result = AnnotationData.fromCsv(dataset, text);
+        const result = AnnotationData.fromCsv(datasetKey, dataset, text);
         setParseResult(result);
       } catch (error) {
         setErrorText('Could not parse CSV file. Parsing failed with the following error: "' + error + '"');
@@ -124,10 +115,10 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
         okButtonProps={{ disabled: !parseResult }}
         onOk={handleImport}
         onCancel={handleCancel}
-        destroyOnClose={true}
+        destroyOnHidden={true}
       >
         <FlexColumn $gap={6}>
-          {uploadedFile ? (
+          {uploadedFile || errorText ? (
             <AnnotationFileInfo
               errorText={errorText}
               file={uploadedFile}

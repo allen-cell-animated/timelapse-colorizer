@@ -1,7 +1,6 @@
 import { defineConfig } from "vite";
 
-import { DEFAULT_ENV } from "../vite.config";
-import { DEFAULT_CONFIG } from "../vite.config";
+import { DEFAULT_CONFIG, DEFAULT_ENV } from "../vite.config";
 
 process.env = {
   ...DEFAULT_ENV,

@@ -1,4 +1,4 @@
-import chroma from "chroma-js";
+import type chroma from "chroma-js";
 import * as d3 from "d3";
 
 export const SVG_TEXT_PADDING = 0.1;
@@ -129,7 +129,7 @@ export function drawAxesLabels(
   // with the first letter of each word. Articles and other common words will
   // not be capitalized. (For example, "Volume at Start of Growth" -> "VaSoG")
   const lowercaseWords = ["the", "and", "of", "in", "a", "an", "to", "for", "with", "on", "by", "as", "at", "from"];
-  const xAxis = d3.axisTop(y).tickFormat(function (_d, i) {
+  const xAxis = d3.axisTop(y).tickFormat(function (_domain: number, i: number) {
     return featureNames[i]
       ? featureNames[i]
           .trim()
@@ -139,7 +139,7 @@ export function drawAxesLabels(
       : "";
   });
 
-  const yAxis = d3.axisLeft(x).tickFormat(function (_d, i) {
+  const yAxis = d3.axisLeft(x).tickFormat(function (_domain: number, i: number) {
     return featureNames[i];
   });
 
@@ -247,10 +247,10 @@ export function drawLegend(legendDiv: HTMLDivElement, extent: [number, number], 
       return config.plotWidth * d.offset;
     })
     .attr("dy", -3)
-    .style("text-anchor", function (_d, i) {
+    .style("text-anchor", function (_d: GradientStop, i: number) {
       return i === 0 ? "start" : i === 1 ? "middle" : "end";
     })
-    .text(function (d: GradientStop, i) {
+    .text(function (d: GradientStop, i: number) {
       if (d.value === undefined) {
         return "--";
       }
@@ -271,9 +271,9 @@ export function setupMouseInteraction(
   d3.select(tooltipDiv).selectAll("*").remove();
   d3.select(plotDiv)
     .selectAll("rect")
-    .on("mouseover", function (event) {
+    .on("mouseover", function (_event: any, datum: unknown) {
       // Show tooltip on hover
-      const d = event.target.__data__ as CellDatum | undefined;
+      const d = datum as CellDatum | undefined;
       if (!d) {
         return;
       }
@@ -314,8 +314,8 @@ export function setupMouseInteraction(
       d3.selectAll(".axis .tick text").classed("selected", false);
       d3.selectAll(".axis .tick line").classed("selected", false);
     })
-    .on("click", function (event) {
-      const d = event.target.__data__;
+    .on("click", function (_event: any, datum: unknown) {
+      const d = datum as CellDatum | undefined;
       if (!d) {
         return;
       }

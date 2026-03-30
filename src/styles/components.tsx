@@ -19,3 +19,10 @@ export const StyledRadioGroup = styled(Radio.Group)`
     }
   }
 `;
+
+export const StyledHorizontalRule = styled.hr`
+  width: 100%;
+  height: 1px;
+  background-color: var(--color-dividers);
+  border: none;
+`;

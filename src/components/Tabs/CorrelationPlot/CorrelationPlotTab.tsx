@@ -5,16 +5,19 @@
 import { Button, Select } from "antd";
 import chroma from "chroma-js";
 import * as d3 from "d3";
-import React, { memo, ReactElement, useEffect, useMemo, useRef, useState } from "react";
+import React, { memo, type ReactElement, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 
-import { Dataset } from "../../../colorizer";
-import { useDebounce } from "../../../colorizer/utils/react_utils";
-import { FlexColumnAlignCenter, FlexRowAlignCenter } from "../../../styles/utils";
+import type { Dataset } from "src/colorizer";
+import type SharedWorkerPool from "src/colorizer/workers/SharedWorkerPool";
+import LoadingSpinner from "src/components/LoadingSpinner";
+import { useDebounce } from "src/hooks";
+import { FlexColumnAlignCenter, FlexRowAlignCenter } from "src/styles/utils";
+
 import {
   areSetsEqual,
   correlationDataToCellDatum,
-  CorrelationPlotConfig,
+  type CorrelationPlotConfig,
   createScales,
   drawAxesLabels,
   drawBaseSvg,
@@ -23,9 +26,6 @@ import {
   setupMouseInteraction,
   SVG_TEXT_PADDING,
 } from "./correlation_plot_data_utils";
-
-import SharedWorkerPool from "../../../colorizer/workers/SharedWorkerPool";
-import LoadingSpinner from "../../LoadingSpinner";
 
 type CorrelationPlotTabProps = {
   dataset: Dataset | null;
@@ -65,9 +65,9 @@ const PlotDiv = styled.div`
 export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps): ReactElement {
   const [isRendering, setIsRendering] = useState(false);
 
-  const plotDivRef = React.useRef<HTMLDivElement>(null);
-  const legendRef = React.useRef<HTMLDivElement>(null);
-  const tooltipDivRef = React.useRef<HTMLDivElement>(null);
+  const plotDivRef = useRef<HTMLDivElement>(null);
+  const legendRef = useRef<HTMLDivElement>(null);
+  const tooltipDivRef = useRef<HTMLDivElement>(null);
 
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
   const lastRenderedPlotFeatures = useRef<Set<string>>(new Set());

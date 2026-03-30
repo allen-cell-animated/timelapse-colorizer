@@ -49,6 +49,9 @@ export const DEFAULT_CONFIG = {
       "@aics/vole-core > throttled-queue",
     ],
   },
+  resolve: {
+    alias: [{ find: "src", replacement: resolve(__dirname, "./src") }],
+  },
   worker: {
     // Fixes an invalid output format error when building
     format: "es",

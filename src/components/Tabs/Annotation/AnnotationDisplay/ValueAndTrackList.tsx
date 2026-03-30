@@ -1,11 +1,11 @@
-import React, { ReactElement, useMemo } from "react";
+import React, { type ReactElement, useMemo, useRef } from "react";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { FixedSizeList } from "react-window";
-import { Color } from "three";
+import type { Color } from "three";
 
-import { Dataset, Track } from "../../../../colorizer";
-import { LookupInfo } from "../../../../colorizer/utils/annotation_utils";
-import { ScrollShadowContainer, useScrollShadow } from "../../../../colorizer/utils/react_utils";
+import type { Dataset, Track } from "src/colorizer";
+import type { LookupInfo } from "src/colorizer/utils/annotation_utils";
+import { ScrollShadowContainer, useScrollShadow } from "src/hooks";
 
 import PlaceholderListItem from "./ListItems/PlaceholderListItem";
 import TrackListItem from "./ListItems/TrackListItem";
@@ -14,7 +14,7 @@ import ValueListItem from "./ListItems/ValueListItem";
 type ValueAndTrackListProps = {
   lookupInfo: LookupInfo;
   dataset: Dataset | null;
-  selectedTrack: Track | null;
+  selectedTracks: Map<number, Track>;
   labelColor: Color;
   onClickTrack: (trackId: number) => void;
 };
@@ -47,7 +47,7 @@ type PlaceholderItemData = {
 
 type ListItemData = {
   dataset: Dataset | null;
-  selectedTrack: Track | null;
+  selectedTracks: Map<number, Track>;
   labelColor: Color;
   onClickTrack: (trackId: number) => void;
   onFocus: (index: number) => void;
@@ -95,7 +95,7 @@ const listItemRenderer = ({
           trackId={item.trackId}
           ids={item.ids}
           dataset={data.dataset!}
-          isSelectedTrack={item.trackId === data.selectedTrack?.trackId}
+          isSelectedTrack={data.selectedTracks.has(item.trackId)}
           labelColor={data.labelColor}
           onClickTrack={data.onClickTrack}
           onFocus={() => data.onFocus(index)}
@@ -113,7 +113,7 @@ const listItemRenderer = ({
  */
 export default function ValueAndTrackList(props: ValueAndTrackListProps): ReactElement {
   const { scrollShadowStyle, onScrollHandler, scrollRef } = useScrollShadow();
-  const listRef = React.useRef<FixedSizeList>(null);
+  const listRef = useRef<FixedSizeList>(null);
 
   const itemData = useMemo(() => {
     const { trackIds, trackToIds, valueToTracksToIds } = props.lookupInfo;

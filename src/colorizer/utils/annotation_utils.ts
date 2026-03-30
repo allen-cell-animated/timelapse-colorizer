@@ -1,4 +1,5 @@
-import Dataset from "../Dataset";
+import type { LabelData } from "src/colorizer/AnnotationData";
+import type Dataset from "src/colorizer/Dataset";
 
 export type LookupInfo = {
   trackIds: number[];
@@ -43,7 +44,7 @@ export function getTrackLookups(
 
   // Reverse the order of IDs so that the most recently added IDs are at the
   // front of the list.
-  const idsReversed = ids.toReversed();
+  const idsReversed = [...ids].reverse();
   for (const id of idsReversed) {
     const trackId = dataset.getTrackId(id);
     const trackIdString = trackId.toString();
@@ -84,4 +85,12 @@ export function getTrackLookups(
     trackToIds,
     valueToTracksToIds: hasValueInfo ? valueToTracksToIds : undefined,
   };
+}
+
+export function getTotalLabeledIds(labelData: LabelData): number {
+  let total = 0;
+  for (const perDatasetData of labelData.datasetToIdData.values()) {
+    total += perDatasetData.ids.size;
+  }
+  return total;
 }

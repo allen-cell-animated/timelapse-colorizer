@@ -1,7 +1,8 @@
 import { parquetRead } from "hyparquet";
 import { compressors } from "hyparquet-compressors";
+import JSZip from "jszip";
 
-import { FeatureArrayType, FeatureDataType, featureTypeSpecs } from "../types";
+import { type FeatureArrayType, type FeatureDataType, featureTypeSpecs, type ReportLoadProgressCallback } from "src/colorizer/types";
 
 const isBoolArray = (arr: number[] | boolean[]): arr is boolean[] => typeof arr[0] === "boolean";
 
@@ -86,4 +87,92 @@ export async function loadFromParquetUrl<T extends FeatureDataType>(url: string,
     },
   });
   return { data, min: dataMin, max: dataMax };
+}
+
+/**
+ * Parses a ZIP file into a map of file paths to their contents. If files are nested
+ * inside one or more levels of empty directories, those directories will be stripped
+ * from the file paths.
+ * @param zipFile A ZIP file object.
+ * @returns A Promise that resolves to a map of file paths to a File object.
+ */
+export async function zipToFileMap(
+  zipFile: File,
+  onLoadProgress?: ReportLoadProgressCallback
+): Promise<Record<string, File>> {
+  const zip = await JSZip.loadAsync(zipFile).catch((error) => {
+    console.error("Could not parse zip file:", error);
+    throw new Error(`Could not parse '${zipFile.name}'. Please check if it is a valid ZIP file.`);
+  });
+
+  // Load all contents and save them as File objects
+  const fileMap: Record<string, File> = {};
+  const filePromises: Promise<void>[] = [];
+  const loadToFileMap = async (relativePath: string, zipObject: JSZip.JSZipObject): Promise<void> => {
+    const fileContents = await zipObject.async("blob");
+    fileMap[relativePath] = new File([fileContents], relativePath);
+  };
+
+  let totalFiles = 0;
+  let completedFiles = 0;
+  const onLoadStart = (): void => {
+    totalFiles++;
+  };
+  const onLoadComplete = (): void => {
+    completedFiles++;
+    onLoadProgress?.(completedFiles, totalFiles);
+  };
+
+  zip.forEach((relativePath, zipObject) => {
+    if (zipObject.dir) {
+      return;
+    }
+    const loadFileCallback = async (): Promise<void> => {
+      onLoadStart();
+      try {
+        await loadToFileMap(relativePath, zipObject);
+      } catch (error) {
+        console.error(`Failed to load file ${relativePath} from ${zipFile.name}:`, error);
+      } finally {
+        // Currently always called even if a file fails to load.
+        onLoadComplete();
+      }
+    };
+    filePromises.push(loadFileCallback());
+  });
+
+  await Promise.allSettled(filePromises);
+
+  // Handle case where files are all nested one or more layers deep in empty
+  // folders by removing the shared prefix. This is very common when zipping
+  // folders.
+  const fileKeys = Object.keys(fileMap);
+  if (fileKeys.length === 0) {
+    return {};
+  }
+  let prefix = Object.keys(fileMap)[0].split("/").slice(0, -1).join("/");
+  for (const key of fileKeys) {
+    if (key.startsWith(prefix)) {
+      continue;
+    }
+    // Find the longest common prefix
+    const prefixDirectories = prefix.split("/");
+    const keyDirectories = key.split("/");
+    let i = 0;
+    while (i < prefixDirectories.length && i < keyDirectories.length && prefixDirectories[i] === keyDirectories[i]) {
+      i++;
+    }
+    prefix = prefixDirectories.slice(0, i).join("/");
+  }
+  if (prefix !== "") {
+    prefix += "/"; // Include final directory slash
+  }
+
+  // Remove prefix from the start of all paths
+  const trimmedFileMap: Record<string, File> = {};
+  for (const key of Object.keys(fileMap)) {
+    trimmedFileMap[key.slice(prefix.length)] = fileMap[key];
+  }
+
+  return trimmedFileMap;
 }

@@ -1,14 +1,13 @@
 import { CloseOutlined } from "@ant-design/icons";
-import { Table, TableProps } from "antd";
-import React, { memo, ReactElement, useContext, useMemo } from "react";
+import { Table, type TableProps } from "antd";
+import React, { memo, type ReactElement, useContext, useMemo } from "react";
 import styled from "styled-components";
 
-import { TagIconSVG } from "../../../../assets";
-import { Dataset } from "../../../../colorizer";
-import { FlexColumnAlignCenter, VisuallyHidden } from "../../../../styles/utils";
-
-import { AppThemeContext } from "../../../AppStyle";
-import IconButton from "../../../IconButton";
+import { TagIconSVG } from "src/assets";
+import type { Dataset } from "src/colorizer";
+import IconButton from "src/components/Buttons/IconButton";
+import { AppThemeContext } from "src/styles/AppStyle";
+import { FlexColumnAlignCenter, VisuallyHidden } from "src/styles/utils";
 
 const SELECTED_ROW_CLASSNAME = "selected-row";
 
@@ -48,6 +47,18 @@ const StyledAntTable = styled(Table)`
       align-items: center;
     }
   }
+
+  .ant-table-body {
+    /** Fix bug where scrollbars would appear in empty table */
+    overflow: unset !important;
+  }
+
+  &&& .ant-table-tbody-virtual-scrollbar-horizontal {
+    /* Fix bug where a horizontal scrollbar would appear that scrolls by 1 pixel
+     * only
+    */
+    display: none;
+  }
 `;
 
 type AnnotationTableProps = {
@@ -58,13 +69,13 @@ type AnnotationTableProps = {
   idToValue?: Map<number, string>;
   height?: number | string;
   hideTrackColumn?: boolean;
-  selectedId?: number;
+  selectedIds?: Set<number>;
 };
 
 const defaultProps = {
   height: "100%",
   hideTrackColumn: false,
-  selectedId: -1,
+  selectedIds: new Set<number>(),
 };
 
 /**
@@ -101,7 +112,7 @@ const AnnotationDisplayTable = memo(function AnnotationDisplayTable(inputProps: 
     {
       title: "",
       key: "action",
-      width: "5%",
+      width: props.idToValue ? "5%" : "3%",
       render: (_, record) => (
         <div style={{ display: "flex", justifyContent: "right" }}>
           <IconButton
@@ -155,7 +166,7 @@ const AnnotationDisplayTable = memo(function AnnotationDisplayTable(inputProps: 
 
   return (
     <StyledAntTable
-      rowClassName={(record) => (record.id === props.selectedId ? SELECTED_ROW_CLASSNAME : "")}
+      rowClassName={(record) => (props.selectedIds?.has(record.id) ? SELECTED_ROW_CLASSNAME : "")}
       dataSource={tableData}
       columns={tableColumns}
       size="small"
@@ -180,6 +191,7 @@ const AnnotationDisplayTable = memo(function AnnotationDisplayTable(inputProps: 
           </FlexColumnAlignCenter>
         ),
       }}
+      style={{ overflow: "unset" }}
     ></StyledAntTable>
   );
 });

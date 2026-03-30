@@ -1,6 +1,6 @@
-import React, { DependencyList, ReactElement, useCallback, useMemo, useRef, useState } from "react";
+import React, { type DependencyList, type ReactElement, useCallback, useMemo, useRef, useState } from "react";
 
-import AlertBanner, { AlertBannerProps } from "./AlertBanner";
+import AlertBanner, { type AlertBannerProps } from "./AlertBanner";
 
 export type ShowAlertBannerCallback = (props: AlertBannerProps) => void;
 export type ClearBannersCallback = () => void;

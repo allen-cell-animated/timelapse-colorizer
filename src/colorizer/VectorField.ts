@@ -2,16 +2,17 @@ import {
   BufferAttribute,
   BufferGeometry,
   Color,
-  Line,
+  type Line,
   LineBasicMaterial,
   LineSegments,
-  Material,
+  type Material,
   Vector2,
 } from "three";
 
-import { OUTLINE_COLOR_DEFAULT } from "./constants";
+import { bucketVectorDataByTime } from "src/colorizer/utils/data_utils";
 
-import Dataset from "./Dataset";
+import { OUTLINE_COLOR_DEFAULT } from "./constants";
+import type Dataset from "./Dataset";
 
 const VERTICES_PER_VECTOR_LINE = 6;
 const VERTEX_LENGTH = 3;
@@ -247,23 +248,8 @@ export default class VectorField {
     }
 
     // Sort object IDs into buckets by time. Drop any IDs whose vectors are invalid (NaN).
-    const timeToIds = new Map<number, number[]>();
-    let totalValidIds = 0;
-    for (let i = 0; i < this.dataset.numObjects; i++) {
-      const time = this.dataset.getTime(i);
-      const ids = timeToIds.get(time) ?? [];
-      if (
-        Number.isNaN(this.vectorData[i * 3]) ||
-        Number.isNaN(this.vectorData[i * 3 + 1]) ||
-        Number.isNaN(this.vectorData[i * 3 + 2]) ||
-        this.dataset.getCentroid(i) === undefined
-      ) {
-        continue;
-      }
-      ids.push(i);
-      timeToIds.set(time, ids);
-      totalValidIds++;
-    }
+    const { timeToVectorData, totalValidIds } = bucketVectorDataByTime(this.dataset, this.vectorData);
+
     const numVertices = totalValidIds * VERTICES_PER_VECTOR_LINE;
     const vertices = new Float32Array(numVertices * 3);
 
@@ -271,18 +257,17 @@ export default class VectorField {
     // Save the starting and ending index for each time.
     this.timeToVertexIndexRange.clear();
     let nextEmptyIndex = 0;
-    for (const [time, ids] of timeToIds) {
+    for (const [time, vectorData] of timeToVectorData.entries()) {
+      const { ids, centroids, deltas } = vectorData;
       this.timeToVertexIndexRange.set(time, [nextEmptyIndex, nextEmptyIndex + ids.length * VERTICES_PER_VECTOR_LINE]);
+      for (let i = 0; i < ids.length; i++) {
+        const centroid = centroids.subarray(3 * i, 3 * i + 3);
+        const delta = deltas.subarray(3 * i, 3 * i + 3);
 
-      for (const objectId of ids) {
-        const centroid = this.dataset.getCentroid(objectId)!;
-        const delta: [number, number, number] = [
-          this.vectorData[objectId * 3],
-          this.vectorData[objectId * 3 + 1],
-          this.vectorData[objectId * 3 + 2],
-        ];
-
-        const arrowVertices = this.getArrowVertices(centroid, delta);
+        const arrowVertices = this.getArrowVertices(
+          Array.from(centroid) as [number, number, number],
+          Array.from(delta) as [number, number, number]
+        );
         vertices.set(arrowVertices, nextEmptyIndex * VERTEX_LENGTH);
 
         nextEmptyIndex += VERTICES_PER_VECTOR_LINE;

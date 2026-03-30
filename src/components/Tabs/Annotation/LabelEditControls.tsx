@@ -1,24 +1,18 @@
 import { CloseCircleFilled, DeleteOutlined, EditOutlined } from "@ant-design/icons";
 import { Popconfirm, Popover, Radio, Tooltip } from "antd";
-import React, { PropsWithChildren, ReactElement, useContext, useEffect, useRef, useState } from "react";
+import React, { type PropsWithChildren, type ReactElement, useContext, useEffect, useRef, useState } from "react";
 
-import { TagAddIconSVG } from "../../../assets";
-import { AnnotationSelectionMode } from "../../../colorizer";
-import { StyledRadioGroup } from "../../../styles/components";
-import { formatQuantityString } from "../../../utils/formatting";
+import { TagAddIconSVG } from "src/assets";
+import { AnnotationSelectionMode } from "src/colorizer";
+import type { LabelData, LabelOptions } from "src/colorizer/AnnotationData";
+import { getTotalLabeledIds } from "src/colorizer/utils/annotation_utils";
+import IconButton from "src/components/Buttons/IconButton";
+import { TooltipWithSubtitle } from "src/components/Tooltips/TooltipWithSubtitle";
+import { AppThemeContext } from "src/styles/AppStyle";
+import { StyledRadioGroup } from "src/styles/components";
+import { formatQuantityString } from "src/utils/formatting";
 
-import { DEFAULT_ANNOTATION_LABEL_COLORS, LabelData, LabelOptions } from "../../../colorizer/AnnotationData";
-import { AppThemeContext } from "../../AppStyle";
-import IconButton from "../../IconButton";
-import { TooltipWithSubtitle } from "../../Tooltips/TooltipWithSubtitle";
 import CreateLabelForm from "./CreateLabelForm";
-
-export const DEFAULT_LABEL_COLOR_PRESETS = [
-  {
-    label: "Presets",
-    colors: DEFAULT_ANNOTATION_LABEL_COLORS,
-  },
-];
 
 type LabelEditControlsProps = {
   onCreateNewLabel: (options: Partial<LabelOptions>) => void;
@@ -40,6 +34,7 @@ export default function LabelEditControls(props: PropsWithChildren<LabelEditCont
   const editPopoverContainerRef = useRef<HTMLDivElement>(null);
 
   const [showDeletePopup, setShowDeletePopup] = useState(false);
+  const deletePopoverContainerRef = useRef<HTMLDivElement>(null);
 
   const savedLabelOptions = useRef<Partial<LabelOptions> | null>(null);
 
@@ -142,6 +137,7 @@ export default function LabelEditControls(props: PropsWithChildren<LabelEditCont
         placement="bottom"
         content={
           <CreateLabelForm
+            baseId="label-edit-controls-create-button"
             initialLabelOptions={props.defaultLabelOptions}
             onConfirm={props.onCreateNewLabel}
             onCancel={() => setShowCreatePopover(false)}
@@ -168,6 +164,7 @@ export default function LabelEditControls(props: PropsWithChildren<LabelEditCont
         placement="bottom"
         content={
           <CreateLabelForm
+            baseId="label-edit-controls-edit-button"
             initialLabelOptions={props.selectedLabel.options}
             onConfirm={onClickEditSave}
             onCancel={onClickEditCancel}
@@ -183,7 +180,7 @@ export default function LabelEditControls(props: PropsWithChildren<LabelEditCont
         open={showEditPopover}
         onOpenChange={createOpenChangeHandler(setShowEditPopover)}
         getPopupContainer={() => editPopoverContainerRef.current!}
-        destroyTooltipOnHide={true}
+        destroyOnHidden={true}
       >
         <div ref={editPopoverContainerRef}>
           <Tooltip title="Edit annotation" placement="top">
@@ -194,7 +191,11 @@ export default function LabelEditControls(props: PropsWithChildren<LabelEditCont
         </div>
       </Popover>
       <Popconfirm
-        title={`Delete annotation with ${formatQuantityString(props.selectedLabel.ids.size, "object", "objects")}?`}
+        title={`Delete annotation with ${formatQuantityString(
+          getTotalLabeledIds(props.selectedLabel),
+          "object",
+          "objects"
+        )}?`}
         description={"This cannot be undone."}
         open={showDeletePopup}
         onOpenChange={createOpenChangeHandler(setShowDeletePopup)}
@@ -204,13 +205,15 @@ export default function LabelEditControls(props: PropsWithChildren<LabelEditCont
         onConfirm={deleteLabel}
         onCancel={() => setShowDeletePopup(false)}
         placement="bottom"
-        getPopupContainer={() => editPopoverContainerRef.current!}
+        getPopupContainer={() => deletePopoverContainerRef.current!}
       >
-        <Tooltip title="Delete annotation" placement="top">
-          <IconButton type="outlined" onClick={onClickDeleteButton}>
-            <DeleteOutlined />
-          </IconButton>
-        </Tooltip>
+        <div ref={deletePopoverContainerRef}>
+          <Tooltip title="Delete annotation" placement="top">
+            <IconButton type="outlined" onClick={onClickDeleteButton}>
+              <DeleteOutlined />
+            </IconButton>
+          </Tooltip>
+        </div>
       </Popconfirm>
     </>
   );

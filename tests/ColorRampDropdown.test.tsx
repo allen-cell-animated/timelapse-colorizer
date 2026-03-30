@@ -3,17 +3,16 @@ import React from "react";
 import { Color } from "three";
 import { describe, expect, it, vi } from "vitest";
 
-import { ColorRamp, ColorRampData, ColorRampType, RawColorData } from "../src/colorizer";
-import { ANY_ERROR } from "./test_utils";
-
-import ColorRampDropdown from "../src/components/Dropdowns/ColorRampDropdown";
+import { ColorRamp, type ColorRampData, ColorRampType, type RawColorData } from "src/colorizer";
+import ColorRampDropdown from "src/components/Dropdowns/ColorRampDropdown";
+import { ANY_ERROR } from "tests/utils";
 
 describe("ColorRampDropdown", () => {
   const defaultPalette = [new Color("#000000"), new Color("#ffffff")];
   const knownRamps: [string, RawColorData][] = [
-    ["map1", { key: "map1", name: "Map 1", colorStops: ["#ffffff", "#000000"] }],
-    ["map2", { key: "map2", name: "Map 2", colorStops: ["#ffffff", "#000000"] }],
-    ["map3", { key: "map3", name: "Map 3", colorStops: ["#ffffff", "#000000"] }],
+    ["map1", { key: "map1", name: "Map 1", type: ColorRampType.LINEAR, colorStops: ["#ffffff", "#000000"] }],
+    ["map2", { key: "map2", name: "Map 2", type: ColorRampType.LINEAR, colorStops: ["#ffffff", "#000000"] }],
+    ["map3", { key: "map3", name: "Map 3", type: ColorRampType.LINEAR, colorStops: ["#ffffff", "#000000"] }],
   ];
   const customColorRamps: Map<string, ColorRampData> = new Map(
     knownRamps.map(([key, data]) => {
@@ -25,6 +24,8 @@ describe("ColorRampDropdown", () => {
     it("can render with correct label", async () => {
       render(
         <ColorRampDropdown
+          label={"Color map"}
+          id={"color-ramp-dropdown"}
           selectedRamp={"map1"}
           knownColorRamps={customColorRamps}
           onChangeRamp={(_value: string) => {}}
@@ -47,6 +48,8 @@ describe("ColorRampDropdown", () => {
       expect(() =>
         render(
           <ColorRampDropdown
+            label={"Color map"}
+            id={"color-ramp-dropdown"}
             selectedRamp={"bad-key"}
             knownColorRamps={customColorRamps}
             onChangeRamp={(_value: string) => {}}

@@ -6,7 +6,7 @@ import {
   encodeGitHubPagesUrl,
   encodeUrlPathAsQueryString,
   tryRemoveHashRouting,
-} from "../src/utils/gh_routing";
+} from "src/utils/gh_routing";
 
 describe("Route utils", () => {
   describe("convertUrlToQueryStringPath", () => {

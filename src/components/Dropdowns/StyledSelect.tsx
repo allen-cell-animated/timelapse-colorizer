@@ -1,23 +1,38 @@
-import { ButtonProps } from "antd";
-import React, { ReactElement, useMemo } from "react";
-import Select, { components, DropdownIndicatorProps, GroupBase, StylesConfig } from "react-select";
-import { StateManagerProps } from "react-select/dist/declarations/src/useStateManager";
+import { LoadingOutlined } from "@ant-design/icons";
+import type { ButtonProps } from "antd";
+import React, { type ReactElement, useContext, useMemo } from "react";
+import Select, {
+  components,
+  type DropdownIndicatorProps,
+  type GroupBase,
+  type Props as StateManagerProps,
+  type StylesConfig,
+} from "react-select";
 import styled, { css } from "styled-components";
-import { Color } from "three";
+import type { Color } from "three";
 
-import { DropdownSVG } from "../../assets";
-import { SelectItem } from "./types";
+import { DropdownSVG } from "src/assets";
+import { removeUndefinedProperties } from "src/colorizer/utils/data_utils";
+import { type AppTheme, AppThemeContext } from "src/styles/AppStyle";
 
-import { AppTheme, AppThemeContext } from "../AppStyle";
+import type { SelectItem } from "./types";
 
 type AntStyledSelectProps<
   IsMulti extends boolean = false,
   Group extends GroupBase<SelectItem> = GroupBase<SelectItem>
 > = StateManagerProps<SelectItem, IsMulti, Group> & {
   type?: ButtonProps["type"] | "outlined";
-  width?: string;
+  controlWidth?: string;
+  menuWidth?: string;
   styles?: StylesConfig<SelectItem, IsMulti, Group>;
 };
+
+const defaultProps = {
+  type: "outlined",
+  controlWidth: "calc(15vw + 30px)",
+  menuWidth: "max-content",
+  menuPlacement: "auto",
+} as const;
 
 const COLOR_INDICATOR_BASE_STYLE = {
   display: "block",
@@ -158,8 +173,8 @@ const SelectContainer = styled.div<{ $type: ButtonProps["type"] | "outlined" }>`
     &:focus-within:has(input:focus-visible) {
       // Focus ring
       box-shadow: none;
-      outline: 2px solid #efe9f7 !important;
-      outline-offset: 0px;
+      outline: 3px solid var(--color-button-focus-shadow) !important;
+      outline-offset: 1px;
       transition: outline-offset 0s, outline 0s;
     }
 
@@ -178,12 +193,16 @@ const SelectContainer = styled.div<{ $type: ButtonProps["type"] | "outlined" }>`
   }
 `;
 
-const getCustomStyles = (theme: AppTheme, width: string): StylesConfig<SelectItem, false, GroupBase<SelectItem>> => ({
+const getCustomStyles = (
+  theme: AppTheme,
+  controlWidth: string,
+  menuWidth: string
+): StylesConfig<SelectItem, false, GroupBase<SelectItem>> => ({
   control: (base, { isFocused }) => ({
     ...base,
     height: theme.controls.height,
     minHeight: theme.controls.height,
-    width: width,
+    width: controlWidth,
     borderRadius: theme.controls.radiusLg,
     borderColor: isFocused ? theme.color.button.outlineActive : theme.color.layout.borders,
   }),
@@ -218,7 +237,7 @@ const getCustomStyles = (theme: AppTheme, width: string): StylesConfig<SelectIte
   menu: (base) => ({
     ...base,
     zIndex: 1050, // Standard z-index for Ant Design popups
-    width: "max-content",
+    width: menuWidth,
     minWidth: base.width,
     maxWidth: "calc(min(50vw, 500px))",
     borderRadius: theme.controls.radiusLg,
@@ -238,7 +257,7 @@ const getCustomStyles = (theme: AppTheme, width: string): StylesConfig<SelectIte
     // Style to match Ant dropdowns
     borderRadius: 4,
     padding: "4px 8px",
-    width: `calc(${styles.width})`,
+    width: styles.width,
     color: isSelected ? theme.color.dropdown.textSelected : theme.color.text.primary,
     backgroundColor: isDisabled
       ? undefined
@@ -274,6 +293,14 @@ const DropdownIndicator = (props: DropdownIndicatorProps<SelectItem>): ReactElem
   );
 };
 
+const SpinningDropdownIndicator = (props: DropdownIndicatorProps<SelectItem>): ReactElement => {
+  return (
+    <components.DropdownIndicator {...props}>
+      <LoadingOutlined size={12} />
+    </components.DropdownIndicator>
+  );
+};
+
 // TODO: Add open/close animation to Menu; see similar implementation in
 // ColorRampDropdown.css.
 
@@ -287,17 +314,26 @@ const DropdownIndicator = (props: DropdownIndicatorProps<SelectItem>): ReactElem
 export default function AntStyledSelect<
   IsMulti extends boolean = false,
   Group extends GroupBase<SelectItem> = GroupBase<SelectItem>
->(props: AntStyledSelectProps<IsMulti, Group>): ReactElement {
-  const theme = React.useContext(AppThemeContext);
-  const customStyles = useMemo(() => getCustomStyles(theme, props.width ?? "15vw"), [theme]);
+>(inputProps: AntStyledSelectProps<IsMulti, Group>): ReactElement {
+  const props = { ...defaultProps, ...removeUndefinedProperties(inputProps) };
+  const theme = useContext(AppThemeContext);
+  const customStyles = useMemo(
+    () => getCustomStyles(theme, props.controlWidth, props.menuWidth),
+    [theme, props.controlWidth, props.menuWidth]
+  );
+
+  const dropdownIndicator = props.isLoading ? SpinningDropdownIndicator : DropdownIndicator;
 
   return (
-    <SelectContainer $type={props.type || "outlined"}>
+    <SelectContainer $type={props.type} style={{ width: "100%" }}>
       <Select
         {...props}
-        menuPlacement={props.menuPlacement || "auto"}
-        components={{ DropdownIndicator, ...props.components }}
+        menuPlacement={props.menuPlacement}
+        components={{ DropdownIndicator: dropdownIndicator, ...props.components }}
         styles={{ ...(customStyles as unknown as StylesConfig<SelectItem, IsMulti, Group>), ...props.styles }}
+        // Select default loading styling is overridden (since it is handled via
+        // DropdownIndicator instead).
+        isLoading={false}
       />
     </SelectContainer>
   );

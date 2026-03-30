@@ -1,5 +1,5 @@
 import { Button } from "antd";
-import React, { PropsWithChildren, ReactElement } from "react";
+import React, { type PropsWithChildren, type ReactElement } from "react";
 import styled, { css } from "styled-components";
 
 type DropdownItemProps = {
@@ -43,7 +43,7 @@ const DropdownItemButton = styled(Button)<{ $selected: boolean }>`
     // Otherwise, add grey backdrop when hovered or focused
     return css`
       &:hover,
-      &:focus {
+      &:focus-visible {
         background-color: var(--color-dropdown-hover) !important;
       }
     `;

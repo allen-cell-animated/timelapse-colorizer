@@ -1,29 +1,31 @@
 import { ExportOutlined, MenuOutlined, TableOutlined } from "@ant-design/icons";
 import { Modal, Radio, Tooltip } from "antd";
-import React, { ReactElement, useCallback, useMemo, useState, useTransition } from "react";
-import { useShallow } from "zustand/shallow";
+import React, { type ReactElement, useCallback, useMemo, useRef, useState, useTransition } from "react";
 
-import { AnnotationSelectionMode } from "../../../colorizer";
-import { AnnotationState } from "../../../colorizer/utils/react_utils";
-import { useViewerStateStore } from "../../../state";
-import { StyledRadioGroup } from "../../../styles/components";
-import { FlexColumnAlignCenter, FlexRow, VisuallyHidden } from "../../../styles/utils";
-import { download } from "../../../utils/file_io";
-import { SelectItem } from "../../Dropdowns/types";
+import { AnnotationSelectionMode } from "src/colorizer";
+import { type LabelData, type LabelOptions, LabelType } from "src/colorizer/AnnotationData";
+import TextButton from "src/components/Buttons/TextButton";
+import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
+import type { SelectItem } from "src/components/Dropdowns/types";
+import LoadingSpinner from "src/components/LoadingSpinner";
+import { SHORTCUT_KEYS } from "src/constants";
+import type { AnnotationState } from "src/hooks";
+import { useViewerStateStore } from "src/state";
+import { Z_INDEX_MODAL } from "src/styles/AppStyle";
+import { StyledRadioGroup } from "src/styles/components";
+import { FlexColumnAlignCenter, FlexRow, VisuallyHidden } from "src/styles/utils";
+import { downloadCsv } from "src/utils/file_io";
+import { areAnyHotkeysPressed } from "src/utils/user_input";
 
-import { LabelData, LabelOptions, LabelType } from "../../../colorizer/AnnotationData";
-import { Z_INDEX_MODAL } from "../../AppStyle";
-import TextButton from "../../Buttons/TextButton";
-import SelectionDropdown from "../../Dropdowns/SelectionDropdown";
-import LoadingSpinner from "../../LoadingSpinner";
 import AnnotationDisplayList from "./AnnotationDisplay/AnnotationDisplayList";
-import AnnotationDisplayTable, { TableDataType } from "./AnnotationDisplay/AnnotationDisplayTable";
+import AnnotationDisplayTable, { type TableDataType } from "./AnnotationDisplay/AnnotationDisplayTable";
 import AnnotationImportButton from "./AnnotationImportButton";
 import AnnotationModeButton from "./AnnotationModeButton";
 import CreateLabelForm from "./CreateLabelForm";
 import LabelEditControls from "./LabelEditControls";
 
-const LABEL_DROPDOWN_LABEL_ID = "label-dropdown-label";
+const ANNOTATION_KEY_SELECT_ID = "annotation-key-select";
+
 const enum AnnotationViewType {
   TABLE,
   LIST,
@@ -47,44 +49,43 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     removeLabelOnIds,
   } = props.annotationState;
   const datasetKey = useViewerStateStore((state) => state.datasetKey);
+  const frame = useViewerStateStore((state) => state.currentFrame);
+  const collection = useViewerStateStore((state) => state.collection);
+  const dataset = useViewerStateStore((state) => state.dataset);
+  const tracks = useViewerStateStore((state) => state.tracks);
+  const setTracks = useViewerStateStore((state) => state.setTracks);
+  const addTracks = useViewerStateStore((state) => state.addTracks);
+  const toggleTrack = useViewerStateStore((state) => state.toggleTrack);
+  const setFrame = useViewerStateStore((state) => state.setFrame);
+
+  const isInitialized = datasetKey !== null && currentLabelIdx !== null;
 
   const [isPending, startTransition] = useTransition();
   const [viewType, setViewType] = useState<AnnotationViewType>(AnnotationViewType.LIST);
   const [isColorPickerOpen, setIsColorPickerOpen] = useState(false);
   const [showCreateLabelModal, setShowCreateLabelModal] = useState(false);
 
-  const modalContainerRef = React.useRef<HTMLDivElement>(null);
-
-  const store = useViewerStateStore(
-    useShallow((state) => ({
-      frame: state.currentFrame,
-      dataset: state.dataset,
-      setTrack: state.setTrack,
-      setFrame: state.setFrame,
-      selectedTrack: state.track,
-    }))
-  );
+  const modalContainerRef = useRef<HTMLDivElement>(null);
 
   const labels = annotationData.getLabels();
   const selectedLabel: LabelData | undefined = labels[currentLabelIdx ?? -1];
-  const selectedId = useMemo(() => {
-    return store.selectedTrack?.getIdAtTime(store.frame) ?? -1;
-  }, [store.frame, store.selectedTrack]);
+  const selectedLabelData = isInitialized ? selectedLabel?.datasetToIdData.get(datasetKey) : undefined;
+  const selectedIds = useMemo(() => {
+    const tracksArray = Array.from(tracks.values());
+    const currentIds = tracksArray.map((track) => track.getIdAtTime(frame));
+    return new Set(currentIds);
+  }, [frame, tracks]);
 
   // If range mode is enabled, highlight the range of IDs that would be selected
   // if the user clicks on the currently hovered ID.
   const highlightedIds = useMemo(() => {
-    if (
-      props.annotationState.selectionMode === AnnotationSelectionMode.RANGE &&
-      props.hoveredId !== null &&
-      store.dataset
-    ) {
-      return props.annotationState.getSelectRangeFromId(store.dataset, props.hoveredId);
+    if (props.annotationState.selectionMode === AnnotationSelectionMode.RANGE && props.hoveredId !== null && dataset) {
+      return props.annotationState.getSelectRangeFromId(dataset, props.hoveredId);
     }
     return null;
-  }, [props.hoveredId, store.dataset, props.annotationState.selectionMode, props.annotationState.getSelectRangeFromId]);
+  }, [props.hoveredId, dataset, props.annotationState.selectionMode, props.annotationState.getSelectRangeFromId]);
 
-  const onClickEnableAnnotationMode = useCallback(() => {
+  const onClickEnableAnnotationMode = (): void => {
     // If no labels are defined, prompt the user to create a new label
     // before enabling annotation mode.
     if (annotationData.getLabels().length === 0) {
@@ -92,7 +93,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     } else {
       setIsAnnotationModeEnabled(!isAnnotationModeEnabled);
     }
-  }, [isAnnotationModeEnabled, annotationData]);
+  };
 
   const onSelectLabelIdx = (idx: string): void => {
     startTransition(() => {
@@ -111,27 +112,31 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
         deleteLabel(currentLabelIdx);
       });
     }
-  }, [currentLabelIdx]);
+  }, [deleteLabel, currentLabelIdx]);
 
   const onClickObjectRow = useCallback(
     (record: TableDataType): void => {
       const trackId = record.track;
-      const track = store.dataset?.getTrack(trackId);
+      const track = dataset?.getTrack(trackId);
       if (track) {
-        store.setTrack(track);
-        store.setFrame(record.time);
+        if (areAnyHotkeysPressed(SHORTCUT_KEYS.viewport.multiTrackSelect.keycode)) {
+          addTracks(track);
+        } else {
+          setTracks(track);
+        }
+        setFrame(record.time);
       }
     },
-    [store.dataset, store.setTrack, store.setFrame]
+    [dataset, addTracks, setTracks, setFrame]
   );
 
   const onClickDeleteObject = useCallback(
     (record: TableDataType): void => {
-      if (currentLabelIdx !== null) {
-        removeLabelOnIds(currentLabelIdx, [record.id]);
+      if (currentLabelIdx !== null && datasetKey !== null) {
+        removeLabelOnIds(datasetKey, currentLabelIdx, [record.id]);
       }
     },
-    [currentLabelIdx, removeLabelOnIds]
+    [datasetKey, currentLabelIdx, removeLabelOnIds]
   );
 
   // Options for the selection dropdown
@@ -143,36 +148,42 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
 
   const selectLabelOptions: SelectItem[] = useMemo(
     () =>
-      labels.map((label, index) => ({
-        value: index.toString(),
-        label: label.ids.size ? `${label.options.name} (${label.ids.size})` : label.options.name,
-        color: label.options.color,
-        colorLabel: labelTypeToLabel[label.options.type],
-      })),
-    [annotationData]
+      labels.map((label, index) => {
+        const idCount = datasetKey !== null && label.datasetToIdData.get(datasetKey)?.ids.size;
+        return {
+          value: index.toString(),
+          label: idCount ? `${label.options.name} (${idCount})` : label.options.name,
+          color: label.options.color,
+          colorLabel: labelTypeToLabel[label.options.type],
+        };
+      }),
+    [annotationData, datasetKey]
   );
 
   const hasAnnotations = labels.length > 0;
 
-  const tableIds = useMemo(() => {
-    return currentLabelIdx !== null ? annotationData.getLabeledIds(currentLabelIdx) : [];
-  }, [currentLabelIdx, annotationData]);
-  const isMultiValueLabel = selectedLabel && selectedLabel?.options.type !== LabelType.BOOLEAN;
-  const idToValue = isMultiValueLabel ? selectedLabel.idToValue : undefined;
-  const valueToIds = isMultiValueLabel ? selectedLabel.valueToIds : undefined;
+  const tableIds = useMemo(
+    () => (isInitialized ? annotationData.getLabeledIds(datasetKey, currentLabelIdx) : []),
+    [isInitialized, currentLabelIdx, annotationData, datasetKey]
+  );
+  const isMultiValueLabel = selectedLabel && selectedLabelData && selectedLabel?.options.type !== LabelType.BOOLEAN;
+  const idToValue = isMultiValueLabel ? selectedLabelData.idToValue : undefined;
+  const valueToIds = isMultiValueLabel ? selectedLabelData.valueToIds : undefined;
 
   const labelSelectionDropdown = (
-    <>
-      <VisuallyHidden id={LABEL_DROPDOWN_LABEL_ID}>Current label</VisuallyHidden>
+    <FlexRow>
+      <label htmlFor={ANNOTATION_KEY_SELECT_ID}>
+        <VisuallyHidden>Current label</VisuallyHidden>
+      </label>
       <SelectionDropdown
+        id={ANNOTATION_KEY_SELECT_ID}
         selected={(currentLabelIdx ?? -1).toString()}
         items={selectLabelOptions}
         onChange={onSelectLabelIdx}
         disabled={currentLabelIdx === null}
         showSelectedItemTooltip={false}
-        htmlLabelId={LABEL_DROPDOWN_LABEL_ID}
       ></SelectionDropdown>
-    </>
+    </FlexRow>
   );
 
   return (
@@ -201,11 +212,12 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
               setIsColorPickerOpen(false);
             }
           }}
-          destroyOnClose={true}
+          destroyOnHidden={true}
           getContainer={() => modalContainerRef.current ?? document.body}
         >
           <div style={{ marginTop: "15px" }}>
             <CreateLabelForm
+              baseId="annotation-create-label-modal"
               initialLabelOptions={annotationData.getNextDefaultLabelSettings()}
               onConfirm={(options: Partial<LabelOptions>) => {
                 onCreateNewLabel(options);
@@ -235,9 +247,13 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           >
             <TextButton
               onClick={() => {
-                const csvData = props.annotationState.data.toCsv(store.dataset!);
-                const name = datasetKey ?? "annotations";
-                download(`${name}-annotations.csv`, "data:text/csv;charset=utf-8," + encodeURIComponent(csvData));
+                if (datasetKey === null || !dataset) {
+                  return;
+                }
+                const csvData = props.annotationState.data.toCsv();
+                const collectionName = collection?.metadata.name ?? collection?.getUrl();
+                const csvName = collectionName ? `${collectionName}-annotations.csv` : "annotations.csv";
+                downloadCsv(csvName, csvData);
               }}
               disabled={!hasAnnotations}
             >
@@ -310,11 +326,11 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           <AnnotationDisplayTable
             onClickObjectRow={onClickObjectRow}
             onClickDeleteObject={onClickDeleteObject}
-            dataset={store.dataset}
+            dataset={dataset}
             ids={tableIds}
             idToValue={idToValue}
             height={480}
-            selectedId={selectedId}
+            selectedIds={selectedIds}
           />
         </div>
         {/*
@@ -334,21 +350,25 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
             onClickObjectRow={onClickObjectRow}
             onClickDeleteObject={onClickDeleteObject}
             onClickTrack={(trackId) => {
-              const track = store.dataset?.getTrack(trackId);
+              const track = dataset?.getTrack(trackId);
               if (track) {
-                store.setTrack(track);
+                if (areAnyHotkeysPressed(SHORTCUT_KEYS.viewport.multiTrackSelect.keycode)) {
+                  toggleTrack(track);
+                } else {
+                  setTracks(track);
+                }
               }
             }}
-            setFrame={store.setFrame}
-            dataset={store.dataset}
+            setFrame={setFrame}
+            dataset={dataset}
             ids={tableIds}
             idToValue={idToValue}
             valueToIds={valueToIds}
             highlightRange={highlightedIds}
             rangeStartId={props.annotationState.rangeStartId}
-            selectedTrack={store.selectedTrack}
-            selectedId={selectedId}
-            frame={store.frame}
+            selectedTracks={tracks}
+            selectedIds={selectedIds}
+            frame={frame}
             labelColor={selectedLabel?.options.color}
           ></AnnotationDisplayList>
         </div>

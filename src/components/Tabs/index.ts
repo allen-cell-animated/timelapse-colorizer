@@ -1,9 +1,9 @@
 import AnnotationTab from "./Annotation/AnnotationTab";
 import CorrelationPlotTab from "./CorrelationPlot/CorrelationPlotTab";
-import FeatureThresholdsTab from "./FeatureThresholdsTab";
+import FeatureThresholdsTab from "./Filters/FeatureThresholdsTab";
 import Plot3dTab from "./Plot3DTab";
-import PlotTab from "./PlotTab";
-import ScatterPlotTab from "./ScatterPlotTab";
-import SettingsTab from "./SettingsTab";
+import ScatterPlotTab from "./ScatterPlot/ScatterPlotTab";
+import SettingsTab from "./Settings/SettingsTab";
+import PlotTab from "./TrackPlot/PlotTab";
 
 export { AnnotationTab, CorrelationPlotTab, FeatureThresholdsTab, Plot3dTab, PlotTab, ScatterPlotTab, SettingsTab };

@@ -1,8 +1,8 @@
 import { ArrayBufferTarget, Muxer } from "mp4-muxer";
 
-import { sleep } from "../utils/timing_utils";
+import { sleep } from "src/colorizer/utils/timing_utils";
 
-import CanvasRecorder, { defaultRecordingOptions, RecordingOptions } from "./CanvasRecorder";
+import CanvasRecorder, { defaultRecordingOptions, type RecordingOptions } from "./CanvasRecorder";
 
 // Eslint doesn't recognize the WebCodecs API yet.
 // This line prevents eslint from throwing errors like

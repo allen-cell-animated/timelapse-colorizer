@@ -1,16 +1,15 @@
 import { describe, expect, it } from "vitest";
 
-import { FeatureThreshold, ThresholdType } from "../src/colorizer/types";
+import { LabelType } from "src/colorizer/AnnotationData";
+import { type FeatureThreshold, ThresholdType } from "src/colorizer/types";
 import {
   buildFrameToGlobalIdLookup,
   getIntervals,
   getKeyFromName,
   getLabelTypeFromParsedCsv,
   validateThresholds,
-} from "../src/colorizer/utils/data_utils";
-import { makeMockDataset } from "./test_utils";
-
-import { LabelType } from "../src/colorizer/AnnotationData";
+} from "src/colorizer/utils/data_utils";
+import { makeMockDataset } from "tests/utils";
 
 describe("data_utils", () => {
   describe("getKeyFromName", () => {

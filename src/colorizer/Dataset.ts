@@ -1,29 +1,33 @@
-import { DataTexture, RGBAFormat, RGBAIntegerFormat, Texture, Vector2, Vector3 } from "three";
+import { type DataTexture, RGBAFormat, RGBAIntegerFormat, type Texture, Vector2, Vector3 } from "three";
 
-import { MAX_FEATURE_CATEGORIES } from "../constants";
+import { MAX_FEATURE_CATEGORIES } from "src/colorizer/constants";
+
+import DataCache from "./DataCache";
+import type { IArrayLoader, ITextureImageLoader } from "./loaders/ILoader";
+import ImageFrameLoader from "./loaders/ImageFrameLoader";
+import UrlArrayLoader from "./loaders/UrlArrayLoader";
+import { type IPathResolver, UrlPathResolver } from "./path_resolvers";
+import Track from "./Track";
 import {
-  FeatureArrayType,
+  type FeatureArrayType,
   FeatureDataType,
-  GlobalIdLookupInfo,
+  type GlobalIdLookupInfo,
   LoadErrorMessage,
   LoadTroubleshooting,
-  ReportWarningCallback,
+  type ReportWarningCallback,
 } from "./types";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./utils/analytics";
 import { buildFrameToGlobalIdLookup, formatAsBulletList, getKeyFromName } from "./utils/data_utils";
-import { ManifestFile, ManifestFileMetadata, updateManifestVersion } from "./utils/dataset_utils";
+import { type ManifestFile, type ManifestFileMetadata, updateManifestVersion } from "./utils/dataset_utils";
 import { padCentroidsTo3d } from "./utils/math_utils";
 import { packDataTexture } from "./utils/texture_utils";
 import * as urlUtils from "./utils/url_utils";
 
-import DataCache from "./DataCache";
-import { IArrayLoader, ITextureImageLoader } from "./loaders/ILoader";
-import ImageFrameLoader from "./loaders/ImageFrameLoader";
-import UrlArrayLoader from "./loaders/UrlArrayLoader";
-import Track from "./Track";
-
 export const TRACK_FEATURE_KEY = "_track_";
 export const TIME_FEATURE_KEY = "_time_";
+export const CENTROID_X_FEATURE_KEY = "_centroid_x_";
+export const CENTROID_Y_FEATURE_KEY = "_centroid_y_";
+export const CENTROID_Z_FEATURE_KEY = "_centroid_z_";
 
 export enum FeatureType {
   CONTINUOUS = "continuous",
@@ -56,13 +60,30 @@ type BackdropData = {
   frames: string[];
 };
 
+export type Backdrop3dData = {
+  source: string;
+  name: string;
+  description?: string;
+  channelIndex: number;
+  min?: number;
+  max?: number;
+};
+
 export type Frames3dData = {
   /** Source for 3D data, resolved to http/https URLs. Expected to be a path to an OME-Zarr array.*/
   source: string;
   /** Index of the segmentation channel in the source data. */
   segmentationChannel: number;
   totalFrames: number;
+  backdrops?: Backdrop3dData[];
 };
+
+type OpenOptions = Partial<{
+  manifestLoader: typeof urlUtils.fetchManifestJson;
+  onLoadStart?: () => void;
+  onLoadComplete?: () => void;
+  reportWarning?: ReportWarningCallback;
+}>;
 
 const defaultMetadata: ManifestFileMetadata = {
   frameDims: {
@@ -83,6 +104,7 @@ export default class Dataset {
   private frames: DataCache<number, Texture> | null;
   private frameDimensions: Vector2 | null;
 
+  // TODO: validate frames 3D data
   public frames3d?: Frames3dData;
 
   private segIdsFile?: string;
@@ -129,6 +151,7 @@ export default class Dataset {
   public trackIds?: Uint32Array | null;
   public times?: Uint32Array | null;
   private cachedTracks: Map<number, Track | null>;
+  private maxTrackLength: number | null;
 
   public centroidsFile?: string;
   public centroids?: Uint16Array | null;
@@ -141,6 +164,7 @@ export default class Dataset {
   public baseUrl: string;
   public manifestUrl: string;
   private hasOpened: boolean;
+  private pathResolver: IPathResolver;
 
   /**
    * Constructs a new Dataset using the provided manifest path.
@@ -148,13 +172,17 @@ export default class Dataset {
    * @param frameLoader Optional.
    * @param arrayLoader Optional.
    */
-  constructor(manifestUrl: string, frameLoader?: ITextureImageLoader, arrayLoader?: IArrayLoader) {
+  constructor(
+    manifestUrl: string,
+    options: { frameLoader?: ITextureImageLoader; arrayLoader?: IArrayLoader; pathResolver?: IPathResolver }
+  ) {
     this.manifestUrl = manifestUrl;
+    this.pathResolver = options.pathResolver ?? new UrlPathResolver();
 
     this.baseUrl = urlUtils.formatPath(manifestUrl.substring(0, manifestUrl.lastIndexOf("/")));
     this.hasOpened = false;
 
-    this.frameLoader = frameLoader || new ImageFrameLoader(RGBAIntegerFormat);
+    this.frameLoader = options.frameLoader || new ImageFrameLoader(RGBAIntegerFormat);
     this.frameFiles = [];
     this.frames = null;
     this.backdropFrames = null;
@@ -162,38 +190,36 @@ export default class Dataset {
 
     this.frameToGlobalIdLookup = null;
 
-    this.backdropLoader = frameLoader || new ImageFrameLoader(RGBAFormat);
+    this.backdropLoader = options.frameLoader || new ImageFrameLoader(RGBAFormat);
     this.backdropData = new Map();
 
-    this.cleanupArrayLoaderOnDispose = !arrayLoader;
-    this.arrayLoader = arrayLoader || new UrlArrayLoader();
+    this.cleanupArrayLoaderOnDispose = !options.arrayLoader;
+    this.arrayLoader = options.arrayLoader || new UrlArrayLoader();
     this.features = new Map();
     this.flowFieldFeatures = new Map();
     this.cachedTracks = new Map();
+    this.maxTrackLength = null;
     this.metadata = defaultMetadata;
 
     this.getSegmentationId = this.getSegmentationId.bind(this);
   }
 
-  private resolvePathToUrl = (url: string): string => {
-    if (url.startsWith("http://") || url.startsWith("https://")) {
-      return url;
-    } else if (urlUtils.isAllenPath(url)) {
-      const newUrl = urlUtils.convertAllenPathToHttps(url);
-      if (newUrl) {
-        return newUrl;
-      } else {
-        throw new Error(
-          `Error while resolving path: Allen filepath '${url}' was detected but could not be converted to an HTTPS URL.` +
-            ` This may be because the file is in a directory that is not publicly servable.`
-        );
-      }
-    } else {
-      return `${this.baseUrl}/${url}`;
-    }
+  public get frames2dPaths(): readonly string[] | undefined {
+    return this.frameFiles;
+  }
+
+  private resolveManifestPath = (url: string): string | null => {
+    return this.pathResolver.resolve("", url);
   };
 
-  private parseFeatureType(inputType: string | undefined, defaultType = FeatureType.CONTINUOUS): FeatureType {
+  private resolvePath = (url: string): string | null => {
+    return this.pathResolver.resolve(this.baseUrl, url);
+  };
+
+  private parseFeatureType(
+    inputType: string | undefined,
+    defaultType: FeatureType = FeatureType.CONTINUOUS
+  ): FeatureType {
     const isFeatureType = (inputType: string): inputType is FeatureType => {
       return Object.values(FeatureType).includes(inputType as FeatureType);
     };
@@ -209,7 +235,10 @@ export default class Dataset {
   private async loadFeature(metadata: ManifestFile["features"][number]): Promise<[string, FeatureData]> {
     const name = metadata.name;
     const key = metadata.key || getKeyFromName(name);
-    const url = this.resolvePathToUrl(metadata.data);
+    const url = this.resolvePath(metadata.data);
+    if (!url) {
+      throw new Error(`Failed to resolve URL for feature ${name}: '${metadata.data}'`);
+    }
     const featureType = this.parseFeatureType(metadata.type);
 
     const source = await this.arrayLoader.load(
@@ -251,7 +280,10 @@ export default class Dataset {
     metadata: Required<ManifestFile>["plot3d"]["flowFieldFeatures"][number]
   ): Promise<[string, FlowFieldFeature]> {
     const { key, data, min, max } = metadata;
-    const url = this.resolvePathToUrl(data);
+    const url = this.resolvePath(data);
+    if (!url) {
+      throw new Error(`Failed to resolve URL for flow field feature ${key}: '${data}'`);
+    }
     const source = await this.arrayLoader.load(url, FeatureDataType.F32, min ?? undefined, max ?? undefined);
 
     return [
@@ -386,7 +418,10 @@ export default class Dataset {
       return null;
     }
 
-    const url = this.resolvePathToUrl(fileUrl);
+    const url = this.resolvePath(fileUrl);
+    if (!url) {
+      throw new Error(`Failed to resolve path: '${fileUrl}'`);
+    }
     const source = await this.arrayLoader.load(url, dataType);
     return source.getBuffer();
   }
@@ -424,7 +459,10 @@ export default class Dataset {
       return undefined;
     }
 
-    const fullUrl = this.resolvePathToUrl(this.frameFiles[index]);
+    const fullUrl = this.resolvePath(this.frameFiles[index]);
+    if (!fullUrl) {
+      throw new Error(`Failed to resolve path for frame ${index}: '${this.frameFiles[index]}'`);
+    }
     const loadedFrame = await this.frameLoader.load(fullUrl);
     this.frameDimensions = new Vector2(loadedFrame.image.width, loadedFrame.image.height);
     const frameSizeBytes = loadedFrame.image.width * loadedFrame.image.height * 4;
@@ -462,7 +500,10 @@ export default class Dataset {
       return undefined;
     }
 
-    const fullUrl = this.resolvePathToUrl(frames[index]);
+    const fullUrl = this.resolvePath(frames[index]);
+    if (!fullUrl) {
+      throw new Error(`Failed to resolve path for backdrop '${key}' at index ${index}: '${frames[index]}'`);
+    }
     const loadedFrame = await this.backdropLoader.load(fullUrl);
     this.backdropFrames?.insert(cacheKey, loadedFrame);
     return loadedFrame;
@@ -490,14 +531,14 @@ export default class Dataset {
         unit: "",
         type: FeatureType.DISCRETE,
         categories: null,
-        description: "Track ID of the object. This feature was added by the viewer.",
+        description: "Track ID of the object. This feature was added by the viewer from provided data.",
       });
     }
 
     if (this.times && !this.features.has(TIME_FEATURE_KEY)) {
       const timeData = new Float32Array(this.times);
       this.features.set(TIME_FEATURE_KEY, {
-        name: "Time",
+        name: "Time (frames)",
         key: TIME_FEATURE_KEY,
         data: this.times,
         tex: packDataTexture(timeData, FeatureDataType.F32),
@@ -506,9 +547,117 @@ export default class Dataset {
         unit: "",
         type: FeatureType.CONTINUOUS,
         categories: null,
-        description: "Frame number where the object appears. This feature was added by the viewer.",
+        description: "Frame number where the object appears. This feature was added by the viewer from provided data.",
       });
     }
+  }
+
+  private addCentroidFeatures(): void {
+    const centroidFeatureKeys = [CENTROID_X_FEATURE_KEY, CENTROID_Y_FEATURE_KEY, CENTROID_Z_FEATURE_KEY];
+    const axes = ["X", "Y", "Z"];
+    if (!this.centroids) {
+      return;
+    }
+    // TODO: The handling for centroid scaling is not consistent for 2D and 3D
+    // datasets. Currently, 2D datasets must provide centroids in pixels, while
+    // 3D datasets must provide them in physical units. If both 3D and 2D frame
+    // data is present, centroids would be read as being pixel units, which
+    // cause centroids to be scaled incorrectly in 3D. Add a flag to indicate
+    // whether centroids are in physical or pixel units.
+    const metadataDims = this.metadata.frameDims;
+    const hasMetadataDims = metadataDims && metadataDims.width && metadataDims.height;
+    const physicalDims = hasMetadataDims ? [metadataDims.width, metadataDims.height, 1] : [1, 1, 1];
+    const pixelDims = this.frameDimensions ? [this.frameDimensions.x, this.frameDimensions.y, 1] : physicalDims;
+
+    for (let i = 0; i < centroidFeatureKeys.length; i++) {
+      const key = centroidFeatureKeys[i];
+      if (this.features.has(key)) {
+        continue;
+      }
+
+      let rawData = this.centroids.filter((_, index) => index % 3 === i);
+      if (this.frameDimensions) {
+        // If provided, normalize centroid coordinates to physical units.
+        const physicalDim = physicalDims[i];
+        const pixelDim = pixelDims[i];
+        rawData = rawData.map((value) => (value / pixelDim) * physicalDim);
+      }
+
+      const data = new Float32Array(rawData);
+      const axis = axes[i];
+      const min = 0;
+      const dataMax = data.reduce((max, value) => Math.max(max, value), -Infinity);
+      const max = hasMetadataDims ? physicalDims[i] : dataMax;
+      const tex = packDataTexture(data, FeatureDataType.F32);
+      const description = `Centroid ${axis} coordinate, in pixels/voxels. This feature was added by the viewer from provided data.`;
+      this.features.set(key, {
+        name: "Centroid " + axis,
+        key,
+        data,
+        tex,
+        min,
+        max,
+        unit: metadataDims?.units || "",
+        type: FeatureType.DISCRETE,
+        categories: null,
+        description,
+      });
+    }
+  }
+
+  private resolveAndValidateFrames3d(data: ManifestFile["frames3d"], options: OpenOptions): Frames3dData | undefined {
+    if (!data) {
+      return undefined;
+    }
+    const frameSource = this.resolvePath(data.source);
+    const backdrops: Backdrop3dData[] = [];
+    if (!frameSource) {
+      // This will only happen if using a file path resolver, if this file does
+      // not exist in a ZIP file.
+
+      // TODO: This will fail for Zarrs, which are directories and not files, so
+      // `resolvePath` will return `null`. Even if `resolvePath` did handle
+      // directories, Zarrs index from the directory root, which is provided as
+      // a Object URL. Adding additional paths to the end of an Object URL (e.g.
+      // TCZYX specifiers for zarrs, like `/0/0/0`) does not result in a working
+      // URL. This means there is no way to make the current path resolver work
+      // without overriding `fetch` in dependency libraries (vole-core).
+      throw new Error(
+        `Failed to resolve path for 3D frame source '${data.source}'. ${LoadTroubleshooting.CHECK_ZIP_ZARR_DATA}`
+      );
+    }
+    // Validate backdrops
+    if (data.backdrops) {
+      const failedBackdrops: Backdrop3dData[] = [];
+      for (const backdrop of data.backdrops) {
+        const backdropSource = this.resolvePath(backdrop.source);
+        if (!backdropSource) {
+          failedBackdrops.push({ channelIndex: 0, ...backdrop });
+          continue;
+        }
+        backdrops.push({
+          ...backdrop,
+          channelIndex: backdrop.channelIndex ?? 0,
+          source: backdropSource,
+        });
+      }
+      if (failedBackdrops.length > 0) {
+        options.reportWarning?.(
+          "One or more 3D backdrop sources could not be resolved to files, and will not be shown.",
+          [
+            "The following backdrop source(s) could not be resolved:",
+            ...failedBackdrops.map((b) => `- ${b.source} (${b.name})`),
+            LoadTroubleshooting.CHECK_ZIP_ZARR_DATA,
+          ]
+        );
+      }
+    }
+    return {
+      source: frameSource,
+      segmentationChannel: data.segmentationChannel ?? 0,
+      totalFrames: data.totalFrames ?? 0,
+      backdrops,
+    };
   }
 
   /**
@@ -520,14 +669,7 @@ export default class Dataset {
    * - `reportWarning` Called with a string or array of strings to report warnings to the user. These are non-fatal errors.
    * @returns A Promise that resolves when loading completes.
    */
-  public async open(
-    options: Partial<{
-      manifestLoader: typeof urlUtils.fetchManifestJson;
-      onLoadStart?: () => void;
-      onLoadComplete?: () => void;
-      reportWarning?: ReportWarningCallback;
-    }> = {}
-  ): Promise<void> {
+  public async open(options: OpenOptions = {}): Promise<void> {
     if (this.hasOpened) {
       return;
     }
@@ -539,17 +681,18 @@ export default class Dataset {
 
     const startTime = new Date();
 
-    const manifest = updateManifestVersion(await options.manifestLoader(this.manifestUrl));
+    const resolvedManifestUrl = this.resolveManifestPath(this.manifestUrl);
+    if (resolvedManifestUrl === null) {
+      // TODO: Currently, only the FilePathResolver (used for ZIP files) can
+      // return `null` when resolving paths, which indicates that a file does
+      // not exist. If support for loading from other sources (local folders,
+      // etc.) is added, Dataset will need to store metadata about the source.
+      throw new Error(`No '${this.manifestUrl}' was found. ${LoadTroubleshooting.CHECK_ZIP_FORMAT_MANIFEST}`);
+    }
+    const manifest = updateManifestVersion(await options.manifestLoader(resolvedManifestUrl));
 
     this.frameFiles = manifest.frames;
-    const frames3dSrc = manifest.frames3d;
-    if (frames3dSrc && frames3dSrc.source) {
-      this.frames3d = {
-        source: this.resolvePathToUrl(frames3dSrc.source),
-        segmentationChannel: manifest.frames3d?.segmentationChannel ?? 0,
-        totalFrames: manifest.frames3d?.totalFrames ?? 0,
-      };
-    }
+    this.frames3d = this.resolveAndValidateFrames3d(manifest.frames3d, options);
     this.outlierFile = manifest.outliers;
     this.metadata = { ...defaultMetadata, ...manifest.metadata };
 
@@ -667,8 +810,6 @@ export default class Dataset {
       ]);
     }
 
-    this.addTimeAndTrackFeatures();
-
     // Construct default array of segmentation IDs if not provided in the manifest.
     if (!this.segIds) {
       // Construct default segIds array (0, 1, 2, ...)
@@ -687,6 +828,9 @@ export default class Dataset {
       this.centroids = padCentroidsTo3d(this.centroids, this.numObjects);
     }
 
+    this.addCentroidFeatures();
+    this.addTimeAndTrackFeatures();
+
     // Analytics reporting
     triggerAnalyticsEvent(AnalyticsEvent.DATASET_LOAD, {
       datasetWriterVersion: this.metadata.writerVersion || "N/A",
@@ -699,16 +843,35 @@ export default class Dataset {
     // TODO: Pre-process feature data to handle outlier values by interpolating between known good values (#21)
   }
 
-  /** Frees the GPU resources held by this dataset */
+  /**
+   * Frees the GPU resources held by this dataset, and marks internal data
+   * structures for garbage collection.
+   */
   public dispose(): void {
-    Object.values(this.features).forEach(({ tex }) => tex.dispose());
     this.frames?.dispose();
     this.backdropFrames?.dispose();
     // Cleanup array loader if it was created in the constructor
     if (this.cleanupArrayLoaderOnDispose) {
       this.arrayLoader.dispose();
     }
+    this.features.forEach((feature) => {
+      feature.data = new Float32Array(0);
+      feature.tex.dispose();
+    });
+    this.features.clear();
     this.cachedTracks.clear();
+    this.frameToGlobalIdLookup?.clear();
+    this.bounds = null;
+    this.centroids = null;
+    this.outliers = null;
+    this.segIds = null;
+    this.times = null;
+    this.trackIds = null;
+    this.backdropData.clear();
+    this.frameFiles = undefined;
+    this.backdropFrames = null;
+    this.frames = null;
+    this.frames3d = undefined;
   }
 
   /** get frame index of a given cell id */
@@ -794,6 +957,34 @@ export default class Dataset {
     }
     this.cachedTracks.set(trackId, track);
     return track;
+  }
+
+  /**
+   * Gets the maximum duration of any track in the dataset.
+   */
+  public getMaxTrackLength(): number {
+    if (this.maxTrackLength !== null) {
+      return this.maxTrackLength;
+    }
+    const trackToMinMaxTime: Map<number, [number, number]> = new Map();
+    if (this.trackIds && this.times) {
+      for (let i = 0; i < this.trackIds.length; i++) {
+        const time = this.times[i];
+        const trackId = this.trackIds[i];
+        if (!trackToMinMaxTime.has(trackId)) {
+          trackToMinMaxTime.set(trackId, [time, time]);
+        } else {
+          const [minTime, maxTime] = trackToMinMaxTime.get(trackId)!;
+          trackToMinMaxTime.set(trackId, [Math.min(minTime, time), Math.max(maxTime, time)]);
+        }
+      }
+    }
+    let maxLength = 0;
+    for (const [minTime, maxTime] of trackToMinMaxTime.values()) {
+      maxLength = Math.max(maxLength, maxTime - minTime + 1);
+    }
+    this.maxTrackLength = maxLength;
+    return maxLength;
   }
 
   /*

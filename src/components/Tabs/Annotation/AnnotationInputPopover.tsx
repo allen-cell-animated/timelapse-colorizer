@@ -1,14 +1,14 @@
 import { DeleteOutlined } from "@ant-design/icons";
 import { AutoComplete, Card } from "antd";
-import React, { ReactElement, useCallback, useContext, useEffect, useRef, useState } from "react";
+import React, { type ReactElement, useContext, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 
-import { AnnotationState } from "../../../colorizer/utils/react_utils";
-import { FlexColumn, FlexRow } from "../../../styles/utils";
-
-import { LabelType } from "../../../colorizer/AnnotationData";
-import { AppThemeContext } from "../../AppStyle";
-import IconButton from "../../IconButton";
+import { LabelType } from "src/colorizer/AnnotationData";
+import IconButton from "src/components/Buttons/IconButton";
+import type { AnnotationState } from "src/hooks";
+import { useViewerStateStore } from "src/state";
+import { AppThemeContext } from "src/styles/AppStyle";
+import { FlexColumn, FlexRow } from "src/styles/utils";
 
 type AnnotationInputPopoverProps = {
   annotationState: AnnotationState;
@@ -38,6 +38,8 @@ const StyledCard = styled(Card)`
 
 export default function AnnotationInputPopover(props: AnnotationInputPopoverProps): ReactElement {
   const theme = useContext(AppThemeContext);
+  const dataset = useViewerStateStore((state) => state.dataset);
+  const datasetKey = useViewerStateStore((state) => state.datasetKey);
 
   const {
     lastClickedId,
@@ -51,10 +53,10 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
   } = props.annotationState;
 
   const [inputValue, setInputValue] = useState("");
-  const anchorRef = React.useRef<HTMLDivElement>(null);
-  const inputContainerRef = React.useRef<HTMLDivElement>(null);
+  const anchorRef = useRef<HTMLDivElement>(null);
+  const inputContainerRef = useRef<HTMLDivElement>(null);
 
-  const originalValueRef = React.useRef<string | null>(null);
+  const originalValueRef = useRef<string | null>(null);
   const lastActiveEditRangeRef = useRef(props.annotationState.activeEditRange);
   const lastLabelIdxRef = useRef(props.annotationState.currentLabelIdx);
   const lastLabelCountRef = useRef(props.annotationState.data.getLabels().length);
@@ -67,11 +69,14 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
     isAnnotationModeEnabled && activeEditRange !== null && lastClickedId !== null && currentLabelIdx !== null;
 
   const saveInputValue = (labelIdx: number, range: number[]): void => {
+    if (datasetKey === null || dataset === null) {
+      return;
+    }
     const newValue = inputValue.trim();
     if (newValue.length === 0) {
-      props.annotationState.removeLabelOnIds(labelIdx, range);
+      props.annotationState.removeLabelOnIds(datasetKey, labelIdx, range);
     } else {
-      props.annotationState.setLabelValueOnIds(labelIdx, range, newValue);
+      props.annotationState.setLabelValueOnIds(datasetKey, dataset, labelIdx, range, newValue);
     }
   };
 
@@ -95,13 +100,16 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
       }
       lastActiveEditRangeRef.current = activeEditRange;
     }
-    if (currentLabelIdx !== null && lastClickedId !== null) {
-      const value = annotationData.getValueFromId(currentLabelIdx, lastClickedId) ?? "";
+    if (currentLabelIdx !== null && datasetKey !== null && lastClickedId !== null) {
+      const value = annotationData.getValueFromId(datasetKey, currentLabelIdx, lastClickedId) ?? "";
       setInputValue(value);
       originalValueRef.current = value;
       // Update the autocomplete options only when editing starts.
-      const labelData = annotationData.getLabels()[currentLabelIdx];
-      originalOptionsRef.current = Array.from(labelData.valueToIds.keys()).map((value) => ({ value, label: value }));
+      const labelIdData = annotationData.getLabels()[currentLabelIdx].datasetToIdData.get(datasetKey);
+      originalOptionsRef.current = Array.from(labelIdData?.valueToIds.keys() ?? []).map((value) => ({
+        value,
+        label: value,
+      }));
     }
     lastLabelIdxRef.current = currentLabelIdx;
     lastLabelCountRef.current = annotationData.getLabels().length;
@@ -124,7 +132,7 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
 
   const handleInputChange = (value: string): void => {
     // Editing the input value directly updates the label value in the annotation state.
-    if (currentLabelIdx === null || activeEditRange === null) {
+    if (currentLabelIdx === null || datasetKey === null || dataset === null || activeEditRange === null) {
       return;
     }
     // Validate input based on label type.
@@ -138,25 +146,31 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
       }
     }
     setInputValue(value);
-    props.annotationState.setLabelValueOnIds(currentLabelIdx, activeEditRange, value);
+    props.annotationState.setLabelValueOnIds(datasetKey, dataset, currentLabelIdx, activeEditRange, value);
   };
 
   const handleDelete = (): void => {
-    if (currentLabelIdx !== null && activeEditRange !== null) {
-      props.annotationState.removeLabelOnIds(currentLabelIdx, activeEditRange);
+    if (currentLabelIdx !== null && datasetKey !== null && activeEditRange !== null) {
+      props.annotationState.removeLabelOnIds(datasetKey, currentLabelIdx, activeEditRange);
     }
     setInputValue("");
     clearActiveEditRange();
   };
 
   // Reset to original value and close the popover when escape is pressed.
-  const handleEscape = useCallback((): void => {
-    if (originalValueRef.current !== null && hasValidData) {
+  const handleEscape = (): void => {
+    if (originalValueRef.current !== null && datasetKey !== null && dataset !== null && hasValidData) {
       setInputValue(originalValueRef.current);
-      props.annotationState.setLabelValueOnIds(currentLabelIdx, activeEditRange, originalValueRef.current);
+      props.annotationState.setLabelValueOnIds(
+        datasetKey,
+        dataset,
+        currentLabelIdx,
+        activeEditRange,
+        originalValueRef.current
+      );
     }
     clearActiveEditRange();
-  }, [hasValidData]);
+  };
 
   const handleKeyInput: React.KeyboardEventHandler = (e): void => {
     if (currentLabelIdx === null || activeEditRange === null) {

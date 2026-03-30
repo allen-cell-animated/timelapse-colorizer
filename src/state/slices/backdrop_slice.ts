@@ -1,4 +1,4 @@
-import { StateCreator } from "zustand";
+import type { StateCreator } from "zustand";
 
 import {
   decodeBoolean,
@@ -6,7 +6,7 @@ import {
   encodeMaybeBoolean,
   encodeMaybeNumber,
   UrlParam,
-} from "../../colorizer/utils/url_utils";
+} from "src/colorizer/utils/url_utils";
 import {
   BACKDROP_BRIGHTNESS_DEFAULT,
   BACKDROP_BRIGHTNESS_MAX,
@@ -17,10 +17,11 @@ import {
   BACKDROP_SATURATION_DEFAULT,
   BACKDROP_SATURATION_MAX,
   BACKDROP_SATURATION_MIN,
-} from "../../constants";
-import { SerializedStoreData, SubscribableStore } from "../types";
-import { clampWithNanCheck } from "../utils/data_validation";
-import { DatasetSlice } from "./dataset_slice";
+} from "src/constants";
+import type { SerializedStoreData, SubscribableStore } from "src/state/types";
+import { clampWithNanCheck } from "src/state/utils/data_validation";
+
+import type { DatasetSlice } from "./dataset_slice";
 
 export type BackdropSliceState = {
   backdropVisible: boolean;

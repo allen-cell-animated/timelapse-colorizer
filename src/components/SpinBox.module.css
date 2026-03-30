@@ -1,5 +1,5 @@
 .spinBox {
-  composes: nospinner from "../styles/utils.module.css";
+  composes: nospinner from "src/styles/utils.module.css";
   --border-width: 1px;
   --border-radius: 6px;
 

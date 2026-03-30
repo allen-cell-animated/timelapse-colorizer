@@ -1,8 +1,8 @@
-import { Button, ButtonProps } from "antd";
-import React, { PropsWithChildren, ReactElement } from "react";
+import { Button, type ButtonProps } from "antd";
+import React, { type PropsWithChildren, type ReactElement } from "react";
 import styled from "styled-components";
 
-import { FlexRowAlignCenter } from "../../styles/utils";
+import { FlexRowAlignCenter } from "src/styles/utils";
 
 const StyledButton = styled(Button)`
   padding: 0 8px;
