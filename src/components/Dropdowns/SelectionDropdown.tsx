@@ -229,40 +229,42 @@ export default function SelectionDropdown(inputProps: React.PropsWithChildren<Se
         </label>
       )}
       <StyledSelect
-        aria-labelledby={labelId}
-        inputId={selectId}
-        classNamePrefix="react-select"
-        isMulti={false}
-        placeholder=""
         type={props.buttonType ?? "outlined"}
-        value={pendingValue ?? selectedOption}
-        components={{ Option, Control }}
-        options={filteredItems}
-        isDisabled={props.disabled}
-        isClearable={false}
-        isSearchable={props.isSearchable}
-        creatable={props.isCreatable}
-        isValidNewOption={props.isValidNewOption}
-        isLoading={pendingValue !== null}
-        onChange={(value) => {
-          if (value && value.value) {
-            setPendingValue(value);
-            Promise.allSettled([props.onChange(value.value)]).finally(() => {
-              setPendingValue(null);
-            });
-          }
-          startTransition(() => {
-            setSearchInput("");
-          });
-        }}
-        onInputChange={(input) => {
-          startTransition(() => {
-            setSearchInput(input);
-          });
-        }}
         controlWidth={props.controlWidth}
         menuWidth={props.menuWidth}
-        styles={props.selectStyles}
+        creatable={props.isCreatable}
+        selectProps={{
+          "aria-labelledby": labelId,
+          inputId: selectId,
+          classNamePrefix: "react-select",
+          isMulti: false,
+          placeholder: "",
+          value: pendingValue ?? selectedOption,
+          components: { Option, Control },
+          options: filteredItems,
+          isDisabled: props.disabled,
+          isClearable: false,
+          isSearchable: props.isSearchable,
+          isValidNewOption: props.isValidNewOption,
+          isLoading: pendingValue !== null,
+          onChange: (value) => {
+            if (value && value.value) {
+              setPendingValue(value);
+              Promise.allSettled([props.onChange(value.value)]).finally(() => {
+                setPendingValue(null);
+              });
+            }
+            startTransition(() => {
+              setSearchInput("");
+            });
+          },
+          onInputChange: (input) => {
+            startTransition(() => {
+              setSearchInput(input);
+            });
+          },
+          styles: props.selectStyles,
+        }}
       />
       {props.children}
     </FlexRowAlignCenter>
