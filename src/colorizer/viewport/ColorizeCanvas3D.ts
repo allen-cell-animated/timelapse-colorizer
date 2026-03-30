@@ -26,12 +26,13 @@ import {
   type FrameLoadResult,
   type FrameVectorData,
   type PixelIdInfo,
+  SelectionOutlineColorMode,
 } from "src/colorizer/types";
 import { getRelativeToAbsoluteChannelIndexMap, getVolumeSources } from "src/colorizer/utils/channels";
 import { bucketVectorDataByTime, getGlobalIdFromSegId, hasPropertyChanged } from "src/colorizer/utils/data_utils";
 import { packDataTexture } from "src/colorizer/utils/texture_utils";
 import TrackPath3D from "src/colorizer/viewport/tracks/TrackPath3D";
-import { getTrackPathColor, reassignTrackPaths, shouldUsePerTrackPathColors } from "src/colorizer/viewport/utils";
+import { getTrackPathColor, reassignTrackPaths } from "src/colorizer/viewport/utils";
 
 import type { IInnerRenderCanvas } from "./IInnerRenderCanvas";
 import { getPixelRatio } from "./overlays";
@@ -191,7 +192,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     if (dataset !== null && featureKey !== null) {
       const featureData = dataset.getFeatureData(featureKey);
       if (featureData) {
-        const useOutlinePalette = shouldUsePerTrackPathColors(this.params);
+        const useOutlinePalette = this.params.outlineColorMode === SelectionOutlineColorMode.USE_PALETTE;
         const isCategorical = dataset.isFeatureCategorical(featureKey);
         const ramp = isCategorical ? this.params.categoricalPaletteRamp : this.params.colorRamp;
         const range = isCategorical ? [0, MAX_FEATURE_CATEGORIES - 1] : this.params.colorRampRange;
