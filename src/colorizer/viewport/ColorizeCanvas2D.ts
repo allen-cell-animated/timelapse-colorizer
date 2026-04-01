@@ -116,15 +116,25 @@ type ColorizeUniformTypes = {
 type ColorizeUniforms = { [K in keyof ColorizeUniformTypes]: Uniform<ColorizeUniformTypes[K]> };
 
 const getDefaultUniforms = (): ColorizeUniforms => {
-  const emptyBackdrop = new DataTexture(new Uint8Array([1, 0, 0, 0]), 1, 1, RGBAFormat, UnsignedByteType);
+  const emptyBackdrop = new DataTexture(new Float32Array([1, 0, 0, 0]), 1, 1, RGBAFormat, FloatType);
+  emptyBackdrop.internalFormat = "RGBA32F";
+  emptyBackdrop.needsUpdate = true;
+
   const emptyFrame = new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAIntegerFormat, UnsignedByteType);
   emptyFrame.internalFormat = "RGBA8UI";
   emptyFrame.needsUpdate = true;
+
   const emptyFramePoints = new DataTexture(new Float32Array([0, 0, 0, 0]), 1, 1, RGBAFormat, FloatType);
   emptyFramePoints.internalFormat = "RGBA32F";
   emptyFramePoints.needsUpdate = true;
-  const emptyOverlay = new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAFormat, UnsignedByteType);
-  const emptySegIdToGlobalId = new DataTexture(new Uint8Array([0]), 1, 1, RGBAFormat, UnsignedByteType);
+
+  const emptyOverlay = new DataTexture(new Float32Array([0, 0, 0, 0]), 1, 1, RGBAFormat, FloatType);
+  emptyOverlay.internalFormat = "RGBA32F";
+  emptyOverlay.needsUpdate = true;
+
+  const emptySegIdToGlobalId = new DataTexture(new Uint8Array([0]), 1, 1, RGBAIntegerFormat, UnsignedByteType);
+  emptySegIdToGlobalId.internalFormat = "R8UI";
+  emptySegIdToGlobalId.needsUpdate = true;
 
   const emptyFeature = packDataTexture([0], FeatureDataType.F32);
   const emptyOutliers = packDataTexture([0], FeatureDataType.U8);
@@ -769,7 +779,7 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
 
     const frameTex = this.pointRenderer.renderFrame(index);
     if (frameTex) {
-      console.log("Rendered point data for frame " + index);
+      console.log("Rendered point data for frame " + index, frameTex);
       this.setUniform("framePoints", frameTex);
     }
 
