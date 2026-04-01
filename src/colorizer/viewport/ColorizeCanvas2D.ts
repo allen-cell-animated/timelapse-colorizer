@@ -1,6 +1,7 @@
 import {
   Color,
   DataTexture,
+  FloatType,
   GLSL3,
   Matrix4,
   Mesh,
@@ -77,6 +78,7 @@ type ColorizeUniformTypes = {
   panOffset: Vector2;
   /** Image, mapping each pixel to an object ID using the RGBA values. */
   frame: Texture;
+  framePoints: Texture;
   objectOpacity: number;
   /** The feature value of each object ID. */
   featureData: Texture;
@@ -118,6 +120,9 @@ const getDefaultUniforms = (): ColorizeUniforms => {
   const emptyFrame = new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAIntegerFormat, UnsignedByteType);
   emptyFrame.internalFormat = "RGBA8UI";
   emptyFrame.needsUpdate = true;
+  const emptyFramePoints = new DataTexture(new Float32Array([0, 0, 0, 0]), 1, 1, RGBAFormat, FloatType);
+  emptyFramePoints.internalFormat = "RGBA32F";
+  emptyFramePoints.needsUpdate = true;
   const emptyOverlay = new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAFormat, UnsignedByteType);
   const emptySegIdToGlobalId = new DataTexture(new Uint8Array([0]), 1, 1, RGBAFormat, UnsignedByteType);
 
@@ -131,6 +136,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
     canvasToFrameScale: new Uniform(new Vector2(1, 1)),
     canvasSizePx: new Uniform(new Vector2(1, 1)),
     frame: new Uniform(emptyFrame),
+    framePoints: new Uniform(emptyFramePoints),
     featureData: new Uniform(emptyFeature),
     outlierData: new Uniform(emptyOutliers),
     inRangeIds: new Uniform(emptyInRangeIds),
@@ -762,10 +768,9 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     }
 
     const frameTex = this.pointRenderer.renderFrame(index);
-    console.log("point", frameTex);
     if (frameTex) {
       console.log("Rendered point data for frame " + index);
-      this.setUniform("frame", frameTex);
+      this.setUniform("framePoints", frameTex);
     }
 
     // Force rescale in case frame dimensions changed

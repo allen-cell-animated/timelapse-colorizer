@@ -2,6 +2,7 @@ precision highp usampler2D;
 precision highp int;
 
 uniform usampler2D frame;
+uniform sampler2D framePoints;
 uniform sampler2D featureData;
 uniform usampler2D outlierData;
 /** A mapping of IDs that are in range after feature thresholding/filtering is applied. If
@@ -211,7 +212,7 @@ bool isOutsideBounds(vec2 sUv) {
 
 vec4 getBackdropColor(vec2 sUv) {
   if (isOutsideBounds(sUv)) {
-    return TRANSPARENT;
+    return vec4(canvasBackgroundColor, 1.0);
   }
   vec4 backdropColor = texture(backdrop, sUv).rgba;
   vec3 backdropHsv = rgbToHsv(backdropColor.rgb);
@@ -312,8 +313,11 @@ void main() {
   // Overlays for timestamp/scale bar
   vec4 overlayColor = texture(overlay, vUv).rgba;  // Unscaled UVs, because it is sized to the canvas
 
+  vec4 pointTextureColor = texture(framePoints, sUv);
+
   gOutputColor = vec4(backgroundColor, 1.0);
   gOutputColor = alphaBlend(backdropColor, gOutputColor);
-  gOutputColor = alphaBlend(mainColor, gOutputColor);
+  // gOutputColor = alphaBlend(mainColor, gOutputColor);
+  gOutputColor = alphaBlend(pointTextureColor, gOutputColor);
   gOutputColor = alphaBlend(overlayColor, gOutputColor);
 }

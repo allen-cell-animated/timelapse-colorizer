@@ -1,11 +1,15 @@
 import {
-  Color,
+  FloatType,
   InstancedMesh,
   Matrix4,
+  NearestFilter,
   OrthographicCamera,
   PlaneGeometry,
+  RGBAFormat,
+  RGBAIntegerFormat,
   Scene,
   Texture,
+  UnsignedByteType,
   Vector3,
   WebGLRenderer,
   WebGLRenderTarget,
@@ -15,6 +19,7 @@ import Dataset from "src/colorizer/Dataset";
 import { hasPropertyChanged } from "src/colorizer/utils/data_utils";
 import PointMaterial from "src/colorizer/viewport/points/PointMaterial";
 import { PointRendererParams } from "src/colorizer/viewport/points/types";
+import { getColorForId } from "src/colorizer/viewport/points/utils";
 
 const DEFAULT_INSTANCE_COUNT = 256;
 
@@ -45,7 +50,16 @@ class PointRenderer2D {
     this.scene.add(this.pointsMesh);
 
     this.camera = new OrthographicCamera();
-    this.renderTarget = new WebGLRenderTarget(1, 1);
+    // TODO: Three does NOT support rendering to integer render targets. Change
+    // this to a float.
+    this.renderTarget = new WebGLRenderTarget(2, 2, {
+      format: RGBAFormat,
+      type: FloatType,
+      internalFormat: "RGBA32F",
+      generateMipmaps: false,
+      minFilter: NearestFilter,
+      magFilter: NearestFilter,
+    });
 
     this.renderer = new WebGLRenderer({ antialias: false });
     this.renderer.setSize(1, 1);
@@ -71,6 +85,7 @@ class PointRenderer2D {
 
   public setParams(params: PointRendererParams, prevParams: PointRendererParams | null): boolean {
     let needsRender = false;
+    this.params = params;
     if (hasPropertyChanged(params, prevParams, ["dataset"])) {
       if (params.dataset) {
         this.timeToIds = this.computeTimeToIds(params.dataset);
@@ -114,7 +129,7 @@ class PointRenderer2D {
         );
       }
       // Placeholder: calculate colors based on ID later
-      this.pointsMesh.setColorAt(i, new Color("#ffffff"));
+      this.pointsMesh.setColorAt(i, getColorForId(objectId));
     }
   }
 
@@ -146,12 +161,17 @@ class PointRenderer2D {
     this.camera.bottom = -height / 2;
     this.camera.position.set(width / 2, height / 2, -1);
     this.camera.lookAt(width / 2, height / 2, 0);
+    this.camera.near = 0.1;
+    this.camera.far = 1000;
     this.camera.updateProjectionMatrix();
 
     this.renderer.render(this.scene, this.camera);
-    // this.renderer.setRenderTarget(null);
+
+    this.renderer.autoClear = true;
+    this.renderer.setRenderTarget(null);
 
     this.lastRenderedFrame = frame;
+    console.log("render target", this.renderTarget.texture);
     return this.renderTarget.texture;
   }
 
