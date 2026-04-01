@@ -124,7 +124,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
   emptyFrame.internalFormat = "RGBA8UI";
   emptyFrame.needsUpdate = true;
 
-  const emptyFramePoints = new DataTexture(new Float32Array([0, 0, 0, 0]), 1, 1, RGBAFormat, FloatType);
+  const emptyFramePoints = new DataTexture(new Float32Array([1, 0, 1, 0]), 1, 1, RGBAFormat, FloatType);
   emptyFramePoints.internalFormat = "RGBA32F";
   emptyFramePoints.needsUpdate = true;
 
@@ -777,7 +777,7 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
       this.setUniform("frame", emptyFrame);
     }
 
-    const frameTex = this.pointRenderer.renderFrame(index);
+    const frameTex = this.pointRenderer.renderFrame(this.renderer, index);
     if (frameTex) {
       console.log("Rendered point data for frame " + index, frameTex);
       this.setUniform("framePoints", frameTex);

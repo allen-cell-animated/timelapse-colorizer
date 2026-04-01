@@ -12,5 +12,5 @@ void main() {
         discard;
     }
     // gOutputColor = uvec4(color * 255.0, 255);
-    gOutputColor = vec4(5.0 / 255.0, 0.0, 0.0, 1.0);
+    gOutputColor = vec4(1.0, 0.0, 0.0, 1.0);
 }
