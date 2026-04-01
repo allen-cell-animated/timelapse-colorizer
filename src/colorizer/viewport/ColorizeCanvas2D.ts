@@ -45,6 +45,7 @@ import { getGlobalIdFromSegId, hasPropertyChanged } from "src/colorizer/utils/da
 import { convertCanvasOffsetPxToFrameCoords, getFrameSizeInScreenPx } from "src/colorizer/utils/math_utils";
 import { packDataTexture } from "src/colorizer/utils/texture_utils";
 import VectorField from "src/colorizer/VectorField";
+import PointRenderer2D from "src/colorizer/viewport/points/PointRenderer2D";
 import {
   type Canvas2DScaleInfo,
   CanvasType,
@@ -169,6 +170,7 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
 
   private vectorField: VectorField;
   private trackPaths: Map<number, TrackPath2D> = new Map();
+  private pointRenderer: PointRenderer2D;
 
   private savedScaleInfo: Canvas2DScaleInfo;
   private lastFrameLoadResult: FrameLoadResult | null;
@@ -233,6 +235,8 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     this.scene.add(this.vectorField.sceneObject);
 
     this.trackPaths = new Map<number, TrackPath2D>();
+
+    this.pointRenderer = new PointRenderer2D();
 
     this.pickScene = new Scene();
     this.pickScene.add(this.pickMesh);
@@ -611,6 +615,11 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     // Update track path data
     this.updateTrackPaths(prevParams, params);
 
+    this.pointRenderer.setParams(
+      { dataset: params.dataset, pointRadiusPx: 5 },
+      { dataset: prevParams?.dataset ?? null, pointRadiusPx: 5 }
+    );
+
     // Update vector data
     if (hasPropertyChanged(params, prevParams, ["vectorVisible", "vectorColor", "vectorScaleFactor"])) {
       this.vectorField.setConfig({
@@ -750,6 +759,13 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
       emptyFrame.internalFormat = "RGBA8UI";
       emptyFrame.needsUpdate = true;
       this.setUniform("frame", emptyFrame);
+    }
+
+    const frameTex = this.pointRenderer.renderFrame(index);
+    console.log("point", frameTex);
+    if (frameTex) {
+      console.log("Rendered point data for frame " + index);
+      this.setUniform("frame", frameTex);
     }
 
     // Force rescale in case frame dimensions changed
