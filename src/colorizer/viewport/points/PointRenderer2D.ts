@@ -49,11 +49,7 @@ class PointRenderer2D {
     const pointMaterial = new PointMaterial();
     this.pointsMesh = new InstancedMesh(planeGeometry, pointMaterial, DEFAULT_INSTANCE_COUNT);
     this.pointsMesh.position.set(0, 0, 0);
-    // this.scene.add(this.pointsMesh);
-    const ballGeometry = new SphereGeometry(0.5, 8, 8);
-    const ballMaterial = new MeshBasicMaterial({ color: "green" });
-    const ballMesh = new Mesh(ballGeometry, ballMaterial);
-    // this.scene.add(ballMesh);
+    this.scene.add(this.pointsMesh);
 
     this.camera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
     // TODO: Three does NOT support rendering to integer render targets. Change
@@ -127,10 +123,11 @@ class PointRenderer2D {
       const centroid = dataset.getCentroid(objectId);
       const matrix = new Object3D();
       if (centroid) {
-        const [x, y] = centroid;
-        matrix.scale.copy(new Vector3(pointRadius, pointRadius, 1));
+        const x = centroid[0];
+        const y = dataset.frameResolution.y - centroid[1];
+        matrix.scale.set(pointRadius, pointRadius, 1);
         matrix.position.set(x, y, 0);
-        matrix.lookAt(0, 0, 1);
+        matrix.lookAt(x, y, 1);
         matrix.updateMatrix();
 
         this.pointsMesh.setMatrixAt(i, matrix.matrix);
@@ -144,6 +141,7 @@ class PointRenderer2D {
   public renderFrame(renderer: WebGLRenderer, frame: number): Texture | undefined {
     // Return cached texture if already rendered
     if (this.lastRenderedFrame === frame) {
+      console.log("Skipping render for frame " + frame + " because it is already rendered");
       return this.renderTarget.texture;
     }
     const dataset = this.params?.dataset;
@@ -159,21 +157,20 @@ class PointRenderer2D {
       this.pointsMesh.count = 0;
     }
     this.renderTarget.setSize(width, height);
-    // renderer.setClearColor("#ff0000", 1);
+    renderer.setClearColor("#000000", 0);
     renderer.setRenderTarget(this.renderTarget);
     renderer.clear();
 
     // TODO: Configure camera?
-    // this.camera.left = -width / 2;
-    // this.camera.right = width / 2;
-    // this.camera.top = height / 2;
-    // this.camera.bottom = -height / 2;
-    // this.camera.position.set(width / 2, height / 2, 1);
-    // this.camera.lookAt(width / 2, height / 2, 0);
-    // this.camera.near = 0.1;
-    // this.camera.far = 1000;
-    // this.camera.updateProjectionMatrix();
-    // this.scene.background = new Color("#00ffff");
+    this.camera.left = -width / 2;
+    this.camera.right = width / 2;
+    this.camera.top = height / 2;
+    this.camera.bottom = -height / 2;
+    this.camera.position.set(width / 2, height / 2, 1);
+    this.camera.lookAt(width / 2, height / 2, 0);
+    this.camera.near = 0;
+    this.camera.far = 1000;
+    this.camera.updateProjectionMatrix();
 
     renderer.render(this.scene, this.camera);
 
@@ -181,7 +178,6 @@ class PointRenderer2D {
     renderer.setRenderTarget(null);
 
     this.lastRenderedFrame = frame;
-    console.log("render target", this.renderTarget.texture);
     return this.renderTarget.texture;
   }
 

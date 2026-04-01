@@ -316,7 +316,6 @@ void main() {
   vec4 pointTextureColor = vec4(1.0, 0.0, 0.0, 0.0);
   if (!isOutsideBounds(sUv)) {
     pointTextureColor = texture(framePoints, sUv).rgba;
-    pointTextureColor.a = 0.25;
   }
 
   gOutputColor = vec4(backgroundColor, 1.0);
