@@ -632,8 +632,8 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     this.updateTrackPaths(prevParams, params);
 
     this.pointRenderer.setParams(
-      { dataset: params.dataset, pointRadiusPx: 8 },
-      { dataset: prevParams?.dataset ?? null, pointRadiusPx: 8 }
+      { dataset: params.dataset, pointRadiusPx: 12 },
+      { dataset: prevParams?.dataset ?? null, pointRadiusPx: 12 }
     );
 
     // Update vector data
@@ -779,7 +779,6 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
 
     const frameTex = this.pointRenderer.renderFrame(this.renderer, index);
     if (frameTex) {
-      console.log("Rendered point data for frame " + index, frameTex);
       frameTex.needsUpdate = true;
       this.setUniform("framePoints", frameTex);
     }

@@ -11,6 +11,6 @@ void main() {
     if (dist > 0.5) {
         discard;
     }
-    // gOutputColor = uvec4(color, 1);
-    gOutputColor = vec4(1.0, 0.0, 0.0, 1.0);
+    gOutputColor = vec4(color, 1);
+    // gOutputColor = vec4(1.0, 0.0, 0.0, 1.0);
 }

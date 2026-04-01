@@ -135,7 +135,8 @@ class PointRenderer2D {
       // Placeholder: calculate colors based on ID later
       this.pointsMesh.setColorAt(i, getColorForId(objectId));
     }
-    console.log("Updated points mesh with " + ids.length + " points");
+    this.pointsMesh.instanceMatrix.needsUpdate = true;
+    this.pointsMesh.instanceColor!.needsUpdate = true;
   }
 
   public renderFrame(renderer: WebGLRenderer, frame: number): Texture | undefined {
