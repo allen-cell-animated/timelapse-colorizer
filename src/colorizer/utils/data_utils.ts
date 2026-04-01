@@ -1,6 +1,12 @@
 import type { Color } from "three";
 
-import { BOOLEAN_VALUE_FALSE, BOOLEAN_VALUE_TRUE, type LabelData, LabelType } from "src/colorizer/AnnotationData";
+import {
+  BOOLEAN_VALUE_FALSE,
+  BOOLEAN_VALUE_TRUE,
+  type LabelData,
+  type LabelIdData,
+  LabelType,
+} from "src/colorizer/AnnotationData";
 import ColorRamp, { ColorRampType } from "src/colorizer/ColorRamp";
 import type { ColorRampData } from "src/colorizer/colors/color_ramps";
 import { MAX_FEATURE_CATEGORIES } from "src/colorizer/constants";
@@ -272,6 +278,28 @@ export function getIntervals(values: number[]): [number, number][] {
   return intervals;
 }
 
+/**
+ * Checks if any value in a dependency array has changed. Note that shallow
+ * comparison is used (e.g. `Object.is` for each element).
+ */
+export function hasAnyValueChanged<T extends Array<unknown>>(curr: T | null, prev: T | null): boolean {
+  if (curr === null && prev === null) {
+    return false;
+  } else if (curr === null || prev === null) {
+    return true;
+  }
+  if (curr.length !== prev.length) {
+    return true;
+  }
+  for (let i = 0; i < curr.length; i++) {
+    // Shallow/ref comparison only
+    if (!Object.is(curr[i], prev[i])) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export function hasPropertyChanged<T extends Record<string, unknown>>(
   curr: T | null,
   prev: T | null,
@@ -415,16 +443,33 @@ export function getLabelTypeFromParsedCsv(
   return labelTypeMap;
 }
 
-export function cloneLabel(label: LabelData): LabelData {
+function cloneLabelIdData(labelIdData: LabelIdData): LabelIdData {
+  const valueToIds = new Map<string, Set<number>>();
+  for (const [value, ids] of labelIdData.valueToIds.entries()) {
+    valueToIds.set(value, new Set(ids));
+  }
+  return {
+    ids: new Set(labelIdData.ids),
+    valueToIds,
+    idToValue: new Map(labelIdData.idToValue),
+  };
+}
+
+export function cloneLabelData(label: LabelData): LabelData {
+  const datasetToIdData = label.datasetToIdData;
+  const newDatasetToIdData = new Map<string, LabelIdData>();
+
+  for (const [datasetKey, labelIdData] of datasetToIdData.entries()) {
+    newDatasetToIdData.set(datasetKey, cloneLabelIdData(labelIdData));
+  }
+
   return {
     options: {
       ...label.options,
       color: label.options.color.clone(),
     },
-    ids: new Set(label.ids),
     lastValue: label.lastValue,
-    valueToIds: new Map(label.valueToIds),
-    idToValue: new Map(label.idToValue),
+    datasetToIdData: newDatasetToIdData,
   };
 }
 

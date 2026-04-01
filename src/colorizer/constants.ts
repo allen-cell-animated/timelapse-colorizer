@@ -56,3 +56,4 @@ export const CSV_COL_TIME_WITH_UNITS = "Time (frames)";
 export const CSV_COL_TRACK = "Track";
 export const CSV_COL_FILTERED = "Filtered";
 export const CSV_COL_OUTLIER = "Outlier";
+export const CSV_COL_DATASET = "Dataset";

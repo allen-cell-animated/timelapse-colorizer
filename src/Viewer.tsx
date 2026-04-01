@@ -91,6 +91,9 @@ function Viewer(): ReactElement {
       useViewerStateStore.getState().setFrameLoadResult(result);
       useViewerStateStore.setState({ currentFrame: result.frame });
     });
+    canvas.setOnVolumeLoadCallback((result) => {
+      useViewerStateStore.getState().updateChannelRangeWithVolumeData(result);
+    });
     useViewerStateStore.getState().setFrameLoadCallback(async (frame: number) => await canvas.setFrame(frame));
     return canvas;
   }).current;
@@ -486,13 +489,13 @@ function Viewer(): ReactElement {
     // contains the segmentation ID (raw image pixel value) and the global ID.
     // The global ID is undefined if the object does not exist in the dataset.
     (info: PixelIdInfo | null) => {
-      if (dataset) {
+      if (dataset && datasetKey !== null) {
         // Pass null if the user clicked on something non-interactive
         // (background or a non-existent object).
-        annotationState.handleAnnotationClick(dataset, info?.globalId ?? null);
+        annotationState.handleAnnotationClick(datasetKey, dataset, info?.globalId ?? null);
       }
     },
-    [dataset, annotationState.handleAnnotationClick]
+    [dataset, datasetKey, annotationState.handleAnnotationClick]
   );
 
   const onClickExport = useCallback((): void => {
@@ -519,11 +522,7 @@ function Viewer(): ReactElement {
       key: TabType.SCATTER_PLOT,
       children: (
         <div className={styles.tabContent}>
-          <ScatterPlotTab
-            isVisible={openTab === TabType.SCATTER_PLOT}
-            isPlaying={timeControls.isPlaying() || isRecording}
-            showAlert={showAlert}
-          />
+          <ScatterPlotTab isVisible={openTab === TabType.SCATTER_PLOT} showAlert={showAlert} />
         </div>
       ),
     },

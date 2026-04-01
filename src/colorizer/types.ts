@@ -95,6 +95,12 @@ export type FrameLoadResult = {
   backdropError: boolean;
 };
 
+export type VolumeLoadResult = {
+  backdropIdx: number;
+  dataMin: number;
+  dataMax: number;
+};
+
 // MUST be synchronized with the DRAW_MODE_* constants in `colorize_RGBA8U.frag`!
 // CHANGING THESE VALUES CAN POTENTIALLY BREAK URLs. See `url_utils.parseDrawSettings` for parsing logic.
 /** Draw options for object types. */
@@ -330,8 +336,24 @@ export type ChannelSetting = {
   visible: boolean;
   color: Color;
   opacity: number;
-  min: number;
-  max: number;
-  dataMin: number;
-  dataMax: number;
+  /**
+   * Minimum intensity value for the channel's ramp. If `null`, the value will
+   * be initialized with the AutoIJ preset once volume data is loaded.
+   */
+  min: number | null;
+  /**
+   * Maximum intensity value for the channel's ramp. If `null`, the value will
+   * be initialized with the AutoIJ preset once volume data is loaded.
+   */
+  max: number | null;
+  /**
+   * Minimum value of the channel's data range. If `null`, will be set to the
+   * data min once volume data is loaded.
+   */
+  dataMin: number | null;
+  /**
+   * Maximum value of the channel's data range. If `null`, will be set to the
+   * data max once volume data is loaded.
+   */
+  dataMax: number | null;
 };

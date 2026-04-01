@@ -27,6 +27,7 @@ import {
   type FrameVectorData,
   type PixelIdInfo,
   SelectionOutlineColorMode,
+  type VolumeLoadResult,
 } from "src/colorizer/types";
 import { getRelativeToAbsoluteChannelIndexMap, getVolumeSources } from "src/colorizer/utils/channels";
 import { bucketVectorDataByTime, getGlobalIdFromSegId, hasPropertyChanged } from "src/colorizer/utils/data_utils";
@@ -56,6 +57,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
   // private viewContainer: HTMLElement;
   private view3d: View3d;
   private onLoadFrameCallback: (result: FrameLoadResult) => void;
+  private onVolumeLoadCallback: (result: VolumeLoadResult) => void;
   private params: RenderCanvasStateParams | null;
 
   private canvasResolution: Vector2;
@@ -104,6 +106,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     this.currentFrame = -1;
 
     this.onLoadFrameCallback = () => {};
+    this.onVolumeLoadCallback = () => {};
 
     this.getScreenSpaceMatrix = this.getScreenSpaceMatrix.bind(this);
     this.getIdAtPixel = this.getIdAtPixel.bind(this);
@@ -387,8 +390,17 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
         isosurfaceEnabled: false,
       });
       const histogram = volume.getHistogram(channelIndex);
-      const minBin = histogram.findFractionalBinOfValue(settings.min);
-      const maxBin = histogram.findFractionalBinOfValue(settings.max);
+      let min = settings.min;
+      let max = settings.max;
+      if (min === null || max === null) {
+        // Compute default range as a placeholder for initial load if
+        // min/max are not set.
+        const [presetMin, presetMax] = this.getBackdropChannelRangePreset(backdropIdx, ChannelRangePreset.DEFAULT)!;
+        min = min ?? presetMin;
+        max = max ?? presetMax;
+      }
+      const minBin = histogram.findFractionalBinOfValue(min);
+      const maxBin = histogram.findFractionalBinOfValue(max);
       const lut = new Lut().createFromMinMax(minBin, maxBin);
 
       volume.setLut(channelIndex, lut);
@@ -568,6 +580,18 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     return Promise.resolve();
   }
 
+  private onLoadedChannel(volume: Volume, channelIndex: number, backdropIndexToAbsoluteChannelIndex: number[]): void {
+    const backdropIndex = backdropIndexToAbsoluteChannelIndex.indexOf(channelIndex);
+    if (backdropIndex === -1) {
+      return;
+    }
+    this.onVolumeLoadCallback({
+      backdropIdx: backdropIndex,
+      dataMin: volume.channels[channelIndex].rawMin,
+      dataMax: volume.channels[channelIndex].rawMax,
+    });
+  }
+
   private async loadNewVolume(sources: string[]): Promise<Volume> {
     if (!this.params) {
       throw new Error("Cannot load volume without parameters.");
@@ -597,6 +621,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
 
       if (this.params && this.backdropIndexToAbsoluteChannelIndex) {
         this.updateVolumeChannels(volume, this.params.channelSettings, this.backdropIndexToAbsoluteChannelIndex);
+        this.onLoadedChannel(currentVol, channelIndex, this.backdropIndexToAbsoluteChannelIndex);
       }
     });
     this.view3d.addVolume(volume);
@@ -689,6 +714,10 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
 
   public setOnFrameLoadCallback(callback: (result: FrameLoadResult) => void): void {
     this.onLoadFrameCallback = callback;
+  }
+
+  public setOnVolumeLoadCallback(callback: (result: VolumeLoadResult) => void): void {
+    this.onVolumeLoadCallback = callback;
   }
 
   public setOnRenderCallback(callback: (() => void) | null): void {

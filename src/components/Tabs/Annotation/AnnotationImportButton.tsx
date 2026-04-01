@@ -32,6 +32,7 @@ const MultilineRadio = styled(Radio)<{ $expanded?: boolean }>`
 
 export default function AnnotationImportButton(props: AnnotationImportButtonProps): ReactElement {
   const dataset = useViewerStateStore((state) => state.dataset);
+  const datasetKey = useViewerStateStore((state) => state.datasetKey);
   const { annotationState } = props;
 
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -47,7 +48,12 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
     setParseResult(null);
     setErrorText("");
     const isCsv = file.type === "text/csv" || file.name.endsWith(".csv");
-    if (!isCsv || !dataset) {
+    if (!dataset || datasetKey === null) {
+      setUploadedFile(file);
+      setErrorText("No dataset loaded.");
+      return;
+    }
+    if (!isCsv) {
       setUploadedFile(file);
       setErrorText("Only CSV files are supported.");
       return;
@@ -57,7 +63,7 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
       const text = e.target?.result as string;
       try {
         // TODO: Do this in a worker to avoid blocking the UI thread?
-        const result = AnnotationData.fromCsv(dataset, text);
+        const result = AnnotationData.fromCsv(datasetKey, dataset, text);
         setParseResult(result);
       } catch (error) {
         setErrorText('Could not parse CSV file. Parsing failed with the following error: "' + error + '"');

@@ -1,6 +1,6 @@
 import type { Vector2 } from "three";
 
-import type { FrameLoadResult, PixelIdInfo } from "src/colorizer/types";
+import type { FrameLoadResult, PixelIdInfo, VolumeLoadResult } from "src/colorizer/types";
 
 import type { CanvasScaleInfo, RenderCanvasStateParams, RenderOptions } from "./types";
 
@@ -44,6 +44,11 @@ export interface IRenderCanvas {
    * Sets a callback function that will be called whenever any frame is loaded.
    */
   setOnFrameLoadCallback(callback: (result: FrameLoadResult) => void): void;
+
+  /**
+   * Sets a callback function that will be called whenever a volume is loaded.
+   */
+  setOnVolumeLoadCallback(callback: (result: VolumeLoadResult) => void): void;
 
   render(options?: RenderOptions): void;
 

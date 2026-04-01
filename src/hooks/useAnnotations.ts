@@ -57,7 +57,7 @@ export type AnnotationState = {
    * - A list of IDs to select if this ID is clicked with range selection mode turned on.
    */
   getSelectRangeFromId: (dataset: Dataset, id: number) => number[] | null;
-  handleAnnotationClick: (dataset: Dataset, id: number | null) => void;
+  handleAnnotationClick: (datasetKey: string, dataset: Dataset, id: number | null) => void;
   /**
    * Contains annotation data getters. Use this object directly as a dependency
    * in `useMemo` or `useCallback` to trigger updates when the underlying data
@@ -229,7 +229,7 @@ export const useAnnotations = (): AnnotationState => {
   }, [currentLabelIdx, dataUpdateCounter, isReuseValueHotkeyPressed]);
 
   const handleAnnotationClick = useCallback(
-    (dataset: Dataset, id: number | null): void => {
+    (datasetKey: string, dataset: Dataset, id: number | null): void => {
       if (!isAnnotationEnabled || currentLabelIdx === null || id === null) {
         if (isAnnotationEnabled) {
           setLastClickedId(id);
@@ -243,20 +243,20 @@ export const useAnnotations = (): AnnotationState => {
       if (!track) {
         throw new Error(`useAnnotations:handleAnnotationClick: Track ID ${dataset.getTrackId(id)} not found.`);
       }
-      const isLabeled = annotationData.isLabelOnId(currentLabelIdx, id);
+      const isLabeled = annotationData.isLabelOnId(datasetKey, currentLabelIdx, id);
       const labelData = annotationData.getLabels()[currentLabelIdx];
 
       const toggleRange = (range: number[]): void => {
         const defaultValue = annotationData.getNextDefaultLabelValue(currentLabelIdx, isReuseValueHotkeyPressed);
         if (isLabeled && labelData.options.type === LabelType.BOOLEAN) {
           // Clicking a boolean label toggles the label on and off
-          annotationData.removeLabelOnIds(currentLabelIdx, range);
+          annotationData.removeLabelOnIds(datasetKey, currentLabelIdx, range);
           setActiveEditRange(null);
         } else if (isLabeled) {
           // If clicking on a range that is already labeled, initiate editing of the label value for that range
           setActiveEditRange(range);
         } else {
-          annotationData.setLabelValueOnIds(currentLabelIdx, range, defaultValue);
+          annotationData.setLabelValueOnIds(datasetKey, dataset, currentLabelIdx, range, defaultValue);
           setActiveEditRange(null);
         }
       };
