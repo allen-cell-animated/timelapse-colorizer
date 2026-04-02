@@ -1,6 +1,8 @@
 import {
+  BufferGeometry,
   FloatType,
   InstancedMesh,
+  InstancedMeshEventMap,
   NearestFilter,
   Object3D,
   OrthographicCamera,
@@ -30,7 +32,7 @@ class PointRenderer2D {
   private timeToIds: Map<number, Uint32Array>;
 
   private scene: Scene;
-  private pointsMesh: InstancedMesh;
+  private pointsMesh: InstancedMesh<BufferGeometry, PointMaterial, InstancedMeshEventMap>;
   private camera: OrthographicCamera;
   private renderTarget: WebGLRenderTarget;
 
@@ -135,7 +137,6 @@ class PointRenderer2D {
     }
 
     // Update size and color
-    const pointRadius = this.params.pointRadiusPx;
     this.pointsMesh.count = ids.length;
     for (let i = 0; i < ids.length; i++) {
       const objectId = ids[i];
@@ -144,7 +145,7 @@ class PointRenderer2D {
       if (centroid) {
         const x = centroid[0];
         const y = dataset.frameResolution.y - centroid[1];
-        matrix.scale.set(pointRadius * 2, pointRadius * 2, 1);
+        matrix.scale.set(1, 1, 1);
         matrix.position.set(x, y, 0);
         matrix.lookAt(x, y, 1);
         matrix.updateMatrix();
@@ -169,7 +170,6 @@ class PointRenderer2D {
   public renderFrame(renderer: WebGLRenderer, frame: number): Texture | undefined {
     // Return cached texture if already rendered
     if (this.lastRenderedFrame === frame) {
-      console.log("Skipping render for frame " + frame + " because it is already rendered");
       return this.renderTarget.texture;
     }
     const dataset = this.params?.dataset;
@@ -184,22 +184,30 @@ class PointRenderer2D {
     } else {
       this.pointsMesh.count = 0;
     }
-    this.renderTarget.setSize(width, height);
+    this.renderTarget.setSize(this.canvasResolution.x, this.canvasResolution.y);
     renderer.setClearColor("#000000", 0);
     renderer.setRenderTarget(this.renderTarget);
     renderer.clear();
 
-    // TODO: Configure camera?
     this.camera.left = -width / 2 / this.frameToCanvasCoordinates.x;
     this.camera.right = width / 2 / this.frameToCanvasCoordinates.x;
     this.camera.top = height / 2 / this.frameToCanvasCoordinates.y;
     this.camera.bottom = -height / 2 / this.frameToCanvasCoordinates.y;
     this.camera.position.set((0.5 - this.panOffset.x) * width, (0.5 - this.panOffset.y) * height, 1);
-    console.log("Camera position:", this.camera.position);
     this.camera.lookAt(this.camera.position.x, this.camera.position.y, 0);
     this.camera.near = 0;
     this.camera.far = 1000;
     this.camera.updateProjectionMatrix();
+
+    // Scale point radius so the points are the same size in canvas space
+    // regardless of zoom level or frame resolution.
+    const canvasToFramePixels = dataset.frameResolution
+      .clone()
+      .divide(this.frameToCanvasCoordinates)
+      .divide(this.canvasResolution);
+    // TODO: Scale a little bit with zoom
+    this.pointsMesh.material.pointRadiusPx =
+      this.params.pointRadiusPx * Math.max(canvasToFramePixels.x, canvasToFramePixels.y);
 
     renderer.render(this.scene, this.camera);
 

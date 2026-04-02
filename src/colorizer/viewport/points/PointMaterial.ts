@@ -24,12 +24,4 @@ export default class PointMaterial extends ShaderMaterial {
   set pointRadiusPx(value: number) {
     this.uniforms.pointRadiusPx.value = value;
   }
-
-  set canvasResolution(value: Vector2) {
-    this.uniforms.canvasResolution.value = value;
-  }
-
-  set zoomMultiplier(value: number) {
-    this.uniforms.zoomMultiplier.value = value;
-  }
 }

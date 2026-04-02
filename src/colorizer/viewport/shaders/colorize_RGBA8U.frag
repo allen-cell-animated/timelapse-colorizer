@@ -325,7 +325,7 @@ void main() {
 
   gOutputColor = vec4(backgroundColor, 1.0);
   gOutputColor = alphaBlend(backdropColor, gOutputColor);
-  // gOutputColor = alphaBlend(mainColor, gOutputColor);
+  gOutputColor = alphaBlend(mainColor, gOutputColor);
   gOutputColor = alphaBlend(pointTextureColor, gOutputColor);
   gOutputColor = alphaBlend(overlayColor, gOutputColor);
 }

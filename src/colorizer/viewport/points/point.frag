@@ -8,6 +8,8 @@ layout (location = 0) out vec4 gOutputColor;
 float threshold = 0.5;
 float edgeSoftness = 0.01;
 
+uniform float pointRadiusPx;
+
 void main() {
     vec2 uv = vUv;
     float dist = distance(uv, vec2(0.5));
