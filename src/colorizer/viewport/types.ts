@@ -26,7 +26,7 @@ export type Canvas2DScaleInfo = {
   frameSizeInCanvasCoordinates: Vector2;
   /**
    * Transforms from [0,1] space of the canvas to the [0,1] space of the frame,
-   * account for zoom.
+   * accounting for zoom.
    *
    * e.g. If frame has the same aspect ratio as the canvas and zoom is set to
    * 2x, then, assuming that the [0, 0] position of the frame and the canvas are

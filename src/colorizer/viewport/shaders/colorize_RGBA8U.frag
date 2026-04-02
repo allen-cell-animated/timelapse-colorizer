@@ -319,9 +319,9 @@ void main() {
   vec4 overlayColor = texture(overlay, vUv).rgba;  // Unscaled UVs, because it is sized to the canvas
 
   vec4 pointTextureColor = vec4(1.0, 0.0, 0.0, 0.0);
-  if (!isOutsideBounds(sUv)) {
-    pointTextureColor = texture(framePoints, sUv).rgba;
-  }
+  pointTextureColor = texture(framePoints, vUv).rgba;
+  // if (!isOutsideBounds(sUv)) {
+  // }
 
   gOutputColor = vec4(backgroundColor, 1.0);
   gOutputColor = alphaBlend(backdropColor, gOutputColor);

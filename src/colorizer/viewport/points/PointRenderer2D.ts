@@ -8,6 +8,7 @@ import {
   RGBAFormat,
   Scene,
   Texture,
+  Vector2,
   WebGLRenderer,
   WebGLRenderTarget,
 } from "three";
@@ -33,6 +34,25 @@ class PointRenderer2D {
   private camera: OrthographicCamera;
   private renderTarget: WebGLRenderTarget;
 
+  /** Resolution of the canvas in onscreen pixels. */
+  private canvasResolution: Vector2;
+  /**
+   * Transforms from [0,1] space of the canvas to the [0,1] space of the frame,
+   * accounting for zoom.
+   *
+   * e.g. If frame has the same aspect ratio as the canvas and zoom is set to
+   * 2x, then, assuming that the [0, 0] position of the frame and the canvas are
+   * in the same position, the position [1, 1] on the canvas should map to [0.5,
+   * 0.5] on the frame.
+   */
+  private frameToCanvasCoordinates: Vector2;
+  /**
+   * The offset of the frame in the canvas, in normalized frame coordinates. [0, 0] means the
+   * frame will be centered, while [-0.5, -0.5] means the top right corner of the frame will be
+   * centered in the canvas view.
+   */
+  private panOffset: Vector2;
+
   private maxInstanceCount = DEFAULT_INSTANCE_COUNT;
 
   private lastRenderedFrame: number | null = null;
@@ -45,6 +65,10 @@ class PointRenderer2D {
     this.pointsMesh = new InstancedMesh(planeGeometry, pointMaterial, DEFAULT_INSTANCE_COUNT);
     this.pointsMesh.position.set(0, 0, 0);
     this.scene.add(this.pointsMesh);
+
+    this.panOffset = new Vector2(0, 0);
+    this.frameToCanvasCoordinates = new Vector2(1, 1);
+    this.canvasResolution = new Vector2(1, 1);
 
     this.camera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
     // TODO: Three does NOT support rendering to integer render targets. Change
@@ -132,6 +156,14 @@ class PointRenderer2D {
     }
     this.pointsMesh.instanceMatrix.needsUpdate = true;
     this.pointsMesh.instanceColor!.needsUpdate = true;
+    this.pointsMesh.frustumCulled = false;
+  }
+
+  public setPositionAndScale(panOffset: Vector2, frameToCanvasCoordinates: Vector2, canvasResolution: Vector2): void {
+    this.panOffset.copy(panOffset);
+    this.frameToCanvasCoordinates.copy(frameToCanvasCoordinates);
+    this.canvasResolution.copy(canvasResolution);
+    this.lastRenderedFrame = null;
   }
 
   public renderFrame(renderer: WebGLRenderer, frame: number): Texture | undefined {
@@ -158,12 +190,13 @@ class PointRenderer2D {
     renderer.clear();
 
     // TODO: Configure camera?
-    this.camera.left = -width / 2;
-    this.camera.right = width / 2;
-    this.camera.top = height / 2;
-    this.camera.bottom = -height / 2;
-    this.camera.position.set(width / 2, height / 2, 1);
-    this.camera.lookAt(width / 2, height / 2, 0);
+    this.camera.left = -width / 2 / this.frameToCanvasCoordinates.x;
+    this.camera.right = width / 2 / this.frameToCanvasCoordinates.x;
+    this.camera.top = height / 2 / this.frameToCanvasCoordinates.y;
+    this.camera.bottom = -height / 2 / this.frameToCanvasCoordinates.y;
+    this.camera.position.set((0.5 - this.panOffset.x) * width, (0.5 - this.panOffset.y) * height, 1);
+    console.log("Camera position:", this.camera.position);
+    this.camera.lookAt(this.camera.position.x, this.camera.position.y, 0);
     this.camera.near = 0;
     this.camera.far = 1000;
     this.camera.updateProjectionMatrix();

@@ -363,6 +363,11 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
       trackPath.setPositionAndScale(this.panOffset, this.savedScaleInfo.frameToCanvasCoordinates)
     );
     this.vectorField.setPosition(this.panOffset, this.savedScaleInfo.frameToCanvasCoordinates);
+    this.pointRenderer.setPositionAndScale(
+      this.panOffset,
+      this.savedScaleInfo.frameToCanvasCoordinates,
+      this.canvasResolution
+    );
     this.render();
   }
 
@@ -453,6 +458,11 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     this.setUniform("canvasToFrameScale", canvasToFrameCoordinates);
 
     this.trackPaths.forEach((trackPath) => trackPath.setPositionAndScale(this.panOffset, frameToCanvasCoordinates));
+    this.pointRenderer.setPositionAndScale(
+      this.panOffset,
+      this.savedScaleInfo.frameToCanvasCoordinates,
+      canvasResolution
+    );
     this.vectorField.setPosition(this.panOffset, frameToCanvasCoordinates);
     this.vectorField.setScale(frameToCanvasCoordinates, this.canvasResolution || new Vector2(1, 1));
   }
@@ -632,8 +642,8 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     this.updateTrackPaths(prevParams, params);
 
     this.pointRenderer.setParams(
-      { dataset: params.dataset, pointRadiusPx: 12 },
-      { dataset: prevParams?.dataset ?? null, pointRadiusPx: 12 }
+      { dataset: params.dataset, pointRadiusPx: 30 },
+      { dataset: prevParams?.dataset ?? null, pointRadiusPx: 30 }
     );
 
     // Update vector data
@@ -777,12 +787,6 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
       this.setUniform("frame", emptyFrame);
     }
 
-    const frameTex = this.pointRenderer.renderFrame(this.renderer, index);
-    if (frameTex) {
-      frameTex.needsUpdate = true;
-      this.setUniform("framePoints", frameTex);
-    }
-
     // Force rescale in case frame dimensions changed
     this.updateScaling(dataset?.frameResolution || null, this.canvasResolution);
     this.currentFrame = index;
@@ -840,7 +844,11 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
   public render(_options?: RenderOptions): void {
     this.checkPixelRatio();
     this.syncTrackPathLine();
-
+    const frameTex = this.pointRenderer.renderFrame(this.renderer, this.currentFrame);
+    if (frameTex) {
+      frameTex.needsUpdate = true;
+      this.setUniform("framePoints", frameTex);
+    }
     this.renderer.render(this.scene, this.camera);
     this.onRenderCallback?.();
   }

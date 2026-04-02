@@ -4,5 +4,5 @@ out vec3 color;
 void main() {
   vUv = uv;
   color = instanceColor;
-  gl_Position = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(position, 1.0);
+  gl_Position = projectionMatrix * viewMatrix * modelMatrix * instanceMatrix * vec4(position, 1.0);
 }

@@ -6,7 +6,7 @@ in vec3 color;
 layout (location = 0) out vec4 gOutputColor;
 
 float threshold = 0.5;
-float edgeSoftness = 0.001;
+float edgeSoftness = 0.01;
 
 void main() {
     vec2 uv = vUv;
