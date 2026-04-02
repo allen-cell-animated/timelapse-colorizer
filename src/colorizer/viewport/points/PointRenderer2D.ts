@@ -1,18 +1,13 @@
 import {
-  Color,
   FloatType,
   InstancedMesh,
-  Mesh,
-  MeshBasicMaterial,
   NearestFilter,
   Object3D,
   OrthographicCamera,
   PlaneGeometry,
   RGBAFormat,
   Scene,
-  SphereGeometry,
   Texture,
-  Vector3,
   WebGLRenderer,
   WebGLRenderTarget,
 } from "three";
@@ -125,7 +120,7 @@ class PointRenderer2D {
       if (centroid) {
         const x = centroid[0];
         const y = dataset.frameResolution.y - centroid[1];
-        matrix.scale.set(pointRadius, pointRadius, 1);
+        matrix.scale.set(pointRadius * 2, pointRadius * 2, 1);
         matrix.position.set(x, y, 0);
         matrix.lookAt(x, y, 1);
         matrix.updateMatrix();

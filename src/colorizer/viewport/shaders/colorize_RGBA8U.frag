@@ -105,6 +105,11 @@ uint combineColor(uvec4 color) {
   return (color.b << 16u) | (color.g << 8u) | color.r;
 }
 
+uint combineColorFloat(vec4 color) {
+  uvec4 uColor = uvec4(color * 255.0);
+  return combineColor(uColor);
+}
+
 uvec4 getUintFromTex(usampler2D tex, int index) {
   int width = textureSize(tex, 0).x;
   ivec2 featurePos = ivec2(index % width, index / width);

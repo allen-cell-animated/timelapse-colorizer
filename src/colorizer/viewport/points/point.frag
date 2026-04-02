@@ -5,12 +5,21 @@ in vec3 color;
 
 layout (location = 0) out vec4 gOutputColor;
 
+float threshold = 0.5;
+float edgeSoftness = 0.001;
+
 void main() {
     vec2 uv = vUv;
     float dist = distance(uv, vec2(0.5));
-    if (dist > 0.5) {
+
+    // Cull pixels outside of the circle to create round points
+    if (dist > threshold) {
         discard;
-    }
-    gOutputColor = vec4(color, 1);
-    // gOutputColor = vec4(1.0, 0.0, 0.0, 1.0);
+    } 
+
+    // Apply a smooth edge to the points
+    float alpha = smoothstep(threshold, threshold - edgeSoftness, dist);
+    gl_FragDepth = dist;
+    gOutputColor = vec4(color, alpha);
+
 }
