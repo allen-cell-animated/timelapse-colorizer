@@ -843,8 +843,6 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
   public render(_options?: RenderOptions): void {
     this.checkPixelRatio();
     this.syncTrackPathLine();
-    console.log("-----");
-    console.log("Zoom multiplier: ", this.zoomMultiplier);
     const frameTex = this.pointRenderer.renderFrame(this.renderer, this.currentFrame);
     if (frameTex) {
       frameTex.needsUpdate = true;

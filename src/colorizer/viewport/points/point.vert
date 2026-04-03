@@ -9,6 +9,7 @@ in vec4 instancePosition;
 in uint instanceId;
 
 flat out uint IN_instanceId;
+flat out float IN_radius;
 
 // General uniforms
 uniform float baseScale;
@@ -19,4 +20,6 @@ void main() {
 
   gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
   gl_PointSize = scale;
+  IN_instanceId = instanceId;
+  IN_radius = scale;
 }
