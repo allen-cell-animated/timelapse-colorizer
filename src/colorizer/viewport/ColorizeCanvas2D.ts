@@ -54,7 +54,7 @@ import {
 
 import type { IInnerRenderCanvas } from "./IInnerRenderCanvas";
 import TrackPath2D from "./tracks/TrackPath2D";
-import { get2DCanvasScaling, getTrackPathColor } from "./utils";
+import { get2DCanvasScaling, getTrackPathColor, reassignTrackPaths } from "./utils";
 
 import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
 import vertexShader from "./shaders/colorize.vert";
@@ -267,6 +267,8 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     this.updateScaling = this.updateScaling.bind(this);
     this.setFrame = this.setFrame.bind(this);
     this.getIdAtPixel = this.getIdAtPixel.bind(this);
+    this.addTrackPath = this.addTrackPath.bind(this);
+    this.removeTrackPath = this.removeTrackPath.bind(this);
   }
 
   private setUniform<U extends keyof ColorizeUniformTypes>(name: U, value: ColorizeUniformTypes[U]): void {
@@ -510,48 +512,37 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     this.onRenderCallback = callback;
   }
 
+  private removeTrackPath(trackPath: TrackPath2D): void {
+    this.scene.remove(...trackPath.getSceneObjects());
+    trackPath.dispose();
+  }
+
+  private addTrackPath(trackPath: TrackPath2D): void {
+    // Track will be assigned to params below; dataset must be set for
+    // zoom/position and scale calculations.
+    const params = this.params;
+    if (!params) {
+      return;
+    }
+    trackPath.setParams({ ...params, track: null });
+    trackPath.setZoom(this.zoomMultiplier);
+    trackPath.setPositionAndScale(this.panOffset, this.savedScaleInfo.frameToCanvasCoordinates);
+    this.scene.add(...trackPath.getSceneObjects());
+  }
+
   private updateTrackPaths(prevParams: RenderCanvasStateParams | null, params: RenderCanvasStateParams): void {
     if (hasPropertyChanged(params, prevParams, ["tracks"])) {
-      // Add and remove TrackPath2D objects as necessary, reusing objects where
-      // possible.
-      const prevTracks = new Set(prevParams ? prevParams.tracks.keys() : []);
-      const newTracks = new Set(params.tracks.keys());
-      const allTracks = new Set([...prevTracks, ...newTracks]);
-
-      const removedTrackIds: number[] = [];
-      const addedTrackIds: number[] = [];
-      for (const trackId of allTracks) {
-        if (prevTracks.has(trackId) && !newTracks.has(trackId)) {
-          removedTrackIds.push(trackId);
-        } else if (!prevTracks.has(trackId) && newTracks.has(trackId)) {
-          addedTrackIds.push(trackId);
-        }
-      }
-
-      // Remove unused TrackPath2D objects
-      const unusedTrackPaths: TrackPath2D[] = [];
-      for (const trackId of removedTrackIds) {
-        const trackPath = this.trackPaths.get(trackId);
-        if (trackPath) {
-          this.scene.remove(...trackPath.getSceneObjects());
-          unusedTrackPaths.push(trackPath);
-          this.trackPaths.delete(trackId);
-        }
-      }
-      // Add new TrackPath2D objects, reusing unused ones where possible
-      for (const trackId of addedTrackIds) {
-        const track = params.tracks.get(trackId);
-        if (track) {
-          const trackPath = unusedTrackPaths.pop() ?? new TrackPath2D();
-          trackPath.setParams({ ...params, track });
-          trackPath.setZoom(this.zoomMultiplier);
-          trackPath.setPositionAndScale(this.panOffset, this.savedScaleInfo.frameToCanvasCoordinates);
-          this.trackPaths.set(trackId, trackPath);
-          this.scene.add(...trackPath.getSceneObjects());
-        }
-      }
-      // Cleanup unused TrackPath2D objects
-      unusedTrackPaths.forEach((trackPath) => trackPath.dispose());
+      const prevTracks = new Set(prevParams ? prevParams.tracks.values() : []);
+      const newTracks = new Set(params.tracks.values());
+      const newTrackPaths = reassignTrackPaths(
+        prevTracks,
+        newTracks,
+        this.trackPaths,
+        () => new TrackPath2D(),
+        this.addTrackPath,
+        this.removeTrackPath
+      );
+      this.trackPaths = newTrackPaths;
     }
 
     // Update params for all TrackPath2D objects.

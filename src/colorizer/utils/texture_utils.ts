@@ -8,8 +8,9 @@ import { type FeatureArrayType, type FeatureDataType, featureTypeSpecs } from "s
 function getSquarestTextureDimensions<T extends FeatureDataType>(
   data: FeatureArrayType[T] | number[]
 ): [number, number] {
-  const width = Math.ceil(Math.sqrt(data.length));
-  const height = Math.ceil(data.length / width);
+  const size = Math.max(1, data.length);
+  const width = Math.ceil(Math.sqrt(size));
+  const height = Math.ceil(size / width);
 
   return [width, height];
 }

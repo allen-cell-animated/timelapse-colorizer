@@ -14,7 +14,7 @@ import {
   VolumeLoaderContext,
   type WorkerLoader,
 } from "@aics/vole-core";
-import { Box3, Matrix4, Quaternion, Vector2, Vector3 } from "three";
+import { Box3, Color, Matrix4, Quaternion, Vector2, Vector3 } from "three";
 import { clamp, inverseLerp, lerp } from "three/src/math/MathUtils";
 
 import { ColorRampType } from "src/colorizer/ColorRamp";
@@ -26,12 +26,14 @@ import {
   type FrameLoadResult,
   type FrameVectorData,
   type PixelIdInfo,
+  SelectionOutlineColorMode,
   type VolumeLoadResult,
 } from "src/colorizer/types";
 import { getRelativeToAbsoluteChannelIndexMap, getVolumeSources } from "src/colorizer/utils/channels";
 import { bucketVectorDataByTime, getGlobalIdFromSegId, hasPropertyChanged } from "src/colorizer/utils/data_utils";
 import { packDataTexture } from "src/colorizer/utils/texture_utils";
 import TrackPath3D from "src/colorizer/viewport/tracks/TrackPath3D";
+import { getTrackPathColor, reassignTrackPaths } from "src/colorizer/viewport/utils";
 
 import type { IInnerRenderCanvas } from "./IInnerRenderCanvas";
 import { getPixelRatio } from "./overlays";
@@ -46,6 +48,8 @@ const ZOOM_IN_MULTIPLIER = 0.75;
 const ZOOM_OUT_MULTIPLIER = 1 / ZOOM_IN_MULTIPLIER;
 
 const VECTOR_THICKNESS_BASE_SCALE = 0.002;
+
+const INNER_OUTLINE_COLOR = new Color(1, 1, 1);
 
 const loaderContext = new VolumeLoaderContext(CACHE_MAX_SIZE, CONCURRENCY_LIMIT, PREFETCH_CONCURRENCY_LIMIT);
 
@@ -76,7 +80,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
    */
   private backdropIndexToAbsoluteChannelIndex: number[] | null = null;
 
-  private trackPath: TrackPath3D;
+  private trackPaths: Map<number, TrackPath3D>;
 
   private timeToVectorData: Map<number, FrameVectorData>;
   private vectorObject: VectorArrows3d;
@@ -90,7 +94,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     this.view3d.setVolumeRenderMode(RENDERMODE_RAYMARCH);
     this.initLights();
 
-    this.trackPath = new TrackPath3D();
+    this.trackPaths = new Map();
 
     this.timeToVectorData = new Map();
     this.vectorObject = new VectorArrows3d();
@@ -107,6 +111,8 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     this.getScreenSpaceMatrix = this.getScreenSpaceMatrix.bind(this);
     this.getIdAtPixel = this.getIdAtPixel.bind(this);
     this.forceUpdate3dObjects = this.forceUpdate3dObjects.bind(this);
+    this.addTrackPath = this.addTrackPath.bind(this);
+    this.removeTrackPath = this.removeTrackPath.bind(this);
   }
 
   // Camera/mouse event handlers
@@ -191,6 +197,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     if (dataset !== null && featureKey !== null) {
       const featureData = dataset.getFeatureData(featureKey);
       if (featureData) {
+        const useOutlinePalette = this.params.outlineColorMode === SelectionOutlineColorMode.USE_PALETTE;
         const isCategorical = dataset.isFeatureCategorical(featureKey);
         const ramp = isCategorical ? this.params.categoricalPaletteRamp : this.params.colorRamp;
         const range = isCategorical ? [0, MAX_FEATURE_CATEGORIES - 1] : this.params.colorRampRange;
@@ -199,10 +206,17 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
           featureValueToColor: ramp.texture,
           useRepeatingColor: ramp.type === ColorRampType.CATEGORICAL,
           inRangeIds: packDataTexture(Array.from(this.params.inRangeLUT), FeatureDataType.U8),
-          outlierData: packDataTexture(Array.from(dataset.outliers ?? []), FeatureDataType.U8),
+          outlierData: packDataTexture(
+            Array.from(dataset.outliers ?? Array(dataset.numObjects).fill(0)),
+            FeatureDataType.U8
+          ),
           featureMin: range[0],
           featureMax: range[1],
           outlineColor: this.params.outlineColor.clone().convertLinearToSRGB(),
+          outlinePalette: this.params.outlinePaletteRamp.texture,
+          innerOutlineColor: INNER_OUTLINE_COLOR,
+          innerOutlineThickness: useOutlinePalette ? 2 : 0,
+          useOutlinePalette,
           outlineAlpha: 1,
           outlierColor: this.params.outlierDrawSettings.color.clone().convertLinearToSRGB(),
           outOfRangeColor: this.params.outOfRangeDrawSettings.color.clone().convertLinearToSRGB(),
@@ -228,6 +242,10 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
         "outOfRangeDrawSettings",
         "outlierDrawSettings",
         "outlineColor",
+        "outlineColorMode",
+        "outlinePaletteRamp",
+        "tracks",
+        "trackColors",
       ])
     ) {
       if (this.volume) {
@@ -246,6 +264,16 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     return false;
   }
 
+  private handleSelectionUpdate(prevParams: RenderCanvasStateParams | null, params: RenderCanvasStateParams): boolean {
+    if (hasPropertyChanged(params, prevParams, ["isSelectedLut"])) {
+      if (this.volume) {
+        this.view3d.setSelectedIDs(params.isSelectedLut);
+        return true;
+      }
+    }
+    return false;
+  }
+
   private handleDatasetUpdate(prevParams: RenderCanvasStateParams | null, params: RenderCanvasStateParams): boolean {
     if (hasPropertyChanged(params, prevParams, ["dataset"])) {
       if (params.dataset !== null && params.dataset.frames3d) {
@@ -253,8 +281,10 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
           // Remove 3D objects so they are not cleaned up with the old volume
           // and can be reused.
           this.view3d.removeDrawableObject(this.vectorObject);
-          this.trackPath.getSceneObjects().forEach((obj) => {
-            this.view3d.removeDrawableObject(obj);
+          this.trackPaths.forEach((trackPath) => {
+            trackPath.getSceneObjects().forEach((obj) => {
+              this.view3d.removeDrawableObject(obj);
+            });
           });
 
           // Clean up old volume
@@ -398,13 +428,16 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
 
   private forceUpdate3dObjects(): void {
     // Update track path
-    if (this.volume) {
-      this.trackPath.setVolumePhysicalSize(this.volume.physicalSize);
-      this.trackPath.getSceneObjects().forEach((obj) => {
-        this.view3d.addDrawableObject(obj);
+    const volume = this.volume;
+    if (volume) {
+      this.trackPaths.forEach((trackPath) => {
+        trackPath.setVolumePhysicalSize(volume.physicalSize);
+        trackPath.getSceneObjects().forEach((obj) => {
+          this.view3d.addDrawableObject(obj);
+        });
       });
     }
-    this.trackPath.forceUpdate();
+    this.trackPaths.forEach((trackPath) => trackPath.forceUpdate());
 
     this.updateVectorData();
     this.updateVectorThickness();
@@ -475,6 +508,50 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     return false;
   }
 
+  private addTrackPath(trackPath: TrackPath3D): void {
+    trackPath.setVolumePhysicalSize(this.volume ? this.volume.physicalSize : new Vector3(1, 1, 1));
+    trackPath.getSceneObjects().forEach((obj) => {
+      this.view3d.addDrawableObject(obj);
+    });
+  }
+
+  private removeTrackPath(trackPath: TrackPath3D): void {
+    trackPath.getSceneObjects().forEach((obj) => {
+      this.view3d.removeDrawableObject(obj);
+    });
+    trackPath.dispose();
+  }
+
+  private handleTrackPathUpdate(prevParams: RenderCanvasStateParams | null, params: RenderCanvasStateParams): boolean {
+    let didTracksUpdate = false;
+    let didTrackParametersUpdate = false;
+
+    if (hasPropertyChanged(params, prevParams, ["tracks"])) {
+      didTracksUpdate = true;
+      const prevTracks = new Set(prevParams ? prevParams.tracks.values() : []);
+      const newTracks = new Set(params.tracks.values());
+      this.trackPaths = reassignTrackPaths(
+        prevTracks,
+        newTracks,
+        this.trackPaths,
+        () => new TrackPath3D(),
+        this.addTrackPath,
+        this.removeTrackPath
+      );
+    }
+
+    // Update all track paths
+    this.trackPaths.forEach((trackPath, trackId) => {
+      const track = params.tracks.get(trackId) ?? null;
+      const outlineColor = getTrackPathColor(track, params).clone().convertLinearToSRGB();
+      const prevTrackParams = prevParams ? { ...prevParams, track: trackPath.track } : null;
+      const didUpdate = trackPath.setParams({ ...params, track, outlineColor }, prevTrackParams);
+      didTrackParametersUpdate = didTrackParametersUpdate || didUpdate;
+    });
+
+    return didTracksUpdate || didTrackParametersUpdate;
+  }
+
   public setParams(params: RenderCanvasStateParams): Promise<void> {
     if (this.params === params) {
       return Promise.resolve();
@@ -484,17 +561,19 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
 
     const didColorRampUpdate = this.handleColorRampUpdate(prevParams, params);
     const didDatasetUpdate = this.handleDatasetUpdate(prevParams, params);
-    const didLineUpdate = this.trackPath.setParams(params, prevParams);
+    const didLineUpdate = this.handleTrackPathUpdate(prevParams, params);
     const didChannelUpdate = this.handleChannelUpdate(prevParams, params);
     const didVectorUpdate = this.handleVectorUpdate(prevParams, params);
     const didSettingsUpdate = this.handleSettingsUpdate(prevParams, params);
+    const didSelectionUpdate = this.handleSelectionUpdate(prevParams, params);
     const needsRender =
       didColorRampUpdate ||
       didDatasetUpdate ||
       didLineUpdate ||
       didChannelUpdate ||
       didVectorUpdate ||
-      didSettingsUpdate;
+      didSettingsUpdate ||
+      didSelectionUpdate;
 
     if (needsRender) {
       this.render({ synchronous: false });
@@ -536,6 +615,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
       if (channelIndex === segChannel) {
         this.view3d.setVolumeChannelEnabled(currentVol, channelIndex, true);
         this.configureColorizeFeature(currentVol, channelIndex);
+        this.params && this.view3d.setSelectedIDs(this.params.isSelectedLut);
       } else {
         this.view3d.setVolumeChannelEnabled(currentVol, channelIndex, false);
       }
@@ -648,7 +728,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
   }
 
   private syncTrackPathLine(): void {
-    this.trackPath.updateVisibleRange(this.currentFrame);
+    this.trackPaths.forEach((trackPath) => trackPath.updateVisibleRange(this.currentFrame));
   }
 
   private syncVectorArrows(): void {
@@ -663,27 +743,20 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     this.vectorObject.setArrowData(vectorData.centroids, vectorData.deltas, thicknessData);
   }
 
-  private syncSelectedId(): void {
-    if (!this.volume || !this.params || !this.params.dataset) {
-      return;
-    }
-    const id = this.params.track ? this.params.track.getIdAtTime(this.currentFrame) : -1;
-    this.view3d.setSelectedID(this.volume, this.params.dataset.frames3d?.segmentationChannel ?? 0, id);
-  }
-
   render(options?: RenderOptions): void {
     this.syncTrackPathLine();
-    this.syncSelectedId();
     this.syncVectorArrows();
     this.view3d.redraw(options?.synchronous);
   }
 
   dispose(): void {
-    this.trackPath.getSceneObjects().forEach((obj) => {
-      this.view3d.removeDrawableObject(obj);
+    this.trackPaths.forEach((trackPath) => {
+      trackPath.getSceneObjects().forEach((obj) => {
+        this.view3d.removeDrawableObject(obj);
+      });
+      trackPath.dispose();
     });
     this.view3d.removeDrawableObject(this.vectorObject);
-    this.trackPath.dispose();
     this.vectorObject.cleanup();
     this.view3d.removeAllVolumes();
   }
