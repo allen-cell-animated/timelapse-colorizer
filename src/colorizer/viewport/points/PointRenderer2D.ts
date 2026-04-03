@@ -1,12 +1,12 @@
 import {
+  BufferAttribute,
   BufferGeometry,
   FloatType,
-  InstancedMesh,
-  InstancedMeshEventMap,
+  InstancedBufferAttribute,
+  InstancedBufferGeometry,
   NearestFilter,
-  Object3D,
   OrthographicCamera,
-  PlaneGeometry,
+  Points,
   RGBAFormat,
   Scene,
   Texture,
@@ -19,9 +19,20 @@ import Dataset from "src/colorizer/Dataset";
 import { hasPropertyChanged } from "src/colorizer/utils/data_utils";
 import PointMaterial from "src/colorizer/viewport/points/PointMaterial";
 import { PointRendererParams } from "src/colorizer/viewport/points/types";
-import { getColorForId } from "src/colorizer/viewport/points/utils";
 
 const DEFAULT_INSTANCE_COUNT = 128;
+
+function getPointBufferGeometry(): BufferGeometry {
+  const geometry = new BufferGeometry();
+  const vertices = new Float32Array([0, 0, 0, 0]);
+  geometry.setAttribute("position", new BufferAttribute(vertices, 4));
+  return geometry;
+}
+
+const enum InstanceAttributes {
+  POSITION = "instancePosition",
+  SEG_ID = "instanceId",
+}
 
 /**
  * Renders centroid data to an image texture that can be passed into the
@@ -32,7 +43,14 @@ class PointRenderer2D {
   private timeToIds: Map<number, Uint32Array>;
 
   private scene: Scene;
-  private pointsMesh: InstancedMesh<BufferGeometry, PointMaterial, InstancedMeshEventMap>;
+
+  private points: Points<InstancedBufferGeometry, PointMaterial>;
+  private instancedGeometry: InstancedBufferGeometry;
+  private positionAndScaleAttribute: InstancedBufferAttribute;
+  private idAttribute: InstancedBufferAttribute;
+
+  // private pointsMesh: InstancedMesh<BufferGeometry, PointMaterial, InstancedMeshEventMap>;
+
   private camera: OrthographicCamera;
   private renderTarget: WebGLRenderTarget;
 
@@ -63,11 +81,24 @@ class PointRenderer2D {
   constructor() {
     this.timeToIds = new Map();
     this.scene = new Scene();
-    const planeGeometry = new PlaneGeometry(1, 1);
+    // const planeGeometry = new PlaneGeometry(1, 1);
     const pointMaterial = new PointMaterial();
-    this.pointsMesh = new InstancedMesh(planeGeometry, pointMaterial, DEFAULT_INSTANCE_COUNT);
-    this.pointsMesh.position.set(0, 0, 0);
-    this.scene.add(this.pointsMesh);
+    // this.pointsMesh = new InstancedMesh(planeGeometry, pointMaterial, DEFAULT_INSTANCE_COUNT);
+    // this.pointsMesh.position.set(0, 0, 0);
+
+    this.instancedGeometry = new InstancedBufferGeometry().copy(getPointBufferGeometry() as InstancedBufferGeometry);
+    this.instancedGeometry.instanceCount = 0;
+
+    // Set up per-instance attributes.
+    this.positionAndScaleAttribute = new InstancedBufferAttribute(new Float32Array(DEFAULT_INSTANCE_COUNT * 4), 4);
+    this.idAttribute = new InstancedBufferAttribute(new Uint32Array(DEFAULT_INSTANCE_COUNT), 1);
+    this.instancedGeometry.setAttribute(InstanceAttributes.POSITION, this.positionAndScaleAttribute);
+    this.instancedGeometry.setAttribute(InstanceAttributes.SEG_ID, this.idAttribute);
+
+    this.points = new Points(this.instancedGeometry, pointMaterial);
+
+    // this.scene.add(this.pointsMesh);
+    this.scene.add(this.points);
 
     this.panOffset = new Vector2(0, 0);
     this.frameToCanvasCoordinates = new Vector2(1, 1);
@@ -127,14 +158,17 @@ class PointRenderer2D {
   private increaseMaxInstanceCount(newCount: number): void {
     this.maxInstanceCount = newCount;
 
-    this.scene.remove(this.pointsMesh);
-    this.pointsMesh.geometry.dispose();
-    this.pointsMesh.dispose();
+    this.instancedGeometry.dispose();
+    this.instancedGeometry = new InstancedBufferGeometry().copy(getPointBufferGeometry() as InstancedBufferGeometry);
+    this.points.geometry = this.instancedGeometry;
 
-    const planeGeometry = new PlaneGeometry(1, 1);
-    const pointMaterial = new PointMaterial();
-    this.pointsMesh = new InstancedMesh(planeGeometry, pointMaterial, this.maxInstanceCount);
-    this.scene.add(this.pointsMesh);
+    const newPos = new Float32Array(this.maxInstanceCount * 4);
+    const newIds = new Uint32Array(this.maxInstanceCount);
+    this.positionAndScaleAttribute = new InstancedBufferAttribute(newPos, 4, false);
+    this.idAttribute = new InstancedBufferAttribute(newIds, 1, false);
+
+    this.instancedGeometry.setAttribute(InstanceAttributes.POSITION, this.positionAndScaleAttribute);
+    this.instancedGeometry.setAttribute(InstanceAttributes.SEG_ID, this.idAttribute);
   }
 
   private setupPointsMesh(dataset: Dataset, ids: Uint32Array): void {
@@ -147,27 +181,23 @@ class PointRenderer2D {
     }
 
     // Update size and color
-    this.pointsMesh.count = ids.length;
+    // this.pointsMesh.count = ids.length;
+    this.instancedGeometry.instanceCount = ids.length;
     for (let i = 0; i < ids.length; i++) {
       const objectId = ids[i];
       const centroid = dataset.getCentroid(objectId);
-      const matrix = new Object3D();
       if (centroid) {
         const x = centroid[0];
         const y = dataset.frameResolution.y - centroid[1];
-        matrix.scale.set(1, 1, 1);
-        matrix.position.set(x, y, 0);
-        matrix.lookAt(x, y, 1);
-        matrix.updateMatrix();
-
-        this.pointsMesh.setMatrixAt(i, matrix.matrix);
+        const z = centroid[2];
+        // TODO: Set scale from data in the future (per-point scaling)
+        const scale = 1;
+        this.positionAndScaleAttribute.setXYZW(i, x, y, z, scale);
+        this.idAttribute.setX(i, objectId);
       }
-      // Placeholder: calculate colors based on ID later
-      this.pointsMesh.setColorAt(i, getColorForId(objectId));
     }
-    this.pointsMesh.instanceMatrix.needsUpdate = true;
-    this.pointsMesh.instanceColor!.needsUpdate = true;
-    this.pointsMesh.frustumCulled = false;
+    this.positionAndScaleAttribute.needsUpdate = true;
+    this.idAttribute.needsUpdate = true;
   }
 
   public setPositionAndScale(panOffset: Vector2, frameToCanvasCoordinates: Vector2, canvasResolution: Vector2): void {
@@ -193,7 +223,8 @@ class PointRenderer2D {
       if (ids) {
         this.setupPointsMesh(dataset, ids);
       } else {
-        this.pointsMesh.count = 0;
+        // this.pointsMesh.count = 0;
+        this.instancedGeometry.instanceCount = 0;
       }
     }
     const width = dataset.frameResolution.x;
@@ -212,7 +243,7 @@ class PointRenderer2D {
     this.camera.near = 0;
     this.camera.far = 1000;
     this.camera.updateProjectionMatrix();
-    this.pointsMesh.frustumCulled = false;
+    // this.pointsMesh.frustumCulled = false;
 
     // Scale point radius so the points are the same size in canvas space
     // regardless of zoom level or frame resolution.
@@ -220,11 +251,14 @@ class PointRenderer2D {
       .clone()
       .divide(this.frameToCanvasCoordinates)
       .divide(this.canvasResolution);
-    // TODO: Scale a little bit with zoom (see annotation rendering)
-    this.pointsMesh.material.pointRadiusPx =
+    this.points.material.baseScale =
       this.params.centroidRadiusPx * Math.max(canvasToFramePixels.x, canvasToFramePixels.y);
-    this.pointsMesh.material.antialiasEdgePx = 0.5 * Math.max(canvasToFramePixels.x, canvasToFramePixels.y);
-    this.pointsMesh.material.needsUpdate = true;
+    this.points.frustumCulled = false;
+    // TODO: Scale a little bit with zoom (see annotation rendering)
+    // this.pointsMesh.material.pointRadiusPx =
+    //   this.params.centroidRadiusPx * Math.max(canvasToFramePixels.x, canvasToFramePixels.y);
+    // this.pointsMesh.material.antialiasEdgePx = 0.5 * Math.max(canvasToFramePixels.x, canvasToFramePixels.y);
+    // this.pointsMesh.material.needsUpdate = true;
 
     renderer.render(this.scene, this.camera);
 
@@ -237,6 +271,10 @@ class PointRenderer2D {
 
   public dispose(): void {
     this.timeToIds.clear();
+    this.instancedGeometry.dispose();
+    this.points.material.dispose();
+    this.points.geometry.dispose();
+    this.renderTarget.dispose();
   }
 }
 

@@ -15,17 +15,17 @@ export default class PointMaterial extends ShaderMaterial {
       this.uniforms,
       {
         // TODO: Can this value be per-instance?
-        pointRadiusPx: { value: 1 },
-        antialiasEdgePx: { value: 0.05 },
+        baseScale: { value: 1 },
+        // antialiasEdgePx: { value: 0.05 },
       },
     ]);
   }
 
-  set pointRadiusPx(value: number) {
-    this.uniforms.pointRadiusPx.value = value;
+  set baseScale(value: number) {
+    this.uniforms.baseScale.value = value;
   }
 
-  set antialiasEdgePx(value: number) {
-    this.uniforms.antialiasEdgePx.value = value;
-  }
+  // set antialiasEdgePx(value: number) {
+  //   this.uniforms.antialiasEdgePx.value = value;
+  // }
 }
