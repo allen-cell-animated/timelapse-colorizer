@@ -58,6 +58,7 @@ class PointRenderer2D {
   private maxInstanceCount = DEFAULT_INSTANCE_COUNT;
 
   private lastRenderedFrame: number | null = null;
+  private lastMeshUpdateFrame: number | null = null;
 
   constructor() {
     this.timeToIds = new Map();
@@ -113,9 +114,10 @@ class PointRenderer2D {
       } else {
         this.timeToIds.clear();
       }
+      this.lastMeshUpdateFrame = null;
       needsRender = true;
     }
-    if (hasPropertyChanged(params, prevParams, ["pointRadiusPx", "dataset"])) {
+    if (hasPropertyChanged(params, prevParams, ["centroidRadiusPx", "dataset"])) {
       this.lastRenderedFrame = null;
       needsRender = true;
     }
@@ -176,14 +178,18 @@ class PointRenderer2D {
     if (!this.params || !dataset) {
       return undefined;
     }
+    // Recalculate points if needed
+    if (this.lastMeshUpdateFrame !== frame) {
+      this.lastMeshUpdateFrame = frame;
+      const ids = this.timeToIds.get(frame);
+      if (ids) {
+        this.setupPointsMesh(dataset, ids);
+      } else {
+        this.pointsMesh.count = 0;
+      }
+    }
     const width = dataset.frameResolution.x;
     const height = dataset.frameResolution.y;
-    const ids = this.timeToIds.get(frame);
-    if (ids) {
-      this.setupPointsMesh(dataset, ids);
-    } else {
-      this.pointsMesh.count = 0;
-    }
     this.renderTarget.setSize(this.canvasResolution.x, this.canvasResolution.y);
     renderer.setClearColor("#000000", 0);
     renderer.setRenderTarget(this.renderTarget);
@@ -198,6 +204,7 @@ class PointRenderer2D {
     this.camera.near = 0;
     this.camera.far = 1000;
     this.camera.updateProjectionMatrix();
+    this.pointsMesh.frustumCulled = false;
 
     // Scale point radius so the points are the same size in canvas space
     // regardless of zoom level or frame resolution.
@@ -205,9 +212,11 @@ class PointRenderer2D {
       .clone()
       .divide(this.frameToCanvasCoordinates)
       .divide(this.canvasResolution);
-    // TODO: Scale a little bit with zoom
+    // TODO: Scale a little bit with zoom (see annotation rendering)
     this.pointsMesh.material.pointRadiusPx =
-      this.params.pointRadiusPx * Math.max(canvasToFramePixels.x, canvasToFramePixels.y);
+      this.params.centroidRadiusPx * Math.max(canvasToFramePixels.x, canvasToFramePixels.y);
+    this.pointsMesh.material.antialiasEdgePx = 0.5 * Math.max(canvasToFramePixels.x, canvasToFramePixels.y);
+    this.pointsMesh.material.needsUpdate = true;
 
     renderer.render(this.scene, this.camera);
 

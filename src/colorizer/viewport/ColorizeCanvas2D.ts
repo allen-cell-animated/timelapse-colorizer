@@ -641,10 +641,7 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     // Update track path data
     this.updateTrackPaths(prevParams, params);
 
-    this.pointRenderer.setParams(
-      { dataset: params.dataset, pointRadiusPx: 3 },
-      { dataset: prevParams?.dataset ?? null, pointRadiusPx: 3 }
-    );
+    this.pointRenderer.setParams(params, prevParams);
 
     // Update vector data
     if (hasPropertyChanged(params, prevParams, ["vectorVisible", "vectorColor", "vectorScaleFactor"])) {

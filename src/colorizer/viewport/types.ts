@@ -74,6 +74,7 @@ export type RenderCanvasStateParams = {
   categoricalPaletteRamp: ColorRamp;
   outlineColor: Color;
   outlineColorMode: SelectionOutlineColorMode;
+  centroidRadiusPx: number;
   edgeColor: Color;
   edgeColorAlpha: number;
   edgeMode: DrawMode;

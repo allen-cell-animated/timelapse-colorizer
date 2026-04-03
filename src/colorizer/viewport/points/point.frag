@@ -6,9 +6,9 @@ in vec3 color;
 layout (location = 0) out vec4 gOutputColor;
 
 float threshold = 0.5;
-float edgeSoftness = 0.01;
 
 uniform float pointRadiusPx;
+uniform float antialiasEdgePx;
 
 void main() {
     vec2 uv = vUv;
@@ -20,6 +20,7 @@ void main() {
     } 
 
     // Apply a smooth edge to the points
+    float edgeSoftness = antialiasEdgePx / pointRadiusPx;
     float alpha = smoothstep(threshold, threshold - edgeSoftness, dist);
     gl_FragDepth = dist;
     gOutputColor = vec4(color, alpha);
