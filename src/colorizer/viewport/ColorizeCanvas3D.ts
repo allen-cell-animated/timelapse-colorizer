@@ -111,6 +111,8 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     this.getScreenSpaceMatrix = this.getScreenSpaceMatrix.bind(this);
     this.getIdAtPixel = this.getIdAtPixel.bind(this);
     this.forceUpdate3dObjects = this.forceUpdate3dObjects.bind(this);
+    this.addTrackPath = this.addTrackPath.bind(this);
+    this.removeTrackPath = this.removeTrackPath.bind(this);
   }
 
   // Camera/mouse event handlers
@@ -506,6 +508,20 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     return false;
   }
 
+  private addTrackPath(trackPath: TrackPath3D): void {
+    trackPath.setVolumePhysicalSize(this.volume ? this.volume.physicalSize : new Vector3(1, 1, 1));
+    trackPath.getSceneObjects().forEach((obj) => {
+      this.view3d.addDrawableObject(obj);
+    });
+  }
+
+  private removeTrackPath(trackPath: TrackPath3D): void {
+    trackPath.getSceneObjects().forEach((obj) => {
+      this.view3d.removeDrawableObject(obj);
+    });
+    trackPath.dispose();
+  }
+
   private handleTrackPathUpdate(prevParams: RenderCanvasStateParams | null, params: RenderCanvasStateParams): boolean {
     let didTracksUpdate = false;
     let didTrackParametersUpdate = false;
@@ -514,28 +530,14 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
       didTracksUpdate = true;
       const prevTracks = new Set(prevParams ? prevParams.tracks.values() : []);
       const newTracks = new Set(params.tracks.values());
-      const [newTrackPaths, addedTrackPaths, removedTrackPaths] = reassignTrackPaths(
+      this.trackPaths = reassignTrackPaths(
         prevTracks,
         newTracks,
         this.trackPaths,
-        () => new TrackPath3D()
+        () => new TrackPath3D(),
+        this.addTrackPath,
+        this.removeTrackPath
       );
-      this.trackPaths = newTrackPaths;
-
-      // Remove unused track paths from scene
-      removedTrackPaths.forEach((trackPath) => {
-        trackPath.getSceneObjects().forEach((obj) => {
-          this.view3d.removeDrawableObject(obj);
-        });
-        trackPath.dispose();
-      });
-      // Configure added track paths
-      addedTrackPaths.forEach((trackPath) => {
-        trackPath.setVolumePhysicalSize(this.volume ? this.volume.physicalSize : new Vector3(1, 1, 1));
-        trackPath.getSceneObjects().forEach((obj) => {
-          this.view3d.addDrawableObject(obj);
-        });
-      });
     }
 
     // Update all track paths

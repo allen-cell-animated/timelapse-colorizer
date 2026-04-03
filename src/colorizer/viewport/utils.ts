@@ -70,8 +70,13 @@ export function getTrackPathColor(track: Track | null, params: RenderCanvasState
  * tracks, reusing objects where possible.
  * @param prevTracks The previous set of active tracks.
  * @param newTracks The new set of active tracks.
- * @param prevTrackPathMap The previous map of track IDs to TrackPath2D/3D objects.
+ * @param prevTrackPathMap The previous map of track IDs to TrackPath2D/3D
+ * objects.
  * @param makeNewTrackPath Function that creates a new TrackPath2D/3D object.
+ * @param addTrackPathToScene Function that adds a TrackPath2D/3D object to the
+ * scene.
+ * @param removeAndDisposeTrackPath Function that removes a TrackPath2D/3D
+ * object from the scene and disposes of it.
  * @returns A tuple containing:
  *  - The updated map of track IDs to TrackPath2D/3D objects.
  *  - An array of added TrackPath2D/3D objects that need to be initialized.
@@ -81,8 +86,10 @@ export function reassignTrackPaths<T extends TrackPath2D | TrackPath3D>(
   prevTracks: Set<Track>,
   newTracks: Set<Track>,
   prevTrackPathMap: Map<number, T>,
-  makeNewTrackPath: () => T
-): [Map<number, T>, T[], T[]] {
+  makeNewTrackPath: () => T,
+  addTrackPathToScene: (trackPath: T) => void,
+  removeAndDisposeTrackPath: (trackPath: T) => void
+): Map<number, T> {
   const newTrackPathMap: Map<number, T> = new Map(prevTrackPathMap);
 
   const allTracks = new Set([...prevTracks, ...newTracks]);
@@ -102,6 +109,7 @@ export function reassignTrackPaths<T extends TrackPath2D | TrackPath3D>(
     const trackPath = prevTrackPathMap.get(track.trackId);
     if (trackPath) {
       unusedTrackPaths.push(trackPath);
+      removeAndDisposeTrackPath(trackPath);
     }
     newTrackPathMap.delete(track.trackId);
   }
@@ -111,7 +119,8 @@ export function reassignTrackPaths<T extends TrackPath2D | TrackPath3D>(
     const trackPath = unusedTrackPaths.pop() ?? makeNewTrackPath();
     addedTrackPaths.push(trackPath);
     newTrackPathMap.set(track.trackId, trackPath);
+    addTrackPathToScene(trackPath);
   }
 
-  return [newTrackPathMap, addedTrackPaths, unusedTrackPaths];
+  return newTrackPathMap;
 }

@@ -267,6 +267,8 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     this.updateScaling = this.updateScaling.bind(this);
     this.setFrame = this.setFrame.bind(this);
     this.getIdAtPixel = this.getIdAtPixel.bind(this);
+    this.addTrackPath = this.addTrackPath.bind(this);
+    this.removeTrackPath = this.removeTrackPath.bind(this);
   }
 
   private setUniform<U extends keyof ColorizeUniformTypes>(name: U, value: ColorizeUniformTypes[U]): void {
@@ -510,31 +512,37 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     this.onRenderCallback = callback;
   }
 
+  private removeTrackPath(trackPath: TrackPath2D): void {
+    this.scene.remove(...trackPath.getSceneObjects());
+    trackPath.dispose();
+  }
+
+  private addTrackPath(trackPath: TrackPath2D): void {
+    // Track will be assigned to params below; dataset must be set for
+    // zoom/position and scale calculations.
+    const params = this.params;
+    if (!params) {
+      return;
+    }
+    trackPath.setParams({ ...params, track: null });
+    trackPath.setZoom(this.zoomMultiplier);
+    trackPath.setPositionAndScale(this.panOffset, this.savedScaleInfo.frameToCanvasCoordinates);
+    this.scene.add(...trackPath.getSceneObjects());
+  }
+
   private updateTrackPaths(prevParams: RenderCanvasStateParams | null, params: RenderCanvasStateParams): void {
     if (hasPropertyChanged(params, prevParams, ["tracks"])) {
       const prevTracks = new Set(prevParams ? prevParams.tracks.values() : []);
       const newTracks = new Set(params.tracks.values());
-      const [newTrackPaths, addedTrackPaths, removedTrackPaths] = reassignTrackPaths(
+      const newTrackPaths = reassignTrackPaths(
         prevTracks,
         newTracks,
         this.trackPaths,
-        () => new TrackPath2D()
+        () => new TrackPath2D(),
+        this.addTrackPath,
+        this.removeTrackPath
       );
       this.trackPaths = newTrackPaths;
-      // Remove + dispose of unused tracks
-      for (const removedTrackPath of removedTrackPaths) {
-        this.scene.remove(...removedTrackPath.getSceneObjects());
-        removedTrackPath.dispose();
-      }
-      // Configure newly-added track paths
-      for (const addedTrack of addedTrackPaths) {
-        // Track will be assigned to params below; dataset must be set for
-        // zoom/position and scale calculations.
-        addedTrack.setParams({ ...params, track: null });
-        addedTrack.setZoom(this.zoomMultiplier);
-        addedTrack.setPositionAndScale(this.panOffset, this.savedScaleInfo.frameToCanvasCoordinates);
-        this.scene.add(...addedTrack.getSceneObjects());
-      }
     }
 
     // Update params for all TrackPath2D objects.
