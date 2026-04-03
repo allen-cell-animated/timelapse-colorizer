@@ -507,9 +507,11 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
   }
 
   private handleTrackPathUpdate(prevParams: RenderCanvasStateParams | null, params: RenderCanvasStateParams): boolean {
-    let needsRender = false;
+    let didTracksUpdate = false;
+    let didTrackParametersUpdate = false;
 
     if (hasPropertyChanged(params, prevParams, ["tracks"])) {
+      didTracksUpdate = true;
       const prevTracks = new Set(prevParams ? prevParams.tracks.values() : []);
       const newTracks = new Set(params.tracks.values());
       const [newTrackPaths, addedTrackPaths, removedTrackPaths] = reassignTrackPaths(
@@ -534,7 +536,6 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
           this.view3d.addDrawableObject(obj);
         });
       });
-      needsRender = true;
     }
 
     // Update all track paths
@@ -543,10 +544,10 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
       const outlineColor = getTrackPathColor(track, params).clone().convertLinearToSRGB();
       const prevTrackParams = prevParams ? { ...prevParams, track: trackPath.track } : null;
       const didUpdate = trackPath.setParams({ ...params, track, outlineColor }, prevTrackParams);
-      needsRender = needsRender || didUpdate;
+      didTrackParametersUpdate = didTrackParametersUpdate || didUpdate;
     });
 
-    return needsRender;
+    return didTracksUpdate || didTrackParametersUpdate;
   }
 
   public setParams(params: RenderCanvasStateParams): Promise<void> {
