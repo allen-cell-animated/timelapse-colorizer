@@ -21,6 +21,7 @@ import PointMaterial from "src/colorizer/viewport/points/PointMaterial";
 import { PointRendererParams } from "src/colorizer/viewport/points/types";
 
 const DEFAULT_INSTANCE_COUNT = 128;
+const SCALE_WITH_ZOOM = 0.25;
 
 function getPointBufferGeometry(): BufferGeometry {
   const geometry = new BufferGeometry();
@@ -72,6 +73,7 @@ class PointRenderer2D {
    * centered in the canvas view.
    */
   private panOffset: Vector2;
+  private zoomMultiplier: number = 1;
 
   private maxInstanceCount = DEFAULT_INSTANCE_COUNT;
 
@@ -81,23 +83,23 @@ class PointRenderer2D {
   constructor() {
     this.timeToIds = new Map();
     this.scene = new Scene();
-    // const planeGeometry = new PlaneGeometry(1, 1);
     const pointMaterial = new PointMaterial();
-    // this.pointsMesh = new InstancedMesh(planeGeometry, pointMaterial, DEFAULT_INSTANCE_COUNT);
-    // this.pointsMesh.position.set(0, 0, 0);
 
     this.instancedGeometry = new InstancedBufferGeometry().copy(getPointBufferGeometry() as InstancedBufferGeometry);
     this.instancedGeometry.instanceCount = 0;
 
     // Set up per-instance attributes.
-    this.positionAndScaleAttribute = new InstancedBufferAttribute(new Float32Array(DEFAULT_INSTANCE_COUNT * 4), 4);
-    this.idAttribute = new InstancedBufferAttribute(new Uint32Array(DEFAULT_INSTANCE_COUNT), 1);
+    this.positionAndScaleAttribute = new InstancedBufferAttribute(
+      new Float32Array(DEFAULT_INSTANCE_COUNT * 4),
+      4,
+      false
+    );
+    this.idAttribute = new InstancedBufferAttribute(new Uint32Array(DEFAULT_INSTANCE_COUNT), 1, false);
     this.instancedGeometry.setAttribute(InstanceAttributes.POSITION, this.positionAndScaleAttribute);
     this.instancedGeometry.setAttribute(InstanceAttributes.SEG_ID, this.idAttribute);
 
     this.points = new Points(this.instancedGeometry, pointMaterial);
 
-    // this.scene.add(this.pointsMesh);
     this.scene.add(this.points);
 
     this.panOffset = new Vector2(0, 0);
@@ -200,10 +202,16 @@ class PointRenderer2D {
     this.idAttribute.needsUpdate = true;
   }
 
-  public setPositionAndScale(panOffset: Vector2, frameToCanvasCoordinates: Vector2, canvasResolution: Vector2): void {
+  public setPositionAndScale(
+    panOffset: Vector2,
+    frameToCanvasCoordinates: Vector2,
+    canvasResolution: Vector2,
+    zoomMultiplier: number
+  ): void {
     this.panOffset.copy(panOffset);
     this.frameToCanvasCoordinates.copy(frameToCanvasCoordinates);
     this.canvasResolution.copy(canvasResolution);
+    this.zoomMultiplier = zoomMultiplier;
     this.lastRenderedFrame = null;
   }
 
@@ -243,22 +251,11 @@ class PointRenderer2D {
     this.camera.near = 0;
     this.camera.far = 1000;
     this.camera.updateProjectionMatrix();
-    // this.pointsMesh.frustumCulled = false;
 
-    // Scale point radius so the points are the same size in canvas space
-    // regardless of zoom level or frame resolution.
-    const canvasToFramePixels = dataset.frameResolution
-      .clone()
-      .divide(this.frameToCanvasCoordinates)
-      .divide(this.canvasResolution);
-    this.points.material.baseScale =
-      this.params.centroidRadiusPx * Math.max(canvasToFramePixels.x, canvasToFramePixels.y);
+    const pixelRatio = renderer.getPixelRatio();
+    const zoomScaleMultiplier = this.zoomMultiplier * SCALE_WITH_ZOOM + (1 - SCALE_WITH_ZOOM);
+    this.points.material.baseScale = 2 * this.params.centroidRadiusPx * pixelRatio * zoomScaleMultiplier;
     this.points.frustumCulled = false;
-    // TODO: Scale a little bit with zoom (see annotation rendering)
-    // this.pointsMesh.material.pointRadiusPx =
-    //   this.params.centroidRadiusPx * Math.max(canvasToFramePixels.x, canvasToFramePixels.y);
-    // this.pointsMesh.material.antialiasEdgePx = 0.5 * Math.max(canvasToFramePixels.x, canvasToFramePixels.y);
-    // this.pointsMesh.material.needsUpdate = true;
 
     renderer.render(this.scene, this.camera);
 

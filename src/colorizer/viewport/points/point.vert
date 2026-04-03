@@ -6,6 +6,9 @@
 
 // Per-instance attributes
 in vec4 instancePosition;
+in uint instanceId;
+
+flat out uint IN_instanceId;
 
 // General uniforms
 uniform float baseScale;

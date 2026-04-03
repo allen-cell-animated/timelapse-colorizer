@@ -6,10 +6,7 @@ layout (location = 0) out vec4 gOutputColor;
 float THRESHOLD = 0.5;
 
 // Per-instance attributes
-uniform uint instanceId;
-
-// uniform float pointRadiusPx;
-// uniform float antialiasEdgePx;
+flat in uint IN_instanceId;
 
 void main() {
     vec2 uv = gl_PointCoord;
@@ -23,7 +20,7 @@ void main() {
     // // Apply a smooth edge to the points
     // // float edgeSoftness = antialiasEdgePx / pointRadiusPx;
     // // float alpha = smoothstep(THRESHOLD, THRESHOLD - edgeSoftness, dist);
-    // gl_FragDepth = dist;
+    gl_FragDepth = dist;
     gOutputColor = vec4(1.0, 0.0, 0.0, 1.0);
 
 }

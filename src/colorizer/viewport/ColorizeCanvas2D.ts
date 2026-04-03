@@ -366,7 +366,8 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     this.pointRenderer.setPositionAndScale(
       this.panOffset,
       this.savedScaleInfo.frameToCanvasCoordinates,
-      this.canvasResolution
+      this.canvasResolution,
+      this.zoomMultiplier
     );
     this.render();
   }
@@ -461,7 +462,8 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     this.pointRenderer.setPositionAndScale(
       this.panOffset,
       this.savedScaleInfo.frameToCanvasCoordinates,
-      canvasResolution
+      canvasResolution,
+      this.zoomMultiplier
     );
     this.vectorField.setPosition(this.panOffset, frameToCanvasCoordinates);
     this.vectorField.setScale(frameToCanvasCoordinates, this.canvasResolution || new Vector2(1, 1));
@@ -841,6 +843,8 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
   public render(_options?: RenderOptions): void {
     this.checkPixelRatio();
     this.syncTrackPathLine();
+    console.log("-----");
+    console.log("Zoom multiplier: ", this.zoomMultiplier);
     const frameTex = this.pointRenderer.renderFrame(this.renderer, this.currentFrame);
     if (frameTex) {
       frameTex.needsUpdate = true;
