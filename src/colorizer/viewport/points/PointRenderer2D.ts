@@ -124,18 +124,26 @@ class PointRenderer2D {
     return needsRender;
   }
 
+  private increaseMaxInstanceCount(newCount: number): void {
+    this.maxInstanceCount = newCount;
+
+    this.scene.remove(this.pointsMesh);
+    this.pointsMesh.geometry.dispose();
+    this.pointsMesh.dispose();
+
+    const planeGeometry = new PlaneGeometry(1, 1);
+    const pointMaterial = new PointMaterial();
+    this.pointsMesh = new InstancedMesh(planeGeometry, pointMaterial, this.maxInstanceCount);
+    this.scene.add(this.pointsMesh);
+  }
+
   private setupPointsMesh(dataset: Dataset, ids: Uint32Array): void {
     if (!this.params) {
       return;
     }
     // Resize instances as needed
     if (ids.length > this.maxInstanceCount) {
-      this.maxInstanceCount = ids.length;
-      this.scene.remove(this.pointsMesh);
-      const planeGeometry = new PlaneGeometry(1, 1);
-      const pointMaterial = new PointMaterial();
-      this.pointsMesh = new InstancedMesh(planeGeometry, pointMaterial, this.maxInstanceCount);
-      this.scene.add(this.pointsMesh);
+      this.increaseMaxInstanceCount(ids.length);
     }
 
     // Update size and color
