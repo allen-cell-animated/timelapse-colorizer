@@ -1,7 +1,6 @@
 import {
   Color,
   DataTexture,
-  FloatType,
   GLSL3,
   Matrix4,
   Mesh,
@@ -43,7 +42,7 @@ import {
 } from "src/colorizer/types";
 import { getGlobalIdFromSegId, hasPropertyChanged } from "src/colorizer/utils/data_utils";
 import { convertCanvasOffsetPxToFrameCoords, getFrameSizeInScreenPx } from "src/colorizer/utils/math_utils";
-import { makeEmptyRGBATexture, packDataTexture } from "src/colorizer/utils/texture_utils";
+import { makeEmptyRGBAFloatTexture, packDataTexture } from "src/colorizer/utils/texture_utils";
 import VectorField from "src/colorizer/VectorField";
 import {
   type Canvas2DScaleInfo,
@@ -56,9 +55,9 @@ import type { IInnerRenderCanvas } from "./IInnerRenderCanvas";
 import TrackPath2D from "./tracks/TrackPath2D";
 import { get2DCanvasScaling, getTrackPathColor, reassignTrackPaths } from "./utils";
 
-import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
+import pickFragmentShader from "./shaders/cellId.frag";
+import fragmentShader from "./shaders/colorize.frag";
 import vertexShader from "./shaders/colorize.vert";
-import fragmentShader from "./shaders/colorize_RGBA8U.frag";
 
 export const BACKGROUND_ID = -1;
 const MIN_PAN_OFFSET = -0.5;
@@ -113,9 +112,9 @@ type ColorizeUniformTypes = {
 type ColorizeUniforms = { [K in keyof ColorizeUniformTypes]: Uniform<ColorizeUniformTypes[K]> };
 
 const getDefaultUniforms = (): ColorizeUniforms => {
-  const emptyBackdrop = makeEmptyRGBATexture();
-  const emptyFrame = makeEmptyRGBATexture();
-  const emptyOverlay = makeEmptyRGBATexture();
+  const emptyBackdrop = makeEmptyRGBAFloatTexture();
+  const emptyFrame = makeEmptyRGBAFloatTexture();
+  const emptyOverlay = makeEmptyRGBAFloatTexture();
   const emptySegIdToGlobalId = packDataTexture([0], FeatureDataType.U8);
   const emptyFeature = packDataTexture([0], FeatureDataType.F32);
   const emptyOutliers = packDataTexture([0], FeatureDataType.U8);
@@ -236,7 +235,6 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
 
     this.pickRenderTarget = new WebGLRenderTarget(1, 1, {
       depthBuffer: false,
-      type: FloatType,
     });
     this.renderer = new WebGLRenderer({ antialias: true });
     this.checkPixelRatio();
@@ -820,12 +818,11 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     if (!dataset) {
       return null;
     }
-    const pixbuf = new Float32Array(4);
+    const pixbuf = new Uint8Array(4);
     this.renderer.readRenderTargetPixels(this.pickRenderTarget, x, this.pickRenderTarget.height - y, 1, 1, pixbuf);
 
     // get 32bit value from 4 8bit values
-    const segId =
-      (pixbuf[0] * 255.0) | ((pixbuf[1] * 255.0) << 8) | ((pixbuf[2] * 255.0) << 16) | ((pixbuf[3] * 255.0) << 24);
+    const segId = pixbuf[0] | (pixbuf[1] << 8) | (pixbuf[2] << 16) | (pixbuf[3] << 24);
 
     if (segId === 0) {
       return null;

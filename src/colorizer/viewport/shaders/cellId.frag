@@ -10,7 +10,6 @@ layout (location = 0) out vec4 gOutputColor;
 
 void main() {
   // Scale uv to compensate for the aspect of the frame
-  ivec2 frameDims = textureSize(frame, 0);
   vec2 sUv = (vUv - 0.5) * canvasToFrameScale + 0.5 - panOffset;
 
   // This pixel is background if, after scaling uv, it is outside the frame

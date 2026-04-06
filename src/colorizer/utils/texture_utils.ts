@@ -98,8 +98,8 @@ export function packDataTexture<T extends FeatureDataType>(data: FeatureArrayTyp
   return infoToDataTexture(arrayToDataTextureInfo(data, type));
 }
 
-export function makeEmptyRGBATexture(): DataTexture {
-  const tex = new DataTexture(new Float32Array([0, 0, 0, 0]), 1, 1, RGBAFormat, FloatType);
+export function makeEmptyRGBAFloatTexture(width = 1, height = 1): DataTexture {
+  const tex = new DataTexture(new Float32Array([0, 0, 0, 0]), width, height, RGBAFormat, FloatType);
   tex.internalFormat = "RGBA32F";
   tex.needsUpdate = true;
   return tex;
