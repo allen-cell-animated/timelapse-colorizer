@@ -801,7 +801,15 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     this.checkPixelRatio();
     this.syncTrackPathLine();
 
+    // Render main scene
     this.renderer.render(this.scene, this.camera);
+
+    // Render to pick buffer
+    const previousRenderTarget = this.renderer.getRenderTarget();
+    this.renderer.setRenderTarget(this.pickRenderTarget);
+    this.renderer.render(this.pickScene, this.camera);
+    this.renderer.setRenderTarget(previousRenderTarget);
+
     this.onRenderCallback?.();
   }
 
@@ -818,16 +826,8 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     if (!dataset) {
       return null;
     }
-
-    const rt = this.renderer.getRenderTarget();
-
-    this.renderer.setRenderTarget(this.pickRenderTarget);
-    this.renderer.render(this.pickScene, this.camera);
-
     const pixbuf = new Uint8Array(4);
     this.renderer.readRenderTargetPixels(this.pickRenderTarget, x, this.pickRenderTarget.height - y, 1, 1, pixbuf);
-    // restore main render target
-    this.renderer.setRenderTarget(rt);
 
     // get 32bit value from 4 8bit values
     const segId = pixbuf[0] | (pixbuf[1] << 8) | (pixbuf[2] << 16) | (pixbuf[3] << 24);
