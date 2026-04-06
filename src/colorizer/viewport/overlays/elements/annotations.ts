@@ -154,11 +154,6 @@ function drawAnnotationMarker(
   const pos = new Vector2(pos3d.x, pos3d.y);
   const { scale, clipOpacity } = params.depthToScale(pos3d.z);
 
-  // TODO: getIdAtPixel is very expensive and can cause performance issues when
-  // annotations are being updated without the view moving (like when a user is
-  // editing a value or is adding annotations). Turn annotation rendering into a
-  // class and cache the getIdAtPixel result for the current frame, invalidating
-  // it whenever the transform matrix or current frame changes.
   if (params.getIdAtPixel !== null) {
     const pixelIdInfo = params.getIdAtPixel(pos.x, pos.y);
     const isObscured = pixelIdInfo !== null && pixelIdInfo.globalId !== id;
