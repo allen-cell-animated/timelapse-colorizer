@@ -8,7 +8,6 @@ import {
   OrthographicCamera,
   PlaneGeometry,
   Quaternion,
-  RedIntegerFormat,
   RGBAFormat,
   Scene,
   ShaderMaterial,
@@ -44,7 +43,7 @@ import {
 } from "src/colorizer/types";
 import { getGlobalIdFromSegId, hasPropertyChanged } from "src/colorizer/utils/data_utils";
 import { convertCanvasOffsetPxToFrameCoords, getFrameSizeInScreenPx } from "src/colorizer/utils/math_utils";
-import { packDataTexture } from "src/colorizer/utils/texture_utils";
+import { makeEmptyRGBATexture, packDataTexture } from "src/colorizer/utils/texture_utils";
 import VectorField from "src/colorizer/VectorField";
 import {
   type Canvas2DScaleInfo,
@@ -114,19 +113,10 @@ type ColorizeUniformTypes = {
 type ColorizeUniforms = { [K in keyof ColorizeUniformTypes]: Uniform<ColorizeUniformTypes[K]> };
 
 const getDefaultUniforms = (): ColorizeUniforms => {
-  const emptyBackdrop = new DataTexture(new Float32Array([1, 0, 0, 0]), 1, 1, RGBAFormat, FloatType);
-  emptyBackdrop.internalFormat = "RGBA32F";
-  emptyBackdrop.needsUpdate = true;
-  const emptyFrame = new DataTexture(new Float32Array([0, 0, 0, 0]), 1, 1, RGBAFormat, FloatType);
-  emptyFrame.internalFormat = "RGBA32F";
-  emptyFrame.needsUpdate = true;
-  const emptyOverlay = new DataTexture(new Float32Array([0, 0, 0, 0]), 1, 1, RGBAFormat, FloatType);
-  emptyOverlay.internalFormat = "RGBA32F";
-  emptyOverlay.needsUpdate = true;
-  const emptySegIdToGlobalId = new DataTexture(new Uint8Array([0]), 1, 1, RedIntegerFormat, UnsignedByteType);
-  emptySegIdToGlobalId.internalFormat = "R8UI";
-  emptySegIdToGlobalId.needsUpdate = true;
-
+  const emptyBackdrop = makeEmptyRGBATexture();
+  const emptyFrame = makeEmptyRGBATexture();
+  const emptyOverlay = makeEmptyRGBATexture();
+  const emptySegIdToGlobalId = packDataTexture([0], FeatureDataType.U8);
   const emptyFeature = packDataTexture([0], FeatureDataType.F32);
   const emptyOutliers = packDataTexture([0], FeatureDataType.U8);
   const emptyInRangeIds = packDataTexture([0], FeatureDataType.U8);

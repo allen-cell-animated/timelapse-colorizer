@@ -1,4 +1,4 @@
-import { DataTexture } from "three";
+import { DataTexture, FloatType, RGBAFormat } from "three";
 
 import { type FeatureArrayType, type FeatureDataType, featureTypeSpecs } from "src/colorizer/types";
 
@@ -96,4 +96,11 @@ export function arrayToDataTextureInfo<T extends FeatureDataType>(
  */
 export function packDataTexture<T extends FeatureDataType>(data: FeatureArrayType[T] | number[], type: T): DataTexture {
   return infoToDataTexture(arrayToDataTextureInfo(data, type));
+}
+
+export function makeEmptyRGBATexture(): DataTexture {
+  const tex = new DataTexture(new Float32Array([0, 0, 0, 0]), 1, 1, RGBAFormat, FloatType);
+  tex.internalFormat = "RGBA32F";
+  tex.needsUpdate = true;
+  return tex;
 }
