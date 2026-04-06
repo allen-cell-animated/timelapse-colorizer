@@ -1,24 +1,12 @@
 precision highp usampler2D;
 
-uniform usampler2D frame;
+uniform sampler2D frame;
 uniform vec2 canvasToFrameScale;
 uniform vec2 panOffset;
 
 in vec2 vUv;
 
 layout (location = 0) out vec4 gOutputColor;
-
-// Combine non-alpha color channels into one 24-bit value
-uint combineColor(uvec4 color) {
-  return (color.b << 16u) | (color.g << 8u) | color.r;
-}
-vec4 uncombineColor(uint value) {
-  uint a = (value >> 24) & 0xFFu;
-  uint b = (value >> 16) & 0xFFu;
-  uint g = (value >> 8) & 0xFFu;
-  uint r = (value >> 0) & 0xFFu;
-  return vec4(float(r) / 255.0, float(g) / 255.0, float(b) / 255.0, float(a) / 255.0);
-}
 
 void main() {
   // Scale uv to compensate for the aspect of the frame
@@ -32,9 +20,9 @@ void main() {
   }
 
   // Get the segmentation id at this pixel
-  uint id = combineColor(texture(frame, sUv));
+  vec4 floatId = texture(frame, sUv);
+  floatId.a = 0.0;
 
   // write this id out and we're done.
-  vec4 v = uncombineColor(id);
-  gOutputColor = v;
+  gOutputColor = floatId;
 }

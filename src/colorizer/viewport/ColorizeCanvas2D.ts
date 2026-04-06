@@ -1,14 +1,15 @@
 import {
   Color,
   DataTexture,
+  FloatType,
   GLSL3,
   Matrix4,
   Mesh,
   OrthographicCamera,
   PlaneGeometry,
   Quaternion,
+  RedIntegerFormat,
   RGBAFormat,
-  RGBAIntegerFormat,
   Scene,
   ShaderMaterial,
   type Texture,
@@ -113,12 +114,18 @@ type ColorizeUniformTypes = {
 type ColorizeUniforms = { [K in keyof ColorizeUniformTypes]: Uniform<ColorizeUniformTypes[K]> };
 
 const getDefaultUniforms = (): ColorizeUniforms => {
-  const emptyBackdrop = new DataTexture(new Uint8Array([1, 0, 0, 0]), 1, 1, RGBAFormat, UnsignedByteType);
-  const emptyFrame = new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAIntegerFormat, UnsignedByteType);
-  emptyFrame.internalFormat = "RGBA8UI";
+  const emptyBackdrop = new DataTexture(new Float32Array([1, 0, 0, 0]), 1, 1, RGBAFormat, FloatType);
+  emptyBackdrop.internalFormat = "RGBA32F";
+  emptyBackdrop.needsUpdate = true;
+  const emptyFrame = new DataTexture(new Float32Array([0, 0, 0, 0]), 1, 1, RGBAFormat, FloatType);
+  emptyFrame.internalFormat = "RGBA32F";
   emptyFrame.needsUpdate = true;
-  const emptyOverlay = new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAFormat, UnsignedByteType);
-  const emptySegIdToGlobalId = new DataTexture(new Uint8Array([0]), 1, 1, RGBAFormat, UnsignedByteType);
+  const emptyOverlay = new DataTexture(new Float32Array([0, 0, 0, 0]), 1, 1, RGBAFormat, FloatType);
+  emptyOverlay.internalFormat = "RGBA32F";
+  emptyOverlay.needsUpdate = true;
+  const emptySegIdToGlobalId = new DataTexture(new Uint8Array([0]), 1, 1, RedIntegerFormat, UnsignedByteType);
+  emptySegIdToGlobalId.internalFormat = "R8UI";
+  emptySegIdToGlobalId.needsUpdate = true;
 
   const emptyFeature = packDataTexture([0], FeatureDataType.F32);
   const emptyOutliers = packDataTexture([0], FeatureDataType.U8);
@@ -239,6 +246,7 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
 
     this.pickRenderTarget = new WebGLRenderTarget(1, 1, {
       depthBuffer: false,
+      type: FloatType,
     });
     this.renderer = new WebGLRenderer({ antialias: true });
     this.checkPixelRatio();
@@ -735,9 +743,7 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
         frameError = true;
       }
       // Set to blank
-      const emptyFrame = new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAIntegerFormat, UnsignedByteType);
-      emptyFrame.internalFormat = "RGBA8UI";
-      emptyFrame.needsUpdate = true;
+      const emptyFrame = new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAFormat, UnsignedByteType);
       this.setUniform("frame", emptyFrame);
     }
 
@@ -824,11 +830,12 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     if (!dataset) {
       return null;
     }
-    const pixbuf = new Uint8Array(4);
+    const pixbuf = new Float32Array(4);
     this.renderer.readRenderTargetPixels(this.pickRenderTarget, x, this.pickRenderTarget.height - y, 1, 1, pixbuf);
 
     // get 32bit value from 4 8bit values
-    const segId = pixbuf[0] | (pixbuf[1] << 8) | (pixbuf[2] << 16) | (pixbuf[3] << 24);
+    const segId =
+      (pixbuf[0] * 255.0) | ((pixbuf[1] * 255.0) << 8) | ((pixbuf[2] * 255.0) << 16) | ((pixbuf[3] * 255.0) << 24);
 
     if (segId === 0) {
       return null;
