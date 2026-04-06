@@ -42,7 +42,11 @@ import {
 } from "src/colorizer/types";
 import { getGlobalIdFromSegId, hasPropertyChanged } from "src/colorizer/utils/data_utils";
 import { convertCanvasOffsetPxToFrameCoords, getFrameSizeInScreenPx } from "src/colorizer/utils/math_utils";
-import { makeEmptyRGBAFloatTexture, packDataTexture } from "src/colorizer/utils/texture_utils";
+import {
+  makeEmptyRgbaFloatTexture,
+  makeEmptyRgbaUint8Texture,
+  packDataTexture,
+} from "src/colorizer/utils/texture_utils";
 import VectorField from "src/colorizer/VectorField";
 import {
   type Canvas2DScaleInfo,
@@ -55,9 +59,9 @@ import type { IInnerRenderCanvas } from "./IInnerRenderCanvas";
 import TrackPath2D from "./tracks/TrackPath2D";
 import { get2DCanvasScaling, getTrackPathColor, reassignTrackPaths } from "./utils";
 
-import pickFragmentShader from "./shaders/cellId.frag";
-import fragmentShader from "./shaders/colorize.frag";
+import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
 import vertexShader from "./shaders/colorize.vert";
+import fragmentShader from "./shaders/colorize_RGBA8U.frag";
 
 export const BACKGROUND_ID = -1;
 const MIN_PAN_OFFSET = -0.5;
@@ -112,9 +116,9 @@ type ColorizeUniformTypes = {
 type ColorizeUniforms = { [K in keyof ColorizeUniformTypes]: Uniform<ColorizeUniformTypes[K]> };
 
 const getDefaultUniforms = (): ColorizeUniforms => {
-  const emptyBackdrop = makeEmptyRGBAFloatTexture();
-  const emptyFrame = makeEmptyRGBAFloatTexture();
-  const emptyOverlay = makeEmptyRGBAFloatTexture();
+  const emptyBackdrop = makeEmptyRgbaFloatTexture();
+  const emptyFrame = makeEmptyRgbaUint8Texture();
+  const emptyOverlay = makeEmptyRgbaFloatTexture();
   const emptySegIdToGlobalId = packDataTexture([0], FeatureDataType.U8);
   const emptyFeature = packDataTexture([0], FeatureDataType.F32);
   const emptyOutliers = packDataTexture([0], FeatureDataType.U8);
@@ -731,7 +735,7 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
         frameError = true;
       }
       // Set to blank
-      const emptyFrame = makeEmptyRGBAFloatTexture();
+      const emptyFrame = makeEmptyRgbaUint8Texture();
       this.setUniform("frame", emptyFrame);
     }
 

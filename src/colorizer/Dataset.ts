@@ -1,4 +1,4 @@
-import { type DataTexture, RGBAFormat, type Texture, Vector2 } from "three";
+import { type DataTexture, RGBAFormat, RGBAIntegerFormat, type Texture, Vector2 } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "src/colorizer/constants";
 
@@ -172,7 +172,7 @@ export default class Dataset {
     this.baseUrl = urlUtils.formatPath(manifestUrl.substring(0, manifestUrl.lastIndexOf("/")));
     this.hasOpened = false;
 
-    this.frameLoader = options.frameLoader || new ImageFrameLoader(RGBAFormat);
+    this.frameLoader = options.frameLoader || new ImageFrameLoader(RGBAIntegerFormat);
     this.frameFiles = [];
     this.frames = null;
     this.backdropFrames = null;

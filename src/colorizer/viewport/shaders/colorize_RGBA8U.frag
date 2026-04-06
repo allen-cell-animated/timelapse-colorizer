@@ -1,7 +1,7 @@
 precision highp usampler2D;
 precision highp int;
 
-uniform sampler2D frame;
+uniform usampler2D frame;
 uniform sampler2D featureData;
 uniform usampler2D outlierData;
 /** A mapping of IDs that are in range after feature thresholding/filtering is applied. If
@@ -143,10 +143,9 @@ int getGlobalId(uint labelId) {
  * Gets the label ID (aka raw pixel value) of the pixel at the given UV
  * coordinates.
  */
-uint getLabelId(sampler2D tex, vec2 sUv) {
-  vec4 color = texture(tex, sUv);
-  uvec4 uColor = uvec4(color * 255.0);
-  return combineColor(uColor);
+uint getLabelId(usampler2D tex, vec2 sUv) {
+  uvec4 color = texture(tex, sUv);
+  return combineColor(color);
 }
 
 vec4 getColorRamp(float val) {
