@@ -731,7 +731,7 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
         frameError = true;
       }
       // Set to blank
-      const emptyFrame = new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAFormat, UnsignedByteType);
+      const emptyFrame = makeEmptyRGBAFloatTexture();
       this.setUniform("frame", emptyFrame);
     }
 

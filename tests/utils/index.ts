@@ -1,4 +1,4 @@
-import { DataTexture, RGBAFormat, type Texture, UnsignedByteType } from "three";
+import { DataTexture, FloatType, RGBAFormat, type Texture } from "three";
 
 import {
   type ArraySource,
@@ -90,13 +90,7 @@ export class MockFrameLoader implements ITextureImageLoader {
 
   load(_url: string): Promise<Texture> {
     return Promise.resolve(
-      new DataTexture(
-        new Uint8Array(this.width * this.height * 4),
-        this.width,
-        this.height,
-        RGBAFormat,
-        UnsignedByteType
-      )
+      new DataTexture(new Float32Array(this.width * this.height * 4), this.width, this.height, RGBAFormat, FloatType)
     );
   }
 }

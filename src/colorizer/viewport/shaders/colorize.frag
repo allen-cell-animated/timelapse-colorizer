@@ -146,7 +146,6 @@ int getGlobalId(uint labelId) {
 uint getLabelId(sampler2D tex, vec2 sUv) {
   vec4 color = texture(tex, sUv);
   uvec4 uColor = uvec4(color * 255.0);
-  // alpha = color.a;
   return combineColor(uColor);
 }
 

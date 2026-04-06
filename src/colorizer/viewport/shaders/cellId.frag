@@ -18,10 +18,8 @@ void main() {
     return;
   }
 
-  // Get the segmentation id at this pixel
+  // Get the segmentation id at this pixel and write it out
   vec4 floatId = texture(frame, sUv);
   floatId.a = 0.0;
-
-  // write this id out and we're done.
   gOutputColor = floatId;
 }
