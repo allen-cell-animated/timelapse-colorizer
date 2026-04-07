@@ -8,6 +8,7 @@ import {
   PlaneGeometry,
   Quaternion,
   RGBAFormat,
+  RGBAIntegerFormat,
   Scene,
   ShaderMaterial,
   type Texture,
@@ -238,6 +239,9 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     this.pickScene.add(this.pickMesh);
 
     this.pickRenderTarget = new WebGLRenderTarget(1, 1, {
+      format: RGBAIntegerFormat,
+      type: UnsignedByteType,
+      internalFormat: "RGBA8UI",
       depthBuffer: false,
     });
     this.renderer = new WebGLRenderer({ antialias: true });
@@ -825,8 +829,8 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     const pixbuf = new Uint8Array(4);
     this.renderer.readRenderTargetPixels(this.pickRenderTarget, x, this.pickRenderTarget.height - y, 1, 1, pixbuf);
 
-    // get 32bit value from 4 8bit values
-    const segId = pixbuf[0] | (pixbuf[1] << 8) | (pixbuf[2] << 16) | (pixbuf[3] << 24);
+    // get 32bit value from RGB 8bit values (ignore alpha)
+    const segId = pixbuf[0] | (pixbuf[1] << 8) | (pixbuf[2] << 16);
 
     if (segId === 0) {
       return null;
