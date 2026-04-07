@@ -252,9 +252,8 @@ class PointRenderer2D {
     this.camera.far = 1000;
     this.camera.updateProjectionMatrix();
 
-    const pixelRatio = renderer.getPixelRatio();
     const zoomScaleMultiplier = this.zoomMultiplier * SCALE_WITH_ZOOM + (1 - SCALE_WITH_ZOOM);
-    this.points.material.baseScale = 2 * this.params.centroidRadiusPx * pixelRatio * zoomScaleMultiplier;
+    this.points.material.baseScale = 2 * this.params.centroidRadiusPx * zoomScaleMultiplier;
     this.points.frustumCulled = false;
 
     renderer.render(this.scene, this.camera);

@@ -149,8 +149,9 @@ int getGlobalId(uint labelId) {
  * Gets the label ID (aka raw pixel value) of the pixel at the given UV
  * coordinates.
  */
-uint getLabelId(usampler2D tex, vec2 sUv) {
+uint getLabelId(usampler2D tex, vec2 sUv, out float alpha) {
   uvec4 color = texture(tex, sUv);
+  alpha = float(color.a) / 255.0;
   return combineColor(color);
 }
 
@@ -186,18 +187,23 @@ vec4 getOutlineColor(int colorIdx) {
  * @param thicknessPx The thickness in screen pixels to use when checking for edges.
  * @returns True if the pixel is at the edge of an object.
  */
-bool isEdge(usampler2D tex, vec2 uv, uint labelId, float thicknessPx) {
+bool isEdge(usampler2D tex, vec2 uv, uint labelId, float thicknessPx, bool useFrameScaling) {
   // step size is equal to thicknessPx onscreen canvas pixels.
-  float wStep = thicknessPx / float(canvasSizePx.x) * float(canvasToFrameScale.x);
-  float hStep = thicknessPx / float(canvasSizePx.y) * float(canvasToFrameScale.y);        
+  float wStep = thicknessPx / float(canvasSizePx.x);
+  float hStep = thicknessPx / float(canvasSizePx.y);
+  if (useFrameScaling) {
+    wStep *= float(canvasToFrameScale.x);
+    hStep *= float(canvasToFrameScale.y);
+  }
 
   // Sample around the pixel to see if we are on an edge.
   // Compare using label IDs (pixels in the segmentation image) because global IDs may be missing
   // for some objects.
-  uint rLabelId = getLabelId(tex, uv + vec2(+wStep, 0));
-  uint lLabelId = getLabelId(tex, uv + vec2(-wStep, 0));
-  uint tLabelId = getLabelId(tex, uv + vec2(0, +hStep));
-  uint bLabelId = getLabelId(tex, uv + vec2(0, -hStep));
+  float _alpha; // unused
+  uint rLabelId = getLabelId(tex, uv + vec2(+wStep, 0), _alpha);
+  uint lLabelId = getLabelId(tex, uv + vec2(-wStep, 0), _alpha);
+  uint tLabelId = getLabelId(tex, uv + vec2(0, +hStep), _alpha);
+  uint bLabelId = getLabelId(tex, uv + vec2(0, -hStep), _alpha);
   return rLabelId != labelId || lLabelId != labelId || tLabelId != labelId || bLabelId != labelId;
 }
 
@@ -241,34 +247,9 @@ vec4 getBackdropColor(vec2 sUv) {
   return vec4(backdropRgb, backdropColor.a);
 }
 
-vec4 getObjectColor(usampler2D tex, vec2 sUv, float opacity) {
-  // This pixel is background if, after scaling uv, it is outside the frame
-  if (isOutsideBounds(sUv)) {
-    return vec4(canvasBackgroundColor, 1.0);
-  }
-
-  // Get the segmentation id at this pixel
-  uint labelId = getLabelId(tex, sUv);
-  int id = getGlobalId(labelId);
-
-  // A label id of 0 represents background
-  if (labelId == RAW_BACKGROUND_ID) {
+vec4 getFeatureColor(int id, vec2 uv) {
+  if (id < 0) {
     return TRANSPARENT;
-  }
-
-  // do an outline around highlighted object
-  uint selectionIdx = getUintFromTex(selectedIds, id).r;
-  if (selectionIdx > 0u) {
-    if (isEdge(tex, sUv, labelId, OUTLINE_WIDTH_PX)) {
-      int colorIdx = int(selectionIdx) - 1;
-      vec4 color = getOutlineColor(colorIdx);
-      return vec4(color.rgb, 1.0);
-    } else if (isEdge(tex, sUv, labelId, OUTLINE_WIDTH_PX + 2.0) && useTracksPalette) {
-      // When coloring with the track palette, apply an additional 2px inner
-      // outline using the background color for better contrast against the
-      // track outline color.
-      return vec4(backgroundColor, 1.0);
-    }
   }
 
   // Data buffer starts at 0, non-background segmentation IDs start at 1
@@ -281,7 +262,6 @@ vec4 getObjectColor(usampler2D tex, vec2 sUv, float opacity) {
   bool isMissingData = id == MISSING_DATA_ID;
   bool isInRange = getUintFromTex(inRangeIds, id).r == 1u;
   bool isOutlier = isinf(featureVal) || outlierVal != 0u;
-  bool isEdgePixel = (edgeColorAlpha != 0.0) && (isEdge(tex, sUv, labelId, EDGE_WIDTH_PX));
 
   // Features outside the filtered/thresholded range will all be treated the same (use `outOfRangeDrawColor`).
   // Features inside the range can either be outliers or standard values, and are colored accordingly.
@@ -300,13 +280,52 @@ vec4 getObjectColor(usampler2D tex, vec2 sUv, float opacity) {
   } else {
     color = getColorFromDrawMode(outOfRangeDrawMode, outOfRangeColor);
   }
-  float baseAlpha = color.a;
-  color.a *= opacity;
+  return color;
+}
+
+vec4 getObjectColor(usampler2D tex, vec2 sUv, float opacity, bool useFrameScaling) {
+  // This pixel is background if, after scaling uv, it is outside the frame
+  if (isOutsideBounds(sUv)) {
+    return vec4(canvasBackgroundColor, 1.0);
+  }
+
+  // Get the segmentation id at this pixel
+  float alpha = 1.0;
+  uint labelId = getLabelId(tex, sUv, alpha);
+  int id = getGlobalId(labelId);
+
+  // A label id of 0 represents background
+  if (labelId == RAW_BACKGROUND_ID) {
+    return TRANSPARENT;
+  }
+
+  // do an outline around highlighted object
+  uint selectionIdx = getUintFromTex(selectedIds, id).r;
+  if (selectionIdx > 0u) {
+    if (isEdge(tex, sUv, labelId, OUTLINE_WIDTH_PX, useFrameScaling)) {
+      int colorIdx = int(selectionIdx) - 1;
+      vec4 color = getOutlineColor(colorIdx);
+      return vec4(color.rgb, alpha);
+    } else if (isEdge(tex, sUv, labelId, OUTLINE_WIDTH_PX + 2.0, useFrameScaling) && useTracksPalette) {
+      // When coloring with the track palette, apply an additional 2px inner
+      // outline using the background color for better contrast against the
+      // track outline color.
+      return vec4(backgroundColor, alpha);
+    }
+  }
+
+  // Get base color and apply edge color if this is an edge pixel.
+  vec4 baseColor = getFeatureColor(id, sUv);
+  float baseAlpha = baseColor.a;
+  baseColor.a *= opacity * alpha;
+
+  // Apply edge color if this is a non-transparent edge pixel. (Hidden cells do not get )
+  bool isEdgePixel = (edgeColorAlpha != 0.0) && (isEdge(tex, sUv, labelId, EDGE_WIDTH_PX, useFrameScaling));
   if (baseAlpha != 0.0 && isEdgePixel) {
     vec4 transparentEdgeColor = vec4(edgeColor, edgeColorAlpha);
-    color = alphaBlend(transparentEdgeColor, color);
+    baseColor = alphaBlend(transparentEdgeColor, baseColor);
   }
-  return color;
+  return baseColor;
 }
 
 void main() {
@@ -317,15 +336,13 @@ void main() {
   vec4 backdropColor = getBackdropColor(sUv);
 
   // Segmentation colors
-  vec4 mainColor = getObjectColor(frame, sUv, objectOpacity);
+  vec4 mainColor = getObjectColor(frame, sUv, objectOpacity, true);
 
   // Overlays for timestamp/scale bar
   vec4 overlayColor = texture(overlay, vUv).rgba;  // Unscaled UVs, because it is sized to the canvas
 
-  vec4 pointTextureColor = getObjectColor(framePoints, vUv, 1.0);
-  // pointTextureColor = vec4(texture(framePoints, vUv).rgba) / 255.0;
-  // if (!isOutsideBounds(sUv)) {
-  // }
+  vec4 pointTextureColor = getObjectColor(framePoints, vUv, 1.0, false);
+  // vec4 pointTextureColor = vec4(texture(framePoints, vUv).rgba) / 255.0;
 
   gOutputColor = vec4(backgroundColor, 1.0);
   gOutputColor = alphaBlend(backdropColor, gOutputColor);

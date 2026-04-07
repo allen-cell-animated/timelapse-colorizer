@@ -198,7 +198,7 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   // State
   showCentroids: true,
   showSegmentation: true,
-  centroidRadiusPx: 6,
+  centroidRadiusPx: 4,
   showTrackPath: true,
   trackPathColor: new Color(OUTLINE_COLOR_DEFAULT),
   trackPathWidthPx: 1.5,
