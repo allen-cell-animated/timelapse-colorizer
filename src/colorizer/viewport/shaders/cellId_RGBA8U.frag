@@ -1,6 +1,7 @@
 precision highp usampler2D;
 
 uniform usampler2D frame;
+uniform usampler2D framePoints;
 uniform vec2 canvasToFrameScale;
 uniform vec2 panOffset;
 
@@ -20,6 +21,11 @@ void main() {
   }
 
   // Get the segmentation id at this pixel
+  uvec4 pointData = texture(framePoints, vUv);
   uvec4 frameColor = texture(frame, sUv);
+  if (pointData.a > 0u) {
+    gOutputColor = pointData;
+    return;
+  }
   gOutputColor = frameColor;
 }
