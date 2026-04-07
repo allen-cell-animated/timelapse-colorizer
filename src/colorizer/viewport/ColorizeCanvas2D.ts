@@ -1,7 +1,6 @@
 import {
   Color,
   DataTexture,
-  FloatType,
   GLSL3,
   Matrix4,
   Mesh,
@@ -9,7 +8,6 @@ import {
   PlaneGeometry,
   Quaternion,
   RGBAFormat,
-  RGBAIntegerFormat,
   Scene,
   ShaderMaterial,
   type Texture,
@@ -44,7 +42,11 @@ import {
 } from "src/colorizer/types";
 import { getGlobalIdFromSegId, hasPropertyChanged } from "src/colorizer/utils/data_utils";
 import { convertCanvasOffsetPxToFrameCoords, getFrameSizeInScreenPx } from "src/colorizer/utils/math_utils";
-import { packDataTexture } from "src/colorizer/utils/texture_utils";
+import {
+  makeEmptyRgbaFloatTexture,
+  makeEmptyRgbaUint8Texture,
+  packDataTexture,
+} from "src/colorizer/utils/texture_utils";
 import VectorField from "src/colorizer/VectorField";
 import PointRenderer2D from "src/colorizer/viewport/points/PointRenderer2D";
 import {
@@ -116,26 +118,11 @@ type ColorizeUniformTypes = {
 type ColorizeUniforms = { [K in keyof ColorizeUniformTypes]: Uniform<ColorizeUniformTypes[K]> };
 
 const getDefaultUniforms = (): ColorizeUniforms => {
-  const emptyBackdrop = new DataTexture(new Float32Array([1, 0, 0, 0]), 1, 1, RGBAFormat, FloatType);
-  emptyBackdrop.internalFormat = "RGBA32F";
-  emptyBackdrop.needsUpdate = true;
-
-  const emptyFrame = new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAIntegerFormat, UnsignedByteType);
-  emptyFrame.internalFormat = "RGBA8UI";
-  emptyFrame.needsUpdate = true;
-
-  const emptyFramePoints = new DataTexture(new Float32Array([1, 0, 1, 0]), 1, 1, RGBAFormat, FloatType);
-  emptyFramePoints.internalFormat = "RGBA32F";
-  emptyFramePoints.needsUpdate = true;
-
-  const emptyOverlay = new DataTexture(new Float32Array([0, 0, 0, 0]), 1, 1, RGBAFormat, FloatType);
-  emptyOverlay.internalFormat = "RGBA32F";
-  emptyOverlay.needsUpdate = true;
-
-  const emptySegIdToGlobalId = new DataTexture(new Uint8Array([0]), 1, 1, RGBAIntegerFormat, UnsignedByteType);
-  emptySegIdToGlobalId.internalFormat = "R8UI";
-  emptySegIdToGlobalId.needsUpdate = true;
-
+  const emptyBackdrop = makeEmptyRgbaFloatTexture();
+  const emptyFrame = makeEmptyRgbaUint8Texture();
+  const emptyFramePoints = makeEmptyRgbaUint8Texture();
+  const emptyOverlay = makeEmptyRgbaFloatTexture();
+  const emptySegIdToGlobalId = packDataTexture([0], FeatureDataType.U8);
   const emptyFeature = packDataTexture([0], FeatureDataType.F32);
   const emptyOutliers = packDataTexture([0], FeatureDataType.U8);
   const emptyInRangeIds = packDataTexture([0], FeatureDataType.U8);
@@ -324,8 +311,6 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     this.renderer.setSize(width, height);
     this.canvas.width = Math.round(width * this.renderer.getPixelRatio());
     this.canvas.height = Math.round(height * this.renderer.getPixelRatio());
-    // TODO: either make this a 1x1 target and draw it with a new camera every time we pick,
-    // or keep it up to date with the canvas on each redraw (and don't draw to it when we pick!)
     this.pickRenderTarget.setSize(width, height);
 
     this.canvasResolution = new Vector2(width, height);
@@ -771,9 +756,7 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
         frameError = true;
       }
       // Set to blank
-      const emptyFrame = new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAIntegerFormat, UnsignedByteType);
-      emptyFrame.internalFormat = "RGBA8UI";
-      emptyFrame.needsUpdate = true;
+      const emptyFrame = makeEmptyRgbaUint8Texture();
       this.setUniform("frame", emptyFrame);
     }
 
@@ -834,12 +817,23 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
   public render(_options?: RenderOptions): void {
     this.checkPixelRatio();
     this.syncTrackPathLine();
+
+    // Render points overlay
     const frameTex = this.pointRenderer.renderFrame(this.renderer, this.currentFrame);
     if (frameTex) {
       frameTex.needsUpdate = true;
       this.setUniform("framePoints", frameTex);
     }
+
+    // Render main scene
     this.renderer.render(this.scene, this.camera);
+
+    // Render to pick buffer
+    const previousRenderTarget = this.renderer.getRenderTarget();
+    this.renderer.setRenderTarget(this.pickRenderTarget);
+    this.renderer.render(this.pickScene, this.camera);
+    this.renderer.setRenderTarget(previousRenderTarget);
+
     this.onRenderCallback?.();
   }
 
@@ -856,16 +850,8 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     if (!dataset) {
       return null;
     }
-
-    const rt = this.renderer.getRenderTarget();
-
-    this.renderer.setRenderTarget(this.pickRenderTarget);
-    this.renderer.render(this.pickScene, this.camera);
-
     const pixbuf = new Uint8Array(4);
     this.renderer.readRenderTargetPixels(this.pickRenderTarget, x, this.pickRenderTarget.height - y, 1, 1, pixbuf);
-    // restore main render target
-    this.renderer.setRenderTarget(rt);
 
     // get 32bit value from 4 8bit values
     const segId = pixbuf[0] | (pixbuf[1] << 8) | (pixbuf[2] << 16) | (pixbuf[3] << 24);
