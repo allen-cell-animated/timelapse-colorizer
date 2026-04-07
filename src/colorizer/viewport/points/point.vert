@@ -1,3 +1,8 @@
+/**
+ * Vertex shader for rendering points; applies per-instance position and scaling
+ * and passes parameters (instanceId and radius) to the fragment shader.
+ */
+
 #include <common>
 #include <color_pars_vertex>
 #include <fog_pars_vertex>

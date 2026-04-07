@@ -59,7 +59,7 @@ const OUTLIER_DRAW_SETTINGS_DEFAULT: DrawSettings = {
 
 export type ConfigSliceState = {
   // View mode
-  showSegmentation: boolean;
+  showSegmentations: boolean;
   showCentroids: boolean;
   centroidRadiusPx: number;
 
@@ -197,7 +197,7 @@ export type ConfigSlice = ConfigSliceState & ConfigSliceActions;
 export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> = (set) => ({
   // State
   showCentroids: true,
-  showSegmentation: true,
+  showSegmentations: true,
   centroidRadiusPx: 4,
   showTrackPath: true,
   trackPathColor: new Color(OUTLINE_COLOR_DEFAULT),

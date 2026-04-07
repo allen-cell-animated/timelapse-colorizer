@@ -17,7 +17,7 @@ import {
 
 import Dataset from "src/colorizer/Dataset";
 import { hasPropertyChanged } from "src/colorizer/utils/data_utils";
-import PointMaterial from "src/colorizer/viewport/points/PointMaterial";
+import PointMaterial, { PointMaterialInstanceAttributes } from "src/colorizer/viewport/points/PointMaterial";
 import { PointRendererParams } from "src/colorizer/viewport/points/types";
 
 const DEFAULT_INSTANCE_COUNT = 128;
@@ -28,11 +28,6 @@ function getPointBufferGeometry(): BufferGeometry {
   const vertices = new Float32Array([0, 0, 0, 0]);
   geometry.setAttribute("position", new BufferAttribute(vertices, 4));
   return geometry;
-}
-
-const enum InstanceAttributes {
-  POSITION = "instancePosition",
-  LABEL_ID = "instanceId",
 }
 
 /**
@@ -83,7 +78,8 @@ class PointRenderer2D {
     this.scene = new Scene();
     const pointMaterial = new PointMaterial();
 
-    this.instancedGeometry = new InstancedBufferGeometry().copy(getPointBufferGeometry() as InstancedBufferGeometry);
+    const pointGeometry = getPointBufferGeometry() as InstancedBufferGeometry;
+    this.instancedGeometry = new InstancedBufferGeometry().copy(pointGeometry);
     this.instancedGeometry.instanceCount = 0;
 
     // Set up per-instance attributes.
@@ -93,8 +89,8 @@ class PointRenderer2D {
       false
     );
     this.idAttribute = new InstancedBufferAttribute(new Uint32Array(DEFAULT_INSTANCE_COUNT), 1, false);
-    this.instancedGeometry.setAttribute(InstanceAttributes.POSITION, this.positionAndScaleAttribute);
-    this.instancedGeometry.setAttribute(InstanceAttributes.LABEL_ID, this.idAttribute);
+    this.instancedGeometry.setAttribute(PointMaterialInstanceAttributes.POSITION, this.positionAndScaleAttribute);
+    this.instancedGeometry.setAttribute(PointMaterialInstanceAttributes.LABEL_ID, this.idAttribute);
 
     this.points = new Points(this.instancedGeometry, pointMaterial);
 
@@ -105,8 +101,6 @@ class PointRenderer2D {
     this.canvasResolution = new Vector2(1, 1);
 
     this.camera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
-    // TODO: Three does NOT support rendering to integer render targets. Change
-    // this to a float.
     this.renderTarget = new WebGLRenderTarget(2, 2, {
       format: RGBAIntegerFormat,
       type: UnsignedByteType,
@@ -159,7 +153,8 @@ class PointRenderer2D {
     this.maxInstanceCount = newCount;
 
     this.instancedGeometry.dispose();
-    this.instancedGeometry = new InstancedBufferGeometry().copy(getPointBufferGeometry() as InstancedBufferGeometry);
+    const pointGeometry = getPointBufferGeometry() as InstancedBufferGeometry;
+    this.instancedGeometry = new InstancedBufferGeometry().copy(pointGeometry);
     this.points.geometry = this.instancedGeometry;
 
     const newPos = new Float32Array(this.maxInstanceCount * 4);
@@ -167,8 +162,8 @@ class PointRenderer2D {
     this.positionAndScaleAttribute = new InstancedBufferAttribute(newPos, 4, false);
     this.idAttribute = new InstancedBufferAttribute(newIds, 1, false);
 
-    this.instancedGeometry.setAttribute(InstanceAttributes.POSITION, this.positionAndScaleAttribute);
-    this.instancedGeometry.setAttribute(InstanceAttributes.LABEL_ID, this.idAttribute);
+    this.instancedGeometry.setAttribute(PointMaterialInstanceAttributes.POSITION, this.positionAndScaleAttribute);
+    this.instancedGeometry.setAttribute(PointMaterialInstanceAttributes.LABEL_ID, this.idAttribute);
   }
 
   private setupPointsMesh(dataset: Dataset, ids: Uint32Array): void {

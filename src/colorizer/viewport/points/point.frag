@@ -1,3 +1,10 @@
+/**
+ * Draws a circular point for each instance, using the RGB color to encode the 
+ * instance ID.
+ * 
+ * The alpha channel is reserved for smooth rendering and encoding the distance
+ * from the edge of the shape for outlining effects.
+ */
 precision highp int;
 
 // TODO: Also write out normal in the future?
@@ -10,6 +17,7 @@ float ANTIALIAS_PX = 2.0;
 flat in uint IN_instanceId;
 flat in float IN_radius;
 
+/** Encodes instance ID as an RGB value. */
 uvec3 getInstanceColor(uint value) {
   uint b = (value >> 16) & 0xFFu;
   uint g = (value >> 8) & 0xFFu;
