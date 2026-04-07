@@ -1,10 +1,10 @@
 precision highp int;
 
-// TODO: Also write out normal and depth in the future?
+// TODO: Also write out normal in the future?
 layout (location = 0) out uvec4 gOutputColor;
 
 float THRESHOLD = 0.5;
-float ANTIALIAS_PX = 1.0;
+float ANTIALIAS_PX = 2.0;
 
 // Per-instance attributes
 flat in uint IN_instanceId;

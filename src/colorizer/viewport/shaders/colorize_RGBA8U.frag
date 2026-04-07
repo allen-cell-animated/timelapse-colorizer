@@ -247,6 +247,13 @@ vec4 getBackdropColor(vec2 sUv) {
   return vec4(backdropRgb, backdropColor.a);
 }
 
+/**
+ * Gets the base color of an object from its global ID. Applies the color map
+ * and handling for out-of-range and outlier values.
+ * 
+ * Note that the output color's alpha will be 0 if the value is hidden by the
+ * current draw mode.
+ */
 vec4 getFeatureColor(int id, vec2 uv) {
   if (id < 0) {
     return TRANSPARENT;
@@ -283,15 +290,14 @@ vec4 getFeatureColor(int id, vec2 uv) {
   return color;
 }
 
-vec4 getObjectColor(usampler2D tex, vec2 sUv, float opacity, bool useFrameScaling) {
-  // This pixel is background if, after scaling uv, it is outside the frame
+vec4 getObjectColor(vec2 sUv, float opacity) {
   if (isOutsideBounds(sUv)) {
-    return vec4(canvasBackgroundColor, 1.0);
+    return TRANSPARENT;
   }
 
   // Get the segmentation id at this pixel
-  float alpha = 1.0;
-  uint labelId = getLabelId(tex, sUv, alpha);
+  float _labelAlpha = 1.0;
+  uint labelId = getLabelId(frame, sUv, _labelAlpha);
   int id = getGlobalId(labelId);
 
   // A label id of 0 represents background
@@ -302,30 +308,62 @@ vec4 getObjectColor(usampler2D tex, vec2 sUv, float opacity, bool useFrameScalin
   // do an outline around highlighted object
   uint selectionIdx = getUintFromTex(selectedIds, id).r;
   if (selectionIdx > 0u) {
-    if (isEdge(tex, sUv, labelId, OUTLINE_WIDTH_PX, useFrameScaling)) {
+    if (isEdge(frame, sUv, labelId, OUTLINE_WIDTH_PX, true)) {
       int colorIdx = int(selectionIdx) - 1;
       vec4 color = getOutlineColor(colorIdx);
-      return vec4(color.rgb, alpha);
-    } else if (isEdge(tex, sUv, labelId, OUTLINE_WIDTH_PX + 2.0, useFrameScaling) && useTracksPalette) {
+      return vec4(color.rgb, 1.0);
+    } else if (isEdge(frame, sUv, labelId, OUTLINE_WIDTH_PX + 2.0, true) && useTracksPalette) {
       // When coloring with the track palette, apply an additional 2px inner
       // outline using the background color for better contrast against the
       // track outline color.
-      return vec4(backgroundColor, alpha);
+      return vec4(backgroundColor, 1.0);
     }
   }
 
   // Get base color and apply edge color if this is an edge pixel.
   vec4 baseColor = getFeatureColor(id, sUv);
   float baseAlpha = baseColor.a;
-  baseColor.a *= opacity * alpha;
+  baseColor.a *= opacity;
 
   // Apply edge color if this is a non-transparent edge pixel. (Hidden cells do not get )
-  bool isEdgePixel = (edgeColorAlpha != 0.0) && (isEdge(tex, sUv, labelId, EDGE_WIDTH_PX, useFrameScaling));
+  bool isEdgePixel = (edgeColorAlpha != 0.0) && (isEdge(frame, sUv, labelId, EDGE_WIDTH_PX, true));
   if (baseAlpha != 0.0 && isEdgePixel) {
     vec4 transparentEdgeColor = vec4(edgeColor, edgeColorAlpha);
     baseColor = alphaBlend(transparentEdgeColor, baseColor);
   }
   return baseColor;
+}
+
+float ANTIALIAS_PX = 1.0;
+
+vec4 getPointColor(vec2 uv) {
+    // Get the segmentation id at this pixel
+  float labelAlpha = 1.0;
+  uint labelId = getLabelId(framePoints, uv, labelAlpha);
+  int id = getGlobalId(labelId);
+
+  if (labelId == RAW_BACKGROUND_ID) {
+    return TRANSPARENT;
+  }
+
+  vec4 baseColor = getFeatureColor(id, uv);
+  if (baseColor.a == 0.0) {
+    return TRANSPARENT;
+  }
+
+  baseColor.a *= labelAlpha;
+
+  vec4 color = baseColor;
+  float t = labelAlpha;
+  float alpha = clamp((labelAlpha * 2.0), 0.0, 1.0);
+
+  if (edgeColorAlpha > 0.0) {
+    vec4 outlineColor = alphaBlend(vec4(edgeColor, edgeColorAlpha), baseColor);
+    // 0 is full outline color, 1 is full base color
+    color = mix(outlineColor, baseColor, t);
+  }
+  color.a *= alpha;
+  return color;
 }
 
 void main() {
@@ -336,12 +374,12 @@ void main() {
   vec4 backdropColor = getBackdropColor(sUv);
 
   // Segmentation colors
-  vec4 mainColor = getObjectColor(frame, sUv, objectOpacity, true);
+  vec4 mainColor = getObjectColor(sUv, objectOpacity);
 
   // Overlays for timestamp/scale bar
   vec4 overlayColor = texture(overlay, vUv).rgba;  // Unscaled UVs, because it is sized to the canvas
 
-  vec4 pointTextureColor = getObjectColor(framePoints, vUv, 1.0, false);
+  vec4 pointTextureColor = getPointColor(vUv);
   // vec4 pointTextureColor = vec4(texture(framePoints, vUv).rgba) / 255.0;
 
   gOutputColor = vec4(backgroundColor, 1.0);

@@ -14,9 +14,7 @@ export default class PointMaterial extends ShaderMaterial {
     this.uniforms = UniformsUtils.merge([
       this.uniforms,
       {
-        // TODO: Can this value be per-instance?
         baseScale: { value: 1 },
-        // antialiasEdgePx: { value: 0.05 },
       },
     ]);
   }
@@ -24,8 +22,4 @@ export default class PointMaterial extends ShaderMaterial {
   set baseScale(value: number) {
     this.uniforms.baseScale.value = value;
   }
-
-  // set antialiasEdgePx(value: number) {
-  //   this.uniforms.antialiasEdgePx.value = value;
-  // }
 }

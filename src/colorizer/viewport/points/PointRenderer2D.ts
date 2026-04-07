@@ -32,7 +32,7 @@ function getPointBufferGeometry(): BufferGeometry {
 
 const enum InstanceAttributes {
   POSITION = "instancePosition",
-  SEG_ID = "instanceId",
+  LABEL_ID = "instanceId",
 }
 
 /**
@@ -49,8 +49,6 @@ class PointRenderer2D {
   private instancedGeometry: InstancedBufferGeometry;
   private positionAndScaleAttribute: InstancedBufferAttribute;
   private idAttribute: InstancedBufferAttribute;
-
-  // private pointsMesh: InstancedMesh<BufferGeometry, PointMaterial, InstancedMeshEventMap>;
 
   private camera: OrthographicCamera;
   private renderTarget: WebGLRenderTarget;
@@ -96,7 +94,7 @@ class PointRenderer2D {
     );
     this.idAttribute = new InstancedBufferAttribute(new Uint32Array(DEFAULT_INSTANCE_COUNT), 1, false);
     this.instancedGeometry.setAttribute(InstanceAttributes.POSITION, this.positionAndScaleAttribute);
-    this.instancedGeometry.setAttribute(InstanceAttributes.SEG_ID, this.idAttribute);
+    this.instancedGeometry.setAttribute(InstanceAttributes.LABEL_ID, this.idAttribute);
 
     this.points = new Points(this.instancedGeometry, pointMaterial);
 
@@ -170,7 +168,7 @@ class PointRenderer2D {
     this.idAttribute = new InstancedBufferAttribute(newIds, 1, false);
 
     this.instancedGeometry.setAttribute(InstanceAttributes.POSITION, this.positionAndScaleAttribute);
-    this.instancedGeometry.setAttribute(InstanceAttributes.SEG_ID, this.idAttribute);
+    this.instancedGeometry.setAttribute(InstanceAttributes.LABEL_ID, this.idAttribute);
   }
 
   private setupPointsMesh(dataset: Dataset, ids: Uint32Array): void {
@@ -187,6 +185,7 @@ class PointRenderer2D {
     this.instancedGeometry.instanceCount = ids.length;
     for (let i = 0; i < ids.length; i++) {
       const objectId = ids[i];
+      const segId = dataset.getSegmentationId(objectId);
       const centroid = dataset.getCentroid(objectId);
       if (centroid) {
         const x = centroid[0];
@@ -195,7 +194,7 @@ class PointRenderer2D {
         // TODO: Set scale from data in the future (per-point scaling)
         const scale = 1;
         this.positionAndScaleAttribute.setXYZW(i, x, y, z, scale);
-        this.idAttribute.setX(i, objectId + 1);
+        this.idAttribute.setX(i, segId);
       }
     }
     this.positionAndScaleAttribute.needsUpdate = true;
@@ -231,7 +230,6 @@ class PointRenderer2D {
       if (ids) {
         this.setupPointsMesh(dataset, ids);
       } else {
-        // this.pointsMesh.count = 0;
         this.instancedGeometry.instanceCount = 0;
       }
     }
