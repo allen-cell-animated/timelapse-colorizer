@@ -365,11 +365,12 @@ export function buildFrameToGlobalIdLookup(
 
   return new Map<number, GlobalIdLookupInfo>(
     Array.from(frameToLut.entries()).map(([frame, lut]) => {
+      const texture = packDataTexture(lut, FeatureDataType.U32);
       return [
         frame,
         {
           lut,
-          texture: packDataTexture(lut, FeatureDataType.U32),
+          texture,
           minSegId: frameToMinSegId[frame] ?? 0,
         },
       ];
