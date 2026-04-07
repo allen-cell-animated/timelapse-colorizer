@@ -1,15 +1,15 @@
 import {
   BufferAttribute,
   BufferGeometry,
-  FloatType,
   InstancedBufferAttribute,
   InstancedBufferGeometry,
   NearestFilter,
   OrthographicCamera,
   Points,
-  RGBAFormat,
+  RGBAIntegerFormat,
   Scene,
   Texture,
+  UnsignedByteType,
   Vector2,
   WebGLRenderer,
   WebGLRenderTarget,
@@ -110,9 +110,9 @@ class PointRenderer2D {
     // TODO: Three does NOT support rendering to integer render targets. Change
     // this to a float.
     this.renderTarget = new WebGLRenderTarget(2, 2, {
-      format: RGBAFormat,
-      type: FloatType,
-      internalFormat: "RGBA32F",
+      format: RGBAIntegerFormat,
+      type: UnsignedByteType,
+      internalFormat: "RGBA8UI",
       generateMipmaps: false,
       minFilter: NearestFilter,
       magFilter: NearestFilter,
@@ -195,7 +195,7 @@ class PointRenderer2D {
         // TODO: Set scale from data in the future (per-point scaling)
         const scale = 1;
         this.positionAndScaleAttribute.setXYZW(i, x, y, z, scale);
-        this.idAttribute.setX(i, objectId);
+        this.idAttribute.setX(i, objectId + 1);
       }
     }
     this.positionAndScaleAttribute.needsUpdate = true;

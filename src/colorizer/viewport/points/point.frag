@@ -1,7 +1,7 @@
 precision highp int;
 
 // TODO: Also write out normal and depth in the future?
-layout (location = 0) out vec4 gOutputColor;
+layout (location = 0) out uvec4 gOutputColor;
 
 float THRESHOLD = 0.5;
 float ANTIALIAS_PX = 0.5;
@@ -10,11 +10,11 @@ float ANTIALIAS_PX = 0.5;
 flat in uint IN_instanceId;
 flat in float IN_radius;
 
-vec3 getInstanceColor(uint value) {
+uvec3 getInstanceColor(uint value) {
   uint b = (value >> 16) & 0xFFu;
   uint g = (value >> 8) & 0xFFu;
   uint r = (value >> 0) & 0xFFu;
-  return vec3(float(r) / 255.0, float(g) / 255.0, float(b) / 255.0);
+  return uvec3(r, g, b);
 }
 
 void main() {
@@ -30,6 +30,7 @@ void main() {
   float edgeSoftness = ANTIALIAS_PX / IN_radius;
   float alpha = smoothstep(THRESHOLD, THRESHOLD - edgeSoftness, dist);
   gl_FragDepth = dist;
-  vec3 color = getInstanceColor(IN_instanceId);
-  gOutputColor = vec4(color, alpha);
+
+  uvec3 color = getInstanceColor(IN_instanceId);
+  gOutputColor = uvec4(color, uint(alpha * 255.0));
 }
