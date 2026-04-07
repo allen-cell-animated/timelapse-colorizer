@@ -1,3 +1,5 @@
+precision highp usampler2D;
+
 uniform usampler2D frame;
 uniform vec2 canvasToFrameScale;
 uniform vec2 panOffset;
