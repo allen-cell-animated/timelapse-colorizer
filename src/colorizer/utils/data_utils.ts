@@ -635,6 +635,7 @@ const LINE_MATERIAL_DEPS: (keyof TrackPathParams)[] = [
   "trackPathColorRamp",
   "outlineColor",
   "trackPathWidthPx",
+  "trackPathOverlayOpacity",
 ];
 
 /** Dependencies that will trigger a re-render of the track path on change. */

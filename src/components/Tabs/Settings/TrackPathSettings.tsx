@@ -1,7 +1,12 @@
 import { Checkbox, Tooltip } from "antd";
 import React, { type ReactElement, useMemo } from "react";
 
-import { DISPLAY_COLOR_RAMP_DIVERGING_KEYS, DISPLAY_COLOR_RAMP_LINEAR_KEYS, TrackPathColorMode } from "src/colorizer";
+import {
+  DISPLAY_COLOR_RAMP_DIVERGING_KEYS,
+  DISPLAY_COLOR_RAMP_LINEAR_KEYS,
+  TrackPathColorMode,
+  ViewMode,
+} from "src/colorizer";
 import DropdownWithColorPicker from "src/components/Dropdowns/DropdownWithColorPicker";
 import type { SelectItem } from "src/components/Dropdowns/types";
 import LabeledSlider from "src/components/Inputs/LabeledSlider";
@@ -23,6 +28,7 @@ const enum TrackPathSettingsHtmlIds {
   TRACK_PATH_PAST_STEPS_SLIDER = "track-path-past-steps-slider",
   TRACK_PATH_FUTURE_STEPS_SLIDER = "track-path-future-steps-slider",
   TRACK_PATH_PERSIST_OUT_OF_RANGE_CHECKBOX = "track-path-persist-out-of-range-checkbox",
+  TRACK_PATH_OVERLAY_OPACITY_SLIDER = "track-path-overlay-opacity-slider",
 }
 
 const TRACK_MODE_ITEMS: SelectItem[] = [
@@ -46,6 +52,8 @@ export default function TrackPathSettings(): ReactElement {
   const showAllTrackPathPastSteps = useViewerStateStore((state) => state.showAllTrackPathPastSteps);
   const showAllTrackPathFutureSteps = useViewerStateStore((state) => state.showAllTrackPathFutureSteps);
   const persistTrackPathWhenOutOfRange = useViewerStateStore((state) => state.persistTrackPathWhenOutOfRange);
+  const trackPathOverlayOpacity = useViewerStateStore((state) => state.trackPathOverlayOpacity);
+  const viewMode = useViewerStateStore((state) => state.viewMode);
   const setShowTrackPath = useViewerStateStore((state) => state.setShowTrackPath);
   const setTrackPathColor = useViewerStateStore((state) => state.setTrackPathColor);
   const setTrackPathColorRampKey = useViewerStateStore((state) => state.setTrackPathColorRampKey);
@@ -58,6 +66,7 @@ export default function TrackPathSettings(): ReactElement {
   const setShowAllTrackPathPastSteps = useViewerStateStore((state) => state.setShowAllTrackPathPastSteps);
   const setShowAllTrackPathFutureSteps = useViewerStateStore((state) => state.setShowAllTrackPathFutureSteps);
   const setPersistTrackPathWhenOutOfRange = useViewerStateStore((state) => state.setPersistTrackPathWhenOutOfRange);
+  const setTrackPathOverlayOpacity = useViewerStateStore((state) => state.setTrackPathOverlayOpacity);
 
   const maxTrackPathSteps = useMemo(() => dataset?.getMaxTrackLength() ?? 0, [dataset]);
 
@@ -97,6 +106,25 @@ export default function TrackPathSettings(): ReactElement {
             }}
           />
         </SettingsItem>
+        {viewMode === ViewMode.VIEW_3D && (
+          <SettingsItem label="X-ray mode" htmlFor={TrackPathSettingsHtmlIds.TRACK_PATH_OVERLAY_OPACITY_SLIDER}>
+            <div style={{ maxWidth: MAX_SETTINGS_SLIDER_WIDTH, width: "100%" }}>
+              <LabeledSlider
+                id={TrackPathSettingsHtmlIds.TRACK_PATH_OVERLAY_OPACITY_SLIDER}
+                type="value"
+                minSliderBound={0}
+                maxSliderBound={100}
+                step={10}
+                minInputBound={0}
+                maxInputBound={100}
+                value={trackPathOverlayOpacity}
+                onChange={setTrackPathOverlayOpacity}
+                marks={[20]}
+                numberFormatter={(value) => `${value}%`}
+              />
+            </div>
+          </SettingsItem>
+        )}
         <SettingsItem label="Width" htmlFor={TrackPathSettingsHtmlIds.TRACK_PATH_WIDTH_SLIDER}>
           <div style={{ maxWidth: MAX_SETTINGS_SLIDER_WIDTH, width: "100%" }}>
             <LabeledSlider

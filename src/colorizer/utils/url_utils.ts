@@ -62,6 +62,7 @@ export enum UrlParam {
   SHOW_PATH_BREAKS = "path-breaks",
   PATH_STEPS = "path-steps",
   PATH_PERSIST_OUT_OF_RANGE = "path-persist",
+  PATH_OVERLAY_OPACITY = "path-overlay",
   SHOW_SCALEBAR = "scalebar",
   SHOW_TIMESTAMP = "timestamp",
   KEEP_RANGE = "keep-range",
