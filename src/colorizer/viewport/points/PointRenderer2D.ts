@@ -8,18 +8,18 @@ import {
   Points,
   RGBAIntegerFormat,
   Scene,
-  Texture,
+  type Texture,
   UnsignedByteType,
   Vector2,
-  WebGLRenderer,
+  type WebGLRenderer,
   WebGLRenderTarget,
 } from "three";
 
-import Dataset from "src/colorizer/Dataset";
+import type Dataset from "src/colorizer/Dataset";
 import { hasPropertyChanged } from "src/colorizer/utils/data_utils";
 import { makeEmptyRgbaUint8Texture } from "src/colorizer/utils/texture_utils";
 import PointMaterial, { PointMaterialInstanceAttributes } from "src/colorizer/viewport/points/PointMaterial";
-import { PointRendererParams } from "src/colorizer/viewport/points/types";
+import type { PointRendererParams } from "src/colorizer/viewport/points/types";
 
 const DEFAULT_INSTANCE_COUNT = 128;
 const SCALE_WITH_ZOOM = 0.25;

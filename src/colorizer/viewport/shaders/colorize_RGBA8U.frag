@@ -334,8 +334,6 @@ vec4 getObjectColor(vec2 sUv, float opacity) {
   return baseColor;
 }
 
-float ANTIALIAS_PX = 1.0;
-
 vec4 getPointColor(vec2 uv) {
     // Get the segmentation id at this pixel
   float labelAlpha = 1.0;

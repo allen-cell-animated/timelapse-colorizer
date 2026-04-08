@@ -540,7 +540,7 @@ export default class Dataset {
       }
 
       const rawData = this.centroids.filter((_, index) => index % 3 === i);
-      let data = new Float32Array(rawData);
+      const data = new Float32Array(rawData);
       if (this.frameDimensions) {
         // If provided, normalize centroid coordinates to physical units.
         const physicalDim = physicalDims[i];

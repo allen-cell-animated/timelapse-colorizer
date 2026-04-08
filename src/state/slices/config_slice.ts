@@ -200,7 +200,7 @@ export type ConfigSlice = ConfigSliceState & ConfigSliceActions;
 
 export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> = (set) => ({
   // State
-  showCentroids: true,
+  showCentroids: false,
   showSegmentations: true,
   centroidRadiusPx: 4,
   showTrackPath: true,
