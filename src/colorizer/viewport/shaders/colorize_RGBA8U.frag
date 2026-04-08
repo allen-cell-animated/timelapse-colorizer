@@ -356,9 +356,13 @@ vec4 getPointColor(vec2 uv) {
   float alpha = clamp((labelAlpha * 2.0), 0.0, 1.0);
 
   if (edgeColorAlpha > 0.0) {
+    bool isEdgePixel = isEdge(framePoints, uv, labelId, EDGE_WIDTH_PX, false);
+    if (isEdgePixel) {
+      t = 0.0;
+    }
     vec4 outlineColor = alphaBlend(vec4(edgeColor, edgeColorAlpha), baseColor);
     // 0 is full outline color, 1 is full base color
-    color = mix(outlineColor, baseColor, t);
+    color = mix(baseColor, outlineColor, clamp((1.0 - t) * 3.0, 0.0, 1.0));
   }
   color.a *= alpha;
   return color;
