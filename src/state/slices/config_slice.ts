@@ -148,6 +148,8 @@ export type ConfigSliceSerializableState = Pick<
   | "edgeColor"
   | "edgeColorAlpha"
   | "edgeMode"
+  | "showCentroids"
+  | "centroidRadiusPx"
   | "openTab"
   | "interpolate3d"
 >;
@@ -324,6 +326,8 @@ export const serializeConfigSlice = (slice: Partial<ConfigSliceSerializableState
     [UrlParam.OUTLINE_PALETTE_KEY]: slice.outlinePaletteKey?.toString(),
     [UrlParam.EDGE_MODE]: slice.edgeMode?.toString(),
     [UrlParam.EDGE_COLOR]: encodeMaybeColorWithAlpha(slice.edgeColor, slice.edgeColorAlpha),
+    [UrlParam.SHOW_CENTROIDS]: encodeMaybeBoolean(slice.showCentroids),
+    [UrlParam.CENTROID_RADIUS]: encodeMaybeNumber(slice.centroidRadiusPx),
     [UrlParam.OPEN_TAB]: slice.openTab,
     [UrlParam.INTERPOLATE_3D]: encodeMaybeBoolean(slice.interpolate3d),
   };
@@ -353,6 +357,8 @@ export const selectConfigSliceSerializationDeps = (slice: ConfigSlice): ConfigSl
   edgeMode: slice.edgeMode,
   edgeColor: slice.edgeColor,
   edgeColorAlpha: slice.edgeColorAlpha,
+  showCentroids: slice.showCentroids,
+  centroidRadiusPx: slice.centroidRadiusPx,
   openTab: slice.openTab,
   interpolate3d: slice.interpolate3d,
 });
@@ -429,6 +435,15 @@ export const loadConfigSliceFromParams = (slice: ConfigSlice, params: URLSearchP
   const edgeModeParam = parseDrawMode(params.get(UrlParam.EDGE_MODE));
   if (edgeModeParam !== undefined) {
     slice.setEdgeMode(edgeModeParam);
+  }
+
+  const showCentroidsParam = decodeBoolean(params.get(UrlParam.SHOW_CENTROIDS));
+  if (showCentroidsParam !== undefined) {
+    slice.setShowCentroids(showCentroidsParam);
+  }
+  const centroidRadiusParam = decodeFloat(params.get(UrlParam.CENTROID_RADIUS));
+  if (centroidRadiusParam !== undefined) {
+    slice.setCentroidRadiusPx(centroidRadiusParam);
   }
 
   const openTabParam = params.get(UrlParam.OPEN_TAB);
