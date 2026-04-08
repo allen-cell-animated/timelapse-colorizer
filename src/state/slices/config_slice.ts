@@ -153,6 +153,8 @@ export type ConfigSliceSerializableState = Pick<
 >;
 
 export type ConfigSliceActions = {
+  setShowCentroids: (showCentroids: boolean) => void;
+  setShowSegmentations: (showSegmentations: boolean) => void;
   setCentroidRadiusPx: (radius: number) => void;
   setShowTrackPath: (showTrackPath: boolean) => void;
   setTrackPathColor: (trackPathColor: Color) => void;
@@ -233,6 +235,8 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   openTab: TabType.TRACK_PLOT,
 
   // Actions
+  setShowCentroids: (showCentroids) => set({ showCentroids }),
+  setShowSegmentations: (showSegmentations) => set({ showSegmentations }),
   setCentroidRadiusPx: (centroidRadiusPx) => set({ centroidRadiusPx: clamp(centroidRadiusPx, 0, 100) }),
   setShowTrackPath: (showTrackPath) => set({ showTrackPath }),
   setTrackPathColor: (trackPathColor) => set({ trackPathColor }),

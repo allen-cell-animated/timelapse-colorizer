@@ -12,6 +12,7 @@ import { VisuallyHidden } from "src/styles/utils";
 import { SETTINGS_GAP_PX } from "./constants";
 
 const enum ViewportSettingsHtmlIds {
+  SHOW_CENTROIDS_SWITCH = "show-centroids-switch",
   CENTROID_RADIUS_SLIDER = "centroid-radius-slider",
   SCALE_BAR_SWITCH = "scale-bar-switch",
   TIMESTAMP_SWITCH = "timestamp-switch",
@@ -19,10 +20,12 @@ const enum ViewportSettingsHtmlIds {
 }
 
 export default function ViewportSettings(): ReactElement {
+  const showCentroids = useViewerStateStore((state) => state.showCentroids);
   const centroidRadiusPx = useViewerStateStore((state) => state.centroidRadiusPx);
   const interpolate3d = useViewerStateStore((state) => state.interpolate3d);
   const setCentroidRadiusPx = useViewerStateStore((state) => state.setCentroidRadiusPx);
   const setInterpolate3d = useViewerStateStore((state) => state.setInterpolate3d);
+  const setShowCentroids = useViewerStateStore((state) => state.setShowCentroids);
   const setShowScaleBar = useViewerStateStore((state) => state.setShowScaleBar);
   const setShowTimestamp = useViewerStateStore((state) => state.setShowTimestamp);
   const showScaleBar = useViewerStateStore((state) => state.showScaleBar);
@@ -34,6 +37,13 @@ export default function ViewportSettings(): ReactElement {
   return (
     <ToggleCollapse label="Viewport">
       <SettingsContainer gapPx={SETTINGS_GAP_PX}>
+        <SettingsItem label="Show centroids" htmlFor={ViewportSettingsHtmlIds.SHOW_CENTROIDS_SWITCH}>
+          <Checkbox
+            id={ViewportSettingsHtmlIds.SHOW_CENTROIDS_SWITCH}
+            checked={showCentroids}
+            onChange={(e) => setShowCentroids(e.target.checked)}
+          />
+        </SettingsItem>
         <SettingsItem
           label="Centroid radius"
           htmlFor={ViewportSettingsHtmlIds.CENTROID_RADIUS_SLIDER}
@@ -43,6 +53,7 @@ export default function ViewportSettings(): ReactElement {
             <LabeledSlider
               id={ViewportSettingsHtmlIds.CENTROID_RADIUS_SLIDER}
               type="value"
+              disabled={!showCentroids}
               step={0.5}
               value={centroidRadiusPx}
               onChange={setCentroidRadiusPx}

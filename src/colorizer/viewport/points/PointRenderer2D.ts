@@ -17,6 +17,7 @@ import {
 
 import Dataset from "src/colorizer/Dataset";
 import { hasPropertyChanged } from "src/colorizer/utils/data_utils";
+import { makeEmptyRgbaUint8Texture } from "src/colorizer/utils/texture_utils";
 import PointMaterial, { PointMaterialInstanceAttributes } from "src/colorizer/viewport/points/PointMaterial";
 import { PointRendererParams } from "src/colorizer/viewport/points/types";
 
@@ -72,6 +73,7 @@ class PointRenderer2D {
 
   private lastRenderedFrame: number | null = null;
   private lastMeshUpdateFrame: number | null = null;
+  private emptyTexture: Texture;
 
   constructor() {
     this.timeToIds = new Map();
@@ -109,6 +111,8 @@ class PointRenderer2D {
       minFilter: NearestFilter,
       magFilter: NearestFilter,
     });
+
+    this.emptyTexture = makeEmptyRgbaUint8Texture();
 
     this.renderFrame = this.renderFrame.bind(this);
   }
@@ -210,7 +214,12 @@ class PointRenderer2D {
   }
 
   public renderFrame(renderer: WebGLRenderer, frame: number): Texture | undefined {
-    // Return cached texture if already rendered
+    // Return empty texture if centroids are not visible
+    if (this.params?.showCentroids === false) {
+      this.lastRenderedFrame = null;
+      return this.emptyTexture;
+    }
+    // Return cached texture if already rendered;
     if (this.lastRenderedFrame === frame) {
       return this.renderTarget.texture;
     }
@@ -230,7 +239,10 @@ class PointRenderer2D {
     }
     const width = dataset.frameResolution.x;
     const height = dataset.frameResolution.y;
-    this.renderTarget.setSize(this.canvasResolution.x, this.canvasResolution.y);
+    this.renderTarget.setSize(
+      this.canvasResolution.x * renderer.getPixelRatio(),
+      this.canvasResolution.y * renderer.getPixelRatio()
+    );
     renderer.setClearColor("#000000", 0);
     renderer.setRenderTarget(this.renderTarget);
     renderer.clear();
