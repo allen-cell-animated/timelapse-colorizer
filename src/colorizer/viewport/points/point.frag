@@ -11,7 +11,7 @@ precision highp int;
 layout (location = 0) out uvec4 gOutputColor;
 
 float THRESHOLD = 0.5;
-float ANTIALIAS_PX = 2.0;
+uniform float antialiasPx;
 
 // Per-instance attributes
 flat in uint IN_instanceId;
@@ -35,7 +35,7 @@ void main() {
   } 
 
   // // Apply a smooth edge to the points
-  float edgeSoftness = ANTIALIAS_PX / IN_radius;
+  float edgeSoftness = antialiasPx / IN_radius;
   float alpha = smoothstep(THRESHOLD, THRESHOLD - edgeSoftness, dist);
   gl_FragDepth = dist;
 

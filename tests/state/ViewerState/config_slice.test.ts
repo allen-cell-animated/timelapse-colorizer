@@ -141,8 +141,8 @@ describe("ConfigSlice", () => {
       result.current.setOpenTab(TabType.FILTERS);
     });
 
-  expect(result.current.showCentroids).toBe(false);
-  expect(result.current.centroidRadiusPx).toBe(2);
+    expect(result.current.showCentroids).toBe(false);
+    expect(result.current.centroidRadiusPx).toBe(2);
     expect(result.current.showTrackPath).toBe(false);
     expect(result.current.trackPathColor).toEqual(new Color(0x00ff00));
     expect(result.current.trackPathWidthPx).toBe(2);

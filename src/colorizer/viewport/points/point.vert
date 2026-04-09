@@ -18,10 +18,11 @@ flat out float IN_radius;
 
 // General uniforms
 uniform float baseScale;
+uniform float antialiasPx;
 
 void main() {
   vec3 pos = instancePosition.xyz;
-  float scale = instancePosition.w * baseScale;
+  float scale = instancePosition.w * baseScale + (antialiasPx * 0.5);
 
   gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
   gl_PointSize = scale;

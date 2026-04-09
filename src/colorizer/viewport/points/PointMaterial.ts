@@ -10,6 +10,16 @@ export const enum PointMaterialInstanceAttributes {
 
 /**
  * Draws circular points, using the RGB color to encode the instance ID.
+ *
+ * The following uniforms can be set:
+ * - `baseScale`: a multiplier for the radius of each point, in onscreen pixels.
+ * - `antialiasPx`: the width in pixels of the antialiased edges of the points.
+ *
+ * Also expects the following attributes:
+ * - `instancePosition`: a Vector4 representing the position of each point in
+ *   world space. The `w` component is used to encode the radius of each point.
+ * - `instanceId`: an unsigned 32-bit integer representing the instance ID of
+ *   each point.
  */
 export default class PointMaterial extends ShaderMaterial {
   constructor() {
@@ -23,11 +33,23 @@ export default class PointMaterial extends ShaderMaterial {
       this.uniforms,
       {
         baseScale: { value: 1 },
+        antialiasPx: { value: 2 },
       },
     ]);
   }
 
+  /**
+   * Base scale for the points in onscreen pixels, multiplied against the
+   * instance position's `w` component.
+   */
   set baseScale(value: number) {
     this.uniforms.baseScale.value = value;
+  }
+
+  /**
+   * The width in pixels of the antialiased edges of the points.
+   */
+  set antialiasPx(value: number) {
+    this.uniforms.antialiasPx.value = value;
   }
 }
