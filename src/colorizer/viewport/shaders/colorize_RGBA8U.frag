@@ -353,7 +353,6 @@ vec4 getPointColor(vec2 uv) {
   // transitions from 1.0 to 0.0 that is 2px wide. The inner area will be
   // colored with the full base color, and we want the 1px outline to be placed
   // in the middle of that transition zone (~0.5 labelAlpha).
-  baseColor.a *= labelAlpha;
 
   vec4 color = baseColor;
   // Multiply + clamp labelAlpha here so that color remains solid up until the

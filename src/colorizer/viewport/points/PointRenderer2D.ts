@@ -1,6 +1,7 @@
 import {
   BufferAttribute,
   BufferGeometry,
+  Color,
   InstancedBufferAttribute,
   InstancedBufferGeometry,
   NearestFilter,
@@ -26,8 +27,8 @@ const SCALE_WITH_ZOOM = 0.25;
 
 function getPointBufferGeometry(): BufferGeometry {
   const geometry = new BufferGeometry();
-  const vertices = new Float32Array([0, 0, 0, 0]);
-  geometry.setAttribute("position", new BufferAttribute(vertices, 4));
+  const vertices = new Float32Array([0, 0, 0]);
+  geometry.setAttribute("position", new BufferAttribute(vertices, 3));
   return geometry;
 }
 
@@ -186,15 +187,18 @@ class PointRenderer2D {
       const objectId = ids[i];
       const segId = dataset.getSegmentationId(objectId);
       const centroid = dataset.getCentroid(objectId);
-      if (centroid) {
-        const x = centroid[0];
-        const y = dataset.frameResolution.y - centroid[1];
-        const z = centroid[2];
-        // TODO: Set scale from data in the future (per-point scaling)
-        const scale = 1;
-        this.positionAndScaleAttribute.setXYZW(i, x, y, z, scale);
-        this.idAttribute.setX(i, segId);
+      if (!centroid) {
+        this.positionAndScaleAttribute.setXYZW(i, 0, 0, 0, 0);
+        this.idAttribute.setX(i, 0);
+        continue;
       }
+      const x = centroid[0];
+      const y = dataset.frameResolution.y - centroid[1];
+      const z = centroid[2];
+      // TODO: Set scale from data in the future (per-point scaling)
+      const scale = 1;
+      this.positionAndScaleAttribute.setXYZW(i, x, y, z, scale);
+      this.idAttribute.setX(i, segId);
     }
     this.positionAndScaleAttribute.needsUpdate = true;
     this.idAttribute.needsUpdate = true;
@@ -237,11 +241,18 @@ class PointRenderer2D {
         this.instancedGeometry.instanceCount = 0;
       }
     }
+
+    // Store current render config and restore after rendering.
+    const prevRenderTarget = renderer.getRenderTarget();
+    const prevClearColor = new Color();
+    renderer.getClearColor(prevClearColor);
+    const prevClearAlpha = renderer.getClearAlpha();
+
     const width = dataset.frameResolution.x;
     const height = dataset.frameResolution.y;
     this.renderTarget.setSize(
-      this.canvasResolution.x * renderer.getPixelRatio(),
-      this.canvasResolution.y * renderer.getPixelRatio()
+      Math.round(this.canvasResolution.x * renderer.getPixelRatio()),
+      Math.round(this.canvasResolution.y * renderer.getPixelRatio())
     );
     renderer.setClearColor("#000000", 0);
     renderer.setRenderTarget(this.renderTarget);
@@ -263,8 +274,8 @@ class PointRenderer2D {
 
     renderer.render(this.scene, this.camera);
 
-    renderer.autoClear = true;
-    renderer.setRenderTarget(null);
+    renderer.setRenderTarget(prevRenderTarget);
+    renderer.setClearColor(prevClearColor, prevClearAlpha);
 
     this.lastRenderedFrame = frame;
     return this.renderTarget.texture;
@@ -274,7 +285,6 @@ class PointRenderer2D {
     this.timeToIds.clear();
     this.instancedGeometry.dispose();
     this.points.material.dispose();
-    this.points.geometry.dispose();
     this.renderTarget.dispose();
   }
 }

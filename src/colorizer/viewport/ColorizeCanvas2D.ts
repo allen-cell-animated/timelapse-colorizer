@@ -825,7 +825,6 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     // Render points overlay
     const frameTex = this.pointRenderer.renderFrame(this.renderer, this.currentFrame);
     if (frameTex) {
-      frameTex.needsUpdate = true;
       this.setUniform("framePoints", frameTex);
     }
 
@@ -846,6 +845,7 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     this.geometry.dispose();
     this.renderer.dispose();
     this.pickMaterial.dispose();
+    this.pointRenderer.dispose();
     this.trackPaths.forEach((trackPath) => trackPath.dispose());
   }
 
