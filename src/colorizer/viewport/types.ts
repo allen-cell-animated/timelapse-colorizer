@@ -77,7 +77,6 @@ export type RenderCanvasStateParams = {
   edgeColorAlpha: number;
   edgeMode: DrawMode;
   showCentroids: boolean;
-  showSegmentations: boolean;
   outlinePaletteRamp: ColorRamp;
   trackPathColor: Color;
   trackPathWidthPx: number;

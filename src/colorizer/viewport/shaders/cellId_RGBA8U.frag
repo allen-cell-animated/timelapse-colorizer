@@ -20,12 +20,13 @@ void main() {
     return;
   }
 
-  // Get the segmentation id at this pixel
+  // Get the ID at this pixel; centroid points are drawn on top of segmentations
+  // so those IDs take priority if present.
   uvec4 pointData = texture(framePoints, vUv);
-  uvec4 frameColor = texture(frame, sUv);
+  uvec4 segData = texture(frame, sUv);
   if (pointData.a > 0u) {
     gOutputColor = pointData;
   } else {
-    gOutputColor = frameColor;
+    gOutputColor = segData;
   }
 }

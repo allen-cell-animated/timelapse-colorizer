@@ -7,7 +7,6 @@
  */
 precision highp int;
 
-// TODO: Also write out normal in the future?
 layout (location = 0) out uvec4 gOutputColor;
 
 float THRESHOLD = 0.5;
@@ -34,7 +33,7 @@ void main() {
     discard;
   } 
 
-  // // Apply a smooth edge to the points
+  // Apply a smooth edge to the points
   float edgeSoftness = antialiasPx / IN_radius;
   float alpha = smoothstep(THRESHOLD, THRESHOLD - edgeSoftness, dist);
   gl_FragDepth = dist;
