@@ -72,10 +72,11 @@ export default class TrackPath3D {
     const useColorRamp = trackPathColorMode === TrackPathColorMode.USE_COLOR_MAP;
     const colorRampHexStrings = trackPathColorRamp.colorStops.map((c) => "#" + c.getHexString());
     for (const lineObject of [this.lineObject, this.lineOverlayObject]) {
-      lineObject.setColor(color, useVertexColors || useColorRamp);
       lineObject.setColorRamp(colorRampHexStrings, useColorRamp);
       lineObject.setLineWidth(trackPathWidthPx);
     }
+    this.lineObject.setColor(color.clone().convertLinearToSRGB(), useVertexColors || useColorRamp);
+    this.lineOverlayObject.setColor(color, useVertexColors || useColorRamp);
     this.lineOverlayObject.setOpacity(trackPathOverlayOpacity / 100);
   }
 
