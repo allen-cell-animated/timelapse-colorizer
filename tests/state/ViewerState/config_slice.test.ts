@@ -12,6 +12,8 @@ import type { SerializedStoreData } from "src/state/types";
 import { compareRecord } from "./utils";
 
 const EXAMPLE_SLICE_1: Partial<ConfigSlice> = {
+  showCentroids: false,
+  centroidRadiusPx: 2,
   showTrackPath: false,
   trackPathColor: new Color(0x00ff00),
   trackPathWidthPx: 2,
@@ -38,6 +40,8 @@ const EXAMPLE_SLICE_1: Partial<ConfigSlice> = {
 };
 
 const EXAMPLE_SLICE_1_PARAMS: SerializedStoreData = {
+  [UrlParam.SHOW_CENTROIDS]: "0",
+  [UrlParam.CENTROID_RADIUS]: "2",
   [UrlParam.SHOW_PATH]: "0",
   [UrlParam.PATH_COLOR]: "00ff00",
   [UrlParam.PATH_WIDTH]: "2",
@@ -61,6 +65,8 @@ const EXAMPLE_SLICE_1_PARAMS: SerializedStoreData = {
 };
 
 const EXAMPLE_SLICE_2: Partial<ConfigSlice> = {
+  showCentroids: true,
+  centroidRadiusPx: 15,
   showTrackPath: true,
   trackPathColor: new Color(0xffff00),
   trackPathWidthPx: 3,
@@ -87,6 +93,8 @@ const EXAMPLE_SLICE_2: Partial<ConfigSlice> = {
 };
 
 const EXAMPLE_SLICE_2_PARAMS: SerializedStoreData = {
+  [UrlParam.SHOW_CENTROIDS]: "1",
+  [UrlParam.CENTROID_RADIUS]: "15",
   [UrlParam.SHOW_PATH]: "1",
   [UrlParam.PATH_COLOR]: "ffff00",
   [UrlParam.PATH_WIDTH]: "3",
@@ -113,6 +121,8 @@ describe("ConfigSlice", () => {
   it("can set properties", () => {
     const { result } = renderHook(() => useViewerStateStore());
     act(() => {
+      result.current.setShowCentroids(false);
+      result.current.setCentroidRadiusPx(2);
       result.current.setShowTrackPath(false);
       result.current.setTrackPathColor(new Color(0x00ff00));
       result.current.setTrackPathWidthPx(2);
@@ -131,6 +141,8 @@ describe("ConfigSlice", () => {
       result.current.setOpenTab(TabType.FILTERS);
     });
 
+  expect(result.current.showCentroids).toBe(false);
+  expect(result.current.centroidRadiusPx).toBe(2);
     expect(result.current.showTrackPath).toBe(false);
     expect(result.current.trackPathColor).toEqual(new Color(0x00ff00));
     expect(result.current.trackPathWidthPx).toBe(2);
@@ -150,6 +162,8 @@ describe("ConfigSlice", () => {
     expect(result.current.openTab).toBe(TabType.FILTERS);
 
     act(() => {
+      result.current.setShowCentroids(true);
+      result.current.setCentroidRadiusPx(15);
       result.current.setShowTrackPath(true);
       result.current.setTrackPathColor(new Color(0xffff00));
       result.current.setTrackPathWidthPx(3);
@@ -167,6 +181,8 @@ describe("ConfigSlice", () => {
       result.current.setEdgeMode(DrawMode.HIDE);
       result.current.setOpenTab(TabType.TRACK_PLOT);
     });
+    expect(result.current.showCentroids).toBe(true);
+    expect(result.current.centroidRadiusPx).toBe(15);
     expect(result.current.showTrackPath).toBe(true);
     expect(result.current.trackPathColor).toEqual(new Color(0xffff00));
     expect(result.current.trackPathWidthPx).toBe(3);
