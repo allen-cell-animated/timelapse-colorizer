@@ -105,11 +105,6 @@ uint combineColor(uvec4 color) {
   return (color.b << 16u) | (color.g << 8u) | color.r;
 }
 
-uint combineColorFloat(vec4 color) {
-  uvec4 uColor = uvec4(color * 255.0);
-  return combineColor(uColor);
-}
-
 uvec4 getUintFromTex(usampler2D tex, int index) {
   int width = textureSize(tex, 0).x;
   ivec2 featurePos = ivec2(index % width, index / width);
@@ -305,7 +300,7 @@ vec4 getObjectColor(vec2 sUv, float opacity) {
     return TRANSPARENT;
   }
 
-  // do an outline around highlighted object
+  // Draw an outline around highlighted objects
   uint selectionIdx = getUintFromTex(selectedIds, id).r;
   if (selectionIdx > 0u) {
     if (isEdge(frame, sUv, labelId, OUTLINE_WIDTH_PX, true)) {
@@ -325,7 +320,7 @@ vec4 getObjectColor(vec2 sUv, float opacity) {
   float baseAlpha = baseColor.a;
   baseColor.a *= opacity;
 
-  // Apply edge color if this is a non-transparent edge pixel. (Hidden cells do not get )
+  // Apply edge color if this is a non-transparent edge pixel.
   bool isEdgePixel = (edgeColorAlpha != 0.0) && (isEdge(frame, sUv, labelId, EDGE_WIDTH_PX, true));
   if (baseAlpha != 0.0 && isEdgePixel) {
     vec4 transparentEdgeColor = vec4(edgeColor, edgeColorAlpha);
@@ -349,22 +344,39 @@ vec4 getPointColor(vec2 uv) {
     return TRANSPARENT;
   }
 
+  // Points should render with a smooth, 1px anti-aliased outline, and we can
+  // use some special alpha value tricks to do so.
+  //
+  // The alpha values of the points look something like this: ◎ 
+  //
+  // The point has an inner area where `labelAlpha=1`, and an outer ring that
+  // transitions from 1.0 to 0.0 that is 2px wide. The inner area will be
+  // colored with the full base color, and we want the 1px outline to be placed
+  // in the middle of that transition zone (~0.5 labelAlpha).
   baseColor.a *= labelAlpha;
 
   vec4 color = baseColor;
-  float t = labelAlpha;
+  // Multiply + clamp labelAlpha here so that color remains solid up until the
+  // 1px outline, then transitions to 0. (e.g. `alpha=1` when `labelAlpha>=0.5`)
   float alpha = clamp((labelAlpha * 2.0), 0.0, 1.0);
 
+  // Apply edge colors
   if (edgeColorAlpha > 0.0) {
+    // - `t=0` when `labelAlpha=1` (e.g. show the base color)
+    // - `0>t>1` when `labelAlpha<1` (e.g. transition to the edge color)
+    // - `t=1` when `labelAlpha>=0.33` (e.g. show the edge color slightly
+    //   earlier than the middle of the transition zone so it's more visible)
+    float t = clamp((1.0 - labelAlpha) * 3.0, 0.0, 1.0);
     bool isEdgePixel = isEdge(framePoints, uv, labelId, EDGE_WIDTH_PX, false);
     if (isEdgePixel) {
-      t = 0.0;
+      // Also apply edge color when this pixel is next to the point of a different
+      // segmentation ID.
+      t = max(t, 0.5);
     }
     vec4 outlineColor = alphaBlend(vec4(edgeColor, edgeColorAlpha), baseColor);
-    // 0 is full outline color, 1 is full base color
-    color = mix(baseColor, outlineColor, clamp((1.0 - t) * 3.0, 0.0, 1.0));
+    color = mix(baseColor, outlineColor, t);
   }
-  color.a *= alpha;
+  color.a *= alpha * objectOpacity;
   return color;
 }
 
@@ -382,7 +394,6 @@ void main() {
   vec4 overlayColor = texture(overlay, vUv).rgba;  // Unscaled UVs, because it is sized to the canvas
 
   vec4 pointTextureColor = getPointColor(vUv);
-  // vec4 pointTextureColor = vec4(texture(framePoints, vUv).rgba) / 255.0;
 
   gOutputColor = vec4(backgroundColor, 1.0);
   gOutputColor = alphaBlend(backdropColor, gOutputColor);

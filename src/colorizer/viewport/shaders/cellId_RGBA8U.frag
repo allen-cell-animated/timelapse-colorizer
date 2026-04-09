@@ -25,7 +25,7 @@ void main() {
   uvec4 frameColor = texture(frame, sUv);
   if (pointData.a > 0u) {
     gOutputColor = pointData;
-    return;
+  } else {
+    gOutputColor = frameColor;
   }
-  gOutputColor = frameColor;
 }

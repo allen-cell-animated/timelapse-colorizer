@@ -59,7 +59,6 @@ const OUTLIER_DRAW_SETTINGS_DEFAULT: DrawSettings = {
 
 export type ConfigSliceState = {
   // View mode
-  showSegmentations: boolean;
   showCentroids: boolean;
   centroidRadiusPx: number;
 
@@ -156,7 +155,6 @@ export type ConfigSliceSerializableState = Pick<
 
 export type ConfigSliceActions = {
   setShowCentroids: (showCentroids: boolean) => void;
-  setShowSegmentations: (showSegmentations: boolean) => void;
   setCentroidRadiusPx: (radius: number) => void;
   setShowTrackPath: (showTrackPath: boolean) => void;
   setTrackPathColor: (trackPathColor: Color) => void;
@@ -201,7 +199,6 @@ export type ConfigSlice = ConfigSliceState & ConfigSliceActions;
 export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> = (set) => ({
   // State
   showCentroids: false,
-  showSegmentations: true,
   centroidRadiusPx: 4,
   showTrackPath: true,
   trackPathColor: new Color(OUTLINE_COLOR_DEFAULT),
@@ -238,7 +235,6 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
 
   // Actions
   setShowCentroids: (showCentroids) => set({ showCentroids }),
-  setShowSegmentations: (showSegmentations) => set({ showSegmentations }),
   setCentroidRadiusPx: (centroidRadiusPx) => set({ centroidRadiusPx: clamp(centroidRadiusPx, 0, 100) }),
   setShowTrackPath: (showTrackPath) => set({ showTrackPath }),
   setTrackPathColor: (trackPathColor) => set({ trackPathColor }),

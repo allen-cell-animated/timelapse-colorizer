@@ -59,7 +59,7 @@ export default function ViewportSettings(): ReactElement {
               onChange={setCentroidRadiusPx}
               minInputBound={0}
               maxInputBound={100}
-              minSliderBound={2}
+              minSliderBound={1}
               maxSliderBound={10}
               numberFormatter={(value) => value?.toFixed(1)}
             />
