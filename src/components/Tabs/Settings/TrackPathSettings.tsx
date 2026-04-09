@@ -107,7 +107,7 @@ export default function TrackPathSettings(): ReactElement {
           />
         </SettingsItem>
         {viewMode === ViewMode.VIEW_3D && (
-          <SettingsItem label="X-ray mode" htmlFor={TrackPathSettingsHtmlIds.TRACK_PATH_OVERLAY_OPACITY_SLIDER}>
+          <SettingsItem label="Opacity" htmlFor={TrackPathSettingsHtmlIds.TRACK_PATH_OVERLAY_OPACITY_SLIDER}>
             <div style={{ maxWidth: MAX_SETTINGS_SLIDER_WIDTH, width: "100%" }}>
               <LabeledSlider
                 id={TrackPathSettingsHtmlIds.TRACK_PATH_OVERLAY_OPACITY_SLIDER}
@@ -119,7 +119,7 @@ export default function TrackPathSettings(): ReactElement {
                 maxInputBound={100}
                 value={trackPathOverlayOpacity}
                 onChange={setTrackPathOverlayOpacity}
-                marks={[20]}
+                marks={[30]}
                 numberFormatter={(value) => `${value}%`}
               />
             </div>

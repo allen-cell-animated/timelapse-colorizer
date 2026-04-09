@@ -207,7 +207,7 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   showAllTrackPathFutureSteps: false,
   showAllTrackPathPastSteps: true,
   persistTrackPathWhenOutOfRange: false,
-  trackPathOverlayOpacity: 20,
+  trackPathOverlayOpacity: 30,
   showScaleBar: true,
   showTimestamp: true,
   showLegendDuringExport: true,
