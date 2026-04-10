@@ -803,12 +803,14 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
 
     // Render main scene
     this.renderer.render(this.scene, this.camera);
+    const mainRenderTarget = this.renderer.getRenderTarget();
 
-    // Render to pick buffer
-    const previousRenderTarget = this.renderer.getRenderTarget();
+    // Render pick scene to pick buffer
     this.renderer.setRenderTarget(this.pickRenderTarget);
     this.renderer.render(this.pickScene, this.camera);
-    this.renderer.setRenderTarget(previousRenderTarget);
+
+    // Restore original render target
+    this.renderer.setRenderTarget(mainRenderTarget);
 
     this.onRenderCallback?.();
   }
