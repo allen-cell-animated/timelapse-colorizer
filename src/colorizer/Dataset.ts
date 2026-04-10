@@ -1,6 +1,20 @@
+import { unparse } from "papaparse";
 import { type DataTexture, RGBAFormat, RGBAIntegerFormat, type Texture, Vector2 } from "three";
 
-import { MAX_FEATURE_CATEGORIES } from "src/colorizer/constants";
+import {
+  BOOLEAN_VALUE_FALSE,
+  BOOLEAN_VALUE_TRUE,
+  CSV_COL_CENTROID_X,
+  CSV_COL_CENTROID_Y,
+  CSV_COL_CENTROID_Z,
+  CSV_COL_FILTERED,
+  CSV_COL_ID,
+  CSV_COL_OUTLIER,
+  CSV_COL_SEG_ID,
+  CSV_COL_TIME,
+  CSV_COL_TRACK,
+  MAX_FEATURE_CATEGORIES,
+} from "src/colorizer/constants";
 
 import DataCache from "./DataCache";
 import type { IArrayLoader, ITextureImageLoader } from "./loaders/ILoader";
@@ -945,5 +959,67 @@ export default class Dataset {
     const range = track.ids.map((i) => featureData.data[i]);
     const domain = track.times;
     return { domain, range };
+  }
+
+  public toCsv(delimiter: string = ","): string {
+    const headerRow = [
+      CSV_COL_ID,
+      CSV_COL_SEG_ID,
+      CSV_COL_TRACK,
+      CSV_COL_TIME,
+      CSV_COL_FILTERED,
+      CSV_COL_OUTLIER,
+      CSV_COL_CENTROID_X,
+      CSV_COL_CENTROID_Y,
+      CSV_COL_CENTROID_Z,
+    ];
+    const featureKeys = this.featureKeys;
+    // Exclude auto-generated features (time, track, centroid) from the CSV output.
+    const filteredFeatureKeys = featureKeys.filter(
+      (key) =>
+        ![
+          TIME_FEATURE_KEY,
+          TRACK_FEATURE_KEY,
+          CENTROID_X_FEATURE_KEY,
+          CENTROID_Y_FEATURE_KEY,
+          CENTROID_Z_FEATURE_KEY,
+        ].includes(key)
+    );
+    const featureNames = filteredFeatureKeys.map((key) => this.getFeatureNameWithUnits(key) || key);
+    headerRow.push(...featureNames);
+
+    // Get rows of data for each object in the dataset
+    const csvRows: (string | number)[][] = [];
+    for (let id = 0; id < this.numObjects; id++) {
+      const centroid = this.getCentroid(id) ?? [NaN, NaN, NaN];
+      const row: (string | number)[] = [
+        id,
+        this.getSegmentationId(id),
+        this.getTrackId(id),
+        this.getTime(id),
+        // Filtered value,
+        BOOLEAN_VALUE_FALSE,
+        this.outliers?.[id] ? BOOLEAN_VALUE_TRUE : BOOLEAN_VALUE_FALSE,
+        centroid[0],
+        centroid[1],
+        centroid[2],
+      ];
+      for (const key of filteredFeatureKeys) {
+        const featureData = this.getFeatureData(key);
+        if (featureData && featureData.categories !== null) {
+          // If categorical, convert from category index to category name for CSV output
+          row.push(featureData.categories[featureData.data[id]] ?? "N/A");
+        } else {
+          row.push(featureData ? featureData.data[id] : NaN);
+        }
+      }
+      csvRows.push(row);
+    }
+
+    const csvString = unparse(
+      { fields: headerRow, data: csvRows },
+      { delimiter: delimiter, header: true, escapeFormulae: true }
+    );
+    return csvString;
   }
 }

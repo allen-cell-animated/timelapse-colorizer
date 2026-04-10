@@ -1,12 +1,15 @@
+import { DownloadOutlined } from "@ant-design/icons";
 import React, { type ReactElement, useMemo } from "react";
 
 import type { Dataset } from "src/colorizer";
+import IconButton from "src/components/Buttons/IconButton";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import type { SelectItem } from "src/components/Dropdowns/types";
 import GlossaryPanel from "src/components/GlossaryPanel";
 import type { AnnotationState } from "src/hooks";
 import { useViewerStateStore } from "src/state";
 import { FlexRow } from "src/styles/utils";
+import { downloadCsv } from "src/utils/file_io";
 
 type DatasetFeatureControlsProps = {
   onSelectDataset: (datasetKey: string) => Promise<void>;
@@ -44,7 +47,7 @@ export default function DatasetFeatureControls(props: DatasetFeatureControlsProp
   }, [dataset]);
 
   return (
-    <FlexRow $gap={22} style={{ width: "100%" }}>
+    <FlexRow $gap={12} style={{ width: "100%" }}>
       <div style={{ width: "45%" }}>
         <SelectionDropdown
           disabled={props.disabled}
@@ -54,7 +57,17 @@ export default function DatasetFeatureControls(props: DatasetFeatureControlsProp
           items={datasetDropdownData}
           onChange={onSelectedDatasetValue}
           controlWidth={"100%"}
-        />
+        >
+          <IconButton
+            type="link"
+            onClick={() => {
+              dataset && downloadCsv(datasetKey ?? "dataset.csv", dataset?.toCsv());
+            }}
+            disabled={!dataset}
+          >
+            <DownloadOutlined />
+          </IconButton>
+        </SelectionDropdown>
       </div>
 
       <FlexRow $gap={6} style={{ width: "55%" }}>

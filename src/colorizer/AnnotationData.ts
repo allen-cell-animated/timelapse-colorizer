@@ -2,12 +2,17 @@ import { parse, unparse } from "papaparse";
 import { Color } from "three";
 
 import { DEFAULT_CATEGORICAL_PALETTE_KEY, KNOWN_CATEGORICAL_PALETTES } from "src/colorizer/colors/categorical_palettes";
-import { CSV_COL_DATASET, CSV_COL_ID, CSV_COL_SEG_ID, CSV_COL_TIME, CSV_COL_TRACK } from "src/colorizer/constants";
+import {
+  BOOLEAN_VALUE_FALSE,
+  BOOLEAN_VALUE_TRUE,
+  CSV_COL_DATASET,
+  CSV_COL_ID,
+  CSV_COL_SEG_ID,
+  CSV_COL_TIME,
+  CSV_COL_TRACK,
+} from "src/colorizer/constants";
 import type Dataset from "src/colorizer/Dataset";
 import { cloneLabelData, getLabelTypeFromParsedCsv, removeUndefinedProperties } from "src/colorizer/utils/data_utils";
-
-export const BOOLEAN_VALUE_TRUE = "true";
-export const BOOLEAN_VALUE_FALSE = "false";
 
 export const DEFAULT_ANNOTATION_LABEL_COLORS = KNOWN_CATEGORICAL_PALETTES.get(
   DEFAULT_CATEGORICAL_PALETTE_KEY
