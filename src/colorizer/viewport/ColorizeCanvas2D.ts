@@ -304,8 +304,6 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     this.renderer.setSize(width, height);
     this.canvas.width = Math.round(width * this.renderer.getPixelRatio());
     this.canvas.height = Math.round(height * this.renderer.getPixelRatio());
-    // TODO: either make this a 1x1 target and draw it with a new camera every time we pick,
-    // or keep it up to date with the canvas on each redraw (and don't draw to it when we pick!)
     this.pickRenderTarget.setSize(width, height);
 
     this.canvasResolution = new Vector2(width, height);
@@ -801,7 +799,17 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     this.checkPixelRatio();
     this.syncTrackPathLine();
 
+    // Render main scene
     this.renderer.render(this.scene, this.camera);
+    const mainRenderTarget = this.renderer.getRenderTarget();
+
+    // Render pick scene to pick buffer
+    this.renderer.setRenderTarget(this.pickRenderTarget);
+    this.renderer.render(this.pickScene, this.camera);
+
+    // Restore original render target
+    this.renderer.setRenderTarget(mainRenderTarget);
+
     this.onRenderCallback?.();
   }
 
@@ -818,16 +826,8 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     if (!dataset) {
       return null;
     }
-
-    const rt = this.renderer.getRenderTarget();
-
-    this.renderer.setRenderTarget(this.pickRenderTarget);
-    this.renderer.render(this.pickScene, this.camera);
-
     const pixbuf = new Uint8Array(4);
     this.renderer.readRenderTargetPixels(this.pickRenderTarget, x, this.pickRenderTarget.height - y, 1, 1, pixbuf);
-    // restore main render target
-    this.renderer.setRenderTarget(rt);
 
     // get 32bit value from 4 8bit values
     const segId = pixbuf[0] | (pixbuf[1] << 8) | (pixbuf[2] << 16) | (pixbuf[3] << 24);
