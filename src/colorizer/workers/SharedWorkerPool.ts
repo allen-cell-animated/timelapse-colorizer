@@ -2,6 +2,7 @@ import { type Pool, pool } from "workerpool";
 
 import type Dataset from "src/colorizer/Dataset";
 import type { FeatureArrayType, FeatureDataType } from "src/colorizer/types";
+import type { CsvDataColumn } from "src/colorizer/utils/csv_utils";
 import type { DataTextureInfo } from "src/colorizer/utils/texture_utils";
 
 // Vite import directive for worker files! See https://vitejs.dev/guide/features.html#import-with-query-suffixes.
@@ -83,6 +84,10 @@ export default class SharedWorkerPool {
       return undefined;
     }
     return await this.workerPool.exec("getMotionDeltas", [trackIds, times, centroids, timeIntervals]);
+  }
+
+  async getCsvString(columns: CsvDataColumn[], delimiter: string = ","): Promise<string> {
+    return await this.workerPool.exec("getCsvString", [columns, delimiter]);
   }
 
   async terminate(): Promise<void> {

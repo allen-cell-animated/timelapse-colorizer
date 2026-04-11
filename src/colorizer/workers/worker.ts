@@ -3,6 +3,7 @@ import type TransferType from "workerpool/types/transfer";
 
 import type { FeatureDataType } from "src/colorizer/types";
 import { computeCorrelations } from "src/colorizer/utils/correlation";
+import { columnsToCsv, type CsvDataColumn } from "src/colorizer/utils/csv_utils";
 import { type LoadedData, loadFromJsonUrl, loadFromParquetUrl } from "src/colorizer/utils/data_load_utils";
 import { calculateMotionDeltas, constructAllTracksFromData } from "src/colorizer/utils/math_utils";
 import { arrayToDataTextureInfo } from "src/colorizer/utils/texture_utils";
@@ -52,8 +53,15 @@ async function getMotionDeltas(
   return new Transfer(motionDeltas, [motionDeltas.buffer]);
 }
 
+async function getCsvString(columns: CsvDataColumn[], delimiter: string = ","): Promise<string> {
+  const csvString = columnsToCsv(columns, delimiter);
+  // TODO: Convert to an array and transfer directly?
+  return csvString;
+}
+
 worker({
   loadUrlData,
   getMotionDeltas,
   getCorrelations,
+  getCsvString,
 });

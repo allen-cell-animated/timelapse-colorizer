@@ -3,7 +3,7 @@ import type { Color } from "three";
 import { type LabelData, type LabelIdData, LabelType } from "src/colorizer/AnnotationData";
 import ColorRamp, { ColorRampType } from "src/colorizer/ColorRamp";
 import type { ColorRampData } from "src/colorizer/colors/color_ramps";
-import { MAX_FEATURE_CATEGORIES } from "src/colorizer/constants";
+import { BOOLEAN_VALUE_FALSE, BOOLEAN_VALUE_TRUE,MAX_FEATURE_CATEGORIES  } from "src/colorizer/constants";
 import type Dataset from "src/colorizer/Dataset";
 import { FeatureType } from "src/colorizer/Dataset";
 import type Track from "src/colorizer/Track";
@@ -19,7 +19,6 @@ import {
 } from "src/colorizer/types";
 import type { TrackPathParams } from "src/colorizer/viewport/tracks/types";
 
-import { BOOLEAN_VALUE_FALSE, BOOLEAN_VALUE_TRUE } from "../constants";
 import { packDataTexture } from "./texture_utils";
 
 // TODO: Move all track path utils into the viewport/tracks directory

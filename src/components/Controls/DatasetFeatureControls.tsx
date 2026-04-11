@@ -1,15 +1,13 @@
-import { DownloadOutlined } from "@ant-design/icons";
 import React, { type ReactElement, useMemo } from "react";
 
 import type { Dataset } from "src/colorizer";
-import IconButton from "src/components/Buttons/IconButton";
+import DownloadDatasetButton from "src/components/Buttons/DownloadDatasetButton";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import type { SelectItem } from "src/components/Dropdowns/types";
 import GlossaryPanel from "src/components/GlossaryPanel";
 import type { AnnotationState } from "src/hooks";
 import { useViewerStateStore } from "src/state";
 import { FlexRow } from "src/styles/utils";
-import { downloadCsv } from "src/utils/file_io";
 
 type DatasetFeatureControlsProps = {
   onSelectDataset: (datasetKey: string) => Promise<void>;
@@ -58,15 +56,7 @@ export default function DatasetFeatureControls(props: DatasetFeatureControlsProp
           onChange={onSelectedDatasetValue}
           controlWidth={"100%"}
         >
-          <IconButton
-            type="link"
-            onClick={() => {
-              dataset && downloadCsv(datasetKey ?? "dataset.csv", dataset?.toCsv());
-            }}
-            disabled={!dataset}
-          >
-            <DownloadOutlined />
-          </IconButton>
+          <DownloadDatasetButton />
         </SelectionDropdown>
       </div>
 
