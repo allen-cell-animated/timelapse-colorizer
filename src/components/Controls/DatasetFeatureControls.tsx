@@ -1,4 +1,4 @@
-import { NotificationInstance } from "antd/es/notification/interface";
+import type { NotificationInstance } from "antd/es/notification/interface";
 import React, { type ReactElement, useMemo } from "react";
 
 import type { Dataset } from "src/colorizer";

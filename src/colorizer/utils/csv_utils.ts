@@ -2,7 +2,7 @@ import { unparse } from "papaparse";
 
 export type CsvDataColumn = {
   name: string;
-  data: number[] | Float32Array | Uint32Array | Uint16Array | Uint8Array;
+  data: (number | undefined | null)[] | Float32Array | Uint32Array | Uint16Array | Uint8Array;
   categories?: string[];
 };
 
@@ -14,7 +14,7 @@ export type CsvDataColumn = {
  * @returns The formatted CSV string.
  */
 export function columnsToCsv(columns: CsvDataColumn[], delimiter: string = ","): string {
-  // Validation
+  // Validate rows
   if (columns.length === 0) {
     throw new Error("No columns provided.");
   }
@@ -33,10 +33,13 @@ export function columnsToCsv(columns: CsvDataColumn[], delimiter: string = ","):
   for (let i = 0; i < numRows; i++) {
     const row = [];
     for (const column of columns) {
-      if (column.categories) {
-        row.push(column.categories[column.data[i]]);
+      const value = column.data[i];
+      if (value === undefined || value === null) {
+        row.push("");
+      } else if (column.categories) {
+        row.push(column.categories[value]);
       } else {
-        row.push(column.data[i].toString());
+        row.push(value.toString());
       }
     }
     csvRows.push(row);

@@ -1,6 +1,6 @@
 import { DownloadOutlined } from "@ant-design/icons";
 import { Tooltip } from "antd";
-import { NotificationInstance } from "antd/es/notification/interface";
+import type { NotificationInstance } from "antd/es/notification/interface";
 import React, { type ReactElement, useCallback, useContext, useState } from "react";
 
 import { BOOLEAN_VALUE_FALSE, BOOLEAN_VALUE_TRUE, CSV_COL_FILTERED } from "src/colorizer";
