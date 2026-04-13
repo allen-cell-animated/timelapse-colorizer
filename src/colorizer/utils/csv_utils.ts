@@ -6,9 +6,28 @@ export type CsvDataColumn = {
   categories?: string[];
 };
 
+/**
+ * Takes one or more columns of data and formats them as a CSV string.
+ * @param columns The columns of data to format.
+ * @param delimiter The delimiter to use in the CSV string. Defaults to ",".
+ * @throws Will throw an error if the columns have different numbers of rows or if there are no columns.
+ * @returns The formatted CSV string.
+ */
 export function columnsToCsv(columns: CsvDataColumn[], delimiter: string = ","): string {
-  const headerRow = columns.map((col) => col.name);
+  // Validation
+  if (columns.length === 0) {
+    throw new Error("No columns provided.");
+  }
   const numRows = columns[0].data.length;
+  for (const column of columns) {
+    if (column.data.length !== numRows) {
+      throw new Error(
+        `All columns must have the same number of rows. Expected ${numRows} but got ${column.data.length} in column ${column.name}.`
+      );
+    }
+  }
+
+  const headerRow = columns.map((col) => col.name);
 
   const csvRows = [];
   for (let i = 0; i < numRows; i++) {

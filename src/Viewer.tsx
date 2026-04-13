@@ -632,6 +632,7 @@ function Viewer(): ReactElement {
                 onSelectFeature={reportFeatureSelected}
                 disabled={disableUi}
                 annotationState={annotationState}
+                notificationApi={notificationApi}
               />
               <ColorizeControls disabled={disableUi} />
             </FlexColumn>

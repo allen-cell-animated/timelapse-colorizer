@@ -1,3 +1,4 @@
+import { NotificationInstance } from "antd/es/notification/interface";
 import React, { type ReactElement, useMemo } from "react";
 
 import type { Dataset } from "src/colorizer";
@@ -14,6 +15,7 @@ type DatasetFeatureControlsProps = {
   onSelectFeature: (dataset: Dataset, featureKey: string) => void;
   disabled: boolean;
   annotationState: AnnotationState;
+  notificationApi: NotificationInstance;
 };
 
 export default function DatasetFeatureControls(props: DatasetFeatureControlsProps): ReactElement {
@@ -56,7 +58,7 @@ export default function DatasetFeatureControls(props: DatasetFeatureControlsProp
           onChange={onSelectedDatasetValue}
           controlWidth={"100%"}
         >
-          <DownloadDatasetButton />
+          <DownloadDatasetButton notificationApi={props.notificationApi} />
         </SelectionDropdown>
       </div>
 
