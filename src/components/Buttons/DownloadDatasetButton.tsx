@@ -25,6 +25,24 @@ export default function DownloadDatasetButton(props: DownloadDatasetButtonProps)
 
   const [isLoading, setIsLoading] = useState(false);
 
+  const showErrorNotification = useCallback(
+    (err: unknown) => {
+      console.error("Could not download dataset CSV: ", err);
+      props.notificationApi.error({
+        message: "Dataset download failed",
+        description:
+          "An error occurred while downloading the dataset: " + (err instanceof Error ? err.message : String(err)),
+        placement: "bottomLeft",
+        duration: 12,
+        style: {
+          backgroundColor: theme.color.alert.fill.error,
+          border: `1px solid ${theme.color.alert.border.error}`,
+        },
+      });
+    },
+    [props.notificationApi, theme]
+  );
+
   const downloadDatasetCsv = useCallback(() => {
     if (!dataset || !collection || !datasetKey) {
       return;
@@ -33,7 +51,7 @@ export default function DownloadDatasetButton(props: DownloadDatasetButtonProps)
     const name = collection.getDatasetName(datasetKey) || "dataset";
     const csvColumns = dataset.toCsvDataColumns();
 
-    // Insert inRangeLUT as a column
+    // Insert filtered status as a column
     if (inRangeLUT.length > 0) {
       csvColumns.push({
         name: CSV_COL_FILTERED,
@@ -41,32 +59,19 @@ export default function DownloadDatasetButton(props: DownloadDatasetButtonProps)
         categories: [BOOLEAN_VALUE_FALSE, BOOLEAN_VALUE_TRUE],
       });
     }
-    const workerPool = getSharedWorkerPool();
 
+    const workerPool = getSharedWorkerPool();
     const generateAndDownloadCsv = async (): Promise<void> => {
       const csvString = await workerPool.getCsvString(csvColumns);
       downloadCsv(name, csvString);
     };
 
     generateAndDownloadCsv()
-      .catch((err) => {
-        console.error("Could not download dataset CSV: ", err);
-        props.notificationApi.error({
-          message: "Dataset download failed",
-          description:
-            "An error occurred while downloading the dataset: " + (err instanceof Error ? err.message : String(err)),
-          placement: "bottomLeft",
-          duration: 12,
-          style: {
-            backgroundColor: theme.color.alert.fill.error,
-            border: `1px solid ${theme.color.alert.border.error}`,
-          },
-        });
-      })
+      .catch(showErrorNotification)
       .finally(() => {
         setIsLoading(false);
       });
-  }, [dataset, collection, datasetKey, inRangeLUT]);
+  }, [dataset, collection, datasetKey, inRangeLUT, showErrorNotification]);
 
   return (
     <Tooltip title="Download dataset as .csv">

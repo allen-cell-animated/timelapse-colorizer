@@ -55,7 +55,8 @@ async function getMotionDeltas(
 
 async function getCsvString(columns: CsvDataColumn[], delimiter: string = ","): Promise<string> {
   const csvString = columnsToCsv(columns, delimiter);
-  // TODO: Convert to an array and transfer directly?
+  // Note: This could be converted to an array and transferred if there is a
+  // noticeable slowdown when copying the string.
   return csvString;
 }
 

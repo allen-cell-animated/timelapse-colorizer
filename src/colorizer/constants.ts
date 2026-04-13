@@ -57,9 +57,6 @@ export const CSV_COL_TRACK = "Track";
 export const CSV_COL_FILTERED = "Filtered";
 export const CSV_COL_OUTLIER = "Outlier";
 export const CSV_COL_DATASET = "Dataset";
-export const CSV_COL_CENTROID_X = "Centroid X";
-export const CSV_COL_CENTROID_Y = "Centroid Y";
-export const CSV_COL_CENTROID_Z = "Centroid Z";
 
 export const BOOLEAN_VALUE_TRUE = "true";
 export const BOOLEAN_VALUE_FALSE = "false";
