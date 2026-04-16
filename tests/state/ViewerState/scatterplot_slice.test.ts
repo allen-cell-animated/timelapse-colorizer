@@ -25,6 +25,27 @@ describe("ScatterplotSlice", () => {
     }
   });
 
+  describe("setScatterHistogramBins", () => {
+    it("can set histogram bin count", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      act(() => {
+        result.current.setScatterHistogramBins(10);
+      });
+      expect(result.current.scatterHistogramBins).toBe(10);
+    });
+
+    it("ignores non-finite or negative bin counts", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      const defaultBins = result.current.scatterHistogramBins;
+      act(() => {
+        result.current.setScatterHistogramBins(-1);
+        result.current.setScatterHistogramBins(NaN);
+        result.current.setScatterHistogramBins(Infinity);
+      });
+      expect(result.current.scatterHistogramBins).toBe(defaultBins);
+    });
+  });
+
   describe("setScatterAxes", () => {
     it("can set axes to any value when dataset is not set", () => {
       const { result } = renderHook(() => useViewerStateStore());
