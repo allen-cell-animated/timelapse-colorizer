@@ -53,7 +53,14 @@ export default class TrackPath3D {
     if (!this.params) {
       return;
     }
-    const { trackPathColorMode, trackPathColorRamp, outlineColor, trackPathColor, trackPathWidthPx } = this.params;
+    const {
+      trackPathColorMode,
+      trackPathColorRamp,
+      outlineColor,
+      trackPathColor,
+      trackPathWidthPx,
+      trackPathOverlayOpacity,
+    } = this.params;
     const modeToColor = {
       [TrackPathColorMode.USE_FEATURE_COLOR]: FEATURE_BASE_COLOR,
       [TrackPathColorMode.USE_OUTLINE_COLOR]: outlineColor,
@@ -65,10 +72,12 @@ export default class TrackPath3D {
     const useColorRamp = trackPathColorMode === TrackPathColorMode.USE_COLOR_MAP;
     const colorRampHexStrings = trackPathColorRamp.colorStops.map((c) => "#" + c.getHexString());
     for (const lineObject of [this.lineObject, this.lineOverlayObject]) {
-      lineObject.setColor(color, useVertexColors || useColorRamp);
       lineObject.setColorRamp(colorRampHexStrings, useColorRamp);
       lineObject.setLineWidth(trackPathWidthPx);
     }
+    this.lineObject.setColor(color.clone().convertLinearToSRGB(), useVertexColors || useColorRamp);
+    this.lineOverlayObject.setColor(color, useVertexColors || useColorRamp);
+    this.lineOverlayObject.setOpacity(trackPathOverlayOpacity / 100);
   }
 
   public setVolumePhysicalSize(volumePhysicalSize: Vector3): void {
