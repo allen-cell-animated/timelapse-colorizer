@@ -100,11 +100,6 @@ vec3 rgbToHsv(vec3 c) {
   return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
 }
 
-// Combine non-alpha color channels into one 24-bit value
-uint combineColor(uvec4 color) {
-  return (color.b << 16u) | (color.g << 8u) | color.r;
-}
-
 uvec4 getUintFromTex(usampler2D tex, int index) {
   int width = textureSize(tex, 0).x;
   ivec2 featurePos = ivec2(index % width, index / width);
@@ -115,6 +110,16 @@ vec4 getFloatFromTex(sampler2D tex, int index) {
   int width = textureSize(tex, 0).x;
   ivec2 featurePos = ivec2(index % width, index / width);
   return texelFetch(tex, featurePos, 0);
+}
+
+/**
+ * Gets the label ID (aka raw pixel value) of the pixel at the given UV
+ * coordinates.
+ */
+uint getLabelId(usampler2D tex, vec2 sUv) {
+  uvec4 color = texture(tex, sUv);
+  uint colorInt = (color.b << 16u) | (color.g << 8u) | color.r;
+  return colorInt;
 }
 
 /**
