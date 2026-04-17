@@ -326,7 +326,7 @@ vec4 getObjectColor(vec2 sUv, float opacity) {
 }
 
 vec4 getPointColor(vec2 uv) {
-    // Get the segmentation id at this pixel
+  // Get the segmentation id at this pixel
   float labelAlpha = 1.0;
   uint labelId = getLabelId(framePoints, uv, labelAlpha);
   int id = getGlobalId(labelId);

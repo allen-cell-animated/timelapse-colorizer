@@ -61,7 +61,7 @@ class PointRenderer2D {
    * in the same position, the position [1, 1] on the canvas should map to [0.5,
    * 0.5] on the frame.
    */
-  private frameToCanvasCoordinates: Vector2;
+  private frameToCanvasScale: Vector2;
   /**
    * The offset of the frame in the canvas, in normalized frame coordinates. [0, 0] means the
    * frame will be centered, while [-0.5, -0.5] means the top right corner of the frame will be
@@ -99,7 +99,7 @@ class PointRenderer2D {
     this.scene.add(this.points);
 
     this.panOffset = new Vector2(0, 0);
-    this.frameToCanvasCoordinates = new Vector2(1, 1);
+    this.frameToCanvasScale = new Vector2(1, 1);
     this.canvasResolution = new Vector2(1, 1);
 
     this.camera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
@@ -188,7 +188,7 @@ class PointRenderer2D {
     zoomMultiplier: number
   ): void {
     this.panOffset.copy(panOffset);
-    this.frameToCanvasCoordinates.copy(frameToCanvasCoordinates);
+    this.frameToCanvasScale.copy(frameToCanvasCoordinates);
     this.canvasResolution.copy(canvasResolution);
     this.zoomMultiplier = zoomMultiplier;
     this.lastRenderedFrame = null;
@@ -236,10 +236,10 @@ class PointRenderer2D {
     renderer.setRenderTarget(this.renderTarget);
     renderer.clear();
 
-    this.camera.left = -width / 2 / this.frameToCanvasCoordinates.x;
-    this.camera.right = width / 2 / this.frameToCanvasCoordinates.x;
-    this.camera.top = height / 2 / this.frameToCanvasCoordinates.y;
-    this.camera.bottom = -height / 2 / this.frameToCanvasCoordinates.y;
+    this.camera.left = -width / 2 / this.frameToCanvasScale.x;
+    this.camera.right = width / 2 / this.frameToCanvasScale.x;
+    this.camera.top = height / 2 / this.frameToCanvasScale.y;
+    this.camera.bottom = -height / 2 / this.frameToCanvasScale.y;
     this.camera.position.set((0.5 - this.panOffset.x) * width, (0.5 - this.panOffset.y) * height, 1);
     this.camera.lookAt(this.camera.position.x, this.camera.position.y, 0);
     this.camera.near = 0;
