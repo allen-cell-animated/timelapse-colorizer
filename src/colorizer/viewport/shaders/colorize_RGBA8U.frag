@@ -113,16 +113,6 @@ vec4 getFloatFromTex(sampler2D tex, int index) {
 }
 
 /**
- * Gets the label ID (aka raw pixel value) of the pixel at the given UV
- * coordinates.
- */
-uint getLabelId(usampler2D tex, vec2 sUv) {
-  uvec4 color = texture(tex, sUv);
-  uint colorInt = (color.b << 16u) | (color.g << 8u) | color.r;
-  return colorInt;
-}
-
-/**
  * Attempts to look up the global ID of the pixel at the given scaled UV
  * coordinates. The global ID can be used to get data about this object from
  * data buffers like `featureData` and `outlierData`.
@@ -152,7 +142,8 @@ int getGlobalId(uint labelId) {
 uint getLabelId(usampler2D tex, vec2 sUv, out float alpha) {
   uvec4 color = texture(tex, sUv);
   alpha = float(color.a) / 255.0;
-  return combineColor(color);
+  uint colorInt = (color.b << 16u) | (color.g << 8u) | color.r;
+  return colorInt;
 }
 
 vec4 getColorRamp(float val) {
