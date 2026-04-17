@@ -278,6 +278,9 @@ export type GlobalIdLookupInfo = {
    * The smallest segmentation on this frame, used for memory optimization.
    */
   minSegId: number;
+
+  /** An unsorted array of global IDs present in the frame. */
+  globalIds: Uint32Array;
 };
 
 export type PixelIdInfo = {

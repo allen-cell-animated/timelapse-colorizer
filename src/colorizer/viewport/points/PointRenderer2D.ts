@@ -39,7 +39,6 @@ function getPointBufferGeometry(): BufferGeometry {
  */
 class PointRenderer2D {
   private params: PointRendererParams | null = null;
-  private timeToIds: Map<number, Uint32Array>;
 
   private scene: Scene;
 
@@ -78,7 +77,6 @@ class PointRenderer2D {
   private emptyTexture: Texture;
 
   constructor() {
-    this.timeToIds = new Map();
     this.scene = new Scene();
     const pointMaterial = new PointMaterial2D();
 
@@ -119,32 +117,10 @@ class PointRenderer2D {
     this.requestFrameRender = this.requestFrameRender.bind(this);
   }
 
-  private computeTimeToIds(dataset: Dataset): Map<number, Uint32Array> {
-    const timeToIds = new Map<number, number[]>();
-    for (let i = 0; i < dataset.numObjects; i++) {
-      const time = dataset.getTime(i);
-      if (!timeToIds.has(time)) {
-        timeToIds.set(time, []);
-      }
-      timeToIds.get(time)!.push(i);
-    }
-    // Map to Uint32Arrays for storage optimization
-    const ret = new Map<number, Uint32Array>();
-    for (const [time, ids] of timeToIds.entries()) {
-      ret.set(time, new Uint32Array(ids));
-    }
-    return ret;
-  }
-
   public setParams(params: PointRendererParams, prevParams: PointRendererParams | null): boolean {
     let needsRender = false;
     this.params = params;
     if (hasPropertyChanged(params, prevParams, ["dataset"])) {
-      if (params.dataset) {
-        this.timeToIds = this.computeTimeToIds(params.dataset);
-      } else {
-        this.timeToIds.clear();
-      }
       this.lastMeshUpdateFrame = null;
       needsRender = true;
     }
@@ -236,9 +212,9 @@ class PointRenderer2D {
     // Recalculate points if needed
     if (this.lastMeshUpdateFrame !== frame) {
       this.lastMeshUpdateFrame = frame;
-      const ids = this.timeToIds.get(frame);
-      if (ids) {
-        this.setupPointsMesh(dataset, ids);
+      const globalIds = dataset.frameToGlobalIdLookup?.get(frame)?.globalIds;
+      if (globalIds) {
+        this.setupPointsMesh(dataset, globalIds);
       } else {
         this.instancedGeometry.instanceCount = 0;
       }
@@ -284,7 +260,6 @@ class PointRenderer2D {
   }
 
   public dispose(): void {
-    this.timeToIds.clear();
     this.instancedGeometry.dispose();
     this.points.material.dispose();
     this.renderTarget.dispose();
