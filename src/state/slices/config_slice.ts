@@ -76,6 +76,8 @@ export type ConfigSliceState = {
   trackPathPastSteps: number;
   showAllTrackPathFutureSteps: boolean;
   showAllTrackPathPastSteps: boolean;
+  /** Opacity of the track path overlay, as an integer percentage in the `[0, 100]` range */
+  trackPathOverlayOpacity: number;
 
   /**
    * Whether track paths should be shown when all past/future steps are enabled,
@@ -137,6 +139,7 @@ export type ConfigSliceSerializableState = Pick<
   | "showAllTrackPathPastSteps"
   | "trackPathPastSteps"
   | "persistTrackPathWhenOutOfRange"
+  | "trackPathOverlayOpacity"
   | "showScaleBar"
   | "showTimestamp"
   | "outOfRangeDrawSettings"
@@ -168,6 +171,7 @@ export type ConfigSliceActions = {
   setShowAllTrackPathFutureSteps: (showAllTrackPathFutureSteps: boolean) => void;
   setShowAllTrackPathPastSteps: (showAllTrackPathPastSteps: boolean) => void;
   setPersistTrackPathWhenOutOfRange: (persistTrackPathWhenOutOfRange: boolean) => void;
+  setTrackPathOverlayOpacity: (trackPathOverlayOpacity: number) => void;
   setShowScaleBar: (showScaleBar: boolean) => void;
   setShowTimestamp: (showTimestamp: boolean) => void;
   setShowLegendDuringExport: (showLegendDuringExport: boolean) => void;
@@ -213,6 +217,7 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   showAllTrackPathFutureSteps: false,
   showAllTrackPathPastSteps: true,
   persistTrackPathWhenOutOfRange: false,
+  trackPathOverlayOpacity: 30,
   showScaleBar: true,
   showTimestamp: true,
   showLegendDuringExport: true,
@@ -261,7 +266,8 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   setShowAllTrackPathFutureSteps: (showAllTrackPathFutureSteps) => set({ showAllTrackPathFutureSteps }),
   setShowAllTrackPathPastSteps: (showAllTrackPathPastSteps) => set({ showAllTrackPathPastSteps }),
   setPersistTrackPathWhenOutOfRange: (persistTrackPathWhenOutOfRange) => set({ persistTrackPathWhenOutOfRange }),
-
+  setTrackPathOverlayOpacity: (trackPathOverlayOpacity) =>
+    set({ trackPathOverlayOpacity: clamp(Math.round(trackPathOverlayOpacity), 0, 100) }),
   setShowScaleBar: (showScaleBar) => set({ showScaleBar }),
   setShowTimestamp: (showTimestamp) => set({ showTimestamp }),
   setShowLegendDuringExport: (showLegendDuringExport) => set({ showLegendDuringExport }),
@@ -310,6 +316,7 @@ export const serializeConfigSlice = (slice: Partial<ConfigSliceSerializableState
       slice.showAllTrackPathFutureSteps
     ),
     [UrlParam.PATH_PERSIST_OUT_OF_RANGE]: encodeMaybeBoolean(slice.persistTrackPathWhenOutOfRange),
+    [UrlParam.PATH_OVERLAY_OPACITY]: encodeMaybeNumber(slice.trackPathOverlayOpacity),
     [UrlParam.SHOW_SCALEBAR]: encodeMaybeBoolean(slice.showScaleBar),
     [UrlParam.SHOW_TIMESTAMP]: encodeMaybeBoolean(slice.showTimestamp),
     // Export settings are currently not serialized.
@@ -345,6 +352,7 @@ export const selectConfigSliceSerializationDeps = (slice: ConfigSlice): ConfigSl
   showAllTrackPathFutureSteps: slice.showAllTrackPathFutureSteps,
   showAllTrackPathPastSteps: slice.showAllTrackPathPastSteps,
   persistTrackPathWhenOutOfRange: slice.persistTrackPathWhenOutOfRange,
+  trackPathOverlayOpacity: slice.trackPathOverlayOpacity,
   outOfRangeDrawSettings: slice.outOfRangeDrawSettings,
   outlierDrawSettings: slice.outlierDrawSettings,
   outlineColor: slice.outlineColor,
@@ -422,6 +430,11 @@ export const loadConfigSliceFromParams = (slice: ConfigSlice, params: URLSearchP
     slice.setTrackPathFutureSteps(trackPathStepsParam.futureSteps);
     slice.setShowAllTrackPathPastSteps(trackPathStepsParam.showAllPastSteps);
     slice.setShowAllTrackPathFutureSteps(trackPathStepsParam.showAllFutureSteps);
+  }
+
+  const trackPathOverlayOpacityParam = decodeFloat(params.get(UrlParam.PATH_OVERLAY_OPACITY));
+  if (trackPathOverlayOpacityParam !== undefined) {
+    slice.setTrackPathOverlayOpacity(trackPathOverlayOpacityParam);
   }
 
   const edgeColorParam = decodeHexAlphaColor(params.get(UrlParam.EDGE_COLOR));

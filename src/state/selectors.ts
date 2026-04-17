@@ -33,6 +33,7 @@ export const renderCanvasStateParamsSelector = (state: ViewerStoreState): Render
   showAllTrackPathPastSteps: state.showAllTrackPathPastSteps,
   showAllTrackPathFutureSteps: state.showAllTrackPathFutureSteps,
   persistTrackPathWhenOutOfRange: state.persistTrackPathWhenOutOfRange,
+  trackPathOverlayOpacity: state.trackPathOverlayOpacity,
   outlierDrawSettings: state.outlierDrawSettings,
   outOfRangeDrawSettings: state.outOfRangeDrawSettings,
   inRangeLUT: state.inRangeLUT,

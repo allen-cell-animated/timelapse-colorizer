@@ -635,6 +635,7 @@ const LINE_MATERIAL_DEPS: (keyof TrackPathParams)[] = [
   "trackPathColorRamp",
   "outlineColor",
   "trackPathWidthPx",
+  "trackPathOverlayOpacity",
 ];
 
 /** Dependencies that will trigger a re-render of the track path on change. */
@@ -816,4 +817,10 @@ export function bucketVectorDataByTime(
     timeToVectorData.set(time, { ids, centroids, deltas, magnitude });
   }
   return { timeToVectorData, totalValidIds };
+}
+
+const POSITIVE_INTEGER_REGEX = /^[1-9]\d*$/;
+
+export function isPositiveInteger(value: string): boolean {
+  return POSITIVE_INTEGER_REGEX.test(value);
 }

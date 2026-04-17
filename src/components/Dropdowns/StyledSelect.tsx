@@ -1,13 +1,8 @@
 import { LoadingOutlined } from "@ant-design/icons";
 import type { ButtonProps } from "antd";
 import React, { type ReactElement, useContext, useMemo } from "react";
-import Select, {
-  components,
-  type DropdownIndicatorProps,
-  type GroupBase,
-  type Props as StateManagerProps,
-  type StylesConfig,
-} from "react-select";
+import Select, { components, type DropdownIndicatorProps, type GroupBase, type StylesConfig } from "react-select";
+import CreatableSelect, { type CreatableProps } from "react-select/creatable";
 import styled, { css } from "styled-components";
 import type { Color } from "three";
 
@@ -20,11 +15,12 @@ import type { SelectItem } from "./types";
 type AntStyledSelectProps<
   IsMulti extends boolean = false,
   Group extends GroupBase<SelectItem> = GroupBase<SelectItem>
-> = StateManagerProps<SelectItem, IsMulti, Group> & {
+> = {
   type?: ButtonProps["type"] | "outlined";
   controlWidth?: string;
   menuWidth?: string;
-  styles?: StylesConfig<SelectItem, IsMulti, Group>;
+  creatable?: boolean;
+  selectProps: CreatableProps<SelectItem, IsMulti, Group>;
 };
 
 const defaultProps = {
@@ -322,19 +318,23 @@ export default function AntStyledSelect<
     [theme, props.controlWidth, props.menuWidth]
   );
 
-  const dropdownIndicator = props.isLoading ? SpinningDropdownIndicator : DropdownIndicator;
+  const dropdownIndicator = props.selectProps.isLoading ? SpinningDropdownIndicator : DropdownIndicator;
+
+  // Remove props that are for the wrapper component only
+  const selectProps = {
+    ...props.selectProps,
+    menuPlacement: props.menuPlacement,
+    components: { DropdownIndicator: dropdownIndicator, ...props.selectProps.components },
+    styles: { ...(customStyles as unknown as StylesConfig<SelectItem, IsMulti, Group>), ...props.selectProps.styles },
+    // Select default loading styling is overridden (since it is handled via
+    // DropdownIndicator instead).
+    isLoading: false,
+    formatCreateLabel: (value: string) => value,
+  };
 
   return (
     <SelectContainer $type={props.type} style={{ width: "100%" }}>
-      <Select
-        {...props}
-        menuPlacement={props.menuPlacement}
-        components={{ DropdownIndicator: dropdownIndicator, ...props.components }}
-        styles={{ ...(customStyles as unknown as StylesConfig<SelectItem, IsMulti, Group>), ...props.styles }}
-        // Select default loading styling is overridden (since it is handled via
-        // DropdownIndicator instead).
-        isLoading={false}
-      />
+      {props.creatable ? <CreatableSelect {...selectProps} /> : <Select {...selectProps} />}
     </SelectContainer>
   );
 }
