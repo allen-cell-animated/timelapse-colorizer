@@ -43,7 +43,11 @@ import {
 } from "src/colorizer/types";
 import { getGlobalIdFromSegId, hasPropertyChanged } from "src/colorizer/utils/data_utils";
 import { convertCanvasOffsetPxToFrameCoords, getFrameSizeInScreenPx } from "src/colorizer/utils/math_utils";
-import { packDataTexture } from "src/colorizer/utils/texture_utils";
+import {
+  makeEmptyRgbaFloatTexture,
+  makeEmptyRgbaUint8Texture,
+  packDataTexture,
+} from "src/colorizer/utils/texture_utils";
 import VectorField from "src/colorizer/VectorField";
 import {
   type Canvas2DScaleInfo,
@@ -113,13 +117,10 @@ type ColorizeUniformTypes = {
 type ColorizeUniforms = { [K in keyof ColorizeUniformTypes]: Uniform<ColorizeUniformTypes[K]> };
 
 const getDefaultUniforms = (): ColorizeUniforms => {
-  const emptyBackdrop = new DataTexture(new Uint8Array([1, 0, 0, 0]), 1, 1, RGBAFormat, UnsignedByteType);
-  const emptyFrame = new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAIntegerFormat, UnsignedByteType);
-  emptyFrame.internalFormat = "RGBA8UI";
-  emptyFrame.needsUpdate = true;
-  const emptyOverlay = new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAFormat, UnsignedByteType);
-  const emptySegIdToGlobalId = new DataTexture(new Uint8Array([0]), 1, 1, RGBAFormat, UnsignedByteType);
-
+  const emptyBackdrop = makeEmptyRgbaFloatTexture();
+  const emptyFrame = makeEmptyRgbaUint8Texture();
+  const emptyOverlay = makeEmptyRgbaFloatTexture();
+  const emptySegIdToGlobalId = packDataTexture([0], FeatureDataType.U8);
   const emptyFeature = packDataTexture([0], FeatureDataType.F32);
   const emptyOutliers = packDataTexture([0], FeatureDataType.U8);
   const emptyInRangeIds = packDataTexture([0], FeatureDataType.U8);
@@ -238,6 +239,9 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     this.pickScene.add(this.pickMesh);
 
     this.pickRenderTarget = new WebGLRenderTarget(1, 1, {
+      format: RGBAIntegerFormat,
+      type: UnsignedByteType,
+      internalFormat: "RGBA8UI",
       depthBuffer: false,
     });
     this.renderer = new WebGLRenderer({ antialias: true });
@@ -735,9 +739,7 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
         frameError = true;
       }
       // Set to blank
-      const emptyFrame = new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAIntegerFormat, UnsignedByteType);
-      emptyFrame.internalFormat = "RGBA8UI";
-      emptyFrame.needsUpdate = true;
+      const emptyFrame = makeEmptyRgbaUint8Texture();
       this.setUniform("frame", emptyFrame);
     }
 
@@ -829,8 +831,8 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     const pixbuf = new Uint8Array(4);
     this.renderer.readRenderTargetPixels(this.pickRenderTarget, x, this.pickRenderTarget.height - y, 1, 1, pixbuf);
 
-    // get 32bit value from 4 8bit values
-    const segId = pixbuf[0] | (pixbuf[1] << 8) | (pixbuf[2] << 16) | (pixbuf[3] << 24);
+    // get 32bit value from RGB 8bit values (ignore alpha)
+    const segId = pixbuf[0] | (pixbuf[1] << 8) | (pixbuf[2] << 16);
 
     if (segId === 0) {
       return null;

@@ -99,11 +99,6 @@ vec3 rgbToHsv(vec3 c) {
   return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
 }
 
-// Combine non-alpha color channels into one 24-bit value
-uint combineColor(uvec4 color) {
-  return (color.b << 16u) | (color.g << 8u) | color.r;
-}
-
 uvec4 getUintFromTex(usampler2D tex, int index) {
   int width = textureSize(tex, 0).x;
   ivec2 featurePos = ivec2(index % width, index / width);
@@ -117,6 +112,16 @@ vec4 getFloatFromTex(sampler2D tex, int index) {
 }
 
 /**
+ * Gets the label ID (aka raw pixel value) of the pixel at the given UV
+ * coordinates.
+ */
+uint getLabelId(usampler2D tex, vec2 sUv) {
+  uvec4 color = texture(tex, sUv);
+  uint colorInt = (color.b << 16u) | (color.g << 8u) | color.r;
+  return colorInt;
+}
+
+/**
  * Attempts to look up the global ID of the pixel at the given scaled UV
  * coordinates. The global ID can be used to get data about this object from
  * data buffers like `featureData` and `outlierData`.
@@ -126,8 +131,7 @@ vec4 getFloatFromTex(sampler2D tex, int index) {
  * @returns The global ID at the given coordinates, or -1 (=MISSING_DATA_ID) if
  *     the pixel is background or missing data.
  */
-int getGlobalId(vec2 sUv, out uint labelId) {
-  labelId = combineColor(texture(frame, sUv));
+int getGlobalId(uint labelId) {
   if (labelId == 0u) {
     return MISSING_DATA_ID;
   }
@@ -180,14 +184,10 @@ bool isEdge(vec2 uv, uint labelId, float thicknessPx) {
   // Sample around the pixel to see if we are on an edge.
   // Compare using label IDs (pixels in the segmentation image) because global IDs may be missing
   // for some objects.
-  uint rLabelId;
-  uint lLabelId;
-  uint tLabelId;
-  uint bLabelId;
-  getGlobalId(uv + vec2(wStep, 0), rLabelId);
-  getGlobalId(uv + vec2(-wStep, 0), lLabelId);
-  getGlobalId(uv + vec2(0, hStep), tLabelId);
-  getGlobalId(uv + vec2(0, -hStep), bLabelId);
+  uint rLabelId = getLabelId(frame, uv + vec2(+wStep, 0));
+  uint lLabelId = getLabelId(frame, uv + vec2(-wStep, 0));
+  uint tLabelId = getLabelId(frame, uv + vec2(0, +hStep));
+  uint bLabelId = getLabelId(frame, uv + vec2(0, -hStep));
   return rLabelId != labelId || lLabelId != labelId || tLabelId != labelId || bLabelId != labelId;
 }
 
@@ -238,8 +238,8 @@ vec4 getObjectColor(vec2 sUv, float opacity) {
   }
 
   // Get the segmentation id at this pixel
-  uint labelId;
-  int id = getGlobalId(sUv, labelId);
+  uint labelId = getLabelId(frame, sUv);
+  int id = getGlobalId(labelId);
 
   // A label id of 0 represents background
   if (labelId == RAW_BACKGROUND_ID) {
