@@ -3,12 +3,6 @@
  * and passes parameters (instanceId and radius) to the fragment shader.
  */
 
-#include <common>
-#include <color_pars_vertex>
-#include <fog_pars_vertex>
-#include <logdepthbuf_pars_vertex>
-#include <clipping_planes_pars_vertex>
-
 // Per-instance attributes
 in vec4 instancePosition;
 in uint instanceId;

@@ -19,7 +19,7 @@ import {
 import type Dataset from "src/colorizer/Dataset";
 import { hasPropertyChanged } from "src/colorizer/utils/data_utils";
 import { makeEmptyRgbaUint8Texture } from "src/colorizer/utils/texture_utils";
-import PointMaterial, { PointMaterialInstanceAttributes } from "src/colorizer/viewport/points/PointMaterial";
+import PointMaterial2D, { PointMaterialInstanceAttributes } from "src/colorizer/viewport/points/PointMaterial2D";
 import type { PointRendererParams } from "src/colorizer/viewport/points/types";
 
 const DEFAULT_INSTANCE_COUNT = 128;
@@ -33,7 +33,8 @@ function getPointBufferGeometry(): BufferGeometry {
 }
 
 /**
- * Renders centroid data to an image texture that can be passed into the
+ * Renders the centroid points of objects to an image texture, encoding their
+ * IDs in the RGB channels. The resulting texture can be passed into the
  * colorize shader for 2D rendering + colorization.
  */
 class PointRenderer2D {
@@ -42,7 +43,7 @@ class PointRenderer2D {
 
   private scene: Scene;
 
-  private points: Points<InstancedBufferGeometry, PointMaterial>;
+  private points: Points<InstancedBufferGeometry, PointMaterial2D>;
   private instancedGeometry: InstancedBufferGeometry;
   private positionAndScaleAttribute: InstancedBufferAttribute;
   private idAttribute: InstancedBufferAttribute;
@@ -79,7 +80,7 @@ class PointRenderer2D {
   constructor() {
     this.timeToIds = new Map();
     this.scene = new Scene();
-    const pointMaterial = new PointMaterial();
+    const pointMaterial = new PointMaterial2D();
 
     const pointGeometry = getPointBufferGeometry() as InstancedBufferGeometry;
     this.instancedGeometry = new InstancedBufferGeometry().copy(pointGeometry);
@@ -115,7 +116,7 @@ class PointRenderer2D {
 
     this.emptyTexture = makeEmptyRgbaUint8Texture();
 
-    this.renderFrame = this.renderFrame.bind(this);
+    this.requestFrameRender = this.requestFrameRender.bind(this);
   }
 
   private computeTimeToIds(dataset: Dataset): Map<number, Uint32Array> {
@@ -217,7 +218,8 @@ class PointRenderer2D {
     this.lastRenderedFrame = null;
   }
 
-  public renderFrame(renderer: WebGLRenderer, frame: number): Texture | undefined {
+  /** Requests a rerender of the points texture for the given frame. */
+  public requestFrameRender(renderer: WebGLRenderer, frame: number): Texture | undefined {
     // Return empty texture if centroids are not visible
     if (this.params?.showCentroids === false) {
       this.lastRenderedFrame = null;

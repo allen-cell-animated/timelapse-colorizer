@@ -823,7 +823,7 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     this.syncTrackPathLine();
 
     // Render points overlay
-    const frameTex = this.pointRenderer.renderFrame(this.renderer, this.currentFrame);
+    const frameTex = this.pointRenderer.requestFrameRender(this.renderer, this.currentFrame);
     if (frameTex) {
       this.setUniform("framePoints", frameTex);
     }

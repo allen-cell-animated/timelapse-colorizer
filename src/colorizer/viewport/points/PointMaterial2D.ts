@@ -9,7 +9,11 @@ export const enum PointMaterialInstanceAttributes {
 }
 
 /**
- * Draws circular points, using the RGB color to encode the instance ID.
+ * Draws circular points using the RGB color to encode the instance ID. This
+ * matches the encoding scheme used in segmentation image data, so IDs can be
+ * read from both in the same way.
+ *
+ * Note that the alpha channel is reserved for antialiasing effects.
  *
  * The following uniforms can be set:
  * - `baseScale`: a multiplier for the radius of each point, in onscreen pixels.
@@ -21,7 +25,7 @@ export const enum PointMaterialInstanceAttributes {
  * - `instanceId`: an unsigned 32-bit integer representing the instance ID of
  *   each point.
  */
-export default class PointMaterial extends ShaderMaterial {
+export default class PointMaterial2D extends ShaderMaterial {
   constructor() {
     super({
       vertexShader,
