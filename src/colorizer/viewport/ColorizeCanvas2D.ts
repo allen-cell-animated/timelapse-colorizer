@@ -450,14 +450,14 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     this.setUniform("canvasToFrameScale", canvasToFrameCoordinates);
 
     this.trackPaths.forEach((trackPath) => trackPath.setPositionAndScale(this.panOffset, frameToCanvasCoordinates));
+    this.vectorField.setPosition(this.panOffset, frameToCanvasCoordinates);
+    this.vectorField.setScale(frameToCanvasCoordinates, this.canvasResolution || new Vector2(1, 1));
     this.pointRenderer.setPositionAndScale(
       this.panOffset,
       this.savedScaleInfo.frameToCanvasCoordinates,
       canvasResolution,
       this.zoomMultiplier
     );
-    this.vectorField.setPosition(this.panOffset, frameToCanvasCoordinates);
-    this.vectorField.setScale(frameToCanvasCoordinates, this.canvasResolution || new Vector2(1, 1));
   }
 
   /**
