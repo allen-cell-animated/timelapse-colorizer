@@ -206,10 +206,12 @@ vec4 getColorFromDrawMode(uint drawMode, vec3 defaultColor) {
   }
 }
 
+/** Blends an RGBA color `a` over `b` using alpha compositing. */
 vec4 alphaBlend(vec4 a, vec4 b) {
   // Implements a over b operation. See https://en.wikipedia.org/wiki/Alpha_compositing
-  float alpha = a.a + b.a * (1.0 - a.a);
-  return vec4((a.rgb * a.a + b.rgb * b.a * (1.0 - a.a)) / alpha, alpha);
+  float outAlpha = mix(b.a, 1.0, a.a);
+  vec3 outColor = mix(b.rgb * b.a, a.rgb, a.a) / outAlpha;
+  return vec4(outColor, outAlpha);
 }
 
 bool isOutsideBounds(vec2 sUv) {
