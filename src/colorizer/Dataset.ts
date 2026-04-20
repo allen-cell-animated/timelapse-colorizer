@@ -1,4 +1,4 @@
-import { type DataTexture, RGBAFormat, RGBAIntegerFormat, type Texture, Vector2 } from "three";
+import { type DataTexture, RGBAFormat, RGBAIntegerFormat, type Texture, Vector2, Vector3 } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "src/colorizer/constants";
 
@@ -46,6 +46,13 @@ export type FeatureData = {
   type: FeatureType;
   categories: string[] | null;
   description: string | null;
+};
+
+export type FlowFieldFeature = {
+  key: string;
+  data: Float32Array;
+  min: number;
+  max: number;
 };
 
 type BackdropData = {
@@ -133,6 +140,9 @@ export default class Dataset {
   /** Ordered map from feature keys to feature data. */
   private features: Map<string, FeatureData>;
 
+  public flowFieldFeatures: Map<string, FlowFieldFeature>;
+  public flowFieldDims: Vector3 | null = null;
+
   private outlierFile?: string;
   public outliers?: Uint8Array | null;
 
@@ -186,6 +196,7 @@ export default class Dataset {
     this.cleanupArrayLoaderOnDispose = !options.arrayLoader;
     this.arrayLoader = options.arrayLoader || new UrlArrayLoader();
     this.features = new Map();
+    this.flowFieldFeatures = new Map();
     this.cachedTracks = new Map();
     this.maxTrackLength = null;
     this.metadata = defaultMetadata;
@@ -265,6 +276,27 @@ export default class Dataset {
     ];
   }
 
+  private async loadFlowFieldFeature(
+    metadata: Required<ManifestFile>["plot3d"]["flowFieldFeatures"][number]
+  ): Promise<[string, FlowFieldFeature]> {
+    const { key, data, min, max } = metadata;
+    const url = this.resolvePath(data);
+    if (!url) {
+      throw new Error(`Failed to resolve URL for flow field feature ${key}: '${data}'`);
+    }
+    const source = await this.arrayLoader.load(url, FeatureDataType.F32, min ?? undefined, max ?? undefined);
+
+    return [
+      key,
+      {
+        key,
+        data: source.getBuffer(),
+        min: source.getMin(),
+        max: source.getMax(),
+      },
+    ];
+  }
+
   public hasFeatureKey(key: string): boolean {
     return this.featureKeys.includes(key);
   }
@@ -297,6 +329,10 @@ export default class Dataset {
    */
   public getFeatureData(key: string): FeatureData | undefined {
     return this.features.get(key);
+  }
+
+  public getFlowFieldFeatureData(key: string): FlowFieldFeature | undefined {
+    return this.flowFieldFeatures.get(key);
   }
 
   public getFeatureName(key: string): string | undefined {
@@ -694,9 +730,12 @@ export default class Dataset {
     if (manifest.features.length === 0) {
       throw new Error(LoadErrorMessage.MANIFEST_HAS_NO_FEATURES);
     }
-    const featuresPromises: Promise<[string, FeatureData]>[] = Array.from(manifest.features).map((data) =>
+    const featurePromises: Promise<[string, FeatureData]>[] = Array.from(manifest.features).map((data) =>
       reportLoadProgress(this.loadFeature(data))
     );
+    const flowFieldFeaturePromises: Promise<[string, FlowFieldFeature]>[] = Array.from(
+      manifest.plot3d?.flowFieldFeatures || []
+    ).map((data) => reportLoadProgress(this.loadFlowFieldFeature(data)));
 
     const result = await Promise.allSettled([
       reportLoadProgress(this.loadToBuffer(FeatureDataType.U8, this.outlierFile)),
@@ -706,9 +745,10 @@ export default class Dataset {
       reportLoadProgress(this.loadToBuffer(FeatureDataType.U16, this.boundsFile)),
       reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, this.segIdsFile)),
       reportLoadProgress(this.loadFrame(0)),
-      ...featuresPromises,
     ]);
-    const [outliers, tracks, times, centroids, bounds, frameIdOffsets, _loadedFrame, ...featureResults] = result;
+    const featureResults = await Promise.allSettled(featurePromises);
+    const flowFieldFeatureResults = await Promise.allSettled(flowFieldFeaturePromises);
+    const [outliers, tracks, times, centroids, bounds, frameIdOffsets, _loadedFrame] = result;
 
     const unloadableDataFiles: string[] = [];
     function makeLoadFailedCallback(fileType: string, url?: string): (reason: any) => void {
@@ -743,6 +783,20 @@ export default class Dataset {
         this.features.set(key, data);
       }
     });
+
+    flowFieldFeatureResults.forEach((result, index) => {
+      const onFlowFieldLoadFailed = (reason: any): void => console.warn(`Flow field feature ${index}: `, reason);
+      const flowFieldValue = urlUtils.getPromiseValue(result, onFlowFieldLoadFailed);
+      if (flowFieldValue) {
+        const [key, data] = flowFieldValue;
+        if (this.features.has(key)) {
+          this.flowFieldFeatures.set(key, data);
+        } else {
+          console.warn(`Flow field feature '${key}' was not added because it does not match any loaded feature key.`);
+        }
+      }
+    });
+    this.flowFieldDims = manifest.plot3d?.dims ? new Vector3(...manifest.plot3d?.dims) : null;
 
     if (this.features.size !== manifest.features.length) {
       // Report the names of all features that could not be loaded.
