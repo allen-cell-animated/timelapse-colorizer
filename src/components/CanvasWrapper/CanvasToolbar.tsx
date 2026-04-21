@@ -33,9 +33,9 @@ const CanvasControlsContainer = styled(FlexColumn)`
 const SectionDivider = styled.hr`
   height: 1px;
   width: 100%;
-  margin: 4px 0;
+  margin: 0;
   border: none;
-  background-color: var(--color-borders);
+  background-color: rgba(0, 0, 0, 0.2);
 `;
 
 export default function CanvasToolbar(props: CanvasToolbarProps): ReactElement {
