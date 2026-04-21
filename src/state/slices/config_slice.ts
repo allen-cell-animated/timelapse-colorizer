@@ -59,6 +59,7 @@ const OUTLIER_DRAW_SETTINGS_DEFAULT: DrawSettings = {
 
 export type ConfigSliceState = {
   // View mode
+  showSegmentations: boolean;
   showCentroids: boolean;
   centroidRadiusPx: number;
 
@@ -127,6 +128,7 @@ export type ConfigSliceState = {
 
 export type ConfigSliceSerializableState = Pick<
   ConfigSliceState,
+  | "showSegmentations"
   | "showTrackPath"
   | "trackPathColor"
   | "trackPathColorMode"
@@ -157,6 +159,7 @@ export type ConfigSliceSerializableState = Pick<
 >;
 
 export type ConfigSliceActions = {
+  setShowSegmentations: (showSegmentations: boolean) => void;
   setShowCentroids: (showCentroids: boolean) => void;
   setCentroidRadiusPx: (radius: number) => void;
   setShowTrackPath: (showTrackPath: boolean) => void;
@@ -202,6 +205,7 @@ export type ConfigSlice = ConfigSliceState & ConfigSliceActions;
 
 export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> = (set) => ({
   // State
+  showSegmentations: true,
   showCentroids: false,
   centroidRadiusPx: 4,
   showTrackPath: true,
@@ -239,6 +243,7 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   openTab: TabType.TRACK_PLOT,
 
   // Actions
+  setShowSegmentations: (showSegmentations) => set({ showSegmentations }),
   setShowCentroids: (showCentroids) => set({ showCentroids }),
   setCentroidRadiusPx: (centroidRadiusPx) => set({ centroidRadiusPx: clamp(centroidRadiusPx, 0, 100) }),
   setShowTrackPath: (showTrackPath) => set({ showTrackPath }),
@@ -301,6 +306,7 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
 
 export const serializeConfigSlice = (slice: Partial<ConfigSliceSerializableState>): SerializedStoreData => {
   return {
+    [UrlParam.SHOW_SEGMENTATIONS]: encodeMaybeBoolean(slice.showSegmentations),
     [UrlParam.SHOW_PATH]: encodeMaybeBoolean(slice.showTrackPath),
     [UrlParam.PATH_COLOR]: encodeMaybeColor(slice.trackPathColor),
     [UrlParam.PATH_WIDTH]: encodeMaybeNumber(slice.trackPathWidthPx),
@@ -338,6 +344,7 @@ export const serializeConfigSlice = (slice: Partial<ConfigSliceSerializableState
 
 /** Selects state values that serialization depends on. */
 export const selectConfigSliceSerializationDeps = (slice: ConfigSlice): ConfigSliceSerializableState => ({
+  showSegmentations: slice.showSegmentations,
   showTrackPath: slice.showTrackPath,
   trackPathColor: slice.trackPathColor,
   trackPathWidthPx: slice.trackPathWidthPx,
@@ -368,6 +375,7 @@ export const selectConfigSliceSerializationDeps = (slice: ConfigSlice): ConfigSl
 });
 
 export const loadConfigSliceFromParams = (slice: ConfigSlice, params: URLSearchParams): void => {
+  setValueIfDefined(decodeBoolean(params.get(UrlParam.SHOW_SEGMENTATIONS)), slice.setShowSegmentations);
   setValueIfDefined(decodeBoolean(params.get(UrlParam.SHOW_PATH)), slice.setShowTrackPath);
   setValueIfDefined(decodeBoolean(params.get(UrlParam.SHOW_SCALEBAR)), slice.setShowScaleBar);
   setValueIfDefined(decodeBoolean(params.get(UrlParam.SHOW_TIMESTAMP)), slice.setShowTimestamp);

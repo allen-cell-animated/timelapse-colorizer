@@ -54,6 +54,7 @@ export enum UrlParam {
   OUTLINE_PALETTE_KEY = "outline-palette-key",
   EDGE_COLOR = "edge-color",
   EDGE_MODE = "edge",
+  SHOW_SEGMENTATIONS = "seg",
   SHOW_CENTROIDS = "centroids",
   CENTROID_RADIUS = "centroid-radius",
   SHOW_PATH = "path",

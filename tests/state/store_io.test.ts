@@ -76,6 +76,7 @@ const EXAMPLE_STORE: ViewerStoreSerializableState = {
   categoricalPaletteKey: CATEGORICAL_PALETTE_KEY,
   categoricalPalette: CATEGORICAL_PALETTE,
   showTrackPath: true,
+  showSegmentations: false,
   showCentroids: true,
   centroidRadiusPx: 7,
   showScaleBar: true,
@@ -149,6 +150,7 @@ const EXAMPLE_STORE_EXPECTED_PARAMS: ExpectedParamType = {
   "keep-range": "1",
   "palette-key": CATEGORICAL_PALETTE_KEY,
   path: "1",
+  seg: "0",
   centroids: "1",
   "centroid-radius": "7",
   scalebar: "1",
@@ -198,7 +200,7 @@ const EXAMPLE_STORE_EXPECTED_QUERY_STRING =
   "collection=https%3A%2F%2Fsome-url.com%2Fcollection.json&dataset=some-dataset" +
   "&feature=feature1&bg-key=backdrop2&track=0%3A3&t=2&color=matplotlib-inferno%21&keep-range=1&range=21.433%2C89.400" +
   "&palette-key=matplotlib_paired&filters=f1%3Am%3A0%3A0%2Cf2%3Aum%3ANaN%3ANaN%2Cf3%3Akm%3A0%3A1%2Cf4%3Amm%3A0.501%3A1000.485%2Cf5%3A%3Afff%2Cf6%3A%3A11" +
-  "&path=1&path-color=ff0000&path-width=1.500&path-ramp=esri-blue_red_8%21&path-mode=1&path-breaks=1&path-steps=10%2C25%21&path-persist=0&path-overlay=35&scalebar=1&timestamp=0&filter-color=ff0000&filter-mode=0&outlier-color=00ff00" +
+  "&seg=0&path=1&path-color=ff0000&path-width=1.500&path-ramp=esri-blue_red_8%21&path-mode=1&path-breaks=1&path-steps=10%2C25%21&path-persist=0&path-overlay=35&scalebar=1&timestamp=0&filter-color=ff0000&filter-mode=0&outlier-color=00ff00" +
   "&outlier-mode=1&outline-color=0000ff&outline-mode=0&outline-palette-key=matplotlib_paired" +
   "&edge=1&edge-color=8090a0b0&centroids=1&centroid-radius=7" +
   "&tab=filters&interpolate=1&scatter-x=feature3&scatter-y=feature2&scatter-bins=150&scatter-range=all" +
