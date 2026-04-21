@@ -580,7 +580,7 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     if (this.params === params) {
       return;
     }
-    const promises: Promise<void>[] = [];
+    const promises: Promise<any>[] = [];
     const prevParams = this.params;
     this.params = params;
     // Update dataset and array data
@@ -618,6 +618,11 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
         this.setUniform("edgeColor", params.edgeColor.clone().convertLinearToSRGB());
         this.setUniform("edgeColorAlpha", clamp(params.edgeColorAlpha, 0, 1));
       }
+    }
+
+    if (hasPropertyChanged(params, prevParams, ["showSegmentations"])) {
+      // Reload current frame
+      promises.push(this.setFrame(this.currentFrame, true));
     }
 
     // Update track path data
@@ -688,8 +693,8 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
       this.setUniform("useTracksPalette", params.outlineColorMode === SelectionOutlineColorMode.USE_PALETTE);
     }
 
-    this.render();
     await Promise.all(promises);
+    this.render();
     return;
   }
 
@@ -708,11 +713,16 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     const pendingDataset = dataset;
     this.pendingFrame = index;
     const pendingBackdropKey = this.params?.backdropKey ?? null;
+
+    // Setup promises; skip backdrop and frame loading if not needed
     let backdropPromise = undefined;
+    let framePromise = undefined;
     if (this.params?.backdropVisible && pendingBackdropKey !== null && dataset?.hasBackdrop(pendingBackdropKey)) {
       backdropPromise = dataset?.loadBackdrop(pendingBackdropKey, index);
     }
-    const framePromise = dataset?.loadFrame(index);
+    if (this.params?.showSegmentations) {
+      framePromise = dataset?.loadFrame(index);
+    }
     const result = await Promise.allSettled([framePromise, backdropPromise]);
     const [frame, backdrop] = result;
 
@@ -748,11 +758,6 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
 
     if (frame.status === "fulfilled" && frame.value) {
       this.setUniform("frame", frame.value);
-      const globalIdLookup = dataset.frameToGlobalIdLookup?.get(index);
-      if (globalIdLookup) {
-        this.setUniform("segIdOffset", globalIdLookup.minSegId);
-        this.setUniform("segIdToGlobalId", globalIdLookup.texture);
-      }
     } else {
       if (frame.status === "rejected") {
         // Only show error message if the frame load encountered an error. (Null/undefined is okay)
@@ -762,6 +767,13 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
       // Set to blank
       const emptyFrame = makeEmptyRgbaUint8Texture();
       this.setUniform("frame", emptyFrame);
+    }
+
+    // Update global ID lookup info.
+    const globalIdLookup = dataset.frameToGlobalIdLookup?.get(index);
+    if (globalIdLookup) {
+      this.setUniform("segIdOffset", globalIdLookup.minSegId);
+      this.setUniform("segIdToGlobalId", globalIdLookup.texture);
     }
 
     // Force rescale in case frame dimensions changed

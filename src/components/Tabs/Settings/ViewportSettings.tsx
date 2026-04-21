@@ -13,6 +13,7 @@ import { SETTINGS_GAP_PX } from "./constants";
 
 const enum ViewportSettingsHtmlIds {
   SHOW_CENTROIDS_SWITCH = "show-centroids-switch",
+  SHOW_SEGMENTATIONS_SWITCH = "show-segmentations-switch",
   CENTROID_RADIUS_SLIDER = "centroid-radius-slider",
   SCALE_BAR_SWITCH = "scale-bar-switch",
   TIMESTAMP_SWITCH = "timestamp-switch",
@@ -20,6 +21,8 @@ const enum ViewportSettingsHtmlIds {
 }
 
 export default function ViewportSettings(): ReactElement {
+  const showSegmentations = useViewerStateStore((state) => state.showSegmentations);
+  const setShowSegmentations = useViewerStateStore((state) => state.setShowSegmentations);
   const showCentroids = useViewerStateStore((state) => state.showCentroids);
   const centroidRadiusPx = useViewerStateStore((state) => state.centroidRadiusPx);
   const interpolate3d = useViewerStateStore((state) => state.interpolate3d);
@@ -37,6 +40,13 @@ export default function ViewportSettings(): ReactElement {
   return (
     <ToggleCollapse label="Viewport">
       <SettingsContainer gapPx={SETTINGS_GAP_PX}>
+        <SettingsItem label="Show segmentations" htmlFor={ViewportSettingsHtmlIds.SHOW_SEGMENTATIONS_SWITCH}>
+          <Checkbox
+            id={ViewportSettingsHtmlIds.SHOW_SEGMENTATIONS_SWITCH}
+            checked={showSegmentations}
+            onChange={(e) => setShowSegmentations(e.target.checked)}
+          />
+        </SettingsItem>
         <SettingsItem label="Show centroids" htmlFor={ViewportSettingsHtmlIds.SHOW_CENTROIDS_SWITCH}>
           <Checkbox
             id={ViewportSettingsHtmlIds.SHOW_CENTROIDS_SWITCH}
