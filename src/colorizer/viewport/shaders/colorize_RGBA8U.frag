@@ -3,6 +3,7 @@ precision highp int;
 
 uniform usampler2D frame;
 uniform usampler2D framePoints;
+uniform bool showPointSelectionOutlines;
 uniform sampler2D featureData;
 uniform usampler2D outlierData;
 /** A mapping of IDs that are in range after feature thresholding/filtering is applied. If
@@ -342,6 +343,20 @@ vec4 getPointColor(vec2 uv) {
     return TRANSPARENT;
   }
 
+  uint selectionIdx = getUintFromTex(selectedIds, id).r;
+  if (selectionIdx > 0u && showPointSelectionOutlines) {
+    if (isEdge(framePoints, uv, labelId, OUTLINE_WIDTH_PX, false)) {
+      int colorIdx = int(selectionIdx) - 1;
+      vec4 color = getOutlineColor(colorIdx);
+      return vec4(color.rgb, 1.0);
+    } else if (isEdge(framePoints, uv, labelId, OUTLINE_WIDTH_PX + 2.0, false) && useTracksPalette) {
+      // When coloring with the track palette, apply an additional 2px inner
+      // outline using the background color for better contrast against the
+      // track outline color.
+      return vec4(backgroundColor, 1.0);
+    }
+  }
+
   // Points should render with a smooth, 1px anti-aliased outline, and we can
   // use some special alpha value tricks to do so.
   //
@@ -358,7 +373,7 @@ vec4 getPointColor(vec2 uv) {
   float alpha = clamp((labelAlpha * 2.0), 0.0, 1.0);
 
   // Apply edge colors
-  if (edgeColorAlpha > 0.0) {
+  if (edgeColorAlpha > 0.0 || selectionIdx > 0u) {
     // - `t=0` when `labelAlpha=1` (e.g. show the base color)
     // - `0>t>1` when `labelAlpha<1` (e.g. transition to the edge color)
     // - `t=1` when `labelAlpha>=0.33` (e.g. show the edge color slightly

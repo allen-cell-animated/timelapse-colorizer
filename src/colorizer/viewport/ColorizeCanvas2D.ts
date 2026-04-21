@@ -82,6 +82,7 @@ type ColorizeUniformTypes = {
   /** Image, mapping each pixel to an object ID using the RGBA values. */
   frame: Texture;
   framePoints: Texture;
+  showPointSelectionOutlines: boolean;
   objectOpacity: number;
   /** The feature value of each object ID. */
   featureData: Texture;
@@ -135,6 +136,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
     canvasSizePx: new Uniform(new Vector2(1, 1)),
     frame: new Uniform(emptyFrame),
     framePoints: new Uniform(emptyFramePoints),
+    showPointSelectionOutlines: new Uniform(false),
     featureData: new Uniform(emptyFeature),
     outlierData: new Uniform(emptyOutliers),
     inRangeIds: new Uniform(emptyInRangeIds),
@@ -623,6 +625,8 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     if (hasPropertyChanged(params, prevParams, ["showSegmentations"])) {
       // Reload current frame
       promises.push(this.setFrame(this.currentFrame, true));
+      // Show point outlines when segmentations are disabled
+      this.setUniform("showPointSelectionOutlines", !params.showSegmentations);
     }
 
     // Update track path data
