@@ -1,17 +1,17 @@
 import { HomeOutlined, ZoomInOutlined, ZoomOutOutlined } from "@ant-design/icons";
 import { Tooltip } from "antd";
-import React, { ReactElement, ReactNode } from "react";
+import React, { type ReactElement, type ReactNode } from "react";
 import styled from "styled-components";
 
 import { TagIconSVG, TagSlashIconSVG } from "src/assets";
 import { TabType, ViewMode } from "src/colorizer/types";
-import CanvasOverlay from "src/colorizer/viewport/CanvasOverlay";
+import type CanvasOverlay from "src/colorizer/viewport/CanvasOverlay";
 import IconButton from "src/components/Buttons/IconButton";
 import TooltipButtonStyleLink from "src/components/Buttons/TooltipButtonStyleLink";
 import BackdropToggleButton from "src/components/CanvasWrapper/BackdropToggleButton";
 import ChannelToggleButton from "src/components/CanvasWrapper/ChannelToggleButton";
 import { TooltipWithSubtitle } from "src/components/Tooltips/TooltipWithSubtitle";
-import { AnnotationState } from "src/hooks";
+import type { AnnotationState } from "src/hooks";
 import { useViewerStateStore } from "src/state";
 import { FlexColumn, VisuallyHidden } from "src/styles/utils";
 
