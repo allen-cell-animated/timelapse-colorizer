@@ -16,7 +16,7 @@ export type ToggleButtonWithConfigProps = {
   visible: boolean;
   setVisible: (visible: boolean) => void;
   disabled: boolean;
-  tooltipContents: ReactNode;
+  tooltipContents?: ReactNode;
   configMenuContents: ReactNode | ((setOpen: (open: boolean) => void) => ReactNode[]);
   enabledIcon?: ReactNode;
   disabledIcon?: ReactNode;
