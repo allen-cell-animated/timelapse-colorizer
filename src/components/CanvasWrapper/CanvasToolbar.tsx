@@ -1,17 +1,17 @@
-import { HomeOutlined, ZoomInOutlined, ZoomOutOutlined } from "@ant-design/icons";
+import { EyeInvisibleOutlined, EyeOutlined, HomeOutlined, ZoomInOutlined, ZoomOutOutlined } from "@ant-design/icons";
 import { Tooltip } from "antd";
-import React, { ReactElement, ReactNode } from "react";
+import React, { type ReactElement, type ReactNode } from "react";
 import styled from "styled-components";
 
 import { AimIconSVG, AimSlashIconSVG, TagIconSVG, TagSlashIconSVG } from "src/assets";
 import { TabType, ViewMode } from "src/colorizer/types";
-import CanvasOverlay from "src/colorizer/viewport/CanvasOverlay";
+import type CanvasOverlay from "src/colorizer/viewport/CanvasOverlay";
 import IconButton from "src/components/Buttons/IconButton";
 import TooltipButtonStyleLink from "src/components/Buttons/TooltipButtonStyleLink";
 import BackdropToggleButton from "src/components/CanvasWrapper/BackdropToggleButton";
 import ChannelToggleButton from "src/components/CanvasWrapper/ChannelToggleButton";
 import { TooltipWithSubtitle } from "src/components/Tooltips/TooltipWithSubtitle";
-import { AnnotationState } from "src/hooks";
+import type { AnnotationState } from "src/hooks";
 import { useViewerStateStore } from "src/state";
 import { FlexColumn, VisuallyHidden } from "src/styles/utils";
 
@@ -36,16 +36,18 @@ const SectionDivider = styled.hr`
   width: 100%;
   margin: 0;
   border: none;
-  background-color: var(--color-borders);
+  background-color: rgba(0, 0, 0, 0.2);
 `;
 
 export default function CanvasToolbar(props: CanvasToolbarProps): ReactElement {
   const { canv } = props;
 
   const showCentroids = useViewerStateStore((state) => state.showCentroids);
+  const showSegmentations = useViewerStateStore((state) => state.showSegmentations);
   const viewMode = useViewerStateStore((state) => state.viewMode);
   const isDataset3d = viewMode === ViewMode.VIEW_3D;
   const setShowCentroids = useViewerStateStore((state) => state.setShowCentroids);
+  const setShowSegmentations = useViewerStateStore((state) => state.setShowSegmentations);
   const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
 
   const onAnnotationLinkClicked = (): void => {
@@ -105,6 +107,18 @@ export default function CanvasToolbar(props: CanvasToolbarProps): ReactElement {
 
       <SectionDivider />
 
+      <TooltipWithSubtitle
+        title={showSegmentations ? "Hide segmentations" : "Show segmentations"}
+        placement="right"
+        trigger={["hover", "focus"]}
+      >
+        <IconButton
+          type={showSegmentations ? "primary" : "link"}
+          onClick={() => setShowSegmentations(!showSegmentations)}
+        >
+          {showSegmentations ? <EyeOutlined /> : <EyeInvisibleOutlined />}
+        </IconButton>
+      </TooltipWithSubtitle>
       {/* TODO: Remove flag when centroids are supported in 3D. */}
       {!isDataset3d && (
         <TooltipWithSubtitle
