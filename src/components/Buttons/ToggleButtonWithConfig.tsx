@@ -11,25 +11,29 @@ import { FlexColumn, VisuallyHidden } from "src/styles/utils";
 
 import IconButton from "./IconButton";
 
-export type ToggleImageButtonProps = {
+export type ToggleButtonWithConfigProps = {
+  name: string;
   visible: boolean;
   setVisible: (visible: boolean) => void;
   disabled: boolean;
-  imageType: "backdrop" | "channels";
   tooltipContents: ReactNode;
   configMenuContents: ReactNode | ((setOpen: (open: boolean) => void) => ReactNode[]);
+  enabledIcon?: ReactNode;
+  disabledIcon?: ReactNode;
+  settingsLinkText: string;
 };
 
-const labelToViewerSettingsSection = {
-  backdrop: "Viewer settings > 2D Backdrop",
-  channels: "Viewer settings > 3D Channels",
-} as const;
+const defaultProps = {
+  enabledIcon: <ImagesIconSVG />,
+  disabledIcon: <ImagesSlashIconSVG />,
+};
 
 /**
- * Icon button that toggles an image layer (e.g. 3D channels or 2D backdrop
- * images), as a reusable component.
+ * Toggleable icon button with a popup config menu. Shows a tooltip on hover or
+ * focus.
  */
-export function ImageToggleButton(props: ToggleImageButtonProps): ReactElement {
+export function ToggleButtonWithConfig(inputProps: ToggleButtonWithConfigProps): ReactElement {
+  const props = { ...defaultProps, ...inputProps };
   const theme = useContext(AppThemeContext);
   const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
 
@@ -49,11 +53,11 @@ export function ImageToggleButton(props: ToggleImageButtonProps): ReactElement {
   } else {
     buttonActionVerb = "Show";
   }
-  const tooltipTitle = buttonActionVerb + " " + props.imageType;
+  const tooltipTitle = buttonActionVerb + " " + props.name;
 
   const tooltipContents = Array.isArray(props.tooltipContents) ? [...props.tooltipContents] : [props.tooltipContents];
   if (props.visible && !configMenuOpen) {
-    tooltipContents.push("Double-click to hide " + props.imageType.toLowerCase());
+    tooltipContents.push("Double-click to hide " + props.name.toLowerCase());
   }
 
   const onClick = (): void => {
@@ -86,7 +90,7 @@ export function ImageToggleButton(props: ToggleImageButtonProps): ReactElement {
           $hoverColor={theme.color.text.secondary}
         >
           <span>
-            {labelToViewerSettingsSection[props.imageType]} <VisuallyHidden>(opens settings tab)</VisuallyHidden>
+            {props.settingsLinkText} <VisuallyHidden>(opens settings tab)</VisuallyHidden>
           </span>
         </LinkStyleButton>
       </div>
@@ -117,7 +121,7 @@ export function ImageToggleButton(props: ToggleImageButtonProps): ReactElement {
           getPopupContainer={() => popupContainerRef.current || document.body}
         >
           <IconButton type={isVisible ? "primary" : "link"} onClick={onClick} disabled={props.disabled}>
-            {props.visible ? <ImagesIconSVG /> : <ImagesSlashIconSVG />}
+            {props.visible ? props.enabledIcon : props.disabledIcon}
             <VisuallyHidden>{tooltipTitle}</VisuallyHidden>
           </IconButton>
         </TooltipWithSubtitle>

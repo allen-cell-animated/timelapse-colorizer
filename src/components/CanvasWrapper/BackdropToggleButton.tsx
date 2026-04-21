@@ -1,6 +1,6 @@
 import React, { type ReactElement, type ReactNode } from "react";
 
-import { ImageToggleButton } from "src/components/Buttons/ImageToggleButton";
+import { ToggleButtonWithConfig } from "src/components/Buttons/ToggleButtonWithConfig";
 import ShortcutTooltipHint from "src/components/Display/ShortcutTooltipHint";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import type { SelectItem } from "src/components/Dropdowns/types";
@@ -93,13 +93,14 @@ export default function BackdropToggleButton(): ReactElement {
   ];
 
   return (
-    <ImageToggleButton
+    <ToggleButtonWithConfig
       visible={backdropVisible}
-      imageType={"backdrop"}
+      name={"backdrop"}
       tooltipContents={backdropTooltipContents}
       configMenuContents={createBackdropConfigMenuContents}
       disabled={dataset === null || backdropKey === null}
       setVisible={setBackdropVisible}
+      settingsLinkText="Viewer settings > 2D Backdrop"
     />
   );
 }
