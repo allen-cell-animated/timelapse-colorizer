@@ -284,6 +284,33 @@ vec4 getFeatureColor(int id, vec2 uv) {
   return color;
 }
 
+/**
+ * Gets the highlight color for an object if it is selected. Returns a transparent color if the object is not selected.
+*/
+vec4 getHighlightColor(uint labelId, int id, usampler2D tex, vec2 uv, bool useFrameScaling, out bool isHighlightPixel) {
+  uint selectionIdx = getUintFromTex(selectedIds, id).r;
+  if (selectionIdx == 0u) {
+    isHighlightPixel = false;
+    return TRANSPARENT;
+  }
+
+  if (isEdge(tex, uv, labelId, OUTLINE_WIDTH_PX, useFrameScaling)) {
+    int colorIdx = int(selectionIdx) - 1;
+    vec4 color = getOutlineColor(colorIdx);
+    isHighlightPixel = true;
+    return vec4(color.rgb, 1.0);
+  } else if (useTracksPalette && isEdge(tex, uv, labelId, OUTLINE_WIDTH_PX + 2.0, useFrameScaling)) {
+      // When coloring with the track palette, apply an additional 2px inner
+      // outline using the background color for better contrast against the
+      // track outline color.
+    isHighlightPixel = true;
+    return vec4(backgroundColor, 1.0);
+  } else {
+    isHighlightPixel = false;
+    return TRANSPARENT;
+  }
+}
+
 vec4 getObjectColor(vec2 sUv, float opacity) {
   if (isOutsideBounds(sUv)) {
     return TRANSPARENT;
@@ -300,18 +327,10 @@ vec4 getObjectColor(vec2 sUv, float opacity) {
   }
 
   // Draw an outline around highlighted objects
-  uint selectionIdx = getUintFromTex(selectedIds, id).r;
-  if (selectionIdx > 0u) {
-    if (isEdge(frame, sUv, labelId, OUTLINE_WIDTH_PX, true)) {
-      int colorIdx = int(selectionIdx) - 1;
-      vec4 color = getOutlineColor(colorIdx);
-      return vec4(color.rgb, 1.0);
-    } else if (isEdge(frame, sUv, labelId, OUTLINE_WIDTH_PX + 2.0, true) && useTracksPalette) {
-      // When coloring with the track palette, apply an additional 2px inner
-      // outline using the background color for better contrast against the
-      // track outline color.
-      return vec4(backgroundColor, 1.0);
-    }
+  bool isHighlight;
+  vec4 highlightColor = getHighlightColor(labelId, id, frame, sUv, true, isHighlight);
+  if (isHighlight) {
+    return highlightColor;
   }
 
   // Get base color and apply edge color if this is an edge pixel.
@@ -343,17 +362,11 @@ vec4 getPointColor(vec2 uv) {
     return TRANSPARENT;
   }
 
-  uint selectionIdx = getUintFromTex(selectedIds, id).r;
-  if (selectionIdx > 0u && showPointSelectionOutlines) {
-    if (isEdge(framePoints, uv, labelId, OUTLINE_WIDTH_PX, false)) {
-      int colorIdx = int(selectionIdx) - 1;
-      vec4 color = getOutlineColor(colorIdx);
-      return vec4(color.rgb, 1.0);
-    } else if (isEdge(framePoints, uv, labelId, OUTLINE_WIDTH_PX + 2.0, false) && useTracksPalette) {
-      // When coloring with the track palette, apply an additional 2px inner
-      // outline using the background color for better contrast against the
-      // track outline color.
-      return vec4(backgroundColor, 1.0);
+  bool isHighlight;
+  if (showPointSelectionOutlines) {
+    vec4 highlightColor = getHighlightColor(labelId, id, framePoints, uv, false, isHighlight);
+    if (isHighlight) {
+      return highlightColor;
     }
   }
 
@@ -373,7 +386,7 @@ vec4 getPointColor(vec2 uv) {
   float alpha = clamp((labelAlpha * 2.0), 0.0, 1.0);
 
   // Apply edge colors
-  if (edgeColorAlpha > 0.0 || selectionIdx > 0u) {
+  if (edgeColorAlpha > 0.0) {
     // - `t=0` when `labelAlpha=1` (e.g. show the base color)
     // - `0>t>1` when `labelAlpha<1` (e.g. transition to the edge color)
     // - `t=1` when `labelAlpha>=0.33` (e.g. show the edge color slightly
