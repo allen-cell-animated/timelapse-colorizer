@@ -42,8 +42,9 @@ export default function CanvasToolbar(props: CanvasToolbarProps): ReactElement {
   const { canv } = props;
 
   const viewMode = useViewerStateStore((state) => state.viewMode);
-  const isDataset3d = viewMode === ViewMode.VIEW_3D;
   const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
+
+  const isDataset3d = viewMode === ViewMode.VIEW_3D;
 
   const onAnnotationLinkClicked = (): void => {
     setOpenTab(TabType.ANNOTATION);
@@ -65,7 +66,7 @@ export default function CanvasToolbar(props: CanvasToolbarProps): ReactElement {
   );
 
   return (
-    <CanvasControlsContainer>
+    <CanvasControlsContainer $gap={4}>
       <Tooltip title={"Reset view"} placement="right" trigger={["hover", "focus"]}>
         <IconButton
           onClick={() => {
