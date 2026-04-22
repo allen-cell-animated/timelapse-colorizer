@@ -1,6 +1,6 @@
 import React, { ReactElement } from "react";
 
-import { AimIconSVG, AimSlashIconSVG } from "src/assets";
+import { CentroidIconSVG, CentroidSlashIconSVG } from "src/assets";
 import { ToggleButtonWithConfig } from "src/components/Buttons/ToggleButtonWithConfig";
 import LabeledSlider from "src/components/Inputs/LabeledSlider";
 import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
@@ -52,8 +52,8 @@ export default function CentroidsToggleButton(): ReactElement {
       disabled={dataset === undefined}
       configMenuContents={configMenuContents}
       settingsLinkText={"Viewer settings > Objects"}
-      visibleIcon={<AimIconSVG />}
-      hiddenIcon={<AimSlashIconSVG />}
+      visibleIcon={<CentroidIconSVG />}
+      hiddenIcon={<CentroidSlashIconSVG />}
     ></ToggleButtonWithConfig>
   );
 }

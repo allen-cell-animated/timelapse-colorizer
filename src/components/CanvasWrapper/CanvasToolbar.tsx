@@ -1,9 +1,9 @@
-import { EyeInvisibleOutlined, EyeOutlined, HomeOutlined, ZoomInOutlined, ZoomOutOutlined } from "@ant-design/icons";
+import { HomeOutlined, ZoomInOutlined, ZoomOutOutlined } from "@ant-design/icons";
 import { Tooltip } from "antd";
 import React, { type ReactElement, type ReactNode } from "react";
 import styled from "styled-components";
 
-import { TagIconSVG, TagSlashIconSVG } from "src/assets";
+import { ImageIconSVG, ImageSlashIconSVG, TagIconSVG, TagSlashIconSVG } from "src/assets";
 import { TabType, ViewMode } from "src/colorizer/types";
 import type CanvasOverlay from "src/colorizer/viewport/CanvasOverlay";
 import IconButton from "src/components/Buttons/IconButton";
@@ -116,14 +116,14 @@ export default function CanvasToolbar(props: CanvasToolbarProps): ReactElement {
           type={showSegmentations ? "primary" : "link"}
           onClick={() => setShowSegmentations(!showSegmentations)}
         >
-          {showSegmentations ? <EyeOutlined /> : <EyeInvisibleOutlined />}
+          {showSegmentations ? <ImageIconSVG /> : <ImageSlashIconSVG />}
         </IconButton>
       </TooltipWithSubtitle>
-      {/* TODO: Remove flag when centroids are supported in 3D. */}
-      {!isDataset3d && <CentroidsToggleButton />}
-
       {/* 2D backdrop or 3D channels toggle */}
       {isDataset3d ? <ChannelToggleButton /> : <BackdropToggleButton />}
+
+      {/* TODO: Remove flag when centroids are supported in 3D. */}
+      {!isDataset3d && <CentroidsToggleButton />}
 
       {/* Annotation mode toggle */}
       <TooltipWithSubtitle
