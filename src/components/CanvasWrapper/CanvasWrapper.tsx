@@ -66,6 +66,7 @@ const AnnotationModeContainer = styled(FlexColumn)`
   top: 10px;
   left: 10px;
   z-index: 100;
+  pointer-events: none;
 `;
 
 type CanvasWrapperProps = {
@@ -591,7 +592,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
           <b>Missing image data</b>
         </p>
       </MissingFileIconContainer>
-      <CanvasToolbar canv={canv} annotationState={props.annotationState}></CanvasToolbar>
+      <CanvasToolbar canv={canv} annotationState={props.annotationState} style={{ zIndex: 101 }}></CanvasToolbar>
       <AnnotationInputPopover
         annotationState={props.annotationState}
         anchorPositionPx={lastClickPosition}

@@ -18,6 +18,7 @@ import { FlexColumn, VisuallyHidden } from "src/styles/utils";
 type CanvasToolbarProps = {
   annotationState: AnnotationState;
   canv: CanvasOverlay;
+  style?: React.CSSProperties;
 };
 
 const CanvasControlsContainer = styled(FlexColumn)`
@@ -66,7 +67,7 @@ export default function CanvasToolbar(props: CanvasToolbarProps): ReactElement {
   );
 
   return (
-    <CanvasControlsContainer $gap={4}>
+    <CanvasControlsContainer $gap={4} style={props.style}>
       <Tooltip title={"Reset view"} placement="right" trigger={["hover", "focus"]}>
         <IconButton
           onClick={() => {
