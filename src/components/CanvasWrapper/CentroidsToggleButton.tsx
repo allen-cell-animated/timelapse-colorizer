@@ -1,4 +1,4 @@
-import React, { ReactElement } from "react";
+import React, { type ReactElement } from "react";
 
 import { CentroidIconSVG, CentroidSlashIconSVG } from "src/assets";
 import { ToggleButtonWithConfig } from "src/components/Buttons/ToggleButtonWithConfig";
@@ -17,7 +17,6 @@ const enum CentroidsToggleButtonHtmlIds {
 }
 
 export default function CentroidsToggleButton(): ReactElement {
-  const dataset = useViewerStateStore((state) => state.dataset);
   const showCentroids = useViewerStateStore((state) => state.showCentroids);
   const centroidRadiusPx = useViewerStateStore((state) => state.centroidRadiusPx);
   const setShowCentroids = useViewerStateStore((state) => state.setShowCentroids);
@@ -49,7 +48,6 @@ export default function CentroidsToggleButton(): ReactElement {
       name={"centroids"}
       visible={showCentroids}
       setVisible={setShowCentroids}
-      disabled={dataset === undefined}
       configMenuContents={configMenuContents}
       settingsLinkText={"Viewer settings > Objects"}
       visibleIcon={<CentroidIconSVG />}

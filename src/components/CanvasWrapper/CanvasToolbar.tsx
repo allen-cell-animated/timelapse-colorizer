@@ -117,6 +117,7 @@ export default function CanvasToolbar(props: CanvasToolbarProps): ReactElement {
           onClick={() => setShowSegmentations(!showSegmentations)}
         >
           {showSegmentations ? <ImageIconSVG /> : <ImageSlashIconSVG />}
+          <VisuallyHidden>{showSegmentations ? "Hide segmentations" : "Show segmentations"}</VisuallyHidden>
         </IconButton>
       </TooltipWithSubtitle>
       {/* 2D backdrop or 3D channels toggle */}
