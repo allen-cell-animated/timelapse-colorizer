@@ -15,17 +15,18 @@ export type ToggleButtonWithConfigProps = {
   name: string;
   visible: boolean;
   setVisible: (visible: boolean) => void;
-  disabled: boolean;
+  disabled?: boolean;
   tooltipContents?: ReactNode;
   configMenuContents: ReactNode | ((setOpen: (open: boolean) => void) => ReactNode[]);
-  enabledIcon?: ReactNode;
-  disabledIcon?: ReactNode;
+  visibleIcon?: ReactNode;
+  hiddenIcon?: ReactNode;
   settingsLinkText: string;
 };
 
-const defaultProps = {
-  enabledIcon: <ImagesIconSVG />,
-  disabledIcon: <ImagesSlashIconSVG />,
+const defaultProps: Partial<ToggleButtonWithConfigProps> = {
+  disabled: false,
+  visibleIcon: <ImagesIconSVG />,
+  hiddenIcon: <ImagesSlashIconSVG />,
 };
 
 /**
@@ -121,7 +122,7 @@ export function ToggleButtonWithConfig(inputProps: ToggleButtonWithConfigProps):
           getPopupContainer={() => popupContainerRef.current || document.body}
         >
           <IconButton type={isVisible ? "primary" : "link"} onClick={onClick} disabled={props.disabled}>
-            {props.visible ? props.enabledIcon : props.disabledIcon}
+            {props.visible ? props.visibleIcon : props.hiddenIcon}
             <VisuallyHidden>{tooltipTitle}</VisuallyHidden>
           </IconButton>
         </TooltipWithSubtitle>

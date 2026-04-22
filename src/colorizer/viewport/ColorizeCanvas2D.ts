@@ -697,8 +697,8 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
       this.setUniform("useTracksPalette", params.outlineColorMode === SelectionOutlineColorMode.USE_PALETTE);
     }
 
-    await Promise.all(promises);
     this.render();
+    await Promise.all(promises);
     return;
   }
 
@@ -773,7 +773,7 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
       this.setUniform("frame", emptyFrame);
     }
 
-    // Update global ID lookup info.
+    // Update global ID lookup info
     const globalIdLookup = dataset.frameToGlobalIdLookup?.get(index);
     if (globalIdLookup) {
       this.setUniform("segIdOffset", globalIdLookup.minSegId);

@@ -9,7 +9,13 @@ import type { SelectItem } from "src/components/Dropdowns/types";
 import LabeledSlider from "src/components/Inputs/LabeledSlider";
 import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
 import ToggleCollapse from "src/components/ToggleCollapse";
-import { MAX_SETTINGS_SLIDER_WIDTH } from "src/constants";
+import {
+  CENTROID_RADIUS_PX_INPUT_MAX,
+  CENTROID_RADIUS_PX_INPUT_MIN,
+  CENTROID_RADIUS_PX_SLIDER_MAX,
+  CENTROID_RADIUS_PX_SLIDER_MIN,
+  MAX_SETTINGS_SLIDER_WIDTH,
+} from "src/constants";
 import { useViewerStateStore } from "src/state";
 
 import { DEFAULT_OUTLINE_COLOR_PRESETS, SETTINGS_GAP_PX } from "./constants";
@@ -207,10 +213,10 @@ export default function ObjectSettings(): ReactElement {
                   step={0.5}
                   value={centroidRadiusPx}
                   onChange={setCentroidRadiusPx}
-                  minInputBound={0}
-                  maxInputBound={100}
-                  minSliderBound={1}
-                  maxSliderBound={10}
+                  minInputBound={CENTROID_RADIUS_PX_INPUT_MIN}
+                  maxInputBound={CENTROID_RADIUS_PX_INPUT_MAX}
+                  minSliderBound={CENTROID_RADIUS_PX_SLIDER_MIN}
+                  maxSliderBound={CENTROID_RADIUS_PX_SLIDER_MAX}
                   numberFormatter={(value) => value?.toFixed(1)}
                 />
               </div>

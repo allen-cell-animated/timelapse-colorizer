@@ -30,7 +30,6 @@ const CanvasControlsContainer = styled(FlexColumn)`
   border-radius: 4px;
   background-color: var(--color-viewport-overlay-background);
   border: 1px solid var(--color-viewport-overlay-outline);
-  gap: 4px;
 `;
 
 const SectionDivider = styled.hr`
