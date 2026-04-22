@@ -43,8 +43,6 @@ const CanvasContainer = styled(FlexColumnAlignCenter)<{ $annotationModeEnabled: 
     ${(props) => (props.$annotationModeEnabled ? "var(--color-viewport-annotation-outline)" : "transparent")};
   border: 1px solid var(--color-borders);
 
-  overflow: hidden;
-
   transition: box-shadow 0.1s ease-in, outline 0.1s ease-in;
 `;
 
