@@ -1,13 +1,4 @@
-import React, {
-  type ReactElement,
-  type ReactNode,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { type ReactElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import { Vector2 } from "three";
 
@@ -19,11 +10,9 @@ import {
   type ChannelRangePreset,
   LoadTroubleshooting,
   type PixelIdInfo,
-  TabType,
 } from "src/colorizer/types";
 import type CanvasOverlay from "src/colorizer/viewport/CanvasOverlay";
 import type { AlertBannerProps } from "src/components/Banner";
-import TooltipButtonStyleLink from "src/components/Buttons/TooltipButtonStyleLink";
 import CanvasToolbar from "src/components/CanvasWrapper/CanvasToolbar";
 import ShortcutKeyList from "src/components/Display/ShortcutKeyList";
 import LoadingSpinner from "src/components/LoadingSpinner";
@@ -33,7 +22,7 @@ import type { AnnotationState } from "src/hooks";
 import { renderCanvasStateParamsSelector } from "src/state";
 import { useViewerStateStore } from "src/state/ViewerState";
 import { AppThemeContext } from "src/styles/AppStyle";
-import { FlexColumn, FlexColumnAlignCenter, VisuallyHidden } from "src/styles/utils";
+import { FlexColumn, FlexColumnAlignCenter } from "src/styles/utils";
 import { areAnyHotkeysPressed } from "src/utils/user_input";
 
 /* Minimum distance in either X or Y that mouse should move
@@ -129,7 +118,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const updateChannelSettings = useViewerStateStore((state) => state.updateChannelSettings);
   const setGetChannelDataRangeCallback = useViewerStateStore((state) => state.setGetChannelDataRangeCallback);
   const setApplyChannelRangePresetCallback = useViewerStateStore((state) => state.setApplyChannelRangePresetCallback);
-  const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
   const clearTracks = useViewerStateStore((state) => state.clearTracks);
   const setTracks = useViewerStateStore((state) => state.setTracks);
   const addTracks = useViewerStateStore((state) => state.addTracks);
@@ -566,24 +554,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   // RENDERING /////////////////////////////////////////////////
 
-  const onAnnotationLinkClicked = (): void => {
-    setOpenTab(TabType.ANNOTATION);
-  };
-
   const labels = props.annotationState.data.getLabels();
-  const annotationTooltipContents: ReactNode[] = [];
-  annotationTooltipContents.push(
-    <span key="annotation-count">
-      {labels.length > 0 ? (labels.length === 1 ? "1 label" : `${labels.length} labels`) : "(No labels)"}
-    </span>
-  );
-  annotationTooltipContents.push(
-    <TooltipButtonStyleLink key="annotation-link" onClick={onAnnotationLinkClicked}>
-      <span>
-        View and edit annotations <VisuallyHidden>(opens annotations tab)</VisuallyHidden>
-      </span>
-    </TooltipButtonStyleLink>
-  );
   const labelData: LabelData | undefined = labels[props.annotationState.currentLabelIdx ?? 0];
 
   const annotationShortcutKeys = [];
@@ -621,7 +592,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
           <b>Missing image data</b>
         </p>
       </MissingFileIconContainer>
-      <CanvasToolbar canv={canv} annotationState={props.annotationState}></CanvasToolbar>
+      <CanvasToolbar canv={canv} annotationState={props.annotationState} style={{ zIndex: 101 }}></CanvasToolbar>
       <AnnotationInputPopover
         annotationState={props.annotationState}
         anchorPositionPx={lastClickPosition}

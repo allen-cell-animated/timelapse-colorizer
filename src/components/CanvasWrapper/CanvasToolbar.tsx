@@ -19,6 +19,7 @@ import { FlexColumn, VisuallyHidden } from "src/styles/utils";
 type CanvasToolbarProps = {
   annotationState: AnnotationState;
   canv: CanvasOverlay;
+  style?: React.CSSProperties;
 };
 
 const CanvasControlsContainer = styled(FlexColumn)`
@@ -43,11 +44,12 @@ const SectionDivider = styled.hr`
 export default function CanvasToolbar(props: CanvasToolbarProps): ReactElement {
   const { canv } = props;
 
+  const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
+  const setShowSegmentations = useViewerStateStore((state) => state.setShowSegmentations);
   const showSegmentations = useViewerStateStore((state) => state.showSegmentations);
   const viewMode = useViewerStateStore((state) => state.viewMode);
+
   const isDataset3d = viewMode === ViewMode.VIEW_3D;
-  const setShowSegmentations = useViewerStateStore((state) => state.setShowSegmentations);
-  const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
 
   const onAnnotationLinkClicked = (): void => {
     setOpenTab(TabType.ANNOTATION);
@@ -69,7 +71,7 @@ export default function CanvasToolbar(props: CanvasToolbarProps): ReactElement {
   );
 
   return (
-    <CanvasControlsContainer>
+    <CanvasControlsContainer $gap={4} style={props.style}>
       <Tooltip title={"Reset view"} placement="right" trigger={["hover", "focus"]}>
         <IconButton
           onClick={() => {
