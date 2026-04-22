@@ -63,8 +63,9 @@ const MissingFileIconContainer = styled(FlexColumnAlignCenter)`
 
 const AnnotationModeContainer = styled(FlexColumn)`
   position: absolute;
+  top: 10px;
+  left: 10px;
   z-index: 100;
-  transition: left 0.2s ease-in-out;
 `;
 
 type CanvasWrapperProps = {
