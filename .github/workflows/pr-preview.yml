@@ -32,9 +32,7 @@ jobs:
       # Must override default vite build base so that assets can still be accessed
       # when not placed in the root directory of gh-pages branch.
       - name: Build
-        run: npx vite build --base=/timelapse-colorizer/pr-preview/pr-${PR_NUMBER}/
-        env:
-          PR_NUMBER: ${{ github.event.number }}
+        run: npx vite build --base=/${{ github.repository.name }}/pr-preview/pr-${{ github.event.number }}/
 
       - name: Deploy preview
         uses: rossjrw/pr-preview-action@430e3dfc1de8a8ae77e77d862d25676ef9db55d1
@@ -58,9 +56,7 @@ jobs:
         run: npm ci
 
       - name: Build
-        run: npx vite build --base=/timelapse-colorizer/pr-preview-internal/pr-${PR_NUMBER}/ --config config/vite.internal-build.config.js
-        env:
-          PR_NUMBER: ${{ github.event.number }}
+        run: npx vite build --base=/${{ github.repository.name }}/pr-preview-internal/pr-${{ github.event.number }}/ --config config/vite.internal-build.config.js
 
       - name: Deploy internal preview
         uses: rossjrw/pr-preview-action@430e3dfc1de8a8ae77e77d862d25676ef9db55d1
