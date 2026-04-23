@@ -107,6 +107,7 @@ export default function CanvasToolbar(props: CanvasToolbarProps): ReactElement {
 
       <SectionDivider />
 
+      {/* Segmentations toggle */}
       <TooltipWithSubtitle
         title={showSegmentations ? "Hide segmentations" : "Show segmentations"}
         placement="right"
@@ -120,6 +121,7 @@ export default function CanvasToolbar(props: CanvasToolbarProps): ReactElement {
           <VisuallyHidden>{showSegmentations ? "Hide segmentations" : "Show segmentations"}</VisuallyHidden>
         </IconButton>
       </TooltipWithSubtitle>
+
       {/* 2D backdrop or 3D channels toggle */}
       {isDataset3d ? <ChannelToggleButton /> : <BackdropToggleButton />}
 

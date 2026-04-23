@@ -582,7 +582,7 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     if (this.params === params) {
       return;
     }
-    const promises: Promise<any>[] = [];
+    const promises: Promise<void>[] = [];
     const prevParams = this.params;
     this.params = params;
     // Update dataset and array data
@@ -624,7 +624,7 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
 
     if (hasPropertyChanged(params, prevParams, ["showSegmentations"])) {
       // Reload current frame
-      promises.push(this.setFrame(this.currentFrame, true));
+      promises.push(this.setFrame(this.currentFrame, true).then(() => {}));
       // Show point outlines when segmentations are disabled
       this.setUniform("showPointSelectionOutlines", !params.showSegmentations);
     }
