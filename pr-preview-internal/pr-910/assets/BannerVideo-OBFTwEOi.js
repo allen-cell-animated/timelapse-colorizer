@@ -1,0 +1,1 @@
+import{j as e}from"./main-DgeP85x-.js";import"./gh_routing-CIETgkEV.js";const r="/timelapse-colorizer/pr-preview-internal/pr-910/assets/banner_video-8h8QZ5tC.mp4";function i(){return e.jsx("video",{autoPlay:!0,loop:!0,muted:!0,children:e.jsx("source",{src:r,type:"video/mp4"})})}export{i as default};
