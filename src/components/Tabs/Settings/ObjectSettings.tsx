@@ -3,7 +3,13 @@ import type { PresetsItem } from "antd/es/color-picker/interface";
 import React, { type ReactElement } from "react";
 import type { Color } from "three";
 
-import { DrawMode, KNOWN_CATEGORICAL_PALETTES, SelectionOutlineColorMode, ViewMode } from "src/colorizer";
+import {
+  CentroidColorMode,
+  DrawMode,
+  KNOWN_CATEGORICAL_PALETTES,
+  SelectionOutlineColorMode,
+  ViewMode,
+} from "src/colorizer";
 import DropdownWithColorPicker from "src/components/Dropdowns/DropdownWithColorPicker";
 import type { SelectItem } from "src/components/Dropdowns/types";
 import LabeledSlider from "src/components/Inputs/LabeledSlider";
@@ -28,6 +34,7 @@ const enum ObjectSettingsHtmlIds {
   SHOW_CENTROIDS_SWITCH = "show-centroids-switch",
   SHOW_SEGMENTATIONS_SWITCH = "show-segmentations-switch",
   CENTROID_RADIUS_SLIDER = "centroid-radius-slider",
+  CENTROID_MODE_SELECT = "centroid-mode-select",
 }
 
 const DRAW_MODE_ITEMS = [
@@ -65,8 +72,15 @@ const OUTLINE_COLOR_MODE_ITEMS = [
   { value: SelectionOutlineColorMode.USE_CUSTOM_COLOR.toString(), label: "Use color" },
 ] as const satisfies SelectItem[];
 
+const CENTROID_COLOR_MODE_ITEMS = [
+  { value: CentroidColorMode.USE_FEATURE_COLOR.toString(), label: "Use feature" },
+  { value: CentroidColorMode.USE_CUSTOM_COLOR.toString(), label: "Use color" },
+] as const satisfies SelectItem[];
+
 export default function ObjectSettings(): ReactElement {
   const centroidRadiusPx = useViewerStateStore((state) => state.centroidRadiusPx);
+  const centroidColor = useViewerStateStore((state) => state.centroidColor);
+  const centroidColorMode = useViewerStateStore((state) => state.centroidColorMode);
   const edgeColor = useViewerStateStore((state) => state.edgeColor);
   const edgeColorAlpha = useViewerStateStore((state) => state.edgeColorAlpha);
   const edgeMode = useViewerStateStore((state) => state.edgeMode);
@@ -76,6 +90,8 @@ export default function ObjectSettings(): ReactElement {
   const outlinePaletteKey = useViewerStateStore((state) => state.outlinePaletteKey);
   const outOfRangeDrawSettings = useViewerStateStore((state) => state.outOfRangeDrawSettings);
   const setCentroidRadiusPx = useViewerStateStore((state) => state.setCentroidRadiusPx);
+  const setCentroidColor = useViewerStateStore((state) => state.setCentroidColor);
+  const setCentroidColorMode = useViewerStateStore((state) => state.setCentroidColorMode);
   const setEdgeColor = useViewerStateStore((state) => state.setEdgeColor);
   const setEdgeMode = useViewerStateStore((state) => state.setEdgeMode);
   const setOutlierDrawSettings = useViewerStateStore((state) => state.setOutlierDrawSettings);
@@ -199,6 +215,23 @@ export default function ObjectSettings(): ReactElement {
                 checked={showCentroids}
                 onChange={(e) => setShowCentroids(e.target.checked)}
               />
+            </SettingsItem>
+            <SettingsItem label="Centroid color" htmlFor={ObjectSettingsHtmlIds.CENTROID_MODE_SELECT}>
+              <DropdownWithColorPicker
+                id={ObjectSettingsHtmlIds.CENTROID_MODE_SELECT}
+                dropdownProps={{
+                  items: CENTROID_COLOR_MODE_ITEMS,
+                  selected: centroidColorMode.toString(),
+                  onChange: (mode: string) => {
+                    setCentroidColorMode(Number.parseInt(mode, 10) as CentroidColorMode);
+                  },
+                }}
+                showColorPicker={centroidColorMode === CentroidColorMode.USE_CUSTOM_COLOR}
+                colorPickerProps={{
+                  color: centroidColor,
+                  onChange: setCentroidColor,
+                }}
+              ></DropdownWithColorPicker>
             </SettingsItem>
             <SettingsItem
               label="Centroid radius"

@@ -24,6 +24,7 @@ import { clamp } from "three/src/math/MathUtils";
 import ColorRamp, { ColorRampType } from "src/colorizer/ColorRamp";
 import {
   CANVAS_BACKGROUND_COLOR_DEFAULT,
+  CENTROID_COLOR_DEFAULT,
   EDGE_COLOR_ALPHA_DEFAULT,
   EDGE_COLOR_DEFAULT,
   FRAME_BACKGROUND_COLOR_DEFAULT,
@@ -115,6 +116,8 @@ type ColorizeUniformTypes = {
   outlierDrawMode: number;
   outOfRangeDrawMode: number;
   useRepeatingCategoricalColors: boolean;
+  pointsColor: Color;
+  pointsColorMode: number;
 };
 
 type ColorizeUniforms = { [K in keyof ColorizeUniformTypes]: Uniform<ColorizeUniformTypes[K]> };
@@ -164,6 +167,8 @@ const getDefaultUniforms = (): ColorizeUniforms => {
     outlierDrawMode: new Uniform(DrawMode.USE_COLOR),
     outOfRangeDrawMode: new Uniform(DrawMode.USE_COLOR),
     useRepeatingCategoricalColors: new Uniform(false),
+    pointsColor: new Uniform(new Color(CENTROID_COLOR_DEFAULT)),
+    pointsColorMode: new Uniform(0),
   };
 };
 
@@ -659,6 +664,12 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     }
     this.setUniform("backdropSaturation", clamp(params.backdropSaturation, 0, 100) / 100);
     this.setUniform("backdropBrightness", clamp(params.backdropBrightness, 0, 200) / 100);
+
+    // Centroids
+    if (hasPropertyChanged(params, prevParams, ["centroidColor", "centroidColorMode"])) {
+      this.setUniform("pointsColorMode", params.centroidColorMode);
+      this.setUniform("pointsColor", params.centroidColor.clone().convertLinearToSRGB());
+    }
 
     // Update color ramp + palette
     if (

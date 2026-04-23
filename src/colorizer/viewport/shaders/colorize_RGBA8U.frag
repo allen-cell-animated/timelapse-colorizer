@@ -66,6 +66,9 @@ const vec4 TRANSPARENT = vec4(0.0, 0.0, 0.0, 0.0);
 /** MUST be synchronized with the DrawMode enum in ColorizeCanvas! */
 const uint DRAW_MODE_HIDE = 0u;
 const uint DRAW_MODE_COLOR = 1u;
+// Draw mode for frame points. Keep in sync with the `CentroidColorMode` enum.
+const uint POINTS_MODE_USE_FEATURE = 0u;
+const uint POINTS_MODE_USE_CUSTOM_COLOR = 1u;
 const uint RAW_BACKGROUND_ID = 0u;
 const int MISSING_DATA_ID = -1;
 const int ID_OFFSET = 1;
@@ -76,6 +79,8 @@ uniform vec3 outlierColor;
 uniform uint outlierDrawMode;
 uniform vec3 outOfRangeColor;
 uniform uint outOfRangeDrawMode;
+uniform vec3 pointsColor;
+uniform uint pointsColorMode;
 
 uniform bool useRepeatingCategoricalColors;
 
@@ -359,6 +364,12 @@ vec4 getPointColor(vec2 uv) {
   vec4 baseColor = getFeatureColor(id, uv);
   if (baseColor.a == 0.0) {
     return TRANSPARENT;
+  } else if (pointsColorMode == POINTS_MODE_USE_CUSTOM_COLOR) {
+    // Apply color override if provided. This will respect any other rules that
+    // would hide the point (e.g. if the point is an outlier and
+    // `outlierDrawMode` is set to hide outliers, the point will still be hidden
+    // even if a custom color is provided).
+    baseColor = vec4(pointsColor, 1.0);
   }
 
   if (showPointSelectionOutlines) {
