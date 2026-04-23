@@ -1,6 +1,7 @@
 import React, { type ReactElement } from "react";
 
 import BackdropSettings from "src/components/Tabs/Settings/BackdropSettings";
+import CentroidSettings from "src/components/Tabs/Settings/CentroidSettings";
 import { useViewerStateStore } from "src/state/ViewerState";
 import { StyledHorizontalRule } from "src/styles/components";
 import { FlexColumn } from "src/styles/utils";
@@ -31,6 +32,13 @@ export default function SettingsTab(): ReactElement {
 
       {isDataset3d ? <ChannelSettingsControl /> : <BackdropSettings />}
       <StyledHorizontalRule />
+
+      {!isDataset3d && (
+        <>
+          <CentroidSettings />
+          <StyledHorizontalRule />
+        </>
+      )}
 
       <VectorFieldSettings />
 

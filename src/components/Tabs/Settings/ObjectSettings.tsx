@@ -3,25 +3,11 @@ import type { PresetsItem } from "antd/es/color-picker/interface";
 import React, { type ReactElement } from "react";
 import type { Color } from "three";
 
-import {
-  CentroidColorMode,
-  DrawMode,
-  KNOWN_CATEGORICAL_PALETTES,
-  SelectionOutlineColorMode,
-  ViewMode,
-} from "src/colorizer";
+import { DrawMode, KNOWN_CATEGORICAL_PALETTES, SelectionOutlineColorMode } from "src/colorizer";
 import DropdownWithColorPicker from "src/components/Dropdowns/DropdownWithColorPicker";
 import type { SelectItem } from "src/components/Dropdowns/types";
-import LabeledSlider from "src/components/Inputs/LabeledSlider";
 import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
 import ToggleCollapse from "src/components/ToggleCollapse";
-import {
-  CENTROID_RADIUS_PX_INPUT_MAX,
-  CENTROID_RADIUS_PX_INPUT_MIN,
-  CENTROID_RADIUS_PX_SLIDER_MAX,
-  CENTROID_RADIUS_PX_SLIDER_MIN,
-  MAX_SETTINGS_SLIDER_WIDTH,
-} from "src/constants";
 import { useViewerStateStore } from "src/state";
 
 import { DEFAULT_OUTLINE_COLOR_PRESETS, SETTINGS_GAP_PX } from "./constants";
@@ -72,15 +58,7 @@ const OUTLINE_COLOR_MODE_ITEMS = [
   { value: SelectionOutlineColorMode.USE_CUSTOM_COLOR.toString(), label: "Use color" },
 ] as const satisfies SelectItem[];
 
-const CENTROID_COLOR_MODE_ITEMS = [
-  { value: CentroidColorMode.USE_FEATURE_COLOR.toString(), label: "Use feature" },
-  { value: CentroidColorMode.USE_CUSTOM_COLOR.toString(), label: "Use color" },
-] as const satisfies SelectItem[];
-
 export default function ObjectSettings(): ReactElement {
-  const centroidRadiusPx = useViewerStateStore((state) => state.centroidRadiusPx);
-  const centroidColor = useViewerStateStore((state) => state.centroidColor);
-  const centroidColorMode = useViewerStateStore((state) => state.centroidColorMode);
   const edgeColor = useViewerStateStore((state) => state.edgeColor);
   const edgeColorAlpha = useViewerStateStore((state) => state.edgeColorAlpha);
   const edgeMode = useViewerStateStore((state) => state.edgeMode);
@@ -89,9 +67,6 @@ export default function ObjectSettings(): ReactElement {
   const outlineColorMode = useViewerStateStore((state) => state.outlineColorMode);
   const outlinePaletteKey = useViewerStateStore((state) => state.outlinePaletteKey);
   const outOfRangeDrawSettings = useViewerStateStore((state) => state.outOfRangeDrawSettings);
-  const setCentroidRadiusPx = useViewerStateStore((state) => state.setCentroidRadiusPx);
-  const setCentroidColor = useViewerStateStore((state) => state.setCentroidColor);
-  const setCentroidColorMode = useViewerStateStore((state) => state.setCentroidColorMode);
   const setEdgeColor = useViewerStateStore((state) => state.setEdgeColor);
   const setEdgeMode = useViewerStateStore((state) => state.setEdgeMode);
   const setOutlierDrawSettings = useViewerStateStore((state) => state.setOutlierDrawSettings);
@@ -99,14 +74,8 @@ export default function ObjectSettings(): ReactElement {
   const setOutlineColorMode = useViewerStateStore((state) => state.setOutlineColorMode);
   const setOutlinePaletteKey = useViewerStateStore((state) => state.setOutlinePaletteKey);
   const setOutOfRangeDrawSettings = useViewerStateStore((state) => state.setOutOfRangeDrawSettings);
-  const setShowCentroids = useViewerStateStore((state) => state.setShowCentroids);
   const setShowSegmentations = useViewerStateStore((state) => state.setShowSegmentations);
-  const showCentroids = useViewerStateStore((state) => state.showCentroids);
   const showSegmentations = useViewerStateStore((state) => state.showSegmentations);
-
-  // TODO: Remove when centroids are supported in 3D
-  const viewMode = useViewerStateStore((state) => state.viewMode);
-  const isDataset3d = viewMode === ViewMode.VIEW_3D;
 
   return (
     <ToggleCollapse label="Objects">
@@ -206,56 +175,6 @@ export default function ObjectSettings(): ReactElement {
             onChange={(e) => setShowSegmentations(e.target.checked)}
           />
         </SettingsItem>
-        {/* TODO: Remove when centroids are supported in 3D */}
-        {!isDataset3d && (
-          <>
-            <SettingsItem label="Show centroids" htmlFor={ObjectSettingsHtmlIds.SHOW_CENTROIDS_SWITCH}>
-              <Checkbox
-                id={ObjectSettingsHtmlIds.SHOW_CENTROIDS_SWITCH}
-                checked={showCentroids}
-                onChange={(e) => setShowCentroids(e.target.checked)}
-              />
-            </SettingsItem>
-            <SettingsItem label="Centroid color" htmlFor={ObjectSettingsHtmlIds.CENTROID_MODE_SELECT}>
-              <DropdownWithColorPicker
-                id={ObjectSettingsHtmlIds.CENTROID_MODE_SELECT}
-                dropdownProps={{
-                  items: CENTROID_COLOR_MODE_ITEMS,
-                  selected: centroidColorMode.toString(),
-                  onChange: (mode: string) => {
-                    setCentroidColorMode(Number.parseInt(mode, 10) as CentroidColorMode);
-                  },
-                }}
-                showColorPicker={centroidColorMode === CentroidColorMode.USE_CUSTOM_COLOR}
-                colorPickerProps={{
-                  color: centroidColor,
-                  onChange: setCentroidColor,
-                }}
-              ></DropdownWithColorPicker>
-            </SettingsItem>
-            <SettingsItem
-              label="Centroid radius"
-              htmlFor={ObjectSettingsHtmlIds.CENTROID_RADIUS_SLIDER}
-              labelStyle={{ marginTop: "1px" }}
-            >
-              <div style={{ maxWidth: MAX_SETTINGS_SLIDER_WIDTH }}>
-                <LabeledSlider
-                  id={ObjectSettingsHtmlIds.CENTROID_RADIUS_SLIDER}
-                  type="value"
-                  disabled={!showCentroids}
-                  step={0.5}
-                  value={centroidRadiusPx}
-                  onChange={setCentroidRadiusPx}
-                  minInputBound={CENTROID_RADIUS_PX_INPUT_MIN}
-                  maxInputBound={CENTROID_RADIUS_PX_INPUT_MAX}
-                  minSliderBound={CENTROID_RADIUS_PX_SLIDER_MIN}
-                  maxSliderBound={CENTROID_RADIUS_PX_SLIDER_MAX}
-                  numberFormatter={(value) => value?.toFixed(1)}
-                />
-              </div>
-            </SettingsItem>
-          </>
-        )}
       </SettingsContainer>
     </ToggleCollapse>
   );
