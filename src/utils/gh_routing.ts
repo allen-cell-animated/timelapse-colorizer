@@ -76,7 +76,8 @@ export function encodeGitHubPagesUrl(url: URL): URL {
     // return it as-is to avoid double-encoding.
     return url;
   }
-  if (url.hostname === "allen-cell-animated.github.io") {
+  // ex: allen-cell-animated.github.io
+  if (url.hostname.endsWith(".github.io")) {
     if (url.pathname.toString().includes("pr-preview")) {
       return encodeUrlPathAsQueryString(url, 3);
     }
