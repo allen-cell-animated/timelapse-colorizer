@@ -1,4 +1,4 @@
-import React, { ReactElement } from "react";
+import React, { type ReactElement } from "react";
 
 import CentroidInnerSettings from "src/components/Tabs/Settings/CentroidSettings/CentroidInnerSettings";
 import ToggleCollapse from "src/components/ToggleCollapse";
