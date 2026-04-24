@@ -26,7 +26,6 @@ const defaultProps: Partial<CentroidInnerSettingsProps> = {
 };
 
 const enum CentroidSettingsHtmlIds {
-  SHOW_CENTROIDS_SWITCH = "show-centroids-switch",
   CENTROID_RADIUS_SLIDER = "centroid-radius-slider",
   CENTROID_MODE_SELECT = "centroid-mode-select",
 }
