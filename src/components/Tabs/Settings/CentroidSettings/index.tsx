@@ -6,7 +6,6 @@ import { useViewerStateStore } from "src/state";
 
 export default function CentroidSettings(): ReactElement {
   const showCentroids = useViewerStateStore((state) => state.showCentroids);
-
   const setShowCentroids = useViewerStateStore((state) => state.setShowCentroids);
 
   return (

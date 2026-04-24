@@ -29,6 +29,7 @@ const enum CentroidSettingsHtmlIds {
   CENTROID_RADIUS_SLIDER = "centroid-radius-slider",
   CENTROID_MODE_SELECT = "centroid-mode-select",
 }
+
 const CENTROID_COLOR_MODE_ITEMS = [
   { value: CentroidColorMode.USE_FEATURE_COLOR.toString(), label: "Use feature" },
   { value: CentroidColorMode.USE_CUSTOM_COLOR.toString(), label: "Use color" },
