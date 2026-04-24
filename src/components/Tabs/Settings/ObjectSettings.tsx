@@ -17,10 +17,7 @@ const enum ObjectSettingsHtmlIds {
   EDGE_COLOR_SELECT = "edge-color-select",
   OUTLIER_OBJECT_COLOR_SELECT = "outlier-object-color-select",
   OUT_OF_RANGE_OBJECT_COLOR_SELECT = "out-of-range-object-color-select",
-  SHOW_CENTROIDS_SWITCH = "show-centroids-switch",
   SHOW_SEGMENTATIONS_SWITCH = "show-segmentations-switch",
-  CENTROID_RADIUS_SLIDER = "centroid-radius-slider",
-  CENTROID_MODE_SELECT = "centroid-mode-select",
 }
 
 const DRAW_MODE_ITEMS = [
