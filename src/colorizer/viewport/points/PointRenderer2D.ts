@@ -1,6 +1,5 @@
 import {
   BufferAttribute,
-  BufferGeometry,
   Color,
   InstancedBufferAttribute,
   InstancedBufferGeometry,
@@ -25,8 +24,8 @@ import type { PointRendererParams } from "src/colorizer/viewport/points/types";
 const DEFAULT_INSTANCE_COUNT = 128;
 const SCALE_WITH_ZOOM = 0.25;
 
-function getPointBufferGeometry(): BufferGeometry {
-  const geometry = new BufferGeometry();
+function getPointBufferGeometry(): InstancedBufferGeometry {
+  const geometry = new InstancedBufferGeometry();
   const vertices = new Float32Array([0, 0, 0]);
   geometry.setAttribute("position", new BufferAttribute(vertices, 3));
   return geometry;
@@ -80,8 +79,7 @@ class PointRenderer2D {
     this.scene = new Scene();
     const pointMaterial = new PointMaterial2D();
 
-    const pointGeometry = getPointBufferGeometry() as InstancedBufferGeometry;
-    this.instancedGeometry = new InstancedBufferGeometry().copy(pointGeometry);
+    this.instancedGeometry = getPointBufferGeometry();
     this.instancedGeometry.instanceCount = 0;
 
     // Set up per-instance attributes.
