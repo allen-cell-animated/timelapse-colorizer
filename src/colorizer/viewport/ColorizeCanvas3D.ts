@@ -21,6 +21,7 @@ import { clamp, inverseLerp, lerp } from "three/src/math/MathUtils";
 import { ColorRampType } from "src/colorizer/ColorRamp";
 import { MAX_FEATURE_CATEGORIES } from "src/colorizer/constants";
 import {
+  CentroidColorMode,
   ChannelRangePreset,
   DrawMode,
   FeatureDataType,
@@ -31,8 +32,14 @@ import {
   type VolumeLoadResult,
 } from "src/colorizer/types";
 import { getRelativeToAbsoluteChannelIndexMap, getVolumeSources } from "src/colorizer/utils/channels";
-import { bucketVectorDataByTime, getGlobalIdFromSegId, hasPropertyChanged } from "src/colorizer/utils/data_utils";
+import {
+  bucketVectorDataByTime,
+  computeVertexColorsFromIds,
+  getGlobalIdFromSegId,
+  hasPropertyChanged,
+} from "src/colorizer/utils/data_utils";
 import { packDataTexture } from "src/colorizer/utils/texture_utils";
+import { getColorForId } from "src/colorizer/viewport/points/utils";
 import TrackPath3D from "src/colorizer/viewport/tracks/TrackPath3D";
 import { getTrackPathColor, reassignTrackPaths } from "src/colorizer/viewport/utils";
 
@@ -450,14 +457,63 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
   }
 
   private updateCentroidData(): void {
+    if (!this.params || !this.params.dataset) {
+      return;
+    }
     this.view3d.addDrawableObject(this.pointsObject);
-    this.pointsObject.setColors(new Color(1, 1, 1));
-    this.pointsObject.setPointData(new Float32Array([0, 0, 0, -0.5, -0.5, -0.5]), new Float32Array([5, 20]));
+    if (!this.params.showCentroids) {
+      this.pointsObject.setPointData(new Float32Array(), new Float32Array(), new Uint32Array());
+      return;
+    }
+
+    const globalIds = this.params.dataset.frameToGlobalIdLookup?.get(this.currentFrame)?.globalIds;
+    if (!globalIds) {
+      return;
+    }
+    const useFeatureColor = this.params.centroidColorMode === CentroidColorMode.USE_FEATURE_COLOR;
+
+    const positions = new Float32Array(globalIds.length * 3);
+    const scales = new Float32Array(globalIds.length);
+    let colors = new Float32Array(this.params.centroidColor.clone().convertLinearToSRGB().toArray());
+
+    // Fill in data arrays per visible object
+    for (let i = 0; i < globalIds.length; i++) {
+      const id = globalIds[i];
+      const centroid = this.params.dataset.getCentroid(id);
+      if (!centroid) {
+        continue;
+      }
+      positions.set(centroid, i * 3);
+      scales[i] = 0.002 * this.params.centroidRadiusPx;
+    }
+    if (useFeatureColor) {
+      colors = computeVertexColorsFromIds([...globalIds], this.params, true) as Float32Array<ArrayBuffer>;
+    }
+
+    this.pointsObject.setColors(colors);
+    this.pointsObject.setPointData(positions, scales, globalIds);
     this.pointsObject.setVisible(true);
-    console.log("Updated centroid data");
+
     if (this.volume) {
       this.pointsObject.setScale(new Vector3(1, 1, 1).divide(this.volume?.physicalSize));
+      this.pointsObject.setTranslation(new Vector3(-0.5, -0.5, -0.5));
     }
+  }
+
+  private handleCentroidUpdate(prevParams: RenderCanvasStateParams | null, params: RenderCanvasStateParams): boolean {
+    if (
+      hasPropertyChanged(params, prevParams, [
+        "showCentroids",
+        "centroidRadiusPx",
+        "centroidColor",
+        "centroidColorMode",
+        "dataset",
+      ])
+    ) {
+      this.updateCentroidData();
+      return true;
+    }
+    return false;
   }
 
   private updateVectorThickness(): void {
@@ -583,7 +639,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     const didVectorUpdate = this.handleVectorUpdate(prevParams, params);
     const didSettingsUpdate = this.handleSettingsUpdate(prevParams, params);
     const didSelectionUpdate = this.handleSelectionUpdate(prevParams, params);
-    this.updateCentroidData();
+    const didCentroidUpdate = this.handleCentroidUpdate(prevParams, params);
     const needsRender =
       didColorRampUpdate ||
       didDatasetUpdate ||
@@ -591,7 +647,8 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
       didChannelUpdate ||
       didVectorUpdate ||
       didSettingsUpdate ||
-      didSelectionUpdate;
+      didSelectionUpdate ||
+      didCentroidUpdate;
 
     if (needsRender) {
       this.render({ synchronous: false });
@@ -745,6 +802,12 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     this.view3d.setOnRenderCallback(callback);
   }
 
+  private syncCentroids(): void {
+    if (this.params?.showCentroids) {
+      this.updateCentroidData();
+    }
+  }
+
   private syncTrackPathLine(): void {
     this.trackPaths.forEach((trackPath) => trackPath.updateVisibleRange(this.currentFrame));
   }
@@ -763,6 +826,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
 
   render(options?: RenderOptions): void {
     this.syncTrackPathLine();
+    this.syncCentroids();
     this.syncVectorArrows();
     this.view3d.redraw(options?.synchronous);
   }

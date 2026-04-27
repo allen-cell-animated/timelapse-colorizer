@@ -33,12 +33,8 @@ export default function SettingsTab(): ReactElement {
       {isDataset3d ? <ChannelSettingsControl /> : <BackdropSettings />}
       <StyledHorizontalRule />
 
-      {!isDataset3d && (
-        <>
-          <CentroidSettings />
-          <StyledHorizontalRule />
-        </>
-      )}
+      <CentroidSettings />
+      <StyledHorizontalRule />
 
       <VectorFieldSettings />
 

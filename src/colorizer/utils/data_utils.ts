@@ -24,6 +24,7 @@ import {
   TrackPathColorMode,
 } from "src/colorizer/types";
 import type { TrackPathParams } from "src/colorizer/viewport/tracks/types";
+import { ColorizeStateParams } from "src/colorizer/viewport/types";
 
 import { packDataTexture } from "./texture_utils";
 
@@ -486,7 +487,7 @@ export function cloneLabelData(label: LabelData): LabelData {
  * @returns The color for the given object ID, using the rules in the main
  * viewport shader.
  */
-export function computeColorFromId(id: number, params: TrackPathParams): Color {
+export function computeColorFromId(id: number, params: ColorizeStateParams): Color {
   const {
     dataset,
     featureKey,
@@ -534,7 +535,7 @@ export function computeColorFromId(id: number, params: TrackPathParams): Color {
  * B: colors[i * 3 + 2]
  * ```
  */
-export function computeVertexColorsFromIds(ids: number[], params: TrackPathParams): Float32Array {
+export function computeVertexColorsFromIds(ids: number[], params: ColorizeStateParams, useSrgb = false): Float32Array {
   // Especially for discontinuous lines, IDs may be repeated. Cache results to
   // avoid repeat computation.
   const idToColor = new Map<number, [number, number, number]>();
@@ -545,6 +546,9 @@ export function computeVertexColorsFromIds(ids: number[], params: TrackPathParam
       vertexColors.set(idToColor.get(id)!, i * 3);
     } else {
       const color = computeColorFromId(id, params);
+      if (useSrgb) {
+        color.convertLinearToSRGB();
+      }
       const rgb = [color.r, color.g, color.b] as [number, number, number];
       idToColor.set(id, rgb);
       vertexColors.set(rgb, i * 3);

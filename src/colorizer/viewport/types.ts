@@ -110,6 +110,18 @@ export type RenderCanvasStateParams = {
   interpolate3d: boolean;
 };
 
+export type ColorizeStateParams = Pick<
+  RenderCanvasStateParams,
+  | "dataset"
+  | "featureKey"
+  | "colorRamp"
+  | "colorRampRange"
+  | "categoricalPaletteRamp"
+  | "outOfRangeDrawSettings"
+  | "inRangeLUT"
+  | "outlierDrawSettings"
+>;
+
 export type RenderOptions = {
   /** If true, renders synchronously. */
   synchronous?: boolean;
