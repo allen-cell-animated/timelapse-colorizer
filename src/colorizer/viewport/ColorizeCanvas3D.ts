@@ -4,6 +4,7 @@ import {
   Light,
   LoadSpec,
   Lut,
+  Points3d,
   type RawArrayLoader,
   RENDERMODE_RAYMARCH,
   SKY_LIGHT,
@@ -84,6 +85,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
 
   private timeToVectorData: Map<number, FrameVectorData>;
   private vectorObject: VectorArrows3d;
+  private pointsObject: Points3d;
 
   constructor() {
     this.params = null;
@@ -98,6 +100,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
 
     this.timeToVectorData = new Map();
     this.vectorObject = new VectorArrows3d();
+    this.pointsObject = new Points3d();
 
     this.tempCanvas = document.createElement("canvas");
     this.tempCanvas.style.width = "10px";
@@ -283,6 +286,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
           // Remove 3D objects so they are not cleaned up with the old volume
           // and can be reused.
           this.view3d.removeDrawableObject(this.vectorObject);
+          this.view3d.removeDrawableObject(this.pointsObject);
           this.trackPaths.forEach((trackPath) => {
             trackPath.getSceneObjects().forEach((obj) => {
               this.view3d.removeDrawableObject(obj);
@@ -445,6 +449,17 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     this.updateVectorThickness();
   }
 
+  private updateCentroidData(): void {
+    this.view3d.addDrawableObject(this.pointsObject);
+    this.pointsObject.setColors(new Color(1, 1, 1));
+    this.pointsObject.setPointData(new Float32Array([0, 0, 0, -0.5, -0.5, -0.5]), new Float32Array([5, 20]));
+    this.pointsObject.setVisible(true);
+    console.log("Updated centroid data");
+    if (this.volume) {
+      this.pointsObject.setScale(new Vector3(1, 1, 1).divide(this.volume?.physicalSize));
+    }
+  }
+
   private updateVectorThickness(): void {
     if (!this.params) {
       return;
@@ -568,6 +583,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     const didVectorUpdate = this.handleVectorUpdate(prevParams, params);
     const didSettingsUpdate = this.handleSettingsUpdate(prevParams, params);
     const didSelectionUpdate = this.handleSelectionUpdate(prevParams, params);
+    this.updateCentroidData();
     const needsRender =
       didColorRampUpdate ||
       didDatasetUpdate ||
@@ -760,6 +776,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     });
     this.view3d.removeDrawableObject(this.vectorObject);
     this.vectorObject.cleanup();
+    this.pointsObject.cleanup();
     this.view3d.removeAllVolumes();
   }
 
