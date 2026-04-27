@@ -327,7 +327,7 @@ export function buildFrameToGlobalIdLookup(
   segIds: Uint32Array,
   numFrames: number
 ): Map<number, GlobalIdLookupInfo> {
-  const frameToLut = new Map<number, Uint32Array>();
+  const frameToIdInfo = new Map<number, { lut: Uint32Array; globalIds: number[] }>();
 
   // Get min and max segmentation IDs for each frame.
   const frameToMinSegId: number[] = [];
@@ -344,7 +344,8 @@ export function buildFrameToGlobalIdLookup(
     const minSegId = frameToMinSegId[i] ?? 0;
     const maxSegId = frameToMaxSegId[i] ?? 0;
     const lut = new Uint32Array(maxSegId - minSegId + 1);
-    frameToLut.set(i, lut);
+    const globalIds: number[] = [];
+    frameToIdInfo.set(i, { lut, globalIds });
   }
 
   // For each object with segmentation ID `segId` at time `t`, fill the arrays
@@ -357,14 +358,16 @@ export function buildFrameToGlobalIdLookup(
     const time = times[i];
     const minSegId = frameToMinSegId[time] ?? 0;
     const segId = segIds[i] - minSegId;
-    const lut = frameToLut.get(time);
-    if (lut) {
-      lut[segId] = i + 1; // +1 to reserve 0 for missing data
+    const idInfo = frameToIdInfo.get(time);
+    if (idInfo) {
+      idInfo.lut[segId] = i + 1; // +1 to reserve 0 for missing data
+      idInfo.globalIds.push(i);
     }
   }
 
   return new Map<number, GlobalIdLookupInfo>(
-    Array.from(frameToLut.entries()).map(([frame, lut]) => {
+    Array.from(frameToIdInfo.entries()).map(([frame, idInfo]) => {
+      const { lut, globalIds } = idInfo;
       const texture = packDataTexture(lut, FeatureDataType.U32);
       return [
         frame,
@@ -372,6 +375,7 @@ export function buildFrameToGlobalIdLookup(
           lut,
           texture,
           minSegId: frameToMinSegId[frame] ?? 0,
+          globalIds: new Uint32Array(globalIds),
         },
       ];
     })

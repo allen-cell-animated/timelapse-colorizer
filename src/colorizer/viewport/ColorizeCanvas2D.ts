@@ -49,6 +49,7 @@ import {
   packDataTexture,
 } from "src/colorizer/utils/texture_utils";
 import VectorField from "src/colorizer/VectorField";
+import PointRenderer2D from "src/colorizer/viewport/points/PointRenderer2D";
 import {
   type Canvas2DScaleInfo,
   CanvasType,
@@ -80,6 +81,7 @@ type ColorizeUniformTypes = {
   panOffset: Vector2;
   /** Image, mapping each pixel to an object ID using the RGBA values. */
   frame: Texture;
+  framePoints: Texture;
   objectOpacity: number;
   /** The feature value of each object ID. */
   featureData: Texture;
@@ -119,6 +121,7 @@ type ColorizeUniforms = { [K in keyof ColorizeUniformTypes]: Uniform<ColorizeUni
 const getDefaultUniforms = (): ColorizeUniforms => {
   const emptyBackdrop = makeEmptyRgbaFloatTexture();
   const emptyFrame = makeEmptyRgbaUint8Texture();
+  const emptyFramePoints = makeEmptyRgbaUint8Texture();
   const emptyOverlay = makeEmptyRgbaFloatTexture();
   const emptySegIdToGlobalId = packDataTexture([0], FeatureDataType.U8);
   const emptyFeature = packDataTexture([0], FeatureDataType.F32);
@@ -131,6 +134,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
     canvasToFrameScale: new Uniform(new Vector2(1, 1)),
     canvasSizePx: new Uniform(new Vector2(1, 1)),
     frame: new Uniform(emptyFrame),
+    framePoints: new Uniform(emptyFramePoints),
     featureData: new Uniform(emptyFeature),
     outlierData: new Uniform(emptyOutliers),
     inRangeIds: new Uniform(emptyInRangeIds),
@@ -170,6 +174,7 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
 
   private vectorField: VectorField;
   private trackPaths: Map<number, TrackPath2D> = new Map();
+  private pointRenderer: PointRenderer2D;
 
   private savedScaleInfo: Canvas2DScaleInfo;
   private lastFrameLoadResult: FrameLoadResult | null;
@@ -234,6 +239,8 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     this.scene.add(this.vectorField.sceneObject);
 
     this.trackPaths = new Map<number, TrackPath2D>();
+
+    this.pointRenderer = new PointRenderer2D();
 
     this.pickScene = new Scene();
     this.pickScene.add(this.pickMesh);
@@ -347,6 +354,12 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
       trackPath.setPositionAndScale(this.panOffset, this.savedScaleInfo.frameToCanvasCoordinates)
     );
     this.vectorField.setPosition(this.panOffset, this.savedScaleInfo.frameToCanvasCoordinates);
+    this.pointRenderer.setPositionAndScale(
+      this.panOffset,
+      this.savedScaleInfo.frameToCanvasCoordinates,
+      this.canvasResolution,
+      this.zoomMultiplier
+    );
     this.render();
   }
 
@@ -439,6 +452,12 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     this.trackPaths.forEach((trackPath) => trackPath.setPositionAndScale(this.panOffset, frameToCanvasCoordinates));
     this.vectorField.setPosition(this.panOffset, frameToCanvasCoordinates);
     this.vectorField.setScale(frameToCanvasCoordinates, this.canvasResolution || new Vector2(1, 1));
+    this.pointRenderer.setPositionAndScale(
+      this.panOffset,
+      this.savedScaleInfo.frameToCanvasCoordinates,
+      canvasResolution,
+      this.zoomMultiplier
+    );
   }
 
   /**
@@ -603,6 +622,8 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
 
     // Update track path data
     this.updateTrackPaths(prevParams, params);
+
+    this.pointRenderer.setParams(params, prevParams);
 
     // Update vector data
     if (hasPropertyChanged(params, prevParams, ["vectorVisible", "vectorColor", "vectorScaleFactor"])) {
@@ -801,6 +822,12 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     this.checkPixelRatio();
     this.syncTrackPathLine();
 
+    // Render points overlay
+    const frameTex = this.pointRenderer.requestFrameRender(this.renderer, this.currentFrame);
+    if (frameTex) {
+      this.setUniform("framePoints", frameTex);
+    }
+
     // Render main scene
     this.renderer.render(this.scene, this.camera);
     const mainRenderTarget = this.renderer.getRenderTarget();
@@ -820,6 +847,7 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     this.geometry.dispose();
     this.renderer.dispose();
     this.pickMaterial.dispose();
+    this.pointRenderer.dispose();
     this.trackPaths.forEach((trackPath) => trackPath.dispose());
   }
 

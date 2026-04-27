@@ -539,15 +539,17 @@ export default class Dataset {
         continue;
       }
 
-      let rawData = this.centroids.filter((_, index) => index % 3 === i);
+      const rawData = this.centroids.filter((_, index) => index % 3 === i);
+      const data = new Float32Array(rawData);
       if (this.frameDimensions) {
         // If provided, normalize centroid coordinates to physical units.
         const physicalDim = physicalDims[i];
         const pixelDim = pixelDims[i];
-        rawData = rawData.map((value) => (value / pixelDim) * physicalDim);
+        for (let j = 0; j < data.length; j++) {
+          data[j] = (data[j] / pixelDim) * physicalDim;
+        }
       }
 
-      const data = new Float32Array(rawData);
       const axis = axes[i];
       const min = 0;
       const dataMax = data.reduce((max, value) => Math.max(max, value), -Infinity);

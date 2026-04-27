@@ -1,6 +1,7 @@
 precision highp usampler2D;
 
 uniform usampler2D frame;
+uniform usampler2D framePoints;
 uniform vec2 canvasToFrameScale;
 uniform vec2 panOffset;
 
@@ -19,7 +20,13 @@ void main() {
     return;
   }
 
-  // Get the segmentation id at this pixel
-  uvec4 frameColor = texture(frame, sUv);
-  gOutputColor = frameColor;
+  // Get the ID at this pixel; centroid points are drawn on top of segmentations
+  // so those IDs take priority if present.
+  uvec4 pointData = texture(framePoints, vUv);
+  if (pointData.a > 0u) {
+    gOutputColor = pointData;
+    return;
+  }
+  uvec4 segData = texture(frame, sUv);
+  gOutputColor = segData;
 }
