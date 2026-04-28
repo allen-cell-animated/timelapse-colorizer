@@ -39,7 +39,6 @@ import {
   hasPropertyChanged,
 } from "src/colorizer/utils/data_utils";
 import { packDataTexture } from "src/colorizer/utils/texture_utils";
-import { getColorForId } from "src/colorizer/viewport/points/utils";
 import TrackPath3D from "src/colorizer/viewport/tracks/TrackPath3D";
 import { getTrackPathColor, reassignTrackPaths } from "src/colorizer/viewport/utils";
 
@@ -472,6 +471,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     }
     const useFeatureColor = this.params.centroidColorMode === CentroidColorMode.USE_FEATURE_COLOR;
 
+    const segIds = new Uint32Array(globalIds.length);
     const positions = new Float32Array(globalIds.length * 3);
     const scales = new Float32Array(globalIds.length);
     let colors = new Float32Array(this.params.centroidColor.clone().convertLinearToSRGB().toArray());
@@ -484,14 +484,15 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
         continue;
       }
       positions.set(centroid, i * 3);
-      scales[i] = 0.002 * this.params.centroidRadiusPx;
+      scales[i] = 0.001 * this.params.centroidRadiusPx;
+      segIds[i] = this.params.dataset.getSegmentationId(id) ?? -1;
     }
     if (useFeatureColor) {
       colors = computeVertexColorsFromIds([...globalIds], this.params, true) as Float32Array<ArrayBuffer>;
     }
 
     this.pointsObject.setColors(colors);
-    this.pointsObject.setPointData(positions, scales, globalIds);
+    this.pointsObject.setPointData(positions, scales, segIds);
     this.pointsObject.setVisible(true);
 
     if (this.volume) {
@@ -688,7 +689,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
 
       this.view3d.onVolumeData(currentVol, [channelIndex]);
       if (channelIndex === segChannel) {
-        this.view3d.setVolumeChannelEnabled(currentVol, channelIndex, true);
+        this.view3d.setVolumeChannelEnabled(currentVol, channelIndex, this.params?.showSegmentations ?? true);
         this.configureColorizeFeature(currentVol, channelIndex);
         this.params && this.view3d.setSelectedIDs(this.params.isSelectedLut);
       } else {
