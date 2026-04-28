@@ -9,12 +9,11 @@ import HelpDropdown from "src/components/Dropdowns/HelpDropdown";
 import Header from "src/components/Header";
 import LoadDatasetButton from "src/components/LoadDatasetButton";
 import { PageRoutes } from "src/routes";
-import { ExternalLink, FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter, VisuallyHidden } from "src/styles/utils";
+import { FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter, VisuallyHidden } from "src/styles/utils";
 import type { LocationState } from "src/types";
 
 import ProjectList from "./components/ProjectList";
-import VideoList from "./components/VideoList";
-import { LANDING_PAGE_CONTENT, LANDING_PAGE_VIDEO_CONTENT } from "./constants";
+import { LANDING_PAGE_CONTENT } from "./constants";
 
 const MAX_CONTENT_WIDTH_PX = 1060;
 
@@ -93,12 +92,14 @@ const FeatureHighlightsItem = styled(FlexColumn)`
   }
 `;
 
-const TutorialVideoContainer = styled.div`
-  width: 100%;
-  background-color: var(--color-background-alt);
-  padding: 30px 0;
-  margin-top: 30px;
-`;
+// TODO: Uncomment once tutorial content is completed
+
+// const TutorialVideoContainer = styled.div`
+//   width: 100%;
+//   background-color: var(--color-background-alt);
+//   padding: 30px 0;
+//   margin-top: 30px;
+// `;
 
 const LoadPromptContainer = styled(FlexColumnAlignCenter)`
   background-color: var(--color-background-med);
@@ -183,7 +184,9 @@ export default function LandingPage(): ReactElement {
         </FeatureHighlightsContainer>
       </ContentContainer>
 
-      <TutorialVideoContainer>
+      {/* TODO: Delete break below and uncomment once tutorial content is completed */}
+      <br />
+      {/* <TutorialVideoContainer>
         <ContentContainer style={{ gap: 20 }}>
           <h2 style={{ margin: 0 }}>See how Timelapse Feature Explorer can help in your research and analysis</h2>
           <VideoList videoEntries={LANDING_PAGE_VIDEO_CONTENT}></VideoList>
@@ -201,7 +204,7 @@ export default function LandingPage(): ReactElement {
             </li>
           </ul>
         </ContentContainer>
-      </TutorialVideoContainer>
+      </TutorialVideoContainer> */}
 
       <LoadPromptContainer>
         <h2 style={{ margin: 0 }}>Load a dataset below or your own data to get started</h2>
