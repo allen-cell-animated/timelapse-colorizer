@@ -29,7 +29,13 @@ import {
   type ColorRampSliceState,
   createColorRampSlice,
 } from "./color_ramp_slice";
-import { type ConfigSliceActions, type ConfigSliceSerializableState, type ConfigSliceState, createConfigSlice } from "./config_slice";
+import {
+  addConfigDerivedStateSubscribers,
+  type ConfigSliceActions,
+  type ConfigSliceSerializableState,
+  type ConfigSliceState,
+  createConfigSlice,
+} from "./config_slice";
 import {
   createDatasetSlice,
   type DatasetSliceActions,
@@ -58,6 +64,13 @@ import {
   type TimeSliceState,
 } from "./time_slice";
 import {
+  addTrackDerivedStateSubscribers,
+  createTrackSlice,
+  type TrackSliceActions,
+  type TrackSliceSerializableState,
+  type TrackSliceState,
+} from "./track_slice";
+import {
   addVectorDerivedStateSubscribers,
   createVectorSlice,
   type VectorSliceActions,
@@ -74,6 +87,7 @@ export * from "./dataset_slice";
 export * from "./scatterplot_slice";
 export * from "./threshold_slice";
 export * from "./time_slice";
+export * from "./track_slice";
 export * from "./vector_slice";
 
 export type ViewerStoreState = BackdropSliceState &
@@ -85,6 +99,7 @@ export type ViewerStoreState = BackdropSliceState &
   ScatterPlotSliceState &
   ThresholdSliceState &
   TimeSliceState &
+  TrackSliceState &
   VectorSliceState;
 
 export type ViewerStoreActions = BackdropSliceActions &
@@ -96,6 +111,7 @@ export type ViewerStoreActions = BackdropSliceActions &
   ScatterPlotSliceActions &
   ThresholdSliceActions &
   TimeSliceActions &
+  TrackSliceActions &
   VectorSliceActions;
 
 /**
@@ -111,6 +127,7 @@ export type ViewerStoreSerializableState = BackdropSliceSerializableState &
   ScatterPlotSliceSerializableState &
   ThresholdSliceSerializableState &
   TimeSliceSerializableState &
+  TrackSliceSerializableState &
   VectorSliceSerializableState;
 
 /**
@@ -131,6 +148,7 @@ export const viewerStateStoreCreator: StateCreator<ViewerStore> = (...a) => ({
   ...createScatterPlotSlice(...a),
   ...createThresholdSlice(...a),
   ...createTimeSlice(...a),
+  ...createTrackSlice(...a),
   ...createVectorSlice(...a),
 });
 
@@ -143,8 +161,10 @@ export const addStoreStateSubscribers = (store: SubscribableStore<ViewerStore>):
   addBackdropDerivedStateSubscribers(store);
   addChannelDerivedStateSubscribers(store);
   addColorRampDerivedStateSubscribers(store);
+  addConfigDerivedStateSubscribers(store);
   addScatterPlotSliceDerivedStateSubscribers(store);
   addThresholdDerivedStateSubscribers(store);
   addTimeDerivedStateSubscribers(store);
+  addTrackDerivedStateSubscribers(store);
   addVectorDerivedStateSubscribers(store);
 };

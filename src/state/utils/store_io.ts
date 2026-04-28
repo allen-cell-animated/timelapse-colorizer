@@ -9,6 +9,7 @@ import {
   loadScatterPlotSliceFromParams,
   loadThresholdSliceFromParams,
   loadTimeSliceFromParams,
+  loadTrackSliceFromParams,
   loadVectorSliceFromParams,
   selectBackdropSliceSerializationDeps,
   selectChannelSliceSerializationDeps,
@@ -19,6 +20,7 @@ import {
   selectScatterPlotSliceSerializationDeps,
   selectThresholdSliceSerializationDeps,
   selectTimeSliceSerializationDeps,
+  selectTrackSliceSerializationDeps,
   selectVectorSliceSerializationDeps,
   serializeBackdropSlice,
   serializeChannelSlice,
@@ -29,6 +31,7 @@ import {
   serializeScatterPlotSlice,
   serializeThresholdSlice,
   serializeTimeSlice,
+  serializeTrackSlice,
   serializeVectorSlice,
   type ViewerStore,
   type ViewerStoreSerializableState,
@@ -40,6 +43,7 @@ import type { SerializedStoreData, Store } from "src/state/types";
 export const selectSerializationDependencies = (state: ViewerStore): Partial<ViewerStore> => ({
   ...selectCollectionSliceSerializationDeps(state),
   ...selectDatasetSliceSerializationDeps(state),
+  ...selectTrackSliceSerializationDeps(state),
   ...selectTimeSliceSerializationDeps(state),
   ...selectColorRampSliceSerializationDeps(state),
   ...selectThresholdSliceSerializationDeps(state),
@@ -56,19 +60,20 @@ export const selectSerializationDependencies = (state: ViewerStore): Partial<Vie
  * @param params Object containing serializable viewer state parameters.
  * Also includes a `collectionParam` field for the collection URL.
  */
-export const serializeViewerState = (state: Partial<ViewerStoreSerializableState>): Partial<SerializedStoreData> => {
+export const serializeViewerState = (state: Partial<ViewerStoreSerializableState>): SerializedStoreData => {
   // Ordered by approximate importance in the URL
   return removeUndefinedProperties({
     ...serializeCollectionSlice(state),
     ...serializeDatasetSlice(state),
+    ...serializeTrackSlice(state),
     ...serializeTimeSlice(state),
     ...serializeColorRampSlice(state),
     ...serializeThresholdSlice(state),
     ...serializeConfigSlice(state),
     ...serializeScatterPlotSlice(state),
     ...serializeBackdropSlice(state),
-    ...serializeChannelSlice(state),
     ...serializeVectorSlice(state),
+    ...serializeChannelSlice(state),
   });
 };
 
@@ -116,7 +121,8 @@ export const serializedDataToUrl = (data: SerializedStoreData): string => {
   const params = new URLSearchParams();
   data = removeUndefinedProperties(data);
   for (const [key, value] of Object.entries(data)) {
-    params.set(key, value);
+    // Value is always defined after removing undefined properties
+    params.set(key, value!);
   }
   return params.toString();
 };
@@ -142,12 +148,13 @@ export const loadViewerStateFromParams = (store: Store<ViewerStore>, params: URL
   // 2. Dependent on dataset object:
   loadBackdropSliceFromParams(store.getState(), params);
   loadDatasetSliceFromParams(store.getState(), params);
+  loadTrackSliceFromParams(store.getState(), params); // Also depends on config slice
   loadScatterPlotSliceFromParams(store.getState(), params);
   loadThresholdSliceFromParams(store.getState(), params);
   loadVectorSliceFromParams(store.getState(), params);
   loadChannelSliceFromParams(store.getState(), params);
 
-  // 3. Dependent on dataset slice (track/backdrop/features):
+  // 3. Dependent on dataset + track slices:
   loadTimeSliceFromParams(store.getState(), params);
 
   // 4. Dependent on dataset + threshold slices:

@@ -3,7 +3,7 @@ import React, { type ReactElement } from "react";
 import { Vector2 } from "three";
 import { describe, expect, it, vi } from "vitest";
 
-import type CanvasOverlay from "src/colorizer/CanvasOverlay";
+import type CanvasOverlay from "src/colorizer/viewport/CanvasOverlay";
 import Export from "src/components/Export";
 
 const mockCanvas = {
@@ -22,7 +22,6 @@ describe("ExportButton", () => {
             throw new Error("Function not implemented.");
           }}
           canvas={mockCanvas}
-          currentFrame={0}
           onClick={vi.fn()}
           setIsRecording={vi.fn()}
           disabled={false}

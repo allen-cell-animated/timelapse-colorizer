@@ -10,6 +10,7 @@ import {
   KNOWN_CATEGORICAL_PALETTES,
   KNOWN_COLOR_RAMPS,
   PlotRangeType,
+  SelectionOutlineColorMode,
   TabType,
   ThresholdType,
   TrackPathColorMode,
@@ -30,14 +31,12 @@ import {
   MOCK_COLLECTION,
   MOCK_COLLECTION_PATH,
   MOCK_DATASET,
-  MOCK_DATASET_ARRAY_LOADER,
   MOCK_DATASET_DEFAULT_TRACK,
   MOCK_DATASET_KEY,
-  MOCK_DATASET_MANIFEST,
   MockBackdropKeys,
   MockFeatureKeys,
 } from "tests/constants";
-import { makeMockDataset, sleep } from "tests/utils";
+import { sleep } from "tests/utils";
 
 import { compareRecord, setDatasetAsync } from "./ViewerState/utils";
 
@@ -50,7 +49,8 @@ const EXAMPLE_STORE: ViewerStoreSerializableState = {
   sourceZipName: null,
   datasetKey: MOCK_DATASET_KEY,
   featureKey: MockFeatureKeys.FEATURE1,
-  track: MOCK_DATASET_DEFAULT_TRACK,
+  tracks: new Map([[0, MOCK_DATASET_DEFAULT_TRACK]]),
+  trackToColorId: new Map([[0, 3]]),
   currentFrame: 2,
   thresholds: [
     { featureKey: "f1", unit: "m", type: ThresholdType.NUMERIC, min: 0, max: 0 },
@@ -76,6 +76,8 @@ const EXAMPLE_STORE: ViewerStoreSerializableState = {
   categoricalPaletteKey: CATEGORICAL_PALETTE_KEY,
   categoricalPalette: CATEGORICAL_PALETTE,
   showTrackPath: true,
+  showCentroids: true,
+  centroidRadiusPx: 7,
   showScaleBar: true,
   showTimestamp: false,
   keepColorRampRange: true,
@@ -87,25 +89,50 @@ const EXAMPLE_STORE: ViewerStoreSerializableState = {
   outOfRangeDrawSettings: { mode: DrawMode.HIDE, color: new Color("#ff0000") } as DrawSettings,
   outlierDrawSettings: { mode: DrawMode.USE_COLOR, color: new Color("#00ff00") } as DrawSettings,
   outlineColor: new Color("#0000ff"),
+  outlineColorMode: SelectionOutlineColorMode.USE_PALETTE,
+  outlinePaletteKey: CATEGORICAL_PALETTE_KEY,
   edgeColor: new Color("#8090a0"),
   edgeColorAlpha: 176 / 255, // 0xb0
   edgeMode: DrawMode.USE_COLOR,
+  interpolate3d: true,
   trackPathColor: new Color("#ff0000"),
   trackPathWidthPx: 1.5,
+  trackPathColorRampKey: "esri-blue_red_8",
+  trackPathIsColorRampReversed: true,
   trackPathColorMode: TrackPathColorMode.USE_CUSTOM_COLOR,
   showTrackPathBreaks: true,
+  trackPathFutureSteps: 25,
+  trackPathPastSteps: 10,
+  showAllTrackPathFutureSteps: true,
+  showAllTrackPathPastSteps: false,
+  persistTrackPathWhenOutOfRange: false,
+  trackPathOverlayOpacity: 35,
   vectorVisible: true,
   vectorKey: VECTOR_KEY_MOTION_DELTA,
   vectorMotionTimeIntervals: 11,
   vectorColor: new Color("#ff00ff"),
   vectorScaleFactor: 5,
   vectorTooltipMode: VectorTooltipMode.COMPONENTS,
+  vectorScaleThicknessByMagnitude: true,
+  vectorThickness: 4.5,
   backdropKey: MockBackdropKeys.BACKDROP2,
   scatterXAxis: MockFeatureKeys.FEATURE3,
   scatterYAxis: MockFeatureKeys.FEATURE2,
+  scatterHistogramBins: 150,
   scatterRangeType: PlotRangeType.ALL_TIME,
-  // TODO: Add mock channel settings
-  channelSettings: [],
+  channelSettings: [
+    { visible: true, color: new Color("#ff0000"), opacity: 1, min: 0, max: 1, dataMin: -5, dataMax: 5 },
+    { visible: false, color: new Color("#00ff00"), opacity: 0, min: 0.3, max: 4.2, dataMin: 0, dataMax: 1 },
+    {
+      visible: true,
+      color: new Color("#0000ff"),
+      opacity: 4 / 255,
+      min: 3500,
+      max: 64231,
+      dataMin: 0,
+      dataMax: 65535,
+    },
+  ],
 };
 
 // Omit key "palette" because it is overridden by key "palette-key"
@@ -114,7 +141,7 @@ const EXAMPLE_STORE_EXPECTED_PARAMS: ExpectedParamType = {
   collection: MOCK_COLLECTION_PATH,
   dataset: MOCK_DATASET_KEY,
   feature: MockFeatureKeys.FEATURE1,
-  track: MOCK_DATASET_DEFAULT_TRACK.trackId.toString(),
+  track: MOCK_DATASET_DEFAULT_TRACK.trackId.toString() + ":3",
   t: "2",
   filters: "f1:m:0:0,f2:um:NaN:NaN,f3:km:0:1,f4:mm:0.501:1000.485,f5::fff,f6::11",
   range: "21.433,89.400",
@@ -122,6 +149,8 @@ const EXAMPLE_STORE_EXPECTED_PARAMS: ExpectedParamType = {
   "keep-range": "1",
   "palette-key": CATEGORICAL_PALETTE_KEY,
   path: "1",
+  centroids: "1",
+  "centroid-radius": "7",
   scalebar: "1",
   timestamp: "0",
   bg: "1",
@@ -134,34 +163,50 @@ const EXAMPLE_STORE_EXPECTED_PARAMS: ExpectedParamType = {
   "outlier-color": "00ff00",
   "outlier-mode": DrawMode.USE_COLOR.toString(),
   "outline-color": "0000ff",
+  "outline-mode": SelectionOutlineColorMode.USE_PALETTE.toString(),
+  "outline-palette-key": CATEGORICAL_PALETTE_KEY,
   "edge-color": "8090a0b0",
   edge: DrawMode.USE_COLOR.toString(),
+  interpolate: "1",
   "path-color": "ff0000",
   "path-width": "1.500",
+  "path-ramp": "esri-blue_red_8!",
   "path-mode": TrackPathColorMode.USE_CUSTOM_COLOR.toString(),
   "path-breaks": "1",
+  "path-steps": "10,25!",
+  "path-persist": "0",
+  "path-overlay": "35",
   vc: "1",
   "vc-key": VECTOR_KEY_MOTION_DELTA,
   "vc-color": "ff00ff",
   "vc-scale": "5",
   "vc-tooltip": VectorTooltipMode.COMPONENTS,
   "vc-time-int": "11",
+  "vc-thickness": "4.500",
+  "vc-thickness-scaling": "1",
   "bg-key": MockBackdropKeys.BACKDROP2,
   "scatter-x": MockFeatureKeys.FEATURE3,
   "scatter-y": MockFeatureKeys.FEATURE2,
+  "scatter-bins": "150",
   "scatter-range": "all",
+  c0: "ven:1,col:ff0000ff,rmp:0:1,rng:-5:5",
+  c1: "ven:0,col:00ff0000,rmp:0.300:4.200,rng:0:1",
+  c2: "ven:1,col:0000ff04,rmp:3500:64231,rng:0:65535",
 };
 
 const EXAMPLE_STORE_EXPECTED_QUERY_STRING =
   "collection=https%3A%2F%2Fsome-url.com%2Fcollection.json&dataset=some-dataset" +
-  "&feature=feature1&track=0&bg-key=backdrop2&t=2&color=matplotlib-inferno%21&keep-range=1&range=21.433%2C89.400" +
+  "&feature=feature1&bg-key=backdrop2&track=0%3A3&t=2&color=matplotlib-inferno%21&keep-range=1&range=21.433%2C89.400" +
   "&palette-key=matplotlib_paired&filters=f1%3Am%3A0%3A0%2Cf2%3Aum%3ANaN%3ANaN%2Cf3%3Akm%3A0%3A1%2Cf4%3Amm%3A0.501%3A1000.485%2Cf5%3A%3Afff%2Cf6%3A%3A11" +
-  "&path=1&path-color=ff0000&path-width=1.500&path-mode=1&path-breaks=1&scalebar=1&timestamp=0&filter-color=ff0000&filter-mode=0&outlier-color=00ff00&outlier-mode=1&outline-color=0000ff" +
-  "&edge=1&edge-color=8090a0b0" +
-  "&tab=filters&scatter-x=feature3&scatter-y=feature2&scatter-range=all" +
+  "&path=1&path-color=ff0000&path-width=1.500&path-ramp=esri-blue_red_8%21&path-mode=1&path-breaks=1&path-steps=10%2C25%21&path-persist=0&path-overlay=35&scalebar=1&timestamp=0&filter-color=ff0000&filter-mode=0&outlier-color=00ff00" +
+  "&outlier-mode=1&outline-color=0000ff&outline-mode=0&outline-palette-key=matplotlib_paired" +
+  "&edge=1&edge-color=8090a0b0&centroids=1&centroid-radius=7" +
+  "&tab=filters&interpolate=1&scatter-x=feature3&scatter-y=feature2&scatter-bins=150&scatter-range=all" +
   "&bg=1&bg-brightness=75&bg-sat=50&fg-alpha=25" +
-  "&vc=1&vc-key=_motion_&vc-color=ff00ff&vc-scale=5&vc-tooltip=c&vc-time-int=11";
-
+  "&vc=1&vc-key=_motion_&vc-color=ff00ff&vc-scale=5&vc-thickness-scaling=1&vc-thickness=4.500&vc-tooltip=c&vc-time-int=11" +
+  "&c0=ven%3A1%2Ccol%3Aff0000ff%2Crmp%3A0%3A1%2Crng%3A-5%3A5" +
+  "&c1=ven%3A0%2Ccol%3A00ff0000%2Crmp%3A0.300%3A4.200%2Crng%3A0%3A1" +
+  "&c2=ven%3A1%2Ccol%3A0000ff04%2Crmp%3A3500%3A64231%2Crng%3A0%3A65535";
 describe("serializeViewerState", () => {
   it("handles empty state", () => {
     const state = {};
@@ -219,12 +264,7 @@ describe("loadViewerStateFromParams", () => {
     act(() => {
       result.current.setCollection(MOCK_COLLECTION);
     });
-    // await setDatasetAsync(result, MOCK_DATASET);
-    // TODO: Temporary fixup until channels are serialized. Remove once implemented.
-    await setDatasetAsync(
-      result,
-      await makeMockDataset({ ...MOCK_DATASET_MANIFEST, frames3d: undefined }, MOCK_DATASET_ARRAY_LOADER)
-    );
+    await setDatasetAsync(result, MOCK_DATASET);
     await act(async () => {
       loadInitialViewerStateFromParams(useViewerStateStore, params);
       loadViewerStateFromParams(useViewerStateStore, params);

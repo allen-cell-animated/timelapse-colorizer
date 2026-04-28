@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { MAX_FEATURE_CATEGORIES } from "src/colorizer/constants";
 import { type FeatureThreshold, ThresholdType } from "src/colorizer/types";
 import {
+  convertAllenPathToHttps,
   decodeHexAlphaColor,
   deserializeThresholds,
   encodeColorWithAlpha,
@@ -12,6 +13,7 @@ import {
   isJson,
   isUrl,
   serializeThresholds,
+  VAST_FILES_URL,
 } from "src/colorizer/utils/url_utils";
 
 function padCategories(categories: boolean[]): boolean[] {
@@ -63,6 +65,35 @@ describe("isAllenPath", () => {
     expect(isAllenPath("\\\\allen\\\\some-resource\\\\path.json")).to.be.true;
     expect(isAllenPath("/allen//some-resource////path.json")).to.be.true;
     expect(isAllenPath("//allen//some-resource////path.json")).to.be.true;
+  });
+});
+
+describe("convertAllenPathToHttps", () => {
+  it("Normalizes slashes", () => {
+    expect(convertAllenPathToHttps("\\allen\\aics\\some-resource\\path.json")).to.equal(
+      `${VAST_FILES_URL}some-resource/path.json`
+    );
+    expect(convertAllenPathToHttps("\\\\allen\\\\aics\\some-resource\\\\path.json")).to.equal(
+      `${VAST_FILES_URL}some-resource/path.json`
+    );
+  });
+
+  it("Does not convert non-aics paths", () => {
+    expect(convertAllenPathToHttps("/allen/some-resource/path.json")).to.equal(null);
+    expect(convertAllenPathToHttps("/not-allen/some-file.json")).to.equal(null);
+    expect(convertAllenPathToHttps("https://something.com/data/example.json")).to.equal(null);
+  });
+
+  it("Replaces spaces", () => {
+    expect(convertAllenPathToHttps("/allen/aics/some resource/path with spaces/my file.json")).to.equal(
+      `${VAST_FILES_URL}some%20resource/path%20with%20spaces/my%20file.json`
+    );
+  });
+
+  it("Replaces special characters", () => {
+    expect(convertAllenPathToHttps("/allen/aics/some_resource/&*#$@^~!.json")).to.equal(
+      `${VAST_FILES_URL}some_resource/%26*%23%24%40%5E~!.json`
+    );
   });
 });
 

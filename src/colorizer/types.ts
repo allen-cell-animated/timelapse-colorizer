@@ -10,7 +10,6 @@ import {
   type TextureDataType,
   UnsignedByteType,
   UnsignedIntType,
-  type Vector2,
 } from "three";
 
 // This file provides a bit of type trickery to allow data loading code to be generic over multiple numeric types.
@@ -82,6 +81,11 @@ export const featureTypeSpecs: { [T in FeatureDataType]: FeatureTypeSpec<T> } = 
 
 // CANVAS //////////////////////////////////////
 
+export const enum ViewMode {
+  VIEW_2D = "2d",
+  VIEW_3D = "3d",
+}
+
 export type FrameLoadResult = {
   frame: number;
   /** True if frame loading encountered an error. */
@@ -91,44 +95,11 @@ export type FrameLoadResult = {
   backdropError: boolean;
 };
 
-export const enum CanvasType {
-  CANVAS_2D = "2D",
-  CANVAS_3D = "3D",
-}
-
-export type Canvas2DScaleInfo = {
-  type: CanvasType.CANVAS_2D;
-  /**
-   * Size of the frame in [0, 1] canvas coordinates, accounting for zoom.
-   */
-  frameSizeInCanvasCoordinates: Vector2;
-  /**
-   * Transforms from [0,1] space of the canvas to the [0,1] space of the frame,
-   * account for zoom.
-   *
-   * e.g. If frame has the same aspect ratio as the canvas and zoom is set to
-   * 2x, then, assuming that the [0, 0] position of the frame and the canvas are
-   * in the same position, the position [1, 1] on the canvas should map to [0.5,
-   * 0.5] on the frame.
-   */
-  canvasToFrameCoordinates: Vector2;
-  /**
-   * Inverse of `canvasToFrameCoordinates`. Transforms from [0,1] space of the
-   * frame to the [0,1] space of the canvas, accounting for zoom.
-   */
-  frameToCanvasCoordinates: Vector2;
-
-  /**
-   * Panning offset,
-   */
-  panOffset: Vector2;
+export type VolumeLoadResult = {
+  backdropIdx: number;
+  dataMin: number;
+  dataMax: number;
 };
-
-export type Canvas3DScaleInfo = {
-  type: CanvasType.CANVAS_3D;
-};
-
-export type CanvasScaleInfo = Canvas3DScaleInfo | Canvas2DScaleInfo;
 
 // MUST be synchronized with the DRAW_MODE_* constants in `colorize_RGBA8U.frag`!
 // CHANGING THESE VALUES CAN POTENTIALLY BREAK URLs. See `url_utils.parseDrawSettings` for parsing logic.
@@ -144,10 +115,16 @@ export const isDrawMode = (mode: number): mode is DrawMode => {
   return mode === DrawMode.HIDE || mode === DrawMode.USE_COLOR;
 };
 
+export const enum SelectionOutlineColorMode {
+  USE_PALETTE = 0,
+  USE_CUSTOM_COLOR = 1,
+}
+
 export const enum TrackPathColorMode {
   USE_OUTLINE_COLOR = 0,
   USE_CUSTOM_COLOR = 1,
   USE_FEATURE_COLOR = 2,
+  USE_COLOR_MAP = 3,
 }
 
 // Similar to `FeatureType`, but indicates that thresholds are lossy when it comes
@@ -206,7 +183,17 @@ export type VectorConfig = {
   timeIntervals: number;
   color: Color;
   scaleFactor: number;
+  scaleThicknessByMagnitude: boolean;
+  thickness: number;
   tooltipMode: VectorTooltipMode;
+};
+
+/** Bucketed vector data for objects visible on a single frame. */
+export type FrameVectorData = {
+  ids: number[];
+  centroids: Float32Array;
+  deltas: Float32Array;
+  magnitude: Float32Array;
 };
 
 // TODO: This should live in the viewer and not in `colorizer`. Same with `url_utils`.
@@ -291,6 +278,9 @@ export type GlobalIdLookupInfo = {
    * The smallest segmentation on this frame, used for memory optimization.
    */
   minSegId: number;
+
+  /** An unsorted array of global IDs present in the frame. */
+  globalIds: Uint32Array;
 };
 
 export type PixelIdInfo = {
@@ -322,6 +312,8 @@ export enum LoadTroubleshooting {
   CHECK_ZIP_FORMAT = "Make sure a 'collection.json' or 'manifest.json' file exists in the base directory.",
   CHECK_ZIP_FORMAT_COLLECTION = "A 'collection.json' should exist in the base directory.",
   CHECK_ZIP_FORMAT_MANIFEST = "A 'manifest.json' should exist in the base directory.",
+  CHECK_ZIP_ZARR_DATA = "Please check if the file exists. If this was a Zarr array, note that Zarr data cannot currently be loaded from ZIP archives. " +
+    "Consider opening the dataset locally with the CLI tools provided in colorizer-data; for more details, see Help > Visit GitHub repository.",
 }
 
 export const enum LoadErrorMessage {
@@ -335,18 +327,36 @@ export const enum LoadErrorMessage {
   COLLECTION_JSON_PARSE_FAILED = "Parsing failed for the collections JSON file with the following error. Please check that the JSON syntax is correct: ",
   MANIFEST_JSON_PARSE_FAILED = "Parsing failed for the manifest JSON file with the following error. Please check that the JSON syntax is correct: ",
 }
+
 export const enum ChannelRangePreset {
   NONE = "none",
   DEFAULT = "default",
   IJ_AUTO = "ij_auto",
   AUTO_2 = "auto_2",
 }
+
 export type ChannelSetting = {
   visible: boolean;
   color: Color;
   opacity: number;
-  min: number;
-  max: number;
-  dataMin: number;
-  dataMax: number;
+  /**
+   * Minimum intensity value for the channel's ramp. If `null`, the value will
+   * be initialized with the AutoIJ preset once volume data is loaded.
+   */
+  min: number | null;
+  /**
+   * Maximum intensity value for the channel's ramp. If `null`, the value will
+   * be initialized with the AutoIJ preset once volume data is loaded.
+   */
+  max: number | null;
+  /**
+   * Minimum value of the channel's data range. If `null`, will be set to the
+   * data min once volume data is loaded.
+   */
+  dataMin: number | null;
+  /**
+   * Maximum value of the channel's data range. If `null`, will be set to the
+   * data max once volume data is loaded.
+   */
+  dataMax: number | null;
 };

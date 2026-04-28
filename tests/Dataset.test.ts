@@ -292,7 +292,7 @@ describe("Dataset", () => {
     const dataset = await makeMockDataset(manifestWith3dSource);
     expect(dataset.has3dFrames()).to.be.true;
     const frames3d = dataset.frames3d;
-    expect(frames3d?.source).to.equal("https://dev-aics-dtp-001.int.allencell.org/assay-dev/some/path/to/seg.ome.zarr");
+    expect(frames3d?.source).to.equal("https://vast-files.int.allencell.org/assay-dev/some/path/to/seg.ome.zarr");
   });
 
   describe("centroids data", () => {

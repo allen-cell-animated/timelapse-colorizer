@@ -1,25 +1,33 @@
 import type { Color } from "three";
 
-import { BOOLEAN_VALUE_FALSE, BOOLEAN_VALUE_TRUE, type LabelData, LabelType } from "src/colorizer/AnnotationData";
-import type ColorRamp from "src/colorizer/ColorRamp";
-import { ColorRampType } from "src/colorizer/ColorRamp";
+import {
+  BOOLEAN_VALUE_FALSE,
+  BOOLEAN_VALUE_TRUE,
+  type LabelData,
+  type LabelIdData,
+  LabelType,
+} from "src/colorizer/AnnotationData";
+import ColorRamp, { ColorRampType } from "src/colorizer/ColorRamp";
 import type { ColorRampData } from "src/colorizer/colors/color_ramps";
 import { MAX_FEATURE_CATEGORIES } from "src/colorizer/constants";
 import type Dataset from "src/colorizer/Dataset";
 import { FeatureType } from "src/colorizer/Dataset";
-import type { RenderCanvasStateParams } from "src/colorizer/IRenderCanvas";
 import type Track from "src/colorizer/Track";
 import {
   FeatureDataType,
   type FeatureThreshold,
+  type FrameVectorData,
   type GlobalIdLookupInfo,
   isThresholdCategorical,
   isThresholdNumeric,
   ThresholdType,
   TrackPathColorMode,
 } from "src/colorizer/types";
+import type { TrackPathParams } from "src/colorizer/viewport/tracks/types";
 
 import { packDataTexture } from "./texture_utils";
+
+// TODO: Move all track path utils into the viewport/tracks directory
 
 /** Returns whether the two arrays are deeply equal, where arr1[i] === arr2[i] for all i. */
 export function arrayElementsAreEqual<T>(arr1: T[], arr2: T[]): boolean {
@@ -50,14 +58,34 @@ export function thresholdMatchFinder(featureKey: string, unit: string): (thresho
 }
 
 /**
- * Convenience method for getting a single ramp from a map of strings to ramps, optionally reversing it.
+ * Convenience method for getting a single ramp from a map of strings to ramps,
+ * optionally reversing or mirroring it. Always returns a *new* ColorRamp
+ * instance that should be disposed of when no longer needed.
  */
-export function getColorMap(colorRampData: Map<string, ColorRampData>, key: string, reversed = false): ColorRamp {
-  const colorRamp = colorRampData.get(key)?.colorRamp;
-  if (!colorRamp) {
+export function getColorMap(
+  colorRampDataMap: Map<string, ColorRampData>,
+  key: string,
+  options: {
+    reversed?: boolean;
+    mirrored?: boolean;
+  } = {}
+): ColorRamp {
+  const colorRampData = colorRampDataMap.get(key);
+  if (!colorRampData) {
     throw new Error("Could not find data for color ramp '" + key + "'");
   }
-  return colorRamp && reversed ? colorRamp.reverse() : colorRamp;
+  let colorStops = [...colorRampData.colorStops];
+  if (options.reversed) {
+    colorStops.reverse();
+  }
+  if (options.mirrored && colorRampData.type === ColorRampType.LINEAR) {
+    // Reverse + remove color at the beginning so the color stop isn't repeated
+    // ex: 123 => 12321 (3 is not repeated)
+    const reversedColorStops = [...colorStops].reverse();
+    reversedColorStops.shift();
+    colorStops = [...colorStops, ...reversedColorStops];
+  }
+  return new ColorRamp(colorStops, colorRampData.type);
 }
 
 /**
@@ -250,6 +278,28 @@ export function getIntervals(values: number[]): [number, number][] {
   return intervals;
 }
 
+/**
+ * Checks if any value in a dependency array has changed. Note that shallow
+ * comparison is used (e.g. `Object.is` for each element).
+ */
+export function hasAnyValueChanged<T extends Array<unknown>>(curr: T | null, prev: T | null): boolean {
+  if (curr === null && prev === null) {
+    return false;
+  } else if (curr === null || prev === null) {
+    return true;
+  }
+  if (curr.length !== prev.length) {
+    return true;
+  }
+  for (let i = 0; i < curr.length; i++) {
+    // Shallow/ref comparison only
+    if (!Object.is(curr[i], prev[i])) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export function hasPropertyChanged<T extends Record<string, unknown>>(
   curr: T | null,
   prev: T | null,
@@ -277,7 +327,7 @@ export function buildFrameToGlobalIdLookup(
   segIds: Uint32Array,
   numFrames: number
 ): Map<number, GlobalIdLookupInfo> {
-  const frameToLut = new Map<number, Uint32Array>();
+  const frameToIdInfo = new Map<number, { lut: Uint32Array; globalIds: number[] }>();
 
   // Get min and max segmentation IDs for each frame.
   const frameToMinSegId: number[] = [];
@@ -294,7 +344,8 @@ export function buildFrameToGlobalIdLookup(
     const minSegId = frameToMinSegId[i] ?? 0;
     const maxSegId = frameToMaxSegId[i] ?? 0;
     const lut = new Uint32Array(maxSegId - minSegId + 1);
-    frameToLut.set(i, lut);
+    const globalIds: number[] = [];
+    frameToIdInfo.set(i, { lut, globalIds });
   }
 
   // For each object with segmentation ID `segId` at time `t`, fill the arrays
@@ -307,20 +358,24 @@ export function buildFrameToGlobalIdLookup(
     const time = times[i];
     const minSegId = frameToMinSegId[time] ?? 0;
     const segId = segIds[i] - minSegId;
-    const lut = frameToLut.get(time);
-    if (lut) {
-      lut[segId] = i + 1; // +1 to reserve 0 for missing data
+    const idInfo = frameToIdInfo.get(time);
+    if (idInfo) {
+      idInfo.lut[segId] = i + 1; // +1 to reserve 0 for missing data
+      idInfo.globalIds.push(i);
     }
   }
 
   return new Map<number, GlobalIdLookupInfo>(
-    Array.from(frameToLut.entries()).map(([frame, lut]) => {
+    Array.from(frameToIdInfo.entries()).map(([frame, idInfo]) => {
+      const { lut, globalIds } = idInfo;
+      const texture = packDataTexture(lut, FeatureDataType.U32);
       return [
         frame,
         {
           lut,
-          texture: packDataTexture(lut, FeatureDataType.U32),
+          texture,
           minSegId: frameToMinSegId[frame] ?? 0,
+          globalIds: new Uint32Array(globalIds),
         },
       ];
     })
@@ -392,16 +447,33 @@ export function getLabelTypeFromParsedCsv(
   return labelTypeMap;
 }
 
-export function cloneLabel(label: LabelData): LabelData {
+function cloneLabelIdData(labelIdData: LabelIdData): LabelIdData {
+  const valueToIds = new Map<string, Set<number>>();
+  for (const [value, ids] of labelIdData.valueToIds.entries()) {
+    valueToIds.set(value, new Set(ids));
+  }
+  return {
+    ids: new Set(labelIdData.ids),
+    valueToIds,
+    idToValue: new Map(labelIdData.idToValue),
+  };
+}
+
+export function cloneLabelData(label: LabelData): LabelData {
+  const datasetToIdData = label.datasetToIdData;
+  const newDatasetToIdData = new Map<string, LabelIdData>();
+
+  for (const [datasetKey, labelIdData] of datasetToIdData.entries()) {
+    newDatasetToIdData.set(datasetKey, cloneLabelIdData(labelIdData));
+  }
+
   return {
     options: {
       ...label.options,
       color: label.options.color.clone(),
     },
-    ids: new Set(label.ids),
     lastValue: label.lastValue,
-    valueToIds: new Map(label.valueToIds),
-    idToValue: new Map(label.idToValue),
+    datasetToIdData: newDatasetToIdData,
   };
 }
 
@@ -414,7 +486,7 @@ export function cloneLabel(label: LabelData): LabelData {
  * @returns The color for the given object ID, using the rules in the main
  * viewport shader.
  */
-export function computeColorFromId(id: number, params: RenderCanvasStateParams): Color {
+export function computeColorFromId(id: number, params: TrackPathParams): Color {
   const {
     dataset,
     featureKey,
@@ -462,7 +534,7 @@ export function computeColorFromId(id: number, params: RenderCanvasStateParams):
  * B: colors[i * 3 + 2]
  * ```
  */
-export function computeVertexColorsFromIds(ids: number[], params: RenderCanvasStateParams): Float32Array {
+export function computeVertexColorsFromIds(ids: number[], params: TrackPathParams): Float32Array {
   // Especially for discontinuous lines, IDs may be repeated. Cache results to
   // avoid repeat computation.
   const idToColor = new Map<number, [number, number, number]>();
@@ -548,24 +620,8 @@ export function computeTrackLinePointsAndIds(
   return { ids, points };
 }
 
-/**
- * Normalizes 3D centroids to 2D canvas space in-place, where the X and Y coordinates are
- * in the range [-1, 1] and the Z coordinate is always zero.
- */
-export function normalizePointsTo2dCanvasSpace(points: Float32Array, dataset: Dataset): Float32Array {
-  // TODO: This normalization step may be unnecessary if we do it during the
-  // line scaling step.
-  for (let i = 0; i < points.length; i += 3) {
-    points[i + 0] = (points[i + 0] / dataset.frameResolution.x) * 2.0 - 1.0;
-    points[i + 1] = -((points[i + 1] / dataset.frameResolution.y) * 2.0 - 1.0);
-    // Z coordinate is always zero for 2D canvas space
-    points[i + 2] = 0;
-  }
-  return points;
-}
-
-const LINE_GEOMETRY_DEPS: (keyof RenderCanvasStateParams)[] = ["dataset", "track", "showTrackPathBreaks"];
-const LINE_VERTEX_COLOR_DEPS: (keyof RenderCanvasStateParams)[] = [
+const LINE_GEOMETRY_DEPS: (keyof TrackPathParams)[] = ["dataset", "track", "showTrackPathBreaks"];
+const LINE_VERTEX_COLOR_DEPS: (keyof TrackPathParams)[] = [
   ...LINE_GEOMETRY_DEPS,
   "trackPathColorMode",
   "featureKey",
@@ -577,33 +633,123 @@ const LINE_VERTEX_COLOR_DEPS: (keyof RenderCanvasStateParams)[] = [
   "outlierDrawSettings",
   "showTrackPath",
 ];
-const LINE_MATERIAL_DEPS: (keyof RenderCanvasStateParams)[] = [
+const LINE_MATERIAL_DEPS: (keyof TrackPathParams)[] = [
   "trackPathColorMode",
   "trackPathColor",
+  "trackPathColorRamp",
   "outlineColor",
   "trackPathWidthPx",
+  "trackPathOverlayOpacity",
+];
+
+/** Dependencies that will trigger a re-render of the track path on change. */
+const LINE_RENDER_DEPS: (keyof TrackPathParams)[] = [
+  "showTrackPath",
+  "trackPathPastSteps",
+  "trackPathFutureSteps",
+  "showAllTrackPathPastSteps",
+  "showAllTrackPathFutureSteps",
+  "persistTrackPathWhenOutOfRange",
 ];
 
 export function getLineUpdateFlags(
-  prevParams: RenderCanvasStateParams | null,
-  params: RenderCanvasStateParams
+  prevParams: TrackPathParams | null,
+  params: TrackPathParams
 ): {
   geometryNeedsUpdate: boolean;
   vertexColorNeedsUpdate: boolean;
   materialNeedsUpdate: boolean;
+  needsRender: boolean;
 } {
   const geometryNeedsUpdate = hasPropertyChanged(prevParams, params, LINE_GEOMETRY_DEPS);
   const vertexColorNeedsUpdate =
-    params.trackPathColorMode === TrackPathColorMode.USE_FEATURE_COLOR &&
+    (params.trackPathColorMode === TrackPathColorMode.USE_COLOR_MAP ||
+      params.trackPathColorMode === TrackPathColorMode.USE_FEATURE_COLOR) &&
     hasPropertyChanged(prevParams, params, LINE_VERTEX_COLOR_DEPS);
   const materialNeedsUpdate = vertexColorNeedsUpdate || hasPropertyChanged(prevParams, params, LINE_MATERIAL_DEPS);
+  const needsRender =
+    hasPropertyChanged(prevParams, params, LINE_RENDER_DEPS) ||
+    geometryNeedsUpdate ||
+    vertexColorNeedsUpdate ||
+    materialNeedsUpdate;
 
   return {
     geometryNeedsUpdate,
     vertexColorNeedsUpdate,
     materialNeedsUpdate,
+    needsRender,
   };
 }
+
+/**
+ * Calculates rendering information for a track path, including the range of
+ * visible path instances to show and how to apply the color ramp.
+ * @returns An object containing:
+ *  - `rampScale`: The number of vertices the color ramp spans.
+ *  - `rampOffset`: The vertex index that the color ramp is centered on (usually
+ *    corresponding with the current frame in the track).
+ *  - `startingInstance`: The index of the first path instance to show, where an
+ *    instance is a line segment between two frames.
+ *  - `endingInstance`: The index of the last path instance to show.
+ */
+export function getTrackPathRenderInfo(
+  params: TrackPathParams | null,
+  currentFrame: number
+): {
+  rampScale: number;
+  rampOffset: number;
+  startingInstance: number;
+  endingInstance: number;
+} {
+  const track = params?.track;
+  // Show nothing if track doesn't exist or doesn't have centroid data
+  if (!track || !track.centroids || !params?.showTrackPath) {
+    return {
+      rampScale: 1,
+      rampOffset: 0,
+      startingInstance: 0,
+      endingInstance: 0,
+    };
+  }
+
+  const trackStepIdx = currentFrame - track.startTime();
+  let endingInstance;
+  let startingInstance;
+  if (params.showAllTrackPathPastSteps) {
+    startingInstance = 0;
+  } else {
+    startingInstance = Math.max(0, trackStepIdx - params.trackPathPastSteps);
+  }
+
+  if (params.showAllTrackPathFutureSteps) {
+    endingInstance = track.duration();
+  } else {
+    endingInstance = Math.min(trackStepIdx + params.trackPathFutureSteps, track.duration());
+  }
+
+  // Check if the path should be hidden entirely because it is outside of the
+  // range. This happens when all past paths are shown and the track has ended,
+  // or if all future paths are shown and the track has not yet started.
+  if (!params.persistTrackPathWhenOutOfRange) {
+    const isVisiblePastEnd = params.showAllTrackPathPastSteps && trackStepIdx >= track.duration();
+    const isVisibleBeforeStart = params.showAllTrackPathFutureSteps && trackStepIdx < 0;
+    if (isVisiblePastEnd || isVisibleBeforeStart) {
+      startingInstance = 0;
+      endingInstance = 0;
+    }
+  }
+
+  const maxTrackLength = params.dataset?.getMaxTrackLength() || track.duration();
+  const pastSteps = params.showAllTrackPathPastSteps ? maxTrackLength : params.trackPathPastSteps;
+  const futureSteps = params.showAllTrackPathFutureSteps ? maxTrackLength : params.trackPathFutureSteps;
+  return {
+    rampScale: Math.max(pastSteps, futureSteps) * 2,
+    rampOffset: trackStepIdx,
+    startingInstance,
+    endingInstance: Math.max(0, endingInstance),
+  };
+}
+
 /**
  * Returns a copy of an object where any properties with a value of `undefined`
  * are not included.
@@ -616,4 +762,69 @@ export function removeUndefinedProperties<T>(object: T): T {
     }
   }
   return ret;
+}
+
+/**
+ * Buckets vector data by time for rendering, returning centroids and deltas for
+ * each time point.
+ * @param dataset The dataset containing object times and centroids.
+ * @param vectorData The deltas for each object ID, as a Float32Array with 3
+ * floats per object (x, y, z), in pixel/voxel coordinate space.
+ * @returns
+ * - `timeToVectorData`: Map from time to an object containing `centroids` and
+ *   `deltas` Float32Arrays. Each array contains 3 floats per vector (x, y, z),
+ *   in pixel/voxel coordinate space.
+ * - `totalValidIds`: Total number of valid vector IDs across all time points.
+ */
+export function bucketVectorDataByTime(
+  dataset: Dataset,
+  vectorData: Float32Array
+): {
+  timeToVectorData: Map<number, FrameVectorData>;
+  totalValidIds: number;
+} {
+  // Sort object IDs into buckets by time. Drop any IDs whose vectors are invalid (NaN).
+  const timeToIds = new Map<number, number[]>();
+  let totalValidIds = 0;
+  for (let i = 0; i < dataset.numObjects; i++) {
+    const time = dataset.getTime(i);
+    const ids = timeToIds.get(time) ?? [];
+    if (
+      Number.isNaN(vectorData[i * 3]) ||
+      Number.isNaN(vectorData[i * 3 + 1]) ||
+      Number.isNaN(vectorData[i * 3 + 2]) ||
+      dataset.getCentroid(i) === undefined
+    ) {
+      continue;
+    }
+    ids.push(i);
+    timeToIds.set(time, ids);
+    totalValidIds++;
+  }
+
+  // For each time, fill in the vertex information (centroid + delta).
+  const times = Array.from(timeToIds.keys()).sort((a, b) => a - b);
+  const timeToVectorData: Map<number, FrameVectorData> = new Map();
+  for (const time of times) {
+    const ids = timeToIds.get(time)!;
+    const centroids = new Float32Array(ids.length * 3);
+    const deltas = new Float32Array(ids.length * 3);
+    const magnitude = new Float32Array(ids.length);
+    for (let i = 0; i < ids.length; i++) {
+      const id = ids[i];
+      const centroid = dataset.getCentroid(id)!;
+      const delta: [number, number, number] = [vectorData[id * 3], vectorData[id * 3 + 1], vectorData[id * 3 + 2]];
+      centroids.set(centroid, i * 3);
+      deltas.set(delta, i * 3);
+      magnitude[i] = Math.sqrt(delta[0] * delta[0] + delta[1] * delta[1] + delta[2] * delta[2]);
+    }
+    timeToVectorData.set(time, { ids, centroids, deltas, magnitude });
+  }
+  return { timeToVectorData, totalValidIds };
+}
+
+const POSITIVE_INTEGER_REGEX = /^[1-9]\d*$/;
+
+export function isPositiveInteger(value: string): boolean {
+  return POSITIVE_INTEGER_REGEX.test(value);
 }

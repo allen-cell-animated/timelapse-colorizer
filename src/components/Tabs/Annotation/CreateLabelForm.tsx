@@ -2,14 +2,8 @@ import { Button, Checkbox, Input, type InputRef, Radio } from "antd";
 import React, { type ReactElement, useContext, useEffect, useRef, useState } from "react";
 import { Color, type ColorRepresentation } from "three";
 
-import {
-  CSV_COL_ID,
-  CSV_COL_TIME,
-  CSV_COL_TRACK,
-  DEFAULT_ANNOTATION_LABEL_COLORS,
-  type LabelOptions,
-  LabelType,
-} from "src/colorizer/AnnotationData";
+import { CSV_COL_ID, CSV_COL_TIME, CSV_COL_TRACK } from "src/colorizer";
+import { DEFAULT_ANNOTATION_LABEL_COLORS, type LabelOptions, LabelType } from "src/colorizer/AnnotationData";
 import WrappedColorPicker from "src/components/Inputs/WrappedColorPicker";
 import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
 import { TooltipWithSubtitle } from "src/components/Tooltips/TooltipWithSubtitle";
@@ -177,7 +171,7 @@ export default function CreateLabelForm(inputProps: CreateLabelFormProps): React
             <TooltipWithSubtitle
               trigger={["hover", "focus"]}
               title="Increments the value on each click"
-              subtitle="Hold Ctrl to reuse last value"
+              subtitle="Hold Alt to reuse last value"
               placement="right"
               getPopupContainer={() => autoIncrementContainerRef.current ?? document.body}
             >

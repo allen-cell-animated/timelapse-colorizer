@@ -1,4 +1,4 @@
-import { CheckCircleOutlined, EllipsisOutlined, ShareAltOutlined } from "@ant-design/icons";
+import { EllipsisOutlined } from "@ant-design/icons";
 import { notification, Tabs } from "antd";
 import type { NotificationConfig } from "antd/es/notification/interface";
 import React, {
@@ -21,15 +21,15 @@ import {
   type ReportWarningCallback,
   TabType,
 } from "src/colorizer";
-import CanvasOverlay from "src/colorizer/CanvasOverlay";
 import type Collection from "src/colorizer/Collection";
 import { FeatureType, TIME_FEATURE_KEY } from "src/colorizer/Dataset";
 import UrlArrayLoader from "src/colorizer/loaders/UrlArrayLoader";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "src/colorizer/utils/analytics";
+import CanvasOverlay from "src/colorizer/viewport/CanvasOverlay";
 import { getSharedWorkerPool } from "src/colorizer/workers/SharedWorkerPool";
 import { useAlertBanner } from "src/components/Banner";
 import { showFailedUrlParseAlert } from "src/components/Banner/alert_templates";
-import TextButton from "src/components/Buttons/TextButton";
+import ShareUrlButton from "src/components/Buttons/ShareUrlButton";
 import CanvasWrapper from "src/components/CanvasWrapper";
 import ColorizeControls from "src/components/Controls/ColorizeControls";
 import DatasetFeatureControls from "src/components/Controls/DatasetFeatureControls";
@@ -50,7 +50,7 @@ import {
 } from "src/components/Tabs";
 import CanvasHoverTooltip from "src/components/Tooltips/CanvasHoverTooltip";
 import { INTERNAL_BUILD } from "src/constants";
-import { useAnnotations, useConstructor, useRecentCollections } from "src/hooks";
+import { useAnnotations, useBackdropShortcuts, useConstructor, useRecentCollections } from "src/hooks";
 import { renderCanvasStateParamsSelector } from "src/state";
 import { getDifferingProperties } from "src/state/utils/data_validation";
 import {
@@ -91,6 +91,9 @@ function Viewer(): ReactElement {
       useViewerStateStore.getState().setFrameLoadResult(result);
       useViewerStateStore.setState({ currentFrame: result.frame });
     });
+    canvas.setOnVolumeLoadCallback((result) => {
+      useViewerStateStore.getState().updateChannelRangeWithVolumeData(result);
+    });
     useViewerStateStore.getState().setFrameLoadCallback(async (frame: number) => await canvas.setFrame(frame));
     return canvas;
   }).current;
@@ -103,7 +106,6 @@ function Viewer(): ReactElement {
   // required for this component.
   // Get viewer state:
   const collection = useViewerStateStore((state) => state.collection);
-  const currentFrame = useViewerStateStore((state) => state.currentFrame);
   const dataset = useViewerStateStore((state) => state.dataset);
   const datasetKey = useViewerStateStore((state) => state.datasetKey);
   const featureKey = useViewerStateStore((state) => state.featureKey);
@@ -153,11 +155,16 @@ function Viewer(): ReactElement {
   const currentHoveredId = showObjectHoverInfo ? lastValidHoveredId : null;
 
   // EVENT LISTENERS ////////////////////////////////////////////////////////
+
+  // Hooks for shortcut keys
+  useBackdropShortcuts();
+
+  // URL handling
   const updateUrlParams = useCallback(
     makeDebouncedCallback(() => {
       if (isInitialDatasetLoaded) {
         const params = serializeViewerState(useViewerStateStore.getState());
-        setSearchParams(params, { replace: true });
+        setSearchParams(params as Record<string, string>, { replace: true });
       }
     }),
     [isInitialDatasetLoaded]
@@ -360,7 +367,7 @@ function Viewer(): ReactElement {
       console.log("Dataset metadata:", newDataset.metadata);
       console.log("Num Items:" + newDataset?.numObjects);
     },
-    [dataset, featureKey, canv, currentFrame, featureThresholds]
+    [dataset, featureKey, canv, featureThresholds]
   );
 
   // INITIAL SETUP  ////////////////////////////////////////////////////////////////
@@ -481,13 +488,13 @@ function Viewer(): ReactElement {
     // contains the segmentation ID (raw image pixel value) and the global ID.
     // The global ID is undefined if the object does not exist in the dataset.
     (info: PixelIdInfo | null) => {
-      if (dataset) {
+      if (dataset && datasetKey !== null) {
         // Pass null if the user clicked on something non-interactive
         // (background or a non-existent object).
-        annotationState.handleAnnotationClick(dataset, info?.globalId ?? null);
+        annotationState.handleAnnotationClick(datasetKey, dataset, info?.globalId ?? null);
       }
     },
-    [dataset, annotationState.handleAnnotationClick]
+    [dataset, datasetKey, annotationState.handleAnnotationClick]
   );
 
   const onClickExport = useCallback((): void => {
@@ -496,20 +503,6 @@ function Viewer(): ReactElement {
   }, [timeControls]);
 
   // RENDERING /////////////////////////////////////////////////////////////
-
-  const openCopyNotification = (): void => {
-    navigator.clipboard.writeText(document.URL);
-    notificationApi["success"]({
-      message: "URL copied to clipboard",
-      placement: "bottomLeft",
-      duration: 4,
-      icon: <CheckCircleOutlined style={{ color: theme.color.text.success }} />,
-      style: {
-        backgroundColor: theme.color.alert.fill.success,
-        border: `1px solid ${theme.color.alert.border.success}`,
-      },
-    });
-  };
 
   const disableUi: boolean = isRecording || !datasetOpen;
 
@@ -528,11 +521,7 @@ function Viewer(): ReactElement {
       key: TabType.SCATTER_PLOT,
       children: (
         <div className={styles.tabContent}>
-          <ScatterPlotTab
-            isVisible={openTab === TabType.SCATTER_PLOT}
-            isPlaying={timeControls.isPlaying() || isRecording}
-            showAlert={showAlert}
-          />
+          <ScatterPlotTab isVisible={openTab === TabType.SCATTER_PLOT} showAlert={showAlert} />
         </div>
       ),
     },
@@ -602,6 +591,7 @@ function Viewer(): ReactElement {
                 onLoad={handleDatasetLoad}
                 currentResourceUrl={collection?.sourcePath ?? datasetKey ?? ""}
                 reportWarning={showDatasetLoadWarning}
+                annotationState={annotationState}
               />
               <LoadZipModal
                 sourceZipName={sourceZipName ?? ""}
@@ -619,15 +609,11 @@ function Viewer(): ReactElement {
               setFrame={setFrame}
               canvas={canv}
               onClick={onClickExport}
-              currentFrame={currentFrame}
               defaultImagePrefix={datasetKey + "-" + featureKey}
               disabled={dataset === null}
               setIsRecording={setIsRecording}
             />
-            <TextButton onClick={openCopyNotification}>
-              <ShareAltOutlined />
-              <p>Share</p>
-            </TextButton>
+            <ShareUrlButton notificationApi={notificationApi} />
           </FlexRowAlignCenter>
           <HelpDropdown />
         </FlexRowAlignCenter>
@@ -645,6 +631,7 @@ function Viewer(): ReactElement {
                 onSelectDataset={handleDatasetChange}
                 onSelectFeature={reportFeatureSelected}
                 disabled={disableUi}
+                annotationState={annotationState}
               />
               <ColorizeControls disabled={disableUi} />
             </FlexColumn>

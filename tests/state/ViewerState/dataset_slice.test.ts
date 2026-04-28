@@ -1,12 +1,14 @@
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
+import { ViewMode } from "src/colorizer";
 import { UrlParam } from "src/colorizer/utils/url_utils";
 import { loadDatasetSliceFromParams, serializeDatasetSlice } from "src/state/slices";
 import { useViewerStateStore } from "src/state/ViewerState";
 import {
   DEFAULT_INITIAL_FEATURE_KEY,
   MOCK_DATASET,
+  MOCK_DATASET_2D_ONLY,
   MOCK_DATASET_DEFAULT_TRACK,
   MOCK_DATASET_WITHOUT_BACKDROP,
   MockBackdropKeys,
@@ -51,16 +53,16 @@ describe("useViewerStateStore: DatasetSlice", () => {
       expect(result.current.backdropVisible).toBe(false);
     });
 
-    it("clears dependent state", async () => {
+    it("updates the viewMode based on the dataset type", async () => {
       const { result } = renderHook(() => useViewerStateStore());
-      await setDatasetAsync(result, MOCK_DATASET, "some-key");
-      act(() => {
-        result.current.setTrack(MOCK_DATASET_DEFAULT_TRACK);
-      });
-      expect(result.current.track).toBe(MOCK_DATASET_DEFAULT_TRACK);
+      // Default is 2D
+      expect(result.current.viewMode).equals(ViewMode.VIEW_2D);
 
-      await setDatasetAsync(result, MOCK_DATASET, "some-other-key");
-      expect(result.current.track).toBeNull();
+      await setDatasetAsync(result, MOCK_DATASET, "some-key");
+      expect(result.current.viewMode).equals(ViewMode.VIEW_3D);
+
+      await setDatasetAsync(result, MOCK_DATASET_2D_ONLY, "some-other-key");
+      expect(result.current.viewMode).equals(ViewMode.VIEW_2D);
     });
   });
 
@@ -87,41 +89,16 @@ describe("useViewerStateStore: DatasetSlice", () => {
       await setDatasetAsync(result, MOCK_DATASET);
       act(() => {
         result.current.setFeatureKey(MockFeatureKeys.FEATURE2);
-        result.current.setTrack(MOCK_DATASET_DEFAULT_TRACK);
+        result.current.setTracks(MOCK_DATASET_DEFAULT_TRACK);
       });
       expect(result.current.featureKey).toBe(MockFeatureKeys.FEATURE2);
-      expect(result.current.track).toBe(MOCK_DATASET_DEFAULT_TRACK);
+      expect(Array.from(result.current.tracks.keys())).toEqual([MOCK_DATASET_DEFAULT_TRACK.trackId]);
 
       act(() => {
         result.current.clearDataset();
       });
       expect(result.current.featureKey).toBeNull();
-      expect(result.current.track).toBeNull();
-    });
-  });
-
-  describe("setTrack & clearTrack", () => {
-    it("throws an error if no dataset is loaded", () => {
-      const { result } = renderHook(() => useViewerStateStore());
-      expect(() => {
-        act(() => {
-          result.current.setTrack(MOCK_DATASET_DEFAULT_TRACK);
-        });
-      }).toThrowError(ANY_ERROR);
-    });
-
-    it("sets and clears the track", async () => {
-      const { result } = renderHook(() => useViewerStateStore());
-      await setDatasetAsync(result, MOCK_DATASET);
-      act(() => {
-        result.current.setTrack(MOCK_DATASET_DEFAULT_TRACK);
-      });
-      expect(result.current.track).toBe(MOCK_DATASET_DEFAULT_TRACK);
-
-      act(() => {
-        result.current.clearTrack();
-      });
-      expect(result.current.track).toBeNull();
+      expect(result.current.tracks.size).toBe(0);
     });
   });
 
@@ -195,13 +172,11 @@ describe("useViewerStateStore: DatasetSlice", () => {
       await setDatasetAsync(result, MOCK_DATASET, "some-key");
       act(() => {
         result.current.setFeatureKey(MockFeatureKeys.FEATURE2);
-        result.current.setTrack(MOCK_DATASET_DEFAULT_TRACK);
         result.current.setBackdropKey(MockBackdropKeys.BACKDROP2);
       });
       const serializedData = serializeDatasetSlice(result.current);
       expect(serializedData[UrlParam.DATASET]).toBe("some-key");
       expect(serializedData[UrlParam.FEATURE]).toBe(MockFeatureKeys.FEATURE2);
-      expect(serializedData[UrlParam.TRACK]).toBe(MOCK_DATASET_DEFAULT_TRACK.trackId.toString());
       expect(serializedData[UrlParam.BACKDROP_KEY]).toBe(MockBackdropKeys.BACKDROP2);
     });
 
@@ -217,13 +192,11 @@ describe("useViewerStateStore: DatasetSlice", () => {
       const { result } = renderHook(() => useViewerStateStore());
       const params = new URLSearchParams();
       params.set(UrlParam.FEATURE, MockFeatureKeys.FEATURE1);
-      params.set(UrlParam.TRACK, MOCK_DATASET_DEFAULT_TRACK.trackId.toString());
       params.set(UrlParam.BACKDROP_KEY, MockBackdropKeys.BACKDROP1);
       act(() => {
         loadDatasetSliceFromParams(result.current, params);
       });
       expect(result.current.featureKey).toBeNull();
-      expect(result.current.track).toBeNull();
       expect(result.current.backdropKey).toBeNull();
     });
 
@@ -231,7 +204,6 @@ describe("useViewerStateStore: DatasetSlice", () => {
       const { result } = renderHook(() => useViewerStateStore());
       const params = new URLSearchParams();
       params.set(UrlParam.FEATURE, MockFeatureKeys.FEATURE3);
-      params.set(UrlParam.TRACK, MOCK_DATASET_DEFAULT_TRACK.trackId.toString());
       params.set(UrlParam.BACKDROP_KEY, MockBackdropKeys.BACKDROP2);
 
       await setDatasetAsync(result, MOCK_DATASET);
@@ -240,7 +212,6 @@ describe("useViewerStateStore: DatasetSlice", () => {
         loadDatasetSliceFromParams(result.current, params);
       });
       expect(result.current.featureKey).toBe(MockFeatureKeys.FEATURE3);
-      expect(result.current.track).toBe(MOCK_DATASET_DEFAULT_TRACK);
       expect(result.current.backdropKey).toBe(MockBackdropKeys.BACKDROP2);
     });
 
@@ -256,44 +227,18 @@ describe("useViewerStateStore: DatasetSlice", () => {
       expect(result.current.featureKey).toBe(MockFeatureKeys.FEATURE4_ILLEGAL_CHARS);
     });
 
-    it("handles non-integer tracks", async () => {
-      const { result } = renderHook(() => useViewerStateStore());
-      const params = new URLSearchParams();
-      params.set(UrlParam.TRACK, "bad-track-value(notint)");
-      await setDatasetAsync(result, MOCK_DATASET);
-      act(() => {
-        loadDatasetSliceFromParams(result.current, params);
-      });
-      expect(result.current.track).toBeNull();
-
-      params.set(UrlParam.TRACK, "NaN");
-      act(() => {
-        loadDatasetSliceFromParams(result.current, params);
-      });
-      expect(result.current.track).toBeNull();
-
-      params.set(UrlParam.TRACK, "19.434");
-      act(() => {
-        loadDatasetSliceFromParams(result.current, params);
-      });
-      expect(result.current.track).toBeNull();
-    });
-
     it("ignores param keys that are not in the dataset.", async () => {
       const { result } = renderHook(() => useViewerStateStore());
       const params = new URLSearchParams();
       params.set(UrlParam.FEATURE, "non-existent-key");
-      params.set(UrlParam.TRACK, "999");
       params.set(UrlParam.BACKDROP_KEY, "non-existent-backdrop");
       await setDatasetAsync(result, MOCK_DATASET);
       const defaultFeatureKey = result.current.featureKey;
-      const defaultTrack = result.current.track;
       const defaultBackdropKey = result.current.backdropKey;
       act(() => {
         loadDatasetSliceFromParams(result.current, params);
       });
       expect(result.current.featureKey).toBe(defaultFeatureKey);
-      expect(result.current.track).toBe(defaultTrack);
       expect(result.current.backdropKey).toBe(defaultBackdropKey);
     });
   });

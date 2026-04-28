@@ -1,0 +1,126 @@
+import { type Color, Vector2 } from "three";
+
+import type Track from "src/colorizer/Track";
+import { SelectionOutlineColorMode } from "src/colorizer/types";
+import type TrackPath2D from "src/colorizer/viewport/tracks/TrackPath2D";
+import type TrackPath3D from "src/colorizer/viewport/tracks/TrackPath3D";
+
+import { type Canvas2DScaleInfo, CanvasType, type RenderCanvasStateParams } from "./types";
+
+export function get2DCanvasScaling(
+  frameResolution: Vector2,
+  canvasResolution: Vector2,
+  zoomMultiplier: number,
+  offset: Vector2
+): Canvas2DScaleInfo {
+  // Both the frame and the canvas have coordinates in a range of [0, 1] in the
+  // x and y axis. However, the canvas may have a different aspect ratio than
+  // the frame, so we need to scale the frame to fit within the canvas while
+  // maintaining the aspect ratio.
+  const canvasAspect = canvasResolution.x / canvasResolution.y;
+  const frameAspect = frameResolution.x / frameResolution.y;
+  const unscaledFrameSizeInCanvasCoords: Vector2 = new Vector2(1, 1);
+  if (canvasAspect > frameAspect) {
+    // Canvas has a wider aspect ratio than the frame, so proportional height is
+    // 1 and we scale width accordingly.
+    unscaledFrameSizeInCanvasCoords.x = canvasAspect / frameAspect;
+  } else {
+    unscaledFrameSizeInCanvasCoords.y = frameAspect / canvasAspect;
+  }
+
+  // Get final size by applying the current zoom level, where `zoomMultiplier=2`
+  // means the frame is 2x larger than its base size. Save this to use when
+  // calculating onscreen units (e.g. with the scale bar).
+  const frameSizeInCanvasCoordinates = unscaledFrameSizeInCanvasCoords.clone().multiplyScalar(zoomMultiplier);
+  // Transforms from [0, 1] space of the canvas to the [0, 1] space of the frame
+  // by dividing by the zoom level.
+  // ex: Let's say our frame has the same aspect ratio as the canvas, but our
+  // zoom is set to 2x. Assuming that the [0, 0] position of the frame and the
+  // canvas are in the same position, the position [1, 1] on the canvas should
+  // map to [0.5, 0.5] on the frame.
+  const canvasToFrameCoordinates = unscaledFrameSizeInCanvasCoords.clone().divideScalar(zoomMultiplier);
+
+  // Invert to get the frame to canvas coordinates. Useful for objects (e.g.
+  // line mesh vertices) that are in frame coordinates and need to be drawn on
+  // the canvas.
+  const frameToCanvasCoordinates = new Vector2(1 / canvasToFrameCoordinates.x, 1 / canvasToFrameCoordinates.y);
+
+  return {
+    type: CanvasType.CANVAS_2D,
+    frameSizeInCanvasCoordinates,
+    canvasToFrameCoordinates,
+    frameToCanvasCoordinates,
+    panOffset: offset,
+  };
+}
+
+/**
+ * Handles "auto" behavior for track path colors. Switches from default outline
+ * color to per-track colors if there are multiple tracks selected.
+ */
+export function getTrackPathColor(track: Track | null, params: RenderCanvasStateParams): Color {
+  if (params.outlineColorMode === SelectionOutlineColorMode.USE_PALETTE && track !== null) {
+    return params.trackColors.get(track.trackId) ?? params.outlineColor;
+  }
+  return params.outlineColor;
+}
+
+/**
+ * Reassigns TrackPath2D/3D objects based on changes to the set of active
+ * tracks, reusing objects where possible.
+ * @param prevTracks The previous set of active tracks.
+ * @param newTracks The new set of active tracks.
+ * @param prevTrackPathMap The previous map of track IDs to TrackPath2D/3D
+ * objects.
+ * @param makeNewTrackPath Function that creates a new TrackPath2D/3D object.
+ * @param addTrackPathToScene Function that adds a TrackPath2D/3D object to the
+ * scene.
+ * @param removeAndDisposeTrackPath Function that removes a TrackPath2D/3D
+ * object from the scene and disposes of it.
+ * @returns A tuple containing:
+ *  - The updated map of track IDs to TrackPath2D/3D objects.
+ *  - An array of added TrackPath2D/3D objects that need to be initialized.
+ *  - An array of removed TrackPath2D/3D objects that need to be disposed of.
+ */
+export function reassignTrackPaths<T extends TrackPath2D | TrackPath3D>(
+  prevTracks: Set<Track>,
+  newTracks: Set<Track>,
+  prevTrackPathMap: Map<number, T>,
+  makeNewTrackPath: () => T,
+  addTrackPathToScene: (trackPath: T) => void,
+  removeAndDisposeTrackPath: (trackPath: T) => void
+): Map<number, T> {
+  const newTrackPathMap: Map<number, T> = new Map(prevTrackPathMap);
+
+  const allTracks = new Set([...prevTracks, ...newTracks]);
+  const removedTracks: Track[] = [];
+  const addedTracks: Track[] = [];
+  for (const track of allTracks) {
+    if (prevTracks.has(track) && !newTracks.has(track)) {
+      removedTracks.push(track);
+    } else if (!prevTracks.has(track) && newTracks.has(track)) {
+      addedTracks.push(track);
+    }
+  }
+
+  // Remove unused TrackPath2D objects
+  const unusedTrackPaths: T[] = [];
+  for (const track of removedTracks) {
+    const trackPath = prevTrackPathMap.get(track.trackId);
+    if (trackPath) {
+      unusedTrackPaths.push(trackPath);
+      removeAndDisposeTrackPath(trackPath);
+    }
+    newTrackPathMap.delete(track.trackId);
+  }
+  // Add new TrackPath2D objects, reusing unused ones where possible
+  const addedTrackPaths: T[] = [];
+  for (const track of addedTracks) {
+    const trackPath = unusedTrackPaths.pop() ?? makeNewTrackPath();
+    addedTrackPaths.push(trackPath);
+    newTrackPathMap.set(track.trackId, trackPath);
+    addTrackPathToScene(trackPath);
+  }
+
+  return newTrackPathMap;
+}

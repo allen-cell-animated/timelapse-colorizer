@@ -19,11 +19,17 @@ for more details about potential future features!
 
 Datasets must be preprocessed for viewing in Timelapse Feature Explorer. We provide the [`colorizer-data` Python package](https://github.com/allen-cell-animated/colorizer-data), which includes tutorials and documentation about the data specification. See our [getting started guide](https://github.com/allen-cell-animated/colorizer-data/blob/main/documentation/getting_started_guide/GETTING_STARTED.ipynb) for more details.
 
-Compatible datasets hosted over HTTPS can be loaded directly from the interface. Click the **Load** button in the top right to open a URL.
+Compatible datasets hosted in an HTTPS-accessible location (ex: AWS S3 bucket, Google Cloud storage, etc.) can be loaded directly from the interface with just a URL. Click the **Load** button in the top right to open a URL.
 
 ![image](https://github.com/allen-cell-animated/timelapse-colorizer/assets/30200665/e2631a78-b0d6-49fc-bb93-cefc94a91a53)
 
-Note: If your dataset is hosted via **HTTP** rather than HTTPS, you'll need to install and run the project locally for security reasons. See below for more help.
+For local datasets, you can install and use the `tfe-open` CLI tool included in the `colorizer-data` Python package. Please check the [`colorizer-data` GitHub repository](https://github.com/allen-cell-animated/colorizer-data) for the latest version.
+
+```bash
+# In a Python environment:
+python -m pip install git+https://github.com/allen-cell-animated/colorizer-data.git@v1.7.0
+tfe-open "/path/to/your/dataset"
+```
 
 ## Installation
 

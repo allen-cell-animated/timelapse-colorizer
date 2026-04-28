@@ -49,8 +49,8 @@ describe("FilePathResolver", () => {
     it("resolves '/allen'", () => {
       const url1 = exampleResolver.resolve("", "//allen/aics/users/example");
       const url2 = exampleResolver.resolve("", "/allen/aics/users/example");
-      expect(url1).to.equal("https://dev-aics-dtp-001.int.allencell.org/users/example");
-      expect(url2).to.equal("https://dev-aics-dtp-001.int.allencell.org/users/example");
+      expect(url1).to.equal("https://vast-files.int.allencell.org/users/example");
+      expect(url2).to.equal("https://vast-files.int.allencell.org/users/example");
     });
 
     it("returns HTTP/HTTPS URLs as-is", () => {

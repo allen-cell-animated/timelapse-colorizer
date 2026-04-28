@@ -2,7 +2,8 @@ import { Color } from "three";
 import type { StateCreator } from "zustand";
 
 import type { Backdrop3dData } from "src/colorizer/Dataset";
-import type { ChannelRangePreset } from "src/colorizer/types";
+import { ChannelRangePreset, type ChannelSetting, type VolumeLoadResult } from "src/colorizer/types";
+import { decodeMaybeChannelSetting, encodeChannelSetting, isChannelKey } from "src/colorizer/utils/url_utils";
 import type { SerializedStoreData, SubscribableStore } from "src/state/types";
 import { addDerivedStateSubscriber } from "src/state/utils/store_utils";
 
@@ -31,26 +32,16 @@ function getDefaultColorForChannel(index: number, totalChannels: number): Color 
 
 function getDefaultChannelSetting(index: number, totalChannels: number, backdropData?: Backdrop3dData): ChannelSetting {
   return {
-    visible: index < 3,
+    visible: false,
     color: getDefaultColorForChannel(index, totalChannels),
     opacity: 1,
-    min: backdropData?.min ?? 0,
-    max: backdropData?.max ?? 255,
-    dataMin: backdropData?.min ?? 0,
-    dataMax: backdropData?.max ?? 255,
+    // Null values mean that this should be initialized with loaded data
+    min: backdropData?.min ?? null,
+    max: backdropData?.max ?? null,
+    dataMin: null,
+    dataMax: null,
   };
 }
-
-export type ChannelSetting = {
-  visible: boolean;
-  color: Color;
-  /** Opacity value in a [0, 1] range. */
-  opacity: number;
-  min: number;
-  max: number;
-  dataMin: number;
-  dataMax: number;
-};
 
 export type ChannelSliceState = {
   channelSettings: ChannelSetting[];
@@ -66,11 +57,17 @@ export type ChannelSliceActions = {
   updateChannelSettings: (index: number, settings: Partial<ChannelSetting>) => void;
   setGetChannelDataRangeCallback: (callback: (channelIndex: number) => null | [number, number]) => void;
   setApplyChannelRangePresetCallback: (callback: (channelIndex: number, preset: ChannelRangePreset) => void) => void;
+  /**
+   * Updates the channel range settings using loaded volume data. Initializes
+   * min and max ramp if not already set, and updates dataMin and dataMax to
+   * reflect the min and max across all loaded volumes.
+   */
+  updateChannelRangeWithVolumeData: (loadResult: VolumeLoadResult) => void;
 };
 
 export type ChannelSlice = ChannelSliceState & ChannelSliceActions;
 
-export const createChannelSlice: StateCreator<ChannelSlice, [], [], ChannelSlice> = (set, _get) => ({
+export const createChannelSlice: StateCreator<ChannelSlice, [], [], ChannelSlice> = (set, get) => ({
   channelSettings: [],
   getChannelDataRange: () => {
     return null;
@@ -85,6 +82,38 @@ export const createChannelSlice: StateCreator<ChannelSlice, [], [], ChannelSlice
         newSettings[index] = { ...newSettings[index], ...settings };
       }
       return { channelSettings: newSettings };
+    });
+  },
+  updateChannelRangeWithVolumeData: (loadResult: VolumeLoadResult) => {
+    let channelSetting = get().channelSettings[loadResult.backdropIdx];
+    if (!channelSetting) {
+      return;
+    }
+    // Apply default range preset to range if not set. (This needs to happen
+    // outside of `set()` since `applyChannelRangePreset()` updates state.)
+    if (channelSetting.min === null || channelSetting.max === null) {
+      get().applyChannelRangePreset(loadResult.backdropIdx, ChannelRangePreset.DEFAULT);
+    }
+    // Update data min and max with new loaded data, so they represent the min
+    // + max across all previously loaded volumes.
+    set((state) => {
+      // Re-fetch channel setting in case of changes
+      channelSetting = state.channelSettings[loadResult.backdropIdx];
+      if (!channelSetting) {
+        return {};
+      }
+      const dataMin = Math.min(channelSetting.dataMin ?? loadResult.dataMin, loadResult.dataMin);
+      const dataMax = Math.max(channelSetting.dataMax ?? loadResult.dataMax, loadResult.dataMax);
+      if (channelSetting.dataMin !== dataMin || channelSetting.dataMax !== dataMax) {
+        const newSettings = [...state.channelSettings];
+        newSettings[loadResult.backdropIdx] = {
+          ...newSettings[loadResult.backdropIdx],
+          dataMin,
+          dataMax,
+        };
+        return { channelSettings: newSettings };
+      }
+      return {};
     });
   },
   // Callback setters
@@ -129,11 +158,29 @@ export const addChannelDerivedStateSubscribers = (
   );
 };
 
-// TODO: Implement serialization
-export const serializeChannelSlice = (_slice: Partial<ChannelSliceSerializableState>): SerializedStoreData => ({});
+export const serializeChannelSlice = (slice: Partial<ChannelSliceSerializableState>): SerializedStoreData => {
+  const channelSettings = slice.channelSettings;
+  const ret: SerializedStoreData = {};
+  channelSettings?.forEach((setting, index) => {
+    ret[`c${index}`] = encodeChannelSetting(setting);
+  });
+  return ret;
+};
 
 export const selectChannelSliceSerializationDeps = (slice: ChannelSlice): ChannelSliceSerializableState => ({
   channelSettings: slice.channelSettings,
 });
 
-export const loadChannelSliceFromParams = (_slice: ChannelSlice, _params: URLSearchParams): void => {};
+export const loadChannelSliceFromParams = (slice: ChannelSlice, params: URLSearchParams): void => {
+  // Find all params matching channel format
+  for (const [key, value] of params.entries()) {
+    if (isChannelKey(key) && value) {
+      const channelIndex = parseInt(key.slice(1), 10);
+      if (Number.isNaN(channelIndex)) {
+        continue;
+      }
+      const decodedChannel = decodeMaybeChannelSetting(value) ?? {};
+      slice.updateChannelSettings(channelIndex, decodedChannel);
+    }
+  }
+};

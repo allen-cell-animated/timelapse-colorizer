@@ -14,27 +14,31 @@ import styled from "styled-components";
 import { Vector2 } from "three";
 
 import { NoImageSVG, TagIconSVG, TagSlashIconSVG } from "src/assets";
+import type { Dataset } from "src/colorizer";
 import { type LabelData, LabelType } from "src/colorizer/AnnotationData";
-import type CanvasOverlay from "src/colorizer/CanvasOverlay";
 import {
   AnnotationSelectionMode,
   type ChannelRangePreset,
   LoadTroubleshooting,
   type PixelIdInfo,
   TabType,
+  ViewMode,
 } from "src/colorizer/types";
+import type CanvasOverlay from "src/colorizer/viewport/CanvasOverlay";
 import type { AlertBannerProps } from "src/components/Banner";
 import IconButton from "src/components/Buttons/IconButton";
 import TooltipButtonStyleLink from "src/components/Buttons/TooltipButtonStyleLink";
+import ShortcutKeyList from "src/components/Display/ShortcutKeyList";
 import LoadingSpinner from "src/components/LoadingSpinner";
 import AnnotationInputPopover from "src/components/Tabs/Annotation/AnnotationInputPopover";
 import { TooltipWithSubtitle } from "src/components/Tooltips/TooltipWithSubtitle";
-import { CANVAS_ASPECT_RATIO } from "src/constants";
+import { CANVAS_ASPECT_RATIO, SHORTCUT_KEYS } from "src/constants";
 import type { AnnotationState } from "src/hooks";
 import { renderCanvasStateParamsSelector } from "src/state";
 import { useViewerStateStore } from "src/state/ViewerState";
 import { AppThemeContext } from "src/styles/AppStyle";
-import { FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter, VisuallyHidden } from "src/styles/utils";
+import { FlexColumn, FlexColumnAlignCenter, VisuallyHidden } from "src/styles/utils";
+import { areAnyHotkeysPressed } from "src/utils/user_input";
 
 import BackdropToggleButton from "./BackdropToggleButton";
 import ChannelToggleButton from "./ChannelToggleButton";
@@ -89,20 +93,8 @@ const AnnotationModeContainer = styled(FlexColumn)`
   position: absolute;
   top: 10px;
   left: 10px;
-  background-color: var(--color-viewport-overlay-background);
-  border: 1px solid var(--color-viewport-overlay-outline);
   z-index: 100;
-  padding: 8px 8px;
-  border-radius: 4px;
   pointer-events: none;
-  gap: 6px;
-`;
-
-const HotkeyText = styled.div`
-  padding: 1px 4px;
-  border-radius: 4px;
-  background-color: var(--color-viewport-overlay-background);
-  border: 1px solid var(--color-viewport-overlay-outline);
 `;
 
 type CanvasWrapperProps = {
@@ -148,17 +140,23 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   // Access state properties
   const pendingFrame = useViewerStateStore((state) => state.pendingFrame);
   const currentFrame = useViewerStateStore((state) => state.currentFrame);
-  const clearTrack = useViewerStateStore((state) => state.clearTrack);
   const collection = useViewerStateStore((state) => state.collection);
   const dataset = useViewerStateStore((state) => state.dataset);
+  const datasetKey = useViewerStateStore((state) => state.datasetKey);
   const updateChannelSettings = useViewerStateStore((state) => state.updateChannelSettings);
   const setGetChannelDataRangeCallback = useViewerStateStore((state) => state.setGetChannelDataRangeCallback);
   const setApplyChannelRangePresetCallback = useViewerStateStore((state) => state.setApplyChannelRangePresetCallback);
   const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
-  const setTrack = useViewerStateStore((state) => state.setTrack);
+  const clearTracks = useViewerStateStore((state) => state.clearTracks);
+  const setTracks = useViewerStateStore((state) => state.setTracks);
+  const addTracks = useViewerStateStore((state) => state.addTracks);
+  const toggleTrack = useViewerStateStore((state) => state.toggleTrack);
   const showScaleBar = useViewerStateStore((state) => state.showScaleBar);
   const showTimestamp = useViewerStateStore((state) => state.showTimestamp);
   const frameLoadResult = useViewerStateStore((state) => state.frameLoadResult);
+  const viewMode = useViewerStateStore((state) => state.viewMode);
+
+  const isAnnotationModeEnabled = props.annotationState.isAnnotationModeEnabled;
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -193,8 +191,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   const isMissingFile = frameLoadResult !== null && (frameLoadResult.frameError || frameLoadResult.backdropError);
 
-  // TODO: This should be a property in state and not derived here and in CanvasOverlay.
-  const isDataset3d = dataset?.frames3d !== undefined;
+  const isDataset3d = viewMode === ViewMode.VIEW_3D;
 
   // CANVAS PROPERTIES /////////////////////////////////////////////////
 
@@ -256,7 +253,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   useMemo(() => {
     const annotationLabels = props.annotationState.data.getLabels();
-    const timeToAnnotationLabelIds = dataset ? props.annotationState.data.getTimeToLabelIdMap(dataset) : new Map();
+    const timeToAnnotationLabelIds =
+      dataset && datasetKey !== null ? props.annotationState.data.getTimeToLabelIdMap(datasetKey, dataset) : new Map();
     canv.isAnnotationVisible = props.annotationState.visible;
     canv.setAnnotationData(
       annotationLabels,
@@ -266,6 +264,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     );
   }, [
     dataset,
+    datasetKey,
     props.annotationState.data,
     props.annotationState.rangeStartId,
     props.annotationState.currentLabelIdx,
@@ -287,7 +286,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   useEffect(() => {
     const boundGetBackdropChannelDataRange = canv.getBackdropChannelDataRange.bind(canv);
     setGetChannelDataRangeCallback(boundGetBackdropChannelDataRange);
-  }, [canv, setGetChannelDataRangeCallback, updateChannelSettings]);
+  }, [canv, setGetChannelDataRangeCallback]);
 
   // CANVAS RESIZING /////////////////////////////////////////////////
 
@@ -345,11 +344,15 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         // Check if mouse is over an object, and if it's labeled with an editable label.
         // If so, show the edit cursor.
         const labelIdx = props.annotationState.currentLabelIdx;
-        if (labelIdx !== null) {
+        if (labelIdx !== null && datasetKey !== null) {
           const labelData = props.annotationState.data.getLabels()[labelIdx];
           if (labelData.options.type !== LabelType.BOOLEAN) {
             const id = canv.getIdAtPixel(offsetX, offsetY);
-            if (id !== null && id.globalId !== undefined && labelData.ids.has(id.globalId)) {
+            if (
+              id !== null &&
+              id.globalId !== undefined &&
+              labelData.datasetToIdData.get(datasetKey)?.ids.has(id.globalId)
+            ) {
               canv.domElement.style.cursor = "text";
               return;
             }
@@ -367,6 +370,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     },
     [
       isMouseDragging,
+      datasetKey,
       props.annotationState.isAnnotationModeEnabled,
       props.annotationState.data,
       props.annotationState.selectionMode,
@@ -374,25 +378,58 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     ]
   );
 
+  const handleBackgroundClicked = useCallback((): void => {
+    const isMultiTrackSelectHotkeyPressed = areAnyHotkeysPressed(SHORTCUT_KEYS.viewport.multiTrackSelect.keycode);
+    if (isMultiTrackSelectHotkeyPressed) {
+      // Ignore background clicks during multi-track selection.
+      return;
+    }
+    clearTracks();
+  }, [clearTracks]);
+
+  const handleObjectClicked = useCallback(
+    (dataset: Dataset, globalId: number) => {
+      const trackId = dataset.getTrackId(globalId);
+      const newTrack = dataset.getTrack(trackId);
+      const isMultiTrackSelectHotkeyPressed = areAnyHotkeysPressed(SHORTCUT_KEYS.viewport.multiTrackSelect.keycode);
+      if (newTrack) {
+        if (isMultiTrackSelectHotkeyPressed) {
+          if (isAnnotationModeEnabled) {
+            // During annotation mode, don't toggle tracks to prevent tracks from
+            // becoming deselected while editing them.
+            addTracks(newTrack);
+          } else {
+            // Otherwise, toggle selection of clicked track during multi-select mode.
+            toggleTrack(newTrack);
+          }
+        } else {
+          // Select only the clicked track.
+          setTracks(newTrack);
+        }
+      }
+    },
+    [toggleTrack, setTracks, addTracks, isAnnotationModeEnabled]
+  );
+
   /** Report clicked tracks via the passed callback. */
   const handleClick = useCallback(
     async (event: MouseEvent): Promise<void> => {
       setLastClickPosition([event.offsetX, event.offsetY]);
-      const info = canv.getIdAtPixel(event.offsetX, event.offsetY);
-      // Reset track input
-      if (dataset === null || info === null || info.globalId === undefined) {
-        clearTrack();
-      } else {
-        const trackId = dataset.getTrackId(info.globalId);
-        const newTrack = dataset.getTrack(trackId);
-        if (newTrack) {
-          setTrack(newTrack);
-        }
-      }
-      props.onClickId(info);
       updateCanvasCursor(event.offsetX, event.offsetY);
+      const info = canv.getIdAtPixel(event.offsetX, event.offsetY);
+      props.onClickId(info);
+
+      // Update track selection based on clicked object
+      if (dataset === null) {
+        clearTracks();
+      } else if (info?.globalId !== undefined) {
+        handleObjectClicked(dataset, info.globalId);
+      } else {
+        // User clicked on background or on a cell with no data.
+        handleBackgroundClicked();
+      }
     },
-    [canv, dataset, props.onClickId, setTrack, clearTrack, updateCanvasCursor]
+    [canv, dataset, props.onClickId, clearTracks, handleObjectClicked, handleBackgroundClicked]
   );
 
   // Mouse event handlers
@@ -505,23 +542,33 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       const id = canv.getIdAtPixel(x, y);
       props.onMouseHover(id);
     },
-    [dataset, canv]
+    [dataset, canv, props.onMouseHover, canv]
   );
 
   /** Track whether the canvas is hovered, so we can determine whether to send updates about the
    * hovered value when the canvas frame updates.
    */
   useEffect(() => {
-    canv.domElement.addEventListener("mouseenter", () => (isMouseOverCanvas.current = true));
-    canv.domElement.addEventListener("mouseleave", () => (isMouseOverCanvas.current = false));
-  });
+    const onMouseEnter = (): void => {
+      isMouseOverCanvas.current = true;
+    };
+    const onMouseLeave = (): void => {
+      isMouseOverCanvas.current = false;
+    };
+    canv.domElement.addEventListener("mouseenter", onMouseEnter);
+    canv.domElement.addEventListener("mouseleave", onMouseLeave);
+    return () => {
+      canv.domElement.removeEventListener("mouseenter", onMouseEnter);
+      canv.domElement.removeEventListener("mouseleave", onMouseLeave);
+    };
+  }, []);
 
   /** Update hovered id when the canvas updates the current frame */
   useEffect(() => {
     if (isMouseOverCanvas.current) {
       reportHoveredIdAtPixel(lastMousePositionPx.current.x, lastMousePositionPx.current.y);
     }
-  }, [currentFrame]);
+  }, [reportHoveredIdAtPixel, currentFrame]);
 
   useEffect(() => {
     const onMouseMove = (event: MouseEvent): void => {
@@ -535,7 +582,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       canv.domElement.removeEventListener("mousemove", onMouseMove);
       canv.domElement.removeEventListener("mouseleave", props.onMouseLeave);
     };
-  }, [dataset, canv]);
+  }, [reportHoveredIdAtPixel, dataset, canv]);
 
   // RENDERING /////////////////////////////////////////////////
 
@@ -558,30 +605,30 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     </TooltipButtonStyleLink>
   );
   const labelData: LabelData | undefined = labels[props.annotationState.currentLabelIdx ?? 0];
+
+  const annotationShortcutKeys = [];
   const shouldShowRangeSelectionHotkey = props.annotationState.baseSelectionMode !== AnnotationSelectionMode.RANGE;
   const shouldShowReuseValueHotkey = labelData?.options.type === LabelType.INTEGER && labelData?.options.autoIncrement;
+  if (shouldShowRangeSelectionHotkey) {
+    annotationShortcutKeys.push(SHORTCUT_KEYS.annotation.selectRange);
+  }
+  if (shouldShowReuseValueHotkey) {
+    annotationShortcutKeys.push(SHORTCUT_KEYS.annotation.reuseValue);
+  }
 
   return (
     <CanvasContainer ref={containerRef} $annotationModeEnabled={props.annotationState.isAnnotationModeEnabled}>
       {
-        // TODO: Fade out annotation mode modal if mouse approaches top left corner?
-        // TODO: Make the hotkey text change styling if the hotkey is pressed?
+        // TODO: Fade out annotation mode modal if mouse approaches top left
+        // corner? (This would require mouse position to be a state variable,
+        // might cause too many re-renders)
         props.annotationState.isAnnotationModeEnabled && (
           <AnnotationModeContainer>
-            <span style={{ marginLeft: "2px" }}>
-              <b>Annotation editing in progress...</b>
-            </span>
-            {shouldShowRangeSelectionHotkey && (
-              <FlexRowAlignCenter $gap={6}>
-                <HotkeyText>Shift</HotkeyText> hold to select range
-              </FlexRowAlignCenter>
-            )}
-            {shouldShowReuseValueHotkey && (
-              <FlexRowAlignCenter $gap={6}>
-                <HotkeyText>Ctrl</HotkeyText>
-                hold to reuse last value
-              </FlexRowAlignCenter>
-            )}
+            <ShortcutKeyList
+              title="Annotation editing in progress..."
+              shortcutKeys={annotationShortcutKeys}
+              inline={true}
+            />
           </AnnotationModeContainer>
         )
       }
@@ -645,7 +692,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
               props.annotationState.setVisibility(!props.annotationState.visible);
             }}
           >
-            {props.annotationState.visible ? <TagSlashIconSVG /> : <TagIconSVG />}
+            {props.annotationState.visible ? <TagIconSVG /> : <TagSlashIconSVG />}
             <VisuallyHidden>{props.annotationState.visible ? "Hide annotations" : "Show annotations"}</VisuallyHidden>
           </IconButton>
         </TooltipWithSubtitle>

@@ -4,6 +4,7 @@ import { Color } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "src/colorizer/constants";
 import {
+  type ChannelSetting,
   type DrawMode,
   type DrawSettings,
   type FeatureThreshold,
@@ -13,9 +14,11 @@ import {
   LoadErrorMessage,
   LoadTroubleshooting,
   PlotRangeType,
+  SelectionOutlineColorMode,
   ThresholdType,
   TrackPathColorMode,
 } from "src/colorizer/types";
+import { removeUndefinedProperties } from "src/colorizer/utils/data_utils";
 
 import { nanToNull } from "./data_load_utils";
 import type { AnyManifestFile } from "./dataset_utils";
@@ -24,6 +27,7 @@ import { formatNumber } from "./math_utils";
 // TODO: This file needs to be split up for easier reading and unit testing.
 
 export const URL_COLOR_RAMP_REVERSED_SUFFIX = "!";
+export const URL_PATH_SHOW_ALL_SUFFIX = "!";
 export enum UrlParam {
   COLLECTION = "collection",
   DATASET = "dataset",
@@ -46,33 +50,73 @@ export enum UrlParam {
   FILTERED_MODE = "filter-mode",
   FILTERED_COLOR = "filter-color",
   OUTLINE_COLOR = "outline-color",
+  OUTLINE_COLOR_MODE = "outline-mode",
+  OUTLINE_PALETTE_KEY = "outline-palette-key",
   EDGE_COLOR = "edge-color",
   EDGE_MODE = "edge",
+  SHOW_CENTROIDS = "centroids",
+  CENTROID_RADIUS = "centroid-radius",
   SHOW_PATH = "path",
   PATH_COLOR = "path-color",
+  PATH_COLOR_RAMP = "path-ramp",
   PATH_WIDTH = "path-width",
   PATH_COLOR_MODE = "path-mode",
   SHOW_PATH_BREAKS = "path-breaks",
+  PATH_STEPS = "path-steps",
+  PATH_PERSIST_OUT_OF_RANGE = "path-persist",
+  PATH_OVERLAY_OPACITY = "path-overlay",
   SHOW_SCALEBAR = "scalebar",
   SHOW_TIMESTAMP = "timestamp",
   KEEP_RANGE = "keep-range",
   SCATTERPLOT_X_AXIS = "scatter-x",
   SCATTERPLOT_Y_AXIS = "scatter-y",
+  SCATTERPLOT_BINS = "scatter-bins",
   SCATTERPLOT_RANGE_MODE = "scatter-range",
   OPEN_TAB = "tab",
   SHOW_VECTOR = "vc",
+  INTERPOLATE_3D = "interpolate",
   VECTOR_KEY = "vc-key",
   VECTOR_COLOR = "vc-color",
   VECTOR_SCALE = "vc-scale",
+  VECTOR_SCALE_THICKNESS = "vc-thickness-scaling",
+  VECTOR_THICKNESS = "vc-thickness",
   VECTOR_TOOLTIP_MODE = "vc-tooltip",
   VECTOR_TIME_INTERVALS = "vc-time-int",
 }
 
+export enum ChannelSettingUrlParam {
+  /** Whether the channel is visible. `1` if visible, `0` if not. */
+  VISIBLE = "ven",
+  /** Color + opacity, as a 8-character hex string (RRGGBBAA). */
+  COLOR = "col",
+  /** Ramp min and max intensity value, as `min:max`. */
+  RAMP = "rmp",
+  /** Slider range, determined from data min/max, as `dataMin:dataMax`. */
+  RANGE = "rng",
+}
+/**
+ * Channels, matching the pattern `c0`, `c1`, etc. corresponding to the index of
+ * the channel being configured. The channel parameter should have a value that
+ * is a comma-separated list of `key:value` pairs, with keys defined in
+ * `ChannelSettingUrlParam`.
+ */
+export type ChannelSettingParamKey = `c${number}`;
+
+const CHANNEL_STATE_KEY_REGEX = /^c[0-9]+$/;
+export const isChannelKey = (key: string): key is ChannelSettingParamKey => {
+  return CHANNEL_STATE_KEY_REGEX.test(key);
+};
+
+const TRACK_PATH_STEPS_REGEX = /^(\d+)!?,(\d+)!?$/;
+
 const ALLEN_FILE_PREFIX = "/allen/";
+export const VAST_FILES_URL = "https://vast-files.int.allencell.org/";
 const ALLEN_PREFIX_TO_HTTPS: Record<string, string> = {
   // eslint-disable-next-line @typescript-eslint/naming-convention
-  "/allen/aics/": "https://dev-aics-dtp-001.int.allencell.org/",
+  "/allen/aics/": VAST_FILES_URL,
 };
+
+export const PUBLIC_TFE_URL = "https://timelapse.allencell.org/";
 
 export const DEFAULT_FETCH_TIMEOUT_MS = 2000;
 
@@ -250,6 +294,42 @@ export function deserializeThresholds(thresholds: string | null): FeatureThresho
   }, [] as FeatureThreshold[]);
 }
 
+export function serializeTrackPathSteps(
+  pastSteps?: number,
+  futureSteps?: number,
+  showAllPastSteps?: boolean,
+  showAllFutureSteps?: boolean
+): string | undefined {
+  if (pastSteps === undefined || futureSteps === undefined) {
+    return undefined;
+  }
+  const pastString = pastSteps + (showAllPastSteps ? URL_PATH_SHOW_ALL_SUFFIX : "");
+  const futureString = futureSteps + (showAllFutureSteps ? URL_PATH_SHOW_ALL_SUFFIX : "");
+  return `${pastString},${futureString}`;
+}
+
+export function deserializeTrackPathSteps(
+  stepsString: string | null
+): { pastSteps: number; futureSteps: number; showAllPastSteps: boolean; showAllFutureSteps: boolean } | undefined {
+  if (!stepsString || !TRACK_PATH_STEPS_REGEX.test(stepsString)) {
+    return;
+  }
+  const [pastString, futureString] = stepsString.split(",");
+  let pastSteps = 0;
+  let futureSteps = 0;
+  let showAllPastSteps = false;
+  let showAllFutureSteps = false;
+  if (pastString) {
+    showAllPastSteps = pastString.endsWith(URL_PATH_SHOW_ALL_SUFFIX);
+    pastSteps = parseInt(showAllPastSteps ? pastString.slice(0, -1) : pastString, 10);
+  }
+  if (futureString) {
+    showAllFutureSteps = futureString.endsWith(URL_PATH_SHOW_ALL_SUFFIX);
+    futureSteps = parseInt(showAllFutureSteps ? futureString.slice(0, -1) : futureString, 10);
+  }
+  return { pastSteps, futureSteps, showAllPastSteps, showAllFutureSteps };
+}
+
 export function encodeColor(value: Color): string {
   return value.getHexString();
 }
@@ -326,6 +406,48 @@ export function decodeInt(value: string | null): number | undefined {
   return value === null ? undefined : parseInt(value, 10);
 }
 
+/**
+ * Serializes a list of track IDs and their associated color indices.
+ * @returns A comma-separated list of trackID:colorIdx entries.
+ */
+export function encodeTracks(trackIds: number[], trackToColorIdx?: Map<number, number>): string {
+  const tracksAndColorIdx = trackIds.map((trackId, index) => {
+    const colorId = trackToColorIdx?.get(trackId) ?? index;
+    return `${trackId}:${colorId}`;
+  });
+  return tracksAndColorIdx.join(",");
+}
+
+/**
+ * Deserializes a string of track IDs, optionally including color indices, in
+ * the following formats:
+ *  - "{t1},{t2},..." (no color indices, )
+ *  - "{t1}:{c1},{t2}:{c2},..."
+ *
+ * where `ti` is the i-th track ID and `ci` is the color index for the i-th track. If color index
+ * data is not provided, it is set to `i` for each track.
+ */
+export function decodeTracks(value: string | null): { trackIds: number[]; colorIdx: number[] } | undefined {
+  if (value === null) {
+    return undefined;
+  }
+  const trackInfo = value.split(",");
+  const trackIds: number[] = [];
+  const colorIdx: number[] = [];
+  for (let i = 0; i < trackInfo.length; i++) {
+    const info = trackInfo[i];
+    const [trackIdStr, colorIdStr] = info.split(":");
+    const trackId = parseInt(trackIdStr, 10);
+    const parsedColorId = colorIdStr ? parseInt(colorIdStr, 10) : i;
+    const colorId = Number.isInteger(parsedColorId) ? parsedColorId : i;
+    if (Number.isInteger(trackId) && trackId >= 0) {
+      trackIds.push(trackId);
+      colorIdx.push(colorId);
+    }
+  }
+  return { trackIds, colorIdx };
+}
+
 export function parseDrawMode(mode: string | null): DrawMode | undefined {
   const modeInt = parseInt(mode || "-1", 10);
   return mode && isDrawMode(modeInt) ? modeInt : undefined;
@@ -344,10 +466,20 @@ export function parseDrawSettings(
   };
 }
 
+export function parseTrackOutlineColorMode(mode: string | null): SelectionOutlineColorMode | undefined {
+  const modeInt = parseInt(mode || "-1", 10);
+  const isTrackOutlineColorMode =
+    modeInt === SelectionOutlineColorMode.USE_CUSTOM_COLOR || modeInt === SelectionOutlineColorMode.USE_PALETTE;
+  return mode && isTrackOutlineColorMode ? (modeInt as SelectionOutlineColorMode) : undefined;
+}
+
 export function parseTrackPathMode(mode: string | null): TrackPathColorMode | undefined {
   const modeInt = parseInt(mode || "-1", 10);
   const isTrackPathColorMode =
-    modeInt === TrackPathColorMode.USE_CUSTOM_COLOR || modeInt === TrackPathColorMode.USE_OUTLINE_COLOR;
+    modeInt === TrackPathColorMode.USE_CUSTOM_COLOR ||
+    modeInt === TrackPathColorMode.USE_OUTLINE_COLOR ||
+    modeInt === TrackPathColorMode.USE_FEATURE_COLOR ||
+    modeInt === TrackPathColorMode.USE_COLOR_MAP;
   return mode && isTrackPathColorMode ? (modeInt as TrackPathColorMode) : undefined;
 }
 
@@ -387,6 +519,73 @@ export function decodeScatterPlotRangeType(rangeString: string | null): PlotRang
     return;
   }
   return urlParamToRangeType[rangeString];
+}
+
+export function encodeChannelSetting(setting: ChannelSetting): string {
+  const colorHex = setting.color.getHexString();
+  const opacityHex = Math.round(setting.opacity * 255)
+    .toString(16)
+    .padStart(2, "0");
+  const rampMin = formatNumber(setting.min, 3);
+  const rampMax = formatNumber(setting.max, 3);
+  const rangeMin = formatNumber(setting.dataMin, 3);
+  const rangeMax = formatNumber(setting.dataMax, 3);
+  let encodedChannel = "";
+  encodedChannel += `${ChannelSettingUrlParam.VISIBLE}:${encodeBoolean(setting.visible)}`;
+  encodedChannel += `,${ChannelSettingUrlParam.COLOR}:${colorHex}${opacityHex}`;
+  encodedChannel += `,${ChannelSettingUrlParam.RAMP}:${rampMin}:${rampMax}`;
+  encodedChannel += `,${ChannelSettingUrlParam.RANGE}:${rangeMin}:${rangeMax}`;
+  return encodedChannel;
+}
+
+/**
+ * Decodes a string to a float value, returning `null` instead if the value is
+ * `NaN`, `undefined`, or `null`.
+ */
+export function decodeFloatOrNull(value: string | undefined | null): number | null {
+  if (!value) {
+    return null;
+  }
+  const floatValue = parseFloat(value);
+  return Number.isNaN(floatValue) ? null : floatValue;
+}
+
+export function decodeMaybeChannelSetting(settingString: string | null): Partial<ChannelSetting> | undefined {
+  if (settingString === null) {
+    return undefined;
+  }
+  const settingParts = settingString.split(",");
+  const setting: Partial<ChannelSetting> = {};
+  for (const part of settingParts) {
+    const [key, ...valueParts] = part.split(":");
+    if (key === undefined || valueParts.length === 0) {
+      continue;
+    }
+    switch (key) {
+      case ChannelSettingUrlParam.VISIBLE:
+        setting.visible = decodeBoolean(valueParts[0]);
+        break;
+      case ChannelSettingUrlParam.COLOR: {
+        const { color, alpha } = decodeHexAlphaColor(valueParts[0]) || {};
+        setting.color = color;
+        setting.opacity = alpha;
+        break;
+      }
+      case ChannelSettingUrlParam.RAMP:
+        // Setting to `null` indicates that the value needs to be initialized
+        // once data is loaded.
+        setting.min = decodeFloatOrNull(valueParts[0]);
+        setting.max = decodeFloatOrNull(valueParts[1]);
+        break;
+      case ChannelSettingUrlParam.RANGE:
+        setting.dataMin = decodeFloatOrNull(valueParts[0]);
+        setting.dataMax = decodeFloatOrNull(valueParts[1]);
+        break;
+      default:
+        console.warn(`url_utils.decodeMaybeChannelSetting: Unknown channel setting key: '${key}'`);
+    }
+  }
+  return removeUndefinedProperties(setting);
 }
 
 /**
@@ -431,10 +630,11 @@ export function isAllenPath(input: string): boolean {
  * otherwise, returns an HTTPS resource path.
  */
 export function convertAllenPathToHttps(input: string): string | null {
-  input = normalizeFilePathSlashes(input);
-  for (const prefix of Object.keys(ALLEN_PREFIX_TO_HTTPS)) {
-    if (input.startsWith(prefix)) {
-      return input.replace(prefix, ALLEN_PREFIX_TO_HTTPS[prefix]);
+  // Escape special characters in the path, except for slashes
+  const escapedInput = encodeURIComponent(normalizeFilePathSlashes(input)).replaceAll("%2F", "/");
+  for (const [prefix, httpsPrefix] of Object.entries(ALLEN_PREFIX_TO_HTTPS)) {
+    if (escapedInput.startsWith(prefix)) {
+      return escapedInput.replace(prefix, httpsPrefix);
     }
   }
   return null;

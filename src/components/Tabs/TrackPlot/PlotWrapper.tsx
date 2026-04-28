@@ -1,16 +1,20 @@
 import type Plotly from "plotly.js-dist-min";
-import type {PlotlyHTMLElement} from "plotly.js-dist-min";
-import React, { type ReactElement, useEffect, useMemo, useRef, useState } from "react";
+import type { PlotlyHTMLElement } from "plotly.js-dist-min";
+import React, { type ReactElement, useEffect, useRef, useState } from "react";
 
-import { type Dataset, Plotting, type Track } from "src/colorizer";
-import type { TrackPlotLayoutConfig } from "src/colorizer/Plotting";
+import { type Dataset, type Track, ViewMode } from "src/colorizer";
+import { CENTROID_Y_FEATURE_KEY } from "src/colorizer/Dataset";
+
+import Plotting, { type TrackPlotLayoutConfig } from "./Plotting";
 
 type PlotWrapperProps = {
   frame: number;
   dataset: Dataset | null;
   featureKey: string | null;
-  selectedTrack: Track | null;
+  tracks: Map<number, Track>;
+  trackColors: string[];
   setFrame: (frame: number) => Promise<void>;
+  viewMode: ViewMode;
 };
 const defaultProps: Partial<PlotWrapperProps> = {};
 
@@ -33,7 +37,7 @@ export default function PlotWrapper(inputProps: PlotWrapperProps): ReactElement 
   }, []);
 
   // Update dataset when it changes
-  useMemo(() => {
+  useEffect(() => {
     plot?.removePlot();
     if (props.dataset) {
       plot?.setDataset(props.dataset);
@@ -41,7 +45,7 @@ export default function PlotWrapper(inputProps: PlotWrapperProps): ReactElement 
   }, [props.dataset]);
 
   // Update time and hovered value in plot
-  useMemo(() => {
+  useEffect(() => {
     let hover;
     if (hoveredObjectId && props.featureKey !== null && props.dataset !== null) {
       const featureData = props.dataset.getFeatureData(props.featureKey);
@@ -59,16 +63,22 @@ export default function PlotWrapper(inputProps: PlotWrapperProps): ReactElement 
       hover,
     };
     plot?.updateLayout(config);
-  }, [props.dataset, props.frame, props.selectedTrack, props.featureKey, hoveredObjectId]);
+  }, [props.dataset, props.frame, props.tracks, props.featureKey, hoveredObjectId]);
 
   // Handle updates to selected track and feature, updating/clearing the plot accordingly.
-  useMemo(() => {
-    if (props.selectedTrack) {
-      plot?.plot(props.selectedTrack, props.featureKey, props.frame);
+  useEffect(() => {
+    if (props.tracks.size > 0) {
+      // In 2D mode, the viewport's image origin (0,0) is in the top left corner, versus in
+      // plot the origin is in the bottom left by default. Reverse the Y-axis
+      // centroid value in 2D so the plot matches the onscreen objects.
+      const reverseYAxis = props.viewMode === ViewMode.VIEW_2D && props.featureKey === CENTROID_Y_FEATURE_KEY;
+      const yAxisLayout = reverseYAxis ? { autorange: "reversed" as const } : {};
+
+      plot?.plot(props.tracks, props.featureKey, props.frame, props.trackColors, { yaxis: yAxisLayout });
     } else {
       plot?.removePlot();
     }
-  }, [props.selectedTrack, props.featureKey]);
+  }, [props.tracks, props.featureKey, props.viewMode, props.trackColors]);
 
   const updatePlotSize = (): void => {
     if (!plotDivRef.current) {
@@ -104,11 +114,12 @@ export default function PlotWrapper(inputProps: PlotWrapperProps): ReactElement 
         setHoveredObjectId(null);
         return;
       }
-      const time = eventData.points[0].x;
-      if (time) {
-        const objectId = props.selectedTrack?.getIdAtTime(time as number);
-        objectId && setHoveredObjectId(objectId);
+      const point = eventData.points[0];
+      const objectId = Number.parseInt(point.data.ids[point.pointNumber], 10);
+      if (isNaN(objectId)) {
+        return;
       }
+      setHoveredObjectId(objectId);
     };
 
     const onHoverExit = (): void => {

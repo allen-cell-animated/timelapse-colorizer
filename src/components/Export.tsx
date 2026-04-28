@@ -5,15 +5,16 @@ import styled from "styled-components";
 import { Vector2 } from "three";
 import { clamp } from "three/src/math/MathUtils";
 
-import { getPixelRatio, toEven } from "src/colorizer/canvas/utils";
-import type CanvasOverlay from "src/colorizer/CanvasOverlay";
-import type {ExportOptions} from "src/colorizer/CanvasOverlay";
-import type { IRenderCanvas } from "src/colorizer/IRenderCanvas";
+import { ViewMode } from "src/colorizer";
 import type CanvasRecorder from "src/colorizer/recorders/CanvasRecorder";
-import type {RecordingOptions} from "src/colorizer/recorders/CanvasRecorder";
+import type { RecordingOptions } from "src/colorizer/recorders/CanvasRecorder";
 import ImageSequenceRecorder from "src/colorizer/recorders/ImageSequenceRecorder";
 import Mp4VideoRecorder, { VideoBitrate } from "src/colorizer/recorders/Mp4VideoRecorder";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "src/colorizer/utils/analytics";
+import type CanvasOverlay from "src/colorizer/viewport/CanvasOverlay";
+import type { ExportOptions } from "src/colorizer/viewport/CanvasOverlay";
+import type { IRenderCanvas } from "src/colorizer/viewport/IRenderCanvas";
+import { getPixelRatio, toEven } from "src/colorizer/viewport/overlays/utils";
 import IconButton from "src/components/Buttons/IconButton";
 import TextButton from "src/components/Buttons/TextButton";
 import StyledInlineProgress from "src/components/Feedback/StyledInlineProgress";
@@ -51,7 +52,6 @@ type ExportButtonProps = {
   canvas: CanvasOverlay;
   /** Callback, called whenever the button is clicked. Can be used to stop playback. */
   onClick: () => void;
-  currentFrame: number;
   /** Callback, called whenever the recording process starts or stops. */
   setIsRecording: (recording: boolean) => void;
   defaultImagePrefix: string;
@@ -170,13 +170,15 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
   const { notification } = App.useApp();
   const modal = useStyledModal();
 
+  const currentFrame = useViewerStateStore((state) => state.currentFrame);
   const showHeaderDuringExport = useViewerStateStore((state) => state.showHeaderDuringExport);
   const setShowHeaderDuringExport = useViewerStateStore((state) => state.setShowHeaderDuringExport);
   const showLegendDuringExport = useViewerStateStore((state) => state.showLegendDuringExport);
   const setShowLegendDuringExport = useViewerStateStore((state) => state.setShowLegendDuringExport);
   const dataset = useViewerStateStore((state) => state.dataset);
+  const viewMode = useViewerStateStore((state) => state.viewMode);
 
-  const originalFrameRef = useRef(props.currentFrame);
+  const originalFrameRef = useRef(currentFrame);
   const exportModalRef = useRef<HTMLDivElement>(null);
   const [isModalOpen, _setIsModalOpen] = useState(false);
   const [isRecording, _setIsRecording] = useState(false);
@@ -280,7 +282,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
   // This is so we can reset to it when the modal is closed.
   const setIsModalOpen = (isOpen: boolean): void => {
     if (isOpen) {
-      originalFrameRef.current = props.currentFrame;
+      originalFrameRef.current = currentFrame;
       setErrorText(null);
     }
     _setIsModalOpen(isOpen);
@@ -391,8 +393,8 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
         max = props.totalFrames - 1;
         break;
       case RangeMode.CURRENT:
-        min = props.currentFrame;
-        max = props.currentFrame;
+        min = currentFrame;
+        max = currentFrame;
         break;
       case RangeMode.CUSTOM:
         // Clamp range values in case of unsafe input
@@ -456,7 +458,8 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
     recorder.current.start();
   };
 
-  const imageDimensions = dataset && !dataset.has3dFrames() ? dataset.frameResolution.toArray() : null;
+  const isIn2dMode = viewMode === ViewMode.VIEW_2D;
+  const imageDimensions = dataset && isIn2dMode ? dataset.frameResolution.toArray() : null;
   const isImageDimensions =
     imageDimensions && imageDimensions[0] === dimensionsInput[0] && imageDimensions[1] === dimensionsInput[1];
 

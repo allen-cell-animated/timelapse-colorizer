@@ -10,9 +10,9 @@ import { ANY_ERROR } from "tests/utils";
 describe("ColorRampDropdown", () => {
   const defaultPalette = [new Color("#000000"), new Color("#ffffff")];
   const knownRamps: [string, RawColorData][] = [
-    ["map1", { key: "map1", name: "Map 1", colorStops: ["#ffffff", "#000000"] }],
-    ["map2", { key: "map2", name: "Map 2", colorStops: ["#ffffff", "#000000"] }],
-    ["map3", { key: "map3", name: "Map 3", colorStops: ["#ffffff", "#000000"] }],
+    ["map1", { key: "map1", name: "Map 1", type: ColorRampType.LINEAR, colorStops: ["#ffffff", "#000000"] }],
+    ["map2", { key: "map2", name: "Map 2", type: ColorRampType.LINEAR, colorStops: ["#ffffff", "#000000"] }],
+    ["map3", { key: "map3", name: "Map 3", type: ColorRampType.LINEAR, colorStops: ["#ffffff", "#000000"] }],
   ];
   const customColorRamps: Map<string, ColorRampData> = new Map(
     knownRamps.map(([key, data]) => {

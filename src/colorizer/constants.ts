@@ -21,9 +21,11 @@ export const getDefaultVectorConfig = (): VectorConfig => ({
   visible: false,
   key: VECTOR_KEY_MOTION_DELTA,
   timeIntervals: 5,
-  color: new Color(0x000000),
+  color: new Color(0x575757),
   scaleFactor: 4,
   tooltipMode: VectorTooltipMode.MAGNITUDE,
+  scaleThicknessByMagnitude: false,
+  thickness: 1,
 });
 
 export const getDefaultScatterPlotConfig = (): ScatterPlotConfig => ({
@@ -43,3 +45,15 @@ export const DEFAULT_COLLECTION_FILENAME = "collection.json";
  * to the elements (frames, feature data, centroids, etc.) of this dataset.
  */
 export const DEFAULT_DATASET_FILENAME = "manifest.json";
+
+export const CSV_COL_ID = "ID";
+// Column constants for segmentation ID, time, and track are used to validate
+// data when parsing CSV files and check for mismatches with the current
+// dataset.
+export const CSV_COL_SEG_ID = "Label";
+export const CSV_COL_TIME = "Frame";
+export const CSV_COL_TIME_WITH_UNITS = "Time (frames)";
+export const CSV_COL_TRACK = "Track";
+export const CSV_COL_FILTERED = "Filtered";
+export const CSV_COL_OUTLIER = "Outlier";
+export const CSV_COL_DATASET = "Dataset";

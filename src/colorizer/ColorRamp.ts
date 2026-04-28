@@ -1,26 +1,44 @@
-import { Color, type ColorRepresentation, DataTexture, FloatType, LinearFilter, NearestFilter, RGBAFormat } from "three";
+import {
+  Color,
+  type ColorRepresentation,
+  DataTexture,
+  FloatType,
+  LinearFilter,
+  NearestFilter,
+  RGBAFormat,
+} from "three";
 
 export enum ColorRampType {
   LINEAR,
   DIVERGING,
+  CYCLICAL,
   CATEGORICAL,
 }
 
 export type GradientCanvasOptions = {
   vertical?: boolean;
   reverse?: boolean;
+  /**
+   * If true, linear ramps will be drawn with a mirrored gradient. Has no effect
+   * on diverging, cyclical, or categorical ramps.
+   */
+  mirror?: boolean;
 };
 
 const DISPLAY_GRADIENT_MAX_STOPS = 24;
 
 export default class ColorRamp {
   public readonly colorStops: Color[];
-  public readonly texture: DataTexture;
+  private textureSRGB: DataTexture;
+  private textureLinear: DataTexture;
   public readonly type: ColorRampType;
 
   constructor(colorStops: ColorRepresentation[], type: ColorRampType = ColorRampType.LINEAR) {
+    this.type = type;
     this.colorStops = colorStops.map((color) => new Color(color));
-    const dataArr = this.colorStops.flatMap((col) => {
+
+    // Save color data in both sRGB and LinearSRGB formats.
+    const sRGBDataArr = this.colorStops.flatMap((col) => {
       // Must convert from LinearSRGB to sRGB color space before getting the RGB
       // components since WebGL (canvas, etc.) expects sRGB, but Three stores
       // color data using LinearSRGB by default. See
@@ -28,17 +46,43 @@ export default class ColorRamp {
       const srgbCol = col.clone().convertLinearToSRGB();
       return [srgbCol.r, srgbCol.g, srgbCol.b, 1];
     });
-    this.texture = new DataTexture(new Float32Array(dataArr), this.colorStops.length, 1, RGBAFormat, FloatType);
-    this.type = type;
-    if (this.type === ColorRampType.CATEGORICAL) {
-      this.texture.minFilter = NearestFilter;
-      this.texture.magFilter = NearestFilter;
-    } else {
-      this.texture.minFilter = LinearFilter;
-      this.texture.magFilter = LinearFilter;
-    }
-    this.texture.internalFormat = "RGBA32F";
-    this.texture.needsUpdate = true;
+    const linearSRGBDataArr = this.colorStops.flatMap((col) => {
+      return [col.r, col.g, col.b, 1];
+    });
+
+    const numStops = this.colorStops.length;
+    this.textureLinear = new DataTexture(new Float32Array(linearSRGBDataArr), numStops, 1, RGBAFormat, FloatType);
+    this.textureSRGB = new DataTexture(new Float32Array(sRGBDataArr), numStops, 1, RGBAFormat, FloatType);
+
+    const configureTexture = (texture: DataTexture): void => {
+      if (this.type === ColorRampType.CATEGORICAL) {
+        texture.minFilter = NearestFilter;
+        texture.magFilter = NearestFilter;
+      } else {
+        texture.minFilter = LinearFilter;
+        texture.magFilter = LinearFilter;
+      }
+      texture.internalFormat = "RGBA32F";
+      texture.needsUpdate = true;
+    };
+    configureTexture(this.textureLinear);
+    configureTexture(this.textureSRGB);
+  }
+
+  /**
+   * Returns the texture for this color ramp in SRGB color space. Use for any
+   * color assignment where the results will be directly shown onscreen.
+   */
+  public get texture(): DataTexture {
+    return this.textureSRGB;
+  }
+
+  /**
+   * Returns the texture for this color ramp in LinearSRGB color space. Use when
+   * performing color computation or interpolation in shaders.
+   */
+  public get textureLinearSRGB(): DataTexture {
+    return this.textureLinear;
   }
 
   public static linearGradientFromColors(
@@ -57,13 +101,25 @@ export default class ColorRamp {
     return gradient;
   }
 
-  /** Creates a canvas filled in with this color ramp, to present as an option in a menu e.g. */
+  /**
+   * Creates an HTML canvas filled in with this color ramp (e.g. to present as
+   * an option in a menu)
+   */
   public createGradientCanvas(width: number, height: number, options?: GradientCanvasOptions): HTMLCanvasElement {
     const canvas = document.createElement("canvas");
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext("2d")!;
-    const colorStops = options?.reverse ? [...this.colorStops].reverse() : this.colorStops;
+    let colorStops = options?.reverse ? [...this.colorStops].reverse() : this.colorStops;
+
+    if (options?.mirror && this.type === ColorRampType.LINEAR) {
+      const reversedColorStops: Color[] = [];
+      // Skip first color stop to avoid duplication in the middle
+      for (let i = colorStops.length - 2; i >= 0; i--) {
+        reversedColorStops.push(colorStops[i]);
+      }
+      colorStops = [...colorStops, ...reversedColorStops];
+    }
 
     if (colorStops.length < 2) {
       ctx.fillStyle = `#${colorStops[0].getHexString()}`;
@@ -89,7 +145,8 @@ export default class ColorRamp {
   }
 
   public dispose(): void {
-    this.texture.dispose();
+    this.textureSRGB.dispose();
+    this.textureLinear.dispose();
   }
 
   /**
