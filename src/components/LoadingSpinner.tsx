@@ -1,4 +1,4 @@
-import { LoadingOutlined } from "@ant-design/icons";
+import { Loading3QuartersOutlined } from "@ant-design/icons";
 import { Progress, Spin } from "antd";
 import React, { type PropsWithChildren, type ReactElement, type ReactNode } from "react";
 import styled, { css } from "styled-components";
@@ -110,11 +110,7 @@ export default function LoadingSpinner(inputProps: PropsWithChildren<LoadingSpin
           <Spin
             indicator={
               <LoadSpinnerIconContainer $fontSize={props.iconSize}>
-                {/* Make larger loading icon by multiple of them together */}
-                {/* TODO: Make custom loading spinner SVG? */}
-                <LoadingOutlined />
-                <LoadingOutlined rotate={90} />
-                <LoadingOutlined rotate={135} />
+                <Loading3QuartersOutlined spin={true} />
               </LoadSpinnerIconContainer>
             }
           ></Spin>
