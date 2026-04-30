@@ -23,7 +23,9 @@ export default function DownloadDatasetButton(props: DownloadDatasetButtonProps)
   const collection = useViewerStateStore((state) => state.collection);
   const inRangeLUT = useViewerStateStore((state) => state.inRangeLUT);
 
-  const [isLoading, setIsLoading] = useState(false);
+  const [isDownloadPending, setIsDownloadPending] = useState(false);
+
+  const hasLoadedData = collection && datasetKey && dataset;
 
   const showErrorNotification = useCallback(
     (err: unknown) => {
@@ -44,10 +46,10 @@ export default function DownloadDatasetButton(props: DownloadDatasetButtonProps)
   );
 
   const downloadDatasetCsv = useCallback(() => {
-    if (!dataset || !collection || !datasetKey) {
+    if (!hasLoadedData) {
       return;
     }
-    setIsLoading(true);
+    setIsDownloadPending(true);
     const name = collection.getDatasetName(datasetKey) || "dataset";
     const csvColumns = dataset.toCsvDataColumns();
 
@@ -69,18 +71,18 @@ export default function DownloadDatasetButton(props: DownloadDatasetButtonProps)
     generateAndDownloadCsv()
       .catch(showErrorNotification)
       .finally(() => {
-        setIsLoading(false);
+        setIsDownloadPending(false);
       });
-  }, [dataset, collection, datasetKey, inRangeLUT, showErrorNotification]);
+  }, [dataset, collection, datasetKey, hasLoadedData, inRangeLUT, showErrorNotification]);
 
   return (
     <Tooltip title="Download dataset as .csv">
       <div>
-        <LoadingSpinner loading={isLoading} iconSize={18}>
+        <LoadingSpinner loading={isDownloadPending} iconSize={18}>
           <IconButton
-            type={isLoading ? "primary" : "link"}
+            type={isDownloadPending ? "primary" : "link"}
             onClick={downloadDatasetCsv}
-            disabled={!dataset || !collection || !datasetKey || isLoading}
+            disabled={!hasLoadedData || isDownloadPending}
           >
             <DownloadOutlined />
           </IconButton>
