@@ -847,7 +847,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
 
   getIdAtPixel(x: number, y: number): PixelIdInfo | null {
     const dataset = this.params?.dataset;
-    if (this.volume?.isLoaded() && dataset) {
+    if (dataset) {
       const segId = this.view3d.hitTest(x, y);
       if (segId === -1) {
         // Background hit
