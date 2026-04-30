@@ -4,10 +4,10 @@ import {
   Light,
   LoadSpec,
   Lut,
-  Points3d,
   type RawArrayLoader,
   RENDERMODE_RAYMARCH,
   SKY_LIGHT,
+  Spheres3d,
   type TiffLoader,
   VectorArrows3d,
   View3d,
@@ -91,7 +91,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
 
   private timeToVectorData: Map<number, FrameVectorData>;
   private vectorObject: VectorArrows3d;
-  private pointsObject: Points3d;
+  private centroidsObject: Spheres3d;
 
   constructor() {
     this.params = null;
@@ -106,7 +106,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
 
     this.timeToVectorData = new Map();
     this.vectorObject = new VectorArrows3d();
-    this.pointsObject = new Points3d();
+    this.centroidsObject = new Spheres3d();
 
     this.tempCanvas = document.createElement("canvas");
     this.tempCanvas.style.width = "10px";
@@ -292,7 +292,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
           // Remove 3D objects so they are not cleaned up with the old volume
           // and can be reused.
           this.view3d.removeDrawableObject(this.vectorObject);
-          this.view3d.removeDrawableObject(this.pointsObject);
+          this.view3d.removeDrawableObject(this.centroidsObject);
           this.trackPaths.forEach((trackPath) => {
             trackPath.getSceneObjects().forEach((obj) => {
               this.view3d.removeDrawableObject(obj);
@@ -459,9 +459,9 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     if (!this.params || !this.params.dataset) {
       return;
     }
-    this.view3d.addDrawableObject(this.pointsObject);
+    this.view3d.addDrawableObject(this.centroidsObject);
     if (!this.params.showCentroids) {
-      this.pointsObject.setPointData(new Float32Array(), new Float32Array(), new Uint32Array());
+      this.centroidsObject.setSphereData(new Float32Array(), new Float32Array(), new Uint32Array());
       return;
     }
 
@@ -491,13 +491,13 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
       colors = computeVertexColorsFromIds([...globalIds], this.params, true) as Float32Array<ArrayBuffer>;
     }
 
-    this.pointsObject.setColors(colors);
-    this.pointsObject.setPointData(positions, scales, segIds);
-    this.pointsObject.setVisible(true);
+    this.centroidsObject.setColors(colors);
+    this.centroidsObject.setSphereData(positions, scales, segIds);
+    this.centroidsObject.setVisible(true);
 
     if (this.volume) {
-      this.pointsObject.setScale(new Vector3(1, 1, 1).divide(this.volume?.physicalSize));
-      this.pointsObject.setTranslation(new Vector3(-0.5, -0.5, -0.5));
+      this.centroidsObject.setScale(new Vector3(1, 1, 1).divide(this.volume?.physicalSize));
+      this.centroidsObject.setTranslation(new Vector3(-0.5, -0.5, -0.5));
     }
   }
 
@@ -841,7 +841,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     });
     this.view3d.removeDrawableObject(this.vectorObject);
     this.vectorObject.cleanup();
-    this.pointsObject.cleanup();
+    this.centroidsObject.cleanup();
     this.view3d.removeAllVolumes();
   }
 
