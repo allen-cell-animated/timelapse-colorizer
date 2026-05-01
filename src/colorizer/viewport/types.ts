@@ -110,6 +110,7 @@ export type RenderCanvasStateParams = {
   interpolate3d: boolean;
 };
 
+/** Subset of RenderCanvasStateParams used for colorization. */
 export const COLORIZE_STATE_KEYS = [
   "dataset",
   "featureKey",
@@ -117,8 +118,8 @@ export const COLORIZE_STATE_KEYS = [
   "colorRampRange",
   "categoricalPaletteRamp",
   "outOfRangeDrawSettings",
-  "inRangeLUT",
   "outlierDrawSettings",
+  "inRangeLUT",
 ] satisfies (keyof RenderCanvasStateParams)[];
 
 export type ColorizeStateParams = Pick<RenderCanvasStateParams, (typeof COLORIZE_STATE_KEYS)[number]>;

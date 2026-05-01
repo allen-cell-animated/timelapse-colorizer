@@ -55,6 +55,7 @@ const ZOOM_IN_MULTIPLIER = 0.75;
 const ZOOM_OUT_MULTIPLIER = 1 / ZOOM_IN_MULTIPLIER;
 
 const VECTOR_THICKNESS_BASE_SCALE = 0.002;
+const CENTROID_RADIUS_BASE_SCALE = 0.001;
 
 const INNER_OUTLINE_COLOR = new Color(1, 1, 1);
 
@@ -245,14 +246,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
   private handleColorRampUpdate(prevParams: RenderCanvasStateParams | null, params: RenderCanvasStateParams): boolean {
     if (
       hasPropertyChanged(params, prevParams, [
-        "colorRamp",
-        "colorRampRange",
-        "categoricalPaletteRamp",
-        "dataset",
-        "featureKey",
-        "inRangeLUT",
-        "outOfRangeDrawSettings",
-        "outlierDrawSettings",
+        ...COLORIZE_STATE_KEYS,
         "outlineColor",
         "outlineColorMode",
         "outlinePaletteRamp",
@@ -458,28 +452,33 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     this.updateVectorThickness();
   }
 
+  private getGlobalIdsForCurrentFrame(): Uint32Array | null {
+    if (!this.params || !this.params.dataset) {
+      return null;
+    }
+    const globalIds = this.params.dataset.frameToGlobalIdLookup?.get(this.currentFrame)?.globalIds;
+    return globalIds ?? null;
+  }
+
   private updateCentroidColors(): void {
-    // Get global IDs for current frame
     if (!this.params || !this.params.dataset) {
       return;
     }
-    const globalIds = this.params.dataset.frameToGlobalIdLookup?.get(this.currentFrame)?.globalIds;
-    if (!globalIds) {
-      return;
-    }
-    let colors = new Float32Array(this.params.centroidColor.clone().convertLinearToSRGB().toArray());
+    const centroidColorSrgb = this.params.centroidColor.clone().convertLinearToSRGB();
+    let colors = new Float32Array(centroidColorSrgb.toArray());
+    // Use feature-based coloring if enabled
     if (this.params.centroidColorMode === CentroidColorMode.USE_FEATURE_COLOR) {
-      colors = computeVertexColorsFromIds([...globalIds], this.params, true) as Float32Array<ArrayBuffer>;
+      const globalIds = this.getGlobalIdsForCurrentFrame();
+      if (globalIds) {
+        colors = computeVertexColorsFromIds([...globalIds], this.params, true) as Float32Array<ArrayBuffer>;
+      }
     }
     this.centroidsObject.setColors(colors);
   }
 
   private updateCentroidData(): void {
-    if (!this.params || !this.params.dataset) {
-      return;
-    }
-    const globalIds = this.params.dataset.frameToGlobalIdLookup?.get(this.currentFrame)?.globalIds;
-    if (!globalIds) {
+    const globalIds = this.getGlobalIdsForCurrentFrame();
+    if (!this.params || !this.params.dataset || !globalIds) {
       return;
     }
     this.view3d.addDrawableObject(this.centroidsObject);
@@ -495,13 +494,13 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
         continue;
       }
       positions.set(centroid, i * 3);
-      scales[i] = 0.001 * this.params.centroidRadiusPx;
+      scales[i] = CENTROID_RADIUS_BASE_SCALE * this.params.centroidRadiusPx;
       segIds[i] = this.params.dataset.getSegmentationId(id) ?? -1;
     }
 
     this.centroidsObject.setSphereData(positions, scales, segIds);
     if (this.volume) {
-      this.centroidsObject.setScale(new Vector3(1, 1, 1).divide(this.volume?.physicalSize));
+      this.centroidsObject.setScale(new Vector3(1, 1, 1).divide(this.volume.physicalSize));
       this.centroidsObject.setTranslation(new Vector3(-0.5, -0.5, -0.5));
     }
     this.lastCentroidFrame = this.currentFrame;
