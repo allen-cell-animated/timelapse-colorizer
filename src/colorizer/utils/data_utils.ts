@@ -24,7 +24,7 @@ import {
   TrackPathColorMode,
 } from "src/colorizer/types";
 import type { TrackPathParams } from "src/colorizer/viewport/tracks/types";
-import { ColorizeStateParams } from "src/colorizer/viewport/types";
+import type { ColorizeStateParams } from "src/colorizer/viewport/types";
 
 import { packDataTexture } from "./texture_utils";
 
@@ -522,11 +522,15 @@ export function computeColorFromId(id: number, params: ColorizeStateParams): Col
 }
 
 /**
- * Returns a Float32Array of RGB (vertex) colors for the given object IDs. Colors
- * are determined by the feature data, color ramp, and other parameters, and
- * will match what is used in the main viewport shader.
+ * Returns a Float32Array of RGB (vertex) colors for the given object IDs.
+ * Colors are determined by the feature data, color ramp, and other parameters,
+ * and will match what is used in the main viewport shader.
  * @param ids An array of object IDs to compute colors for.
  * @param params Rendering parameters.
+ * @param useSrgb Whether to convert the colors from linear to sRGB color space,
+ *   `false` by default. Set to `true` when colors will be written or
+ *   manipulated directly in the frag shader, rather than being set as vertex
+ *   colors.
  * @return A Float32Array of RGB color components, in a [0, 1] range. For each
  * object ID at index `i` in `ids`, the RGB color will be given by:
  * ```
@@ -535,7 +539,11 @@ export function computeColorFromId(id: number, params: ColorizeStateParams): Col
  * B: colors[i * 3 + 2]
  * ```
  */
-export function computeVertexColorsFromIds(ids: number[], params: ColorizeStateParams, useSrgb = false): Float32Array {
+export function computeVertexColorsFromIds(
+  ids: number[],
+  params: ColorizeStateParams,
+  useSrgb: boolean = false
+): Float32Array {
   // Especially for discontinuous lines, IDs may be repeated. Cache results to
   // avoid repeat computation.
   const idToColor = new Map<number, [number, number, number]>();
