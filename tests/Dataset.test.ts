@@ -15,6 +15,7 @@ import {
   ANY_ERROR,
   DEFAULT_DATASET_DIR,
   DEFAULT_DATASET_PATH,
+  disableConsole,
   makeMockAsyncLoader,
   makeMockDataset,
   MockArrayLoader,
@@ -165,6 +166,8 @@ describe("Dataset", () => {
       });
 
       it("throws an error if categorical data is missing categories", async () => {
+        disableConsole(["warn"]);
+
         const badManifest = {
           frames: ["frame0.json"],
           features: {
@@ -183,6 +186,8 @@ describe("Dataset", () => {
       });
 
       it("throws an error if the number of categories exceeds the max", async () => {
+        disableConsole(["warn"]);
+
         const categories = [...Array(MAX_FEATURE_CATEGORIES + 1).keys()].map((i) => i.toString());
         const badManifest = {
           frames: ["frame0.json"],
