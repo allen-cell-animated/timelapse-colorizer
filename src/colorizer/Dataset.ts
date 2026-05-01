@@ -11,6 +11,7 @@ import {
   MAX_FEATURE_CATEGORIES,
 } from "src/colorizer/constants";
 import type { CsvDataColumn } from "src/colorizer/utils/csv_utils";
+import { formatQuantityString } from "src/utils/formatting";
 
 import DataCache from "./DataCache";
 import type { IArrayLoader, ITextureImageLoader } from "./loaders/ILoader";
@@ -103,7 +104,7 @@ const MAX_CACHED_BACKDROPS_BYTES = 500_000_000; // 500 MB
 
 export default class Dataset {
   private frameLoader: ITextureImageLoader;
-  private frameFiles?: string[];
+  protected frameFiles?: string[];
   private frames: DataCache<number, Texture> | null;
   private frameDimensions: Vector2 | null;
 
@@ -150,6 +151,7 @@ export default class Dataset {
   private timesFile?: string;
   public trackIds?: Uint32Array | null;
   public times?: Uint32Array | null;
+  private timeMaxValue?: number;
   private cachedTracks: Map<number, Track | null>;
   private maxTrackLength: number | null;
 
@@ -369,11 +371,11 @@ export default class Dataset {
     return featureData !== undefined && featureData.type === FeatureType.CATEGORICAL;
   }
 
-  public has2dFrames(): boolean {
+  public has2dFrames(): this is { frameFiles: string[] } {
     return this.frameFiles !== undefined;
   }
 
-  public has3dFrames(): boolean {
+  public has3dFrames(): this is { frames3d: Frames3dData } {
     return this.frames3d !== undefined;
   }
 
@@ -678,18 +680,6 @@ export default class Dataset {
     this.boundsFile = manifest.bounds;
     this.segIdsFile = manifest.segIds;
 
-    if (manifest.backdrops && manifest.frames) {
-      for (const { name, key, frames } of manifest.backdrops) {
-        this.backdropData.set(key, { name, frames });
-        if (frames.length !== this.frameFiles?.length || 0) {
-          throw new Error(
-            `Number of frames (${this.frameFiles?.length}) does not match number of images (${frames.length}) for backdrop '${key}'. ` +
-              ` If you are a dataset author, please ensure that the number of frames in the manifest matches the number of images for each backdrop.`
-          );
-        }
-      }
-    }
-
     this.frames = new DataCache(MAX_CACHED_FRAME_BYTES);
     this.backdropFrames = new DataCache(MAX_CACHED_BACKDROPS_BYTES);
 
@@ -768,6 +758,33 @@ export default class Dataset {
       ]);
     }
 
+    // Validate and load backdrops.
+    if (manifest.backdrops && manifest.frames) {
+      const skippedBackdropKeysAndNames: [string, string][] = [];
+      const totalFrames = this.getTotalFrames();
+      for (const { name, key, frames } of manifest.backdrops) {
+        if (frames.length < totalFrames) {
+          skippedBackdropKeysAndNames.push([key, name]);
+          continue;
+        }
+        this.backdropData.set(key, { name, frames });
+      }
+
+      if (skippedBackdropKeysAndNames.length > 0) {
+        options.reportWarning?.(
+          formatQuantityString(skippedBackdropKeysAndNames.length, "backdrop was", "backdrops were") +
+            ` could not be loaded.`,
+          [
+            "The following backdrop(s) contained fewer frames than the total frames in the dataset, and were skipped:",
+            ...formatAsBulletList(
+              skippedBackdropKeysAndNames.map(([key, name]) => `${name} (${key})`),
+              5
+            ),
+          ]
+        );
+      }
+    }
+
     // Construct default array of segmentation IDs if not provided in the manifest.
     if (!this.segIds) {
       // Construct default segIds array (0, 1, 2, ...)
@@ -839,10 +856,16 @@ export default class Dataset {
 
   public getTotalFrames(): number {
     if (this.has2dFrames()) {
-      return this.frameFiles?.length ?? 0;
-    } else {
-      return this.frames3d?.totalFrames ?? 0;
+      return this.frameFiles.length;
+    } else if (this.has3dFrames()) {
+      return this.frames3d.totalFrames;
     }
+    // If no frames are provided, use the times array to determine the number of
+    // frames using the max time value. (Assumes that time values start from 0.)
+    if (this.timeMaxValue === undefined) {
+      this.timeMaxValue = Math.max(...(this.times || []));
+    }
+    return this.timeMaxValue + 1;
   }
 
   public isValidFrameIndex(index: number): boolean {
