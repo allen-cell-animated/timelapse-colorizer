@@ -110,17 +110,18 @@ export type RenderCanvasStateParams = {
   interpolate3d: boolean;
 };
 
-export type ColorizeStateParams = Pick<
-  RenderCanvasStateParams,
-  | "dataset"
-  | "featureKey"
-  | "colorRamp"
-  | "colorRampRange"
-  | "categoricalPaletteRamp"
-  | "outOfRangeDrawSettings"
-  | "inRangeLUT"
-  | "outlierDrawSettings"
->;
+export const COLORIZE_STATE_KEYS = [
+  "dataset",
+  "featureKey",
+  "colorRamp",
+  "colorRampRange",
+  "categoricalPaletteRamp",
+  "outOfRangeDrawSettings",
+  "inRangeLUT",
+  "outlierDrawSettings",
+] satisfies (keyof RenderCanvasStateParams)[];
+
+export type ColorizeStateParams = Pick<RenderCanvasStateParams, (typeof COLORIZE_STATE_KEYS)[number]>;
 
 export type RenderOptions = {
   /** If true, renders synchronously. */
