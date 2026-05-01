@@ -481,7 +481,9 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     if (!this.params || !this.params.dataset || !globalIds) {
       return;
     }
-    this.view3d.addDrawableObject(this.centroidsObject);
+    if (!this.view3d.hasDrawableObject(this.centroidsObject)) {
+      this.view3d.addDrawableObject(this.centroidsObject);
+    }
     const segIds = new Uint32Array(globalIds.length);
     const positions = new Float32Array(globalIds.length * 3);
     const scales = new Float32Array(globalIds.length);
@@ -495,7 +497,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
       }
       positions.set(centroid, i * 3);
       scales[i] = CENTROID_RADIUS_BASE_SCALE * this.params.centroidRadiusPx;
-      segIds[i] = this.params.dataset.getSegmentationId(id) ?? -1;
+      segIds[i] = this.params.dataset.getSegmentationId(id) ?? 0;
     }
 
     this.centroidsObject.setSphereData(positions, scales, segIds);
@@ -507,27 +509,27 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
   }
 
   private handleCentroidUpdate(prevParams: RenderCanvasStateParams | null, params: RenderCanvasStateParams): boolean {
-    const visibilityChanged = hasPropertyChanged(params, prevParams, ["showCentroids"]);
-    const colorChanged = hasPropertyChanged(params, prevParams, [
-      "centroidColor",
-      "centroidColorMode",
-      ...COLORIZE_STATE_KEYS,
-    ]);
-    const dataChanged = hasPropertyChanged(params, prevParams, ["dataset", "centroidRadiusPx"]);
+    // Reset last updated frame when the dataset changes.
     if (hasPropertyChanged(params, prevParams, ["dataset"])) {
-      // Reset last updated frame if dataset changes.
       this.lastCentroidFrame = -1;
     }
-    if (visibilityChanged) {
+
+    let needsRender = false;
+    if (hasPropertyChanged(params, prevParams, ["showCentroids"])) {
       this.centroidsObject.setVisible(params.showCentroids);
+      needsRender = true;
     }
-    if (colorChanged) {
-      this.updateCentroidColors();
+    if (params.showCentroids) {
+      if (hasPropertyChanged(params, prevParams, ["centroidColor", "centroidColorMode", ...COLORIZE_STATE_KEYS])) {
+        this.updateCentroidColors();
+        needsRender = true;
+      }
+      if (hasPropertyChanged(params, prevParams, ["dataset", "centroidRadiusPx"])) {
+        this.updateCentroidData();
+        needsRender = true;
+      }
     }
-    if (dataChanged) {
-      this.updateCentroidData();
-    }
-    return visibilityChanged || colorChanged || dataChanged;
+    return needsRender;
   }
 
   private updateVectorThickness(): void {
@@ -725,11 +727,9 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
       this.params.dataset?.frames3d?.backdrops
     );
 
-    this.view3d.setVolumeChannelEnabled(volume, segChannel, true);
     this.view3d.setVolumeChannelOptions(volume, segChannel, {
       isosurfaceEnabled: false,
       isosurfaceOpacity: 1.0,
-      enabled: true,
       color: [1, 1, 1],
       emissiveColor: [0, 0, 0],
     });
@@ -858,6 +858,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     });
     this.view3d.removeDrawableObject(this.vectorObject);
     this.vectorObject.cleanup();
+    this.view3d.removeDrawableObject(this.centroidsObject);
     this.centroidsObject.cleanup();
     this.view3d.removeAllVolumes();
   }
