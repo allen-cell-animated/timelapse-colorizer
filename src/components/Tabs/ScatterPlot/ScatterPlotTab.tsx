@@ -71,6 +71,15 @@ const ScatterPlotContainer = styled.div`
   }
   // Center plot horizontally
   margin: 0 auto;
+
+  & .main-svg {
+    z-index: 1;
+    background: transparent !important;
+
+    & .cbfills {
+      opacity: 0.4;
+    }
+  }
 `;
 
 /**
@@ -825,6 +834,23 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       tracks.size === 0 || rangeType !== PlotRangeType.ALL_TIME
     );
     const shapes: Partial<Plotly.Shape>[] = [];
+
+    const densityTrace: Partial<PlotData> = {
+      x: xData,
+      y: yData,
+      name: "density",
+      type: "histogram2dcontour",
+      colorscale: [
+        [0, "rgba(0,0,0,0.4)"],
+        [0.3, "rgba(128, 128, 128, 0.4)"],
+        [1, "rgba(255, 255, 255, 0)"],
+      ],
+      reversescale: true,
+      ncontours: 15,
+      hovertemplate: undefined,
+      hoverinfo: "skip",
+    };
+    traces.push(densityTrace);
 
     const xHistogram: Partial<Plotly.PlotData> = {
       x: xData,
