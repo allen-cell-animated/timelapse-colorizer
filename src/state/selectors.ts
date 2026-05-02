@@ -1,4 +1,4 @@
-import type { RenderCanvasStateParams } from "src/colorizer/viewport/types";
+import type { ColorizeStateParams, RenderCanvasStateParams } from "src/colorizer/viewport/types";
 import type { ViewerStoreState } from "src/state/slices";
 
 export const renderCanvasStateParamsSelector = (state: ViewerStoreState): RenderCanvasStateParams => ({
@@ -50,4 +50,15 @@ export const renderCanvasStateParamsSelector = (state: ViewerStoreState): Render
   backdropSaturation: state.backdropSaturation,
   backdropBrightness: state.backdropBrightness,
   interpolate3d: state.interpolate3d,
+});
+
+export const colorizeStateSelector = (state: ViewerStoreState): ColorizeStateParams => ({
+  dataset: state.dataset,
+  featureKey: state.featureKey,
+  colorRamp: state.colorRamp,
+  colorRampRange: state.colorRampRange,
+  categoricalPaletteRamp: state.categoricalPaletteRamp,
+  outOfRangeDrawSettings: state.outOfRangeDrawSettings,
+  outlierDrawSettings: state.outlierDrawSettings,
+  inRangeLUT: state.inRangeLUT,
 });
