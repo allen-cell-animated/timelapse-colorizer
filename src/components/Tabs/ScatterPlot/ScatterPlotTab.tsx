@@ -6,7 +6,7 @@ import styled from "styled-components";
 import { Color } from "three";
 
 import { SwitchIconSVG } from "src/assets";
-import { type Dataset } from "src/colorizer";
+import type { Dataset } from "src/colorizer";
 import { CENTROID_Y_FEATURE_KEY, TIME_FEATURE_KEY } from "src/colorizer/Dataset";
 import { PlotRangeType, ViewMode } from "src/colorizer/types";
 import { hasAnyValueChanged, isPositiveInteger } from "src/colorizer/utils/data_utils";

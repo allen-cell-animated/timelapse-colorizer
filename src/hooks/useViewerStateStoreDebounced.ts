@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useShallow } from "zustand/shallow";
 
-import { ViewerStore } from "src/state/slices";
+import type { ViewerStore } from "src/state/slices";
 import { useViewerStateStore } from "src/state/ViewerState";
+
+type TimeoutHandle = ReturnType<typeof setTimeout>;
 
 /**
  * Custom hook that returns a debounced version of the selected viewer state.
@@ -18,7 +20,7 @@ export const useViewerStateStoreDebounced = <T extends Partial<ViewerStore>>(
   delayMs: number,
   propertyDelayMs: Partial<Record<keyof T, number>> = {}
 ): [T, boolean] => {
-  const propertyTimeouts = useRef<Partial<Record<keyof T, NodeJS.Timeout>>>({});
+  const propertyTimeouts = useRef<Partial<Record<keyof T, TimeoutHandle>>>({});
   const pendingValues = useRef<Partial<T>>({});
   const propertyDelayMsRef = useRef(propertyDelayMs);
   propertyDelayMsRef.current = propertyDelayMs;

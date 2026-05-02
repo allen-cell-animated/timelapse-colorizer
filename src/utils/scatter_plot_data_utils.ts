@@ -14,11 +14,11 @@ import {
   DrawMode,
   type HexColorString,
   PlotRangeType,
-  Track,
+  type Track,
 } from "src/colorizer";
 import { type FeatureData, FeatureType, TIME_FEATURE_KEY, TRACK_FEATURE_KEY } from "src/colorizer/Dataset";
 import { remap } from "src/colorizer/utils/math_utils";
-import { ColorizeStateParams } from "src/colorizer/viewport/types";
+import type { ColorizeStateParams } from "src/colorizer/viewport/types";
 
 const MAX_POINTS_PER_TRACE = 1024;
 const COLOR_RAMP_SUBSAMPLES = 100;
