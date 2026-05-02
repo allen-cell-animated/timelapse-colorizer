@@ -48,13 +48,13 @@ export const useViewerStateStoreDebounced = <T extends Partial<ViewerStore>>(
             clearTimeout(propertyTimeouts.current[key]);
           }
           propertyTimeouts.current[key] = setTimeout(() => {
+            const value = pendingValues.current[key];
             setDebouncedState((prevState) => ({
               ...prevState,
-              [key]: pendingValues.current[key],
+              [key]: value,
             }));
             // Clear the pending value and timeout for this property
             delete pendingValues.current[key];
-            clearTimeout(propertyTimeouts.current[key]);
             delete propertyTimeouts.current[key];
           }, propertyDelayMs);
         }
