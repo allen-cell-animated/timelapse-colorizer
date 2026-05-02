@@ -10,7 +10,6 @@ import { type Dataset } from "src/colorizer";
 import { CENTROID_Y_FEATURE_KEY, TIME_FEATURE_KEY } from "src/colorizer/Dataset";
 import { PlotRangeType, ViewMode } from "src/colorizer/types";
 import { hasAnyValueChanged, isPositiveInteger } from "src/colorizer/utils/data_utils";
-import { ColorizeStateParams } from "src/colorizer/viewport/types";
 import type { ShowAlertBannerCallback } from "src/components/Banner/hooks";
 import IconButton from "src/components/Buttons/IconButton";
 import TextButton from "src/components/Buttons/TextButton";
@@ -18,7 +17,9 @@ import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import type { SelectItem } from "src/components/Dropdowns/types";
 import LoadingSpinner from "src/components/LoadingSpinner";
 import { SHORTCUT_KEYS } from "src/constants";
-import { useDebounce, useIsMouseButtonDownRef } from "src/hooks";
+import { useIsMouseButtonDownRef } from "src/hooks";
+import { useViewerStateStoreDebounced } from "src/hooks/useViewerStateStoreDebounced";
+import { colorizeStateSelector } from "src/state";
 import { useViewerStateStore } from "src/state/ViewerState";
 import { AppThemeContext } from "src/styles/AppStyle";
 import { FlexRow, FlexRowAlignCenter } from "src/styles/utils";
@@ -71,10 +72,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   //////////////////////////////////
   const theme = useContext(AppThemeContext);
 
-  const colorRamp = useViewerStateStore((state) => state.colorRamp);
   const currentFrame = useViewerStateStore((state) => state.currentFrame);
-  const inRangeLUT = useViewerStateStore((state) => state.inRangeLUT);
-  const outlierDrawSettings = useViewerStateStore((state) => state.outlierDrawSettings);
   const outOfRangeDrawSettings = useViewerStateStore((state) => state.outOfRangeDrawSettings);
   const rangeType = useViewerStateStore((state) => state.scatterRangeType);
   const selectedFeatureKey = useViewerStateStore((state) => state.featureKey);
@@ -103,44 +101,14 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     yAxisPlotRange.current = [-Infinity, Infinity];
   }, []);
 
-  // Debounce changes to the dataset to prevent noticeably blocking the UI thread with a re-render.
-  const datasetKey = useViewerStateStore((state) => state.datasetKey);
-  const rawDataset = useViewerStateStore((state) => state.dataset);
-  const rawCategoricalPaletteRamp = useViewerStateStore((state) => state.categoricalPaletteRamp);
-  const rawColorRampRange = useViewerStateStore((state) => state.colorRampRange);
-  const dataset = useDebounce(rawDataset, 500);
-  const categoricalPaletteRamp = useDebounce(rawCategoricalPaletteRamp, 100);
-  const [colorRampMin, colorRampMax] = useDebounce(rawColorRampRange, 100);
-
-  const colorizeConfig = useMemo(
-    () =>
-      ({
-        dataset,
-        featureKey: selectedFeatureKey,
-        colorRamp,
-        colorRampRange: [colorRampMin, colorRampMax],
-        inRangeLUT,
-        categoricalPaletteRamp,
-        outOfRangeDrawSettings,
-        outlierDrawSettings,
-      } satisfies ColorizeStateParams),
-    [
-      dataset,
-      selectedFeatureKey,
-      colorRamp,
-      colorRampMin,
-      colorRampMax,
-      inRangeLUT,
-      categoricalPaletteRamp,
-      outOfRangeDrawSettings,
-      outlierDrawSettings,
-    ]
-  );
+  // Debounce changes to the dataset and other frequently-changing values to
+  // prevent noticeably blocking the UI thread with a re-render
+  const [colorizeConfig, isDebouncePending] = useViewerStateStoreDebounced(colorizeStateSelector, 100, {
+    dataset: 500,
+  });
+  const { dataset } = colorizeConfig;
 
   const plottedIds = useRef<Set<number>>(new Set());
-
-  const isDebouncePending =
-    dataset !== rawDataset || colorRampMin !== rawColorRampRange[0] || colorRampMax !== rawColorRampRange[1];
 
   const { isVisible } = props;
 
@@ -447,7 +415,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
   // Plot dependencies, not including time.
   const basePlotDependencies = [
-    dataset,
+    ...Array.from(Object.values(colorizeConfig)),
     xAxisFeatureKey,
     yAxisFeatureKey,
     histogramBins,
@@ -455,14 +423,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     tracks,
     isVisible,
     plotDivRef.current,
-    outlierDrawSettings,
-    outOfRangeDrawSettings,
-    selectedFeatureKey,
-    colorRampMin,
-    colorRampMax,
-    colorRamp,
-    inRangeLUT,
-    categoricalPaletteRamp,
     resetXAxisPlotRange,
     resetYAxisPlotRange,
   ];
@@ -735,6 +695,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     if (!canDownloadScatterPlotCsv) {
       return;
     }
+    const viewerState = useViewerStateStore.getState();
     const featureSet = new Set([xAxisFeatureKey, yAxisFeatureKey, selectedFeatureKey]);
     // Remove time as a feature axis if present, since it's included already as
     // a metadata column in the CSV.
@@ -744,18 +705,16 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       [xAxisFeatureKey, xAxisPlotRange.current],
       [yAxisFeatureKey, yAxisPlotRange.current],
     ]);
-    const csvString = getScatterplotDataAsCsv(dataset, Array.from(plottedIds.current), inRangeLUT, features, filters);
-    const name = datasetKey ? `${datasetKey}-scatterplot.csv` : "scatterplot.csv";
+    const csvString = getScatterplotDataAsCsv(
+      dataset,
+      Array.from(plottedIds.current),
+      viewerState.inRangeLUT,
+      features,
+      filters
+    );
+    const name = viewerState.datasetKey ? `${viewerState.datasetKey}-scatterplot.csv` : "scatterplot.csv";
     downloadCsv(name, csvString);
-  }, [
-    dataset,
-    datasetKey,
-    xAxisFeatureKey,
-    yAxisFeatureKey,
-    selectedFeatureKey,
-    canDownloadScatterPlotCsv,
-    inRangeLUT,
-  ]);
+  }, [dataset, xAxisFeatureKey, yAxisFeatureKey, selectedFeatureKey, canDownloadScatterPlotCsv]);
 
   const menuItems = useMemo((): SelectItem[] => {
     const featureKeys = dataset ? dataset.featureKeys : [];
