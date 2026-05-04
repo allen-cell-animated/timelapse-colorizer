@@ -57,3 +57,6 @@ export const CSV_COL_TRACK = "Track";
 export const CSV_COL_FILTERED = "Filtered";
 export const CSV_COL_OUTLIER = "Outlier";
 export const CSV_COL_DATASET = "Dataset";
+
+export const BOOLEAN_VALUE_TRUE = "true";
+export const BOOLEAN_VALUE_FALSE = "false";
