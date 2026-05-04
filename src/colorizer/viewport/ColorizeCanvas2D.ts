@@ -719,8 +719,8 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     const pendingBackdropKey = this.params?.backdropKey ?? null;
 
     // Setup promises; skip backdrop and frame loading if not needed
-    let backdropPromise = undefined;
-    let framePromise = undefined;
+    let backdropPromise: Promise<Texture | undefined> | undefined = undefined;
+    let framePromise: Promise<Texture | undefined> | undefined = undefined;
     if (this.params?.backdropVisible && pendingBackdropKey !== null && dataset?.hasBackdrop(pendingBackdropKey)) {
       backdropPromise = dataset?.loadBackdrop(pendingBackdropKey, index);
     }

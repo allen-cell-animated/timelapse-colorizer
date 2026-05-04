@@ -95,7 +95,7 @@ export default function BackdropToggleButton(): ReactElement {
   return (
     <ToggleButtonWithConfig
       visible={backdropVisible}
-      name={"backdrop"}
+      name="backdrop"
       tooltipContents={backdropTooltipContents}
       configMenuContents={createBackdropConfigMenuContents}
       disabled={dataset === null || backdropKey === null}
