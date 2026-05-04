@@ -127,6 +127,11 @@ export const enum TrackPathColorMode {
   USE_COLOR_MAP = 3,
 }
 
+export const enum CentroidColorMode {
+  USE_FEATURE_COLOR = 0,
+  USE_CUSTOM_COLOR = 1,
+}
+
 // Similar to `FeatureType`, but indicates that thresholds are lossy when it comes
 // to numeric data. Numeric thresholds do not track if their source feature is integer
 // (FeatureType.DISCRETE) or a float (FeatureType.CONTINUOUS).

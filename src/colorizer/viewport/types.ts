@@ -5,6 +5,7 @@ import type ColorRamp from "src/colorizer/ColorRamp";
 import type Dataset from "src/colorizer/Dataset";
 import type Track from "src/colorizer/Track";
 import type {
+  CentroidColorMode,
   ChannelSetting,
   DrawMode,
   DrawSettings,
@@ -73,6 +74,8 @@ export type RenderCanvasStateParams = {
   outlineColor: Color;
   outlineColorMode: SelectionOutlineColorMode;
   centroidRadiusPx: number;
+  centroidColorMode: CentroidColorMode;
+  centroidColor: Color;
   edgeColor: Color;
   edgeColorAlpha: number;
   edgeMode: DrawMode;
