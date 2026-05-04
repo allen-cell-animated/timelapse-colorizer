@@ -2,13 +2,8 @@ import { Color } from "three";
 import { describe, expect, it } from "vitest";
 
 import { type Dataset, DEFAULT_CATEGORICAL_PALETTE_KEY, KNOWN_CATEGORICAL_PALETTES } from "src/colorizer";
-import {
-  AnnotationData,
-  AnnotationMergeMode,
-  BOOLEAN_VALUE_FALSE,
-  BOOLEAN_VALUE_TRUE,
-  LabelType,
-} from "src/colorizer/AnnotationData";
+import { AnnotationData, AnnotationMergeMode, LabelType } from "src/colorizer/AnnotationData";
+import { BOOLEAN_VALUE_FALSE, BOOLEAN_VALUE_TRUE } from "src/colorizer/constants";
 import { MOCK_DATASET, MOCK_DATASET_KEY } from "tests/constants";
 import { compareRecord } from "tests/state/ViewerState/utils";
 
