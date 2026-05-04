@@ -1,6 +1,8 @@
+import type { NotificationInstance } from "antd/es/notification/interface";
 import React, { type ReactElement, useMemo } from "react";
 
 import type { Dataset } from "src/colorizer";
+import DownloadDatasetButton from "src/components/Buttons/DownloadDatasetButton";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import type { SelectItem } from "src/components/Dropdowns/types";
 import GlossaryPanel from "src/components/GlossaryPanel";
@@ -13,6 +15,7 @@ type DatasetFeatureControlsProps = {
   onSelectFeature: (dataset: Dataset, featureKey: string) => void;
   disabled: boolean;
   annotationState: AnnotationState;
+  notificationApi: NotificationInstance;
 };
 
 export default function DatasetFeatureControls(props: DatasetFeatureControlsProps): ReactElement {
@@ -44,7 +47,7 @@ export default function DatasetFeatureControls(props: DatasetFeatureControlsProp
   }, [dataset]);
 
   return (
-    <FlexRow $gap={22} style={{ width: "100%" }}>
+    <FlexRow $gap={12} style={{ width: "100%" }}>
       <div style={{ width: "45%" }}>
         <SelectionDropdown
           disabled={props.disabled}
@@ -54,7 +57,9 @@ export default function DatasetFeatureControls(props: DatasetFeatureControlsProp
           items={datasetDropdownData}
           onChange={onSelectedDatasetValue}
           controlWidth={"100%"}
-        />
+        >
+          <DownloadDatasetButton notificationApi={props.notificationApi} />
+        </SelectionDropdown>
       </div>
 
       <FlexRow $gap={6} style={{ width: "55%" }}>
