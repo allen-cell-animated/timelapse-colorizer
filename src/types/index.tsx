@@ -24,6 +24,12 @@ export type ProjectEntry = {
   inReview?: boolean;
 };
 
+export type VideoEntry = {
+  title: string;
+  description: string | ReactNode;
+  videoUrl?: string;
+};
+
 export type LocationState = {
   collection: Collection;
   datasetKey: string;
