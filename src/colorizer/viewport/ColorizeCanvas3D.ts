@@ -7,6 +7,7 @@ import {
   type RawArrayLoader,
   RENDERMODE_RAYMARCH,
   SKY_LIGHT,
+  Spheres3d,
   type TiffLoader,
   VectorArrows3d,
   View3d,
@@ -20,6 +21,7 @@ import { clamp, inverseLerp, lerp } from "three/src/math/MathUtils";
 import { ColorRampType } from "src/colorizer/ColorRamp";
 import { MAX_FEATURE_CATEGORIES } from "src/colorizer/constants";
 import {
+  CentroidColorMode,
   ChannelRangePreset,
   DrawMode,
   FeatureDataType,
@@ -30,7 +32,12 @@ import {
   type VolumeLoadResult,
 } from "src/colorizer/types";
 import { getRelativeToAbsoluteChannelIndexMap, getVolumeSources } from "src/colorizer/utils/channels";
-import { bucketVectorDataByTime, getGlobalIdFromSegId, hasPropertyChanged } from "src/colorizer/utils/data_utils";
+import {
+  bucketVectorDataByTime,
+  computeVertexColorsFromIds,
+  getGlobalIdFromSegId,
+  hasPropertyChanged,
+} from "src/colorizer/utils/data_utils";
 import { packDataTexture } from "src/colorizer/utils/texture_utils";
 import TrackPath3D from "src/colorizer/viewport/tracks/TrackPath3D";
 import { getTrackPathColor, reassignTrackPaths } from "src/colorizer/viewport/utils";
@@ -38,7 +45,7 @@ import { getTrackPathColor, reassignTrackPaths } from "src/colorizer/viewport/ut
 import type { IInnerRenderCanvas } from "./IInnerRenderCanvas";
 import { getPixelRatio } from "./overlays";
 import type { CanvasScaleInfo, RenderCanvasStateParams, RenderOptions } from "./types";
-import { CanvasType } from "./types";
+import { CanvasType, COLORIZE_STATE_KEYS } from "./types";
 
 const CACHE_MAX_SIZE = 1_000_000_000;
 const CONCURRENCY_LIMIT = 8;
@@ -48,6 +55,7 @@ const ZOOM_IN_MULTIPLIER = 0.75;
 const ZOOM_OUT_MULTIPLIER = 1 / ZOOM_IN_MULTIPLIER;
 
 const VECTOR_THICKNESS_BASE_SCALE = 0.002;
+const CENTROID_RADIUS_BASE_SCALE = 0.001;
 
 const INNER_OUTLINE_COLOR = new Color(1, 1, 1);
 
@@ -84,6 +92,9 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
 
   private timeToVectorData: Map<number, FrameVectorData>;
   private vectorObject: VectorArrows3d;
+  private centroidsObject: Spheres3d;
+  /** Last frame the centroid were updated on. */
+  private lastCentroidFrame = -1;
 
   constructor() {
     this.params = null;
@@ -98,6 +109,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
 
     this.timeToVectorData = new Map();
     this.vectorObject = new VectorArrows3d();
+    this.centroidsObject = new Spheres3d();
 
     this.tempCanvas = document.createElement("canvas");
     this.tempCanvas.style.width = "10px";
@@ -113,6 +125,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     this.forceUpdate3dObjects = this.forceUpdate3dObjects.bind(this);
     this.addTrackPath = this.addTrackPath.bind(this);
     this.removeTrackPath = this.removeTrackPath.bind(this);
+    this.syncCentroids = this.syncCentroids.bind(this);
   }
 
   // Camera/mouse event handlers
@@ -233,14 +246,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
   private handleColorRampUpdate(prevParams: RenderCanvasStateParams | null, params: RenderCanvasStateParams): boolean {
     if (
       hasPropertyChanged(params, prevParams, [
-        "colorRamp",
-        "colorRampRange",
-        "categoricalPaletteRamp",
-        "dataset",
-        "featureKey",
-        "inRangeLUT",
-        "outOfRangeDrawSettings",
-        "outlierDrawSettings",
+        ...COLORIZE_STATE_KEYS,
         "outlineColor",
         "outlineColorMode",
         "outlinePaletteRamp",
@@ -283,6 +289,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
           // Remove 3D objects so they are not cleaned up with the old volume
           // and can be reused.
           this.view3d.removeDrawableObject(this.vectorObject);
+          this.view3d.removeDrawableObject(this.centroidsObject);
           this.trackPaths.forEach((trackPath) => {
             trackPath.getSceneObjects().forEach((obj) => {
               this.view3d.removeDrawableObject(obj);
@@ -445,6 +452,86 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     this.updateVectorThickness();
   }
 
+  private getGlobalIdsForCurrentFrame(): Uint32Array | null {
+    if (!this.params || !this.params.dataset) {
+      return null;
+    }
+    const globalIds = this.params.dataset.frameToGlobalIdLookup?.get(this.currentFrame)?.globalIds;
+    return globalIds ?? null;
+  }
+
+  private updateCentroidColors(): void {
+    if (!this.params || !this.params.dataset) {
+      return;
+    }
+    const centroidColorSrgb = this.params.centroidColor.clone().convertLinearToSRGB();
+    let colors = new Float32Array(centroidColorSrgb.toArray());
+    // Use feature-based coloring if enabled
+    if (this.params.centroidColorMode === CentroidColorMode.USE_FEATURE_COLOR) {
+      const globalIds = this.getGlobalIdsForCurrentFrame();
+      if (globalIds) {
+        colors = computeVertexColorsFromIds([...globalIds], this.params, true) as Float32Array<ArrayBuffer>;
+      }
+    }
+    this.centroidsObject.setColors(colors);
+  }
+
+  private updateCentroidData(): void {
+    const globalIds = this.getGlobalIdsForCurrentFrame();
+    if (!this.params || !this.params.dataset || !globalIds) {
+      return;
+    }
+    if (!this.view3d.hasDrawableObject(this.centroidsObject)) {
+      this.view3d.addDrawableObject(this.centroidsObject);
+    }
+    const segIds = new Uint32Array(globalIds.length);
+    const positions = new Float32Array(globalIds.length * 3);
+    const scales = new Float32Array(globalIds.length);
+
+    // Fill in data arrays per visible object
+    for (let i = 0; i < globalIds.length; i++) {
+      const id = globalIds[i];
+      const centroid = this.params.dataset.getCentroid(id);
+      if (!centroid) {
+        continue;
+      }
+      positions.set(centroid, i * 3);
+      scales[i] = CENTROID_RADIUS_BASE_SCALE * this.params.centroidRadiusPx;
+      segIds[i] = this.params.dataset.getSegmentationId(id) ?? 0;
+    }
+
+    this.centroidsObject.setSphereData(positions, scales, segIds);
+    if (this.volume) {
+      this.centroidsObject.setScale(new Vector3(1, 1, 1).divide(this.volume.physicalSize));
+      this.centroidsObject.setTranslation(new Vector3(-0.5, -0.5, -0.5));
+    }
+    this.lastCentroidFrame = this.currentFrame;
+  }
+
+  private handleCentroidUpdate(prevParams: RenderCanvasStateParams | null, params: RenderCanvasStateParams): boolean {
+    // Reset last updated frame when the dataset changes.
+    if (hasPropertyChanged(params, prevParams, ["dataset"])) {
+      this.lastCentroidFrame = -1;
+    }
+
+    let needsRender = false;
+    if (hasPropertyChanged(params, prevParams, ["showCentroids"])) {
+      this.centroidsObject.setVisible(params.showCentroids);
+      needsRender = true;
+    }
+    if (params.showCentroids) {
+      if (hasPropertyChanged(params, prevParams, ["centroidColor", "centroidColorMode", ...COLORIZE_STATE_KEYS])) {
+        this.updateCentroidColors();
+        needsRender = true;
+      }
+      if (hasPropertyChanged(params, prevParams, ["dataset", "centroidRadiusPx"])) {
+        this.updateCentroidData();
+        needsRender = true;
+      }
+    }
+    return needsRender;
+  }
+
   private updateVectorThickness(): void {
     if (!this.params) {
       return;
@@ -568,6 +655,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     const didVectorUpdate = this.handleVectorUpdate(prevParams, params);
     const didSettingsUpdate = this.handleSettingsUpdate(prevParams, params);
     const didSelectionUpdate = this.handleSelectionUpdate(prevParams, params);
+    const didCentroidUpdate = this.handleCentroidUpdate(prevParams, params);
     const needsRender =
       didColorRampUpdate ||
       didDatasetUpdate ||
@@ -575,7 +663,8 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
       didChannelUpdate ||
       didVectorUpdate ||
       didSettingsUpdate ||
-      didSelectionUpdate;
+      didSelectionUpdate ||
+      didCentroidUpdate;
 
     if (needsRender) {
       this.render({ synchronous: false });
@@ -615,7 +704,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
 
       this.view3d.onVolumeData(currentVol, [channelIndex]);
       if (channelIndex === segChannel) {
-        this.view3d.setVolumeChannelEnabled(currentVol, channelIndex, true);
+        this.view3d.setVolumeChannelEnabled(currentVol, channelIndex, this.params?.showSegmentations ?? true);
         this.configureColorizeFeature(currentVol, channelIndex);
         this.params && this.view3d.setSelectedIDs(this.params.isSelectedLut);
       } else {
@@ -638,11 +727,9 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
       this.params.dataset?.frames3d?.backdrops
     );
 
-    this.view3d.setVolumeChannelEnabled(volume, segChannel, true);
     this.view3d.setVolumeChannelOptions(volume, segChannel, {
       isosurfaceEnabled: false,
       isosurfaceOpacity: 1.0,
-      enabled: true,
       color: [1, 1, 1],
       emissiveColor: [0, 0, 0],
     });
@@ -709,6 +796,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
         backdropKey: null,
         backdropError: false,
       };
+      this.syncCentroids();
       this.onLoadFrameCallback(result);
       return result;
     };
@@ -729,6 +817,15 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     this.view3d.setOnRenderCallback(callback);
   }
 
+  private syncCentroids(): void {
+    // Only update centroids if they are currently visible and have not already
+    // been updated to the current frame.
+    if (this.params?.showCentroids && this.currentFrame !== this.lastCentroidFrame) {
+      this.updateCentroidData();
+      this.updateCentroidColors();
+    }
+  }
+
   private syncTrackPathLine(): void {
     this.trackPaths.forEach((trackPath) => trackPath.updateVisibleRange(this.currentFrame));
   }
@@ -747,6 +844,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
 
   render(options?: RenderOptions): void {
     this.syncTrackPathLine();
+    this.syncCentroids();
     this.syncVectorArrows();
     this.view3d.redraw(options?.synchronous);
   }
@@ -760,12 +858,14 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     });
     this.view3d.removeDrawableObject(this.vectorObject);
     this.vectorObject.cleanup();
+    this.view3d.removeDrawableObject(this.centroidsObject);
+    this.centroidsObject.cleanup();
     this.view3d.removeAllVolumes();
   }
 
   getIdAtPixel(x: number, y: number): PixelIdInfo | null {
     const dataset = this.params?.dataset;
-    if (this.volume?.isLoaded() && dataset) {
+    if (dataset) {
       const segId = this.view3d.hitTest(x, y);
       if (segId === -1) {
         // Background hit

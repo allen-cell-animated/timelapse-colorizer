@@ -125,8 +125,7 @@ export default function CanvasToolbar(props: CanvasToolbarProps): ReactElement {
       {/* 2D backdrop or 3D channels toggle */}
       {isDataset3d ? <ChannelToggleButton /> : <BackdropToggleButton />}
 
-      {/* TODO: Remove flag when centroids are supported in 3D. */}
-      {!isDataset3d && <CentroidsToggleButton />}
+      <CentroidsToggleButton />
 
       {/* Annotation mode toggle */}
       <TooltipWithSubtitle
