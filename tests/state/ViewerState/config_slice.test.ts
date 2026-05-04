@@ -12,6 +12,7 @@ import type { SerializedStoreData } from "src/state/types";
 import { compareRecord } from "./utils";
 
 const EXAMPLE_SLICE_1: Partial<ConfigSlice> = {
+  showSegmentations: false,
   showCentroids: false,
   centroidRadiusPx: 2,
   showTrackPath: false,
@@ -41,6 +42,7 @@ const EXAMPLE_SLICE_1: Partial<ConfigSlice> = {
 };
 
 const EXAMPLE_SLICE_1_PARAMS: SerializedStoreData = {
+  [UrlParam.SHOW_SEGMENTATIONS]: "0",
   [UrlParam.SHOW_CENTROIDS]: "0",
   [UrlParam.CENTROID_RADIUS]: "2",
   [UrlParam.SHOW_PATH]: "0",
@@ -67,6 +69,7 @@ const EXAMPLE_SLICE_1_PARAMS: SerializedStoreData = {
 };
 
 const EXAMPLE_SLICE_2: Partial<ConfigSlice> = {
+  showSegmentations: true,
   showCentroids: true,
   centroidRadiusPx: 15,
   showTrackPath: true,
@@ -96,6 +99,7 @@ const EXAMPLE_SLICE_2: Partial<ConfigSlice> = {
 };
 
 const EXAMPLE_SLICE_2_PARAMS: SerializedStoreData = {
+  [UrlParam.SHOW_SEGMENTATIONS]: "1",
   [UrlParam.SHOW_CENTROIDS]: "1",
   [UrlParam.CENTROID_RADIUS]: "15",
   [UrlParam.SHOW_PATH]: "1",
@@ -125,6 +129,7 @@ describe("ConfigSlice", () => {
   it("can set properties", () => {
     const { result } = renderHook(() => useViewerStateStore());
     act(() => {
+      result.current.setShowSegmentations(false);
       result.current.setShowCentroids(false);
       result.current.setCentroidRadiusPx(2);
       result.current.setShowTrackPath(false);
@@ -146,6 +151,7 @@ describe("ConfigSlice", () => {
       result.current.setOpenTab(TabType.FILTERS);
     });
 
+  expect(result.current.showSegmentations).toBe(false);
     expect(result.current.showCentroids).toBe(false);
     expect(result.current.centroidRadiusPx).toBe(2);
     expect(result.current.showTrackPath).toBe(false);
@@ -168,6 +174,7 @@ describe("ConfigSlice", () => {
     expect(result.current.openTab).toBe(TabType.FILTERS);
 
     act(() => {
+      result.current.setShowSegmentations(true);
       result.current.setShowCentroids(true);
       result.current.setCentroidRadiusPx(15);
       result.current.setShowTrackPath(true);
@@ -188,6 +195,7 @@ describe("ConfigSlice", () => {
       result.current.setEdgeMode(DrawMode.HIDE);
       result.current.setOpenTab(TabType.TRACK_PLOT);
     });
+    expect(result.current.showSegmentations).toBe(true);
     expect(result.current.showCentroids).toBe(true);
     expect(result.current.centroidRadiusPx).toBe(15);
     expect(result.current.showTrackPath).toBe(true);

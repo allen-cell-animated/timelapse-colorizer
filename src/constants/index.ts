@@ -17,6 +17,11 @@ export const BACKDROP_OBJECT_OPACITY_MAX = 100;
 export const BACKDROP_OBJECT_OPACITY_DEFAULT = 50;
 export const COLOR_RAMP_RANGE_DEFAULT: [number, number] = [0, 0];
 
+export const CENTROID_RADIUS_PX_SLIDER_MAX = 15;
+export const CENTROID_RADIUS_PX_SLIDER_MIN = 1;
+export const CENTROID_RADIUS_PX_INPUT_MIN = 0;
+export const CENTROID_RADIUS_PX_INPUT_MAX = 100;
+
 export const CANVAS_ASPECT_RATIO = 14.6 / 10;
 
 export const DEFAULT_LABEL_COLOR_PRESETS = [
