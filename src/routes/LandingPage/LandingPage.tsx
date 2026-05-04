@@ -15,6 +15,8 @@ import type { LocationState } from "src/types";
 import ProjectList from "./components/ProjectList";
 import { LANDING_PAGE_CONTENT } from "./constants";
 
+const MAX_CONTENT_WIDTH_PX = 1060;
+
 const BannerVideo = lazy(() => import("src/components/AssetWrappers/BannerVideo"));
 
 const Banner = styled(FlexColumnAlignCenter)`
@@ -26,7 +28,7 @@ const Banner = styled(FlexColumnAlignCenter)`
 `;
 
 const BannerTextContainer = styled(FlexColumn)`
-  max-width: 1060px;
+  max-width: ${MAX_CONTENT_WIDTH_PX}px;
   width: calc(90vw - 40px);
   padding: 30px 0;
 
@@ -64,7 +66,7 @@ const BannerVideoContainer = styled.div`
 `;
 
 const ContentContainer = styled(FlexColumn)`
-  max-width: 1060px;
+  max-width: ${MAX_CONTENT_WIDTH_PX}px;
   width: calc(90vw - 40px);
   margin: auto;
 `;
@@ -90,9 +92,18 @@ const FeatureHighlightsItem = styled(FlexColumn)`
   }
 `;
 
+// TODO: Uncomment once tutorial content is completed
+
+// const TutorialVideoContainer = styled.div`
+//   width: 100%;
+//   background-color: var(--color-background-alt);
+//   padding: 30px 0;
+//   margin-top: 30px;
+// `;
+
 const LoadPromptContainer = styled(FlexColumnAlignCenter)`
-  background-color: var(--color-background-alt);
-  margin: 30px 0;
+  background-color: var(--color-background-med);
+  margin: 0 0 30px 0;
   padding: 30px 0;
 
   & > h2 {
@@ -172,6 +183,28 @@ export default function LandingPage(): ReactElement {
           </FeatureHighlightsItem>
         </FeatureHighlightsContainer>
       </ContentContainer>
+
+      {/* TODO: Delete break below and uncomment once tutorial content is completed */}
+      <br />
+      {/* <TutorialVideoContainer>
+        <ContentContainer style={{ gap: 20 }}>
+          <h2 style={{ margin: 0 }}>See how Timelapse Feature Explorer can help in your research and analysis</h2>
+          <VideoList videoEntries={LANDING_PAGE_VIDEO_CONTENT}></VideoList>
+          <h2 style={{ margin: 0 }}>Additional resources</h2>
+          <ul style={{ margin: 0 }}>
+            <li style={{ margin: 0 }}>
+              Follow{" "}
+              <ExternalLink
+                href={
+                  "https://github.com/allen-cell-animated/colorizer-data/blob/main/documentation/getting_started_guide/GETTING_STARTED.ipynb"
+                }
+              >
+                our data conversion tutorial on GitHub
+              </ExternalLink>
+            </li>
+          </ul>
+        </ContentContainer>
+      </TutorialVideoContainer> */}
 
       <LoadPromptContainer>
         <h2 style={{ margin: 0 }}>Load a dataset below or your own data to get started</h2>
