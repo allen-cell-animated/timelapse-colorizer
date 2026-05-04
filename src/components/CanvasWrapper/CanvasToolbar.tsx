@@ -36,7 +36,7 @@ const SectionDivider = styled.hr`
   width: 100%;
   margin: 0;
   border: none;
-  background-color: rgba(0, 0, 0, 0.2);
+  background-color: var(--color-dividers);
 `;
 
 export default function CanvasToolbar(props: CanvasToolbarProps): ReactElement {
