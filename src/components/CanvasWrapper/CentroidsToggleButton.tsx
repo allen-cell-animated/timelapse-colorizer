@@ -17,13 +17,13 @@ export default function CentroidsToggleButton(): ReactElement {
 
   return (
     <ToggleButtonWithConfig
-      name={"centroids"}
+      name="centroids"
       visible={showCentroids}
       setVisible={setShowCentroids}
       configMenuContents={configMenuContents}
-      settingsLinkText={"Viewer settings > Objects"}
+      settingsLinkText="Viewer settings > Objects"
       visibleIcon={<CentroidIconSVG />}
       hiddenIcon={<CentroidSlashIconSVG />}
-    ></ToggleButtonWithConfig>
+    />
   );
 }
