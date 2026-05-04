@@ -38,7 +38,7 @@ export default function ChannelToggleButton(): ReactElement {
     <span key="no-channels">{hasChannels ? `${channelString} available` : "(No channels available)"}</span>,
   ];
 
-  const createConfigMenuContents = (
+  const configMenuContents = (
     <SettingsContainer labelWidth="80px" style={{ marginBottom: 6 }} key="channel-settings-container">
       <SettingsItem
         label={
@@ -96,10 +96,10 @@ export default function ChannelToggleButton(): ReactElement {
       visible={isAnyChannelVisible}
       setVisible={onSetVisible}
       disabled={!hasChannels}
-      name={"channels"}
+      name="channels"
       tooltipContents={tooltipContents}
-      configMenuContents={createConfigMenuContents}
+      configMenuContents={configMenuContents}
       settingsLinkText="Viewer settings > 3D Channels"
-    ></ToggleButtonWithConfig>
+    />
   );
 }
