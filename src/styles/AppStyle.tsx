@@ -80,6 +80,7 @@ const theme = {
     layout: {
       background: palette.gray0,
       backgroundAlt: palette.gray7,
+      backgroundMed: palette.gray15,
       backgroundAltTransparent: "rgba(240, 240, 240, 0.5)",
       tabBackground: palette.gray5,
       dividers: palette.grayTransparent15,
@@ -201,6 +202,7 @@ const CssContainer = styled.div`
 
   /* Layout */
   --color-background: ${theme.color.layout.background};
+  --color-background-med: ${theme.color.layout.backgroundMed};
   --color-background-alt: ${theme.color.layout.backgroundAlt};
   --color-background-alt-transparent: ${theme.color.layout.backgroundAltTransparent};
   --color-dividers: ${theme.color.layout.dividers};
