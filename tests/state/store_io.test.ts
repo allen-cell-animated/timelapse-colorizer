@@ -5,6 +5,7 @@ import { Color } from "three";
 import { describe, expect, it } from "vitest";
 
 import {
+  CentroidColorMode,
   DrawMode,
   type DrawSettings,
   KNOWN_CATEGORICAL_PALETTES,
@@ -79,6 +80,8 @@ const EXAMPLE_STORE: ViewerStoreSerializableState = {
   showSegmentations: false,
   showCentroids: true,
   centroidRadiusPx: 7,
+  centroidColor: new Color("#aabbcc"),
+  centroidColorMode: CentroidColorMode.USE_CUSTOM_COLOR,
   showScaleBar: true,
   showTimestamp: false,
   keepColorRampRange: true,
@@ -153,6 +156,8 @@ const EXAMPLE_STORE_EXPECTED_PARAMS: ExpectedParamType = {
   seg: "0",
   centroids: "1",
   "centroid-radius": "7",
+  "centroid-mode": "1",
+  "centroid-color": "aabbcc",
   scalebar: "1",
   timestamp: "0",
   bg: "1",
@@ -202,7 +207,7 @@ const EXAMPLE_STORE_EXPECTED_QUERY_STRING =
   "&palette-key=matplotlib_paired&filters=f1%3Am%3A0%3A0%2Cf2%3Aum%3ANaN%3ANaN%2Cf3%3Akm%3A0%3A1%2Cf4%3Amm%3A0.501%3A1000.485%2Cf5%3A%3Afff%2Cf6%3A%3A11" +
   "&seg=0&path=1&path-color=ff0000&path-width=1.500&path-ramp=esri-blue_red_8%21&path-mode=1&path-breaks=1&path-steps=10%2C25%21&path-persist=0&path-overlay=35&scalebar=1&timestamp=0&filter-color=ff0000&filter-mode=0&outlier-color=00ff00" +
   "&outlier-mode=1&outline-color=0000ff&outline-mode=0&outline-palette-key=matplotlib_paired" +
-  "&edge=1&edge-color=8090a0b0&centroids=1&centroid-radius=7" +
+  "&edge=1&edge-color=8090a0b0&centroids=1&centroid-mode=1&centroid-color=aabbcc&centroid-radius=7" +
   "&tab=filters&interpolate=1&scatter-x=feature3&scatter-y=feature2&scatter-bins=150&scatter-range=all" +
   "&bg=1&bg-brightness=75&bg-sat=50&fg-alpha=25" +
   "&vc=1&vc-key=_motion_&vc-color=ff00ff&vc-scale=5&vc-thickness-scaling=1&vc-thickness=4.500&vc-tooltip=c&vc-time-int=11" +

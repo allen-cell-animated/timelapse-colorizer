@@ -25,6 +25,8 @@ export const renderCanvasStateParamsSelector = (state: ViewerStoreState): Render
   showSegmentations: state.showSegmentations,
   showCentroids: state.showCentroids,
   centroidRadiusPx: state.centroidRadiusPx,
+  centroidColorMode: state.centroidColorMode,
+  centroidColor: state.centroidColor,
   trackPathColor: state.trackPathColor,
   trackPathColorRamp: state.trackPathColorRamp,
   trackPathWidthPx: state.trackPathWidthPx,
