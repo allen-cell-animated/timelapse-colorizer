@@ -379,6 +379,13 @@ vec4 getPointColor(vec2 uv) {
     }
   }
 
+  if (!showFrame) {
+    vec4 highlightColor = getHighlightColor(labelId, id, framePoints, uv, false);
+    if (highlightColor != TRANSPARENT) {
+      return highlightColor;
+    }
+  }
+
   // Points should render with a smooth, 1px anti-aliased outline, and we can
   // use some special alpha value tricks to do so.
   //
