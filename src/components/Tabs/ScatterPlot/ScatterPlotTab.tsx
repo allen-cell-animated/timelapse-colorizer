@@ -350,12 +350,12 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     }
 
     // Filter data by the range type, if applicable
-    const result = filterDataByRange(dataset, currentFrame, rawXData, rawYData, rangeType);
-    if (result === undefined) {
+    const pointsData = filterDataByRange(dataset, currentFrame, rawXData, rawYData, rangeType);
+    if (pointsData === undefined) {
       clearPlotAndStopRender();
       return;
     }
-    const { xData, yData, segIds, objectIds, trackIds } = result;
+    const { xData, yData, objectIds } = pointsData;
 
     plottedIds.current = new Set(objectIds);
 
@@ -372,11 +372,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       colorizeConfig,
       xAxisFeatureKey,
       yAxisFeatureKey,
-      xData,
-      yData,
-      objectIds,
-      segIds,
-      trackIds,
+      pointsData,
       {},
       markerBaseColor,
       // disable hover for all points other than the track when one is selected
@@ -431,22 +427,12 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         }
         // Connect track points as a line trace.
         const outOfRangeOutlineColor = outOfRangeDrawSettings.color.clone().multiplyScalar(0.8);
-        const trackTraces = colorizeScatterplotPoints(
-          colorizeConfig,
-          xAxisFeatureKey,
-          yAxisFeatureKey,
-          trackData.xData,
-          trackData.yData,
-          trackData.objectIds,
-          trackData.segIds,
-          trackData.trackIds,
-          {
-            outOfRange: {
-              color: theme.color.layout.background,
-              line: { width: 1, color: "#" + outOfRangeOutlineColor.getHexString() + "40" },
-            },
-          }
-        );
+        const trackTraces = colorizeScatterplotPoints(colorizeConfig, xAxisFeatureKey, yAxisFeatureKey, trackData, {
+          outOfRange: {
+            color: theme.color.layout.background,
+            line: { width: 1, color: "#" + outOfRangeOutlineColor.getHexString() + "40" },
+          },
+        });
         traces.push(...trackTraces);
         plottedIds.current = new Set([...plottedIds.current, ...trackData.objectIds]);
       }

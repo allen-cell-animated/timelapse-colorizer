@@ -45,7 +45,7 @@ export type TraceData = {
   marker: Partial<PlotMarker>;
 };
 
-export type FilteredData = {
+export type PointsData = {
   xData: DataArray;
   yData: DataArray;
   objectIds: number[];
@@ -102,7 +102,7 @@ export const filterDataByRange = (
   rawYData: DataArray,
   range: PlotRangeType,
   track?: Track
-): undefined | FilteredData => {
+): undefined | PointsData => {
   if (!dataset || !rawXData || !rawYData) {
     return undefined;
   }
@@ -289,8 +289,9 @@ export const getCurrentFrameShapes = (
 
   // Render the dots. See TODO in `scatterplotTraceToShapes` for refactoring
   // `colorizeScatterplotPoints`.
+  const groupedData = { xData, yData, objectIds: ids, segIds, trackIds };
   const pointShapes = scatterplotTraceToShapes(
-    colorizeScatterplotPoints(colorizeConfig, xAxisFeatureKey, yAxisFeatureKey, xData, yData, ids, segIds, trackIds, {
+    colorizeScatterplotPoints(colorizeConfig, xAxisFeatureKey, yAxisFeatureKey, groupedData, {
       outOfRange: {
         color: "var( --color-background)",
         line: { width: 2, color: "#" + outOfRangeOutlineColor.getHexString() + "40" },
@@ -338,11 +339,7 @@ export const colorizeScatterplotPoints = (
   colorizeState: ColorizeStateParams,
   xAxisFeatureKey: string | null,
   yAxisFeatureKey: string | null,
-  xData: DataArray,
-  yData: DataArray,
-  objectIds: number[],
-  segIds: number[],
-  trackIds: number[],
+  data: PointsData,
   markerConfig: Partial<PlotMarker> & { outliers?: Partial<PlotMarker>; outOfRange?: Partial<PlotMarker> } = {},
   overrideColor?: Color,
   allowHover = true
@@ -357,7 +354,7 @@ export const colorizeScatterplotPoints = (
     outlierDrawSettings,
     inRangeLUT,
   } = colorizeState;
-  console.log(colorizeState);
+  const { xData, yData, objectIds, segIds, trackIds } = data;
   if (featureKey === null || dataset === null || !xAxisFeatureKey || !yAxisFeatureKey) {
     return [];
   }
