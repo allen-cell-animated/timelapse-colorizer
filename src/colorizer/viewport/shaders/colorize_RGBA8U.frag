@@ -285,28 +285,24 @@ vec4 getFeatureColor(int id, vec2 uv) {
 }
 
 /**
- * If an object is selected, returns its highlight color and sets
- * `isHighlightPixel` to true. If not selected, returns a transparent color and
- * sets `isHighlightPixel` to false.
+ * If an object is selected, returns its highlight color. If not selected,
+ * returns the transparent color (`TRANSPARENT`).
 */
-vec4 getHighlightColor(uint labelId, int id, usampler2D tex, vec2 uv, bool useFrameScaling, out bool isHighlightPixel) {
+vec4 getHighlightColor(uint labelId, int id, usampler2D tex, vec2 uv, bool useFrameScaling) {
   uint selectionIdx = getUintFromTex(selectedIds, id).r;
   if (selectionIdx != 0u) {
     if (isEdge(tex, uv, labelId, OUTLINE_WIDTH_PX, useFrameScaling)) {
       int colorIdx = int(selectionIdx) - 1;
       vec4 color = getOutlineColor(colorIdx);
-      isHighlightPixel = true;
       return vec4(color.rgb, 1.0);
     } else if (useTracksPalette && isEdge(tex, uv, labelId, OUTLINE_WIDTH_PX + 2.0, useFrameScaling)) {
       // When coloring with the track palette, apply an additional 2px inner
       // outline using the background color for better contrast against the
       // track outline color.
-      isHighlightPixel = true;
       return vec4(backgroundColor, 1.0);
     }
   }
   // Not selected or not edge pixel
-  isHighlightPixel = false;
   return TRANSPARENT;
 }
 
@@ -326,9 +322,8 @@ vec4 getObjectColor(vec2 sUv, float opacity) {
   }
 
   // Draw an outline around highlighted objects
-  bool isHighlight;
-  vec4 highlightColor = getHighlightColor(labelId, id, frame, sUv, true, isHighlight);
-  if (isHighlight) {
+  vec4 highlightColor = getHighlightColor(labelId, id, frame, sUv, true);
+  if (highlightColor != TRANSPARENT) {
     return highlightColor;
   }
 
@@ -362,9 +357,8 @@ vec4 getPointColor(vec2 uv) {
   }
 
   if (showPointSelectionOutlines) {
-    bool isHighlight;
-    vec4 highlightColor = getHighlightColor(labelId, id, framePoints, uv, false, isHighlight);
-    if (isHighlight) {
+    vec4 highlightColor = getHighlightColor(labelId, id, framePoints, uv, false);
+    if (highlightColor != TRANSPARENT) {
       return highlightColor;
     }
   }
