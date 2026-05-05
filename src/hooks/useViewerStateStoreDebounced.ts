@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useShallow } from "zustand/shallow";
 
 import type { ViewerStore } from "src/state/slices";
@@ -36,39 +36,62 @@ export const useViewerStateStoreDebounced = <T extends Partial<ViewerStore>>(
 
   const debouncedStateRef = useRef(rawState);
 
-  // Detect changes in the selected state vs. debounced state.
-  for (const key in rawState) {
-    if (debouncedStateRef.current[key] !== rawState[key]) {
-      const propertyDelayMs = Math.max(propertyDelayMsRef.current[key] ?? delayMs, 0);
+  const getPropertyDelayMs = (key: keyof T): number => {
+    return Math.max(propertyDelayMsRef.current[key] ?? delayMs, 0);
+  };
 
-      if (propertyDelayMs === 0) {
-        // No debounce, set immediately.
-        debouncedStateRef.current = {
-          ...debouncedStateRef.current,
-          [key]: rawState[key],
-        };
-      } else if (pendingValues.current[key] !== rawState[key]) {
-        // Value has been changed (either from previous state or while an update
-        // was pending); start a new timeout to update the debounced state.
-        pendingValues.current[key] = rawState[key];
-        // Clear the existing timeout, if already pending
-        if (propertyTimeouts.current[key]) {
-          clearTimeout(propertyTimeouts.current[key]);
-        }
-        propertyTimeouts.current[key] = setTimeout(() => {
-          const value = pendingValues.current[key];
-          debouncedStateRef.current = {
-            ...debouncedStateRef.current,
-            [key]: value,
-          };
-          triggerStateUpdate();
-          // Clear the pending value and timeout for this property
-          delete pendingValues.current[key];
-          delete propertyTimeouts.current[key];
-        }, propertyDelayMs);
-      }
+  // Set any properties that can be updated immediately (debounce is 0).
+  for (const key in rawState) {
+    const propertyDelayMs = getPropertyDelayMs(key);
+    if (debouncedStateRef.current[key] !== rawState[key] && propertyDelayMs === 0) {
+      // No debounce, set immediately.
+      debouncedStateRef.current = {
+        ...debouncedStateRef.current,
+        [key]: rawState[key],
+      };
     }
   }
+
+  // Handle debouncing properties in an effect
+  useEffect(() => {
+    for (const key in rawState) {
+      if (debouncedStateRef.current[key] !== rawState[key]) {
+        const propertyDelayMs = getPropertyDelayMs(key);
+        if (propertyDelayMs > 0 && pendingValues.current[key] !== rawState[key]) {
+          // Value has been changed (either from previous state or while an
+          // existing update was pending); start a new timeout to update the
+          // debounced state.
+          pendingValues.current[key] = rawState[key];
+          // Clear the existing timeout, if already pending
+          if (propertyTimeouts.current[key]) {
+            clearTimeout(propertyTimeouts.current[key]);
+          }
+          propertyTimeouts.current[key] = setTimeout(() => {
+            const value = pendingValues.current[key];
+            debouncedStateRef.current = {
+              ...debouncedStateRef.current,
+              [key]: value,
+            };
+            triggerStateUpdate();
+            // Clear the pending value and timeout for this property
+            delete pendingValues.current[key];
+            delete propertyTimeouts.current[key];
+          }, propertyDelayMs);
+        }
+      }
+    }
+  }, [rawState, delayMs]);
+
+  // Clear timeouts on unmount
+  useEffect(() => {
+    return () => {
+      for (const timeoutId of Object.values(propertyTimeouts.current)) {
+        clearTimeout(timeoutId);
+      }
+      pendingValues.current = {};
+      propertyTimeouts.current = {};
+    };
+  }, []);
 
   const isDebouncePending = Object.keys(pendingValues.current).length > 0;
   return [debouncedStateRef.current, isDebouncePending];
