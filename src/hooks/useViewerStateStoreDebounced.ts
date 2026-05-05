@@ -27,7 +27,7 @@ export const useViewerStateStoreDebounced = <T extends Partial<ViewerStore>>(
   const rawState = useViewerStateStore(useShallow(selector));
 
   const [_countState, _setCountState] = useState(0);
-  const triggerStateUpdate = () => _setCountState((prev) => prev + 1);
+  const triggerStateUpdate = (): void => _setCountState((prev) => prev + 1);
 
   const propertyTimeouts = useRef<Partial<Record<keyof T, TimeoutHandle>>>({});
   const pendingValues = useRef<Partial<T>>({});

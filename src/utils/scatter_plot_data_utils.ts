@@ -1,6 +1,6 @@
 import { unparse } from "papaparse";
-import type { PlotData, PlotMarker, PlotMouseEvent, Shape } from "plotly.js-dist-min";
-import { Color, type ColorRepresentation, TypedArray } from "three";
+import type { LayoutAxis, PlotData, PlotMarker, PlotMouseEvent, Shape } from "plotly.js-dist-min";
+import { Color, type ColorRepresentation, type TypedArray } from "three";
 
 import {
   type ColorRamp,
@@ -169,17 +169,17 @@ export const getAxisLayoutsFromRange = (
   histogramTrace: Partial<PlotData>,
   viewMode: ViewMode
 ): {
-  scatterPlotAxis: Partial<Plotly.LayoutAxis>;
-  histogramAxis: Partial<Plotly.LayoutAxis>;
+  scatterPlotAxis: Partial<LayoutAxis>;
+  histogramAxis: Partial<LayoutAxis>;
   histogramTrace: Partial<PlotData>;
 } => {
-  let scatterPlotAxis: Partial<Plotly.LayoutAxis> = {
+  let scatterPlotAxis: Partial<LayoutAxis> = {
     domain: [0, 0.85],
     showgrid: false,
     showline: true,
     zeroline: true,
   };
-  const histogramAxis: Partial<Plotly.LayoutAxis> = {
+  const histogramAxis: Partial<LayoutAxis> = {
     domain: [0.9, 1],
     showgrid: false,
     hoverformat: "f",
@@ -263,8 +263,8 @@ export const getCurrentFrameShapes = (
   tracks: Map<number, Track>,
   rawXData: TypedArray | undefined,
   rawYData: TypedArray | undefined
-): Partial<Plotly.Shape>[] => {
-  const crosshairShapes: Partial<Plotly.Shape>[] = [];
+): Partial<Shape>[] => {
+  const crosshairShapes: Partial<Shape>[] = [];
   if (!rawXData || !rawYData || !dataset) {
     return [];
   }
