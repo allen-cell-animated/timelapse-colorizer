@@ -111,7 +111,7 @@ export function ImageToggleButton(props: ToggleImageButtonProps): ReactElement {
       >
         <TooltipWithSubtitle
           title={tooltipTitle}
-          placement={"right"}
+          placement="right"
           subtitleList={tooltipContents}
           tooltipRef={tooltipRef}
           getPopupContainer={() => popupContainerRef.current || document.body}

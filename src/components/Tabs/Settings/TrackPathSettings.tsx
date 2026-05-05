@@ -196,7 +196,7 @@ export default function TrackPathSettings(): ReactElement {
         </SettingsItem>
 
         <SettingsItem
-          label={"Show breaks"}
+          label="Show breaks"
           htmlFor={TrackPathSettingsHtmlIds.TRACK_PATH_SHOW_BREAKS_CHECKBOX}
           labelStyle={{ height: "min-content" }}
         >

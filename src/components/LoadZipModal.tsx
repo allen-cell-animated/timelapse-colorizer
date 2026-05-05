@@ -151,7 +151,7 @@ export default function LoadZipModal(props: LoadZipModalProps): ReactElement {
   }, [uploadedCollection, props.targetDataset]);
 
   return (
-    <StyledModal title={"Reload dataset"} open={props.open} footer={null} onCancel={props.onClose}>
+    <StyledModal title="Reload dataset" open={props.open} footer={null} onCancel={props.onClose}>
       <FlexColumn $gap={10}>
         <FlexColumn style={{ wordWrap: "break-word", wordBreak: "break-all" }}>
           <p style={{ margin: "0" }}>To continue, please reload the dataset from a .zip file.</p>

@@ -241,7 +241,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
         <FlexRow $gap={2}>
           <AnnotationImportButton annotationState={props.annotationState} />
           <Tooltip
-            title={"Create an annotation first to enable exporting"}
+            title="Create an annotation first to enable exporting"
             placement="top"
             open={hasAnnotations ? false : undefined}
           >

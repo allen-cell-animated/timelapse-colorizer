@@ -92,7 +92,7 @@ export default function PlotTab(props: PlotTabProps): ReactElement {
     <>
       <TrackTitleBar $gap={12}>
         <ColorRampDropdown
-          label={"Palette"}
+          label="Palette"
           useCategoricalPalettes={true}
           selectedPaletteKey={outlinePaletteKey}
           selectedPalette={KNOWN_CATEGORICAL_PALETTES.get(outlinePaletteKey)?.colors}

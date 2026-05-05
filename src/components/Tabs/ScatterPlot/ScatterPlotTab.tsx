@@ -1024,7 +1024,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       <FlexRow $gap={6}>
         <FlexRowAlignCenter $gap={8} style={{ flexWrap: "wrap", width: "100%" }}>
           <SelectionDropdown
-            label={"X"}
+            label="X"
             selected={xAxisFeatureKey || ""}
             items={menuItems}
             onChange={setXAxis}
@@ -1044,7 +1044,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
             </IconButton>
           </Tooltip>
           <SelectionDropdown
-            label={"Y"}
+            label="Y"
             selected={yAxisFeatureKey || ""}
             items={menuItems}
             onChange={setYAxis}
@@ -1053,10 +1053,10 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
           />
           <div>
             <SelectionDropdown
-              label={"Show objects from"}
+              label="Show objects from"
               selected={rangeType}
               items={PLOT_RANGE_SELECT_ITEMS}
-              controlWidth={"120px"}
+              controlWidth="120px"
               onChange={(value: string) => setRangeType(value as PlotRangeType)}
               showSelectedItemTooltip={false}
             ></SelectionDropdown>

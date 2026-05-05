@@ -348,7 +348,7 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
           onClear={() => setThresholds([])}
           // Allows the selection dropdown to be selected and styled
           getPopupContainer={() => selectContainerRef.current!}
-          maxTagCount={"responsive"}
+          maxTagCount="responsive"
           suffixIcon={isFocused ? <SearchOutlined /> : <DropdownSVG style={{ pointerEvents: "none", width: "12px" }} />}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}

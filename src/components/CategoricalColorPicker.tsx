@@ -72,7 +72,7 @@ export default function CategoricalColorPicker(inputProps: CategoricalColorPicke
             id={colorPickerId}
             value={color.getHexString()}
             onChange={onChange}
-            size={"small"}
+            size="small"
             disabledAlpha={true}
             // Necessary to prevent the color picker from going off the screen
             placement="right"

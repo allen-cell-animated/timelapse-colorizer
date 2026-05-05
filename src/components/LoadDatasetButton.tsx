@@ -354,7 +354,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
         <p>Load</p>
       </TextButton>
       <StyledModal
-        title={"Load a single dataset or collection"}
+        title="Load a single dataset or collection"
         open={isLoadModalOpen}
         onCancel={handleCancel}
         afterOpenChange={(open) => open && inputRef.current?.focus({ cursor: "all" })}

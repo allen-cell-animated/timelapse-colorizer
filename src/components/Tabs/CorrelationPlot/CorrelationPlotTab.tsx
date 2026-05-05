@@ -174,7 +174,7 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
           placeholder="Add features"
           options={featureOptions}
           value={sortedSelectedFeatures}
-          maxTagCount={"responsive"}
+          maxTagCount="responsive"
           onClear={() => setSelectedFeatures([])}
           disabled={!props.dataset}
           onSelect={(value) => {

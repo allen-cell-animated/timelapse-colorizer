@@ -116,11 +116,11 @@ export default function ChannelSettingsControl(): ReactElement {
   ]);
 
   return (
-    <ToggleCollapse label={"3D Channels"} maxContentHeightPx={maxChannelControlsHeight} contentIndentPx={16}>
+    <ToggleCollapse label="3D Channels" maxContentHeightPx={maxChannelControlsHeight} contentIndentPx={16}>
       <div style={{ marginRight: "20px", paddingTop: "4px" }}>
         {hasChannels && (
           <SettingsContainer style={{ marginBottom: 16 }}>
-            <SettingsItem label={"Show all"} htmlFor={SHOW_ALL_CHANNELS_CHECKBOX_ID}>
+            <SettingsItem label="Show all" htmlFor={SHOW_ALL_CHANNELS_CHECKBOX_ID}>
               <div style={{ width: "fit-content" }}>
                 <Checkbox
                   checked={areAllChannelsVisible}
