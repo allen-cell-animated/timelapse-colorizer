@@ -68,7 +68,7 @@ export default function CanvasToolbar(props: CanvasToolbarProps): ReactElement {
 
   return (
     <CanvasControlsContainer $gap={4} style={props.style}>
-      <Tooltip title={"Reset view"} placement="right" trigger={["hover", "focus"]}>
+      <Tooltip title="Reset view" placement="right" trigger={["hover", "focus"]}>
         <IconButton
           onClick={() => {
             canv.resetView();
@@ -79,7 +79,7 @@ export default function CanvasToolbar(props: CanvasToolbarProps): ReactElement {
           <VisuallyHidden>Reset view</VisuallyHidden>
         </IconButton>
       </Tooltip>
-      <TooltipWithSubtitle title={"Zoom in"} subtitle="Ctrl + Scroll" placement="right" trigger={["hover", "focus"]}>
+      <TooltipWithSubtitle title="Zoom in" subtitle="Ctrl + Scroll" placement="right" trigger={["hover", "focus"]}>
         <IconButton
           type="link"
           onClick={() => {
@@ -90,7 +90,7 @@ export default function CanvasToolbar(props: CanvasToolbarProps): ReactElement {
           <VisuallyHidden>Zoom in</VisuallyHidden>
         </IconButton>
       </TooltipWithSubtitle>
-      <TooltipWithSubtitle title={"Zoom out"} subtitle="Ctrl + Scroll" placement="right" trigger={["hover", "focus"]}>
+      <TooltipWithSubtitle title="Zoom out" subtitle="Ctrl + Scroll" placement="right" trigger={["hover", "focus"]}>
         <IconButton
           type="link"
           onClick={() => {

@@ -606,7 +606,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
 
       {/* Export modal */}
       <StyledModal
-        title={"Export"}
+        title="Export"
         open={isModalOpen}
         onCancel={handleCancel}
         cancelButtonProps={{ hidden: true }}
@@ -722,7 +722,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
               </Space>
             </MaxWidthRadioGroup>
           </Card>
-          <Card size="small" title={"Dimensions"}>
+          <Card size="small" title="Dimensions">
             <SettingsContainer gapPx={6} indentPx={CARD_SETTINGS_INDENT_PX}>
               <SettingsItem
                 label="Frame dimensions"
@@ -799,7 +799,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
                   />
                 </div>
               </SettingsItem>
-              <SettingsItem label={"Feature legend"} htmlFor={ExportHtmlIds.SHOW_FEATURE_LEGEND_CHECKBOX}>
+              <SettingsItem label="Feature legend" htmlFor={ExportHtmlIds.SHOW_FEATURE_LEGEND_CHECKBOX}>
                 <div style={{ width: "fit-content" }}>
                   <Checkbox
                     id={ExportHtmlIds.SHOW_FEATURE_LEGEND_CHECKBOX}
@@ -849,7 +849,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
               </>
             )}
             {/* Filename prefix */}
-            <SettingsItem label={"Filename"} htmlFor={ExportHtmlIds.IMAGE_FILENAME_INPUT}>
+            <SettingsItem label="Filename" htmlFor={ExportHtmlIds.IMAGE_FILENAME_INPUT}>
               <FlexRow $gap={6}>
                 <Input
                   id={ExportHtmlIds.IMAGE_FILENAME_INPUT}

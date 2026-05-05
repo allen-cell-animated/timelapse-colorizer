@@ -56,7 +56,7 @@ export default function DatasetFeatureControls(props: DatasetFeatureControlsProp
           buttonType="primary"
           items={datasetDropdownData}
           onChange={onSelectedDatasetValue}
-          controlWidth={"100%"}
+          controlWidth="100%"
         >
           <DownloadDatasetButton notificationApi={props.notificationApi} />
         </SelectionDropdown>
@@ -74,8 +74,8 @@ export default function DatasetFeatureControls(props: DatasetFeatureControlsProp
               props.onSelectFeature(dataset, value);
             }
           }}
-          width={"100%"}
-          controlWidth={"100%"}
+          width="100%"
+          controlWidth="100%"
         >
           <GlossaryPanel dataset={dataset} />
         </SelectionDropdown>

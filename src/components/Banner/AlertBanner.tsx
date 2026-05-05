@@ -133,7 +133,7 @@ export default function AlertBanner(props: AlertBannerProps): ReactElement {
   const description = renderStringArrayAsJsx(props.description);
   const message = (
     <FlexColumn>
-      <FlexRowAlignCenter $wrap={"wrap"} $gap={4}>
+      <FlexRowAlignCenter $wrap="wrap" $gap={4}>
         <h3 style={{ margin: 0 }}>{props.message}</h3>
         {!showFullContent && (
           <ReadMoreButton type="link" onClick={() => setShowFullContent(true)}>

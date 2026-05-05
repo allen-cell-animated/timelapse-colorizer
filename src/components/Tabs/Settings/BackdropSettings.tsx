@@ -67,7 +67,7 @@ export default function BackdropSettings(): ReactElement {
             items={backdropOptions}
             onChange={(key) => dataset && setBackdropKey(key)}
             disabled={isBackdropOptionsDisabled}
-            controlWidth={"280px"}
+            controlWidth="280px"
             controlTooltipPlacement="right"
           />
         </SettingsItem>

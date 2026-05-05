@@ -196,7 +196,7 @@ export default function LabelEditControls(props: PropsWithChildren<LabelEditCont
           "object",
           "objects"
         )}?`}
-        description={"This cannot be undone."}
+        description="This cannot be undone."
         open={showDeletePopup}
         onOpenChange={createOpenChangeHandler(setShowDeletePopup)}
         okButtonProps={{ danger: true }}

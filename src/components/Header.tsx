@@ -65,7 +65,7 @@ function HeaderLogo(props: { headerOpensInNewTab?: boolean }): ReactElement {
   return (
     <FlexRowAlignCenter>
       <AicsLogoLink href="https://www.allencell.org/" rel="noopener noreferrer" target="_blank">
-        <div title={"https://www.allencell.org"}>
+        <div title="https://www.allencell.org">
           <AicsLogoAndNameSVG />
           <AicsLogoSVG />
         </div>

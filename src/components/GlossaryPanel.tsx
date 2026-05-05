@@ -78,7 +78,7 @@ export default function GlossaryPanel(props: GlossaryPanelProps): ReactElement {
       </Tooltip>
       <StyledDrawer
         zIndex={2000}
-        width={"calc(min(75vw, 1000px))"}
+        width="calc(min(75vw, 1000px))"
         onClose={() => {
           setShowPanel(false);
         }}

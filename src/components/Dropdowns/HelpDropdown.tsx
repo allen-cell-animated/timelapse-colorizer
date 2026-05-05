@@ -88,7 +88,7 @@ export default function HelpDropdown(): ReactElement {
     <div>
       <AccessibleDropdown
         dropdownContent={dropdownContent}
-        buttonText={"Help"}
+        buttonText="Help"
         buttonType="default"
         showTooltip={false}
         buttonStyle={{ width: "fit-content" }}

@@ -73,7 +73,7 @@ export default function VectorFieldSettings(): ReactElement {
             items={vectorOptions}
             onChange={setVectorKey}
             controlTooltipPlacement="right"
-            controlWidth={"300px"}
+            controlWidth="300px"
           ></SelectionDropdown>
           {vectorKey === VECTOR_KEY_MOTION_DELTA && vectorOptionsEnabled && (
             <Card style={{ position: "relative", width: "fit-content", marginTop: "10px" }} size="small">
@@ -108,7 +108,7 @@ export default function VectorFieldSettings(): ReactElement {
          * all deltas.
          * See examples in https://github.com/react-component/slider/issues/393.
          */}
-        <SettingsItem label={"Scale factor"} htmlFor={VectorSettingsHtmlIds.VECTOR_SCALE_FACTOR_SLIDER}>
+        <SettingsItem label="Scale factor" htmlFor={VectorSettingsHtmlIds.VECTOR_SCALE_FACTOR_SLIDER}>
           <div style={{ maxWidth: MAX_SETTINGS_SLIDER_WIDTH, width: "100%" }}>
             <LabeledSlider
               id={VectorSettingsHtmlIds.VECTOR_SCALE_FACTOR_SLIDER}
@@ -148,7 +148,7 @@ export default function VectorFieldSettings(): ReactElement {
               </div>
             </SettingsItem>
             <SettingsItem
-              label={"Scale thickness by magnitude"}
+              label="Scale thickness by magnitude"
               htmlFor={VectorSettingsHtmlIds.VECTOR_SCALE_THICKNESS_CHECKBOX}
             >
               <Checkbox

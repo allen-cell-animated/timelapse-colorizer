@@ -174,8 +174,8 @@ export default function ToggleCollapse(inputProps: PropsWithChildren<ToggleColla
 
   return (
     <FlexColumn className={"toggle-collapse " + (props.className ?? "")}>
-      <FlexRowAlignCenter className={"toggle-collapse-control-row"} style={{ justifyContent: "space-between" }}>
-        <FlexRowAlignCenter $gap={6} className={"toggle-collapse-header"} style={{ marginBottom: 2 }}>
+      <FlexRowAlignCenter className="toggle-collapse-control-row" style={{ justifyContent: "space-between" }}>
+        <FlexRowAlignCenter $gap={6} className="toggle-collapse-header" style={{ marginBottom: 2 }}>
           {!props.toggleDisabled ? (
             <label htmlFor={toggleId} style={{ ...defaultProps.labelStyle, ...props.labelStyle }}>
               {props.label}

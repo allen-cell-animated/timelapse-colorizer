@@ -59,7 +59,7 @@
             "leadingUnderscore": "allow"
           },
           // Be permissive for imports (otherwise it uses the default rule)
-          {"selector": ["import"], "format": ["camelCase","PascalCase", "UPPER_CASE"] },
+          { "selector": ["import"], "format": ["camelCase", "PascalCase", "UPPER_CASE"] },
           { "selector": "objectLiteralProperty", "format": ["camelCase", "PascalCase"] },
           { "selector": "typeLike", "format": ["PascalCase"] }
         ]
@@ -121,6 +121,10 @@
     "@typescript-eslint/explicit-function-return-type": ["error", { "allowExpressions": true }],
     "@typescript-eslint/no-duplicate-enum-values": "error",
     "@typescript-eslint/typedef": ["error", { "parameter": true }],
+    "react/jsx-curly-brace-presence": [
+      "warn",
+      { "props": "never", "children": "never", "propElementValues": "always" }
+    ],
     "@typescript-eslint/consistent-type-imports": [
       "warn",
       {
