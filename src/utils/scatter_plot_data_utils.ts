@@ -162,21 +162,6 @@ export function subsampleColorRamp(colorRamp: ColorRamp, numColors: number): Col
   return colors;
 }
 
-/**
- * Appends alpha opacity information to a hex color string, making it less opaque as the number of markers increases.
- */
-export function scaleColorOpacityByMarkerCount(numMarkers: number, baseColor: HexColorString): HexColorString {
-  if (baseColor.length !== 7) {
-    throw new Error("ScatterPlotTab.getMarkerColor: Base color '" + baseColor + "' must be 7-character hex string.");
-  }
-  // Interpolate linearly between 80% and 25% transparency from 0 up to a max of 1000 markers.
-  const opacity = remap(numMarkers, 0, 1000, 0.8, 0.25);
-  const opacityString = Math.floor(opacity * 255)
-    .toString(16)
-    .padStart(2, "0");
-  return (baseColor + opacityString) as HexColorString;
-}
-
 // TODO: Move to `scatter_plot_data_utils.ts`
 /**
  * Applies coloring to point traces in a scatterplot. Does this by splitting
@@ -444,6 +429,21 @@ export function splitTraceData(traceData: TraceData, maxPoints: number): TraceDa
  */
 export function isHistogramEvent(eventData: PlotMouseEvent): boolean {
   return eventData.points.length > 0 && eventData.points[0].data.type === "histogram";
+}
+
+/**
+ * Appends alpha opacity information to a hex color string, making it less opaque as the number of markers increases.
+ */
+export function scaleColorOpacityByMarkerCount(numMarkers: number, baseColor: HexColorString): HexColorString {
+  if (baseColor.length !== 7) {
+    throw new Error("ScatterPlotTab.getMarkerColor: Base color '" + baseColor + "' must be 7-character hex string.");
+  }
+  // Interpolate linearly between 80% and 25% transparency from 0 up to a max of 1000 markers.
+  const opacity = remap(numMarkers, 0, 1000, 0.8, 0.25);
+  const opacityString = Math.floor(opacity * 255)
+    .toString(16)
+    .padStart(2, "0");
+  return (baseColor + opacityString) as HexColorString;
 }
 
 /**
