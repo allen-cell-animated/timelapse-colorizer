@@ -2,8 +2,9 @@ precision highp usampler2D;
 precision highp int;
 
 uniform usampler2D frame;
+uniform bool showFrame;
 uniform usampler2D framePoints;
-uniform bool showPointSelectionOutlines;
+uniform bool showPoints;
 uniform sampler2D featureData;
 uniform usampler2D outlierData;
 /** A mapping of IDs that are in range after feature thresholding/filtering is applied. If
@@ -307,7 +308,7 @@ vec4 getHighlightColor(uint labelId, int id, usampler2D tex, vec2 uv, bool useFr
 }
 
 vec4 getObjectColor(vec2 sUv, float opacity) {
-  if (isOutsideBounds(sUv)) {
+  if (isOutsideBounds(sUv) || !showFrame) {
     return TRANSPARENT;
   }
 
@@ -342,6 +343,10 @@ vec4 getObjectColor(vec2 sUv, float opacity) {
 }
 
 vec4 getPointColor(vec2 uv) {
+  if (!showPoints) {
+    return TRANSPARENT;
+  }
+
   // Get the segmentation id at this pixel
   float labelAlpha = 1.0;
   uint labelId = getLabelId(framePoints, uv, labelAlpha);
@@ -356,7 +361,7 @@ vec4 getPointColor(vec2 uv) {
     return TRANSPARENT;
   }
 
-  if (showPointSelectionOutlines) {
+  if (!showFrame) {
     vec4 highlightColor = getHighlightColor(labelId, id, framePoints, uv, false);
     if (highlightColor != TRANSPARENT) {
       return highlightColor;

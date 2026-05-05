@@ -81,8 +81,9 @@ type ColorizeUniformTypes = {
   panOffset: Vector2;
   /** Image, mapping each pixel to an object ID using the RGBA values. */
   frame: Texture;
+  showFrame: boolean;
   framePoints: Texture;
-  showPointSelectionOutlines: boolean;
+  showPoints: boolean;
   objectOpacity: number;
   /** The feature value of each object ID. */
   featureData: Texture;
@@ -135,8 +136,9 @@ const getDefaultUniforms = (): ColorizeUniforms => {
     canvasToFrameScale: new Uniform(new Vector2(1, 1)),
     canvasSizePx: new Uniform(new Vector2(1, 1)),
     frame: new Uniform(emptyFrame),
+    showFrame: new Uniform(true),
     framePoints: new Uniform(emptyFramePoints),
-    showPointSelectionOutlines: new Uniform(false),
+    showPoints: new Uniform(false),
     featureData: new Uniform(emptyFeature),
     outlierData: new Uniform(emptyOutliers),
     inRangeIds: new Uniform(emptyInRangeIds),
@@ -622,11 +624,15 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
       }
     }
 
+    if (hasPropertyChanged(params, prevParams, ["showCentroids"])) {
+      this.setUniform("showPoints", params.showCentroids);
+    }
+
     if (hasPropertyChanged(params, prevParams, ["showSegmentations"])) {
       // Reload current frame
       promises.push(this.setFrame(this.currentFrame, true).then(() => {}));
       // Show point outlines when segmentations are disabled
-      this.setUniform("showPointSelectionOutlines", !params.showSegmentations);
+      this.setUniform("showFrame", params.showSegmentations);
     }
 
     // Update track path data
