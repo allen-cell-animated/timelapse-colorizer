@@ -1,6 +1,6 @@
 import { unparse } from "papaparse";
 import type { PlotData, PlotMarker, PlotMouseEvent, Shape } from "plotly.js-dist-min";
-import { Color, type ColorRepresentation } from "three";
+import { Color, type ColorRepresentation, TypedArray } from "three";
 
 import {
   type ColorRamp,
@@ -15,8 +15,15 @@ import {
   type HexColorString,
   PlotRangeType,
   type Track,
+  ViewMode,
 } from "src/colorizer";
-import { type FeatureData, FeatureType, TIME_FEATURE_KEY, TRACK_FEATURE_KEY } from "src/colorizer/Dataset";
+import {
+  CENTROID_Y_FEATURE_KEY,
+  type FeatureData,
+  FeatureType,
+  TIME_FEATURE_KEY,
+  TRACK_FEATURE_KEY,
+} from "src/colorizer/Dataset";
 import { remap } from "src/colorizer/utils/math_utils";
 import type { ColorizeStateParams } from "src/colorizer/viewport/types";
 
@@ -36,6 +43,14 @@ export type TraceData = {
   trackIds: number[];
   color: HexColorString;
   marker: Partial<PlotMarker>;
+};
+
+export type FilteredData = {
+  xData: DataArray;
+  yData: DataArray;
+  objectIds: number[];
+  segIds: number[];
+  trackIds: number[];
 };
 
 //// Data validation ////
@@ -87,15 +102,7 @@ export const filterDataByRange = (
   rawYData: DataArray,
   range: PlotRangeType,
   track?: Track
-):
-  | undefined
-  | {
-      xData: DataArray;
-      yData: DataArray;
-      objectIds: number[];
-      segIds: number[];
-      trackIds: number[];
-    } => {
+): undefined | FilteredData => {
   if (!dataset || !rawXData || !rawYData) {
     return undefined;
   }
@@ -144,6 +151,153 @@ export const filterDataByRange = (
   }
   // TODO: Consider moving this or making it conditional if it causes performance issues.
   return sanitizeNumericDataArrays(xData, yData, objectIds, segIds, trackIds);
+};
+
+/**
+ * Creates the scatterplot and histogram axes for a given feature. Normalizes for dataset min/max to
+ * prevents axes from jumping during time or track playback.
+ * @param featureKey Name of the feature to generate layouts for.
+ * @param histogramTrace The default histogram trace configuration.
+ * @returns An object with the following keys:
+ *  - `scatterPlotAxis`: Layout for the scatter plot axis.
+ *  - `histogramAxis`: Layout for the histogram axis.
+ *  - `histogramTrace`: A copy of the histogram trace, with potentially updated bin sizes.
+ */
+export const getAxisLayoutsFromRange = (
+  dataset: Dataset | null,
+  featureKey: string,
+  histogramTrace: Partial<PlotData>,
+  viewMode: ViewMode
+): {
+  scatterPlotAxis: Partial<Plotly.LayoutAxis>;
+  histogramAxis: Partial<Plotly.LayoutAxis>;
+  histogramTrace: Partial<PlotData>;
+} => {
+  let scatterPlotAxis: Partial<Plotly.LayoutAxis> = {
+    domain: [0, 0.85],
+    showgrid: false,
+    showline: true,
+    zeroline: true,
+  };
+  const histogramAxis: Partial<Plotly.LayoutAxis> = {
+    domain: [0.9, 1],
+    showgrid: false,
+    hoverformat: "f",
+  };
+  const newHistogramTrace = { ...histogramTrace };
+
+  let min = dataset?.getFeatureData(featureKey)?.min || 0;
+  let max = dataset?.getFeatureData(featureKey)?.max || 0;
+
+  if (0 < min && min < (max - min) / 20) {
+    // If min is close to zero (within 5% of the range), snap to zero.
+    min = 0;
+  }
+  if (dataset && dataset.isFeatureCategorical(featureKey)) {
+    // Add extra padding for categories so they're nicely centered
+    min -= 0.5;
+    max += 0.5;
+  } else {
+    // Add a little padding to the max so points aren't cut off by the edge of the plot.
+    // (ideally this would be a pixel padding, but plotly doesn't support that.)
+    max += (max - min) / 100;
+  }
+  scatterPlotAxis.range = [min, max];
+  if (viewMode === ViewMode.VIEW_2D && featureKey === CENTROID_Y_FEATURE_KEY) {
+    // In 2D mode, the origin (0,0) is in the top left corner, versus in plot
+    // the origin is in the bottom left by default. Reverse the Y-axis
+    // centroid value in 2D so the plot matches the onscreen objects.
+    scatterPlotAxis.range = [max, min];
+  }
+
+  // TODO: Show categories as box and whisker plots instead of scatterplot?
+  // TODO: Add special handling for integer features once implemented, so their histograms use reasonable
+  // bin sizes to prevent jumping.
+
+  if (dataset && dataset.isFeatureCategorical(featureKey)) {
+    // Create custom tick marks for the categories
+    const categories = dataset.getFeatureCategories(featureKey) || [];
+    scatterPlotAxis = {
+      ...scatterPlotAxis,
+      tickmode: "array",
+      tick0: "0", // start at 0
+      dtick: "1", // tick increment is 1
+      tickvals: [...categories.keys()], // map from category index to category label
+      ticktext: categories,
+      zeroline: false,
+    };
+    // Enforce bins on histogram traces for categorical features. This prevents a bug where the histograms
+    // would suddenly change width if a category wasn't present in the given data range.
+    newHistogramTrace.xbins = { start: min, end: max, size: (max - min) / categories.length };
+    // @ts-ignore. TODO: Update once the plotly types are updated.
+    newHistogramTrace.ybins = { start: min, end: max, size: (max - min) / categories.length };
+  }
+  return { scatterPlotAxis, histogramAxis, histogramTrace: newHistogramTrace };
+};
+
+/**
+ * VERY roughly estimate the max width in pixels needed for a categorical feature.
+ */
+export const estimateTextWidthPxForCategories = (dataset: Dataset | null, featureKey: string): number => {
+  if (featureKey === null || !dataset?.isFeatureCategorical(featureKey)) {
+    return 0;
+  }
+  const categories = dataset.getFeatureCategories(featureKey) || [];
+  return (
+    categories.reduce((_prev: any, val: string, acc: number) => {
+      return Math.max(val.length, acc);
+    }, 0) * 8
+  );
+};
+
+/**
+ * Returns an array of shapes that draw a crosshair + colored scatterplot dot over the
+ * points in selected tracks visible in the current frame.
+ */
+export const getCurrentFrameShapes = (
+  dataset: Dataset | null,
+  xAxisFeatureKey: string | null,
+  yAxisFeatureKey: string | null,
+  colorizeConfig: ColorizeStateParams,
+  currentFrame: number,
+  tracks: Map<number, Track>,
+  rawXData: TypedArray | undefined,
+  rawYData: TypedArray | undefined
+): Partial<Plotly.Shape>[] => {
+  const crosshairShapes: Partial<Plotly.Shape>[] = [];
+  if (!rawXData || !rawYData || !dataset) {
+    return [];
+  }
+  const xData: number[] = [];
+  const yData: number[] = [];
+  const ids: number[] = [];
+  const segIds: number[] = [];
+  const trackIds: number[] = [];
+  for (const track of tracks.values()) {
+    const currentObjectId = track.getIdAtTime(currentFrame);
+    if (currentObjectId !== -1) {
+      // Get crosshair for this shape and store data for rendering the dots
+      crosshairShapes.push(...getCrosshairShapes(rawXData[currentObjectId], rawYData[currentObjectId]));
+      xData.push(rawXData[currentObjectId]);
+      yData.push(rawYData[currentObjectId]);
+      ids.push(currentObjectId);
+      segIds.push(dataset!.getSegmentationId(currentObjectId));
+      trackIds.push(track.trackId);
+    }
+  }
+  const outOfRangeOutlineColor = colorizeConfig.outOfRangeDrawSettings.color.clone().multiplyScalar(0.8);
+
+  // Render the dots. See TODO in `scatterplotTraceToShapes` for refactoring
+  // `colorizeScatterplotPoints`.
+  const pointShapes = scatterplotTraceToShapes(
+    colorizeScatterplotPoints(colorizeConfig, xAxisFeatureKey, yAxisFeatureKey, xData, yData, ids, segIds, trackIds, {
+      outOfRange: {
+        color: "var( --color-background)",
+        line: { width: 2, color: "#" + outOfRangeOutlineColor.getHexString() + "40" },
+      },
+    })
+  );
+  return crosshairShapes.concat(pointShapes);
 };
 
 //// Plotly utilities ////

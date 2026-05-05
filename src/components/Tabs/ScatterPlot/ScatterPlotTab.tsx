@@ -7,8 +7,8 @@ import { Color } from "three";
 
 import { SwitchIconSVG } from "src/assets";
 import type { Dataset } from "src/colorizer";
-import { CENTROID_Y_FEATURE_KEY, TIME_FEATURE_KEY } from "src/colorizer/Dataset";
-import { PlotRangeType, ViewMode } from "src/colorizer/types";
+import { TIME_FEATURE_KEY } from "src/colorizer/Dataset";
+import { PlotRangeType } from "src/colorizer/types";
 import { hasAnyValueChanged, isPositiveInteger } from "src/colorizer/utils/data_utils";
 import type { ShowAlertBannerCallback } from "src/components/Banner/hooks";
 import IconButton from "src/components/Buttons/IconButton";
@@ -26,13 +26,14 @@ import { FlexRow, FlexRowAlignCenter } from "src/styles/utils";
 import { downloadCsv } from "src/utils/file_io";
 import {
   colorizeScatterplotPoints,
+  estimateTextWidthPxForCategories,
   filterDataByRange,
-  getCrosshairShapes,
+  getAxisLayoutsFromRange,
+  getCurrentFrameShapes,
   getHistogramBins,
   getScatterplotDataAsCsv,
   isHistogramEvent,
   makeLineTrace,
-  scatterplotTraceToShapes,
 } from "src/utils/scatter_plot_data_utils";
 import { areAnyHotkeysPressed } from "src/utils/user_input";
 
@@ -314,101 +315,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     setIsRendering(false);
   };
 
-  /**
-   * Creates the scatterplot and histogram axes for a given feature. Normalizes for dataset min/max to
-   * prevents axes from jumping during time or track playback.
-   * @param featureKey Name of the feature to generate layouts for.
-   * @param histogramTrace The default histogram trace configuration.
-   * @returns An object with the following keys:
-   *  - `scatterPlotAxis`: Layout for the scatter plot axis.
-   *  - `histogramAxis`: Layout for the histogram axis.
-   *  - `histogramTrace`: A copy of the histogram trace, with potentially updated bin sizes.
-   */
-  const getAxisLayoutsFromRange = (
-    featureKey: string,
-    histogramTrace: Partial<PlotData>
-  ): {
-    scatterPlotAxis: Partial<Plotly.LayoutAxis>;
-    histogramAxis: Partial<Plotly.LayoutAxis>;
-    histogramTrace: Partial<PlotData>;
-  } => {
-    let scatterPlotAxis: Partial<Plotly.LayoutAxis> = {
-      domain: [0, 0.85],
-      showgrid: false,
-      showline: true,
-      zeroline: true,
-    };
-    const histogramAxis: Partial<Plotly.LayoutAxis> = {
-      domain: [0.9, 1],
-      showgrid: false,
-      hoverformat: "f",
-    };
-    const newHistogramTrace = { ...histogramTrace };
-
-    let min = dataset?.getFeatureData(featureKey)?.min || 0;
-    let max = dataset?.getFeatureData(featureKey)?.max || 0;
-
-    if (0 < min && min < (max - min) / 20) {
-      // If min is close to zero (within 5% of the range), snap to zero.
-      min = 0;
-    }
-    if (dataset && dataset.isFeatureCategorical(featureKey)) {
-      // Add extra padding for categories so they're nicely centered
-      min -= 0.5;
-      max += 0.5;
-    } else {
-      // Add a little padding to the max so points aren't cut off by the edge of the plot.
-      // (ideally this would be a pixel padding, but plotly doesn't support that.)
-      max += (max - min) / 100;
-    }
-    scatterPlotAxis.range = [min, max];
-    if (viewMode === ViewMode.VIEW_2D && featureKey === CENTROID_Y_FEATURE_KEY) {
-      // In 2D mode, the origin (0,0) is in the top left corner, versus in plot
-      // the origin is in the bottom left by default. Reverse the Y-axis
-      // centroid value in 2D so the plot matches the onscreen objects.
-      scatterPlotAxis.range = [max, min];
-    }
-
-    // TODO: Show categories as box and whisker plots instead of scatterplot?
-    // TODO: Add special handling for integer features once implemented, so their histograms use reasonable
-    // bin sizes to prevent jumping.
-
-    if (dataset && dataset.isFeatureCategorical(featureKey)) {
-      // Create custom tick marks for the categories
-      const categories = dataset.getFeatureCategories(featureKey) || [];
-      scatterPlotAxis = {
-        ...scatterPlotAxis,
-        tickmode: "array",
-        tick0: "0", // start at 0
-        dtick: "1", // tick increment is 1
-        tickvals: [...categories.keys()], // map from category index to category label
-        ticktext: categories,
-        zeroline: false,
-      };
-      // Enforce bins on histogram traces for categorical features. This prevents a bug where the histograms
-      // would suddenly change width if a category wasn't present in the given data range.
-      newHistogramTrace.xbins = { start: min, end: max, size: (max - min) / categories.length };
-      // @ts-ignore. TODO: Update once the plotly types are updated.
-      newHistogramTrace.ybins = { start: min, end: max, size: (max - min) / categories.length };
-    }
-    return { scatterPlotAxis, histogramAxis, histogramTrace: newHistogramTrace };
-  };
-
-  /**
-   * VERY roughly estimate the max width in pixels needed for a categorical feature.
-   */
-  const estimateTextWidthPxForCategories = (featureKey: string): number => {
-    if (featureKey === null || !dataset?.isFeatureCategorical(featureKey)) {
-      return 0;
-    }
-    const categories = dataset.getFeatureCategories(featureKey) || [];
-    return (
-      categories.reduce((_prev: any, val: string, acc: number) => {
-        return Math.max(val.length, acc);
-      }, 0) * 8
-    );
-  };
-
   //////////////////////////////////
   // Plot Rendering
   //////////////////////////////////
@@ -430,49 +336,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const prevDependenciesRef = useRef<typeof basePlotDependencies | null>(null);
   const rawXDataRef = useRef<Uint32Array | Float32Array | undefined>(undefined);
   const rawYDataRef = useRef<Uint32Array | Float32Array | undefined>(undefined);
-
-  /**
-   * Returns an array of shapes that draw a crosshair + colored scatterplot dot over the
-   * points in selected tracks visible in the current frame.
-   */
-  const getCurrentFrameShapes = (): Partial<Plotly.Shape>[] => {
-    const crosshairShapes: Partial<Plotly.Shape>[] = [];
-    if (!rawXDataRef.current || !rawYDataRef.current || !dataset) {
-      return [];
-    }
-    const xData: number[] = [];
-    const yData: number[] = [];
-    const ids: number[] = [];
-    const segIds: number[] = [];
-    const trackIds: number[] = [];
-    for (const track of tracks.values()) {
-      const currentObjectId = track.getIdAtTime(currentFrame);
-      if (currentObjectId !== -1) {
-        // Get crosshair for this shape and store data for rendering the dots
-        crosshairShapes.push(
-          ...getCrosshairShapes(rawXDataRef.current[currentObjectId], rawYDataRef.current[currentObjectId])
-        );
-        xData.push(rawXDataRef.current[currentObjectId]);
-        yData.push(rawYDataRef.current[currentObjectId]);
-        ids.push(currentObjectId);
-        segIds.push(dataset!.getSegmentationId(currentObjectId));
-        trackIds.push(track.trackId);
-      }
-    }
-    const outOfRangeOutlineColor = outOfRangeDrawSettings.color.clone().multiplyScalar(0.8);
-
-    // Render the dots. See TODO in `scatterplotTraceToShapes` for refactoring
-    // `colorizeScatterplotPoints`.
-    const pointShapes = scatterplotTraceToShapes(
-      colorizeScatterplotPoints(colorizeConfig, xAxisFeatureKey, yAxisFeatureKey, xData, yData, ids, segIds, trackIds, {
-        outOfRange: {
-          color: theme.color.layout.background,
-          line: { width: 2, color: "#" + outOfRangeOutlineColor.getHexString() + "40" },
-        },
-      })
-    );
-    return crosshairShapes.concat(pointShapes);
-  };
 
   const renderPlot = (forceRelayout: boolean = false): void => {
     const rawXData = getData(xAxisFeatureKey, dataset);
@@ -590,16 +453,31 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     }
 
     // Render crosshair at the current time for all tracks.
-    shapes.push(...getCurrentFrameShapes());
+    shapes.push(
+      ...getCurrentFrameShapes(
+        dataset,
+        xAxisFeatureKey,
+        yAxisFeatureKey,
+        colorizeConfig,
+        currentFrame,
+        tracks,
+        rawXData,
+        rawYData
+      )
+    );
 
     // Format axes
     const { scatterPlotAxis: scatterPlotXAxis, histogramAxis: histogramXAxis } = getAxisLayoutsFromRange(
+      dataset,
       xAxisFeatureKey,
-      xHistogram
+      xHistogram,
+      viewMode
     );
     const { scatterPlotAxis: scatterPlotYAxis, histogramAxis: histogramYAxis } = getAxisLayoutsFromRange(
+      dataset,
       yAxisFeatureKey,
-      yHistogram
+      yHistogram,
+      viewMode
     );
 
     scatterPlotXAxis.title = dataset.getFeatureNameWithUnits(xAxisFeatureKey);
@@ -609,7 +487,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       : dataset.getFeatureNameWithUnits(yAxisFeatureKey);
 
     // Add extra margin for categorical feature labels on the Y axis.
-    const leftMarginPx = Math.max(60, estimateTextWidthPxForCategories(yAxisFeatureKey));
+    const leftMarginPx = Math.max(60, estimateTextWidthPxForCategories(dataset, yAxisFeatureKey));
     const layout: Partial<Plotly.Layout> = {
       autosize: true,
       showlegend: false,
@@ -676,7 +554,18 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     const shouldSkipFrameChangeRender = hasOnlyFrameChanged && rangeType === PlotRangeType.ALL_TIME;
     if (shouldSkipFrameChangeRender && plotDivRef.current !== null) {
       // Only the frame changed, so we can skip the render and just do a relayout instead.
-      Plotly.relayout(plotDivRef.current, { shapes: getCurrentFrameShapes() });
+      Plotly.relayout(plotDivRef.current, {
+        shapes: getCurrentFrameShapes(
+          dataset,
+          xAxisFeatureKey,
+          yAxisFeatureKey,
+          colorizeConfig,
+          currentFrame,
+          tracks,
+          rawXDataRef.current,
+          rawYDataRef.current
+        ),
+      });
       return;
     }
     setIsRendering(true);
