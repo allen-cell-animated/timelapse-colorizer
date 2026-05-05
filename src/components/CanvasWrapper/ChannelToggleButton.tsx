@@ -1,7 +1,7 @@
 import { Checkbox } from "antd";
 import React, { type ReactElement, type ReactNode, useRef } from "react";
 
-import { ImageToggleButton } from "src/components/Buttons/ImageToggleButton";
+import { ToggleButtonWithConfig } from "src/components/Buttons/ToggleButtonWithConfig";
 import ShortcutTooltipHint from "src/components/Display/ShortcutTooltipHint";
 import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
 import { SHORTCUT_KEYS } from "src/constants";
@@ -38,7 +38,7 @@ export default function ChannelToggleButton(): ReactElement {
     <span key="no-channels">{hasChannels ? `${channelString} available` : "(No channels available)"}</span>,
   ];
 
-  const createConfigMenuContents = (
+  const configMenuContents = (
     <SettingsContainer labelWidth="80px" style={{ marginBottom: 6 }} key="channel-settings-container">
       <SettingsItem
         label={
@@ -92,13 +92,14 @@ export default function ChannelToggleButton(): ReactElement {
   };
 
   return (
-    <ImageToggleButton
+    <ToggleButtonWithConfig
       visible={isAnyChannelVisible}
       setVisible={onSetVisible}
       disabled={!hasChannels}
-      imageType={"channels"}
+      name="channels"
       tooltipContents={tooltipContents}
-      configMenuContents={createConfigMenuContents}
-    ></ImageToggleButton>
+      configMenuContents={configMenuContents}
+      settingsLinkText="Viewer settings > 3D Channels"
+    />
   );
 }

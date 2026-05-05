@@ -3,12 +3,13 @@ import { Tooltip } from "antd";
 import React, { type ReactElement, type ReactNode } from "react";
 import styled from "styled-components";
 
-import { TagIconSVG, TagSlashIconSVG } from "src/assets";
+import { ImageIconSVG, ImageSlashIconSVG, TagIconSVG, TagSlashIconSVG } from "src/assets";
 import { TabType, ViewMode } from "src/colorizer/types";
 import type CanvasOverlay from "src/colorizer/viewport/CanvasOverlay";
 import IconButton from "src/components/Buttons/IconButton";
 import TooltipButtonStyleLink from "src/components/Buttons/TooltipButtonStyleLink";
 import BackdropToggleButton from "src/components/CanvasWrapper/BackdropToggleButton";
+import CentroidsToggleButton from "src/components/CanvasWrapper/CentroidsToggleButton";
 import ChannelToggleButton from "src/components/CanvasWrapper/ChannelToggleButton";
 import { TooltipWithSubtitle } from "src/components/Tooltips/TooltipWithSubtitle";
 import type { AnnotationState } from "src/hooks";
@@ -42,8 +43,10 @@ const SectionDivider = styled.hr`
 export default function CanvasToolbar(props: CanvasToolbarProps): ReactElement {
   const { canv } = props;
 
-  const viewMode = useViewerStateStore((state) => state.viewMode);
   const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
+  const setShowSegmentations = useViewerStateStore((state) => state.setShowSegmentations);
+  const showSegmentations = useViewerStateStore((state) => state.showSegmentations);
+  const viewMode = useViewerStateStore((state) => state.viewMode);
 
   const isDataset3d = viewMode === ViewMode.VIEW_3D;
 
@@ -104,8 +107,26 @@ export default function CanvasToolbar(props: CanvasToolbarProps): ReactElement {
 
       <SectionDivider />
 
+      {/* Segmentations toggle */}
+      <TooltipWithSubtitle
+        title={showSegmentations ? "Hide segmentations" : "Show segmentations"}
+        placement="right"
+        trigger={["hover", "focus"]}
+      >
+        <IconButton
+          type={showSegmentations ? "primary" : "link"}
+          onClick={() => setShowSegmentations(!showSegmentations)}
+        >
+          {showSegmentations ? <ImageIconSVG /> : <ImageSlashIconSVG />}
+          <VisuallyHidden>{showSegmentations ? "Hide segmentations" : "Show segmentations"}</VisuallyHidden>
+        </IconButton>
+      </TooltipWithSubtitle>
+
       {/* 2D backdrop or 3D channels toggle */}
       {isDataset3d ? <ChannelToggleButton /> : <BackdropToggleButton />}
+
+      {/* TODO: Remove flag when centroids are supported in 3D. */}
+      {!isDataset3d && <CentroidsToggleButton />}
 
       {/* Annotation mode toggle */}
       <TooltipWithSubtitle
