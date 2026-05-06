@@ -1,9 +1,15 @@
 import type { StateCreator } from "zustand";
 
-import type { Dataset } from "src/colorizer";
+import { DEFAULT_COLOR_RAMP_KEY, KNOWN_COLOR_RAMPS, type Dataset } from "src/colorizer";
 import { TIME_FEATURE_KEY } from "src/colorizer/Dataset";
 import { PlotRangeType } from "src/colorizer/types";
-import { decodeScatterPlotRangeType, encodeScatterPlotRangeType, UrlParam } from "src/colorizer/utils/url_utils";
+import {
+  decodeBoolean,
+  decodeScatterPlotRangeType,
+  encodeMaybeBoolean,
+  encodeScatterPlotRangeType,
+  UrlParam,
+} from "src/colorizer/utils/url_utils";
 import { DEPRECATED_SCATTERPLOT_TIME_KEY } from "src/constants";
 import type { SerializedStoreData, SubscribableStore } from "src/state/types";
 import { addDerivedStateSubscriber } from "src/state/utils/store_utils";
@@ -15,11 +21,19 @@ export type ScatterPlotSliceState = {
   scatterYAxis: string | null;
   scatterHistogramBins: number;
   scatterRangeType: PlotRangeType;
+
+  showHeatmap: boolean;
+  heatmapColorMapKey: string;
 };
 
 export type ScatterPlotSliceSerializableState = Pick<
   ScatterPlotSliceState,
-  "scatterXAxis" | "scatterYAxis" | "scatterRangeType" | "scatterHistogramBins"
+  | "scatterXAxis"
+  | "scatterYAxis"
+  | "scatterRangeType"
+  | "scatterHistogramBins"
+  | "showHeatmap"
+  | "heatmapColorMapKey"
 >;
 
 export type ScatterPlotSliceActions = {
@@ -27,6 +41,8 @@ export type ScatterPlotSliceActions = {
   setScatterYAxis: (yAxis: string | null) => void;
   setScatterHistogramBins: (bins: number) => void;
   setScatterRangeType: (rangeType: PlotRangeType) => void;
+  setShowHeatmap: (showHeatmap: boolean) => void;
+  setHeatmapColorMapKey: (heatmapColorMapKey: string) => void;
 };
 
 export type ScatterPlotSlice = ScatterPlotSliceState & ScatterPlotSliceActions;
@@ -44,6 +60,8 @@ export const createScatterPlotSlice: StateCreator<DatasetSlice & ScatterPlotSlic
   scatterYAxis: null,
   scatterHistogramBins: 20,
   scatterRangeType: PlotRangeType.ALL_TIME,
+  showHeatmap: false,
+  heatmapColorMapKey: DEFAULT_COLOR_RAMP_KEY,
 
   // Actions
   setScatterXAxis: (xAxis) => {
@@ -66,6 +84,13 @@ export const createScatterPlotSlice: StateCreator<DatasetSlice & ScatterPlotSlic
     set({ scatterHistogramBins: bins });
   },
   setScatterRangeType: (rangeType) => set({ scatterRangeType: rangeType }),
+  setShowHeatmap: (showHeatmap) => set({ showHeatmap }),
+  setHeatmapColorMapKey: (key) => {
+    if (!KNOWN_COLOR_RAMPS.has(key)) {
+      throw new Error(`Unknown color ramp key: ${key}`);
+    }
+    set({ heatmapColorMapKey: key });
+  },
 });
 
 export const addScatterPlotSliceDerivedStateSubscribers = (
@@ -104,6 +129,12 @@ export const serializeScatterPlotSlice = (slice: Partial<ScatterPlotSliceSeriali
   if (slice.scatterRangeType !== undefined) {
     ret[UrlParam.SCATTERPLOT_RANGE_MODE] = encodeScatterPlotRangeType(slice.scatterRangeType);
   }
+  if (slice.showHeatmap !== undefined) {
+    ret[UrlParam.SCATTERPLOT_SHOW_HEATMAP] = encodeMaybeBoolean(slice.showHeatmap);
+  }
+  if (slice.heatmapColorMapKey !== undefined) {
+    ret[UrlParam.SCATTERPLOT_HEATMAP_COLOR_MAP] = slice.heatmapColorMapKey;
+  }
   return ret;
 };
 
@@ -115,6 +146,8 @@ export const selectScatterPlotSliceSerializationDeps = (
   scatterYAxis: slice.scatterYAxis,
   scatterHistogramBins: slice.scatterHistogramBins,
   scatterRangeType: slice.scatterRangeType,
+  showHeatmap: slice.showHeatmap,
+  heatmapColorMapKey: slice.heatmapColorMapKey,
 });
 
 export const loadScatterPlotSliceFromParams = (
@@ -150,5 +183,15 @@ export const loadScatterPlotSliceFromParams = (
   const scatterRangeType = decodeScatterPlotRangeType(params.get(UrlParam.SCATTERPLOT_RANGE_MODE));
   if (scatterRangeType !== undefined) {
     slice.setScatterRangeType(scatterRangeType);
+  }
+
+  const showHeatmap = decodeBoolean(params.get(UrlParam.SCATTERPLOT_SHOW_HEATMAP));
+  if (showHeatmap !== undefined) {
+    slice.setShowHeatmap(showHeatmap);
+  }
+
+  const heatmapColorMapKey = params.get(UrlParam.SCATTERPLOT_HEATMAP_COLOR_MAP);
+  if (heatmapColorMapKey !== null && KNOWN_COLOR_RAMPS.has(heatmapColorMapKey)) {
+    slice.setHeatmapColorMapKey(heatmapColorMapKey);
   }
 };

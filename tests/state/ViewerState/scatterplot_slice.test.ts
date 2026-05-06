@@ -46,6 +46,31 @@ describe("ScatterplotSlice", () => {
     });
   });
 
+  describe("heatmap settings", () => {
+    it("can set heatmap visibility", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      act(() => {
+        result.current.setShowHeatmap(true);
+      });
+      expect(result.current.showHeatmap).toBe(true);
+    });
+
+    it("can set heatmap colormap key", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      act(() => {
+        result.current.setHeatmapColorMapKey("matplotlib-viridis");
+      });
+      expect(result.current.heatmapColorMapKey).toBe("matplotlib-viridis");
+    });
+
+    it("throws on unknown heatmap colormap key", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      act(() => {
+        expect(() => result.current.setHeatmapColorMapKey("unknown-colormap-key")).toThrowError(ANY_ERROR);
+      });
+    });
+  });
+
   describe("setScatterAxes", () => {
     it("can set axes to any value when dataset is not set", () => {
       const { result } = renderHook(() => useViewerStateStore());
@@ -139,21 +164,29 @@ describe("ScatterplotSlice", () => {
         result.current.setScatterXAxis(null);
         result.current.setScatterYAxis(null);
         result.current.setScatterRangeType(PlotRangeType.ALL_TIME);
+        result.current.setShowHeatmap(false);
+        result.current.setHeatmapColorMapKey("matplotlib-cool");
       });
       let serializedData = serializeScatterPlotSlice(result.current);
       expect(serializedData[UrlParam.SCATTERPLOT_X_AXIS]).toBeUndefined();
       expect(serializedData[UrlParam.SCATTERPLOT_Y_AXIS]).toBeUndefined();
       expect(serializedData[UrlParam.SCATTERPLOT_RANGE_MODE]).toBe("all");
+      expect(serializedData[UrlParam.SCATTERPLOT_SHOW_HEATMAP]).toBe("0");
+      expect(serializedData[UrlParam.SCATTERPLOT_HEATMAP_COLOR_MAP]).toBe("matplotlib-cool");
 
       act(() => {
         result.current.setScatterXAxis(MockFeatureKeys.FEATURE1);
         result.current.setScatterYAxis(MockFeatureKeys.FEATURE2);
         result.current.setScatterRangeType(PlotRangeType.CURRENT_FRAME);
+        result.current.setShowHeatmap(true);
+        result.current.setHeatmapColorMapKey("matplotlib-viridis");
       });
       serializedData = serializeScatterPlotSlice(result.current);
       expect(serializedData[UrlParam.SCATTERPLOT_X_AXIS]).toBe(MockFeatureKeys.FEATURE1);
       expect(serializedData[UrlParam.SCATTERPLOT_Y_AXIS]).toBe(MockFeatureKeys.FEATURE2);
       expect(serializedData[UrlParam.SCATTERPLOT_RANGE_MODE]).toBe("frame");
+      expect(serializedData[UrlParam.SCATTERPLOT_SHOW_HEATMAP]).toBe("1");
+      expect(serializedData[UrlParam.SCATTERPLOT_HEATMAP_COLOR_MAP]).toBe("matplotlib-viridis");
     });
   });
 
@@ -164,6 +197,8 @@ describe("ScatterplotSlice", () => {
       params.set(UrlParam.SCATTERPLOT_X_AXIS, MockFeatureKeys.FEATURE1);
       params.set(UrlParam.SCATTERPLOT_Y_AXIS, MockFeatureKeys.FEATURE2);
       params.set(UrlParam.SCATTERPLOT_RANGE_MODE, "frame");
+      params.set(UrlParam.SCATTERPLOT_SHOW_HEATMAP, "1");
+      params.set(UrlParam.SCATTERPLOT_HEATMAP_COLOR_MAP, "matplotlib-viridis");
 
       act(() => {
         loadScatterPlotSliceFromParams(result.current, params);
@@ -172,6 +207,8 @@ describe("ScatterplotSlice", () => {
       expect(result.current.scatterXAxis).toBe(MockFeatureKeys.FEATURE1);
       expect(result.current.scatterYAxis).toBe(MockFeatureKeys.FEATURE2);
       expect(result.current.scatterRangeType).toBe(PlotRangeType.CURRENT_FRAME);
+      expect(result.current.showHeatmap).toBe(true);
+      expect(result.current.heatmapColorMapKey).toBe("matplotlib-viridis");
     });
 
     it("ignores axes that are not in the dataset when dataset is loaded", async () => {
