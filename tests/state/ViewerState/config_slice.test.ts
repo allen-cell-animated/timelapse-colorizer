@@ -12,6 +12,8 @@ import type { SerializedStoreData } from "src/state/types";
 import { compareRecord } from "./utils";
 
 const EXAMPLE_SLICE_1: Partial<ConfigSlice> = {
+  showCentroids: false,
+  centroidRadiusPx: 2,
   showTrackPath: false,
   trackPathColor: new Color(0x00ff00),
   trackPathWidthPx: 2,
@@ -24,6 +26,7 @@ const EXAMPLE_SLICE_1: Partial<ConfigSlice> = {
   showAllTrackPathPastSteps: false,
   showAllTrackPathFutureSteps: true,
   persistTrackPathWhenOutOfRange: false,
+  trackPathOverlayOpacity: 15,
   showScaleBar: false,
   showTimestamp: false,
   outOfRangeDrawSettings: { color: new Color(0xff0000), mode: DrawMode.USE_COLOR },
@@ -38,6 +41,8 @@ const EXAMPLE_SLICE_1: Partial<ConfigSlice> = {
 };
 
 const EXAMPLE_SLICE_1_PARAMS: SerializedStoreData = {
+  [UrlParam.SHOW_CENTROIDS]: "0",
+  [UrlParam.CENTROID_RADIUS]: "2",
   [UrlParam.SHOW_PATH]: "0",
   [UrlParam.PATH_COLOR]: "00ff00",
   [UrlParam.PATH_WIDTH]: "2",
@@ -46,6 +51,7 @@ const EXAMPLE_SLICE_1_PARAMS: SerializedStoreData = {
   [UrlParam.SHOW_PATH_BREAKS]: "0",
   [UrlParam.PATH_STEPS]: "70,100!",
   [UrlParam.PATH_PERSIST_OUT_OF_RANGE]: "0",
+  [UrlParam.PATH_OVERLAY_OPACITY]: "15",
   [UrlParam.SHOW_SCALEBAR]: "0",
   [UrlParam.SHOW_TIMESTAMP]: "0",
   [UrlParam.FILTERED_COLOR]: "ff0000",
@@ -61,6 +67,8 @@ const EXAMPLE_SLICE_1_PARAMS: SerializedStoreData = {
 };
 
 const EXAMPLE_SLICE_2: Partial<ConfigSlice> = {
+  showCentroids: true,
+  centroidRadiusPx: 15,
   showTrackPath: true,
   trackPathColor: new Color(0xffff00),
   trackPathWidthPx: 3,
@@ -73,6 +81,7 @@ const EXAMPLE_SLICE_2: Partial<ConfigSlice> = {
   showAllTrackPathPastSteps: true,
   showAllTrackPathFutureSteps: false,
   persistTrackPathWhenOutOfRange: true,
+  trackPathOverlayOpacity: 85,
   showScaleBar: true,
   showTimestamp: true,
   outOfRangeDrawSettings: { color: new Color(0xffff00), mode: DrawMode.HIDE },
@@ -87,6 +96,8 @@ const EXAMPLE_SLICE_2: Partial<ConfigSlice> = {
 };
 
 const EXAMPLE_SLICE_2_PARAMS: SerializedStoreData = {
+  [UrlParam.SHOW_CENTROIDS]: "1",
+  [UrlParam.CENTROID_RADIUS]: "15",
   [UrlParam.SHOW_PATH]: "1",
   [UrlParam.PATH_COLOR]: "ffff00",
   [UrlParam.PATH_WIDTH]: "3",
@@ -95,6 +106,7 @@ const EXAMPLE_SLICE_2_PARAMS: SerializedStoreData = {
   [UrlParam.SHOW_PATH_BREAKS]: "1",
   [UrlParam.PATH_STEPS]: "25!,0",
   [UrlParam.PATH_PERSIST_OUT_OF_RANGE]: "1",
+  [UrlParam.PATH_OVERLAY_OPACITY]: "85",
   [UrlParam.SHOW_SCALEBAR]: "1",
   [UrlParam.SHOW_TIMESTAMP]: "1",
   [UrlParam.FILTERED_COLOR]: "ffff00",
@@ -113,11 +125,14 @@ describe("ConfigSlice", () => {
   it("can set properties", () => {
     const { result } = renderHook(() => useViewerStateStore());
     act(() => {
+      result.current.setShowCentroids(false);
+      result.current.setCentroidRadiusPx(2);
       result.current.setShowTrackPath(false);
       result.current.setTrackPathColor(new Color(0x00ff00));
       result.current.setTrackPathWidthPx(2);
       result.current.setTrackPathColorMode(TrackPathColorMode.USE_CUSTOM_COLOR);
       result.current.setShowTrackPathBreaks(false);
+      result.current.setTrackPathOverlayOpacity(15);
       result.current.setShowScaleBar(false);
       result.current.setShowTimestamp(false);
       result.current.setShowLegendDuringExport(false);
@@ -131,11 +146,14 @@ describe("ConfigSlice", () => {
       result.current.setOpenTab(TabType.FILTERS);
     });
 
+    expect(result.current.showCentroids).toBe(false);
+    expect(result.current.centroidRadiusPx).toBe(2);
     expect(result.current.showTrackPath).toBe(false);
     expect(result.current.trackPathColor).toEqual(new Color(0x00ff00));
     expect(result.current.trackPathWidthPx).toBe(2);
     expect(result.current.trackPathColorMode).toBe(TrackPathColorMode.USE_CUSTOM_COLOR);
     expect(result.current.showTrackPathBreaks).toBe(false);
+    expect(result.current.trackPathOverlayOpacity).toBe(15);
     expect(result.current.showScaleBar).toBe(false);
     expect(result.current.showTimestamp).toBe(false);
     expect(result.current.showLegendDuringExport).toBe(false);
@@ -150,11 +168,14 @@ describe("ConfigSlice", () => {
     expect(result.current.openTab).toBe(TabType.FILTERS);
 
     act(() => {
+      result.current.setShowCentroids(true);
+      result.current.setCentroidRadiusPx(15);
       result.current.setShowTrackPath(true);
       result.current.setTrackPathColor(new Color(0xffff00));
       result.current.setTrackPathWidthPx(3);
       result.current.setTrackPathColorMode(TrackPathColorMode.USE_OUTLINE_COLOR);
       result.current.setShowTrackPathBreaks(true);
+      result.current.setTrackPathOverlayOpacity(85);
       result.current.setShowScaleBar(true);
       result.current.setShowTimestamp(true);
       result.current.setShowLegendDuringExport(true);
@@ -167,11 +188,14 @@ describe("ConfigSlice", () => {
       result.current.setEdgeMode(DrawMode.HIDE);
       result.current.setOpenTab(TabType.TRACK_PLOT);
     });
+    expect(result.current.showCentroids).toBe(true);
+    expect(result.current.centroidRadiusPx).toBe(15);
     expect(result.current.showTrackPath).toBe(true);
     expect(result.current.trackPathColor).toEqual(new Color(0xffff00));
     expect(result.current.trackPathWidthPx).toBe(3);
     expect(result.current.trackPathColorMode).toBe(TrackPathColorMode.USE_OUTLINE_COLOR);
     expect(result.current.showTrackPathBreaks).toBe(true);
+    expect(result.current.trackPathOverlayOpacity).toBe(85);
     expect(result.current.showScaleBar).toBe(true);
     expect(result.current.showTimestamp).toBe(true);
     expect(result.current.showLegendDuringExport).toBe(true);

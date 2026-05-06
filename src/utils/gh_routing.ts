@@ -71,7 +71,13 @@ export function isEncodedPathUrl(url: URL): boolean {
  */
 export function encodeGitHubPagesUrl(url: URL): URL {
   url = new URL(url); // Clone the URL to avoid modifying the original
-  if (url.hostname === "allen-cell-animated.github.io") {
+  if (url.toString().includes(ESCAPED_AMPERSAND)) {
+    // If the URL is already escaped, assume it has already been encoded and
+    // return it as-is to avoid double-encoding.
+    return url;
+  }
+  // ex: allen-cell-animated.github.io
+  if (url.hostname.endsWith(".github.io")) {
     if (url.pathname.toString().includes("pr-preview")) {
       return encodeUrlPathAsQueryString(url, 3);
     }

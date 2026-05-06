@@ -32,6 +32,8 @@ export type SelectionDropdownProps = {
   controlTooltipPlacement?: "top" | "bottom" | "left" | "right";
   disabled?: boolean;
   isSearchable?: boolean;
+  isCreatable?: boolean;
+  isValidNewOption?: (inputValue: string) => boolean;
   /**
    * The type of button to render for the dropdown. See Antd's button types:
    * https://ant.design/components/button#components-button-demo-basic
@@ -227,38 +229,43 @@ export default function SelectionDropdown(inputProps: React.PropsWithChildren<Se
         </label>
       )}
       <StyledSelect
-        aria-labelledby={labelId}
-        inputId={selectId}
-        classNamePrefix="react-select"
-        isMulti={false}
-        placeholder=""
         type={props.buttonType ?? "outlined"}
-        value={pendingValue ?? selectedOption}
-        components={{ Option, Control }}
-        options={filteredItems}
-        isDisabled={props.disabled}
-        isClearable={false}
-        isSearchable={props.isSearchable}
-        isLoading={pendingValue !== null}
-        onChange={(value) => {
-          if (value && value.value) {
-            setPendingValue(value);
-            Promise.allSettled([props.onChange(value.value)]).finally(() => {
-              setPendingValue(null);
-            });
-          }
-          startTransition(() => {
-            setSearchInput("");
-          });
-        }}
-        onInputChange={(input) => {
-          startTransition(() => {
-            setSearchInput(input);
-          });
-        }}
         controlWidth={props.controlWidth}
         menuWidth={props.menuWidth}
-        styles={props.selectStyles}
+        creatable={props.isCreatable}
+        selectProps={{
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          "aria-labelledby": labelId,
+          inputId: selectId,
+          classNamePrefix: "react-select",
+          isMulti: false,
+          placeholder: "",
+          value: pendingValue ?? selectedOption,
+          components: { Option, Control },
+          options: filteredItems,
+          isDisabled: props.disabled,
+          isClearable: false,
+          isSearchable: props.isSearchable,
+          isValidNewOption: props.isValidNewOption,
+          isLoading: pendingValue !== null,
+          onChange: (value) => {
+            if (value && value.value) {
+              setPendingValue(value);
+              Promise.allSettled([props.onChange(value.value)]).finally(() => {
+                setPendingValue(null);
+              });
+            }
+            startTransition(() => {
+              setSearchInput("");
+            });
+          },
+          onInputChange: (input) => {
+            startTransition(() => {
+              setSearchInput(input);
+            });
+          },
+          styles: props.selectStyles,
+        }}
       />
       {props.children}
     </FlexRowAlignCenter>

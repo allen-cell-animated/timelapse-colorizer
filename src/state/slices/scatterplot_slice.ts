@@ -13,17 +13,19 @@ import type { DatasetSlice } from "./dataset_slice";
 export type ScatterPlotSliceState = {
   scatterXAxis: string | null;
   scatterYAxis: string | null;
+  scatterHistogramBins: number;
   scatterRangeType: PlotRangeType;
 };
 
 export type ScatterPlotSliceSerializableState = Pick<
   ScatterPlotSliceState,
-  "scatterXAxis" | "scatterYAxis" | "scatterRangeType"
+  "scatterXAxis" | "scatterYAxis" | "scatterRangeType" | "scatterHistogramBins"
 >;
 
 export type ScatterPlotSliceActions = {
   setScatterXAxis: (xAxis: string | null) => void;
   setScatterYAxis: (yAxis: string | null) => void;
+  setScatterHistogramBins: (bins: number) => void;
   setScatterRangeType: (rangeType: PlotRangeType) => void;
 };
 
@@ -40,6 +42,7 @@ export const createScatterPlotSlice: StateCreator<DatasetSlice & ScatterPlotSlic
   // State
   scatterXAxis: null,
   scatterYAxis: null,
+  scatterHistogramBins: 20,
   scatterRangeType: PlotRangeType.ALL_TIME,
 
   // Actions
@@ -54,6 +57,13 @@ export const createScatterPlotSlice: StateCreator<DatasetSlice & ScatterPlotSlic
       throw new Error(`ScatterPlotSlice.setScatterYAxis: Axis key '${yAxis}' was not found in dataset.`);
     }
     set({ scatterYAxis: yAxis });
+  },
+  setScatterHistogramBins: (bins) => {
+    bins = Math.round(bins);
+    if (bins <= 0 || !isFinite(bins)) {
+      return;
+    }
+    set({ scatterHistogramBins: bins });
   },
   setScatterRangeType: (rangeType) => set({ scatterRangeType: rangeType }),
 });
@@ -88,6 +98,9 @@ export const serializeScatterPlotSlice = (slice: Partial<ScatterPlotSliceSeriali
   if (slice.scatterYAxis !== null && slice.scatterYAxis !== undefined) {
     ret[UrlParam.SCATTERPLOT_Y_AXIS] = slice.scatterYAxis;
   }
+  if (slice.scatterHistogramBins !== undefined) {
+    ret[UrlParam.SCATTERPLOT_BINS] = slice.scatterHistogramBins.toString();
+  }
   if (slice.scatterRangeType !== undefined) {
     ret[UrlParam.SCATTERPLOT_RANGE_MODE] = encodeScatterPlotRangeType(slice.scatterRangeType);
   }
@@ -100,6 +113,7 @@ export const selectScatterPlotSliceSerializationDeps = (
 ): ScatterPlotSliceSerializableState => ({
   scatterXAxis: slice.scatterXAxis,
   scatterYAxis: slice.scatterYAxis,
+  scatterHistogramBins: slice.scatterHistogramBins,
   scatterRangeType: slice.scatterRangeType,
 });
 
@@ -123,6 +137,14 @@ export const loadScatterPlotSliceFromParams = (
   }
   if (scatterYAxis !== null && scatterYAxis !== undefined && isAxisKeyValid(dataset, scatterYAxis)) {
     slice.setScatterYAxis(scatterYAxis);
+  }
+
+  const scatterHistogramBinsParam = params.get(UrlParam.SCATTERPLOT_BINS);
+  if (scatterHistogramBinsParam !== null && scatterHistogramBinsParam !== undefined) {
+    const bins = parseInt(scatterHistogramBinsParam, 10);
+    if (!isNaN(bins) && bins > 0) {
+      slice.setScatterHistogramBins(bins);
+    }
   }
 
   const scatterRangeType = decodeScatterPlotRangeType(params.get(UrlParam.SCATTERPLOT_RANGE_MODE));

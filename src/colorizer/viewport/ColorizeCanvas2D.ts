@@ -43,8 +43,13 @@ import {
 } from "src/colorizer/types";
 import { getGlobalIdFromSegId, hasPropertyChanged } from "src/colorizer/utils/data_utils";
 import { convertCanvasOffsetPxToFrameCoords, getFrameSizeInScreenPx } from "src/colorizer/utils/math_utils";
-import { packDataTexture } from "src/colorizer/utils/texture_utils";
+import {
+  makeEmptyRgbaFloatTexture,
+  makeEmptyRgbaUint8Texture,
+  packDataTexture,
+} from "src/colorizer/utils/texture_utils";
 import VectorField from "src/colorizer/VectorField";
+import PointRenderer2D from "src/colorizer/viewport/points/PointRenderer2D";
 import {
   type Canvas2DScaleInfo,
   CanvasType,
@@ -76,6 +81,7 @@ type ColorizeUniformTypes = {
   panOffset: Vector2;
   /** Image, mapping each pixel to an object ID using the RGBA values. */
   frame: Texture;
+  framePoints: Texture;
   objectOpacity: number;
   /** The feature value of each object ID. */
   featureData: Texture;
@@ -113,13 +119,11 @@ type ColorizeUniformTypes = {
 type ColorizeUniforms = { [K in keyof ColorizeUniformTypes]: Uniform<ColorizeUniformTypes[K]> };
 
 const getDefaultUniforms = (): ColorizeUniforms => {
-  const emptyBackdrop = new DataTexture(new Uint8Array([1, 0, 0, 0]), 1, 1, RGBAFormat, UnsignedByteType);
-  const emptyFrame = new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAIntegerFormat, UnsignedByteType);
-  emptyFrame.internalFormat = "RGBA8UI";
-  emptyFrame.needsUpdate = true;
-  const emptyOverlay = new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAFormat, UnsignedByteType);
-  const emptySegIdToGlobalId = new DataTexture(new Uint8Array([0]), 1, 1, RGBAFormat, UnsignedByteType);
-
+  const emptyBackdrop = makeEmptyRgbaFloatTexture();
+  const emptyFrame = makeEmptyRgbaUint8Texture();
+  const emptyFramePoints = makeEmptyRgbaUint8Texture();
+  const emptyOverlay = makeEmptyRgbaFloatTexture();
+  const emptySegIdToGlobalId = packDataTexture([0], FeatureDataType.U8);
   const emptyFeature = packDataTexture([0], FeatureDataType.F32);
   const emptyOutliers = packDataTexture([0], FeatureDataType.U8);
   const emptyInRangeIds = packDataTexture([0], FeatureDataType.U8);
@@ -130,6 +134,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
     canvasToFrameScale: new Uniform(new Vector2(1, 1)),
     canvasSizePx: new Uniform(new Vector2(1, 1)),
     frame: new Uniform(emptyFrame),
+    framePoints: new Uniform(emptyFramePoints),
     featureData: new Uniform(emptyFeature),
     outlierData: new Uniform(emptyOutliers),
     inRangeIds: new Uniform(emptyInRangeIds),
@@ -169,6 +174,7 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
 
   private vectorField: VectorField;
   private trackPaths: Map<number, TrackPath2D> = new Map();
+  private pointRenderer: PointRenderer2D;
 
   private savedScaleInfo: Canvas2DScaleInfo;
   private lastFrameLoadResult: FrameLoadResult | null;
@@ -234,10 +240,15 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
 
     this.trackPaths = new Map<number, TrackPath2D>();
 
+    this.pointRenderer = new PointRenderer2D();
+
     this.pickScene = new Scene();
     this.pickScene.add(this.pickMesh);
 
     this.pickRenderTarget = new WebGLRenderTarget(1, 1, {
+      format: RGBAIntegerFormat,
+      type: UnsignedByteType,
+      internalFormat: "RGBA8UI",
       depthBuffer: false,
     });
     this.renderer = new WebGLRenderer({ antialias: true });
@@ -343,6 +354,12 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
       trackPath.setPositionAndScale(this.panOffset, this.savedScaleInfo.frameToCanvasCoordinates)
     );
     this.vectorField.setPosition(this.panOffset, this.savedScaleInfo.frameToCanvasCoordinates);
+    this.pointRenderer.setPositionAndScale(
+      this.panOffset,
+      this.savedScaleInfo.frameToCanvasCoordinates,
+      this.canvasResolution,
+      this.zoomMultiplier
+    );
     this.render();
   }
 
@@ -435,6 +452,12 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     this.trackPaths.forEach((trackPath) => trackPath.setPositionAndScale(this.panOffset, frameToCanvasCoordinates));
     this.vectorField.setPosition(this.panOffset, frameToCanvasCoordinates);
     this.vectorField.setScale(frameToCanvasCoordinates, this.canvasResolution || new Vector2(1, 1));
+    this.pointRenderer.setPositionAndScale(
+      this.panOffset,
+      this.savedScaleInfo.frameToCanvasCoordinates,
+      canvasResolution,
+      this.zoomMultiplier
+    );
   }
 
   /**
@@ -600,6 +623,8 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     // Update track path data
     this.updateTrackPaths(prevParams, params);
 
+    this.pointRenderer.setParams(params, prevParams);
+
     // Update vector data
     if (hasPropertyChanged(params, prevParams, ["vectorVisible", "vectorColor", "vectorScaleFactor"])) {
       this.vectorField.setConfig({
@@ -735,9 +760,7 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
         frameError = true;
       }
       // Set to blank
-      const emptyFrame = new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAIntegerFormat, UnsignedByteType);
-      emptyFrame.internalFormat = "RGBA8UI";
-      emptyFrame.needsUpdate = true;
+      const emptyFrame = makeEmptyRgbaUint8Texture();
       this.setUniform("frame", emptyFrame);
     }
 
@@ -799,6 +822,12 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     this.checkPixelRatio();
     this.syncTrackPathLine();
 
+    // Render points overlay
+    const frameTex = this.pointRenderer.requestFrameRender(this.renderer, this.currentFrame);
+    if (frameTex) {
+      this.setUniform("framePoints", frameTex);
+    }
+
     // Render main scene
     this.renderer.render(this.scene, this.camera);
     const mainRenderTarget = this.renderer.getRenderTarget();
@@ -818,6 +847,7 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     this.geometry.dispose();
     this.renderer.dispose();
     this.pickMaterial.dispose();
+    this.pointRenderer.dispose();
     this.trackPaths.forEach((trackPath) => trackPath.dispose());
   }
 
@@ -829,8 +859,8 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     const pixbuf = new Uint8Array(4);
     this.renderer.readRenderTargetPixels(this.pickRenderTarget, x, this.pickRenderTarget.height - y, 1, 1, pixbuf);
 
-    // get 32bit value from 4 8bit values
-    const segId = pixbuf[0] | (pixbuf[1] << 8) | (pixbuf[2] << 16) | (pixbuf[3] << 24);
+    // get 32bit value from RGB 8bit values (ignore alpha)
+    const segId = pixbuf[0] | (pixbuf[1] << 8) | (pixbuf[2] << 16);
 
     if (segId === 0) {
       return null;

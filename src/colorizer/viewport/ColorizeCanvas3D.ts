@@ -543,7 +543,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     // Update all track paths
     this.trackPaths.forEach((trackPath, trackId) => {
       const track = params.tracks.get(trackId) ?? null;
-      const outlineColor = getTrackPathColor(track, params).clone().convertLinearToSRGB();
+      const outlineColor = getTrackPathColor(track, params);
       const prevTrackParams = prevParams ? { ...prevParams, track: trackPath.track } : null;
       const didUpdate = trackPath.setParams({ ...params, track, outlineColor }, prevTrackParams);
       didTrackParametersUpdate = didTrackParametersUpdate || didUpdate;

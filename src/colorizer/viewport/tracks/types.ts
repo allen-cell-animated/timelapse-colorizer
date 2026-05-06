@@ -30,4 +30,5 @@ export type TrackPathParams = {
   showAllTrackPathPastSteps: boolean;
   showAllTrackPathFutureSteps: boolean;
   persistTrackPathWhenOutOfRange: boolean;
+  trackPathOverlayOpacity: number;
 };
