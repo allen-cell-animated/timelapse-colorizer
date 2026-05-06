@@ -154,6 +154,8 @@ function Viewer(): ReactElement {
   const [showObjectHoverInfo, setShowObjectHoverInfo] = useState(false);
   const currentHoveredId = showObjectHoverInfo ? lastValidHoveredId : null;
 
+  const tabsContainerRef = useRef<HTMLDivElement>(null);
+
   // EVENT LISTENERS ////////////////////////////////////////////////////////
 
   // Hooks for shortcut keys
@@ -521,7 +523,11 @@ function Viewer(): ReactElement {
       key: TabType.SCATTER_PLOT,
       children: (
         <div className={styles.tabContent}>
-          <ScatterPlotTab isVisible={openTab === TabType.SCATTER_PLOT} showAlert={showAlert} />
+          <ScatterPlotTab
+            isVisible={openTab === TabType.SCATTER_PLOT}
+            showAlert={showAlert}
+            containerRef={tabsContainerRef}
+          />
         </div>
       ),
     },
@@ -669,7 +675,7 @@ function Viewer(): ReactElement {
 
           {/* Tabs */}
           <div className={styles.sidePanels}>
-            <div className={styles.plotAndFiltersPanel}>
+            <div className={styles.plotAndFiltersPanel} ref={tabsContainerRef}>
               <Tabs
                 type="card"
                 style={{ marginBottom: 0, width: "100%" }}
