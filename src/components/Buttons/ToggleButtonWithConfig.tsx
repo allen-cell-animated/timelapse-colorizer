@@ -17,14 +17,16 @@ export type ToggleButtonWithConfigProps = {
   setVisible: (visible: boolean) => void;
   disabled?: boolean;
   tooltipContents?: ReactNode;
+  placement?: "horizontal" | "vertical";
   configMenuContents: ReactNode | ((setOpen: (open: boolean) => void) => ReactNode[]);
   visibleIcon?: ReactNode;
   hiddenIcon?: ReactNode;
-  settingsLinkText: string;
+  settingsLinkText?: string;
 };
 
 const defaultProps: Partial<ToggleButtonWithConfigProps> = {
   disabled: false,
+  placement: "horizontal",
   visibleIcon: <ImagesIconSVG />,
   hiddenIcon: <ImagesSlashIconSVG />,
 };
@@ -81,20 +83,22 @@ export function ToggleButtonWithConfig(inputProps: ToggleButtonWithConfigProps):
         ? props.configMenuContents(setConfigMenuOpen)
         : props.configMenuContents}
 
-      <div key="backdrop-settings-link">
-        <LinkStyleButton
-          onClick={() => {
-            setOpenTab(TabType.SETTINGS);
-            setConfigMenuOpen(false);
-          }}
-          $color={theme.color.text.hint}
-          $hoverColor={theme.color.text.secondary}
-        >
-          <span>
-            {props.settingsLinkText} <VisuallyHidden>(opens settings tab)</VisuallyHidden>
-          </span>
-        </LinkStyleButton>
-      </div>
+      {props.settingsLinkText && (
+        <div key="backdrop-settings-link">
+          <LinkStyleButton
+            onClick={() => {
+              setOpenTab(TabType.SETTINGS);
+              setConfigMenuOpen(false);
+            }}
+            $color={theme.color.text.hint}
+            $hoverColor={theme.color.text.secondary}
+          >
+            <span>
+              {props.settingsLinkText} <VisuallyHidden>(opens settings tab)</VisuallyHidden>
+            </span>
+          </LinkStyleButton>
+        </div>
+      )}
 
       <div style={{ marginLeft: "auto", marginTop: "8px" }}>
         <Button onClick={() => setConfigMenuOpen(false)}>Close</Button>
@@ -108,7 +112,7 @@ export function ToggleButtonWithConfig(inputProps: ToggleButtonWithConfigProps):
     <div ref={popupContainerRef}>
       <Popover
         content={configMenuContents}
-        placement="left"
+        placement={props.placement === "vertical" ? "bottom" : "left"}
         trigger={["click"]}
         getPopupContainer={() => popupContainerRef.current || document.body}
         onOpenChange={(open) => setConfigMenuOpen(open)}
@@ -116,7 +120,7 @@ export function ToggleButtonWithConfig(inputProps: ToggleButtonWithConfigProps):
       >
         <TooltipWithSubtitle
           title={tooltipTitle}
-          placement={"right"}
+          placement={props.placement === "vertical" ? "top" : "right"}
           subtitleList={tooltipContents}
           tooltipRef={tooltipRef}
           getPopupContainer={() => popupContainerRef.current || document.body}
