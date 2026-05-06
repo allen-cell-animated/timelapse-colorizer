@@ -583,6 +583,21 @@ export function isHistogramEvent(eventData: PlotMouseEvent): boolean {
 }
 
 /**
+ * Appends alpha opacity information to a hex color string, making it less opaque as the number of markers increases.
+ */
+export function scaleColorOpacityByMarkerCount(numMarkers: number, baseColor: HexColorString): HexColorString {
+  if (baseColor.length !== 7) {
+    throw new Error("ScatterPlotTab.getMarkerColor: Base color '" + baseColor + "' must be 7-character hex string.");
+  }
+  // Interpolate linearly between 80% and 25% transparency from 0 up to a max of 1000 markers.
+  const opacity = remap(numMarkers, 0, 1000, 0.8, 0.25);
+  const opacityString = Math.floor(opacity * 255)
+    .toString(16)
+    .padStart(2, "0");
+  return (baseColor + opacityString) as HexColorString;
+}
+
+/**
  * Returns a Plotly hovertemplate string for a scatter plot trace.
  * The trace must include the `id` (object ID) and `customdata` (track ID) fields.
  */
