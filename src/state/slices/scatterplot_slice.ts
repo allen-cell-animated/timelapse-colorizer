@@ -1,6 +1,6 @@
 import type { StateCreator } from "zustand";
 
-import { DEFAULT_COLOR_RAMP_KEY, KNOWN_COLOR_RAMPS, type Dataset } from "src/colorizer";
+import { type Dataset, DEFAULT_COLOR_RAMP_KEY, KNOWN_COLOR_RAMPS } from "src/colorizer";
 import { TIME_FEATURE_KEY } from "src/colorizer/Dataset";
 import { PlotRangeType } from "src/colorizer/types";
 import {
@@ -28,12 +28,7 @@ export type ScatterPlotSliceState = {
 
 export type ScatterPlotSliceSerializableState = Pick<
   ScatterPlotSliceState,
-  | "scatterXAxis"
-  | "scatterYAxis"
-  | "scatterRangeType"
-  | "scatterHistogramBins"
-  | "showHeatmap"
-  | "heatmapColorMapKey"
+  "scatterXAxis" | "scatterYAxis" | "scatterRangeType" | "scatterHistogramBins" | "showHeatmap" | "heatmapColorMapKey"
 >;
 
 export type ScatterPlotSliceActions = {
