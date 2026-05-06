@@ -13,6 +13,8 @@ export const OUT_OF_RANGE_COLOR_DEFAULT = "#dddddd";
 export const EDGE_COLOR_DEFAULT = "#000000";
 export const EDGE_COLOR_ALPHA_DEFAULT = 64 / 255; // ~25%
 
+export const CENTROID_COLOR_DEFAULT = "#aaaaaa";
+
 export const VECTOR_KEY_MOTION_DELTA = "_motion_";
 
 export const INITIAL_TRACK_PATH_BUFFER_SIZE = 6; // Must be divisible by 6

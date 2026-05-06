@@ -244,6 +244,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
         "outlineColor",
         "outlineColorMode",
         "outlinePaletteRamp",
+        "showSegmentations",
         "tracks",
         "trackColors",
       ])
@@ -254,6 +255,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
         for (let i = 0; i < this.volume.numChannels; i++) {
           if (i === segChannel) {
             this.configureColorizeFeature(this.volume, i);
+            this.view3d.setVolumeChannelEnabled(this.volume, i, params.showSegmentations);
           } else {
             this.view3d.setChannelColorizeFeature(this.volume, i, null);
           }

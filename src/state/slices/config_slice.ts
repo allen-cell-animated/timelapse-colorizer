@@ -3,6 +3,8 @@ import { clamp } from "three/src/math/MathUtils";
 import type { StateCreator } from "zustand";
 
 import {
+  CENTROID_COLOR_DEFAULT,
+  CentroidColorMode,
   ColorRamp,
   ColorRampType,
   DEFAULT_DIVERGING_COLOR_RAMP_KEY,
@@ -32,6 +34,7 @@ import {
   encodeMaybeColor,
   encodeMaybeColorWithAlpha,
   encodeMaybeNumber,
+  parseCentroidColorMode,
   parseDrawMode,
   parseDrawSettings,
   parseTrackOutlineColorMode,
@@ -59,8 +62,13 @@ const OUTLIER_DRAW_SETTINGS_DEFAULT: DrawSettings = {
 
 export type ConfigSliceState = {
   // View mode
+  showSegmentations: boolean;
+
+  // Centroids
   showCentroids: boolean;
   centroidRadiusPx: number;
+  centroidColorMode: CentroidColorMode;
+  centroidColor: Color;
 
   // Track path settings
   showTrackPath: boolean;
@@ -127,6 +135,7 @@ export type ConfigSliceState = {
 
 export type ConfigSliceSerializableState = Pick<
   ConfigSliceState,
+  | "showSegmentations"
   | "showTrackPath"
   | "trackPathColor"
   | "trackPathColorMode"
@@ -152,13 +161,18 @@ export type ConfigSliceSerializableState = Pick<
   | "edgeMode"
   | "showCentroids"
   | "centroidRadiusPx"
+  | "centroidColorMode"
+  | "centroidColor"
   | "openTab"
   | "interpolate3d"
 >;
 
 export type ConfigSliceActions = {
+  setShowSegmentations: (showSegmentations: boolean) => void;
   setShowCentroids: (showCentroids: boolean) => void;
   setCentroidRadiusPx: (radius: number) => void;
+  setCentroidColorMode: (centroidColorMode: CentroidColorMode) => void;
+  setCentroidColor: (centroidColor: Color) => void;
   setShowTrackPath: (showTrackPath: boolean) => void;
   setTrackPathColor: (trackPathColor: Color) => void;
   setTrackPathWidthPx: (trackPathWidthPx: number) => void;
@@ -202,7 +216,10 @@ export type ConfigSlice = ConfigSliceState & ConfigSliceActions;
 
 export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> = (set) => ({
   // State
+  showSegmentations: true,
   showCentroids: false,
+  centroidColorMode: CentroidColorMode.USE_FEATURE_COLOR,
+  centroidColor: new Color(CENTROID_COLOR_DEFAULT),
   centroidRadiusPx: 4,
   showTrackPath: true,
   trackPathColor: new Color(OUTLINE_COLOR_DEFAULT),
@@ -239,8 +256,11 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   openTab: TabType.TRACK_PLOT,
 
   // Actions
+  setShowSegmentations: (showSegmentations) => set({ showSegmentations }),
   setShowCentroids: (showCentroids) => set({ showCentroids }),
   setCentroidRadiusPx: (centroidRadiusPx) => set({ centroidRadiusPx: clamp(centroidRadiusPx, 0, 100) }),
+  setCentroidColorMode: (centroidColorMode) => set({ centroidColorMode }),
+  setCentroidColor: (centroidColor) => set({ centroidColor }),
   setShowTrackPath: (showTrackPath) => set({ showTrackPath }),
   setTrackPathColor: (trackPathColor) => set({ trackPathColor }),
   setTrackPathWidthPx: (trackPathWidthPx) => set({ trackPathWidthPx: clamp(trackPathWidthPx, 0, 100) }),
@@ -301,6 +321,7 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
 
 export const serializeConfigSlice = (slice: Partial<ConfigSliceSerializableState>): SerializedStoreData => {
   return {
+    [UrlParam.SHOW_SEGMENTATIONS]: encodeMaybeBoolean(slice.showSegmentations),
     [UrlParam.SHOW_PATH]: encodeMaybeBoolean(slice.showTrackPath),
     [UrlParam.PATH_COLOR]: encodeMaybeColor(slice.trackPathColor),
     [UrlParam.PATH_WIDTH]: encodeMaybeNumber(slice.trackPathWidthPx),
@@ -330,6 +351,8 @@ export const serializeConfigSlice = (slice: Partial<ConfigSliceSerializableState
     [UrlParam.EDGE_MODE]: slice.edgeMode?.toString(),
     [UrlParam.EDGE_COLOR]: encodeMaybeColorWithAlpha(slice.edgeColor, slice.edgeColorAlpha),
     [UrlParam.SHOW_CENTROIDS]: encodeMaybeBoolean(slice.showCentroids),
+    [UrlParam.CENTROID_COLOR_MODE]: slice.centroidColorMode?.toString(),
+    [UrlParam.CENTROID_COLOR]: encodeMaybeColor(slice.centroidColor),
     [UrlParam.CENTROID_RADIUS]: encodeMaybeNumber(slice.centroidRadiusPx),
     [UrlParam.OPEN_TAB]: slice.openTab,
     [UrlParam.INTERPOLATE_3D]: encodeMaybeBoolean(slice.interpolate3d),
@@ -338,6 +361,7 @@ export const serializeConfigSlice = (slice: Partial<ConfigSliceSerializableState
 
 /** Selects state values that serialization depends on. */
 export const selectConfigSliceSerializationDeps = (slice: ConfigSlice): ConfigSliceSerializableState => ({
+  showSegmentations: slice.showSegmentations,
   showTrackPath: slice.showTrackPath,
   trackPathColor: slice.trackPathColor,
   trackPathWidthPx: slice.trackPathWidthPx,
@@ -362,12 +386,15 @@ export const selectConfigSliceSerializationDeps = (slice: ConfigSlice): ConfigSl
   edgeColor: slice.edgeColor,
   edgeColorAlpha: slice.edgeColorAlpha,
   showCentroids: slice.showCentroids,
+  centroidColorMode: slice.centroidColorMode,
+  centroidColor: slice.centroidColor,
   centroidRadiusPx: slice.centroidRadiusPx,
   openTab: slice.openTab,
   interpolate3d: slice.interpolate3d,
 });
 
 export const loadConfigSliceFromParams = (slice: ConfigSlice, params: URLSearchParams): void => {
+  setValueIfDefined(decodeBoolean(params.get(UrlParam.SHOW_SEGMENTATIONS)), slice.setShowSegmentations);
   setValueIfDefined(decodeBoolean(params.get(UrlParam.SHOW_PATH)), slice.setShowTrackPath);
   setValueIfDefined(decodeBoolean(params.get(UrlParam.SHOW_SCALEBAR)), slice.setShowScaleBar);
   setValueIfDefined(decodeBoolean(params.get(UrlParam.SHOW_TIMESTAMP)), slice.setShowTimestamp);
@@ -453,6 +480,14 @@ export const loadConfigSliceFromParams = (slice: ConfigSlice, params: URLSearchP
   const centroidRadiusParam = decodeFloat(params.get(UrlParam.CENTROID_RADIUS));
   if (centroidRadiusParam !== undefined) {
     slice.setCentroidRadiusPx(centroidRadiusParam);
+  }
+  const centroidColorParam = decodeHexColor(params.get(UrlParam.CENTROID_COLOR));
+  if (centroidColorParam) {
+    slice.setCentroidColor(new Color(centroidColorParam));
+  }
+  const centroidColorModeParam = parseCentroidColorMode(params.get(UrlParam.CENTROID_COLOR_MODE));
+  if (centroidColorModeParam !== undefined) {
+    slice.setCentroidColorMode(centroidColorModeParam);
   }
 
   const openTabParam = params.get(UrlParam.OPEN_TAB);

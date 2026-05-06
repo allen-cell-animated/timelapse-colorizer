@@ -4,6 +4,7 @@ import { Color } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "src/colorizer/constants";
 import {
+  CentroidColorMode,
   type ChannelSetting,
   type DrawMode,
   type DrawSettings,
@@ -54,7 +55,10 @@ export enum UrlParam {
   OUTLINE_PALETTE_KEY = "outline-palette-key",
   EDGE_COLOR = "edge-color",
   EDGE_MODE = "edge",
+  SHOW_SEGMENTATIONS = "seg",
   SHOW_CENTROIDS = "centroids",
+  CENTROID_COLOR_MODE = "centroid-mode",
+  CENTROID_COLOR = "centroid-color",
   CENTROID_RADIUS = "centroid-radius",
   SHOW_PATH = "path",
   PATH_COLOR = "path-color",
@@ -481,6 +485,13 @@ export function parseTrackPathMode(mode: string | null): TrackPathColorMode | un
     modeInt === TrackPathColorMode.USE_FEATURE_COLOR ||
     modeInt === TrackPathColorMode.USE_COLOR_MAP;
   return mode && isTrackPathColorMode ? (modeInt as TrackPathColorMode) : undefined;
+}
+
+export function parseCentroidColorMode(mode: string | null): CentroidColorMode | undefined {
+  const modeInt = parseInt(mode || "-1", 10);
+  const isCentroidColorMode =
+    modeInt === CentroidColorMode.USE_CUSTOM_COLOR || modeInt === CentroidColorMode.USE_FEATURE_COLOR;
+  return mode && isCentroidColorMode ? (modeInt as CentroidColorMode) : undefined;
 }
 
 export function encodeBoolean(value: boolean): string {
