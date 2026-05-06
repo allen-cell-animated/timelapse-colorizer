@@ -24,6 +24,7 @@ import { clamp } from "three/src/math/MathUtils";
 import ColorRamp, { ColorRampType } from "src/colorizer/ColorRamp";
 import {
   CANVAS_BACKGROUND_COLOR_DEFAULT,
+  CENTROID_COLOR_DEFAULT,
   EDGE_COLOR_ALPHA_DEFAULT,
   EDGE_COLOR_DEFAULT,
   FRAME_BACKGROUND_COLOR_DEFAULT,
@@ -81,7 +82,9 @@ type ColorizeUniformTypes = {
   panOffset: Vector2;
   /** Image, mapping each pixel to an object ID using the RGBA values. */
   frame: Texture;
+  showFrame: boolean;
   framePoints: Texture;
+  showPoints: boolean;
   objectOpacity: number;
   /** The feature value of each object ID. */
   featureData: Texture;
@@ -114,6 +117,8 @@ type ColorizeUniformTypes = {
   outlierDrawMode: number;
   outOfRangeDrawMode: number;
   useRepeatingCategoricalColors: boolean;
+  pointsColor: Color;
+  pointsColorMode: number;
 };
 
 type ColorizeUniforms = { [K in keyof ColorizeUniformTypes]: Uniform<ColorizeUniformTypes[K]> };
@@ -134,7 +139,9 @@ const getDefaultUniforms = (): ColorizeUniforms => {
     canvasToFrameScale: new Uniform(new Vector2(1, 1)),
     canvasSizePx: new Uniform(new Vector2(1, 1)),
     frame: new Uniform(emptyFrame),
+    showFrame: new Uniform(true),
     framePoints: new Uniform(emptyFramePoints),
+    showPoints: new Uniform(false),
     featureData: new Uniform(emptyFeature),
     outlierData: new Uniform(emptyOutliers),
     inRangeIds: new Uniform(emptyInRangeIds),
@@ -162,6 +169,8 @@ const getDefaultUniforms = (): ColorizeUniforms => {
     outlierDrawMode: new Uniform(DrawMode.USE_COLOR),
     outOfRangeDrawMode: new Uniform(DrawMode.USE_COLOR),
     useRepeatingCategoricalColors: new Uniform(false),
+    pointsColor: new Uniform(new Color(CENTROID_COLOR_DEFAULT)),
+    pointsColorMode: new Uniform(0),
   };
 };
 
@@ -620,6 +629,17 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
       }
     }
 
+    if (hasPropertyChanged(params, prevParams, ["showCentroids"])) {
+      this.setUniform("showPoints", params.showCentroids);
+    }
+
+    if (hasPropertyChanged(params, prevParams, ["showSegmentations"])) {
+      // Reload current frame
+      promises.push(this.setFrame(this.currentFrame, true).then(() => {}));
+      // Show point outlines when segmentations are disabled
+      this.setUniform("showFrame", params.showSegmentations);
+    }
+
     // Update track path data
     this.updateTrackPaths(prevParams, params);
 
@@ -650,6 +670,12 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     }
     this.setUniform("backdropSaturation", clamp(params.backdropSaturation, 0, 100) / 100);
     this.setUniform("backdropBrightness", clamp(params.backdropBrightness, 0, 200) / 100);
+
+    // Centroids
+    if (hasPropertyChanged(params, prevParams, ["centroidColor", "centroidColorMode"])) {
+      this.setUniform("pointsColorMode", params.centroidColorMode);
+      this.setUniform("pointsColor", params.centroidColor.clone().convertLinearToSRGB());
+    }
 
     // Update color ramp + palette
     if (
@@ -708,11 +734,16 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     const pendingDataset = dataset;
     this.pendingFrame = index;
     const pendingBackdropKey = this.params?.backdropKey ?? null;
-    let backdropPromise = undefined;
+
+    // Setup promises; skip backdrop and frame loading if not needed
+    let backdropPromise: Promise<Texture | undefined> | undefined = undefined;
+    let framePromise: Promise<Texture | undefined> | undefined = undefined;
     if (this.params?.backdropVisible && pendingBackdropKey !== null && dataset?.hasBackdrop(pendingBackdropKey)) {
       backdropPromise = dataset?.loadBackdrop(pendingBackdropKey, index);
     }
-    const framePromise = dataset?.loadFrame(index);
+    if (this.params?.showSegmentations) {
+      framePromise = dataset?.loadFrame(index);
+    }
     const result = await Promise.allSettled([framePromise, backdropPromise]);
     const [frame, backdrop] = result;
 
@@ -748,11 +779,6 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
 
     if (frame.status === "fulfilled" && frame.value) {
       this.setUniform("frame", frame.value);
-      const globalIdLookup = dataset.frameToGlobalIdLookup?.get(index);
-      if (globalIdLookup) {
-        this.setUniform("segIdOffset", globalIdLookup.minSegId);
-        this.setUniform("segIdToGlobalId", globalIdLookup.texture);
-      }
     } else {
       if (frame.status === "rejected") {
         // Only show error message if the frame load encountered an error. (Null/undefined is okay)
@@ -762,6 +788,13 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
       // Set to blank
       const emptyFrame = makeEmptyRgbaUint8Texture();
       this.setUniform("frame", emptyFrame);
+    }
+
+    // Update global ID lookup info
+    const globalIdLookup = dataset.frameToGlobalIdLookup?.get(index);
+    if (globalIdLookup) {
+      this.setUniform("segIdOffset", globalIdLookup.minSegId);
+      this.setUniform("segIdToGlobalId", globalIdLookup.texture);
     }
 
     // Force rescale in case frame dimensions changed

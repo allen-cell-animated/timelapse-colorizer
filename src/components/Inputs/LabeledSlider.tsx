@@ -162,6 +162,7 @@ export default function LabeledSlider(inputProps: LabeledSliderProps): ReactElem
   // TODO: Could add a controlled/uncontrolled mode to this component, maybe with
   // a custom hook? (e.g., use state if min/max are undefined, otherwise use props)
 
+  const containerRef = useRef<HTMLDivElement>(null);
   const valueInput = useRef<HTMLInputElement>(null);
   const minInput = useRef<HTMLInputElement>(null);
   const maxInput = useRef<HTMLInputElement>(null);
@@ -264,6 +265,7 @@ export default function LabeledSlider(inputProps: LabeledSliderProps): ReactElem
     tooltip: {
       formatter: numberFormatter,
       open: props.disabled ? false : undefined, // Hide tooltip when disabled
+      getPopupContainer: () => containerRef.current || document.body,
     },
     styles: props.sliderStyles,
   };
@@ -319,7 +321,7 @@ export default function LabeledSlider(inputProps: LabeledSliderProps): ReactElem
     ) : null;
 
   return (
-    <ComponentContainer>
+    <ComponentContainer ref={containerRef}>
       {inputComponent1}
       <SliderContainer>
         <Slider {...sharedSliderProps} {...(props.type === "value" ? valueSliderProps : rangeSliderProps)} />
