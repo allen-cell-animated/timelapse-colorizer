@@ -2,7 +2,9 @@ precision highp usampler2D;
 precision highp int;
 
 uniform usampler2D frame;
+uniform bool showFrame;
 uniform usampler2D framePoints;
+uniform bool showPoints;
 uniform sampler2D featureData;
 uniform usampler2D outlierData;
 /** A mapping of IDs that are in range after feature thresholding/filtering is applied. If
@@ -65,6 +67,9 @@ const vec4 TRANSPARENT = vec4(0.0, 0.0, 0.0, 0.0);
 /** MUST be synchronized with the DrawMode enum in ColorizeCanvas! */
 const uint DRAW_MODE_HIDE = 0u;
 const uint DRAW_MODE_COLOR = 1u;
+// Draw mode for frame points. Keep in sync with the `CentroidColorMode` enum.
+const uint POINTS_MODE_USE_FEATURE = 0u;
+const uint POINTS_MODE_USE_CUSTOM_COLOR = 1u;
 const uint RAW_BACKGROUND_ID = 0u;
 const int MISSING_DATA_ID = -1;
 const int ID_OFFSET = 1;
@@ -75,6 +80,8 @@ uniform vec3 outlierColor;
 uniform uint outlierDrawMode;
 uniform vec3 outOfRangeColor;
 uniform uint outOfRangeDrawMode;
+uniform vec3 pointsColor;
+uniform uint pointsColorMode;
 
 uniform bool useRepeatingCategoricalColors;
 
@@ -283,8 +290,30 @@ vec4 getFeatureColor(int id, vec2 uv) {
   return color;
 }
 
+/**
+ * If an object is selected, returns its highlight color. If not selected,
+ * returns the transparent color (`TRANSPARENT`).
+*/
+vec4 getHighlightColor(uint labelId, int id, usampler2D tex, vec2 uv, bool useFrameScaling) {
+  uint selectionIdx = getUintFromTex(selectedIds, id).r;
+  if (selectionIdx != 0u) {
+    if (isEdge(tex, uv, labelId, OUTLINE_WIDTH_PX, useFrameScaling)) {
+      int colorIdx = int(selectionIdx) - 1;
+      vec4 color = getOutlineColor(colorIdx);
+      return vec4(color.rgb, 1.0);
+    } else if (useTracksPalette && isEdge(tex, uv, labelId, OUTLINE_WIDTH_PX + 2.0, useFrameScaling)) {
+      // When coloring with the track palette, apply an additional 2px inner
+      // outline using the background color for better contrast against the
+      // track outline color.
+      return vec4(backgroundColor, 1.0);
+    }
+  }
+  // Not selected or not edge pixel
+  return TRANSPARENT;
+}
+
 vec4 getObjectColor(vec2 sUv, float opacity) {
-  if (isOutsideBounds(sUv)) {
+  if (isOutsideBounds(sUv) || !showFrame) {
     return TRANSPARENT;
   }
 
@@ -299,18 +328,9 @@ vec4 getObjectColor(vec2 sUv, float opacity) {
   }
 
   // Draw an outline around highlighted objects
-  uint selectionIdx = getUintFromTex(selectedIds, id).r;
-  if (selectionIdx > 0u) {
-    if (isEdge(frame, sUv, labelId, OUTLINE_WIDTH_PX, true)) {
-      int colorIdx = int(selectionIdx) - 1;
-      vec4 color = getOutlineColor(colorIdx);
-      return vec4(color.rgb, 1.0);
-    } else if (isEdge(frame, sUv, labelId, OUTLINE_WIDTH_PX + 2.0, true) && useTracksPalette) {
-      // When coloring with the track palette, apply an additional 2px inner
-      // outline using the background color for better contrast against the
-      // track outline color.
-      return vec4(backgroundColor, 1.0);
-    }
+  vec4 highlightColor = getHighlightColor(labelId, id, frame, sUv, true);
+  if (highlightColor != TRANSPARENT) {
+    return highlightColor;
   }
 
   // Get base color and apply edge color if this is an edge pixel.
@@ -328,6 +348,10 @@ vec4 getObjectColor(vec2 sUv, float opacity) {
 }
 
 vec4 getPointColor(vec2 uv) {
+  if (!showPoints) {
+    return TRANSPARENT;
+  }
+
   // Get the segmentation id at this pixel
   float labelAlpha = 1.0;
   uint labelId = getLabelId(framePoints, uv, labelAlpha);
@@ -340,6 +364,26 @@ vec4 getPointColor(vec2 uv) {
   vec4 baseColor = getFeatureColor(id, uv);
   if (baseColor.a == 0.0) {
     return TRANSPARENT;
+  } else if (pointsColorMode == POINTS_MODE_USE_CUSTOM_COLOR) {
+    // Apply color override if provided. This will respect any other rules that
+    // would hide the point (e.g. if the point is an outlier and
+    // `outlierDrawMode` is set to hide outliers, the point will still be hidden
+    // even if a custom color is provided).
+    baseColor = vec4(pointsColor, 1.0);
+  }
+
+  if (!showFrame) {
+    vec4 highlightColor = getHighlightColor(labelId, id, framePoints, uv, false);
+    if (highlightColor != TRANSPARENT) {
+      return highlightColor;
+    }
+  }
+
+  if (!showFrame) {
+    vec4 highlightColor = getHighlightColor(labelId, id, framePoints, uv, false);
+    if (highlightColor != TRANSPARENT) {
+      return highlightColor;
+    }
   }
 
   // Points should render with a smooth, 1px anti-aliased outline, and we can
