@@ -250,57 +250,6 @@ export const estimateTextWidthPxForCategories = (dataset: Dataset | null, featur
   );
 };
 
-/**
- * Returns an array of shapes that draw a crosshair + colored scatterplot dot over the
- * points in selected tracks visible in the current frame.
- */
-export const getCurrentFrameShapes = (
-  dataset: Dataset | null,
-  xAxisFeatureKey: string | null,
-  yAxisFeatureKey: string | null,
-  colorizeConfig: ColorizeStateParams,
-  currentFrame: number,
-  tracks: Map<number, Track>,
-  rawXData: TypedArray | undefined,
-  rawYData: TypedArray | undefined
-): Partial<Shape>[] => {
-  const crosshairShapes: Partial<Shape>[] = [];
-  if (!rawXData || !rawYData || !dataset) {
-    return [];
-  }
-  const xData: number[] = [];
-  const yData: number[] = [];
-  const ids: number[] = [];
-  const segIds: number[] = [];
-  const trackIds: number[] = [];
-  for (const track of tracks.values()) {
-    const currentObjectId = track.getIdAtTime(currentFrame);
-    if (currentObjectId !== -1) {
-      // Get crosshair for this shape and store data for rendering the dots
-      crosshairShapes.push(...getCrosshairShapes(rawXData[currentObjectId], rawYData[currentObjectId]));
-      xData.push(rawXData[currentObjectId]);
-      yData.push(rawYData[currentObjectId]);
-      ids.push(currentObjectId);
-      segIds.push(dataset!.getSegmentationId(currentObjectId));
-      trackIds.push(track.trackId);
-    }
-  }
-  const outOfRangeOutlineColor = colorizeConfig.outOfRangeDrawSettings.color.clone().multiplyScalar(0.8);
-
-  // Render the dots. See TODO in `scatterplotTraceToShapes` for refactoring
-  // `colorizeScatterplotPoints`.
-  const groupedData = { xData, yData, objectIds: ids, segIds, trackIds };
-  const pointShapes = scatterplotTraceToShapes(
-    colorizeScatterplotPoints(colorizeConfig, xAxisFeatureKey, yAxisFeatureKey, groupedData, {
-      outOfRange: {
-        color: "var( --color-background)",
-        line: { width: 2, color: "#" + outOfRangeOutlineColor.getHexString() + "40" },
-      },
-    })
-  );
-  return crosshairShapes.concat(pointShapes);
-};
-
 //// Plotly utilities ////
 
 /**
@@ -504,6 +453,57 @@ export const colorizeScatterplotPoints = (
     });
 
   return traces;
+};
+
+/**
+ * Returns an array of shapes that draw a crosshair + colored scatterplot dot over the
+ * points in selected tracks visible in the current frame.
+ */
+export const getCurrentFrameShapes = (
+  dataset: Dataset | null,
+  xAxisFeatureKey: string | null,
+  yAxisFeatureKey: string | null,
+  colorizeConfig: ColorizeStateParams,
+  currentFrame: number,
+  tracks: Map<number, Track>,
+  rawXData: TypedArray | undefined,
+  rawYData: TypedArray | undefined
+): Partial<Shape>[] => {
+  const crosshairShapes: Partial<Shape>[] = [];
+  if (!rawXData || !rawYData || !dataset) {
+    return [];
+  }
+  const xData: number[] = [];
+  const yData: number[] = [];
+  const ids: number[] = [];
+  const segIds: number[] = [];
+  const trackIds: number[] = [];
+  for (const track of tracks.values()) {
+    const currentObjectId = track.getIdAtTime(currentFrame);
+    if (currentObjectId !== -1) {
+      // Get crosshair for this shape and store data for rendering the dots
+      crosshairShapes.push(...getCrosshairShapes(rawXData[currentObjectId], rawYData[currentObjectId]));
+      xData.push(rawXData[currentObjectId]);
+      yData.push(rawYData[currentObjectId]);
+      ids.push(currentObjectId);
+      segIds.push(dataset.getSegmentationId(currentObjectId));
+      trackIds.push(track.trackId);
+    }
+  }
+  const outOfRangeOutlineColor = colorizeConfig.outOfRangeDrawSettings.color.clone().multiplyScalar(0.8);
+
+  // Render the dots. See TODO in `scatterplotTraceToShapes` for refactoring
+  // `colorizeScatterplotPoints`.
+  const groupedData = { xData, yData, objectIds: ids, segIds, trackIds };
+  const pointShapes = scatterplotTraceToShapes(
+    colorizeScatterplotPoints(colorizeConfig, xAxisFeatureKey, yAxisFeatureKey, groupedData, {
+      outOfRange: {
+        color: "var( --color-background)",
+        line: { width: 2, color: "#" + outOfRangeOutlineColor.getHexString() + "40" },
+      },
+    })
+  );
+  return crosshairShapes.concat(pointShapes);
 };
 
 /**

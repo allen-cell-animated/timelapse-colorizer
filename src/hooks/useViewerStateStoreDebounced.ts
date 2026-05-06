@@ -26,6 +26,7 @@ export const useViewerStateStoreDebounced = <T extends Partial<ViewerStore>>(
 ): [T, boolean] => {
   const rawState = useViewerStateStore(useShallow(selector));
 
+  // Dummy value used to trigger re-renders.
   const [_countState, _setCountState] = useState(0);
   const triggerStateUpdate = (): void => _setCountState((prev) => prev + 1);
 
@@ -40,11 +41,10 @@ export const useViewerStateStoreDebounced = <T extends Partial<ViewerStore>>(
     return Math.max(propertyDelayMsRef.current[key] ?? delayMs, 0);
   };
 
-  // Set any properties that can be updated immediately (debounce is 0).
+  // Set any properties that can be updated immediately (debounce = 0).
   for (const key in rawState) {
     const propertyDelayMs = getPropertyDelayMs(key);
     if (debouncedStateRef.current[key] !== rawState[key] && propertyDelayMs === 0) {
-      // No debounce, set immediately.
       debouncedStateRef.current = {
         ...debouncedStateRef.current,
         [key]: rawState[key],
