@@ -1,5 +1,5 @@
 import { ExportOutlined } from "@ant-design/icons";
-import { Button, Tooltip } from "antd";
+import { Tooltip } from "antd";
 import Plotly, { type PlotData } from "plotly.js-dist-min";
 import React, { memo, type ReactElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
@@ -16,13 +16,14 @@ import TextButton from "src/components/Buttons/TextButton";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import type { SelectItem } from "src/components/Dropdowns/types";
 import LoadingSpinner from "src/components/LoadingSpinner";
+import ScatterplotToolbar from "src/components/Tabs/ScatterPlot/ScatterplotToolbar";
 import { SHORTCUT_KEYS } from "src/constants";
 import { useIsMouseButtonDownRef } from "src/hooks";
 import { useViewerStateStoreDebounced } from "src/hooks/useViewerStateStoreDebounced";
 import { colorizeStateSelector } from "src/state";
 import { useViewerStateStore } from "src/state/ViewerState";
 import { AppThemeContext } from "src/styles/AppStyle";
-import { FlexRow, FlexRowAlignCenter } from "src/styles/utils";
+import { FlexColumn, FlexRow, FlexRowAlignCenter } from "src/styles/utils";
 import { downloadCsv } from "src/utils/file_io";
 import {
   colorizeScatterplotPoints,
@@ -60,8 +61,6 @@ const ScatterPlotContainer = styled.div`
     // Remove Plotly border
     border: 0px solid transparent !important;
   }
-  // Center plot horizontally
-  margin: 0 auto;
 
   & .main-svg {
     z-index: 1;
@@ -627,7 +626,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const makeControlBar = (menuItems: SelectItem[]): ReactElement => {
     return (
       <FlexRow $gap={6}>
-        <FlexRowAlignCenter $gap={8} style={{ flexWrap: "wrap", width: "100%" }}>
+        <FlexRowAlignCenter $gap={8} style={{ flexWrap: "wrap", flexGrow: 1 }}>
           <SelectionDropdown
             label={"X"}
             selected={xAxisFeatureKey || ""}
@@ -682,12 +681,11 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
                   setScatterHistogramBins(bins);
                 }
               }}
-              width="100px"
               controlWidth="80px"
             ></SelectionDropdown>
           </div>
         </FlexRowAlignCenter>
-        <TextButton onClick={downloadScatterPlotCsv} disabled={!canDownloadScatterPlotCsv}>
+        <TextButton onClick={downloadScatterPlotCsv} disabled={!canDownloadScatterPlotCsv} style={{ flexGrow: 0 }}>
           <ExportOutlined style={{ marginRight: "2px" }} />
           Export CSV
         </TextButton>
@@ -695,42 +693,30 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     );
   };
 
-  const makePlotButtons = (): ReactElement => {
-    return (
-      <FlexRow $gap={6} style={{ position: "absolute", right: "5px", top: "5px", zIndex: 10 }}>
-        <Button
-          onClick={() => {
-            setIsRendering(true);
-            clearTracks();
-          }}
-          disabled={tracks.size === 0}
-        >
-          Clear Tracks
-        </Button>
+  const onResetZoom = useCallback((): void => {
+    setIsRendering(true);
+    setTimeout(() => renderPlot(true), 100);
+  }, [renderPlot]);
 
-        <Button
-          onClick={() => {
-            setIsRendering(true);
-            setTimeout(() => renderPlot(true), 100);
-          }}
-          type="primary"
-        >
-          Reset Zoom
-        </Button>
-      </FlexRow>
-    );
-  };
+  const onClearTracks = useCallback((): void => {
+    setIsRendering(true);
+    clearTracks();
+  }, [clearTracks]);
 
   return (
     <>
       {makeControlBar(menuItems)}
       <div style={{ position: "relative" }}>
         <LoadingSpinner loading={isRendering || isDebouncePending} style={{ marginTop: "10px" }}>
-          {makePlotButtons()}
-          <ScatterPlotContainer
-            style={{ width: "calc(min(100%, 680px) - 40px)", aspectRatio: "7 / 6", padding: "5px" }}
-            ref={plotDivRef}
-          ></ScatterPlotContainer>
+          <FlexColumn style={{ margin: "0 auto", alignItems: "center" }}>
+            <div>
+              <ScatterplotToolbar onClickResetZoom={onResetZoom} onClickClearTracks={onClearTracks} />
+            </div>
+            <ScatterPlotContainer
+              style={{ width: "calc(min(100%, 680px) - 40px)", aspectRatio: "7 / 6", padding: "5px" }}
+              ref={plotDivRef}
+            ></ScatterPlotContainer>
+          </FlexColumn>
         </LoadingSpinner>
       </div>
     </>
