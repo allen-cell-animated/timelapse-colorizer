@@ -3,6 +3,11 @@
   font-family: Lato, LatoExtended, sans-serif;
 }
 
-#onetrust-consent-sdk #onetrust-banner-sdk #onetrust-pc-btn-handler {
-  font-weight: 400;
+#onetrust-consent-sdk #ot-pc-content #ot-pc-title {
+  margin-top: 20px;
+}
+
+body {
+  /* Prevents layout shift when the banner cookie settings are clicked. */
+  overflow: auto !important;
 }
