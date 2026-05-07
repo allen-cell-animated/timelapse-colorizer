@@ -479,7 +479,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       yaxis: scatterPlotYAxis,
       xaxis2: histogramXAxis,
       yaxis2: histogramYAxis,
-      margin: { l: leftMarginPx, r: 50, b: 30, t: 20 },
+      margin: { l: leftMarginPx, r: 30, b: 30, t: 20 },
       font: {
         // Unfortunately using the Lato font family causes the text to render with SEVERE
         // aliasing. Using the default plotly font family causes the X and Y axes to be
