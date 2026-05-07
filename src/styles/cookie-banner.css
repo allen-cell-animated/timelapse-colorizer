@@ -8,6 +8,9 @@
 }
 
 body {
-  /* Prevents layout shift when the banner cookie settings are clicked. */
+  /* 
+   * Prevents layout shift when the banner cookie settings are clicked;
+   * the onetrust banner tries to set this to hidden.
+   */
   overflow: auto !important;
 }
