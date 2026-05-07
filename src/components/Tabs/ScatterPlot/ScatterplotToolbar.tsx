@@ -1,7 +1,8 @@
-import { DeleteOutlined, DownloadOutlined, HomeOutlined } from "@ant-design/icons";
+import { DeleteOutlined, DownloadOutlined } from "@ant-design/icons";
 import { Tooltip } from "antd";
-import React, { ReactElement } from "react";
+import React, { type ReactElement } from "react";
 
+import { ResetViewIconSVG } from "src/assets";
 import { PlotRangeType } from "src/colorizer/types";
 import IconButton from "src/components/Buttons/IconButton";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
@@ -44,15 +45,8 @@ export default function ScatterplotToolbar(props: ScatterplotToolbarProps): Reac
 
       <Tooltip title={"Reset zoom"} placement="top" trigger={["hover", "focus"]}>
         <IconButton onClick={props.onClickResetZoom} type="link">
-          <HomeOutlined />
+          <ResetViewIconSVG />
           <VisuallyHidden>Reset zoom</VisuallyHidden>
-        </IconButton>
-      </Tooltip>
-
-      <Tooltip title={"Clear tracks"} placement="top" trigger={["hover", "focus"]}>
-        <IconButton onClick={props.onClickClearTracks} type="link" disabled={!hasTracks}>
-          <DeleteOutlined />
-          <VisuallyHidden>Clear tracks</VisuallyHidden>
         </IconButton>
       </Tooltip>
 
@@ -60,6 +54,13 @@ export default function ScatterplotToolbar(props: ScatterplotToolbarProps): Reac
         <IconButton onClick={props.onClickDownloadCsv} type="link">
           <DownloadOutlined />
           <VisuallyHidden>Download current scatterplot as CSV</VisuallyHidden>
+        </IconButton>
+      </Tooltip>
+
+      <Tooltip title={"Clear tracks"} placement="top" trigger={["hover", "focus"]}>
+        <IconButton onClick={props.onClickClearTracks} type="link" disabled={!hasTracks}>
+          <DeleteOutlined />
+          <VisuallyHidden>Clear tracks</VisuallyHidden>
         </IconButton>
       </Tooltip>
 

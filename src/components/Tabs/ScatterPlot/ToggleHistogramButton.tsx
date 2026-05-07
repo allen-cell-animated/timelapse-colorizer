@@ -1,5 +1,5 @@
 import { BarChartOutlined } from "@ant-design/icons";
-import React, { ReactElement } from "react";
+import React, { type ReactElement } from "react";
 
 import { isPositiveInteger } from "src/colorizer/utils/data_utils";
 import { ToggleButtonWithConfig } from "src/components/Buttons/ToggleButtonWithConfig";
