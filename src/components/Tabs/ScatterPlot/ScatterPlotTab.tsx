@@ -311,6 +311,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
   const clearPlotAndStopRender = (): void => {
     // TODO: Show histograms on default, cleared layout
+    console.log("Clearing plot and stopping render");
     Plotly.react(plotDivRef.current!, [], {}, PLOTLY_CONFIG);
     setIsRendering(false);
   };
@@ -321,7 +322,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
   // Plot dependencies, not including time.
   const basePlotDependencies = [
-    ...Array.from(Object.values(colorizeConfig)),
+    colorizeConfig,
     xAxisFeatureKey,
     yAxisFeatureKey,
     histogramBins,
@@ -536,6 +537,10 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     if (!isVisible) {
       return;
     }
+    console.log("ScatterPlotTab wants to rerender. Render will be skipped if debounce is pending:", isDebouncePending);
+    if (isDebouncePending) {
+      return;
+    }
     const hasOnlyFrameChanged = !hasAnyValueChanged(basePlotDependencies, prevDependenciesRef.current);
     const shouldSkipFrameChangeRender = hasOnlyFrameChanged && rangeType === PlotRangeType.ALL_TIME;
     if (shouldSkipFrameChangeRender && plotDivRef.current !== null) {
@@ -557,7 +562,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     setIsRendering(true);
     renderPlot();
     prevDependenciesRef.current = basePlotDependencies;
-  }, [...basePlotDependencies, currentFrame]);
+  }, [...basePlotDependencies, isDebouncePending, currentFrame]);
 
   //////////////////////////////////
   // Component Rendering

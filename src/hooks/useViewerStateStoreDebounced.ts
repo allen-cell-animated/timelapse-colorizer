@@ -42,13 +42,18 @@ export const useViewerStateStoreDebounced = <T extends Partial<ViewerStore>>(
   };
 
   // Set any properties that can be updated immediately (debounce = 0).
+  let isDebouncePending = false;
   for (const key in rawState) {
     const propertyDelayMs = getPropertyDelayMs(key);
-    if (debouncedStateRef.current[key] !== rawState[key] && propertyDelayMs === 0) {
-      debouncedStateRef.current = {
-        ...debouncedStateRef.current,
-        [key]: rawState[key],
-      };
+    if (debouncedStateRef.current[key] !== rawState[key]) {
+      if (propertyDelayMs === 0) {
+        debouncedStateRef.current = {
+          ...debouncedStateRef.current,
+          [key]: rawState[key],
+        };
+      } else {
+        isDebouncePending = true;
+      }
     }
   }
 
@@ -93,6 +98,5 @@ export const useViewerStateStoreDebounced = <T extends Partial<ViewerStore>>(
     };
   }, []);
 
-  const isDebouncePending = Object.keys(pendingValues.current).length > 0;
   return [debouncedStateRef.current, isDebouncePending];
 };
