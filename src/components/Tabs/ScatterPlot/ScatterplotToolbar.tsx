@@ -1,17 +1,20 @@
-import { CloseSquareOutlined, HomeOutlined } from "@ant-design/icons";
+import { DeleteOutlined, DownloadOutlined, HomeOutlined } from "@ant-design/icons";
 import { Tooltip } from "antd";
 import React, { ReactElement } from "react";
 
 import { PlotRangeType } from "src/colorizer/types";
 import IconButton from "src/components/Buttons/IconButton";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
+import ToggleHistogramButton from "src/components/Tabs/ScatterPlot/ToggleHistogramButton";
 import { useViewerStateStore } from "src/state";
 import { StyledVerticalRule } from "src/styles/components";
 import { FlexRowAlignCenter, VisuallyHidden } from "src/styles/utils";
 
 type ScatterplotToolbarProps = {
+  popupContainer?: HTMLElement;
   onClickResetZoom: () => void;
   onClickClearTracks: () => void;
+  onClickDownloadCsv: () => void;
 };
 
 const PLOT_RANGE_SELECT_ITEMS = Object.values(PlotRangeType);
@@ -45,14 +48,24 @@ export default function ScatterplotToolbar(props: ScatterplotToolbarProps): Reac
           <VisuallyHidden>Reset zoom</VisuallyHidden>
         </IconButton>
       </Tooltip>
+
       <Tooltip title={"Clear tracks"} placement="top" trigger={["hover", "focus"]}>
         <IconButton onClick={props.onClickClearTracks} type="link" disabled={!hasTracks}>
-          <CloseSquareOutlined />
+          <DeleteOutlined />
           <VisuallyHidden>Clear tracks</VisuallyHidden>
         </IconButton>
       </Tooltip>
 
+      <Tooltip title={"Download current scatterplot as CSV"} placement="top" trigger={["hover", "focus"]}>
+        <IconButton onClick={props.onClickDownloadCsv} type="link">
+          <DownloadOutlined />
+          <VisuallyHidden>Download current scatterplot as CSV</VisuallyHidden>
+        </IconButton>
+      </Tooltip>
+
       <StyledVerticalRule style={{ height: 24, margin: "0 2px" }} />
+
+      <ToggleHistogramButton popupContainer={props.popupContainer} />
     </FlexRowAlignCenter>
   );
 }

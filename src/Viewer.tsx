@@ -526,7 +526,7 @@ function Viewer(): ReactElement {
           <ScatterPlotTab
             isVisible={openTab === TabType.SCATTER_PLOT}
             showAlert={showAlert}
-            containerRef={tabsContainerRef}
+            containerRef={tabsContainerRef.current ?? undefined}
           />
         </div>
       ),

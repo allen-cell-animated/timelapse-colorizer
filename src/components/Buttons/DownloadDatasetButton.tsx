@@ -76,7 +76,7 @@ export default function DownloadDatasetButton(props: DownloadDatasetButtonProps)
   }, [dataset, collection, datasetKey, hasLoadedData, inRangeLUT, showErrorNotification]);
 
   return (
-    <Tooltip title="Download dataset as .csv">
+    <Tooltip title="Download dataset CSV">
       <div>
         <LoadingSpinner loading={isDownloadPending} iconSize={18}>
           <IconButton

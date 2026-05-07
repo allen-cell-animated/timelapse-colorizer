@@ -1,4 +1,3 @@
-import { ExportOutlined } from "@ant-design/icons";
 import { Tooltip } from "antd";
 import Plotly, { type PlotData } from "plotly.js-dist-min";
 import React, { memo, type ReactElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
@@ -9,10 +8,9 @@ import { SwitchIconSVG } from "src/assets";
 import type { Dataset } from "src/colorizer";
 import { TIME_FEATURE_KEY } from "src/colorizer/Dataset";
 import { PlotRangeType } from "src/colorizer/types";
-import { hasAnyValueChanged, isPositiveInteger } from "src/colorizer/utils/data_utils";
+import { hasAnyValueChanged } from "src/colorizer/utils/data_utils";
 import type { ShowAlertBannerCallback } from "src/components/Banner/hooks";
 import IconButton from "src/components/Buttons/IconButton";
-import TextButton from "src/components/Buttons/TextButton";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import type { SelectItem } from "src/components/Dropdowns/types";
 import LoadingSpinner from "src/components/LoadingSpinner";
@@ -47,12 +45,10 @@ const PLOTLY_CONFIG: Partial<Plotly.Config> = {
 
 const DEFAULT_RANGE_TYPE = PlotRangeType.ALL_TIME;
 
-const BIN_COUNTS = [20, 50, 100, 200];
-
 type ScatterPlotTabProps = {
   isVisible: boolean;
   showAlert: ShowAlertBannerCallback;
-  containerRef?: React.RefObject<HTMLDivElement>;
+  containerRef?: HTMLElement;
 };
 
 const ScatterPlotContainer = styled.div`
@@ -92,7 +88,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const xAxisFeatureKey = useViewerStateStore((state) => state.scatterXAxis);
   const yAxisFeatureKey = useViewerStateStore((state) => state.scatterYAxis);
   const histogramBins = useViewerStateStore((state) => state.scatterHistogramBins);
-  const setScatterHistogramBins = useViewerStateStore((state) => state.setScatterHistogramBins);
   const viewMode = useViewerStateStore((state) => state.viewMode);
 
   const xAxisPlotRange = useRef<[number, number]>([-Infinity, Infinity]);
@@ -601,39 +596,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     });
   }, [dataset]);
 
-  // TODO: Remove
-  const makeControlBar = (_menuItems: SelectItem[]): ReactElement => {
-    return (
-      <FlexRow $gap={6}>
-        <FlexRowAlignCenter $gap={8} style={{ flexWrap: "wrap", flexGrow: 1 }}>
-          <div style={{ marginLeft: 6 }}>
-            <SelectionDropdown
-              label="Histogram bins"
-              selected={histogramBins.toString()}
-              items={BIN_COUNTS.map((value) => ({ value: value.toString(), label: value.toString() }))}
-              isCreatable={true}
-              isValidNewOption={(value: string) => {
-                const bins = parseInt(value, 10);
-                return isPositiveInteger(value) && BIN_COUNTS.indexOf(bins) === -1;
-              }}
-              onChange={function (value: string): void {
-                const bins = parseInt(value, 10);
-                if (isPositiveInteger(value)) {
-                  setScatterHistogramBins(bins);
-                }
-              }}
-              controlWidth="80px"
-            ></SelectionDropdown>
-          </div>
-        </FlexRowAlignCenter>
-        <TextButton onClick={onDownloadScatterPlotCsv} disabled={!canDownloadScatterPlotCsv} style={{ flexGrow: 0 }}>
-          <ExportOutlined style={{ marginRight: "2px" }} />
-          Export CSV
-        </TextButton>
-      </FlexRow>
-    );
-  };
-
   const onResetZoom = useCallback((): void => {
     setIsRendering(true);
     setTimeout(() => renderPlot(true), 100);
@@ -646,10 +608,14 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
   return (
     <>
-      {makeControlBar(menuItems)}
       <div style={{ position: "relative" }}>
         <FlexColumn style={{ margin: "0 auto", alignItems: "center" }}>
-          <ScatterplotToolbar onClickResetZoom={onResetZoom} onClickClearTracks={onClearTracks} />
+          <ScatterplotToolbar
+            popupContainer={props.containerRef}
+            onClickResetZoom={onResetZoom}
+            onClickClearTracks={onClearTracks}
+            onClickDownloadCsv={onDownloadScatterPlotCsv}
+          />
 
           <LoadingSpinner loading={isRendering || isDebouncePending} style={{ marginTop: "10px" }}>
             <FlexRowAlignCenter style={{ width: "100%", justifyContent: "center", alignItems: "center" }}>
@@ -670,19 +636,19 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
                     items={menuItems}
                     onChange={setYAxis}
                     selectProps={{
-                      menuPortalTarget: props.containerRef?.current ?? document.body,
+                      menuPortalTarget: props.containerRef ?? document.body,
                     }}
                   />
                 </AxisDropdownContainer>
               </div>
               {/* Main plot */}
               <ScatterPlotContainer
-                style={{ width: "calc(min(100%, 680px) - 50px)", aspectRatio: "7 / 6", padding: "5px" }}
+                style={{ width: "calc(min(100%, 680px) - 30px)", aspectRatio: "7 / 6", padding: "5px" }}
                 ref={plotDivRef}
               ></ScatterPlotContainer>
             </FlexRowAlignCenter>
             {/* X axis label */}
-            <FlexRow style={{ justifyContent: "center", width: "calc(min(100%, 680px) - 50px)", margin: "0 auto" }}>
+            <FlexRow style={{ justifyContent: "center", width: "calc(min(100%, 680px) - 30px)", margin: "0 auto" }}>
               <Tooltip title="Swap axes" trigger={["hover", "focus"]}>
                 <IconButton
                   onClick={() => {
@@ -705,7 +671,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
                   containerStyle={{ flexGrow: 1, flexBasis: "210px", flexShrink: 1 }}
                   placement="top"
                   selectProps={{
-                    menuPortalTarget: props.containerRef?.current ?? document.body,
+                    menuPortalTarget: props.containerRef ?? document.body,
                   }}
                 />
               </AxisDropdownContainer>
