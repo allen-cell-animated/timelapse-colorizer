@@ -453,10 +453,8 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
   }
 
   private getGlobalIdsForCurrentFrame(): Uint32Array | null {
-    if (!this.params || !this.params.dataset) {
-      return null;
-    }
-    const globalIds = this.params.dataset.frameToGlobalIdLookup?.get(this.currentFrame)?.globalIds;
+    const dataset = this.params?.dataset;
+    const globalIds = dataset?.getIdsInFrame(this.currentFrame);
     return globalIds ?? null;
   }
 
