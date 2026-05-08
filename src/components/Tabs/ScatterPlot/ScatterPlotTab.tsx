@@ -311,7 +311,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
   const clearPlotAndStopRender = (): void => {
     // TODO: Show histograms on default, cleared layout
-    console.log("Clearing plot and stopping render");
     Plotly.react(plotDivRef.current!, [], {}, PLOTLY_CONFIG);
     setIsRendering(false);
   };
@@ -534,11 +533,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
    * Re-render the plot when the relevant props change.
    */
   useEffect(() => {
-    if (!isVisible) {
-      return;
-    }
-    console.log("ScatterPlotTab wants to rerender. Render will be skipped if debounce is pending:", isDebouncePending);
-    if (isDebouncePending) {
+    if (!isVisible || isDebouncePending) {
       return;
     }
     const hasOnlyFrameChanged = !hasAnyValueChanged(basePlotDependencies, prevDependenciesRef.current);

@@ -649,8 +649,6 @@ export default class Dataset {
     if (this.hasOpened) {
       return;
     }
-    this.hasOpened = true;
-
     if (!options.manifestLoader) {
       options.manifestLoader = urlUtils.fetchManifestJson;
     }
@@ -798,6 +796,7 @@ export default class Dataset {
       datasetLoadTimeMs: new Date().getTime() - startTime.getTime(),
     });
 
+    this.hasOpened = true;
     // TODO: Pre-process feature data to handle outlier values by interpolating between known good values (#21)
   }
 
