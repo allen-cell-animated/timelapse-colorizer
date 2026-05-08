@@ -166,25 +166,19 @@ export const filterDataByRange = (
 export const getAxisLayoutsFromRange = (
   dataset: Dataset | null,
   featureKey: string,
-  histogramTrace: Partial<PlotData>,
+  histogramTrace: Partial<PlotData> | undefined,
   viewMode: ViewMode
 ): {
   scatterPlotAxis: Partial<LayoutAxis>;
   histogramAxis: Partial<LayoutAxis>;
-  histogramTrace: Partial<PlotData>;
 } => {
+  const hasHistogram = histogramTrace !== undefined;
   let scatterPlotAxis: Partial<LayoutAxis> = {
-    domain: [0, 0.85],
+    domain: hasHistogram ? [0, 0.85] : [0, 1],
     showgrid: false,
     showline: true,
     zeroline: true,
   };
-  const histogramAxis: Partial<LayoutAxis> = {
-    domain: [0.9, 1],
-    showgrid: false,
-    hoverformat: "f",
-  };
-  const newHistogramTrace = { ...histogramTrace };
 
   let min = dataset?.getFeatureData(featureKey)?.min || 0;
   let max = dataset?.getFeatureData(featureKey)?.max || 0;
@@ -226,13 +220,15 @@ export const getAxisLayoutsFromRange = (
       ticktext: categories,
       zeroline: false,
     };
-    // Enforce bins on histogram traces for categorical features. This prevents a bug where the histograms
-    // would suddenly change width if a category wasn't present in the given data range.
-    newHistogramTrace.xbins = { start: min, end: max, size: (max - min) / categories.length };
-    // @ts-ignore. TODO: Update once the plotly types are updated.
-    newHistogramTrace.ybins = { start: min, end: max, size: (max - min) / categories.length };
   }
-  return { scatterPlotAxis, histogramAxis, histogramTrace: newHistogramTrace };
+
+  const histogramAxis: Partial<LayoutAxis> = {
+    domain: [0.9, 1],
+    showgrid: false,
+    hoverformat: "f",
+  };
+
+  return { scatterPlotAxis, histogramAxis };
 };
 
 /**

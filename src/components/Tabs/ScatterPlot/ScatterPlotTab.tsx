@@ -1,5 +1,5 @@
 import { Tooltip } from "antd";
-import Plotly, { type PlotData } from "plotly.js-dist-min";
+import Plotly from "plotly.js-dist-min";
 import React, { memo, type ReactElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import { Color } from "three";
@@ -87,6 +87,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const setYAxis = useViewerStateStore((state) => state.setScatterYAxis);
   const xAxisFeatureKey = useViewerStateStore((state) => state.scatterXAxis);
   const yAxisFeatureKey = useViewerStateStore((state) => state.scatterYAxis);
+  const showHistograms = useViewerStateStore((state) => state.scatterShowHistograms);
   const histogramBins = useViewerStateStore((state) => state.scatterHistogramBins);
   const viewMode = useViewerStateStore((state) => state.viewMode);
 
@@ -322,6 +323,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     ...Array.from(Object.values(colorizeConfig)),
     xAxisFeatureKey,
     yAxisFeatureKey,
+    showHistograms,
     histogramBins,
     rangeType,
     tracks,
@@ -378,33 +380,36 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     );
     const shapes: Partial<Plotly.Shape>[] = [];
 
-    const xHistogram: Partial<Plotly.PlotData> = {
-      x: xData,
-      name: "x density",
-      marker: { color: theme.color.plots.histogram, line: { color: theme.color.plots.histogramOutline, width: 1 } },
-      yaxis: "y2",
-      type: "histogram",
-      // @ts-ignore. TODO: Update once the plotly types are updated.
-      xbins: getHistogramBins(dataset, xAxisFeatureKey, histogramBins),
-      // When using categorical features, use a fallback of 20 bins for nicer
-      // spacing/alignment of auto-generated bins.
-      // @ts-ignore. TODO: Update once the plotly types are updated.
-      nbinsx: 20,
-    };
-    const yHistogram: Partial<PlotData> = {
-      y: yData,
-      name: "y density",
-      marker: { color: theme.color.plots.histogram, line: { color: theme.color.plots.histogramOutline, width: 1 } },
-      xaxis: "x2",
-      type: "histogram",
-      // @ts-ignore. TODO: Update once the plotly types are updated.
-      ybins: getHistogramBins(dataset, yAxisFeatureKey, histogramBins),
-      // @ts-ignore. TODO: Update once the plotly types are updated.
-      nbinsy: 20,
-    };
-
-    traces.push(xHistogram);
-    traces.push(yHistogram);
+    let xHistogram;
+    let yHistogram;
+    if (showHistograms) {
+      xHistogram = {
+        x: xData,
+        name: "x density",
+        marker: { color: theme.color.plots.histogram, line: { color: theme.color.plots.histogramOutline, width: 1 } },
+        yaxis: "y2",
+        type: "histogram",
+        // @ts-ignore. TODO: Update once the plotly types are updated.
+        xbins: getHistogramBins(dataset, xAxisFeatureKey, histogramBins),
+        // When using categorical features, use a fallback of 20 bins for nicer
+        // spacing/alignment of auto-generated bins.
+        // @ts-ignore. TODO: Update once the plotly types are updated.
+        nbinsx: 20,
+      };
+      yHistogram = {
+        y: yData,
+        name: "y density",
+        marker: { color: theme.color.plots.histogram, line: { color: theme.color.plots.histogramOutline, width: 1 } },
+        xaxis: "x2",
+        type: "histogram",
+        // @ts-ignore. TODO: Update once the plotly types are updated.
+        ybins: getHistogramBins(dataset, yAxisFeatureKey, histogramBins),
+        // @ts-ignore. TODO: Update once the plotly types are updated.
+        nbinsy: 20,
+      };
+      traces.push(xHistogram);
+      traces.push(yHistogram);
+    }
 
     // Render current track as an extra trace.
     for (const track of tracks.values()) {
@@ -463,12 +468,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       yHistogram,
       viewMode
     );
-
-    // scatterPlotXAxis.title = dataset.getFeatureNameWithUnits(xAxisFeatureKey);
-    // Due to limited space in the Y-axis, hide categorical feature names.
-    // scatterPlotYAxis.title = dataset.isFeatureCategorical(yAxisFeatureKey)
-    //   ? ""
-    //   : dataset.getFeatureNameWithUnits(yAxisFeatureKey);
 
     // Add extra margin for categorical feature labels on the Y axis.
     const leftMarginPx = Math.max(40, estimateTextWidthPxForCategories(dataset, yAxisFeatureKey));

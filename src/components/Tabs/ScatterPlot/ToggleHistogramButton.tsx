@@ -1,6 +1,7 @@
 import { BarChartOutlined } from "@ant-design/icons";
 import React, { type ReactElement } from "react";
 
+import { BarChartSlashIconSVG } from "src/assets";
 import { isPositiveInteger } from "src/colorizer/utils/data_utils";
 import { ToggleButtonWithConfig } from "src/components/Buttons/ToggleButtonWithConfig";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
@@ -20,6 +21,8 @@ const enum ToggleHistogramButtonHtmlIds {
 export default function ToggleHistogramButton(props: ToggleHistogramButtonProps): ReactElement {
   const scatterHistogramBins = useViewerStateStore((state) => state.scatterHistogramBins);
   const setScatterHistogramBins = useViewerStateStore((state) => state.setScatterHistogramBins);
+  const showHistograms = useViewerStateStore((state) => state.scatterShowHistograms);
+  const setShowHistograms = useViewerStateStore((state) => state.setScatterShowHistograms);
 
   const configMenuContents = (
     <SettingsContainer>
@@ -48,9 +51,10 @@ export default function ToggleHistogramButton(props: ToggleHistogramButtonProps)
   return (
     <ToggleButtonWithConfig
       name="histogram"
-      visible={true}
+      visible={showHistograms}
       visibleIcon={<BarChartOutlined />}
-      setVisible={function (_visible: boolean): void {}}
+      hiddenIcon={<BarChartSlashIconSVG />}
+      setVisible={setShowHistograms}
       configMenuContents={configMenuContents}
       configMenuPlacement="vertical"
       popupContainer={props.popupContainer}
