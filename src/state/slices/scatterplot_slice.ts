@@ -3,7 +3,13 @@ import type { StateCreator } from "zustand";
 import type { Dataset } from "src/colorizer";
 import { TIME_FEATURE_KEY } from "src/colorizer/Dataset";
 import { PlotRangeType } from "src/colorizer/types";
-import { decodeScatterPlotRangeType, encodeScatterPlotRangeType, UrlParam } from "src/colorizer/utils/url_utils";
+import {
+  decodeBoolean,
+  decodeScatterPlotRangeType,
+  encodeBoolean,
+  encodeScatterPlotRangeType,
+  UrlParam,
+} from "src/colorizer/utils/url_utils";
 import { DEPRECATED_SCATTERPLOT_TIME_KEY } from "src/constants";
 import type { SerializedStoreData, SubscribableStore } from "src/state/types";
 import { addDerivedStateSubscriber } from "src/state/utils/store_utils";
@@ -13,18 +19,20 @@ import type { DatasetSlice } from "./dataset_slice";
 export type ScatterPlotSliceState = {
   scatterXAxis: string | null;
   scatterYAxis: string | null;
+  scatterShowHistograms: boolean;
   scatterHistogramBins: number;
   scatterRangeType: PlotRangeType;
 };
 
 export type ScatterPlotSliceSerializableState = Pick<
   ScatterPlotSliceState,
-  "scatterXAxis" | "scatterYAxis" | "scatterRangeType" | "scatterHistogramBins"
+  "scatterXAxis" | "scatterYAxis" | "scatterRangeType" | "scatterHistogramBins" | "scatterShowHistograms"
 >;
 
 export type ScatterPlotSliceActions = {
   setScatterXAxis: (xAxis: string | null) => void;
   setScatterYAxis: (yAxis: string | null) => void;
+  setScatterShowHistograms: (showHistograms: boolean) => void;
   setScatterHistogramBins: (bins: number) => void;
   setScatterRangeType: (rangeType: PlotRangeType) => void;
 };
@@ -42,6 +50,7 @@ export const createScatterPlotSlice: StateCreator<DatasetSlice & ScatterPlotSlic
   // State
   scatterXAxis: null,
   scatterYAxis: null,
+  scatterShowHistograms: true,
   scatterHistogramBins: 20,
   scatterRangeType: PlotRangeType.ALL_TIME,
 
@@ -57,6 +66,9 @@ export const createScatterPlotSlice: StateCreator<DatasetSlice & ScatterPlotSlic
       throw new Error(`ScatterPlotSlice.setScatterYAxis: Axis key '${yAxis}' was not found in dataset.`);
     }
     set({ scatterYAxis: yAxis });
+  },
+  setScatterShowHistograms: (showHistograms) => {
+    set({ scatterShowHistograms: showHistograms });
   },
   setScatterHistogramBins: (bins) => {
     bins = Math.round(bins);
@@ -98,6 +110,9 @@ export const serializeScatterPlotSlice = (slice: Partial<ScatterPlotSliceSeriali
   if (slice.scatterYAxis !== null && slice.scatterYAxis !== undefined) {
     ret[UrlParam.SCATTERPLOT_Y_AXIS] = slice.scatterYAxis;
   }
+  if (slice.scatterShowHistograms !== undefined) {
+    ret[UrlParam.SCATTERPLOT_SHOW_HISTOGRAMS] = encodeBoolean(slice.scatterShowHistograms);
+  }
   if (slice.scatterHistogramBins !== undefined) {
     ret[UrlParam.SCATTERPLOT_BINS] = slice.scatterHistogramBins.toString();
   }
@@ -113,6 +128,7 @@ export const selectScatterPlotSliceSerializationDeps = (
 ): ScatterPlotSliceSerializableState => ({
   scatterXAxis: slice.scatterXAxis,
   scatterYAxis: slice.scatterYAxis,
+  scatterShowHistograms: slice.scatterShowHistograms,
   scatterHistogramBins: slice.scatterHistogramBins,
   scatterRangeType: slice.scatterRangeType,
 });
@@ -137,6 +153,11 @@ export const loadScatterPlotSliceFromParams = (
   }
   if (scatterYAxis !== null && scatterYAxis !== undefined && isAxisKeyValid(dataset, scatterYAxis)) {
     slice.setScatterYAxis(scatterYAxis);
+  }
+
+  const scatterShowHistograms = decodeBoolean(params.get(UrlParam.SCATTERPLOT_SHOW_HISTOGRAMS));
+  if (scatterShowHistograms !== undefined) {
+    slice.setScatterShowHistograms(scatterShowHistograms);
   }
 
   const scatterHistogramBinsParam = params.get(UrlParam.SCATTERPLOT_BINS);

@@ -122,6 +122,7 @@ const EXAMPLE_STORE: ViewerStoreSerializableState = {
   backdropKey: MockBackdropKeys.BACKDROP2,
   scatterXAxis: MockFeatureKeys.FEATURE3,
   scatterYAxis: MockFeatureKeys.FEATURE2,
+  scatterShowHistograms: true,
   scatterHistogramBins: 150,
   scatterRangeType: PlotRangeType.ALL_TIME,
   channelSettings: [
@@ -194,6 +195,7 @@ const EXAMPLE_STORE_EXPECTED_PARAMS: ExpectedParamType = {
   "bg-key": MockBackdropKeys.BACKDROP2,
   "scatter-x": MockFeatureKeys.FEATURE3,
   "scatter-y": MockFeatureKeys.FEATURE2,
+  "scatter-hist": "1",
   "scatter-bins": "150",
   "scatter-range": "all",
   c0: "ven:1,col:ff0000ff,rmp:0:1,rng:-5:5",
@@ -208,7 +210,7 @@ const EXAMPLE_STORE_EXPECTED_QUERY_STRING =
   "&seg=0&path=1&path-color=ff0000&path-width=1.500&path-ramp=esri-blue_red_8%21&path-mode=1&path-breaks=1&path-steps=10%2C25%21&path-persist=0&path-overlay=35&scalebar=1&timestamp=0&filter-color=ff0000&filter-mode=0&outlier-color=00ff00" +
   "&outlier-mode=1&outline-color=0000ff&outline-mode=0&outline-palette-key=matplotlib_paired" +
   "&edge=1&edge-color=8090a0b0&centroids=1&centroid-mode=1&centroid-color=aabbcc&centroid-radius=7" +
-  "&tab=filters&interpolate=1&scatter-x=feature3&scatter-y=feature2&scatter-bins=150&scatter-range=all" +
+  "&tab=filters&interpolate=1&scatter-x=feature3&scatter-y=feature2&scatter-hist=1&scatter-bins=150&scatter-range=all" +
   "&bg=1&bg-brightness=75&bg-sat=50&fg-alpha=25" +
   "&vc=1&vc-key=_motion_&vc-color=ff00ff&vc-scale=5&vc-thickness-scaling=1&vc-thickness=4.500&vc-tooltip=c&vc-time-int=11" +
   "&c0=ven%3A1%2Ccol%3Aff0000ff%2Crmp%3A0%3A1%2Crng%3A-5%3A5" +
