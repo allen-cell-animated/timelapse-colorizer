@@ -30,17 +30,15 @@ export default function ScatterplotToolbar(props: ScatterplotToolbarProps): Reac
   return (
     <FlexRowAlignCenter style={{ height: "fit-content" }} $gap={4}>
       <div style={{ marginRight: "2px" }}>
-        <Tooltip>
-          <SelectionDropdown
-            label={"Show objects from"}
-            hideLabel={true}
-            selected={scatterRangeType}
-            items={PLOT_RANGE_SELECT_ITEMS}
-            controlWidth={"130px"}
-            onChange={(value: string) => setRangeType(value as PlotRangeType)}
-            showSelectedItemTooltip={false}
-          ></SelectionDropdown>
-        </Tooltip>
+        <SelectionDropdown
+          label={"Show objects from"}
+          hideLabel={true}
+          selected={scatterRangeType}
+          items={PLOT_RANGE_SELECT_ITEMS}
+          controlWidth={"130px"}
+          onChange={(value: string) => setRangeType(value as PlotRangeType)}
+          showSelectedItemTooltip={false}
+        ></SelectionDropdown>
       </div>
 
       <Tooltip title={"Reset zoom"} placement="top" trigger={["hover", "focus"]}>

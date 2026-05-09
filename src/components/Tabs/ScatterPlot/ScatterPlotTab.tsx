@@ -606,78 +606,75 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   }, [clearTracks]);
 
   return (
-    <>
-      <div style={{ position: "relative" }}>
-        <FlexColumn style={{ margin: "0 auto", alignItems: "center" }}>
-          <ScatterplotToolbar
-            popupContainer={props.containerRef}
-            onClickResetZoom={onResetZoom}
-            onClickClearTracks={onClearTracks}
-            onClickDownloadCsv={onDownloadScatterPlotCsv}
-          />
+    <FlexColumn style={{ margin: "0 auto", alignItems: "center" }}>
+      <ScatterplotToolbar
+        popupContainer={props.containerRef}
+        onClickResetZoom={onResetZoom}
+        onClickClearTracks={onClearTracks}
+        onClickDownloadCsv={onDownloadScatterPlotCsv}
+      />
 
-          <LoadingSpinner loading={isRendering || isDebouncePending} style={{ marginTop: "10px" }}>
-            <FlexRowAlignCenter style={{ width: "100%", justifyContent: "center", alignItems: "center" }}>
-              {/* Y axis label */}
-              <div
-                style={{ width: 28, height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}
-              >
-                <AxisDropdownContainer
-                  style={{
-                    height: 28,
-                    transform: "rotate(-90deg)",
-                  }}
-                >
-                  <SelectionDropdown
-                    label={"Y axis"}
-                    hideLabel={true}
-                    selected={yAxisFeatureKey || ""}
-                    items={menuItems}
-                    onChange={setYAxis}
-                    selectProps={{
-                      menuPortalTarget: props.containerRef ?? document.body,
-                    }}
-                  />
-                </AxisDropdownContainer>
-              </div>
-              {/* Main plot */}
-              <ScatterPlotContainer
-                style={{ width: "calc(min(100%, 680px) - 30px)", aspectRatio: "7 / 6", padding: "5px" }}
-                ref={plotDivRef}
-              ></ScatterPlotContainer>
-            </FlexRowAlignCenter>
-            {/* X axis label */}
-            <FlexRow style={{ justifyContent: "center", width: "calc(min(100%, 680px) - 30px)", margin: "0 auto" }}>
-              <Tooltip title="Swap axes" trigger={["hover", "focus"]}>
-                <IconButton
-                  onClick={() => {
-                    const temp = xAxisFeatureKey;
-                    setXAxis(yAxisFeatureKey);
-                    setYAxis(temp);
-                  }}
-                  type="link"
-                >
-                  <SwitchIconSVG />
-                </IconButton>
-              </Tooltip>
-              <AxisDropdownContainer style={{ paddingRight: "40px", width: "fit-content" }}>
-                <SelectionDropdown
-                  label={"X axis"}
-                  hideLabel={true}
-                  selected={xAxisFeatureKey || ""}
-                  items={menuItems}
-                  onChange={setXAxis}
-                  containerStyle={{ flexGrow: 1, flexBasis: "210px", flexShrink: 1 }}
-                  placement="top"
-                  selectProps={{
-                    menuPortalTarget: props.containerRef ?? document.body,
-                  }}
-                />
-              </AxisDropdownContainer>
-            </FlexRow>
-          </LoadingSpinner>
-        </FlexColumn>
-      </div>
-    </>
+      <LoadingSpinner loading={isRendering || isDebouncePending} style={{ marginTop: "10px" }}>
+        <FlexRowAlignCenter style={{ width: "100%", justifyContent: "center", alignItems: "center" }}>
+          {/* Y axis label */}
+          <div style={{ width: 28, height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <AxisDropdownContainer
+              style={{
+                height: 28,
+                // Force antialiasing on text
+                WebkitBackfaceVisibility: "hidden",
+                transform: "rotate(-90deg)",
+              }}
+            >
+              <SelectionDropdown
+                label={"Y axis"}
+                hideLabel={true}
+                selected={yAxisFeatureKey || ""}
+                items={menuItems}
+                onChange={setYAxis}
+                selectProps={{
+                  menuPortalTarget: props.containerRef ?? document.body,
+                }}
+                controlTooltipPlacement="left"
+              />
+            </AxisDropdownContainer>
+          </div>
+          {/* Main plot */}
+          <ScatterPlotContainer
+            style={{ width: "calc(min(100%, 680px) - 30px)", aspectRatio: "7 / 6", padding: "5px" }}
+            ref={plotDivRef}
+          ></ScatterPlotContainer>
+        </FlexRowAlignCenter>
+        {/* X axis label */}
+        <FlexRow style={{ justifyContent: "center", width: "calc(min(100%, 680px) - 30px)", margin: "0 auto" }}>
+          <Tooltip title="Swap axes" trigger={["hover", "focus"]}>
+            <IconButton
+              onClick={() => {
+                const temp = xAxisFeatureKey;
+                setXAxis(yAxisFeatureKey);
+                setYAxis(temp);
+              }}
+              type="link"
+            >
+              <SwitchIconSVG />
+            </IconButton>
+          </Tooltip>
+          <AxisDropdownContainer style={{ paddingRight: "40px", width: "fit-content" }}>
+            <SelectionDropdown
+              label={"X axis"}
+              hideLabel={true}
+              selected={xAxisFeatureKey || ""}
+              items={menuItems}
+              onChange={setXAxis}
+              containerStyle={{ flexGrow: 1, flexBasis: "210px", flexShrink: 1 }}
+              placement="top"
+              selectProps={{
+                menuPortalTarget: props.containerRef ?? document.body,
+              }}
+            />
+          </AxisDropdownContainer>
+        </FlexRow>
+      </LoadingSpinner>
+    </FlexColumn>
   );
 });
