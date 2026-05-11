@@ -30,8 +30,8 @@ export type ScatterPlotSliceState = {
   // Contours
   scatterShowContours: boolean;
   scatterContourCount: number;
-  scatterContourColorMapKey: string;
-  scatterContourColorMapKeyReversed: boolean;
+  scatterContourColorRampKey: string;
+  scatterContourColorRampReversed: boolean;
 
   // Derived values
   scatterContourColorRamp: ColorRamp;
@@ -46,8 +46,8 @@ export type ScatterPlotSliceSerializableState = Pick<
   | "scatterHistogramBins"
   | "scatterShowContours"
   | "scatterContourCount"
-  | "scatterContourColorMapKey"
-  | "scatterContourColorMapKeyReversed"
+  | "scatterContourColorRampKey"
+  | "scatterContourColorRampReversed"
 >;
 
 export type ScatterPlotSliceActions = {
@@ -80,8 +80,8 @@ export const createScatterPlotSlice: StateCreator<DatasetSlice & ScatterPlotSlic
   scatterRangeType: PlotRangeType.ALL_TIME,
   scatterShowContours: false,
   scatterContourCount: 20,
-  scatterContourColorMapKey: DEFAULT_COLOR_RAMP_KEY,
-  scatterContourColorMapKeyReversed: false,
+  scatterContourColorRampKey: DEFAULT_COLOR_RAMP_KEY,
+  scatterContourColorRampReversed: false,
 
   // Derived values
   scatterContourColorRamp: getColorMap(KNOWN_COLOR_RAMPS, DEFAULT_COLOR_RAMP_KEY),
@@ -122,9 +122,9 @@ export const createScatterPlotSlice: StateCreator<DatasetSlice & ScatterPlotSlic
     if (!KNOWN_COLOR_RAMPS.has(key)) {
       throw new Error(`Unknown color ramp key: ${key}`);
     }
-    set({ scatterContourColorMapKey: key, scatterContourColorMapKeyReversed: false });
+    set({ scatterContourColorRampKey: key, scatterContourColorRampReversed: false });
   },
-  setScatterContourColorRampReversed: (reversed) => set({ scatterContourColorMapKeyReversed: reversed }),
+  setScatterContourColorRampReversed: (reversed) => set({ scatterContourColorRampReversed: reversed }),
 });
 
 export const addScatterPlotSliceDerivedStateSubscribers = (
@@ -132,7 +132,7 @@ export const addScatterPlotSliceDerivedStateSubscribers = (
 ): void => {
   addDerivedStateSubscriber(
     store,
-    (state) => [state.scatterContourColorMapKey, state.scatterContourColorMapKeyReversed],
+    (state) => [state.scatterContourColorRampKey, state.scatterContourColorRampReversed],
     ([key, reversed]) => {
       store.getState().scatterContourColorRamp.dispose();
       return {
@@ -183,9 +183,9 @@ export const serializeScatterPlotSlice = (slice: Partial<ScatterPlotSliceSeriali
   if (slice.scatterContourCount !== undefined) {
     ret[UrlParam.SCATTERPLOT_CONTOUR_COUNT] = slice.scatterContourCount.toString();
   }
-  if (slice.scatterContourColorMapKey !== undefined) {
+  if (slice.scatterContourColorRampKey !== undefined) {
     ret[UrlParam.SCATTERPLOT_CONTOUR_COLOR_MAP] =
-      slice.scatterContourColorMapKey + (slice.scatterContourColorMapKeyReversed ? URL_COLOR_RAMP_REVERSED_SUFFIX : "");
+      slice.scatterContourColorRampKey + (slice.scatterContourColorRampReversed ? URL_COLOR_RAMP_REVERSED_SUFFIX : "");
   }
   return ret;
 };
@@ -201,8 +201,8 @@ export const selectScatterPlotSliceSerializationDeps = (
   scatterRangeType: slice.scatterRangeType,
   scatterShowContours: slice.scatterShowContours,
   scatterContourCount: slice.scatterContourCount,
-  scatterContourColorMapKey: slice.scatterContourColorMapKey,
-  scatterContourColorMapKeyReversed: slice.scatterContourColorMapKeyReversed,
+  scatterContourColorRampKey: slice.scatterContourColorRampKey,
+  scatterContourColorRampReversed: slice.scatterContourColorRampReversed,
 });
 
 export const loadScatterPlotSliceFromParams = (

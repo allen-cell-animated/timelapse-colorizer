@@ -75,7 +75,7 @@ describe("ScatterplotSlice", () => {
       act(() => {
         result.current.setScatterContourColorRampKey("matplotlib-viridis");
       });
-      expect(result.current.scatterContourColorMapKey).toBe("matplotlib-viridis");
+      expect(result.current.scatterContourColorRampKey).toBe("matplotlib-viridis");
     });
 
     it("can set contour colormap key reversed", () => {
@@ -83,12 +83,12 @@ describe("ScatterplotSlice", () => {
       act(() => {
         result.current.setScatterContourColorRampReversed(true);
       });
-      expect(result.current.scatterContourColorMapKeyReversed).toBe(true);
+      expect(result.current.scatterContourColorRampReversed).toBe(true);
 
       act(() => {
         result.current.setScatterContourColorRampReversed(false);
       });
-      expect(result.current.scatterContourColorMapKeyReversed).toBe(false);
+      expect(result.current.scatterContourColorRampReversed).toBe(false);
     });
 
     it("can set contour bin count", () => {
@@ -116,7 +116,7 @@ describe("ScatterplotSlice", () => {
         result.current.setScatterContourColorRampReversed(true);
         result.current.setScatterContourColorRampKey("matplotlib-viridis");
       });
-      expect(result.current.scatterContourColorMapKeyReversed).toBe(false);
+      expect(result.current.scatterContourColorRampReversed).toBe(false);
     });
 
     it("throws on unknown contour colormap key", () => {
@@ -276,8 +276,8 @@ describe("ScatterplotSlice", () => {
       expect(result.current.scatterRangeType).toBe(PlotRangeType.CURRENT_FRAME);
       expect(result.current.scatterShowContours).toBe(true);
       expect(result.current.scatterContourCount).toBe(40);
-      expect(result.current.scatterContourColorMapKey).toBe("matplotlib-viridis");
-      expect(result.current.scatterContourColorMapKeyReversed).toBe(true);
+      expect(result.current.scatterContourColorRampKey).toBe("matplotlib-viridis");
+      expect(result.current.scatterContourColorRampReversed).toBe(true);
     });
 
     it("ignores axes that are not in the dataset when dataset is loaded", async () => {
