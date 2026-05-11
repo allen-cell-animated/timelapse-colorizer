@@ -16,7 +16,7 @@ import type { SelectItem } from "src/components/Dropdowns/types";
 import LoadingSpinner from "src/components/LoadingSpinner";
 import ScatterplotToolbar from "src/components/Tabs/ScatterPlot/ScatterplotToolbar";
 import { SHORTCUT_KEYS } from "src/constants";
-import { useIsMouseButtonDownRef } from "src/hooks";
+import { useDebounce, useIsMouseButtonDownRef } from "src/hooks";
 import { useViewerStateStoreDebounced } from "src/hooks/useViewerStateStoreDebounced";
 import { colorizeStateSelector } from "src/state";
 import { useViewerStateStore } from "src/state/ViewerState";
@@ -99,6 +99,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const showHistograms = useViewerStateStore((state) => state.scatterShowHistograms);
   const histogramBins = useViewerStateStore((state) => state.scatterHistogramBins);
   const showContours = useViewerStateStore((state) => state.scatterShowContours);
+  const _rawContourCount = useViewerStateStore((state) => state.scatterContourCount);
+  const contourCount = useDebounce(_rawContourCount, 100);
   const viewMode = useViewerStateStore((state) => state.viewMode);
 
   const xAxisPlotRange = useRef<[number, number]>([-Infinity, Infinity]);
@@ -336,6 +338,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     showHistograms,
     histogramBins,
     showContours,
+    contourCount,
     rangeType,
     tracks,
     isVisible,
@@ -403,7 +406,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
           [1, "rgba(255, 255, 255, 0)"],
         ],
         reversescale: true,
-        ncontours: 15,
+        ncontours: contourCount + 1,
         hovertemplate: undefined,
         hoverinfo: "skip",
       };
@@ -424,7 +427,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         // When using categorical features, use a fallback of 20 bins for nicer
         // spacing/alignment of auto-generated bins.
         // @ts-ignore. TODO: Update once the plotly types are updated.
-        nbinsx: 20,
+        nbinsx: contourCount,
       };
       yHistogram = {
         y: yData,
