@@ -78,6 +78,7 @@ export enum UrlParam {
   SCATTERPLOT_RANGE_MODE = "scatter-range",
   SCATTERPLOT_SHOW_HEATMAP = "scatter-heatmap",
   SCATTERPLOT_HEATMAP_COLOR_MAP = "heatmap-color",
+  SCATTERPLOT_SHOW_HISTOGRAMS = "scatter-hist",
   OPEN_TAB = "tab",
   SHOW_VECTOR = "vc",
   INTERPOLATE_3D = "interpolate",

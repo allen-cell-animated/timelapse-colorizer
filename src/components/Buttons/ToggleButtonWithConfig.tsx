@@ -17,16 +17,17 @@ export type ToggleButtonWithConfigProps = {
   setVisible: (visible: boolean) => void;
   disabled?: boolean;
   tooltipContents?: ReactNode;
-  placement?: "horizontal" | "vertical";
+  configMenuPlacement?: "horizontal" | "vertical";
   configMenuContents: ReactNode | ((setOpen: (open: boolean) => void) => ReactNode[]);
   visibleIcon?: ReactNode;
   hiddenIcon?: ReactNode;
   settingsLinkText?: string;
+  popupContainer?: HTMLElement;
 };
 
 const defaultProps: Partial<ToggleButtonWithConfigProps> = {
   disabled: false,
-  placement: "horizontal",
+  configMenuPlacement: "horizontal",
   visibleIcon: <ImagesIconSVG />,
   hiddenIcon: <ImagesSlashIconSVG />,
 };
@@ -112,18 +113,18 @@ export function ToggleButtonWithConfig(inputProps: ToggleButtonWithConfigProps):
     <div ref={popupContainerRef}>
       <Popover
         content={configMenuContents}
-        placement={props.placement === "vertical" ? "bottom" : "left"}
+        placement={props.configMenuPlacement === "vertical" ? "bottom" : "left"}
         trigger={["click"]}
-        getPopupContainer={() => popupContainerRef.current || document.body}
+        getPopupContainer={() => props.popupContainer || popupContainerRef.current || document.body}
         onOpenChange={(open) => setConfigMenuOpen(open)}
         open={configMenuOpen}
       >
         <TooltipWithSubtitle
           title={tooltipTitle}
-          placement={props.placement === "vertical" ? "top" : "right"}
+          placement={props.configMenuPlacement === "vertical" ? "top" : "right"}
           subtitleList={tooltipContents}
           tooltipRef={tooltipRef}
-          getPopupContainer={() => popupContainerRef.current || document.body}
+          getPopupContainer={() => props.popupContainer || popupContainerRef.current || document.body}
         >
           <IconButton type={isVisible ? "primary" : "link"} onClick={onClick} disabled={props.disabled}>
             {props.visible ? props.visibleIcon : props.hiddenIcon}

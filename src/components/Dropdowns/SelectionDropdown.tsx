@@ -4,14 +4,19 @@ import React, { type ReactElement, useCallback, useEffect, useMemo, useState, us
 import { components, type ControlProps, type OptionProps, type StylesConfig } from "react-select";
 
 import { useDebounce } from "src/hooks/useDebounce";
-import { FlexRowAlignCenter } from "src/styles/utils";
+import { FlexRowAlignCenter, VisuallyHidden } from "src/styles/utils";
 
 import StyledSelect from "./StyledSelect";
 import type { SelectItem } from "./types";
 
 export type SelectionDropdownProps = {
-  /** Text label to include with the dropdown. If null or undefined, hides the label. */
+  /** Text label to include with the dropdown. */
   label?: string | null;
+  /**
+   * Whether to make the label visually hidden but still accessible to screen
+   * readers.
+   */
+  hideLabel?: boolean;
   id?: string;
   /** The value of the item that is currently selected. */
   selected: string | SelectItem | undefined;
@@ -64,6 +69,8 @@ export type SelectionDropdownProps = {
    * (control, menu, option, etc.) to a function that returns a style object.
    */
   selectStyles?: StylesConfig<SelectItem, false>;
+  selectProps?: React.ComponentProps<typeof StyledSelect<false>>["selectProps"];
+  placement?: "top" | "bottom";
 };
 
 const defaultProps: Partial<SelectionDropdownProps> = {
@@ -225,7 +232,11 @@ export default function SelectionDropdown(inputProps: React.PropsWithChildren<Se
     <FlexRowAlignCenter $gap={6} style={{ width: props.width, minWidth: props.width, ...props.containerStyle }}>
       {props.label && (
         <label htmlFor={selectId} style={{ whiteSpace: "nowrap" }}>
-          <h3 id={labelId}>{props.label}</h3>
+          {props.hideLabel ? (
+            <VisuallyHidden id={labelId}>{props.label}</VisuallyHidden>
+          ) : (
+            <h3 id={labelId}>{props.label}</h3>
+          )}
         </label>
       )}
       <StyledSelect
@@ -265,6 +276,7 @@ export default function SelectionDropdown(inputProps: React.PropsWithChildren<Se
             });
           },
           styles: props.selectStyles,
+          ...props.selectProps,
         }}
       />
       {props.children}

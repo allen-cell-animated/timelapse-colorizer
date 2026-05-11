@@ -6,7 +6,7 @@ import { PlotRangeType } from "src/colorizer/types";
 import {
   decodeBoolean,
   decodeScatterPlotRangeType,
-  encodeMaybeBoolean,
+  encodeBoolean,
   encodeScatterPlotRangeType,
   UrlParam,
 } from "src/colorizer/utils/url_utils";
@@ -19,6 +19,7 @@ import type { DatasetSlice } from "./dataset_slice";
 export type ScatterPlotSliceState = {
   scatterXAxis: string | null;
   scatterYAxis: string | null;
+  scatterShowHistograms: boolean;
   scatterHistogramBins: number;
   scatterRangeType: PlotRangeType;
 
@@ -28,12 +29,19 @@ export type ScatterPlotSliceState = {
 
 export type ScatterPlotSliceSerializableState = Pick<
   ScatterPlotSliceState,
-  "scatterXAxis" | "scatterYAxis" | "scatterRangeType" | "scatterHistogramBins" | "showHeatmap" | "heatmapColorMapKey"
+  | "scatterXAxis"
+  | "scatterYAxis"
+  | "scatterRangeType"
+  | "scatterShowHistograms"
+  | "scatterHistogramBins"
+  | "showHeatmap"
+  | "heatmapColorMapKey"
 >;
 
 export type ScatterPlotSliceActions = {
   setScatterXAxis: (xAxis: string | null) => void;
   setScatterYAxis: (yAxis: string | null) => void;
+  setScatterShowHistograms: (showHistograms: boolean) => void;
   setScatterHistogramBins: (bins: number) => void;
   setScatterRangeType: (rangeType: PlotRangeType) => void;
   setShowHeatmap: (showHeatmap: boolean) => void;
@@ -53,6 +61,7 @@ export const createScatterPlotSlice: StateCreator<DatasetSlice & ScatterPlotSlic
   // State
   scatterXAxis: null,
   scatterYAxis: null,
+  scatterShowHistograms: true,
   scatterHistogramBins: 20,
   scatterRangeType: PlotRangeType.ALL_TIME,
   showHeatmap: false,
@@ -70,6 +79,9 @@ export const createScatterPlotSlice: StateCreator<DatasetSlice & ScatterPlotSlic
       throw new Error(`ScatterPlotSlice.setScatterYAxis: Axis key '${yAxis}' was not found in dataset.`);
     }
     set({ scatterYAxis: yAxis });
+  },
+  setScatterShowHistograms: (showHistograms) => {
+    set({ scatterShowHistograms: showHistograms });
   },
   setScatterHistogramBins: (bins) => {
     bins = Math.round(bins);
@@ -118,6 +130,9 @@ export const serializeScatterPlotSlice = (slice: Partial<ScatterPlotSliceSeriali
   if (slice.scatterYAxis !== null && slice.scatterYAxis !== undefined) {
     ret[UrlParam.SCATTERPLOT_Y_AXIS] = slice.scatterYAxis;
   }
+  if (slice.scatterShowHistograms !== undefined) {
+    ret[UrlParam.SCATTERPLOT_SHOW_HISTOGRAMS] = encodeBoolean(slice.scatterShowHistograms);
+  }
   if (slice.scatterHistogramBins !== undefined) {
     ret[UrlParam.SCATTERPLOT_BINS] = slice.scatterHistogramBins.toString();
   }
@@ -125,7 +140,7 @@ export const serializeScatterPlotSlice = (slice: Partial<ScatterPlotSliceSeriali
     ret[UrlParam.SCATTERPLOT_RANGE_MODE] = encodeScatterPlotRangeType(slice.scatterRangeType);
   }
   if (slice.showHeatmap !== undefined) {
-    ret[UrlParam.SCATTERPLOT_SHOW_HEATMAP] = encodeMaybeBoolean(slice.showHeatmap);
+    ret[UrlParam.SCATTERPLOT_SHOW_HEATMAP] = encodeBoolean(slice.showHeatmap);
   }
   if (slice.heatmapColorMapKey !== undefined) {
     ret[UrlParam.SCATTERPLOT_HEATMAP_COLOR_MAP] = slice.heatmapColorMapKey;
@@ -139,6 +154,7 @@ export const selectScatterPlotSliceSerializationDeps = (
 ): ScatterPlotSliceSerializableState => ({
   scatterXAxis: slice.scatterXAxis,
   scatterYAxis: slice.scatterYAxis,
+  scatterShowHistograms: slice.scatterShowHistograms,
   scatterHistogramBins: slice.scatterHistogramBins,
   scatterRangeType: slice.scatterRangeType,
   showHeatmap: slice.showHeatmap,
@@ -165,6 +181,11 @@ export const loadScatterPlotSliceFromParams = (
   }
   if (scatterYAxis !== null && scatterYAxis !== undefined && isAxisKeyValid(dataset, scatterYAxis)) {
     slice.setScatterYAxis(scatterYAxis);
+  }
+
+  const scatterShowHistograms = decodeBoolean(params.get(UrlParam.SCATTERPLOT_SHOW_HISTOGRAMS));
+  if (scatterShowHistograms !== undefined) {
+    slice.setScatterShowHistograms(scatterShowHistograms);
   }
 
   const scatterHistogramBinsParam = params.get(UrlParam.SCATTERPLOT_BINS);

@@ -27,8 +27,9 @@ export const StyledHorizontalRule = styled.hr`
   background-color: var(--color-dividers);
 `;
 
-export const StyledVerticalRule = styled.div`
+export const StyledVerticalRule = styled.hr`
   width: 1px;
   height: 100%;
+  border: none;
   background-color: var(--color-dividers);
 `;
