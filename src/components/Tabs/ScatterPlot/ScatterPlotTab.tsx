@@ -98,7 +98,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const yAxisFeatureKey = useViewerStateStore((state) => state.scatterYAxis);
   const showHistograms = useViewerStateStore((state) => state.scatterShowHistograms);
   const histogramBins = useViewerStateStore((state) => state.scatterHistogramBins);
-  const showHeatmap = useViewerStateStore((state) => state.showHeatmap);
+  const showContours = useViewerStateStore((state) => state.scatterShowContours);
   const viewMode = useViewerStateStore((state) => state.viewMode);
 
   const xAxisPlotRange = useRef<[number, number]>([-Infinity, Infinity]);
@@ -335,7 +335,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     yAxisFeatureKey,
     showHistograms,
     histogramBins,
-    showHeatmap,
+    showContours,
     rangeType,
     tracks,
     isVisible,
@@ -391,7 +391,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     );
     const shapes: Partial<Plotly.Shape>[] = [];
 
-    if (showHeatmap) {
+    if (showContours) {
       const densityTrace: Partial<PlotData> = {
         x: xData,
         y: yData,

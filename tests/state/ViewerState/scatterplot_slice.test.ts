@@ -61,27 +61,68 @@ describe("ScatterplotSlice", () => {
     });
   });
 
-  describe("heatmap settings", () => {
-    it("can set heatmap visibility", () => {
+  describe("contour settings", () => {
+    it("can set contour visibility", () => {
       const { result } = renderHook(() => useViewerStateStore());
       act(() => {
-        result.current.setShowHeatmap(true);
+        result.current.setScatterShowContours(true);
       });
-      expect(result.current.showHeatmap).toBe(true);
+      expect(result.current.scatterShowContours).toBe(true);
     });
 
-    it("can set heatmap colormap key", () => {
+    it("can set contour colormap key", () => {
       const { result } = renderHook(() => useViewerStateStore());
       act(() => {
-        result.current.setHeatmapColorMapKey("matplotlib-viridis");
+        result.current.setScatterContourColorRampKey("matplotlib-viridis");
       });
-      expect(result.current.heatmapColorMapKey).toBe("matplotlib-viridis");
+      expect(result.current.scatterContourColorMapKey).toBe("matplotlib-viridis");
     });
 
-    it("throws on unknown heatmap colormap key", () => {
+    it("can set contour colormap key reversed", () => {
       const { result } = renderHook(() => useViewerStateStore());
       act(() => {
-        expect(() => result.current.setHeatmapColorMapKey("unknown-colormap-key")).toThrowError(ANY_ERROR);
+        result.current.setScatterContourColorRampReversed(true);
+      });
+      expect(result.current.scatterContourColorMapKeyReversed).toBe(true);
+
+      act(() => {
+        result.current.setScatterContourColorRampReversed(false);
+      });
+      expect(result.current.scatterContourColorMapKeyReversed).toBe(false);
+    });
+
+    it("can set contour bin count", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      act(() => {
+        result.current.setScatterContourCount(50);
+      });
+      expect(result.current.scatterContourCount).toBe(50);
+    });
+
+    it("ignores non-finite or negative contour bin counts", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      const defaultCount = result.current.scatterContourCount;
+      act(() => {
+        result.current.setScatterContourCount(-1);
+        result.current.setScatterContourCount(NaN);
+        result.current.setScatterContourCount(Infinity);
+      });
+      expect(result.current.scatterContourCount).toBe(defaultCount);
+    });
+
+    it("resets reversed state when setting a new contour colormap key", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      act(() => {
+        result.current.setScatterContourColorRampReversed(true);
+        result.current.setScatterContourColorRampKey("matplotlib-viridis");
+      });
+      expect(result.current.scatterContourColorMapKeyReversed).toBe(false);
+    });
+
+    it("throws on unknown contour colormap key", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      act(() => {
+        expect(() => result.current.setScatterContourColorRampKey("unknown-colormap-key")).toThrowError(ANY_ERROR);
       });
     });
   });
@@ -180,32 +221,36 @@ describe("ScatterplotSlice", () => {
         result.current.setScatterYAxis(null);
         result.current.setScatterShowHistograms(true);
         result.current.setScatterRangeType(PlotRangeType.ALL_TIME);
-        result.current.setShowHeatmap(false);
-        result.current.setHeatmapColorMapKey("matplotlib-cool");
+        result.current.setScatterShowContours(false);
+        result.current.setScatterContourColorRampKey("matplotlib-cool");
+        result.current.setScatterContourColorRampReversed(false);
       });
       let serializedData = serializeScatterPlotSlice(result.current);
       expect(serializedData[UrlParam.SCATTERPLOT_X_AXIS]).toBeUndefined();
       expect(serializedData[UrlParam.SCATTERPLOT_Y_AXIS]).toBeUndefined();
       expect(serializedData[UrlParam.SCATTERPLOT_SHOW_HISTOGRAMS]).toBe("1");
       expect(serializedData[UrlParam.SCATTERPLOT_RANGE_MODE]).toBe("all");
-      expect(serializedData[UrlParam.SCATTERPLOT_SHOW_HEATMAP]).toBe("0");
-      expect(serializedData[UrlParam.SCATTERPLOT_HEATMAP_COLOR_MAP]).toBe("matplotlib-cool");
+      expect(serializedData[UrlParam.SCATTERPLOT_SHOW_CONTOUR]).toBe("0");
+      expect(serializedData[UrlParam.SCATTERPLOT_CONTOUR_COLOR_MAP]).toBe("matplotlib-cool");
 
       act(() => {
         result.current.setScatterXAxis(MockFeatureKeys.FEATURE1);
         result.current.setScatterYAxis(MockFeatureKeys.FEATURE2);
         result.current.setScatterShowHistograms(false);
         result.current.setScatterRangeType(PlotRangeType.CURRENT_FRAME);
-        result.current.setShowHeatmap(true);
-        result.current.setHeatmapColorMapKey("matplotlib-viridis");
+        result.current.setScatterShowContours(true);
+        result.current.setScatterContourCount(40);
+        result.current.setScatterContourColorRampKey("matplotlib-viridis");
+        result.current.setScatterContourColorRampReversed(true);
       });
       serializedData = serializeScatterPlotSlice(result.current);
       expect(serializedData[UrlParam.SCATTERPLOT_X_AXIS]).toBe(MockFeatureKeys.FEATURE1);
       expect(serializedData[UrlParam.SCATTERPLOT_Y_AXIS]).toBe(MockFeatureKeys.FEATURE2);
       expect(serializedData[UrlParam.SCATTERPLOT_SHOW_HISTOGRAMS]).toBe("0");
       expect(serializedData[UrlParam.SCATTERPLOT_RANGE_MODE]).toBe("frame");
-      expect(serializedData[UrlParam.SCATTERPLOT_SHOW_HEATMAP]).toBe("1");
-      expect(serializedData[UrlParam.SCATTERPLOT_HEATMAP_COLOR_MAP]).toBe("matplotlib-viridis");
+      expect(serializedData[UrlParam.SCATTERPLOT_SHOW_CONTOUR]).toBe("1");
+      expect(serializedData[UrlParam.SCATTERPLOT_CONTOUR_COUNT]).toBe("40");
+      expect(serializedData[UrlParam.SCATTERPLOT_CONTOUR_COLOR_MAP]).toBe("matplotlib-viridis!");
     });
   });
 
@@ -217,8 +262,9 @@ describe("ScatterplotSlice", () => {
       params.set(UrlParam.SCATTERPLOT_Y_AXIS, MockFeatureKeys.FEATURE2);
       params.set(UrlParam.SCATTERPLOT_SHOW_HISTOGRAMS, "0");
       params.set(UrlParam.SCATTERPLOT_RANGE_MODE, "frame");
-      params.set(UrlParam.SCATTERPLOT_SHOW_HEATMAP, "1");
-      params.set(UrlParam.SCATTERPLOT_HEATMAP_COLOR_MAP, "matplotlib-viridis");
+      params.set(UrlParam.SCATTERPLOT_SHOW_CONTOUR, "1");
+      params.set(UrlParam.SCATTERPLOT_CONTOUR_COUNT, "40");
+      params.set(UrlParam.SCATTERPLOT_CONTOUR_COLOR_MAP, "matplotlib-viridis!");
 
       act(() => {
         loadScatterPlotSliceFromParams(result.current, params);
@@ -228,8 +274,10 @@ describe("ScatterplotSlice", () => {
       expect(result.current.scatterYAxis).toBe(MockFeatureKeys.FEATURE2);
       expect(result.current.scatterShowHistograms).toBe(false);
       expect(result.current.scatterRangeType).toBe(PlotRangeType.CURRENT_FRAME);
-      expect(result.current.showHeatmap).toBe(true);
-      expect(result.current.heatmapColorMapKey).toBe("matplotlib-viridis");
+      expect(result.current.scatterShowContours).toBe(true);
+      expect(result.current.scatterContourCount).toBe(40);
+      expect(result.current.scatterContourColorMapKey).toBe("matplotlib-viridis");
+      expect(result.current.scatterContourColorMapKeyReversed).toBe(true);
     });
 
     it("ignores axes that are not in the dataset when dataset is loaded", async () => {
