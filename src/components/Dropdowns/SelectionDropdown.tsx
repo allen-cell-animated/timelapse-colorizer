@@ -1,6 +1,6 @@
 import { type ButtonProps, Tooltip } from "antd";
 import Fuse from "fuse.js";
-import React, { type ReactElement, useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import React, { type ReactElement, useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { components, type ControlProps, type OptionProps, type StylesConfig } from "react-select";
 
 import { useDebounce } from "src/hooks/useDebounce";
@@ -142,7 +142,7 @@ export default function SelectionDropdown(inputProps: React.PropsWithChildren<Se
   const [_isPending, startTransition] = useTransition();
   const [searchInput, setSearchInput] = useState("");
   const [filteredItems, setFilteredItems] = useState<SelectItem[]>(options);
-  const containerRef = React.useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Value that is pending confirmation (e.g., during async updates). Cleared if
   // the currently selected value changes.

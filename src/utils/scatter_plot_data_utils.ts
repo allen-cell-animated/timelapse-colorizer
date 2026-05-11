@@ -318,14 +318,8 @@ export const colorizeScatterplotPoints = (
   } = colorizeState;
 
   config = { ...defaultScatterplotColorizeConfig, ...removeUndefinedProperties(config) };
-  let {
-    markers: markerConfig,
-    overrideColor: overrideColor,
-    outOfRangeMarkers,
-    outlierMarkers,
-    opacityMultiplier,
-    allowHover,
-  } = config;
+  const { markers: markerConfig, outOfRangeMarkers, outlierMarkers, opacityMultiplier, allowHover } = config;
+  let overrideColor = config.overrideColor;
 
   const { xData, yData, objectIds, segIds, trackIds } = data;
   if (featureKey === null || dataset === null || !xAxisFeatureKey || !yAxisFeatureKey) {
@@ -614,7 +608,7 @@ export function isHistogramEvent(eventData: PlotMouseEvent): boolean {
 export function scaleColorOpacityByMarkerCount(
   numMarkers: number,
   baseColor: HexColorString,
-  opacityMultiplier = 1
+  opacityMultiplier: number = 1
 ): HexColorString {
   if (baseColor.length !== 7) {
     throw new Error("ScatterPlotTab.getMarkerColor: Base color '" + baseColor + "' must be 7-character hex string.");

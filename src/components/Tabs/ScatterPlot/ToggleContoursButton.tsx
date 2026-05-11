@@ -1,4 +1,4 @@
-import React, { ReactElement } from "react";
+import React, { type ReactElement } from "react";
 
 import { ContourIconSVG, ContourSlashIconSVG } from "src/assets";
 import { DISPLAY_COLOR_RAMP_LINEAR_KEYS } from "src/colorizer";

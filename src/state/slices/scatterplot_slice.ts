@@ -1,6 +1,6 @@
 import type { StateCreator } from "zustand";
 
-import { ColorRamp, type Dataset, DEFAULT_COLOR_RAMP_KEY, KNOWN_COLOR_RAMPS } from "src/colorizer";
+import { type ColorRamp, type Dataset, DEFAULT_COLOR_RAMP_KEY, KNOWN_COLOR_RAMPS } from "src/colorizer";
 import { TIME_FEATURE_KEY } from "src/colorizer/Dataset";
 import { PlotRangeType } from "src/colorizer/types";
 import { getColorMap } from "src/colorizer/utils/data_utils";
