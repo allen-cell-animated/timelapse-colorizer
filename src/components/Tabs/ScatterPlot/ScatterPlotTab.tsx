@@ -377,7 +377,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     if (showContours) {
       // Make all points smaller, and use a default color.
       markerConfig = { size: 2 };
-      markerBaseColor = new Color("#222222");
+      // markerBaseColor = new Color("#222222");
     }
     if (isTrackSelected) {
       // Use a light grey for other markers when a track is selected.
