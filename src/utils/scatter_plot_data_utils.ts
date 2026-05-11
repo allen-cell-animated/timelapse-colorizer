@@ -1,6 +1,7 @@
 import { unparse } from "papaparse";
 import type { LayoutAxis, PlotData, PlotMarker, PlotMouseEvent, Shape } from "plotly.js-dist-min";
 import { Color, type ColorRepresentation, type TypedArray } from "three";
+import { clamp } from "three/src/math/MathUtils";
 
 import {
   type ColorRamp,
@@ -24,6 +25,7 @@ import {
   TIME_FEATURE_KEY,
   TRACK_FEATURE_KEY,
 } from "src/colorizer/Dataset";
+import { removeUndefinedProperties } from "src/colorizer/utils/data_utils";
 import { remap } from "src/colorizer/utils/math_utils";
 import type { ColorizeStateParams } from "src/colorizer/viewport/types";
 
@@ -262,6 +264,23 @@ export function subsampleColorRamp(colorRamp: ColorRamp, numColors: number): Col
   return colors;
 }
 
+type ScatterplotColorizeConfig = {
+  markers: Partial<PlotMarker>;
+  outlierMarkers: Partial<PlotMarker>;
+  outOfRangeMarkers: Partial<PlotMarker>;
+  overrideColor?: Color;
+  opacityMultiplier?: number;
+  allowHover?: boolean;
+};
+
+const defaultScatterplotColorizeConfig = {
+  markers: {},
+  outlierMarkers: {},
+  outOfRangeMarkers: {},
+  opacityMultiplier: 1,
+  allowHover: true,
+} satisfies Partial<ScatterplotColorizeConfig>;
+
 // TODO: Move to `scatter_plot_data_utils.ts`
 /**
  * Applies coloring to point traces in a scatterplot. Does this by splitting
@@ -285,9 +304,7 @@ export const colorizeScatterplotPoints = (
   xAxisFeatureKey: string | null,
   yAxisFeatureKey: string | null,
   data: PointsData,
-  markerConfig: Partial<PlotMarker> & { outliers?: Partial<PlotMarker>; outOfRange?: Partial<PlotMarker> } = {},
-  overrideColor?: Color,
-  allowHover = true
+  config: Partial<ScatterplotColorizeConfig> = {}
 ): Partial<PlotData>[] => {
   const {
     dataset,
@@ -299,6 +316,17 @@ export const colorizeScatterplotPoints = (
     outlierDrawSettings,
     inRangeLUT,
   } = colorizeState;
+
+  config = { ...defaultScatterplotColorizeConfig, ...removeUndefinedProperties(config) };
+  let {
+    markers: markerConfig,
+    overrideColor: overrideColor,
+    outOfRangeMarkers,
+    outlierMarkers,
+    opacityMultiplier,
+    allowHover,
+  } = config;
+
   const { xData, yData, objectIds, segIds, trackIds } = data;
   if (featureKey === null || dataset === null || !xAxisFeatureKey || !yAxisFeatureKey) {
     return [];
@@ -312,8 +340,8 @@ export const colorizeScatterplotPoints = (
   const categories = dataset.getFeatureCategories(featureKey);
   const isCategorical = categories !== null;
   const isCategoricalRamp = colorRamp.type === ColorRampType.CATEGORICAL;
-  const usingOverrideColor = markerConfig.color || overrideColor;
-  overrideColor = overrideColor || new Color(markerConfig.color as ColorRepresentation);
+  const usingOverrideColor = markerConfig?.color || overrideColor;
+  overrideColor = overrideColor || new Color(markerConfig?.color as ColorRepresentation);
 
   let colors: Color[];
   if (usingOverrideColor) {
@@ -336,8 +364,8 @@ export const colorizeScatterplotPoints = (
 
   let outOfRangeColor: HexColorString = `#${outOfRangeDrawSettings.color.getHexString()}`;
   let outlierColor: HexColorString = `#${outlierDrawSettings.color.getHexString()}`;
-  const outOfRangeMarker = { ...markerConfig, ...markerConfig.outOfRange };
-  const outlierMarker = { ...markerConfig, ...markerConfig.outliers };
+  const outOfRangeMarker = { ...markerConfig, ...outOfRangeMarkers };
+  const outlierMarker = { ...markerConfig, ...outlierMarkers };
   if (usingOverrideColor) {
     outlierColor = overrideColorHex;
     outOfRangeColor = overrideColorHex;
@@ -348,7 +376,7 @@ export const colorizeScatterplotPoints = (
 
   for (let i = NUM_RESERVED_BUCKETS; i < colors.length + NUM_RESERVED_BUCKETS; i++) {
     let color: HexColorString = `#${colors[i - NUM_RESERVED_BUCKETS].getHexString()}`;
-    const marker = markerConfig;
+    const marker = markerConfig || {};
     if (usingOverrideColor) {
       color = overrideColorHex;
     }
@@ -398,21 +426,23 @@ export const colorizeScatterplotPoints = (
   // unusually opaque if there are only a small number of points.
   traceDataBuckets[BUCKET_INDEX_OUTOFRANGE].color = scaleColorOpacityByMarkerCount(
     totalPoints,
-    traceDataBuckets[BUCKET_INDEX_OUTOFRANGE].color
+    traceDataBuckets[BUCKET_INDEX_OUTOFRANGE].color,
+    opacityMultiplier
   );
   traceDataBuckets[BUCKET_INDEX_OUTLIERS].color = scaleColorOpacityByMarkerCount(
     totalPoints,
-    traceDataBuckets[BUCKET_INDEX_OUTLIERS].color
+    traceDataBuckets[BUCKET_INDEX_OUTLIERS].color,
+    opacityMultiplier
   );
   traceDataBuckets.slice(2).forEach((bucket) => {
-    bucket.color = scaleColorOpacityByMarkerCount(numInRange, bucket.color);
+    bucket.color = scaleColorOpacityByMarkerCount(numInRange, bucket.color, opacityMultiplier);
   });
 
   // Optionally delete the outlier and out of range buckets to hide the values.
-  if (outlierDrawSettings.mode === DrawMode.HIDE && !markerConfig.outliers) {
+  if (outlierDrawSettings.mode === DrawMode.HIDE && !outlierMarkers) {
     traceDataBuckets.splice(1, 1);
   }
-  if (outOfRangeDrawSettings.mode === DrawMode.HIDE && !markerConfig.outOfRange) {
+  if (outOfRangeDrawSettings.mode === DrawMode.HIDE && !outOfRangeMarkers) {
     traceDataBuckets.splice(0, 1);
   }
 
@@ -493,7 +523,7 @@ export const getCurrentFrameShapes = (
   const groupedData = { xData, yData, objectIds: ids, segIds, trackIds };
   const pointShapes = scatterplotTraceToShapes(
     colorizeScatterplotPoints(colorizeConfig, xAxisFeatureKey, yAxisFeatureKey, groupedData, {
-      outOfRange: {
+      outOfRangeMarkers: {
         color: "var( --color-background)",
         line: { width: 2, color: "#" + outOfRangeOutlineColor.getHexString() + "40" },
       },
@@ -581,13 +611,17 @@ export function isHistogramEvent(eventData: PlotMouseEvent): boolean {
 /**
  * Appends alpha opacity information to a hex color string, making it less opaque as the number of markers increases.
  */
-export function scaleColorOpacityByMarkerCount(numMarkers: number, baseColor: HexColorString): HexColorString {
+export function scaleColorOpacityByMarkerCount(
+  numMarkers: number,
+  baseColor: HexColorString,
+  opacityMultiplier = 1
+): HexColorString {
   if (baseColor.length !== 7) {
     throw new Error("ScatterPlotTab.getMarkerColor: Base color '" + baseColor + "' must be 7-character hex string.");
   }
   // Interpolate linearly between 80% and 25% transparency from 0 up to a max of 1000 markers.
   const opacity = remap(numMarkers, 0, 1000, 0.8, 0.25);
-  const opacityString = Math.floor(opacity * 255)
+  const opacityString = clamp(Math.floor(opacity * 255 * opacityMultiplier), 0, 255)
     .toString(16)
     .padStart(2, "0");
   return (baseColor + opacityString) as HexColorString;

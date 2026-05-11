@@ -35,8 +35,8 @@ export default function ToggleContoursButton(props: ToggleContoursButtonProps): 
           onChange={setContourCount}
           minInputBound={1}
           maxInputBound={50}
-          minSliderBound={1}
-          maxSliderBound={20}
+          minSliderBound={3}
+          maxSliderBound={30}
           step={1}
         />
       </SettingsItem>

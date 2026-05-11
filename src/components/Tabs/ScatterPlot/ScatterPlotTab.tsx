@@ -58,12 +58,8 @@ const ScatterPlotContainer = styled.div`
   }
 
   & .main-svg {
-    z-index: 1;
+    /* z-index: 1; */
     background: transparent !important;
-
-    & .cbfills {
-      opacity: 0.4;
-    }
   }
 `;
 
@@ -100,6 +96,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const histogramBins = useViewerStateStore((state) => state.scatterHistogramBins);
   const showContours = useViewerStateStore((state) => state.scatterShowContours);
   const _rawContourCount = useViewerStateStore((state) => state.scatterContourCount);
+  const contourColorRamp = useViewerStateStore((state) => state.scatterContourColorRamp);
   const contourCount = useDebounce(_rawContourCount, 100);
   const viewMode = useViewerStateStore((state) => state.viewMode);
 
@@ -339,6 +336,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     histogramBins,
     showContours,
     contourCount,
+    contourColorRamp,
     rangeType,
     tracks,
     isVisible,
@@ -373,8 +371,15 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
     plottedIds.current = new Set(objectIds);
 
-    let markerBaseColor = undefined;
-    if (rangeType === PlotRangeType.ALL_TIME && tracks.size > 0) {
+    const isTrackSelected = rangeType === PlotRangeType.ALL_TIME && tracks.size > 0;
+    let markerBaseColor: Color | undefined = undefined;
+    let markerConfig: Partial<Plotly.PlotMarker> = {};
+    if (showContours) {
+      // Make all points smaller, and use a default color.
+      markerConfig = { size: 2 };
+      markerBaseColor = new Color("#222222");
+    }
+    if (isTrackSelected) {
       // Use a light grey for other markers when a track is selected.
       markerBaseColor = new Color("#dddddd");
     }
@@ -382,30 +387,34 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     const isUsingTime = xAxisFeatureKey === TIME_FEATURE_KEY || yAxisFeatureKey === TIME_FEATURE_KEY;
 
     // Configure traces
-    const traces = colorizeScatterplotPoints(
-      colorizeConfig,
-      xAxisFeatureKey,
-      yAxisFeatureKey,
-      pointsData,
-      {},
-      markerBaseColor,
+    const traces = colorizeScatterplotPoints(colorizeConfig, xAxisFeatureKey, yAxisFeatureKey, pointsData, {
+      markers: markerConfig,
+      overrideColor: markerBaseColor,
       // disable hover for all points other than the track when one is selected
-      tracks.size === 0 || rangeType !== PlotRangeType.ALL_TIME
-    );
+      opacityMultiplier: showContours ? 0.35 : 1.0,
+      allowHover: tracks.size === 0 || rangeType !== PlotRangeType.ALL_TIME,
+    });
+
     const shapes: Partial<Plotly.Shape>[] = [];
 
     if (showContours) {
+      // const subsampledRamp = subsampleColorRamp(contourColorRamp, 32);
+      // const colorScale = subsampledRamp.map((color, i) => {
+      //   const blendedColor = new Color(color).lerp(new Color(theme.color.layout.background), 0.2);
+      //   const rgbaColor = `rgba(${blendedColor.r * 255}, ${blendedColor.g * 255}, ${blendedColor.b * 255}, 255.0)`;
+      //   console.log(`color ${i}:`, rgbaColor);
+      //   return [i / 31, rgbaColor] as [number, string];
+      // });
+      const colorScale = [
+        [0, "rgba(255, 255, 255, 255)"],
+        [1, "rgba(80, 80, 80, 255)"],
+      ] as [number, string][];
       const densityTrace: Partial<PlotData> = {
         x: xData,
         y: yData,
         name: "density",
         type: "histogram2dcontour",
-        colorscale: [
-          [0, "rgba(0,0,0,0.4)"],
-          [0.3, "rgba(128, 128, 128, 0.4)"],
-          [1, "rgba(255, 255, 255, 0)"],
-        ],
-        reversescale: true,
+        colorscale: colorScale,
         ncontours: contourCount + 1,
         hovertemplate: undefined,
         hoverinfo: "skip",
@@ -464,7 +473,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         // Connect track points as a line trace.
         const outOfRangeOutlineColor = outOfRangeDrawSettings.color.clone().multiplyScalar(0.8);
         const trackTraces = colorizeScatterplotPoints(colorizeConfig, xAxisFeatureKey, yAxisFeatureKey, trackData, {
-          outOfRange: {
+          outOfRangeMarkers: {
             color: theme.color.layout.background,
             line: { width: 1, color: "#" + outOfRangeOutlineColor.getHexString() + "40" },
           },
