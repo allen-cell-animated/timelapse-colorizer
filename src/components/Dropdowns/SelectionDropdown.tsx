@@ -142,6 +142,7 @@ export default function SelectionDropdown(inputProps: React.PropsWithChildren<Se
   const [_isPending, startTransition] = useTransition();
   const [searchInput, setSearchInput] = useState("");
   const [filteredItems, setFilteredItems] = useState<SelectItem[]>(options);
+  const containerRef = React.useRef<HTMLDivElement>(null);
 
   // Value that is pending confirmation (e.g., during async updates). Cleared if
   // the currently selected value changes.
@@ -205,6 +206,7 @@ export default function SelectionDropdown(inputProps: React.PropsWithChildren<Se
           trigger={["hover", "focus"]}
           placement={props.controlTooltipPlacement}
           open={props.showSelectedItemTooltip ? undefined : false}
+          getPopupContainer={() => containerRef.current ?? document.body}
         >
           <div>
             <components.Control {...controlProps}>
@@ -229,7 +231,11 @@ export default function SelectionDropdown(inputProps: React.PropsWithChildren<Se
   const labelId = props.label ? selectId + "-label" : undefined;
 
   return (
-    <FlexRowAlignCenter $gap={6} style={{ width: props.width, minWidth: props.width, ...props.containerStyle }}>
+    <FlexRowAlignCenter
+      $gap={6}
+      style={{ width: props.width, minWidth: props.width, ...props.containerStyle }}
+      ref={containerRef}
+    >
       {props.label && (
         <label htmlFor={selectId} style={{ whiteSpace: "nowrap" }}>
           {props.hideLabel ? (
