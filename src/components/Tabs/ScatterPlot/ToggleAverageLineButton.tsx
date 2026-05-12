@@ -1,5 +1,6 @@
-import React, { ReactElement } from "react";
+import React, { type ReactElement } from "react";
 
+import { LinePlotIconSVG, LinePlotSlashIconSVG } from "src/assets";
 import { ToggleButtonWithConfig } from "src/components/Buttons/ToggleButtonWithConfig";
 import LabeledSlider from "src/components/Inputs/LabeledSlider";
 import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
@@ -61,6 +62,8 @@ export default function ToggleAverageLineButton(props: ToggleAverageLineButtonPr
       configMenuContents={configMenu}
       configMenuPlacement="vertical"
       popupContainer={props.popupContainer}
+      visibleIcon={<LinePlotIconSVG />}
+      hiddenIcon={<LinePlotSlashIconSVG />}
     ></ToggleButtonWithConfig>
   );
 }
