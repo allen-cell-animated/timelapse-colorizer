@@ -127,8 +127,8 @@ const EXAMPLE_STORE: ViewerStoreSerializableState = {
   scatterRangeType: PlotRangeType.ALL_TIME,
   scatterShowContours: true,
   scatterContourCount: 25,
-  scatterContourColorRamKey: COLOR_RAMP_KEY,
-  scatterContourColorMapKeyReversed: true,
+  scatterContourColorRampKey: COLOR_RAMP_KEY,
+  scatterContourColorRampReversed: true,
   channelSettings: [
     { visible: true, color: new Color("#ff0000"), opacity: 1, min: 0, max: 1, dataMin: -5, dataMax: 5 },
     { visible: false, color: new Color("#00ff00"), opacity: 0, min: 0.3, max: 4.2, dataMin: 0, dataMax: 1 },
