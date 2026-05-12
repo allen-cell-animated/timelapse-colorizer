@@ -16,11 +16,11 @@ const enum ToggleAverageLineButtonHtmlIds {
 
 export default function ToggleAverageLineButton(props: ToggleAverageLineButtonProps): ReactElement {
   const showAverageLine = useViewerStateStore((state) => state.scatterShowAverageLine);
-  const setShowAverageLine = useViewerStateStore((state) => state.setScatterShowAverageLine);
-  const averageLineWindow = useViewerStateStore((state) => state.scatterAverageLineWindow);
-  const setAverageLineWindow = useViewerStateStore((state) => state.setScatterAverageLineWindow);
   const averageLineWidth = useViewerStateStore((state) => state.scatterAverageLineWidth);
+  const averageLineWindow = useViewerStateStore((state) => state.scatterAverageLineWindow);
+  const setShowAverageLine = useViewerStateStore((state) => state.setScatterShowAverageLine);
   const setAverageLineWidth = useViewerStateStore((state) => state.setScatterAverageLineWidth);
+  const setAverageLineWindow = useViewerStateStore((state) => state.setScatterAverageLineWindow);
 
   const configMenu = (
     <SettingsContainer labelWidth="80px" style={{ width: "300px", marginBottom: "6px" }} gapPx={10}>
@@ -55,7 +55,7 @@ export default function ToggleAverageLineButton(props: ToggleAverageLineButtonPr
 
   return (
     <ToggleButtonWithConfig
-      name={"moving average"}
+      name={"moving average line"}
       visible={showAverageLine}
       setVisible={setShowAverageLine}
       configMenuContents={configMenu}

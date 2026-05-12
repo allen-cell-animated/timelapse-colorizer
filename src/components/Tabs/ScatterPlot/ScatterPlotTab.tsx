@@ -27,13 +27,14 @@ import {
   colorizeScatterplotPoints,
   estimateTextWidthPxForCategories,
   filterDataByRange,
+  getAverageLineHoverTemplate,
   getAxisLayoutsFromRange,
   getCurrentFrameShapes,
   getHistogramBins,
   getScatterplotDataAsCsv,
   isHistogramEvent,
+  makeAverageLineTrace,
   makeLineTrace,
-  makeSmoothLineTrace,
 } from "src/utils/scatter_plot_data_utils";
 import { areAnyHotkeysPressed } from "src/utils/user_input";
 
@@ -84,6 +85,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const rangeType = useViewerStateStore((state) => state.scatterRangeType);
   const selectedFeatureKey = useViewerStateStore((state) => state.featureKey);
   const tracks = useViewerStateStore((state) => state.tracks);
+  const trackColors = useViewerStateStore((state) => state.trackColors);
   const addTracks = useViewerStateStore((state) => state.addTracks);
   const toggleTrack = useViewerStateStore((state) => state.toggleTrack);
   const setTracks = useViewerStateStore((state) => state.setTracks);
@@ -352,6 +354,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     showAverageLine,
     averageLineWindow,
     averageLineWidth,
+    trackColors,
     rangeType,
     tracks,
     isVisible,
@@ -481,11 +484,19 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       if (trackData && rangeType !== PlotRangeType.CURRENT_FRAME) {
         // Show rolling average line
         if (showAverageLine) {
+          const trackColor = trackColors.get(track.trackId);
           traces.push(
-            makeSmoothLineTrace(
+            makeAverageLineTrace(
               getMovingAverage(trackData.xData, averageLineWindow, true),
               getMovingAverage(trackData.yData, averageLineWindow, true),
-              averageLineWidth
+              trackData.objectIds,
+              track.times,
+              {
+                lineWidth: averageLineWidth,
+                // Only use track colors if multiple tracks are selected
+                color: tracks.size > 1 ? trackColor : undefined,
+                hoverTemplate: getAverageLineHoverTemplate(track.trackId, dataset, xAxisFeatureKey, yAxisFeatureKey),
+              }
             )
           );
         } else if (isUsingTime) {

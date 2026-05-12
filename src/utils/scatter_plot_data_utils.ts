@@ -660,21 +660,47 @@ export function makeLineTrace(
   };
 }
 
-export function makeSmoothLineTrace(xData: DataArray, yData: DataArray, lineWidth: number): Partial<PlotData> {
+export function getAverageLineHoverTemplate(
+  trackId: number,
+  dataset: Dataset,
+  xAxisFeatureKey: string,
+  yAxisFeatureKey: string
+): string {
+  return (
+    `<b>Moving Average</b>` +
+    `<br>${dataset.getFeatureName(xAxisFeatureKey)}: %{x} ${dataset.getFeatureUnits(xAxisFeatureKey)}` +
+    `<br>${dataset.getFeatureName(yAxisFeatureKey)}: %{y} ${dataset.getFeatureUnits(yAxisFeatureKey)}` +
+    `<br>Track ID: ${trackId}<br>Time: %{customdata[0]}<extra></extra>`
+  );
+}
+
+export function makeAverageLineTrace(
+  xData: DataArray,
+  yData: DataArray,
+  ids: number[],
+  times: number[],
+  config: Partial<{
+    lineWidth: number;
+    color: Color;
+    hoverTemplate: string;
+  }>
+): Partial<PlotData> {
   // TODO: show discontinuities in the line trace?
   // TODO: show time in hover tooltip?
   // TODO: click interactions?
   return {
     x: xData,
     y: yData,
+    ids: ids.map((id) => id.toString()),
     type: "scattergl",
     mode: "lines",
     line: {
-      color: "#444",
+      color: config.color ? "#" + config.color.getHexString() : "#444",
       smoothing: 1.2,
-      width: lineWidth,
+      width: config.lineWidth ?? 1.7,
     },
-    hoverinfo: "skip",
+    customdata: times.map((time) => [time.toString()]),
+    hovertemplate: config.hoverTemplate,
   };
 }
 
