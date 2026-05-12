@@ -8,6 +8,7 @@ jobs:
   static-checks:
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       pull-requests: write # Required to comment on PR with check results
 
     steps:
@@ -45,6 +46,7 @@ jobs:
   static-workflow-checks:
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       security-events: write
 
     steps:

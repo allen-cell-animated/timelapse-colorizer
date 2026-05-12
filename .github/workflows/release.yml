@@ -53,4 +53,5 @@ jobs:
       - name: Create release
         run: gh release create ${VERSION_TAG} --draft tfe-${VERSION_TAG}.zip
         env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION_TAG: ${{ steps.get_version.outputs.VERSION }}
