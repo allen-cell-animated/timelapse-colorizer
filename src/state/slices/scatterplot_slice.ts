@@ -33,6 +33,11 @@ export type ScatterPlotSliceState = {
   scatterContourColorRampKey: string;
   scatterContourColorRampReversed: boolean;
 
+  // Average line
+  scatterShowAverageLine: boolean;
+  scatterAverageLineWindow: number;
+  scatterAverageLineWidth: number;
+
   // Derived values
   scatterContourColorRamp: ColorRamp;
 };
@@ -48,6 +53,9 @@ export type ScatterPlotSliceSerializableState = Pick<
   | "scatterContourCount"
   | "scatterContourColorRampKey"
   | "scatterContourColorRampReversed"
+  | "scatterShowAverageLine"
+  | "scatterAverageLineWindow"
+  | "scatterAverageLineWidth"
 >;
 
 export type ScatterPlotSliceActions = {
@@ -60,6 +68,9 @@ export type ScatterPlotSliceActions = {
   setScatterContourCount: (count: number) => void;
   setScatterContourColorRampKey: (heatmapColorMapKey: string) => void;
   setScatterContourColorRampReversed: (reversed: boolean) => void;
+  setScatterShowAverageLine: (showAverageLine: boolean) => void;
+  setScatterAverageLineWindow: (windowSize: number) => void;
+  setScatterAverageLineWidth: (width: number) => void;
 };
 
 export type ScatterPlotSlice = ScatterPlotSliceState & ScatterPlotSliceActions;
@@ -75,13 +86,19 @@ export const createScatterPlotSlice: StateCreator<DatasetSlice & ScatterPlotSlic
   // State
   scatterXAxis: null,
   scatterYAxis: null,
+  scatterRangeType: PlotRangeType.ALL_TIME,
+
   scatterShowHistograms: true,
   scatterHistogramBins: 20,
-  scatterRangeType: PlotRangeType.ALL_TIME,
+
   scatterShowContours: false,
   scatterContourCount: 20,
   scatterContourColorRampKey: DEFAULT_COLOR_RAMP_KEY,
   scatterContourColorRampReversed: false,
+
+  scatterShowAverageLine: false,
+  scatterAverageLineWindow: 5,
+  scatterAverageLineWidth: 1.7,
 
   // Derived values
   scatterContourColorRamp: getColorMap(KNOWN_COLOR_RAMPS, DEFAULT_COLOR_RAMP_KEY),
@@ -125,6 +142,20 @@ export const createScatterPlotSlice: StateCreator<DatasetSlice & ScatterPlotSlic
     set({ scatterContourColorRampKey: key, scatterContourColorRampReversed: false });
   },
   setScatterContourColorRampReversed: (reversed) => set({ scatterContourColorRampReversed: reversed }),
+  setScatterShowAverageLine: (showAverageLine) => set({ scatterShowAverageLine: showAverageLine }),
+  setScatterAverageLineWindow: (windowSize) => {
+    windowSize = Math.round(windowSize);
+    if (windowSize <= 0 || !isFinite(windowSize)) {
+      return;
+    }
+    set({ scatterAverageLineWindow: windowSize });
+  },
+  setScatterAverageLineWidth: (width) => {
+    if (width <= 0 || !isFinite(width)) {
+      return;
+    }
+    set({ scatterAverageLineWidth: width });
+  },
 });
 
 export const addScatterPlotSliceDerivedStateSubscribers = (
@@ -187,6 +218,15 @@ export const serializeScatterPlotSlice = (slice: Partial<ScatterPlotSliceSeriali
     ret[UrlParam.SCATTERPLOT_CONTOUR_COLOR_MAP] =
       slice.scatterContourColorRampKey + (slice.scatterContourColorRampReversed ? URL_COLOR_RAMP_REVERSED_SUFFIX : "");
   }
+  if (slice.scatterShowAverageLine !== undefined) {
+    ret[UrlParam.SCATTERPLOT_SHOW_AVERAGE_LINE] = encodeBoolean(slice.scatterShowAverageLine);
+  }
+  if (slice.scatterAverageLineWindow !== undefined) {
+    ret[UrlParam.SCATTERPLOT_AVERAGE_LINE_WINDOW] = slice.scatterAverageLineWindow.toString();
+  }
+  if (slice.scatterAverageLineWidth !== undefined) {
+    ret[UrlParam.SCATTERPLOT_AVERAGE_LINE_WIDTH] = slice.scatterAverageLineWidth.toString();
+  }
   return ret;
 };
 
@@ -203,6 +243,9 @@ export const selectScatterPlotSliceSerializationDeps = (
   scatterContourCount: slice.scatterContourCount,
   scatterContourColorRampKey: slice.scatterContourColorRampKey,
   scatterContourColorRampReversed: slice.scatterContourColorRampReversed,
+  scatterShowAverageLine: slice.scatterShowAverageLine,
+  scatterAverageLineWindow: slice.scatterAverageLineWindow,
+  scatterAverageLineWidth: slice.scatterAverageLineWidth,
 });
 
 export const loadScatterPlotSliceFromParams = (
@@ -264,6 +307,26 @@ export const loadScatterPlotSliceFromParams = (
     if (KNOWN_COLOR_RAMPS.has(key)) {
       slice.setScatterContourColorRampKey(key);
       slice.setScatterContourColorRampReversed(reversed !== undefined);
+    }
+  }
+
+  // Average line
+  const scatterShowAverageLine = decodeBoolean(params.get(UrlParam.SCATTERPLOT_SHOW_AVERAGE_LINE));
+  if (scatterShowAverageLine !== undefined) {
+    slice.setScatterShowAverageLine(scatterShowAverageLine);
+  }
+  const scatterAverageLineWindowParam = params.get(UrlParam.SCATTERPLOT_AVERAGE_LINE_WINDOW);
+  if (scatterAverageLineWindowParam !== null && scatterAverageLineWindowParam !== undefined) {
+    const windowSize = parseInt(scatterAverageLineWindowParam, 10);
+    if (!isNaN(windowSize) && windowSize > 0) {
+      slice.setScatterAverageLineWindow(windowSize);
+    }
+  }
+  const scatterAverageLineWidthParam = params.get(UrlParam.SCATTERPLOT_AVERAGE_LINE_WIDTH);
+  if (scatterAverageLineWidthParam !== null && scatterAverageLineWidthParam !== undefined) {
+    const lineWidth = parseFloat(scatterAverageLineWidthParam);
+    if (!isNaN(lineWidth) && lineWidth > 0) {
+      slice.setScatterAverageLineWidth(lineWidth);
     }
   }
 };

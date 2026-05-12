@@ -660,6 +660,24 @@ export function makeLineTrace(
   };
 }
 
+export function makeSmoothLineTrace(xData: DataArray, yData: DataArray, lineWidth: number): Partial<PlotData> {
+  // TODO: show discontinuities in the line trace?
+  // TODO: show time in hover tooltip?
+  // TODO: click interactions?
+  return {
+    x: xData,
+    y: yData,
+    type: "scattergl",
+    mode: "lines",
+    line: {
+      color: "#444",
+      smoothing: 1.2,
+      width: lineWidth,
+    },
+    hoverinfo: "skip",
+  };
+}
+
 function getLineShape(x: number, y: number, xDim: number, yDim: number, color: string, width: number): Partial<Shape> {
   return {
     xanchor: x,

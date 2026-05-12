@@ -8,7 +8,7 @@ import { SwitchIconSVG } from "src/assets";
 import type { Dataset } from "src/colorizer";
 import { TIME_FEATURE_KEY } from "src/colorizer/Dataset";
 import { PlotRangeType } from "src/colorizer/types";
-import { hasAnyValueChanged } from "src/colorizer/utils/data_utils";
+import { getMovingAverage, hasAnyValueChanged } from "src/colorizer/utils/data_utils";
 import type { ShowAlertBannerCallback } from "src/components/Banner/hooks";
 import IconButton from "src/components/Buttons/IconButton";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
@@ -33,6 +33,7 @@ import {
   getScatterplotDataAsCsv,
   isHistogramEvent,
   makeLineTrace,
+  makeSmoothLineTrace,
 } from "src/utils/scatter_plot_data_utils";
 import { areAnyHotkeysPressed } from "src/utils/user_input";
 
@@ -98,6 +99,17 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const _rawContourCount = useViewerStateStore((state) => state.scatterContourCount);
   const contourColorRamp = useViewerStateStore((state) => state.scatterContourColorRamp);
   const contourCount = useDebounce(_rawContourCount, 100);
+
+  const showAverageLine = useViewerStateStore((state) => state.scatterShowAverageLine);
+  const averageLineWindow = useDebounce(
+    useViewerStateStore((state) => state.scatterAverageLineWindow),
+    500
+  );
+  const averageLineWidth = useDebounce(
+    useViewerStateStore((state) => state.scatterAverageLineWidth),
+    500
+  );
+
   const viewMode = useViewerStateStore((state) => state.viewMode);
 
   const xAxisPlotRange = useRef<[number, number]>([-Infinity, Infinity]);
@@ -337,6 +349,9 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     showContours,
     contourCount,
     contourColorRamp,
+    showAverageLine,
+    averageLineWindow,
+    averageLineWidth,
     rangeType,
     tracks,
     isVisible,
@@ -464,12 +479,22 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         track
       );
       if (trackData && rangeType !== PlotRangeType.CURRENT_FRAME) {
-        // Render an extra trace for lines connecting the points in the current track when time is a feature.
-        if (isUsingTime) {
+        // Show rolling average line
+        if (showAverageLine) {
+          traces.push(
+            makeSmoothLineTrace(
+              getMovingAverage(trackData.xData, averageLineWindow, true),
+              getMovingAverage(trackData.yData, averageLineWindow, true),
+              averageLineWidth
+            )
+          );
+        } else if (isUsingTime) {
+          // Render an extra trace for lines connecting the points in the current track when time is a feature.
           traces.push(
             makeLineTrace(trackData.xData, trackData.yData, trackData.objectIds, trackData.segIds, trackData.trackIds)
           );
         }
+
         // Connect track points as a line trace.
         const outOfRangeOutlineColor = outOfRangeDrawSettings.color.clone().multiplyScalar(0.8);
         const trackTraces = colorizeScatterplotPoints(colorizeConfig, xAxisFeatureKey, yAxisFeatureKey, trackData, {

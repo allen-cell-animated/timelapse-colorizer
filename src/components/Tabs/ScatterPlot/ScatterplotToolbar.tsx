@@ -6,6 +6,7 @@ import { ResetViewIconSVG } from "src/assets";
 import { PlotRangeType } from "src/colorizer/types";
 import IconButton from "src/components/Buttons/IconButton";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
+import ToggleAverageLineButton from "src/components/Tabs/ScatterPlot/ToggleAverageLineButton";
 import ToggleContoursButton from "src/components/Tabs/ScatterPlot/ToggleContoursButton";
 import ToggleHistogramButton from "src/components/Tabs/ScatterPlot/ToggleHistogramButton";
 import { useViewerStateStore } from "src/state";
@@ -68,6 +69,8 @@ export default function ScatterplotToolbar(props: ScatterplotToolbarProps): Reac
       <ToggleHistogramButton popupContainer={props.popupContainer} />
 
       <ToggleContoursButton popupContainer={props.popupContainer} />
+
+      <ToggleAverageLineButton popupContainer={props.popupContainer} />
     </FlexRowAlignCenter>
   );
 }
