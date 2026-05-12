@@ -103,11 +103,11 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const showAverageLine = useViewerStateStore((state) => state.scatterShowAverageLine);
   const averageLineWindow = useDebounce(
     useViewerStateStore((state) => state.scatterAverageLineWindow),
-    500
+    100
   );
   const averageLineWidth = useDebounce(
     useViewerStateStore((state) => state.scatterAverageLineWidth),
-    500
+    100
   );
 
   const viewMode = useViewerStateStore((state) => state.viewMode);
