@@ -475,6 +475,31 @@ export const colorizeScatterplotPoints = (
   return traces;
 };
 
+export const getAverageLineCurrentFrameShapes = (
+  tracks: Map<number, Track>,
+  tracksToAverageLineData: Map<number, { xData: number[]; yData: number[] }>,
+  currentFrame: number,
+  trackColors?: Map<number, Color>
+): Partial<Shape>[] => {
+  const lineShapes: Partial<Shape>[] = [];
+  for (const [trackId, track] of tracks) {
+    const lineData = tracksToAverageLineData.get(trackId);
+    if (!lineData) {
+      continue;
+    }
+    const index = track.times.indexOf(currentFrame);
+    if (index === -1) {
+      continue;
+    }
+    const x = lineData.xData[index];
+    const y = lineData.yData[index];
+    const color = trackColors?.get(trackId) || new Color("#444");
+
+    lineShapes.push(getCircleShape(x, y, 4, `#${color.getHexString()}`));
+  }
+  return lineShapes;
+};
+
 /**
  * Returns an array of shapes that draw a crosshair + colored scatterplot dot over the
  * points in selected tracks visible in the current frame.
@@ -704,7 +729,7 @@ export function makeAverageLineTrace(
   };
 }
 
-function getLineShape(x: number, y: number, xDim: number, yDim: number, color: string, width: number): Partial<Shape> {
+function getPlotlyShapeBase(x: number, y: number, xDim: number, yDim: number): Partial<Shape> {
   return {
     xanchor: x,
     yanchor: y,
@@ -714,8 +739,25 @@ function getLineShape(x: number, y: number, xDim: number, yDim: number, color: s
     y1: +yDim / 2,
     xsizemode: "pixel",
     ysizemode: "pixel",
-    type: "line",
     layer: "above",
+  };
+}
+
+function getCircleShape(x: number, y: number, diameter: number, color: string): Partial<Shape> {
+  return {
+    ...getPlotlyShapeBase(x, y, diameter, diameter),
+    type: "circle",
+    fillcolor: color,
+    line: {
+      width: 1,
+    },
+  };
+}
+
+function getLineShape(x: number, y: number, xDim: number, yDim: number, color: string, width: number): Partial<Shape> {
+  return {
+    ...getPlotlyShapeBase(x, y, xDim, yDim),
+    type: "line",
     line: {
       color,
       width,

@@ -7,7 +7,7 @@ import { Color } from "three";
 import { SwitchIconSVG } from "src/assets";
 import type { Dataset } from "src/colorizer";
 import { TIME_FEATURE_KEY } from "src/colorizer/Dataset";
-import { PlotRangeType } from "src/colorizer/types";
+import { PlotRangeType, SelectionOutlineColorMode } from "src/colorizer/types";
 import { getMovingAverage, hasAnyValueChanged } from "src/colorizer/utils/data_utils";
 import type { ShowAlertBannerCallback } from "src/components/Banner/hooks";
 import IconButton from "src/components/Buttons/IconButton";
@@ -27,6 +27,7 @@ import {
   colorizeScatterplotPoints,
   estimateTextWidthPxForCategories,
   filterDataByRange,
+  getAverageLineCurrentFrameShapes,
   getAverageLineHoverTemplate,
   getAxisLayoutsFromRange,
   getCurrentFrameShapes,
@@ -86,6 +87,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const selectedFeatureKey = useViewerStateStore((state) => state.featureKey);
   const tracks = useViewerStateStore((state) => state.tracks);
   const trackColors = useViewerStateStore((state) => state.trackColors);
+  const outlineColorMode = useViewerStateStore((state) => state.outlineColorMode);
   const addTracks = useViewerStateStore((state) => state.addTracks);
   const toggleTrack = useViewerStateStore((state) => state.toggleTrack);
   const setTracks = useViewerStateStore((state) => state.setTracks);
@@ -116,6 +118,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
   const xAxisPlotRange = useRef<[number, number]>([-Infinity, Infinity]);
   const yAxisPlotRange = useRef<[number, number]>([-Infinity, Infinity]);
+  const trackToAverageLineData = useRef<Map<number, { xData: number[]; yData: number[] }>>(new Map());
 
   const resetXAxisPlotRange = useCallback((): void => {
     xAxisPlotRange.current = [-Infinity, Infinity];
@@ -174,6 +177,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     rangeType !== lastRenderedState.current.rangeType ||
     xAxisFeatureKey !== lastRenderedState.current.xAxisFeatureKey ||
     yAxisFeatureKey !== lastRenderedState.current.yAxisFeatureKey;
+
+  const useTrackColors = tracks.size > 1 && outlineColorMode === SelectionOutlineColorMode.USE_PALETTE;
 
   useEffect(() => {
     if (hasConfigChanged) {
@@ -355,6 +360,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     averageLineWindow,
     averageLineWidth,
     trackColors,
+    outlineColorMode,
     rangeType,
     tracks,
     isVisible,
@@ -472,6 +478,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     }
 
     // Render current track as an extra trace.
+    trackToAverageLineData.current.clear();
     for (const track of tracks.values()) {
       const trackData = filterDataByRange(
         dataset,
@@ -484,21 +491,16 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       if (trackData && rangeType !== PlotRangeType.CURRENT_FRAME) {
         // Show rolling average line
         if (showAverageLine) {
+          const lineXData = getMovingAverage(trackData.xData, averageLineWindow, true);
+          const lineYData = getMovingAverage(trackData.yData, averageLineWindow, true);
           const trackColor = trackColors.get(track.trackId);
-          traces.push(
-            makeAverageLineTrace(
-              getMovingAverage(trackData.xData, averageLineWindow, true),
-              getMovingAverage(trackData.yData, averageLineWindow, true),
-              trackData.objectIds,
-              track.times,
-              {
-                lineWidth: averageLineWidth,
-                // Only use track colors if multiple tracks are selected
-                color: tracks.size > 1 ? trackColor : undefined,
-                hoverTemplate: getAverageLineHoverTemplate(track.trackId, dataset, xAxisFeatureKey, yAxisFeatureKey),
-              }
-            )
-          );
+          const lineConfig = {
+            lineWidth: averageLineWidth,
+            color: useTrackColors ? trackColor : undefined,
+            hoverTemplate: getAverageLineHoverTemplate(track.trackId, dataset, xAxisFeatureKey, yAxisFeatureKey),
+          };
+          traces.push(makeAverageLineTrace(lineXData, lineYData, trackData.objectIds, track.times, lineConfig));
+          trackToAverageLineData.current.set(track.trackId, { xData: lineXData, yData: lineYData });
         } else if (isUsingTime) {
           // Render an extra trace for lines connecting the points in the current track when time is a feature.
           traces.push(
@@ -520,6 +522,16 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     }
 
     // Render crosshair at the current time for all tracks.
+    if (showAverageLine) {
+      shapes.push(
+        ...getAverageLineCurrentFrameShapes(
+          tracks,
+          trackToAverageLineData.current,
+          currentFrame,
+          useTrackColors ? trackColors : undefined
+        )
+      );
+    }
     shapes.push(
       ...getCurrentFrameShapes(
         dataset,
@@ -615,8 +627,19 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     const shouldSkipFrameChangeRender = hasOnlyFrameChanged && rangeType === PlotRangeType.ALL_TIME;
     if (shouldSkipFrameChangeRender && plotDivRef.current !== null) {
       // Only the frame changed, so we can skip the render and just do a relayout instead.
-      Plotly.relayout(plotDivRef.current, {
-        shapes: getCurrentFrameShapes(
+      const shapes = [];
+      if (showAverageLine) {
+        shapes.push(
+          ...getAverageLineCurrentFrameShapes(
+            tracks,
+            trackToAverageLineData.current,
+            currentFrame,
+            useTrackColors ? trackColors : undefined
+          )
+        );
+      }
+      shapes.push(
+        ...getCurrentFrameShapes(
           dataset,
           xAxisFeatureKey,
           yAxisFeatureKey,
@@ -625,7 +648,10 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
           tracks,
           rawXDataRef.current,
           rawYDataRef.current
-        ),
+        )
+      );
+      Plotly.relayout(plotDivRef.current, {
+        shapes,
       });
       return;
     }
