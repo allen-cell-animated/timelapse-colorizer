@@ -10,14 +10,20 @@ on:
       - closed
 
 concurrency: preview-${{ github.ref }}
+permissions: {}
 
 jobs:
   deploy-preview:
     runs-on: ubuntu-latest
     needs: [deploy-preview-internal]
+    permissions:
+      contents: write # Required for pushing to gh-pages branch
+
     steps:
       - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 #v3.6.0
+        with:
+          persist-credentials: false
 
       - name: Setup node
         uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 #v6.0.0
@@ -32,7 +38,9 @@ jobs:
       # Must override default vite build base so that assets can still be accessed
       # when not placed in the root directory of gh-pages branch.
       - name: Build
-        run: npx vite build --base=/${{ github.event.repository.name }}/pr-preview/pr-${{ github.event.number }}/
+        run: npx vite build --base=/${GITHUB_EVENT_REPOSITORY_NAME}/pr-preview/pr-${{ github.event.number }}/
+        env:
+          GITHUB_EVENT_REPOSITORY_NAME: ${{ github.event.repository.name }}
 
       - name: Deploy preview
         uses: rossjrw/pr-preview-action@430e3dfc1de8a8ae77e77d862d25676ef9db55d1
@@ -41,9 +49,14 @@ jobs:
 
   deploy-preview-internal:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # Required for pushing to gh-pages branch
+
     steps:
       - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 #v3.6.0
+        with:
+          persist-credentials: false
 
       - name: Setup node
         uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 #v6.0.0
@@ -56,7 +69,9 @@ jobs:
         run: npm ci
 
       - name: Build
-        run: npx vite build --base=/${{ github.event.repository.name }}/pr-preview-internal/pr-${{ github.event.number }}/ --config config/vite.internal-build.config.js
+        run: npx vite build --base=/${GITHUB_EVENT_REPOSITORY_NAME}/pr-preview-internal/pr-${{ github.event.number }}/ --config config/vite.internal-build.config.js
+        env:
+          GITHUB_EVENT_REPOSITORY_NAME: ${{ github.event.repository.name }}
 
       - name: Deploy internal preview
         uses: rossjrw/pr-preview-action@430e3dfc1de8a8ae77e77d862d25676ef9db55d1

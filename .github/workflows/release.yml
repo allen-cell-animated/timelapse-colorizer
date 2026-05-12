@@ -5,13 +5,19 @@ on:
     tags:
       - "v*"
   workflow_dispatch:
+permissions: {}
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
     steps:
       - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 #v3.6.0
+        with:
+          persist-credentials: false
 
       - name: Setup node
         uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 #v6.0.0
@@ -40,13 +46,11 @@ jobs:
         run: mv dist viewer
 
       - name: Zip build artifact
-        run: zip -r tfe-${{ steps.get_version.outputs.VERSION }}.zip viewer/*
+        run: zip -r tfe-${VERSION_TAG}.zip viewer/*
+        env:
+          VERSION_TAG: ${{ steps.get_version.outputs.VERSION }}
 
       - name: Create release
-        # v2.4.1 10/14/25
-        uses: softprops/action-gh-release@6da8fa9354ddfdc4aeace5fc48d7f679b5214090
+        run: gh release create ${VERSION_TAG} --draft tfe-${VERSION_TAG}.zip
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          draft: true
-          files: tfe-${{ steps.get_version.outputs.VERSION }}.zip
+          VERSION_TAG: ${{ steps.get_version.outputs.VERSION }}
