@@ -11,7 +11,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: write # Required to create release and upload artifacts
 
     steps:
       - name: Checkout
