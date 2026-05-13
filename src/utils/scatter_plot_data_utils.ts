@@ -279,7 +279,7 @@ const defaultScatterplotColorizeConfig = {
   outOfRangeMarkers: {},
   opacityMultiplier: 1,
   allowHover: true,
-} satisfies Partial<ScatterplotColorizeConfig>;
+} satisfies ScatterplotColorizeConfig;
 
 // TODO: Move to `scatter_plot_data_utils.ts`
 /**
@@ -334,8 +334,8 @@ export const colorizeScatterplotPoints = (
   const categories = dataset.getFeatureCategories(featureKey);
   const isCategorical = categories !== null;
   const isCategoricalRamp = colorRamp.type === ColorRampType.CATEGORICAL;
-  const usingOverrideColor = markerConfig?.color || overrideColor;
-  overrideColor = overrideColor || new Color(markerConfig?.color as ColorRepresentation);
+  const usingOverrideColor = markerConfig?.color !== undefined || overrideColor !== undefined;
+  overrideColor = overrideColor ?? new Color(markerConfig?.color as ColorRepresentation);
 
   let colors: Color[];
   if (usingOverrideColor) {

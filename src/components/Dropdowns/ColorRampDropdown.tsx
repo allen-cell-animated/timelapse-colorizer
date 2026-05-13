@@ -1,6 +1,6 @@
 import { RetweetOutlined } from "@ant-design/icons";
 import { Tooltip } from "antd";
-import React, { type ReactElement, useContext, useMemo, useRef } from "react";
+import React, { type ReactElement, useContext, useMemo } from "react";
 import styled from "styled-components";
 import type { Color } from "three";
 import { clamp } from "three/src/math/MathUtils";
@@ -147,7 +147,6 @@ export type ColorRampSelectionProps = {
   disabled?: boolean;
   colorRampToImageUrl?: (colorRamp: ColorRamp) => string;
   showReverseButton?: boolean;
-  popupContainer?: HTMLElement;
 
   // Color ramp
   selectedRamp?: string;
@@ -199,7 +198,6 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
   const theme = useContext(AppThemeContext);
 
   const { colorRampsToDisplay, categoricalPalettesToDisplay } = props;
-  const containerRef = useRef<HTMLDivElement>(null);
 
   ///////// Generate dropdown contents
 
@@ -318,7 +316,7 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
   };
 
   return (
-    <FlexRowAlignCenter $gap={4} ref={containerRef}>
+    <FlexRowAlignCenter $gap={4}>
       <DropdownStyleContainer $categorical={props.useCategoricalPalettes} $showReverseButton={props.showReverseButton}>
         <SelectionDropdown
           disabled={props.disabled}
@@ -343,7 +341,6 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
             <Tooltip
               title="Reverse color map"
               open={props.disabled || props.useCategoricalPalettes ? false : undefined}
-              getPopupContainer={() => containerRef.current ?? document.body}
             >
               <ReverseIconButton
                 aria-label="Reverse color map"

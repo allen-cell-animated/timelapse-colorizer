@@ -88,198 +88,198 @@ describe("ScatterplotSlice", () => {
       });
       expect(result.current.scatterContourCount).toBe(defaultCount);
     });
+  });
 
-    describe("setScatterAxes", () => {
-      it("can set axes to any value when dataset is not set", () => {
-        const { result } = renderHook(() => useViewerStateStore());
-        act(() => {
-          result.current.setScatterXAxis("some-feature-x");
-          result.current.setScatterYAxis("some-feature-y");
-        });
-        expect(result.current.scatterXAxis).toBe("some-feature-x");
-        expect(result.current.scatterYAxis).toBe("some-feature-y");
+  describe("setScatterAxes", () => {
+    it("can set axes to any value when dataset is not set", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      act(() => {
+        result.current.setScatterXAxis("some-feature-x");
+        result.current.setScatterYAxis("some-feature-y");
       });
+      expect(result.current.scatterXAxis).toBe("some-feature-x");
+      expect(result.current.scatterYAxis).toBe("some-feature-y");
+    });
 
-      it("throws an error if an axis key is not in the current dataset", async () => {
-        const { result } = renderHook(() => useViewerStateStore());
-        await setDatasetAsync(result, MOCK_DATASET);
-        act(() => {
-          expect(() => result.current.setScatterXAxis("some-feature-x")).toThrowError(ANY_ERROR);
-        });
-        act(() => {
-          expect(() => result.current.setScatterYAxis("some-feature-y")).toThrowError(ANY_ERROR);
-        });
+    it("throws an error if an axis key is not in the current dataset", async () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      await setDatasetAsync(result, MOCK_DATASET);
+      act(() => {
+        expect(() => result.current.setScatterXAxis("some-feature-x")).toThrowError(ANY_ERROR);
       });
-
-      it("allows axes to be set to feature keys in the current dataset, time, or null", async () => {
-        const { result } = renderHook(() => useViewerStateStore());
-        await setDatasetAsync(result, MOCK_DATASET);
-        // Features in current dataset
-        act(() => {
-          result.current.setScatterXAxis(MockFeatureKeys.FEATURE1);
-          result.current.setScatterYAxis(MockFeatureKeys.FEATURE2);
-        });
-        expect(result.current.scatterXAxis).toBe(MockFeatureKeys.FEATURE1);
-        expect(result.current.scatterYAxis).toBe(MockFeatureKeys.FEATURE2);
-
-        // Custom time feature
-        act(() => {
-          result.current.setScatterXAxis(TIME_FEATURE_KEY);
-          result.current.setScatterYAxis(TIME_FEATURE_KEY);
-        });
-        expect(result.current.scatterXAxis).toBe(TIME_FEATURE_KEY);
-        expect(result.current.scatterYAxis).toBe(TIME_FEATURE_KEY);
-
-        // Null
-        act(() => {
-          result.current.setScatterXAxis(null);
-          result.current.setScatterYAxis(null);
-        });
-        expect(result.current.scatterXAxis).toBe(null);
-        expect(result.current.scatterYAxis).toBe(null);
+      act(() => {
+        expect(() => result.current.setScatterYAxis("some-feature-y")).toThrowError(ANY_ERROR);
       });
     });
 
-    describe("on dataset change", () => {
-      it("allows axes to keep feature keys in the new dataset", async () => {
-        const { result } = renderHook(() => useViewerStateStore());
-        act(() => {
-          result.current.setScatterXAxis(MockFeatureKeys.FEATURE1);
-          result.current.setScatterYAxis(MockFeatureKeys.FEATURE2);
-        });
-        await setDatasetAsync(result, MOCK_DATASET);
-        expect(result.current.scatterXAxis).toBe(MockFeatureKeys.FEATURE1);
-        expect(result.current.scatterYAxis).toBe(MockFeatureKeys.FEATURE2);
+    it("allows axes to be set to feature keys in the current dataset, time, or null", async () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      await setDatasetAsync(result, MOCK_DATASET);
+      // Features in current dataset
+      act(() => {
+        result.current.setScatterXAxis(MockFeatureKeys.FEATURE1);
+        result.current.setScatterYAxis(MockFeatureKeys.FEATURE2);
       });
+      expect(result.current.scatterXAxis).toBe(MockFeatureKeys.FEATURE1);
+      expect(result.current.scatterYAxis).toBe(MockFeatureKeys.FEATURE2);
 
-      it("allows axes to keep time value on dataset change", async () => {
-        const { result } = renderHook(() => useViewerStateStore());
-        act(() => {
-          result.current.setScatterXAxis(TIME_FEATURE_KEY);
-          result.current.setScatterYAxis(TIME_FEATURE_KEY);
-        });
-        await setDatasetAsync(result, MOCK_DATASET);
-        expect(result.current.scatterXAxis).toBe(TIME_FEATURE_KEY);
-        expect(result.current.scatterYAxis).toBe(TIME_FEATURE_KEY);
+      // Custom time feature
+      act(() => {
+        result.current.setScatterXAxis(TIME_FEATURE_KEY);
+        result.current.setScatterYAxis(TIME_FEATURE_KEY);
       });
+      expect(result.current.scatterXAxis).toBe(TIME_FEATURE_KEY);
+      expect(result.current.scatterYAxis).toBe(TIME_FEATURE_KEY);
 
-      it("nulls axes with feature keys that do not exist in the new dataset", async () => {
-        const { result } = renderHook(() => useViewerStateStore());
-        act(() => {
-          result.current.setScatterXAxis("some-feature-x");
-          result.current.setScatterYAxis("some-feature-y");
-        });
-        await setDatasetAsync(result, MOCK_DATASET);
-        expect(result.current.scatterXAxis).toBe(null);
-        expect(result.current.scatterYAxis).toBe(null);
+      // Null
+      act(() => {
+        result.current.setScatterXAxis(null);
+        result.current.setScatterYAxis(null);
       });
+      expect(result.current.scatterXAxis).toBe(null);
+      expect(result.current.scatterYAxis).toBe(null);
+    });
+  });
+
+  describe("on dataset change", () => {
+    it("allows axes to keep feature keys in the new dataset", async () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      act(() => {
+        result.current.setScatterXAxis(MockFeatureKeys.FEATURE1);
+        result.current.setScatterYAxis(MockFeatureKeys.FEATURE2);
+      });
+      await setDatasetAsync(result, MOCK_DATASET);
+      expect(result.current.scatterXAxis).toBe(MockFeatureKeys.FEATURE1);
+      expect(result.current.scatterYAxis).toBe(MockFeatureKeys.FEATURE2);
     });
 
-    describe("serializeScatterPlotSlice", () => {
-      it("serializes slice data", () => {
-        const { result } = renderHook(() => useViewerStateStore());
-        act(() => {
-          result.current.setScatterXAxis(null);
-          result.current.setScatterYAxis(null);
-          result.current.setScatterShowHistograms(true);
-          result.current.setScatterRangeType(PlotRangeType.ALL_TIME);
-          result.current.setScatterShowContours(false);
-        });
-        let serializedData = serializeScatterPlotSlice(result.current);
-        expect(serializedData[UrlParam.SCATTERPLOT_X_AXIS]).toBeUndefined();
-        expect(serializedData[UrlParam.SCATTERPLOT_Y_AXIS]).toBeUndefined();
-        expect(serializedData[UrlParam.SCATTERPLOT_SHOW_HISTOGRAMS]).toBe("1");
-        expect(serializedData[UrlParam.SCATTERPLOT_RANGE_MODE]).toBe("all");
-        expect(serializedData[UrlParam.SCATTERPLOT_SHOW_CONTOUR]).toBe("0");
-
-        act(() => {
-          result.current.setScatterXAxis(MockFeatureKeys.FEATURE1);
-          result.current.setScatterYAxis(MockFeatureKeys.FEATURE2);
-          result.current.setScatterShowHistograms(false);
-          result.current.setScatterRangeType(PlotRangeType.CURRENT_FRAME);
-          result.current.setScatterShowContours(true);
-          result.current.setScatterContourCount(40);
-        });
-        serializedData = serializeScatterPlotSlice(result.current);
-        expect(serializedData[UrlParam.SCATTERPLOT_X_AXIS]).toBe(MockFeatureKeys.FEATURE1);
-        expect(serializedData[UrlParam.SCATTERPLOT_Y_AXIS]).toBe(MockFeatureKeys.FEATURE2);
-        expect(serializedData[UrlParam.SCATTERPLOT_SHOW_HISTOGRAMS]).toBe("0");
-        expect(serializedData[UrlParam.SCATTERPLOT_RANGE_MODE]).toBe("frame");
-        expect(serializedData[UrlParam.SCATTERPLOT_SHOW_CONTOUR]).toBe("1");
-        expect(serializedData[UrlParam.SCATTERPLOT_CONTOUR_COUNT]).toBe("40");
+    it("allows axes to keep time value on dataset change", async () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      act(() => {
+        result.current.setScatterXAxis(TIME_FEATURE_KEY);
+        result.current.setScatterYAxis(TIME_FEATURE_KEY);
       });
+      await setDatasetAsync(result, MOCK_DATASET);
+      expect(result.current.scatterXAxis).toBe(TIME_FEATURE_KEY);
+      expect(result.current.scatterYAxis).toBe(TIME_FEATURE_KEY);
     });
 
-    describe("loadScatterPlotSliceFromParams", () => {
-      it("loads slice data", () => {
-        const { result } = renderHook(() => useViewerStateStore());
-        const params = new URLSearchParams();
-        params.set(UrlParam.SCATTERPLOT_X_AXIS, MockFeatureKeys.FEATURE1);
-        params.set(UrlParam.SCATTERPLOT_Y_AXIS, MockFeatureKeys.FEATURE2);
-        params.set(UrlParam.SCATTERPLOT_SHOW_HISTOGRAMS, "0");
-        params.set(UrlParam.SCATTERPLOT_RANGE_MODE, "frame");
-        params.set(UrlParam.SCATTERPLOT_SHOW_CONTOUR, "1");
-        params.set(UrlParam.SCATTERPLOT_CONTOUR_COUNT, "40");
+    it("nulls axes with feature keys that do not exist in the new dataset", async () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      act(() => {
+        result.current.setScatterXAxis("some-feature-x");
+        result.current.setScatterYAxis("some-feature-y");
+      });
+      await setDatasetAsync(result, MOCK_DATASET);
+      expect(result.current.scatterXAxis).toBe(null);
+      expect(result.current.scatterYAxis).toBe(null);
+    });
+  });
 
-        act(() => {
-          loadScatterPlotSliceFromParams(result.current, params);
-        });
+  describe("serializeScatterPlotSlice", () => {
+    it("serializes slice data", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      act(() => {
+        result.current.setScatterXAxis(null);
+        result.current.setScatterYAxis(null);
+        result.current.setScatterShowHistograms(true);
+        result.current.setScatterRangeType(PlotRangeType.ALL_TIME);
+        result.current.setScatterShowContours(false);
+      });
+      let serializedData = serializeScatterPlotSlice(result.current);
+      expect(serializedData[UrlParam.SCATTERPLOT_X_AXIS]).toBeUndefined();
+      expect(serializedData[UrlParam.SCATTERPLOT_Y_AXIS]).toBeUndefined();
+      expect(serializedData[UrlParam.SCATTERPLOT_SHOW_HISTOGRAMS]).toBe("1");
+      expect(serializedData[UrlParam.SCATTERPLOT_RANGE_MODE]).toBe("all");
+      expect(serializedData[UrlParam.SCATTERPLOT_SHOW_CONTOUR]).toBe("0");
 
-        expect(result.current.scatterXAxis).toBe(MockFeatureKeys.FEATURE1);
-        expect(result.current.scatterYAxis).toBe(MockFeatureKeys.FEATURE2);
-        expect(result.current.scatterShowHistograms).toBe(false);
-        expect(result.current.scatterRangeType).toBe(PlotRangeType.CURRENT_FRAME);
-        expect(result.current.scatterShowContours).toBe(true);
-        expect(result.current.scatterContourCount).toBe(40);
+      act(() => {
+        result.current.setScatterXAxis(MockFeatureKeys.FEATURE1);
+        result.current.setScatterYAxis(MockFeatureKeys.FEATURE2);
+        result.current.setScatterShowHistograms(false);
+        result.current.setScatterRangeType(PlotRangeType.CURRENT_FRAME);
+        result.current.setScatterShowContours(true);
+        result.current.setScatterContourCount(40);
+      });
+      serializedData = serializeScatterPlotSlice(result.current);
+      expect(serializedData[UrlParam.SCATTERPLOT_X_AXIS]).toBe(MockFeatureKeys.FEATURE1);
+      expect(serializedData[UrlParam.SCATTERPLOT_Y_AXIS]).toBe(MockFeatureKeys.FEATURE2);
+      expect(serializedData[UrlParam.SCATTERPLOT_SHOW_HISTOGRAMS]).toBe("0");
+      expect(serializedData[UrlParam.SCATTERPLOT_RANGE_MODE]).toBe("frame");
+      expect(serializedData[UrlParam.SCATTERPLOT_SHOW_CONTOUR]).toBe("1");
+      expect(serializedData[UrlParam.SCATTERPLOT_CONTOUR_COUNT]).toBe("40");
+    });
+  });
+
+  describe("loadScatterPlotSliceFromParams", () => {
+    it("loads slice data", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      const params = new URLSearchParams();
+      params.set(UrlParam.SCATTERPLOT_X_AXIS, MockFeatureKeys.FEATURE1);
+      params.set(UrlParam.SCATTERPLOT_Y_AXIS, MockFeatureKeys.FEATURE2);
+      params.set(UrlParam.SCATTERPLOT_SHOW_HISTOGRAMS, "0");
+      params.set(UrlParam.SCATTERPLOT_RANGE_MODE, "frame");
+      params.set(UrlParam.SCATTERPLOT_SHOW_CONTOUR, "1");
+      params.set(UrlParam.SCATTERPLOT_CONTOUR_COUNT, "40");
+
+      act(() => {
+        loadScatterPlotSliceFromParams(result.current, params);
       });
 
-      it("ignores axes that are not in the dataset when dataset is loaded", async () => {
-        const { result } = renderHook(() => useViewerStateStore());
-        const params = new URLSearchParams();
-        params.set(UrlParam.SCATTERPLOT_X_AXIS, "invalid-feature-x");
-        params.set(UrlParam.SCATTERPLOT_Y_AXIS, "invalid-feature-y");
-        await setDatasetAsync(result, MOCK_DATASET);
-        act(() => {
-          loadScatterPlotSliceFromParams(result.current, params);
-        });
-        expect(result.current.scatterXAxis).toBe(null);
-        expect(result.current.scatterYAxis).toBe(null);
-      });
+      expect(result.current.scatterXAxis).toBe(MockFeatureKeys.FEATURE1);
+      expect(result.current.scatterYAxis).toBe(MockFeatureKeys.FEATURE2);
+      expect(result.current.scatterShowHistograms).toBe(false);
+      expect(result.current.scatterRangeType).toBe(PlotRangeType.CURRENT_FRAME);
+      expect(result.current.scatterShowContours).toBe(true);
+      expect(result.current.scatterContourCount).toBe(40);
+    });
 
-      it("ignores missing axes", () => {
-        const { result } = renderHook(() => useViewerStateStore());
-        const initialXAxis = result.current.scatterXAxis;
-        const initialYAxis = result.current.scatterYAxis;
-        act(() => {
-          loadScatterPlotSliceFromParams(result.current, new URLSearchParams());
-        });
-        expect(result.current.scatterXAxis).toBe(initialXAxis);
-        expect(result.current.scatterYAxis).toBe(initialYAxis);
+    it("ignores axes that are not in the dataset when dataset is loaded", async () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      const params = new URLSearchParams();
+      params.set(UrlParam.SCATTERPLOT_X_AXIS, "invalid-feature-x");
+      params.set(UrlParam.SCATTERPLOT_Y_AXIS, "invalid-feature-y");
+      await setDatasetAsync(result, MOCK_DATASET);
+      act(() => {
+        loadScatterPlotSliceFromParams(result.current, params);
       });
+      expect(result.current.scatterXAxis).toBe(null);
+      expect(result.current.scatterYAxis).toBe(null);
+    });
 
-      it("ignores invalid range types", () => {
-        const { result } = renderHook(() => useViewerStateStore());
-        const initialRangeType = result.current.scatterRangeType;
-
-        const params = new URLSearchParams();
-        params.set(UrlParam.SCATTERPLOT_RANGE_MODE, "invalid-range-type");
-        act(() => {
-          loadScatterPlotSliceFromParams(result.current, params);
-        });
-        expect(result.current.scatterRangeType).toBe(initialRangeType);
+    it("ignores missing axes", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      const initialXAxis = result.current.scatterXAxis;
+      const initialYAxis = result.current.scatterYAxis;
+      act(() => {
+        loadScatterPlotSliceFromParams(result.current, new URLSearchParams());
       });
+      expect(result.current.scatterXAxis).toBe(initialXAxis);
+      expect(result.current.scatterYAxis).toBe(initialYAxis);
+    });
 
-      it("replaces the deprecated scatterplot time feature", () => {
-        const { result } = renderHook(() => useViewerStateStore());
-        const params = new URLSearchParams();
-        params.set(UrlParam.SCATTERPLOT_X_AXIS, DEPRECATED_SCATTERPLOT_TIME_KEY);
-        params.set(UrlParam.SCATTERPLOT_Y_AXIS, DEPRECATED_SCATTERPLOT_TIME_KEY);
-        act(() => {
-          loadScatterPlotSliceFromParams(result.current, params);
-        });
-        expect(result.current.scatterXAxis).toBe(TIME_FEATURE_KEY);
-        expect(result.current.scatterYAxis).toBe(TIME_FEATURE_KEY);
+    it("ignores invalid range types", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      const initialRangeType = result.current.scatterRangeType;
+
+      const params = new URLSearchParams();
+      params.set(UrlParam.SCATTERPLOT_RANGE_MODE, "invalid-range-type");
+      act(() => {
+        loadScatterPlotSliceFromParams(result.current, params);
       });
+      expect(result.current.scatterRangeType).toBe(initialRangeType);
+    });
+
+    it("replaces the deprecated scatterplot time feature", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      const params = new URLSearchParams();
+      params.set(UrlParam.SCATTERPLOT_X_AXIS, DEPRECATED_SCATTERPLOT_TIME_KEY);
+      params.set(UrlParam.SCATTERPLOT_Y_AXIS, DEPRECATED_SCATTERPLOT_TIME_KEY);
+      act(() => {
+        loadScatterPlotSliceFromParams(result.current, params);
+      });
+      expect(result.current.scatterXAxis).toBe(TIME_FEATURE_KEY);
+      expect(result.current.scatterYAxis).toBe(TIME_FEATURE_KEY);
     });
   });
 });

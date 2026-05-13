@@ -1,6 +1,6 @@
 import type { StateCreator } from "zustand";
 
-import { type Dataset } from "src/colorizer";
+import type { Dataset } from "src/colorizer";
 import { TIME_FEATURE_KEY } from "src/colorizer/Dataset";
 import { PlotRangeType } from "src/colorizer/types";
 import {
@@ -94,7 +94,7 @@ export const createScatterPlotSlice: StateCreator<DatasetSlice & ScatterPlotSlic
     set({ scatterHistogramBins: bins });
   },
   setScatterRangeType: (rangeType) => set({ scatterRangeType: rangeType }),
-  setScatterShowContours: (showHeatmap) => set({ scatterShowContours: showHeatmap }),
+  setScatterShowContours: (visibility) => set({ scatterShowContours: visibility }),
   setScatterContourCount: (count) => {
     count = Math.round(count);
     if (count <= 0 || !isFinite(count)) {
@@ -205,16 +205,16 @@ export const loadScatterPlotSliceFromParams = (
     slice.setScatterRangeType(scatterRangeType);
   }
 
-  const showHeatmap = decodeBoolean(params.get(UrlParam.SCATTERPLOT_SHOW_CONTOUR));
-  if (showHeatmap !== undefined) {
-    slice.setScatterShowContours(showHeatmap);
+  const scatterShowContours = decodeBoolean(params.get(UrlParam.SCATTERPLOT_SHOW_CONTOUR));
+  if (scatterShowContours !== undefined) {
+    slice.setScatterShowContours(scatterShowContours);
   }
 
-  const scatterContourBinsParam = params.get(UrlParam.SCATTERPLOT_CONTOUR_COUNT);
-  if (scatterContourBinsParam !== null && scatterContourBinsParam !== undefined) {
-    const bins = parseInt(scatterContourBinsParam, 10);
-    if (!isNaN(bins) && bins > 0) {
-      slice.setScatterContourCount(bins);
+  const scatterContourCountParam = params.get(UrlParam.SCATTERPLOT_CONTOUR_COUNT);
+  if (scatterContourCountParam !== null && scatterContourCountParam !== undefined) {
+    const contourCount = parseInt(scatterContourCountParam, 10);
+    if (!isNaN(contourCount) && contourCount > 0) {
+      slice.setScatterContourCount(contourCount);
     }
   }
 };
