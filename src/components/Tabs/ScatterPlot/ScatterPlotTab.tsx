@@ -5,7 +5,7 @@ import styled from "styled-components";
 import { Color } from "three";
 
 import { SwitchIconSVG } from "src/assets";
-import type { Dataset } from "src/colorizer";
+import { type Dataset, PLOT_FEATURE_MATCH_SELECTED } from "src/colorizer";
 import { TIME_FEATURE_KEY } from "src/colorizer/Dataset";
 import { PlotRangeType } from "src/colorizer/types";
 import { hasAnyValueChanged } from "src/colorizer/utils/data_utils";
@@ -85,11 +85,14 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const setFrame = useViewerStateStore((state) => state.setFrame);
   const setXAxis = useViewerStateStore((state) => state.setScatterXAxis);
   const setYAxis = useViewerStateStore((state) => state.setScatterYAxis);
-  const xAxisFeatureKey = useViewerStateStore((state) => state.scatterXAxis);
-  const yAxisFeatureKey = useViewerStateStore((state) => state.scatterYAxis);
   const showHistograms = useViewerStateStore((state) => state.scatterShowHistograms);
   const histogramBins = useViewerStateStore((state) => state.scatterHistogramBins);
   const viewMode = useViewerStateStore((state) => state.viewMode);
+
+  const rawXAxisFeatureKey = useViewerStateStore((state) => state.scatterXAxis);
+  const rawYAxisFeatureKey = useViewerStateStore((state) => state.scatterYAxis);
+  const xAxisFeatureKey = rawXAxisFeatureKey === PLOT_FEATURE_MATCH_SELECTED ? selectedFeatureKey : rawXAxisFeatureKey;
+  const yAxisFeatureKey = rawYAxisFeatureKey === PLOT_FEATURE_MATCH_SELECTED ? selectedFeatureKey : rawYAxisFeatureKey;
 
   const xAxisPlotRange = useRef<[number, number]>([-Infinity, Infinity]);
   const yAxisPlotRange = useRef<[number, number]>([-Infinity, Infinity]);
@@ -590,10 +593,13 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
   const menuItems = useMemo((): SelectItem[] => {
     const featureKeys = dataset ? dataset.featureKeys : [];
-    return featureKeys.map((key: string) => {
+    const items = featureKeys.map((key: string) => {
       return { value: key, label: dataset?.getFeatureNameWithUnits(key) ?? key };
     });
-  }, [dataset]);
+    const selectedFeatureName = selectedFeatureKey ? dataset?.getFeatureNameWithUnits(selectedFeatureKey) : "None";
+    items.unshift({ value: PLOT_FEATURE_MATCH_SELECTED, label: "Current selection - " + selectedFeatureName });
+    return items;
+  }, [dataset, selectedFeatureKey]);
 
   const onResetZoom = useCallback((): void => {
     setIsRendering(true);
@@ -629,7 +635,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
               <SelectionDropdown
                 label={"Y axis"}
                 hideLabel={true}
-                selected={yAxisFeatureKey || ""}
+                selected={rawYAxisFeatureKey || ""}
                 items={menuItems}
                 onChange={setYAxis}
                 selectProps={{
@@ -650,8 +656,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
           <Tooltip title="Swap axes" trigger={["hover", "focus"]}>
             <IconButton
               onClick={() => {
-                const temp = xAxisFeatureKey;
-                setXAxis(yAxisFeatureKey);
+                const temp = rawXAxisFeatureKey;
+                setXAxis(rawYAxisFeatureKey);
                 setYAxis(temp);
               }}
               type="link"
@@ -663,7 +669,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
             <SelectionDropdown
               label={"X axis"}
               hideLabel={true}
-              selected={xAxisFeatureKey || ""}
+              selected={rawXAxisFeatureKey || ""}
               items={menuItems}
               onChange={setXAxis}
               containerStyle={{ flexGrow: 1, flexBasis: "210px", flexShrink: 1 }}

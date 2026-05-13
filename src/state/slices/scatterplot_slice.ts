@@ -1,6 +1,6 @@
 import type { StateCreator } from "zustand";
 
-import type { Dataset } from "src/colorizer";
+import { type Dataset, PLOT_FEATURE_MATCH_SELECTED } from "src/colorizer";
 import { TIME_FEATURE_KEY } from "src/colorizer/Dataset";
 import { PlotRangeType } from "src/colorizer/types";
 import {
@@ -40,7 +40,12 @@ export type ScatterPlotSliceActions = {
 export type ScatterPlotSlice = ScatterPlotSliceState & ScatterPlotSliceActions;
 
 const isAxisKeyValid = (dataset: Dataset | null, featureKey: string | null): boolean => {
-  return dataset === null || featureKey === null || dataset.hasFeatureKey(featureKey);
+  return (
+    dataset === null ||
+    featureKey === null ||
+    dataset.hasFeatureKey(featureKey) ||
+    featureKey === PLOT_FEATURE_MATCH_SELECTED
+  );
 };
 
 export const createScatterPlotSlice: StateCreator<DatasetSlice & ScatterPlotSlice, [], [], ScatterPlotSlice> = (

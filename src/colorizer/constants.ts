@@ -17,6 +17,8 @@ export const CENTROID_COLOR_DEFAULT = "#aaaaaa";
 
 export const VECTOR_KEY_MOTION_DELTA = "_motion_";
 
+export const PLOT_FEATURE_MATCH_SELECTED = "_selected_";
+
 export const INITIAL_TRACK_PATH_BUFFER_SIZE = 6; // Must be divisible by 6
 
 export const getDefaultVectorConfig = (): VectorConfig => ({
