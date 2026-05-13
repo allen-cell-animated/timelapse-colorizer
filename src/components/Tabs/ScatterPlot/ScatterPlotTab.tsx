@@ -375,8 +375,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       markers: markerConfig,
       overrideColor: markerBaseColor,
       // disable hover for all points other than the track when one is selected
-      opacityMultiplier: showContours ? 0.35 : 1.0,
       allowHover: tracks.size === 0 || rangeType !== PlotRangeType.ALL_TIME,
+      opacityMultiplier: showContours ? 0.35 : 1.0,
     });
 
     const shapes: Partial<Plotly.Shape>[] = [];
