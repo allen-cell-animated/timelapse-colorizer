@@ -77,7 +77,6 @@ export enum UrlParam {
   SCATTERPLOT_BINS = "scatter-bins",
   SCATTERPLOT_RANGE_MODE = "scatter-range",
   SCATTERPLOT_SHOW_CONTOUR = "scatter-cont",
-  SCATTERPLOT_CONTOUR_COLOR_MAP = "scatter-cont-color",
   SCATTERPLOT_CONTOUR_COUNT = "scatter-cont-num",
   SCATTERPLOT_SHOW_HISTOGRAMS = "scatter-hist",
   SCATTERPLOT_SHOW_AVERAGE_LINE = "sc-avg",

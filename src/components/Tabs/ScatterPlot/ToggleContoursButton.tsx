@@ -21,7 +21,7 @@ export default function ToggleContoursButton(props: ToggleContoursButtonProps): 
   const setContourCount = useViewerStateStore((state) => state.setScatterContourCount);
 
   const configMenuContents = (
-    <SettingsContainer gapPx={6} labelWidth="90px" style={{ width: "320px" }}>
+    <SettingsContainer gapPx={6} labelWidth="90px" style={{ width: "320px", marginBottom: "8px" }}>
       <SettingsItem label="Max contours" htmlFor={ToggleContoursButtonHtmlIds.contourCountSlider}>
         <LabeledSlider
           id={ToggleContoursButtonHtmlIds.contourCountSlider}
@@ -40,7 +40,7 @@ export default function ToggleContoursButton(props: ToggleContoursButtonProps): 
 
   return (
     <ToggleButtonWithConfig
-      name={"contours"}
+      name="contours"
       visible={showContours}
       setVisible={setShowContours}
       configMenuContents={configMenuContents}
