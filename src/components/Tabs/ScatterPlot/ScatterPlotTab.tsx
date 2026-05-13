@@ -96,7 +96,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const histogramBins = useViewerStateStore((state) => state.scatterHistogramBins);
   const showContours = useViewerStateStore((state) => state.scatterShowContours);
   const _rawContourCount = useViewerStateStore((state) => state.scatterContourCount);
-  const contourColorRamp = useViewerStateStore((state) => state.scatterContourColorRamp);
   const contourCount = useDebounce(_rawContourCount, 100);
   const viewMode = useViewerStateStore((state) => state.viewMode);
 
@@ -336,7 +335,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     histogramBins,
     showContours,
     contourCount,
-    contourColorRamp,
     rangeType,
     tracks,
     isVisible,
@@ -398,13 +396,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     const shapes: Partial<Plotly.Shape>[] = [];
 
     if (showContours) {
-      // const subsampledRamp = subsampleColorRamp(contourColorRamp, 32);
-      // const colorScale = subsampledRamp.map((color, i) => {
-      //   const blendedColor = new Color(color).lerp(new Color(theme.color.layout.background), 0.2);
-      //   const rgbaColor = `rgba(${blendedColor.r * 255}, ${blendedColor.g * 255}, ${blendedColor.b * 255}, 255.0)`;
-      //   console.log(`color ${i}:`, rgbaColor);
-      //   return [i / 31, rgbaColor] as [number, string];
-      // });
       const colorScale = [
         [0, "rgba(255, 255, 255, 255)"],
         [1, "rgba(80, 80, 80, 255)"],
