@@ -23,6 +23,7 @@ export type ToggleButtonWithConfigProps = {
   hiddenIcon?: ReactNode;
   settingsLinkText?: string;
   popupContainer?: HTMLElement;
+  outlined?: boolean;
 };
 
 const defaultProps: Partial<ToggleButtonWithConfigProps> = {
@@ -30,6 +31,7 @@ const defaultProps: Partial<ToggleButtonWithConfigProps> = {
   configMenuPlacement: "horizontal",
   visibleIcon: <ImagesIconSVG />,
   hiddenIcon: <ImagesSlashIconSVG />,
+  outlined: false,
 };
 
 /**
@@ -108,6 +110,8 @@ export function ToggleButtonWithConfig(inputProps: ToggleButtonWithConfigProps):
   );
 
   const isVisible = props.visible && !props.disabled;
+  const hiddenStyle = props.outlined ? "outlined" : "link";
+  const buttonType = isVisible ? "primary" : hiddenStyle;
 
   return (
     <div ref={popupContainerRef}>
@@ -126,7 +130,7 @@ export function ToggleButtonWithConfig(inputProps: ToggleButtonWithConfigProps):
           tooltipRef={tooltipRef}
           getPopupContainer={() => props.popupContainer || popupContainerRef.current || document.body}
         >
-          <IconButton type={isVisible ? "primary" : "link"} onClick={onClick} disabled={props.disabled}>
+          <IconButton type={buttonType} onClick={onClick} disabled={props.disabled}>
             {props.visible ? props.visibleIcon : props.hiddenIcon}
             <VisuallyHidden>{tooltipTitle}</VisuallyHidden>
           </IconButton>

@@ -43,6 +43,14 @@ export default function ScatterplotToolbar(props: ScatterplotToolbarProps): Reac
         ></SelectionDropdown>
       </div>
 
+      <ToggleHistogramButton popupContainer={props.popupContainer} />
+
+      <ToggleContoursButton popupContainer={props.popupContainer} />
+
+      <ToggleAverageLineButton popupContainer={props.popupContainer} />
+
+      <StyledVerticalRule style={{ height: 24, margin: "0 4px" }} />
+
       <Tooltip title={"Reset zoom"} placement="top" trigger={["hover", "focus"]}>
         <IconButton onClick={props.onClickResetZoom} type="link">
           <ResetViewIconSVG />
@@ -63,14 +71,6 @@ export default function ScatterplotToolbar(props: ScatterplotToolbarProps): Reac
           <VisuallyHidden>Clear tracks</VisuallyHidden>
         </IconButton>
       </Tooltip>
-
-      <StyledVerticalRule style={{ height: 24, margin: "0 2px" }} />
-
-      <ToggleHistogramButton popupContainer={props.popupContainer} />
-
-      <ToggleContoursButton popupContainer={props.popupContainer} />
-
-      <ToggleAverageLineButton popupContainer={props.popupContainer} />
     </FlexRowAlignCenter>
   );
 }
