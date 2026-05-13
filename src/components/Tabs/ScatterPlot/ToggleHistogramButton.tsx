@@ -58,6 +58,7 @@ export default function ToggleHistogramButton(props: ToggleHistogramButtonProps)
       configMenuContents={configMenuContents}
       configMenuPlacement="vertical"
       popupContainer={props.popupContainer}
+      outlined={true}
     />
   );
 }
