@@ -1,8 +1,7 @@
-import { InfoCircleOutlined } from "@ant-design/icons";
 import React, { type ReactElement, useContext, useRef } from "react";
 
+import InlineHint from "src/components/Display/InlineHint";
 import ShortcutKeyText from "src/components/Display/ShortcutKeyText";
-import { TooltipWithSubtitle } from "src/components/Tooltips/TooltipWithSubtitle";
 import type { ShortcutKeyInfo } from "src/constants";
 import { AppThemeContext } from "src/styles/AppStyle";
 import { FlexColumn } from "src/styles/utils";
@@ -12,12 +11,11 @@ type ShortcutTooltipHintProps = {
 };
 
 /**
- * A shortcut hint icon that displays a tooltip with shortcut key info when
+ * An inline shortcut hint that displays a tooltip with shortcut key info when
  * hovered or focused.
  */
 export default function ShortcutTooltipHint(props: ShortcutTooltipHintProps): ReactElement {
   const theme = useContext(AppThemeContext);
-  const popupContainerRef = useRef<HTMLDivElement>(null);
 
   const tooltipKeycharacterStyle: React.CSSProperties = {
     backgroundColor: theme.color.text.shortcutKey.dark.background,
@@ -33,18 +31,5 @@ export default function ShortcutTooltipHint(props: ShortcutTooltipHintProps): Re
     </FlexColumn>
   );
 
-  return (
-    <div ref={popupContainerRef}>
-      <TooltipWithSubtitle
-        trigger={["focus", "hover"]}
-        title={null}
-        subtitle={tooltipContents}
-        getPopupContainer={() => {
-          return popupContainerRef.current ?? document.body;
-        }}
-      >
-        <InfoCircleOutlined tabIndex={0}></InfoCircleOutlined>
-      </TooltipWithSubtitle>
-    </div>
-  );
+  return <InlineHint subtitle={tooltipContents} />;
 }

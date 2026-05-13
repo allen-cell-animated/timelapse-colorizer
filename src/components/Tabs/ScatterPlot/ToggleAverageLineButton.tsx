@@ -2,6 +2,7 @@ import React, { type ReactElement } from "react";
 
 import { LinePlotIconSVG, LinePlotSlashIconSVG } from "src/assets";
 import { ToggleButtonWithConfig } from "src/components/Buttons/ToggleButtonWithConfig";
+import InlineHint from "src/components/Display/InlineHint";
 import LabeledSlider from "src/components/Inputs/LabeledSlider";
 import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
 import { useViewerStateStore } from "src/state/ViewerState";
@@ -23,20 +24,33 @@ export default function ToggleAverageLineButton(props: ToggleAverageLineButtonPr
   const setAverageLineWidth = useViewerStateStore((state) => state.setScatterAverageLineWidth);
   const setAverageLineWindow = useViewerStateStore((state) => state.setScatterAverageLineWindow);
 
+  const pointsToAverageHint = (
+    <InlineHint subtitle="Number of points to average over, as a rolling window centered on the current point." />
+  );
+
   const configMenu = (
-    <SettingsContainer labelWidth="80px" style={{ width: "300px", marginBottom: "6px" }} gapPx={10}>
-      <SettingsItem label="Window size" htmlFor={ToggleAverageLineButtonHtmlIds.averageLineWindowSlider}>
-        <LabeledSlider
-          id={ToggleAverageLineButtonHtmlIds.averageLineWindowSlider}
-          type="value"
-          value={averageLineWindow}
-          onChange={setAverageLineWindow}
-          minInputBound={1}
-          maxInputBound={101}
-          minSliderBound={1}
-          maxSliderBound={31}
-          step={2}
-        />
+    <SettingsContainer labelWidth="120px" style={{ width: "300px", marginBottom: "6px" }} gapPx={10}>
+      <SettingsItem
+        label={
+          <span>
+            Points to average over <span>{pointsToAverageHint}</span>
+          </span>
+        }
+        htmlFor={ToggleAverageLineButtonHtmlIds.averageLineWindowSlider}
+      >
+        <div style={{ marginBottom: "auto" }}>
+          <LabeledSlider
+            id={ToggleAverageLineButtonHtmlIds.averageLineWindowSlider}
+            type="value"
+            value={averageLineWindow}
+            onChange={setAverageLineWindow}
+            minInputBound={1}
+            maxInputBound={101}
+            minSliderBound={1}
+            maxSliderBound={31}
+            step={2}
+          />
+        </div>
       </SettingsItem>
       <SettingsItem label="Line width" htmlFor={ToggleAverageLineButtonHtmlIds.averageLineWidthSlider}>
         <LabeledSlider
@@ -64,6 +78,7 @@ export default function ToggleAverageLineButton(props: ToggleAverageLineButtonPr
       popupContainer={props.popupContainer}
       visibleIcon={<LinePlotIconSVG />}
       hiddenIcon={<LinePlotSlashIconSVG />}
+      outlined={true}
     ></ToggleButtonWithConfig>
   );
 }
