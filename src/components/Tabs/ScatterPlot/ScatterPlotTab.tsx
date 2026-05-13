@@ -51,13 +51,6 @@ type ScatterPlotTabProps = {
   containerRef?: HTMLElement;
 };
 
-const ScatterPlotContainer = styled.div`
-  & canvas {
-    // Remove Plotly border
-    border: 0px solid transparent !important;
-  }
-`;
-
 const AxisDropdownContainer = styled.div`
   .react-select__single-value {
     text-align: center;
@@ -606,7 +599,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   }, [clearTracks]);
 
   return (
-    <FlexColumn style={{ margin: "0 auto", alignItems: "center" }}>
+    <FlexColumn style={{ alignItems: "flex-start" }}>
       <ScatterplotToolbar
         popupContainer={props.containerRef}
         onClickResetZoom={onResetZoom}
@@ -615,7 +608,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       />
 
       <LoadingSpinner loading={isRendering || isDebouncePending} style={{ marginTop: "10px" }}>
-        <FlexRowAlignCenter style={{ width: "100%", justifyContent: "center", alignItems: "center" }}>
+        <FlexRowAlignCenter style={{ marginLeft: 15 }}>
           {/* Y axis label */}
           <div style={{ width: 28, height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <AxisDropdownContainer
@@ -640,13 +633,13 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
             </AxisDropdownContainer>
           </div>
           {/* Main plot */}
-          <ScatterPlotContainer
+          <div
             style={{ width: "calc(min(100%, 680px) - 30px)", aspectRatio: "7 / 6", padding: "5px" }}
             ref={plotDivRef}
-          ></ScatterPlotContainer>
+          ></div>
         </FlexRowAlignCenter>
         {/* X axis label */}
-        <FlexRow style={{ justifyContent: "center", width: "calc(min(100%, 680px) - 30px)", margin: "0 auto" }}>
+        <FlexRow style={{ width: "calc(min(100%, 680px) - 30px)", paddingLeft: "30px", justifyContent: "center" }}>
           <Tooltip title="Swap axes" trigger={["hover", "focus"]}>
             <IconButton
               onClick={() => {
