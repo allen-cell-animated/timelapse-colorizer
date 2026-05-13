@@ -35,6 +35,7 @@ export type SelectionDropdownProps = {
    */
   items: SelectItem[] | string[];
   controlTooltipPlacement?: "top" | "bottom" | "left" | "right";
+  tooltipPopupContainer?: HTMLElement;
   disabled?: boolean;
   isSearchable?: boolean;
   isCreatable?: boolean;
@@ -206,7 +207,7 @@ export default function SelectionDropdown(inputProps: React.PropsWithChildren<Se
           trigger={["hover", "focus"]}
           placement={props.controlTooltipPlacement}
           open={props.showSelectedItemTooltip ? undefined : false}
-          getPopupContainer={() => containerRef.current ?? document.body}
+          getPopupContainer={() => props.tooltipPopupContainer ?? containerRef.current ?? document.body}
         >
           <div>
             <components.Control {...controlProps}>

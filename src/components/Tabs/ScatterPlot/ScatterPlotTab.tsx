@@ -678,6 +678,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
                   menuPortalTarget: props.containerRef ?? document.body,
                 }}
                 controlTooltipPlacement="left"
+                tooltipPopupContainer={props.containerRef}
               />
             </AxisDropdownContainer>
           </div>
