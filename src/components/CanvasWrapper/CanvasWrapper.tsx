@@ -1,19 +1,8 @@
-import { HomeOutlined, ZoomInOutlined, ZoomOutOutlined } from "@ant-design/icons";
-import { Tooltip } from "antd";
-import React, {
-  type ReactElement,
-  type ReactNode,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { type ReactElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import { Vector2 } from "three";
 
-import { NoImageSVG, TagIconSVG, TagSlashIconSVG } from "src/assets";
+import { NoImageSVG } from "src/assets";
 import type { Dataset } from "src/colorizer";
 import { type LabelData, LabelType } from "src/colorizer/AnnotationData";
 import {
@@ -21,27 +10,20 @@ import {
   type ChannelRangePreset,
   LoadTroubleshooting,
   type PixelIdInfo,
-  TabType,
-  ViewMode,
 } from "src/colorizer/types";
 import type CanvasOverlay from "src/colorizer/viewport/CanvasOverlay";
 import type { AlertBannerProps } from "src/components/Banner";
-import IconButton from "src/components/Buttons/IconButton";
-import TooltipButtonStyleLink from "src/components/Buttons/TooltipButtonStyleLink";
+import CanvasToolbar from "src/components/CanvasWrapper/CanvasToolbar";
 import ShortcutKeyList from "src/components/Display/ShortcutKeyList";
 import LoadingSpinner from "src/components/LoadingSpinner";
 import AnnotationInputPopover from "src/components/Tabs/Annotation/AnnotationInputPopover";
-import { TooltipWithSubtitle } from "src/components/Tooltips/TooltipWithSubtitle";
 import { CANVAS_ASPECT_RATIO, SHORTCUT_KEYS } from "src/constants";
 import type { AnnotationState } from "src/hooks";
 import { renderCanvasStateParamsSelector } from "src/state";
 import { useViewerStateStore } from "src/state/ViewerState";
 import { AppThemeContext } from "src/styles/AppStyle";
-import { FlexColumn, FlexColumnAlignCenter, VisuallyHidden } from "src/styles/utils";
+import { FlexColumn, FlexColumnAlignCenter } from "src/styles/utils";
 import { areAnyHotkeysPressed } from "src/utils/user_input";
-
-import BackdropToggleButton from "./BackdropToggleButton";
-import ChannelToggleButton from "./ChannelToggleButton";
 
 /* Minimum distance in either X or Y that mouse should move
  * before mouse event is considered a drag
@@ -62,16 +44,6 @@ const CanvasContainer = styled(FlexColumnAlignCenter)<{ $annotationModeEnabled: 
   border: 1px solid var(--color-borders);
 
   transition: box-shadow 0.1s ease-in, outline 0.1s ease-in;
-`;
-
-const CanvasControlsContainer = styled(FlexColumn)`
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  padding: 4px;
-  border-radius: 4px;
-  background-color: var(--color-viewport-overlay-background);
-  border: 1px solid var(--color-viewport-overlay-outline);
 `;
 
 const MissingFileIconContainer = styled(FlexColumnAlignCenter)`
@@ -146,7 +118,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const updateChannelSettings = useViewerStateStore((state) => state.updateChannelSettings);
   const setGetChannelDataRangeCallback = useViewerStateStore((state) => state.setGetChannelDataRangeCallback);
   const setApplyChannelRangePresetCallback = useViewerStateStore((state) => state.setApplyChannelRangePresetCallback);
-  const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
   const clearTracks = useViewerStateStore((state) => state.clearTracks);
   const setTracks = useViewerStateStore((state) => state.setTracks);
   const addTracks = useViewerStateStore((state) => state.addTracks);
@@ -154,7 +125,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const showScaleBar = useViewerStateStore((state) => state.showScaleBar);
   const showTimestamp = useViewerStateStore((state) => state.showTimestamp);
   const frameLoadResult = useViewerStateStore((state) => state.frameLoadResult);
-  const viewMode = useViewerStateStore((state) => state.viewMode);
 
   const isAnnotationModeEnabled = props.annotationState.isAnnotationModeEnabled;
 
@@ -190,8 +160,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const lastMousePositionPx = useRef(new Vector2(0, 0));
 
   const isMissingFile = frameLoadResult !== null && (frameLoadResult.frameError || frameLoadResult.backdropError);
-
-  const isDataset3d = viewMode === ViewMode.VIEW_3D;
 
   // CANVAS PROPERTIES /////////////////////////////////////////////////
 
@@ -586,24 +554,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   // RENDERING /////////////////////////////////////////////////
 
-  const onAnnotationLinkClicked = (): void => {
-    setOpenTab(TabType.ANNOTATION);
-  };
-
   const labels = props.annotationState.data.getLabels();
-  const annotationTooltipContents: ReactNode[] = [];
-  annotationTooltipContents.push(
-    <span key="annotation-count">
-      {labels.length > 0 ? (labels.length === 1 ? "1 label" : `${labels.length} labels`) : "(No labels)"}
-    </span>
-  );
-  annotationTooltipContents.push(
-    <TooltipButtonStyleLink key="annotation-link" onClick={onAnnotationLinkClicked}>
-      <span>
-        View and edit annotations <VisuallyHidden>(opens annotations tab)</VisuallyHidden>
-      </span>
-    </TooltipButtonStyleLink>
-  );
   const labelData: LabelData | undefined = labels[props.annotationState.currentLabelIdx ?? 0];
 
   const annotationShortcutKeys = [];
@@ -641,62 +592,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
           <b>Missing image data</b>
         </p>
       </MissingFileIconContainer>
-      <CanvasControlsContainer $gap={4} style={{ zIndex: 101 }}>
-        <Tooltip title={"Reset view"} placement="right" trigger={["hover", "focus"]}>
-          <IconButton
-            onClick={() => {
-              canv.resetView();
-            }}
-            type="link"
-          >
-            <HomeOutlined />
-            <VisuallyHidden>Reset view</VisuallyHidden>
-          </IconButton>
-        </Tooltip>
-        <TooltipWithSubtitle title={"Zoom in"} subtitle="Ctrl + Scroll" placement="right" trigger={["hover", "focus"]}>
-          <IconButton
-            type="link"
-            onClick={() => {
-              canv.handleZoomIn();
-            }}
-          >
-            <ZoomInOutlined />
-            <VisuallyHidden>Zoom in</VisuallyHidden>
-          </IconButton>
-        </TooltipWithSubtitle>
-        <TooltipWithSubtitle title={"Zoom out"} subtitle="Ctrl + Scroll" placement="right" trigger={["hover", "focus"]}>
-          <IconButton
-            type="link"
-            onClick={() => {
-              canv.handleZoomOut();
-            }}
-          >
-            <ZoomOutOutlined />
-            <VisuallyHidden>Zoom out</VisuallyHidden>
-          </IconButton>
-        </TooltipWithSubtitle>
-
-        {/* 2D backdrop or 3D channels toggle */}
-        {isDataset3d ? <ChannelToggleButton /> : <BackdropToggleButton />}
-
-        {/* Annotation mode toggle */}
-        <TooltipWithSubtitle
-          title={props.annotationState.visible ? "Hide annotations" : "Show annotations"}
-          subtitleList={annotationTooltipContents}
-          placement="right"
-          trigger={["hover", "focus"]}
-        >
-          <IconButton
-            type={props.annotationState.visible ? "primary" : "link"}
-            onClick={() => {
-              props.annotationState.setVisibility(!props.annotationState.visible);
-            }}
-          >
-            {props.annotationState.visible ? <TagIconSVG /> : <TagSlashIconSVG />}
-            <VisuallyHidden>{props.annotationState.visible ? "Hide annotations" : "Show annotations"}</VisuallyHidden>
-          </IconButton>
-        </TooltipWithSubtitle>
-      </CanvasControlsContainer>
+      <CanvasToolbar canv={canv} annotationState={props.annotationState} style={{ zIndex: 101 }}></CanvasToolbar>
       <AnnotationInputPopover
         annotationState={props.annotationState}
         anchorPositionPx={lastClickPosition}

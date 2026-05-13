@@ -28,6 +28,7 @@ const palette = {
   gray40: "#737373",
   gray50: "#575859",
   gray60: "#323233",
+  grayTransparent15: "rgba(0, 0, 0, 0.2)",
   success: "#2fc022",
   error: "#f92d20",
   link: "#0094FF",
@@ -79,9 +80,10 @@ const theme = {
     layout: {
       background: palette.gray0,
       backgroundAlt: palette.gray7,
+      backgroundMed: palette.gray15,
       backgroundAltTransparent: "rgba(240, 240, 240, 0.5)",
       tabBackground: palette.gray5,
-      dividers: palette.gray15,
+      dividers: palette.grayTransparent15,
       borders: palette.gray20,
       modalOverlay: "rgba(0, 0, 0, 0.7)",
     },
@@ -200,6 +202,7 @@ const CssContainer = styled.div`
 
   /* Layout */
   --color-background: ${theme.color.layout.background};
+  --color-background-med: ${theme.color.layout.backgroundMed};
   --color-background-alt: ${theme.color.layout.backgroundAlt};
   --color-background-alt-transparent: ${theme.color.layout.backgroundAltTransparent};
   --color-dividers: ${theme.color.layout.dividers};

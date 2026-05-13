@@ -2,6 +2,7 @@ import { type Pool, pool } from "workerpool";
 
 import type Dataset from "src/colorizer/Dataset";
 import type { FeatureArrayType, FeatureDataType } from "src/colorizer/types";
+import type { CsvDataColumn } from "src/colorizer/utils/csv_utils";
 import type { DataTextureInfo } from "src/colorizer/utils/texture_utils";
 
 // Vite import directive for worker files! See https://vitejs.dev/guide/features.html#import-with-query-suffixes.
@@ -83,6 +84,19 @@ export default class SharedWorkerPool {
       return undefined;
     }
     return await this.workerPool.exec("getMotionDeltas", [trackIds, times, centroids, timeIntervals]);
+  }
+
+  /**
+   * Generates a CSV string from the provided columns of data, handling
+   * formatting and character escaping.
+   * @param columns An array of `CsvDataColumn` objects, each containing a
+   * column name and an array of data values. All columns must have the same
+   * number of rows.
+   * @param delimiter The delimiter to use in the CSV string. Defaults to ",".
+   * @returns A formatted CSV string.
+   */
+  async getCsvString(columns: CsvDataColumn[], delimiter: string = ","): Promise<string> {
+    return await this.workerPool.exec("getCsvString", [columns, delimiter]);
   }
 
   async terminate(): Promise<void> {

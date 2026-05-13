@@ -111,6 +111,7 @@ export const MOCK_DATASET_MANIFEST: AnyManifestFile = {
   times: "times.json",
   tracks: "tracks.json",
   segIds: "seg_ids.json",
+  centroids: "centroids.json",
 };
 
 /**
@@ -136,6 +137,9 @@ export const MOCK_DATASET_FEATURE_1 = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0
 export const MOCK_DATASET_FEATURE_2 = [0, 10, 20, 30, 40, 50, 60, 70, 80];
 export const MOCK_DATASET_FEATURE_3 = [0, 0, 0, 1, 1, 1, 2, 2, 2];
 export const MOCK_DATASET_FEATURE_4 = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];
+export const MOCK_DATASET_CENTROIDS = [
+  10, 20, 30, 11, 21, 31, 12, 22, 32, 13, 23, 33, 14, 24, 34, 15, 25, 35, 16, 26, 36, 17, 27, 37, 18, 28, 38,
+];
 
 export const makeMockDatasetArrayLoader = (basePath: string): Record<string, MockArraySource<FeatureDataType>> => ({
   [basePath + "times.json"]: new MockArraySource(FeatureDataType.U32, new Uint32Array(MOCK_DATASET_TIMES)),
@@ -146,6 +150,7 @@ export const makeMockDatasetArrayLoader = (basePath: string): Record<string, Moc
   [basePath + "feature2.json"]: new MockArraySource(FeatureDataType.F32, new Float32Array(MOCK_DATASET_FEATURE_2)),
   [basePath + "feature3.json"]: new MockArraySource(FeatureDataType.F32, new Float32Array(MOCK_DATASET_FEATURE_3)),
   [basePath + "feature4.json"]: new MockArraySource(FeatureDataType.F32, new Float32Array(MOCK_DATASET_FEATURE_4)),
+  [basePath + "centroids.json"]: new MockArraySource(FeatureDataType.U16, new Uint16Array(MOCK_DATASET_CENTROIDS)),
 });
 
 export const MOCK_DATASET_ARRAY_LOADER_DEFAULT_SOURCE = makeMockDatasetArrayLoader(DEFAULT_DATASET_DIR);

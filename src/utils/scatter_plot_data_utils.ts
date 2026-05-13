@@ -322,3 +322,24 @@ export function getScatterplotDataAsCsv(
   );
   return csvString;
 }
+
+/**
+ * Returns the Plotly configuration for histogram bin sizing for a given
+ * feature. Returns undefined if the feature is missing or categorical.
+ */
+export function getHistogramBins(dataset: Dataset, featureKey: string, numBins: number): PlotData["xbins"] | undefined {
+  const featureData = dataset.getFeatureData(featureKey);
+  if (!featureData) {
+    return undefined;
+  }
+  const min = featureData.min ?? 0;
+  const max = featureData.max ?? 0;
+  if (dataset.isFeatureCategorical(featureKey) || numBins <= 0 || min > max) {
+    return undefined;
+  }
+  return {
+    start: min,
+    end: max,
+    size: (max - min) / numBins,
+  };
+}

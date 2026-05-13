@@ -107,7 +107,6 @@ function Viewer(): ReactElement {
   // required for this component.
   // Get viewer state:
   const collection = useViewerStateStore((state) => state.collection);
-  const currentFrame = useViewerStateStore((state) => state.currentFrame);
   const dataset = useViewerStateStore((state) => state.dataset);
   const datasetKey = useViewerStateStore((state) => state.datasetKey);
   const featureKey = useViewerStateStore((state) => state.featureKey);
@@ -369,7 +368,7 @@ function Viewer(): ReactElement {
       console.log("Dataset metadata:", newDataset.metadata);
       console.log("Num Items:" + newDataset?.numObjects);
     },
-    [dataset, featureKey, canv, currentFrame, featureThresholds]
+    [dataset, featureKey, canv, featureThresholds]
   );
 
   // INITIAL SETUP  ////////////////////////////////////////////////////////////////
@@ -621,7 +620,6 @@ function Viewer(): ReactElement {
               setFrame={setFrame}
               canvas={canv}
               onClick={onClickExport}
-              currentFrame={currentFrame}
               defaultImagePrefix={datasetKey + "-" + featureKey}
               disabled={dataset === null}
               setIsRecording={setIsRecording}
@@ -645,6 +643,7 @@ function Viewer(): ReactElement {
                 onSelectFeature={reportFeatureSelected}
                 disabled={disableUi}
                 annotationState={annotationState}
+                notificationApi={notificationApi}
               />
               <ColorizeControls disabled={disableUi} />
             </FlexColumn>

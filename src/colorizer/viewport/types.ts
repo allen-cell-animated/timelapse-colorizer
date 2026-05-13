@@ -5,6 +5,7 @@ import type ColorRamp from "src/colorizer/ColorRamp";
 import type Dataset from "src/colorizer/Dataset";
 import type Track from "src/colorizer/Track";
 import type {
+  CentroidColorMode,
   ChannelSetting,
   DrawMode,
   DrawSettings,
@@ -26,7 +27,7 @@ export type Canvas2DScaleInfo = {
   frameSizeInCanvasCoordinates: Vector2;
   /**
    * Transforms from [0,1] space of the canvas to the [0,1] space of the frame,
-   * account for zoom.
+   * accounting for zoom.
    *
    * e.g. If frame has the same aspect ratio as the canvas and zoom is set to
    * 2x, then, assuming that the [0, 0] position of the frame and the canvas are
@@ -62,8 +63,6 @@ export type RenderCanvasStateParams = {
   viewMode: ViewMode;
   pendingFrame: number;
   featureKey: string | null;
-  /** @deprecated will be removed in a future update */
-  track: Track | null;
   tracks: Map<number, Track>;
   trackColors: Map<number, Color>;
   showTrackPath: boolean;
@@ -74,9 +73,14 @@ export type RenderCanvasStateParams = {
   categoricalPaletteRamp: ColorRamp;
   outlineColor: Color;
   outlineColorMode: SelectionOutlineColorMode;
+  centroidRadiusPx: number;
+  centroidColorMode: CentroidColorMode;
+  centroidColor: Color;
   edgeColor: Color;
   edgeColorAlpha: number;
   edgeMode: DrawMode;
+  showSegmentations: boolean;
+  showCentroids: boolean;
   outlinePaletteRamp: ColorRamp;
   trackPathColor: Color;
   trackPathWidthPx: number;
@@ -86,6 +90,7 @@ export type RenderCanvasStateParams = {
   showAllTrackPathPastSteps: boolean;
   showAllTrackPathFutureSteps: boolean;
   persistTrackPathWhenOutOfRange: boolean;
+  trackPathOverlayOpacity: number;
   outlierDrawSettings: DrawSettings;
   outOfRangeDrawSettings: DrawSettings;
   inRangeLUT: Uint8Array;

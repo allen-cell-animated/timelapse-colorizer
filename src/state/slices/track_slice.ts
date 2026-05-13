@@ -17,8 +17,6 @@ export type TrackSliceState = {
   trackToColorId: Map<number, number>;
 
   /** Derived values */
-  /** @deprecated */
-  track: Track | null;
   trackColors: Map<number, Color>;
   /**
    * LUT that maps from an object ID to whether it is selected (>=1) or not (0).
@@ -62,11 +60,6 @@ export type TrackSliceActions = {
 
 export type TrackSlice = TrackSliceState & TrackSliceActions;
 
-function getDefaultTrack(tracks: Map<number, Track>): Track | null {
-  const trackValues = Array.from(tracks.values());
-  return trackValues[trackValues.length - 1] ?? null;
-}
-
 /**
  * Gets the next color ID to assign. Chooses the next color after the color of
  * the track that was last selected (e.g. the last track added to the Map).
@@ -97,7 +90,6 @@ function getTrackColors(trackToColorId: Map<number, number>, palette: ColorRamp)
 export const createTrackSlice: StateCreator<TrackSlice & ConfigSlice, [], [], TrackSlice> = (set, get) => ({
   tracks: new Map<number, Track>(),
   trackToColorId: new Map<number, number>(),
-  track: null,
   trackColors: new Map<number, Color>(),
   isSelectedLut: new Uint8Array(0),
 
@@ -125,7 +117,6 @@ export const createTrackSlice: StateCreator<TrackSlice & ConfigSlice, [], [], Tr
       }
       return {
         tracks: newTracks,
-        track: getDefaultTrack(newTracks),
         isSelectedLut: newSelectedLut,
         trackToColorId: newTrackToColorId,
         trackColors: getTrackColors(newTrackToColorId, state.outlinePaletteRamp),
@@ -153,7 +144,6 @@ export const createTrackSlice: StateCreator<TrackSlice & ConfigSlice, [], [], Tr
       }
       return {
         tracks: newTracks,
-        track: getDefaultTrack(newTracks),
         isSelectedLut: newSelectedLut,
         trackToColorId: newTrackToColorId,
         trackColors: getTrackColors(newTrackToColorId, state.outlinePaletteRamp),
@@ -173,7 +163,6 @@ export const createTrackSlice: StateCreator<TrackSlice & ConfigSlice, [], [], Tr
     const newSelectedLut = newLut ?? new Uint8Array(get().isSelectedLut.length);
     set({
       tracks: new Map<number, Track>(),
-      track: null,
       isSelectedLut: newSelectedLut,
       trackToColorId: new Map<number, number>(),
       trackColors: new Map<number, Color>(),
@@ -209,7 +198,6 @@ export const createTrackSlice: StateCreator<TrackSlice & ConfigSlice, [], [], Tr
     }
     set((state) => ({
       tracks: newTracks,
-      track: getDefaultTrack(newTracks),
       isSelectedLut: newSelectedLut,
       trackToColorId: newTrackToColorId,
       trackColors: getTrackColors(newTrackToColorId, state.outlinePaletteRamp),

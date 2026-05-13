@@ -3,6 +3,8 @@ import { clamp } from "three/src/math/MathUtils";
 import type { StateCreator } from "zustand";
 
 import {
+  CENTROID_COLOR_DEFAULT,
+  CentroidColorMode,
   ColorRamp,
   ColorRampType,
   DEFAULT_DIVERGING_COLOR_RAMP_KEY,
@@ -32,6 +34,7 @@ import {
   encodeMaybeColor,
   encodeMaybeColorWithAlpha,
   encodeMaybeNumber,
+  parseCentroidColorMode,
   parseDrawMode,
   parseDrawSettings,
   parseTrackOutlineColorMode,
@@ -58,6 +61,15 @@ const OUTLIER_DRAW_SETTINGS_DEFAULT: DrawSettings = {
 };
 
 export type ConfigSliceState = {
+  // View mode
+  showSegmentations: boolean;
+
+  // Centroids
+  showCentroids: boolean;
+  centroidRadiusPx: number;
+  centroidColorMode: CentroidColorMode;
+  centroidColor: Color;
+
   // Track path settings
   showTrackPath: boolean;
   trackPathColor: Color;
@@ -72,6 +84,8 @@ export type ConfigSliceState = {
   trackPathPastSteps: number;
   showAllTrackPathFutureSteps: boolean;
   showAllTrackPathPastSteps: boolean;
+  /** Opacity of the track path overlay, as an integer percentage in the `[0, 100]` range */
+  trackPathOverlayOpacity: number;
 
   /**
    * Whether track paths should be shown when all past/future steps are enabled,
@@ -121,6 +135,7 @@ export type ConfigSliceState = {
 
 export type ConfigSliceSerializableState = Pick<
   ConfigSliceState,
+  | "showSegmentations"
   | "showTrackPath"
   | "trackPathColor"
   | "trackPathColorMode"
@@ -133,6 +148,7 @@ export type ConfigSliceSerializableState = Pick<
   | "showAllTrackPathPastSteps"
   | "trackPathPastSteps"
   | "persistTrackPathWhenOutOfRange"
+  | "trackPathOverlayOpacity"
   | "showScaleBar"
   | "showTimestamp"
   | "outOfRangeDrawSettings"
@@ -143,11 +159,20 @@ export type ConfigSliceSerializableState = Pick<
   | "edgeColor"
   | "edgeColorAlpha"
   | "edgeMode"
+  | "showCentroids"
+  | "centroidRadiusPx"
+  | "centroidColorMode"
+  | "centroidColor"
   | "openTab"
   | "interpolate3d"
 >;
 
 export type ConfigSliceActions = {
+  setShowSegmentations: (showSegmentations: boolean) => void;
+  setShowCentroids: (showCentroids: boolean) => void;
+  setCentroidRadiusPx: (radius: number) => void;
+  setCentroidColorMode: (centroidColorMode: CentroidColorMode) => void;
+  setCentroidColor: (centroidColor: Color) => void;
   setShowTrackPath: (showTrackPath: boolean) => void;
   setTrackPathColor: (trackPathColor: Color) => void;
   setTrackPathWidthPx: (trackPathWidthPx: number) => void;
@@ -160,6 +185,7 @@ export type ConfigSliceActions = {
   setShowAllTrackPathFutureSteps: (showAllTrackPathFutureSteps: boolean) => void;
   setShowAllTrackPathPastSteps: (showAllTrackPathPastSteps: boolean) => void;
   setPersistTrackPathWhenOutOfRange: (persistTrackPathWhenOutOfRange: boolean) => void;
+  setTrackPathOverlayOpacity: (trackPathOverlayOpacity: number) => void;
   setShowScaleBar: (showScaleBar: boolean) => void;
   setShowTimestamp: (showTimestamp: boolean) => void;
   setShowLegendDuringExport: (showLegendDuringExport: boolean) => void;
@@ -190,6 +216,11 @@ export type ConfigSlice = ConfigSliceState & ConfigSliceActions;
 
 export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> = (set) => ({
   // State
+  showSegmentations: true,
+  showCentroids: false,
+  centroidColorMode: CentroidColorMode.USE_FEATURE_COLOR,
+  centroidColor: new Color(CENTROID_COLOR_DEFAULT),
+  centroidRadiusPx: 4,
   showTrackPath: true,
   trackPathColor: new Color(OUTLINE_COLOR_DEFAULT),
   trackPathWidthPx: 1.5,
@@ -203,6 +234,7 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   showAllTrackPathFutureSteps: false,
   showAllTrackPathPastSteps: true,
   persistTrackPathWhenOutOfRange: false,
+  trackPathOverlayOpacity: 30,
   showScaleBar: true,
   showTimestamp: true,
   showLegendDuringExport: true,
@@ -224,6 +256,11 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   openTab: TabType.TRACK_PLOT,
 
   // Actions
+  setShowSegmentations: (showSegmentations) => set({ showSegmentations }),
+  setShowCentroids: (showCentroids) => set({ showCentroids }),
+  setCentroidRadiusPx: (centroidRadiusPx) => set({ centroidRadiusPx: clamp(centroidRadiusPx, 0, 100) }),
+  setCentroidColorMode: (centroidColorMode) => set({ centroidColorMode }),
+  setCentroidColor: (centroidColor) => set({ centroidColor }),
   setShowTrackPath: (showTrackPath) => set({ showTrackPath }),
   setTrackPathColor: (trackPathColor) => set({ trackPathColor }),
   setTrackPathWidthPx: (trackPathWidthPx) => set({ trackPathWidthPx: clamp(trackPathWidthPx, 0, 100) }),
@@ -249,7 +286,8 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   setShowAllTrackPathFutureSteps: (showAllTrackPathFutureSteps) => set({ showAllTrackPathFutureSteps }),
   setShowAllTrackPathPastSteps: (showAllTrackPathPastSteps) => set({ showAllTrackPathPastSteps }),
   setPersistTrackPathWhenOutOfRange: (persistTrackPathWhenOutOfRange) => set({ persistTrackPathWhenOutOfRange }),
-
+  setTrackPathOverlayOpacity: (trackPathOverlayOpacity) =>
+    set({ trackPathOverlayOpacity: clamp(Math.round(trackPathOverlayOpacity), 0, 100) }),
   setShowScaleBar: (showScaleBar) => set({ showScaleBar }),
   setShowTimestamp: (showTimestamp) => set({ showTimestamp }),
   setShowLegendDuringExport: (showLegendDuringExport) => set({ showLegendDuringExport }),
@@ -283,6 +321,7 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
 
 export const serializeConfigSlice = (slice: Partial<ConfigSliceSerializableState>): SerializedStoreData => {
   return {
+    [UrlParam.SHOW_SEGMENTATIONS]: encodeMaybeBoolean(slice.showSegmentations),
     [UrlParam.SHOW_PATH]: encodeMaybeBoolean(slice.showTrackPath),
     [UrlParam.PATH_COLOR]: encodeMaybeColor(slice.trackPathColor),
     [UrlParam.PATH_WIDTH]: encodeMaybeNumber(slice.trackPathWidthPx),
@@ -298,6 +337,7 @@ export const serializeConfigSlice = (slice: Partial<ConfigSliceSerializableState
       slice.showAllTrackPathFutureSteps
     ),
     [UrlParam.PATH_PERSIST_OUT_OF_RANGE]: encodeMaybeBoolean(slice.persistTrackPathWhenOutOfRange),
+    [UrlParam.PATH_OVERLAY_OPACITY]: encodeMaybeNumber(slice.trackPathOverlayOpacity),
     [UrlParam.SHOW_SCALEBAR]: encodeMaybeBoolean(slice.showScaleBar),
     [UrlParam.SHOW_TIMESTAMP]: encodeMaybeBoolean(slice.showTimestamp),
     // Export settings are currently not serialized.
@@ -310,6 +350,10 @@ export const serializeConfigSlice = (slice: Partial<ConfigSliceSerializableState
     [UrlParam.OUTLINE_PALETTE_KEY]: slice.outlinePaletteKey?.toString(),
     [UrlParam.EDGE_MODE]: slice.edgeMode?.toString(),
     [UrlParam.EDGE_COLOR]: encodeMaybeColorWithAlpha(slice.edgeColor, slice.edgeColorAlpha),
+    [UrlParam.SHOW_CENTROIDS]: encodeMaybeBoolean(slice.showCentroids),
+    [UrlParam.CENTROID_COLOR_MODE]: slice.centroidColorMode?.toString(),
+    [UrlParam.CENTROID_COLOR]: encodeMaybeColor(slice.centroidColor),
+    [UrlParam.CENTROID_RADIUS]: encodeMaybeNumber(slice.centroidRadiusPx),
     [UrlParam.OPEN_TAB]: slice.openTab,
     [UrlParam.INTERPOLATE_3D]: encodeMaybeBoolean(slice.interpolate3d),
   };
@@ -317,6 +361,7 @@ export const serializeConfigSlice = (slice: Partial<ConfigSliceSerializableState
 
 /** Selects state values that serialization depends on. */
 export const selectConfigSliceSerializationDeps = (slice: ConfigSlice): ConfigSliceSerializableState => ({
+  showSegmentations: slice.showSegmentations,
   showTrackPath: slice.showTrackPath,
   trackPathColor: slice.trackPathColor,
   trackPathWidthPx: slice.trackPathWidthPx,
@@ -331,6 +376,7 @@ export const selectConfigSliceSerializationDeps = (slice: ConfigSlice): ConfigSl
   showAllTrackPathFutureSteps: slice.showAllTrackPathFutureSteps,
   showAllTrackPathPastSteps: slice.showAllTrackPathPastSteps,
   persistTrackPathWhenOutOfRange: slice.persistTrackPathWhenOutOfRange,
+  trackPathOverlayOpacity: slice.trackPathOverlayOpacity,
   outOfRangeDrawSettings: slice.outOfRangeDrawSettings,
   outlierDrawSettings: slice.outlierDrawSettings,
   outlineColor: slice.outlineColor,
@@ -339,11 +385,16 @@ export const selectConfigSliceSerializationDeps = (slice: ConfigSlice): ConfigSl
   edgeMode: slice.edgeMode,
   edgeColor: slice.edgeColor,
   edgeColorAlpha: slice.edgeColorAlpha,
+  showCentroids: slice.showCentroids,
+  centroidColorMode: slice.centroidColorMode,
+  centroidColor: slice.centroidColor,
+  centroidRadiusPx: slice.centroidRadiusPx,
   openTab: slice.openTab,
   interpolate3d: slice.interpolate3d,
 });
 
 export const loadConfigSliceFromParams = (slice: ConfigSlice, params: URLSearchParams): void => {
+  setValueIfDefined(decodeBoolean(params.get(UrlParam.SHOW_SEGMENTATIONS)), slice.setShowSegmentations);
   setValueIfDefined(decodeBoolean(params.get(UrlParam.SHOW_PATH)), slice.setShowTrackPath);
   setValueIfDefined(decodeBoolean(params.get(UrlParam.SHOW_SCALEBAR)), slice.setShowScaleBar);
   setValueIfDefined(decodeBoolean(params.get(UrlParam.SHOW_TIMESTAMP)), slice.setShowTimestamp);
@@ -408,6 +459,11 @@ export const loadConfigSliceFromParams = (slice: ConfigSlice, params: URLSearchP
     slice.setShowAllTrackPathFutureSteps(trackPathStepsParam.showAllFutureSteps);
   }
 
+  const trackPathOverlayOpacityParam = decodeFloat(params.get(UrlParam.PATH_OVERLAY_OPACITY));
+  if (trackPathOverlayOpacityParam !== undefined) {
+    slice.setTrackPathOverlayOpacity(trackPathOverlayOpacityParam);
+  }
+
   const edgeColorParam = decodeHexAlphaColor(params.get(UrlParam.EDGE_COLOR));
   if (edgeColorParam) {
     slice.setEdgeColor(edgeColorParam.color, clamp(edgeColorParam.alpha, 0, 1));
@@ -415,6 +471,23 @@ export const loadConfigSliceFromParams = (slice: ConfigSlice, params: URLSearchP
   const edgeModeParam = parseDrawMode(params.get(UrlParam.EDGE_MODE));
   if (edgeModeParam !== undefined) {
     slice.setEdgeMode(edgeModeParam);
+  }
+
+  const showCentroidsParam = decodeBoolean(params.get(UrlParam.SHOW_CENTROIDS));
+  if (showCentroidsParam !== undefined) {
+    slice.setShowCentroids(showCentroidsParam);
+  }
+  const centroidRadiusParam = decodeFloat(params.get(UrlParam.CENTROID_RADIUS));
+  if (centroidRadiusParam !== undefined) {
+    slice.setCentroidRadiusPx(centroidRadiusParam);
+  }
+  const centroidColorParam = decodeHexColor(params.get(UrlParam.CENTROID_COLOR));
+  if (centroidColorParam) {
+    slice.setCentroidColor(new Color(centroidColorParam));
+  }
+  const centroidColorModeParam = parseCentroidColorMode(params.get(UrlParam.CENTROID_COLOR_MODE));
+  if (centroidColorModeParam !== undefined) {
+    slice.setCentroidColorMode(centroidColorModeParam);
   }
 
   const openTabParam = params.get(UrlParam.OPEN_TAB);

@@ -22,7 +22,6 @@ describe("ExportButton", () => {
             throw new Error("Function not implemented.");
           }}
           canvas={mockCanvas}
-          currentFrame={0}
           onClick={vi.fn()}
           setIsRecording={vi.fn()}
           disabled={false}

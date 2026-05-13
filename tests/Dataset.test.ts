@@ -6,7 +6,11 @@ import { FeatureDataType } from "src/colorizer";
 import { MAX_FEATURE_CATEGORIES } from "src/colorizer/constants";
 import Dataset, { FeatureType } from "src/colorizer/Dataset";
 import type { AnyManifestFile, ManifestFile } from "src/colorizer/utils/dataset_utils";
-import { MOCK_DATASET_ARRAY_LOADER_DEFAULT_SOURCE, MOCK_DATASET_MANIFEST } from "tests/constants";
+import {
+  MOCK_DATASET_ARRAY_LOADER,
+  MOCK_DATASET_ARRAY_LOADER_DEFAULT_SOURCE,
+  MOCK_DATASET_MANIFEST,
+} from "tests/constants";
 import {
   ANY_ERROR,
   DEFAULT_DATASET_DIR,
@@ -340,6 +344,73 @@ describe("Dataset", () => {
       // Regression test: this test will break if the key constants are modified or removed.
       expect(dataset.featureKeys).includes("_track_");
       expect(dataset.featureKeys).includes("_time_");
+    });
+  });
+
+  describe("toCsvDataColumns", () => {
+    it("converts default dataset to CSV data columns", async () => {
+      const dataset = await makeMockDataset(MOCK_DATASET_MANIFEST, MOCK_DATASET_ARRAY_LOADER);
+      await dataset.open();
+      const csvColumns = dataset.toCsvDataColumns();
+      expect(csvColumns[0]).to.deep.equal({
+        name: "ID",
+        data: [0, 1, 2, 3, 4, 5, 6, 7, 8],
+      });
+      expect(csvColumns[1]).to.deep.equal({
+        name: "Label",
+        data: new Uint32Array([0, 1, 2, 3, 4, 5, 6, 7, 8]),
+      });
+      expect(csvColumns[2]).to.deep.equal({
+        name: "Track",
+        data: new Uint32Array([0, 1, 2, 0, 1, 2, 0, 1, 2]),
+      });
+      expect(csvColumns[3]).to.deep.equal({
+        name: "Frame",
+        data: new Uint32Array([0, 0, 0, 1, 1, 1, 2, 2, 3]),
+      });
+      expect(csvColumns[4]).to.deep.equal({
+        name: "Outlier",
+        data: [undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined],
+        categories: ["false", "true"],
+      });
+      expect(csvColumns[5]).to.deep.equal({
+        name: "Feature1 (meters)",
+        data: new Float32Array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]),
+        categories: undefined,
+      });
+      expect(csvColumns[6]).to.deep.equal({
+        name: "Feature2 ((m))",
+        data: new Float32Array([0, 10, 20, 30, 40, 50, 60, 70, 80]),
+        categories: undefined,
+      });
+      expect(csvColumns[7]).to.deep.equal({
+        name: "feature3",
+        data: new Float32Array([0, 0, 0, 1, 1, 1, 2, 2, 2]),
+        categories: ["small", "medium", "large"],
+      });
+      expect(csvColumns[8]).to.deep.equal({
+        name: "Feature$&%20^4 (meters)",
+        data: new Float32Array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]),
+        categories: undefined,
+      });
+
+      // Centroid features
+      expect(csvColumns[9]).to.deep.equal({
+        name: "Centroid X",
+        data: new Float32Array([10, 11, 12, 13, 14, 15, 16, 17, 18]),
+        categories: undefined,
+      });
+      expect(csvColumns[10]).to.deep.equal({
+        name: "Centroid Y",
+        data: new Float32Array([20, 21, 22, 23, 24, 25, 26, 27, 28]),
+        categories: undefined,
+      });
+      expect(csvColumns[11]).to.deep.equal({
+        name: "Centroid Z",
+        data: new Float32Array([30, 31, 32, 33, 34, 35, 36, 37, 38]),
+        categories: undefined,
+      });
+      expect(csvColumns).to.have.length(12);
     });
   });
 });

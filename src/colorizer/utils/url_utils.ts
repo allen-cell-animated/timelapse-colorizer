@@ -4,6 +4,7 @@ import { Color } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "src/colorizer/constants";
 import {
+  CentroidColorMode,
   type ChannelSetting,
   type DrawMode,
   type DrawSettings,
@@ -54,6 +55,11 @@ export enum UrlParam {
   OUTLINE_PALETTE_KEY = "outline-palette-key",
   EDGE_COLOR = "edge-color",
   EDGE_MODE = "edge",
+  SHOW_SEGMENTATIONS = "seg",
+  SHOW_CENTROIDS = "centroids",
+  CENTROID_COLOR_MODE = "centroid-mode",
+  CENTROID_COLOR = "centroid-color",
+  CENTROID_RADIUS = "centroid-radius",
   SHOW_PATH = "path",
   PATH_COLOR = "path-color",
   PATH_COLOR_RAMP = "path-ramp",
@@ -62,11 +68,13 @@ export enum UrlParam {
   SHOW_PATH_BREAKS = "path-breaks",
   PATH_STEPS = "path-steps",
   PATH_PERSIST_OUT_OF_RANGE = "path-persist",
+  PATH_OVERLAY_OPACITY = "path-overlay",
   SHOW_SCALEBAR = "scalebar",
   SHOW_TIMESTAMP = "timestamp",
   KEEP_RANGE = "keep-range",
   SCATTERPLOT_X_AXIS = "scatter-x",
   SCATTERPLOT_Y_AXIS = "scatter-y",
+  SCATTERPLOT_BINS = "scatter-bins",
   SCATTERPLOT_RANGE_MODE = "scatter-range",
   OPEN_TAB = "tab",
   SHOW_VECTOR = "vc",
@@ -477,6 +485,13 @@ export function parseTrackPathMode(mode: string | null): TrackPathColorMode | un
     modeInt === TrackPathColorMode.USE_FEATURE_COLOR ||
     modeInt === TrackPathColorMode.USE_COLOR_MAP;
   return mode && isTrackPathColorMode ? (modeInt as TrackPathColorMode) : undefined;
+}
+
+export function parseCentroidColorMode(mode: string | null): CentroidColorMode | undefined {
+  const modeInt = parseInt(mode || "-1", 10);
+  const isCentroidColorMode =
+    modeInt === CentroidColorMode.USE_CUSTOM_COLOR || modeInt === CentroidColorMode.USE_FEATURE_COLOR;
+  return mode && isCentroidColorMode ? (modeInt as CentroidColorMode) : undefined;
 }
 
 export function encodeBoolean(value: boolean): string {
