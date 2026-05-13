@@ -47,7 +47,7 @@ export type ScatterPlotSliceActions = {
   setScatterShowHistograms: (showHistograms: boolean) => void;
   setScatterHistogramBins: (bins: number) => void;
   setScatterRangeType: (rangeType: PlotRangeType) => void;
-  setScatterShowContours: (showHeatmap: boolean) => void;
+  setScatterShowContours: (showContours: boolean) => void;
   setScatterContourCount: (count: number) => void;
 };
 
@@ -68,7 +68,7 @@ export const createScatterPlotSlice: StateCreator<DatasetSlice & ScatterPlotSlic
   scatterHistogramBins: 20,
   scatterRangeType: PlotRangeType.ALL_TIME,
   scatterShowContours: false,
-  scatterContourCount: 20,
+  scatterContourCount: 10,
 
   // Actions
   setScatterXAxis: (xAxis) => {
@@ -94,7 +94,7 @@ export const createScatterPlotSlice: StateCreator<DatasetSlice & ScatterPlotSlic
     set({ scatterHistogramBins: bins });
   },
   setScatterRangeType: (rangeType) => set({ scatterRangeType: rangeType }),
-  setScatterShowContours: (visibility) => set({ scatterShowContours: visibility }),
+  setScatterShowContours: (showContours) => set({ scatterShowContours: showContours }),
   setScatterContourCount: (count) => {
     count = Math.round(count);
     if (count <= 0 || !isFinite(count)) {
