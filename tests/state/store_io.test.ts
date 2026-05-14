@@ -124,6 +124,9 @@ const EXAMPLE_STORE: ViewerStoreSerializableState = {
   scatterYAxis: MockFeatureKeys.FEATURE2,
   scatterShowHistograms: true,
   scatterHistogramBins: 150,
+  scatterShowAverageLine: false,
+  scatterAverageLineWidth: 4.5,
+  scatterAverageLineWindow: 11,
   scatterRangeType: PlotRangeType.ALL_TIME,
   scatterShowContours: true,
   scatterContourCount: 25,
@@ -200,8 +203,11 @@ const EXAMPLE_STORE_EXPECTED_PARAMS: ExpectedParamType = {
   "sc-hist": "1",
   "scatter-bins": "150",
   "scatter-range": "all",
-  "scatter-cont": "1",
-  "scatter-cont-num": "25",
+  "sc-cont": "1",
+  "sc-cont-num": "25",
+  "sc-avg": "0",
+  "sc-avg-n": "11",
+  "sc-avg-w": "4.5",
   c0: "ven:1,col:ff0000ff,rmp:0:1,rng:-5:5",
   c1: "ven:0,col:00ff0000,rmp:0.300:4.200,rng:0:1",
   c2: "ven:1,col:0000ff04,rmp:3500:64231,rng:0:65535",
@@ -214,7 +220,7 @@ const EXAMPLE_STORE_EXPECTED_QUERY_STRING =
   "&seg=0&path=1&path-color=ff0000&path-width=1.500&path-ramp=esri-blue_red_8%21&path-mode=1&path-breaks=1&path-steps=10%2C25%21&path-persist=0&path-overlay=35&scalebar=1&timestamp=0&filter-color=ff0000&filter-mode=0&outlier-color=00ff00" +
   "&outlier-mode=1&outline-color=0000ff&outline-mode=0&outline-palette-key=matplotlib_paired" +
   "&edge=1&edge-color=8090a0b0&centroids=1&centroid-mode=1&centroid-color=aabbcc&centroid-radius=7" +
-  "&tab=filters&interpolate=1&scatter-x=feature3&scatter-y=feature2&sc-hist=1&scatter-bins=150&scatter-range=all&scatter-cont=1&scatter-cont-num=25" +
+  "&tab=filters&interpolate=1&scatter-x=feature3&scatter-y=feature2&sc-hist=1&scatter-bins=150&scatter-range=all&sc-cont=1&sc-cont-num=25&sc-avg=0&sc-avg-n=11&sc-avg-w=4.5" +
   "&bg=1&bg-brightness=75&bg-sat=50&fg-alpha=25" +
   "&vc=1&vc-key=_motion_&vc-color=ff00ff&vc-scale=5&vc-thickness-scaling=1&vc-thickness=4.500&vc-tooltip=c&vc-time-int=11" +
   "&c0=ven%3A1%2Ccol%3Aff0000ff%2Crmp%3A0%3A1%2Crng%3A-5%3A5" +
