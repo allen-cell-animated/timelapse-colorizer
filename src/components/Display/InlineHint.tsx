@@ -1,5 +1,5 @@
 import { InfoCircleOutlined } from "@ant-design/icons";
-import React, { ReactElement, ReactNode, useRef } from "react";
+import React, { type ReactElement, type ReactNode, useRef } from "react";
 
 import { TooltipWithSubtitle } from "src/components/Tooltips/TooltipWithSubtitle";
 
@@ -19,9 +19,8 @@ export default function InlineHint(props: InlineHintProps): ReactElement {
         trigger={["focus", "hover"]}
         title={props.title}
         subtitle={props.subtitle}
-        getPopupContainer={() => {
-          return popupContainerRef.current ?? document.body;
-        }}
+        subtitleList={props.subtitleList}
+        getPopupContainer={() => popupContainerRef.current ?? document.body}
       >
         <InfoCircleOutlined tabIndex={0}></InfoCircleOutlined>
       </TooltipWithSubtitle>

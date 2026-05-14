@@ -710,9 +710,6 @@ export function makeAverageLineTrace(
     hoverTemplate: string;
   }>
 ): Partial<PlotData> {
-  // TODO: show discontinuities in the line trace?
-  // TODO: show time in hover tooltip?
-  // TODO: click interactions?
   return {
     x: xData,
     y: yData,

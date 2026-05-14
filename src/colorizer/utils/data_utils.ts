@@ -838,14 +838,14 @@ export function isPositiveInteger(value: string): boolean {
 export function getMovingAverage(
   values: number[] | Uint32Array | Float32Array,
   windowSize: number,
-  includeEnds = false
+  includeEnds: boolean = false
 ): number[] {
   // Number of values forward and backwards to include in the average.
   // For a window size of 7, the window offset will be 3.
   const windowOffset = Math.max(0, Math.floor(windowSize / 2));
   const ret = [];
 
-  const clampArrayBounds = (value: number) => Math.max(0, Math.min(value, values.length - 1));
+  const clampArrayBounds = (value: number): number => Math.max(0, Math.min(value, values.length - 1));
 
   const start = includeEnds ? 0 : windowOffset;
   const end = includeEnds ? values.length : values.length - windowOffset;

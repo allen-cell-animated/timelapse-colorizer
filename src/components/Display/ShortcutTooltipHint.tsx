@@ -1,4 +1,4 @@
-import React, { type ReactElement, useContext, useRef } from "react";
+import React, { type ReactElement, useContext } from "react";
 
 import InlineHint from "src/components/Display/InlineHint";
 import ShortcutKeyText from "src/components/Display/ShortcutKeyText";
