@@ -34,6 +34,7 @@ const COLOR_RAMP_SUBSAMPLES = 100;
 const NUM_RESERVED_BUCKETS = 2;
 const BUCKET_INDEX_OUTOFRANGE = 0;
 const BUCKET_INDEX_OUTLIERS = 1;
+const DEFAULT_AVERAGE_LINE_COLOR = new Color("#444");
 
 export type DataArray = Uint32Array | Float32Array | number[];
 
@@ -475,6 +476,10 @@ export const colorizeScatterplotPoints = (
   return traces;
 };
 
+/**
+ * Returns a series of shapes that mark the current time on each track's moving
+ * average line.
+ */
 export const getAverageLineCurrentFrameShapes = (
   tracks: Map<number, Track>,
   tracksToAverageLineData: Map<number, { xData: number[]; yData: number[] }>,
@@ -493,7 +498,7 @@ export const getAverageLineCurrentFrameShapes = (
     }
     const x = lineData.xData[index];
     const y = lineData.yData[index];
-    const color = trackColors?.get(trackId) || new Color("#444");
+    const color = trackColors?.get(trackId) || DEFAULT_AVERAGE_LINE_COLOR;
 
     lineShapes.push(getCircleShape(x, y, 4, `#${color.getHexString()}`));
   }
@@ -665,25 +670,27 @@ export function makeLineTrace(
   xData: DataArray,
   yData: DataArray,
   objectIds: number[],
-  segIds: number[],
-  trackIds: number[],
-  hovertemplate?: string
+  config: Partial<{
+    customData: string[][];
+    lineWidth: number;
+    color: string;
+    hoverTemplate: string;
+  }>
 ): Partial<PlotData> {
-  const stackedCustomData = trackIds.map((id, index) => {
-    return [id.toString(), segIds[index].toString()];
-  });
   return {
     x: xData,
     y: yData,
     type: "scattergl",
     mode: "lines",
     line: {
-      color: "#aaaaaa",
+      width: config.lineWidth,
+      color: config.color,
+      smoothing: 1.2,
     },
     ids: objectIds.map((id) => id.toString()),
-    customdata: stackedCustomData,
+    customdata: config.customData,
     hoverinfo: "skip", // will be overridden if hovertemplate is provided
-    hovertemplate,
+    hovertemplate: config.hoverTemplate,
   };
 }
 
@@ -699,33 +706,6 @@ export function getAverageLineHoverTemplate(
     `<br>${dataset.getFeatureName(yAxisFeatureKey)}: %{y} ${dataset.getFeatureUnits(yAxisFeatureKey)}` +
     `<br>Track ID: ${trackId}<br>Time: %{customdata[0]}<extra></extra>`
   );
-}
-
-export function makeAverageLineTrace(
-  xData: DataArray,
-  yData: DataArray,
-  ids: number[],
-  times: number[],
-  config: Partial<{
-    lineWidth: number;
-    color: Color;
-    hoverTemplate: string;
-  }>
-): Partial<PlotData> {
-  return {
-    x: xData,
-    y: yData,
-    ids: ids.map((id) => id.toString()),
-    type: "scattergl",
-    mode: "lines",
-    line: {
-      color: config.color ? "#" + config.color.getHexString() : "#444",
-      smoothing: 1.2,
-      width: config.lineWidth ?? 1.7,
-    },
-    customdata: times.map((time) => [time.toString()]),
-    hovertemplate: config.hoverTemplate,
-  };
 }
 
 function getPlotlyShapeBase(x: number, y: number, xDim: number, yDim: number): Partial<Shape> {

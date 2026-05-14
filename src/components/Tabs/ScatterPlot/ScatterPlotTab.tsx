@@ -34,7 +34,6 @@ import {
   getHistogramBins,
   getScatterplotDataAsCsv,
   isHistogramEvent,
-  makeAverageLineTrace,
   makeLineTrace,
 } from "src/utils/scatter_plot_data_utils";
 import { areAnyHotkeysPressed } from "src/utils/user_input";
@@ -47,6 +46,8 @@ const PLOTLY_CONFIG: Partial<Plotly.Config> = {
 };
 
 const DEFAULT_RANGE_TYPE = PlotRangeType.ALL_TIME;
+const TIME_LINE_TRACE_COLOR = "#aaaaaa";
+const AVERAGE_LINE_TRACE_COLOR = "#444444";
 
 type ScatterPlotTabProps = {
   isVisible: boolean;
@@ -475,15 +476,23 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
           const trackColor = trackColors.get(track.trackId);
           const lineConfig = {
             lineWidth: averageLineWidth,
-            color: useTrackColors ? trackColor : undefined,
+            color: useTrackColors ? "#" + trackColor?.getHexString() : AVERAGE_LINE_TRACE_COLOR,
             hoverTemplate: getAverageLineHoverTemplate(track.trackId, dataset, xAxisFeatureKey, yAxisFeatureKey),
+            customData: track.times.map((time) => [time.toString()]),
           };
-          traces.push(makeAverageLineTrace(lineXData, lineYData, trackData.objectIds, track.times, lineConfig));
+
+          traces.push(makeLineTrace(lineXData, lineYData, trackData.objectIds, lineConfig));
           trackToAverageLineData.current.set(track.trackId, { xData: lineXData, yData: lineYData });
         } else if (isUsingTime) {
           // Render an extra trace for lines connecting the points in the current track when time is a feature.
+          const stackedCustomData = trackData.trackIds.map((id, index) => {
+            return [id.toString(), trackData.segIds[index].toString()];
+          });
           traces.push(
-            makeLineTrace(trackData.xData, trackData.yData, trackData.objectIds, trackData.segIds, trackData.trackIds)
+            makeLineTrace(trackData.xData, trackData.yData, trackData.objectIds, {
+              customData: stackedCustomData,
+              color: TIME_LINE_TRACE_COLOR,
+            })
           );
         }
 
