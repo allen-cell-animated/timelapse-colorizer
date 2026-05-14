@@ -1,5 +1,5 @@
 name: run-static-checks
-run-name: ✅ Checking '#${{github.ref_name}}' on branch '${{github.head_ref}}'
+run-name: Checking '#${{github.event.number}}' on branch '${{github.head_ref}}'
 on: pull_request
 
 permissions: {}
