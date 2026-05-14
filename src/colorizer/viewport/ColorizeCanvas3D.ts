@@ -93,7 +93,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
   private timeToVectorData: Map<number, FrameVectorData>;
   private vectorObject: VectorArrows3d;
   private centroidsObject: Spheres3d;
-  /** Last frame the centroid were updated on. */
+  /** Last frame the centroids were updated on. */
   private lastCentroidFrame = -1;
 
   constructor() {
