@@ -224,7 +224,7 @@ export default function SelectionDropdown(inputProps: React.PropsWithChildren<Se
         </Tooltip>
       );
     },
-    [props.showSelectedItemTooltip, props.controlTooltipPlacement]
+    [props.showSelectedItemTooltip, props.controlTooltipPlacement, props.tooltipPopupContainer]
   );
 
   // Create an ID for the HTML label element if one is provided.

@@ -636,7 +636,9 @@ export function scaleColorOpacityByMarkerCount(
   opacityMultiplier: number = 1
 ): HexColorString {
   if (baseColor.length !== 7) {
-    throw new Error("ScatterPlotTab.getMarkerColor: Base color '" + baseColor + "' must be 7-character hex string.");
+    throw new Error(
+      "ScatterPlotTab.scaleColorOpacityByMarkerCount: Base color '" + baseColor + "' must be 7-character hex string."
+    );
   }
   // Interpolate linearly between 80% and 25% transparency from 0 up to a max of 1000 markers.
   const opacity = remap(numMarkers, 0, 1000, 0.8, 0.25);
