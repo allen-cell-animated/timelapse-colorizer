@@ -78,7 +78,7 @@ export enum UrlParam {
   SCATTERPLOT_RANGE_MODE = "scatter-range",
   SCATTERPLOT_SHOW_CONTOUR = "scatter-cont",
   SCATTERPLOT_CONTOUR_COUNT = "scatter-cont-num",
-  SCATTERPLOT_SHOW_HISTOGRAMS = "scatter-hist",
+  SCATTERPLOT_SHOW_HISTOGRAMS = "sc-hist",
   OPEN_TAB = "tab",
   SHOW_VECTOR = "vc",
   INTERPOLATE_3D = "interpolate",
