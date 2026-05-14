@@ -85,7 +85,7 @@ export const createScatterPlotSlice: StateCreator<DatasetSlice & ScatterPlotSlic
 
   scatterShowAverageLine: false,
   scatterAverageLineWindow: 5,
-  scatterAverageLineWidth: 1.7,
+  scatterAverageLineWidth: 1.6,
 
   // Actions
   setScatterXAxis: (xAxis) => {
@@ -125,7 +125,8 @@ export const createScatterPlotSlice: StateCreator<DatasetSlice & ScatterPlotSlic
     if (windowSize <= 0 || !isFinite(windowSize)) {
       return;
     }
-    set({ scatterAverageLineWindow: windowSize });
+    const nextOddInteger = Math.floor(windowSize / 2) * 2 + 1;
+    set({ scatterAverageLineWindow: nextOddInteger });
   },
   setScatterAverageLineWidth: (width) => {
     if (width <= 0 || !isFinite(width)) {

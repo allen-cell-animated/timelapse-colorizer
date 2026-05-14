@@ -105,6 +105,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
   const xAxisPlotRange = useRef<[number, number]>([-Infinity, Infinity]);
   const yAxisPlotRange = useRef<[number, number]>([-Infinity, Infinity]);
+  // Stores computed average line points so markers for the current time can be
+  // updated in the layout pass.
   const trackToAverageLineData = useRef<Map<number, { xData: number[]; yData: number[] }>>(new Map());
 
   const resetXAxisPlotRange = useCallback((): void => {
@@ -454,8 +456,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       traces.push(yHistogram);
     }
 
-    // Render current track as an extra trace.
     trackToAverageLineData.current.clear();
+    // Render current tracks as extra traces.
     for (const track of tracks.values()) {
       const trackData = filterDataByRange(
         dataset,

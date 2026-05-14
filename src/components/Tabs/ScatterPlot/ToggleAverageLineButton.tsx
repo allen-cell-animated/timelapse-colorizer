@@ -13,8 +13,8 @@ type ToggleAverageLineButtonProps = {
 };
 
 const enum ToggleAverageLineButtonHtmlIds {
-  averageLineWindowSlider = "average-line-window-slider",
-  averageLineWidthSlider = "average-line-width-slider",
+  WINDOW_SIZE_SLIDER = "average-line-window-slider",
+  WIDTH_SLIDER = "average-line-width-slider",
 }
 
 export default function ToggleAverageLineButton(props: ToggleAverageLineButtonProps): ReactElement {
@@ -25,10 +25,6 @@ export default function ToggleAverageLineButton(props: ToggleAverageLineButtonPr
   const setAverageLineWidth = useViewerStateStore((state) => state.setScatterAverageLineWidth);
   const setAverageLineWindow = useViewerStateStore((state) => state.setScatterAverageLineWindow);
 
-  const pointsToAverageHint = (
-    <InlineHint subtitle="Number of points to average over, as a rolling window centered on the current point." />
-  );
-
   const configMenu = (
     <SettingsContainer labelWidth="105px" style={{ width: "300px", marginBottom: "6px" }} gapPx={10}>
       <SettingsItem
@@ -37,11 +33,11 @@ export default function ToggleAverageLineButton(props: ToggleAverageLineButtonPr
             Window size <InlineHint title="Total number of points to average over, including past and future." />
           </FlexRow>
         }
-        htmlFor={ToggleAverageLineButtonHtmlIds.averageLineWindowSlider}
+        htmlFor={ToggleAverageLineButtonHtmlIds.WINDOW_SIZE_SLIDER}
       >
         <div style={{ marginBottom: "auto" }}>
           <LabeledSlider
-            id={ToggleAverageLineButtonHtmlIds.averageLineWindowSlider}
+            id={ToggleAverageLineButtonHtmlIds.WINDOW_SIZE_SLIDER}
             type="value"
             value={averageLineWindow}
             onChange={setAverageLineWindow}
@@ -53,16 +49,16 @@ export default function ToggleAverageLineButton(props: ToggleAverageLineButtonPr
           />
         </div>
       </SettingsItem>
-      <SettingsItem label="Line width" htmlFor={ToggleAverageLineButtonHtmlIds.averageLineWidthSlider}>
+      <SettingsItem label="Line width" htmlFor={ToggleAverageLineButtonHtmlIds.WIDTH_SLIDER}>
         <LabeledSlider
-          id={ToggleAverageLineButtonHtmlIds.averageLineWidthSlider}
+          id={ToggleAverageLineButtonHtmlIds.WIDTH_SLIDER}
           type="value"
           value={averageLineWidth}
           onChange={setAverageLineWidth}
           minInputBound={0.5}
           maxInputBound={10}
           minSliderBound={0.5}
-          maxSliderBound={2.5}
+          maxSliderBound={3.5}
           step={0.1}
           numberFormatter={(number) => number?.toFixed(1)}
           marks={[1.6]}
