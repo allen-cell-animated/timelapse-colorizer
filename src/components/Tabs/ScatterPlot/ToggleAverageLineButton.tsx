@@ -6,6 +6,7 @@ import InlineHint from "src/components/Display/InlineHint";
 import LabeledSlider from "src/components/Inputs/LabeledSlider";
 import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
 import { useViewerStateStore } from "src/state/ViewerState";
+import { FlexRow } from "src/styles/utils";
 
 type ToggleAverageLineButtonProps = {
   popupContainer?: HTMLElement;
@@ -29,12 +30,12 @@ export default function ToggleAverageLineButton(props: ToggleAverageLineButtonPr
   );
 
   const configMenu = (
-    <SettingsContainer labelWidth="120px" style={{ width: "300px", marginBottom: "6px" }} gapPx={10}>
+    <SettingsContainer labelWidth="105px" style={{ width: "300px", marginBottom: "6px" }} gapPx={10}>
       <SettingsItem
         label={
-          <span>
-            Points to average over <span>{pointsToAverageHint}</span>
-          </span>
+          <FlexRow $gap={6}>
+            Window size <InlineHint title="Total number of points to average over, including past and future." />
+          </FlexRow>
         }
         htmlFor={ToggleAverageLineButtonHtmlIds.averageLineWindowSlider}
       >
@@ -61,8 +62,10 @@ export default function ToggleAverageLineButton(props: ToggleAverageLineButtonPr
           minInputBound={0.5}
           maxInputBound={10}
           minSliderBound={0.5}
-          maxSliderBound={3}
+          maxSliderBound={2.5}
           step={0.1}
+          numberFormatter={(number) => number?.toFixed(1)}
+          marks={[1.6]}
         />
       </SettingsItem>
     </SettingsContainer>
