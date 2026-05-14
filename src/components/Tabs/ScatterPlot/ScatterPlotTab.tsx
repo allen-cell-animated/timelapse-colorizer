@@ -383,8 +383,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
     if (showContours) {
       const colorScale = [
-        [0, "rgba(255, 255, 255, 255)"],
-        [1, "rgba(80, 80, 80, 255)"],
+        [0, "rgba(255, 255, 255, 1)"],
+        [1, "rgba(80, 80, 80, 1)"],
       ] as [number, string][];
       const densityTrace: Partial<PlotData> = {
         x: xData,
