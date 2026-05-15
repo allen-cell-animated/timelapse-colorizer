@@ -121,10 +121,10 @@ export const createScatterPlotSlice: StateCreator<DatasetSlice & ScatterPlotSlic
   },
   setScatterShowAverageLine: (showAverageLine) => set({ scatterShowAverageLine: showAverageLine }),
   setScatterAverageLineWindow: (windowSize) => {
-    windowSize = Math.round(windowSize);
     if (windowSize <= 0 || !isFinite(windowSize)) {
       return;
     }
+    windowSize = Math.round(windowSize);
     const nextOddInteger = Math.floor(windowSize / 2) * 2 + 1;
     set({ scatterAverageLineWindow: nextOddInteger });
   },
