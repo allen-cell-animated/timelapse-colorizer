@@ -1,7 +1,7 @@
 import { type Pool, pool } from "workerpool";
 
 import type Dataset from "src/colorizer/Dataset";
-import { FeatureData } from "src/colorizer/Dataset";
+import type { FeatureData } from "src/colorizer/Dataset";
 import type { FeatureArrayType, FeatureDataType, FeatureRangeData, VectorFieldData } from "src/colorizer/types";
 import type { CsvDataColumn } from "src/colorizer/utils/csv_utils";
 import type { DataTextureInfo } from "src/colorizer/utils/texture_utils";

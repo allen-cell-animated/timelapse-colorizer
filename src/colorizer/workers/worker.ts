@@ -82,6 +82,7 @@ async function getVectorFlowField(
     flowFieldData.xData.buffer,
     flowFieldData.yData.buffer,
     flowFieldData.zData.buffer,
+    flowFieldData.count.buffer,
   ]);
 }
 

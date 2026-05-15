@@ -3,7 +3,6 @@ import type Plotly from "plotly.js-dist-min";
 import type { PlotlyHTMLElement } from "plotly.js-dist-min";
 import React, { type ReactElement, useEffect, useMemo, useRef, useState } from "react";
 import { useDebounce } from "usehooks-ts";
-import { worker } from "workerpool";
 
 import {
   DEFAULT_CATEGORICAL_PALETTE_KEY,
@@ -36,6 +35,7 @@ export default function Plot3dTab(): ReactElement {
   const [zAxisFeatureKey, setZAxisFeatureKey] = useState<string | null>(null);
 
   const [bins, setBins] = useState(25);
+  const [threshold, setThreshold] = useState(5);
 
   const [vectorFieldData, setVectorFieldData] = useState<VectorFieldData | null>(null);
   const [coneTrace, setConeTrace] = useState<Plotly.Data | null>(null);
@@ -240,43 +240,13 @@ export default function Plot3dTab(): ReactElement {
       {/* Toolbar */}
       <FlexRow $gap={24}>
         <FlexColumn style={{ flexGrow: 1 }} $gap={8}>
-          <FlexRow $gap={8}>
+          <FlexRow $gap={8} style={{ flexGrow: 1 }}>
             <FlexRow $gap={8} style={{ flexGrow: 1 }}>
               {getFeatureAxisSelector("X Axis", xAxisFeatureKey, setXAxisFeatureKey)}
               {getFeatureAxisSelector("Y Axis", yAxisFeatureKey, setYAxisFeatureKey)}
               {getFeatureAxisSelector("Z Axis", zAxisFeatureKey, setZAxisFeatureKey)}
             </FlexRow>
           </FlexRow>
-          <FlexRowAlignCenter $gap={8}>
-            <h3>Cone size</h3>
-            <div style={{ width: "180px" }}>
-              <LabeledSlider
-                type="value"
-                value={rawConeSize}
-                onChange={setConeSize}
-                minInputBound={0}
-                minSliderBound={0}
-                maxInputBound={10}
-                maxSliderBound={2.5}
-                step={0.1}
-                marks={[1]}
-                numberFormatter={(number) => number?.toFixed(1)}
-              ></LabeledSlider>
-            </div>
-            <ColorRampSelection
-              selectedRamp={coneColorRampKey}
-              onChangeRamp={function (colorRampKey: string, reversed: boolean): void {
-                setConeColorRampKey(colorRampKey);
-                setConeColorRampReversed(reversed);
-              }}
-              reversed={coneColorRampReversed}
-              colorRampsToDisplay={DISPLAY_COLOR_RAMP_LINEAR_KEYS}
-              selectedPaletteKey={DEFAULT_CATEGORICAL_PALETTE_KEY}
-              onChangePalette={() => {}}
-              numCategories={0}
-              categoricalPalettesToDisplay={DISPLAY_CATEGORICAL_PALETTE_KEYS}
-            />
-          </FlexRowAlignCenter>
         </FlexColumn>
 
         <Button
@@ -287,6 +257,38 @@ export default function Plot3dTab(): ReactElement {
           Recalculate
         </Button>
       </FlexRow>
+
+      {/* Plot Controls */}
+      <FlexRowAlignCenter $gap={8}>
+        <h3>Cone size</h3>
+        <div style={{ width: "180px" }}>
+          <LabeledSlider
+            type="value"
+            value={rawConeSize}
+            onChange={setConeSize}
+            minInputBound={0}
+            minSliderBound={0}
+            maxInputBound={10}
+            maxSliderBound={2.5}
+            step={0.1}
+            marks={[1]}
+            numberFormatter={(number) => number?.toFixed(1)}
+          ></LabeledSlider>
+        </div>
+        <ColorRampSelection
+          selectedRamp={coneColorRampKey}
+          onChangeRamp={function (colorRampKey: string, reversed: boolean): void {
+            setConeColorRampKey(colorRampKey);
+            setConeColorRampReversed(reversed);
+          }}
+          reversed={coneColorRampReversed}
+          colorRampsToDisplay={DISPLAY_COLOR_RAMP_LINEAR_KEYS}
+          selectedPaletteKey={DEFAULT_CATEGORICAL_PALETTE_KEY}
+          onChangePalette={() => {}}
+          numCategories={0}
+          categoricalPalettesToDisplay={DISPLAY_CATEGORICAL_PALETTE_KEYS}
+        />
+      </FlexRowAlignCenter>
 
       {/* Plot Container */}
       <div ref={plotContainerRef} style={{ width: "auto", height: "100%", zIndex: "0" }}></div>

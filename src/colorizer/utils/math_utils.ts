@@ -369,7 +369,7 @@ export function calculateVectorFlowField(
   const [xSteps, ySteps, zSteps] = binsPerAxis;
 
   const numBins = xSteps * ySteps * zSteps;
-  const count = Array(numBins).fill(0);
+  const count = new Uint16Array(numBins);
   const xData = new Float32Array(numBins);
   const yData = new Float32Array(numBins);
   const zData = new Float32Array(numBins);
@@ -409,11 +409,7 @@ export function calculateVectorFlowField(
     for (let y = 0; y < ySteps; y++) {
       for (let z = 0; z < zSteps; z++) {
         const binIndex = x * ySteps * zSteps + y * zSteps + z;
-        if (count[binIndex] < 5) {
-          xData[binIndex] = 0;
-          yData[binIndex] = 0;
-          zData[binIndex] = 0;
-        } else if (count[binIndex] > 0) {
+        if (count[binIndex] > 0) {
           xData[binIndex] /= count[binIndex];
           yData[binIndex] /= count[binIndex];
           zData[binIndex] /= count[binIndex];
@@ -425,5 +421,5 @@ export function calculateVectorFlowField(
     }
   }
 
-  return { xPos, yPos, zPos, xData, yData, zData };
+  return { xPos, yPos, zPos, xData, yData, zData, count };
 }

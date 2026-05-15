@@ -380,4 +380,5 @@ export type VectorFieldData = {
   xData: Float32Array;
   yData: Float32Array;
   zData: Float32Array;
+  count: Uint16Array;
 };
