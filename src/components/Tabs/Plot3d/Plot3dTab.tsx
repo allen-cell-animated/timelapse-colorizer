@@ -1,5 +1,6 @@
 import Plotly, { PlotlyHTMLElement } from "plotly.js-dist-min";
 import React, { ReactElement, useEffect, useRef, useState } from "react";
+import { useDebounce } from "usehooks-ts";
 
 import {
   DEFAULT_CATEGORICAL_PALETTE_KEY,
@@ -24,6 +25,15 @@ function makeSteps(min: number, max: number, steps: number): number[] {
   return Array.from({ length: steps }, (_, i) => min + i * stepSize);
 }
 
+type VectorFieldData = {
+  xPos: Float32Array;
+  yPos: Float32Array;
+  zPos: Float32Array;
+  xData: Float32Array;
+  yData: Float32Array;
+  zData: Float32Array;
+};
+
 export default function Plot3dTab(): ReactElement {
   const plotContainerRef = useRef<HTMLDivElement>(null);
   const plot3dRef = useRef<Plot3d | null>(null);
@@ -31,6 +41,10 @@ export default function Plot3dTab(): ReactElement {
   const [xAxisFeatureKey, setXAxisFeatureKey] = useState<string | null>(null);
   const [yAxisFeatureKey, setYAxisFeatureKey] = useState<string | null>(null);
   const [zAxisFeatureKey, setZAxisFeatureKey] = useState<string | null>(null);
+
+  const [bins, setBins] = useState(10);
+
+  const [vectorFieldData, setVectorFieldData] = useState<VectorFieldData | null>(null);
   const [coneTrace, setConeTrace] = useState<Plotly.Data | null>(null);
 
   const [isPlaybackTempPaused, setIsPlaybackTempPaused] = useState(false);
@@ -41,7 +55,8 @@ export default function Plot3dTab(): ReactElement {
   // are currently occurring. When 0, no user interaction is occurring.
   const [numActiveUserInteractions, setNumActiveUserInteractions] = useState(0);
 
-  const [coneSize, setConeSize] = useState(1);
+  const [rawConeSize, setConeSize] = useState(1);
+  const coneSize = useDebounce(rawConeSize, 100);
   const [coneColorRampKey, setConeColorRampKey] = useState<string>("matplotlib-turbo");
   const [coneColorRampReversed, setConeColorRampReversed] = useState(false);
   const [flowFieldSubsampleRate, setFlowFieldSubsampleRate] = useState(6);
@@ -84,62 +99,31 @@ export default function Plot3dTab(): ReactElement {
     }
   }, [numActiveUserInteractions, isPlaybackTempPaused]);
 
+  // Reset on dataset change
   useEffect(() => {
-    if (dataset && dataset?.flowFieldFeatures.size >= 3) {
-      const flowFieldKeys = Array.from(dataset.flowFieldFeatures.keys());
-      setXAxisFeatureKey(flowFieldKeys[0] ?? null);
-      setYAxisFeatureKey(flowFieldKeys[1] ?? null);
-      setZAxisFeatureKey(flowFieldKeys[2] ?? null);
-    }
+    // if (dataset && dataset?.flowFieldFeatures.size >= 3) {
+    //   const flowFieldKeys = Array.from(dataset.flowFieldFeatures.keys());
+    //   setXAxisFeatureKey(flowFieldKeys[0] ?? null);
+    //   setYAxisFeatureKey(flowFieldKeys[1] ?? null);
+    //   setZAxisFeatureKey(flowFieldKeys[2] ?? null);
+    // }
   }, [dataset]);
 
   // Build cone trace when dataset or axis keys change
   useEffect(() => {
     const makeConeTrace = (): Plotly.Data | null => {
-      if (!dataset || !xAxisFeatureKey || !yAxisFeatureKey || !zAxisFeatureKey) {
+      if (!dataset || !vectorFieldData) {
         return null;
-      }
-      const xFlowFieldData = dataset.getFlowFieldFeatureData(xAxisFeatureKey);
-      const yFlowFieldData = dataset.getFlowFieldFeatureData(yAxisFeatureKey);
-      const zFlowFieldData = dataset.getFlowFieldFeatureData(zAxisFeatureKey);
-
-      const dims = dataset.flowFieldDims;
-      if (!xFlowFieldData || !yFlowFieldData || !zFlowFieldData || !dims) {
-        return null;
-      }
-      // Get XYZ coordinates as a flattened array
-      const xSteps = makeSteps(xFlowFieldData.min, xFlowFieldData.max, dims.x);
-      const ySteps = makeSteps(yFlowFieldData.min, yFlowFieldData.max, dims.y);
-      const zSteps = makeSteps(zFlowFieldData.min, zFlowFieldData.max, dims.z);
-      const xCoords: number[] = [];
-      const yCoords: number[] = [];
-      const zCoords: number[] = [];
-      const xData: number[] = [];
-      const yData: number[] = [];
-      const zData: number[] = [];
-
-      for (let i = 0; i < dims.x; i += flowFieldSubsampleRate) {
-        for (let j = 0; j < dims.y; j += flowFieldSubsampleRate) {
-          for (let k = 0; k < dims.z; k += flowFieldSubsampleRate) {
-            xCoords.push(xSteps[i]);
-            yCoords.push(ySteps[j]);
-            zCoords.push(zSteps[k]);
-            const dataIndex = i * dims.y * dims.z + j * dims.z + k;
-            xData.push(xFlowFieldData.data[dataIndex]);
-            yData.push(yFlowFieldData.data[dataIndex]);
-            zData.push(zFlowFieldData.data[dataIndex]);
-          }
-        }
       }
 
       return {
         type: "cone",
-        x: xCoords,
-        y: yCoords,
-        z: zCoords,
-        u: xData,
-        v: yData,
-        w: zData,
+        x: vectorFieldData.xPos,
+        y: vectorFieldData.yPos,
+        z: vectorFieldData.zPos,
+        u: vectorFieldData.xData,
+        v: vectorFieldData.yData,
+        w: vectorFieldData.zData,
         showscale: false,
         sizemode: "scaled",
         sizeref: coneSize,
@@ -149,16 +133,7 @@ export default function Plot3dTab(): ReactElement {
     };
     const newConeTrace = makeConeTrace();
     setConeTrace(newConeTrace);
-  }, [
-    dataset,
-    xAxisFeatureKey,
-    yAxisFeatureKey,
-    zAxisFeatureKey,
-    flowFieldSubsampleRate,
-    coneSize,
-    coneColorRampKey,
-    coneColorRampReversed,
-  ]);
+  }, [dataset, vectorFieldData, coneSize, coneColorRampKey, coneColorRampReversed]);
 
   useEffect(() => {
     plot3dRef.current = new Plot3d(plotContainerRef.current!);
@@ -183,6 +158,7 @@ export default function Plot3dTab(): ReactElement {
     const onMouseUp = (): void => {
       setNumActiveUserInteractions((prev) => Math.max(prev - 1, 0));
     };
+    // TODO: clear mouse interactions on window blur, since events will not fire
     const onScroll = (): void => {
       // If the user is scrolling, treat it as an interaction
       if (!scrollTimeoutRef.current) {
