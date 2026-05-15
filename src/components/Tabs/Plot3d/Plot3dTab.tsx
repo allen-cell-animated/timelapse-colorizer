@@ -1,6 +1,9 @@
-import Plotly, { PlotlyHTMLElement } from "plotly.js-dist-min";
-import React, { ReactElement, useEffect, useRef, useState } from "react";
+import { Button } from "antd";
+import type Plotly from "plotly.js-dist-min";
+import type { PlotlyHTMLElement } from "plotly.js-dist-min";
+import React, { type ReactElement, useEffect, useMemo, useRef, useState } from "react";
 import { useDebounce } from "usehooks-ts";
+import { worker } from "workerpool";
 
 import {
   DEFAULT_CATEGORICAL_PALETTE_KEY,
@@ -9,8 +12,12 @@ import {
   DISPLAY_COLOR_RAMP_LINEAR_KEYS,
   KNOWN_COLOR_RAMPS,
   TabType,
+  type VectorFieldData,
 } from "src/colorizer";
+import { getSharedWorkerPool } from "src/colorizer/workers/SharedWorkerPool";
 import ColorRampSelection from "src/components/Dropdowns/ColorRampDropdown";
+import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
+import type { SelectItem } from "src/components/Dropdowns/types";
 import LabeledSlider from "src/components/Inputs/LabeledSlider";
 import { useViewerStateStore } from "src/state";
 import { FlexColumn, FlexRow, FlexRowAlignCenter } from "src/styles/utils";
@@ -20,20 +27,6 @@ import Plot3d from "./Plot3d";
 const SCROLL_PLAYBACK_TIMEOUT_MS = 100;
 const RESUME_PLAYBACK_TIMEOUT_MS = 1000;
 
-function makeSteps(min: number, max: number, steps: number): number[] {
-  const stepSize = (max - min) / (steps - 1);
-  return Array.from({ length: steps }, (_, i) => min + i * stepSize);
-}
-
-type VectorFieldData = {
-  xPos: Float32Array;
-  yPos: Float32Array;
-  zPos: Float32Array;
-  xData: Float32Array;
-  yData: Float32Array;
-  zData: Float32Array;
-};
-
 export default function Plot3dTab(): ReactElement {
   const plotContainerRef = useRef<HTMLDivElement>(null);
   const plot3dRef = useRef<Plot3d | null>(null);
@@ -42,7 +35,7 @@ export default function Plot3dTab(): ReactElement {
   const [yAxisFeatureKey, setYAxisFeatureKey] = useState<string | null>(null);
   const [zAxisFeatureKey, setZAxisFeatureKey] = useState<string | null>(null);
 
-  const [bins, setBins] = useState(10);
+  const [bins, setBins] = useState(25);
 
   const [vectorFieldData, setVectorFieldData] = useState<VectorFieldData | null>(null);
   const [coneTrace, setConeTrace] = useState<Plotly.Data | null>(null);
@@ -59,7 +52,6 @@ export default function Plot3dTab(): ReactElement {
   const coneSize = useDebounce(rawConeSize, 100);
   const [coneColorRampKey, setConeColorRampKey] = useState<string>("matplotlib-turbo");
   const [coneColorRampReversed, setConeColorRampReversed] = useState(false);
-  const [flowFieldSubsampleRate, setFlowFieldSubsampleRate] = useState(6);
 
   const dataset = useViewerStateStore((state) => state.dataset);
   const tracks = useViewerStateStore((state) => state.tracks);
@@ -69,6 +61,11 @@ export default function Plot3dTab(): ReactElement {
   const coneColorRamp = KNOWN_COLOR_RAMPS.get(coneColorRampKey) ?? KNOWN_COLOR_RAMPS.get(DEFAULT_COLOR_RAMP_KEY)!;
 
   const isPlotTabVisible = useViewerStateStore((state) => state.openTab === TabType.PLOT_3D);
+
+  //// Interaction Handlers ////
+
+  // Pause playback when the user interacts with the plot, to prevent slowdowns
+  // due to re-rendering.
 
   useEffect(() => {
     if (timeControls.isPlaying()) {
@@ -98,58 +95,6 @@ export default function Plot3dTab(): ReactElement {
       }
     }
   }, [numActiveUserInteractions, isPlaybackTempPaused]);
-
-  // Reset on dataset change
-  useEffect(() => {
-    // if (dataset && dataset?.flowFieldFeatures.size >= 3) {
-    //   const flowFieldKeys = Array.from(dataset.flowFieldFeatures.keys());
-    //   setXAxisFeatureKey(flowFieldKeys[0] ?? null);
-    //   setYAxisFeatureKey(flowFieldKeys[1] ?? null);
-    //   setZAxisFeatureKey(flowFieldKeys[2] ?? null);
-    // }
-  }, [dataset]);
-
-  // Build cone trace when dataset or axis keys change
-  useEffect(() => {
-    const makeConeTrace = (): Plotly.Data | null => {
-      if (!dataset || !vectorFieldData) {
-        return null;
-      }
-
-      return {
-        type: "cone",
-        x: vectorFieldData.xPos,
-        y: vectorFieldData.yPos,
-        z: vectorFieldData.zPos,
-        u: vectorFieldData.xData,
-        v: vectorFieldData.yData,
-        w: vectorFieldData.zData,
-        showscale: false,
-        sizemode: "scaled",
-        sizeref: coneSize,
-        colorscale: coneColorRamp.colorRamp.getPlotlyColorScale(coneColorRampReversed),
-        hoverinfo: "none",
-      } as Plotly.Data;
-    };
-    const newConeTrace = makeConeTrace();
-    setConeTrace(newConeTrace);
-  }, [dataset, vectorFieldData, coneSize, coneColorRampKey, coneColorRampReversed]);
-
-  useEffect(() => {
-    plot3dRef.current = new Plot3d(plotContainerRef.current!);
-  }, []);
-
-  useEffect(() => {
-    if (plot3dRef.current && isPlotTabVisible) {
-      plot3dRef.current.dataset = dataset;
-      plot3dRef.current.tracks = tracks;
-      plot3dRef.current.xAxisFeatureKey = xAxisFeatureKey;
-      plot3dRef.current.yAxisFeatureKey = yAxisFeatureKey;
-      plot3dRef.current.zAxisFeatureKey = zAxisFeatureKey;
-      plot3dRef.current.coneTrace = coneTrace as Plotly.Data | null;
-      plot3dRef.current.plot(currentFrame);
-    }
-  }, [dataset, tracks, currentFrame, coneTrace, isPlotTabVisible]);
 
   useEffect(() => {
     const onMouseDown = (): void => {
@@ -189,51 +134,161 @@ export default function Plot3dTab(): ReactElement {
     };
   }, []);
 
+  //// Data Handlers ////
+
+  // Reset on dataset change
+  useEffect(() => {
+    // if (dataset && dataset?.flowFieldFeatures.size >= 3) {
+    //   const flowFieldKeys = Array.from(dataset.flowFieldFeatures.keys());
+    //   setXAxisFeatureKey(flowFieldKeys[0] ?? null);
+    //   setYAxisFeatureKey(flowFieldKeys[1] ?? null);
+    //   setZAxisFeatureKey(flowFieldKeys[2] ?? null);
+    // }
+  }, [dataset]);
+
+  // Build cone trace when dataset or axis keys change
+  useEffect(() => {
+    const makeConeTrace = (): Plotly.Data | null => {
+      if (!dataset || !vectorFieldData) {
+        return null;
+      }
+
+      return {
+        type: "cone",
+        x: vectorFieldData.xPos,
+        y: vectorFieldData.yPos,
+        z: vectorFieldData.zPos,
+        u: vectorFieldData.xData,
+        v: vectorFieldData.yData,
+        w: vectorFieldData.zData,
+        showscale: false,
+        sizemode: "scaled",
+        sizeref: coneSize,
+        colorscale: coneColorRamp.colorRamp.getPlotlyColorScale(coneColorRampReversed),
+        hoverinfo: "none",
+      } as Plotly.Data;
+    };
+    const newConeTrace = makeConeTrace();
+    setConeTrace(newConeTrace);
+  }, [dataset, vectorFieldData, coneSize, coneColorRampKey, coneColorRampReversed]);
+
+  // Mount Plotly plot on component mount
+  useEffect(() => {
+    plot3dRef.current = new Plot3d(plotContainerRef.current!);
+  }, []);
+
+  // Sync plot with state changes
+  useEffect(() => {
+    if (plot3dRef.current && isPlotTabVisible) {
+      plot3dRef.current.dataset = dataset;
+      plot3dRef.current.tracks = tracks;
+      plot3dRef.current.coneTrace = coneTrace as Plotly.Data | null;
+      plot3dRef.current.plot(currentFrame);
+    }
+  }, [dataset, tracks, currentFrame, coneTrace, isPlotTabVisible]);
+
+  //// Calculation Handlers ////
+  const onClickCalculateFlowField = async (): Promise<void> => {
+    if (!dataset || !xAxisFeatureKey || !yAxisFeatureKey || !zAxisFeatureKey || !plot3dRef.current) {
+      return;
+    }
+
+    const workerPool = getSharedWorkerPool();
+    const vectorFieldData = await workerPool.getVectorFlowField(
+      dataset,
+      xAxisFeatureKey,
+      yAxisFeatureKey,
+      zAxisFeatureKey,
+      [bins, bins, bins]
+    );
+    setVectorFieldData(vectorFieldData);
+    plot3dRef.current.xAxisFeatureKey = xAxisFeatureKey;
+    plot3dRef.current.yAxisFeatureKey = yAxisFeatureKey;
+    plot3dRef.current.zAxisFeatureKey = zAxisFeatureKey;
+  };
+
+  //// Rendering ////
+  const featureDropdownData = useMemo((): SelectItem[] => {
+    if (!dataset) {
+      return [];
+    }
+    // Add units to the dataset feature names if present
+    return dataset.featureKeys.map((key) => {
+      return { value: key, label: dataset.getFeatureNameWithUnits(key) };
+    });
+  }, [dataset]);
+
+  const getFeatureAxisSelector = (
+    axisLabel: string,
+    selectedKey: string | null,
+    onChangeKey: (newKey: string) => void
+  ): ReactElement => {
+    return (
+      <SelectionDropdown
+        label={axisLabel}
+        selected={selectedKey || ""}
+        items={featureDropdownData}
+        onChange={onChangeKey}
+        controlWidth="100%"
+        containerStyle={{ flexGrow: 1, flexBasis: "140px", flexShrink: 1 }}
+      ></SelectionDropdown>
+    );
+  };
+
   return (
-    <FlexColumn style={{ height: "100%" }}>
-      <FlexRow>
-        <FlexRow>
-          <ColorRampSelection
-            selectedRamp={coneColorRampKey}
-            onChangeRamp={function (colorRampKey: string, reversed: boolean): void {
-              setConeColorRampKey(colorRampKey);
-              setConeColorRampReversed(reversed);
-            }}
-            reversed={coneColorRampReversed}
-            colorRampsToDisplay={DISPLAY_COLOR_RAMP_LINEAR_KEYS}
-            selectedPaletteKey={DEFAULT_CATEGORICAL_PALETTE_KEY}
-            onChangePalette={() => {}}
-            numCategories={0}
-            categoricalPalettesToDisplay={DISPLAY_CATEGORICAL_PALETTE_KEYS}
-          />
-        </FlexRow>
+    <FlexColumn style={{ height: "100%", marginBottom: 10 }} $gap={8}>
+      {/* Toolbar */}
+      <FlexRow $gap={24}>
+        <FlexColumn style={{ flexGrow: 1 }} $gap={8}>
+          <FlexRow $gap={8}>
+            <FlexRow $gap={8} style={{ flexGrow: 1 }}>
+              {getFeatureAxisSelector("X Axis", xAxisFeatureKey, setXAxisFeatureKey)}
+              {getFeatureAxisSelector("Y Axis", yAxisFeatureKey, setYAxisFeatureKey)}
+              {getFeatureAxisSelector("Z Axis", zAxisFeatureKey, setZAxisFeatureKey)}
+            </FlexRow>
+          </FlexRow>
+          <FlexRowAlignCenter $gap={8}>
+            <h3>Cone size</h3>
+            <div style={{ width: "180px" }}>
+              <LabeledSlider
+                type="value"
+                value={rawConeSize}
+                onChange={setConeSize}
+                minInputBound={0}
+                minSliderBound={0}
+                maxInputBound={10}
+                maxSliderBound={2.5}
+                step={0.1}
+                marks={[1]}
+                numberFormatter={(number) => number?.toFixed(1)}
+              ></LabeledSlider>
+            </div>
+            <ColorRampSelection
+              selectedRamp={coneColorRampKey}
+              onChangeRamp={function (colorRampKey: string, reversed: boolean): void {
+                setConeColorRampKey(colorRampKey);
+                setConeColorRampReversed(reversed);
+              }}
+              reversed={coneColorRampReversed}
+              colorRampsToDisplay={DISPLAY_COLOR_RAMP_LINEAR_KEYS}
+              selectedPaletteKey={DEFAULT_CATEGORICAL_PALETTE_KEY}
+              onChangePalette={() => {}}
+              numCategories={0}
+              categoricalPalettesToDisplay={DISPLAY_CATEGORICAL_PALETTE_KEYS}
+            />
+          </FlexRowAlignCenter>
+        </FlexColumn>
+
+        <Button
+          type="primary"
+          onClick={onClickCalculateFlowField}
+          disabled={!xAxisFeatureKey || !yAxisFeatureKey || !zAxisFeatureKey}
+        >
+          Recalculate
+        </Button>
       </FlexRow>
-      <FlexRowAlignCenter $gap={5}>
-        <p>Cone size</p>
-        <LabeledSlider
-          type="value"
-          value={coneSize}
-          onChange={setConeSize}
-          minInputBound={0}
-          minSliderBound={0}
-          maxInputBound={10}
-          maxSliderBound={2.5}
-          marks={[1]}
-        ></LabeledSlider>
-      </FlexRowAlignCenter>
-      <FlexRowAlignCenter $gap={5}>
-        <p>Flow field subsampling</p>
-        <LabeledSlider
-          type="value"
-          value={flowFieldSubsampleRate}
-          onChange={setFlowFieldSubsampleRate}
-          minInputBound={1}
-          minSliderBound={1}
-          maxInputBound={20}
-          maxSliderBound={10}
-          step={1}
-        ></LabeledSlider>
-      </FlexRowAlignCenter>
+
+      {/* Plot Container */}
       <div ref={plotContainerRef} style={{ width: "auto", height: "100%", zIndex: "0" }}></div>
     </FlexColumn>
   );

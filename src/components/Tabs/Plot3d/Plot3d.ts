@@ -1,6 +1,6 @@
 import Plotly from "plotly.js-dist-min";
 
-import { Dataset, Track } from "src/colorizer";
+import type { Dataset, Track } from "src/colorizer";
 
 const CONFIG: Partial<Plotly.Config> = {
   responsive: true,
@@ -33,7 +33,6 @@ export default class Plot3d {
     this.dataset = null;
     this.tracks = null;
     this.parentRef = parentRef;
-
     Plotly.newPlot(this.parentRef, [], {}, CONFIG);
 
     this.plot = this.plot.bind(this);

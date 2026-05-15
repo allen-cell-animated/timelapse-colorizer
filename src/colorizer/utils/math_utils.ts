@@ -1,5 +1,6 @@
 import { Vector2 } from "three";
 
+import type { VectorFieldData } from "src/colorizer";
 import Track from "src/colorizer/Track";
 
 /**
@@ -194,7 +195,11 @@ type TrackData = {
 /**
  * Constructs an array of tracks from the given data.
  */
-export function constructAllTracksFromData(trackIds: Uint32Array, times: Uint32Array, centroids: Uint16Array): Track[] {
+export function constructAllTracksFromData(
+  trackIds: Uint32Array,
+  times: Uint32Array,
+  centroids?: Uint16Array
+): Track[] {
   const trackIdToTrackData = new Map<number, TrackData>();
 
   for (let id = 0; id < trackIds.length; id++) {
@@ -206,7 +211,9 @@ export function constructAllTracksFromData(trackIds: Uint32Array, times: Uint32A
     }
     trackData.ids.push(id);
     trackData.times.push(times[id]);
-    trackData.centroids.push(centroids[id * 3], centroids[id * 3 + 1], centroids[id * 3 + 2]);
+    if (centroids) {
+      trackData.centroids.push(centroids[id * 3], centroids[id * 3 + 1], centroids[id * 3 + 2]);
+    }
   }
 
   // Construct and return tracks. Tracks will automatically sort their data by time.
@@ -334,4 +341,89 @@ export function padCentroidsTo3d(centroidsData: Uint16Array, numObjects: number)
     );
     return centroidsData;
   }
+}
+
+function getBinIndex(value: number, range: [number, number], steps: number): number {
+  const [min, max] = range;
+  const stepSize = (max - min) / steps;
+  const bin = Math.floor((value - min) / stepSize);
+  return Math.min(Math.max(bin, 0), steps - 1);
+}
+
+function getBinValue(binIndex: number, range: [number, number], steps: number): number {
+  const [min, max] = range;
+  const stepSize = (max - min) / steps;
+  return min + binIndex * stepSize + stepSize / 2;
+}
+
+export function calculateVectorFlowField(
+  tracks: Track[],
+  xFeatureData: Float32Array | Uint32Array,
+  yFeatureData: Float32Array | Uint32Array,
+  zFeatureData: Float32Array | Uint32Array,
+  xRange: [number, number],
+  yRange: [number, number],
+  zRange: [number, number],
+  binsPerAxis: [number, number, number]
+): VectorFieldData {
+  const [xSteps, ySteps, zSteps] = binsPerAxis;
+
+  const numBins = xSteps * ySteps * zSteps;
+  const count = Array(numBins).fill(0);
+  const xData = new Float32Array(numBins);
+  const yData = new Float32Array(numBins);
+  const zData = new Float32Array(numBins);
+  const xPos = new Float32Array(numBins);
+  const yPos = new Float32Array(numBins);
+  const zPos = new Float32Array(numBins);
+
+  for (const track of tracks) {
+    for (let i0 = 0; i0 < track.ids.length; i0++) {
+      const time = track.times[i0];
+      const i1 = track.times.indexOf(time + 1);
+      const x0Value = xFeatureData[track.ids[i0]];
+      const y0Value = yFeatureData[track.ids[i0]];
+      const z0Value = zFeatureData[track.ids[i0]];
+      const x1Value = xFeatureData[track.ids[i1]];
+      const y1Value = yFeatureData[track.ids[i1]];
+      const z1Value = zFeatureData[track.ids[i1]];
+      const deltaX = x1Value - x0Value;
+      const deltaY = y1Value - y0Value;
+      const deltaZ = z1Value - z0Value;
+
+      const xBin = getBinIndex(x0Value, xRange, xSteps);
+      const yBin = getBinIndex(y0Value, yRange, ySteps);
+      const zBin = getBinIndex(z0Value, zRange, zSteps);
+      const binIndex = xBin * ySteps * zSteps + yBin * zSteps + zBin;
+
+      // TODO: This may result in float imprecision issues
+      xData[binIndex] += deltaX;
+      yData[binIndex] += deltaY;
+      zData[binIndex] += deltaZ;
+      count[binIndex]++;
+    }
+  }
+
+  // Normalize by number of vectors
+  for (let x = 0; x < xSteps; x++) {
+    for (let y = 0; y < ySteps; y++) {
+      for (let z = 0; z < zSteps; z++) {
+        const binIndex = x * ySteps * zSteps + y * zSteps + z;
+        if (count[binIndex] < 5) {
+          xData[binIndex] = 0;
+          yData[binIndex] = 0;
+          zData[binIndex] = 0;
+        } else if (count[binIndex] > 0) {
+          xData[binIndex] /= count[binIndex];
+          yData[binIndex] /= count[binIndex];
+          zData[binIndex] /= count[binIndex];
+        }
+        xPos[binIndex] = getBinValue(x, xRange, xSteps);
+        yPos[binIndex] = getBinValue(y, yRange, ySteps);
+        zPos[binIndex] = getBinValue(z, zRange, zSteps);
+      }
+    }
+  }
+
+  return { xPos, yPos, zPos, xData, yData, zData };
 }

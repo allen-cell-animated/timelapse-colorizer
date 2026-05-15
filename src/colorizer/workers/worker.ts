@@ -1,11 +1,15 @@
 import { Transfer, worker } from "workerpool";
 import type TransferType from "workerpool/types/transfer";
 
-import type { FeatureDataType } from "src/colorizer/types";
+import type { FeatureDataType, FeatureRangeData } from "src/colorizer/types";
 import { computeCorrelations } from "src/colorizer/utils/correlation";
 import { columnsToCsv, type CsvDataColumn } from "src/colorizer/utils/csv_utils";
 import { type LoadedData, loadFromJsonUrl, loadFromParquetUrl } from "src/colorizer/utils/data_load_utils";
-import { calculateMotionDeltas, constructAllTracksFromData } from "src/colorizer/utils/math_utils";
+import {
+  calculateMotionDeltas,
+  calculateVectorFlowField,
+  constructAllTracksFromData,
+} from "src/colorizer/utils/math_utils";
 import { arrayToDataTextureInfo } from "src/colorizer/utils/texture_utils";
 
 async function loadUrlData(url: string, type: FeatureDataType): Promise<TransferType> {
@@ -53,6 +57,34 @@ async function getMotionDeltas(
   return new Transfer(motionDeltas, [motionDeltas.buffer]);
 }
 
+async function getVectorFlowField(
+  trackIds: Uint32Array,
+  times: Uint32Array,
+  xFeature: FeatureRangeData,
+  yFeature: FeatureRangeData,
+  zFeature: FeatureRangeData
+): Promise<TransferType> {
+  const tracks = constructAllTracksFromData(trackIds, times);
+  const flowFieldData = calculateVectorFlowField(
+    tracks,
+    xFeature.data,
+    yFeature.data,
+    zFeature.data,
+    xFeature.range,
+    yFeature.range,
+    zFeature.range,
+    [xFeature.bins, yFeature.bins, zFeature.bins]
+  );
+  return new Transfer(flowFieldData, [
+    flowFieldData.xPos.buffer,
+    flowFieldData.yPos.buffer,
+    flowFieldData.zPos.buffer,
+    flowFieldData.xData.buffer,
+    flowFieldData.yData.buffer,
+    flowFieldData.zData.buffer,
+  ]);
+}
+
 async function getCsvString(columns: CsvDataColumn[], delimiter: string = ","): Promise<string> {
   const csvString = columnsToCsv(columns, delimiter);
   // Note: This could be converted to an array and transferred if there is a
@@ -63,6 +95,7 @@ async function getCsvString(columns: CsvDataColumn[], delimiter: string = ","): 
 worker({
   loadUrlData,
   getMotionDeltas,
+  getVectorFlowField,
   getCorrelations,
   getCsvString,
 });

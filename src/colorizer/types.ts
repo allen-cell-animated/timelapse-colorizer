@@ -366,3 +366,18 @@ export type ChannelSetting = {
    */
   dataMax: number | null;
 };
+
+export type FeatureRangeData = {
+  data: Float32Array | Uint32Array;
+  bins: number;
+  range: [number, number];
+};
+
+export type VectorFieldData = {
+  xPos: Float32Array;
+  yPos: Float32Array;
+  zPos: Float32Array;
+  xData: Float32Array;
+  yData: Float32Array;
+  zData: Float32Array;
+};
