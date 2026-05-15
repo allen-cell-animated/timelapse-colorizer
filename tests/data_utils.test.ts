@@ -280,7 +280,7 @@ describe("data_utils", () => {
     });
   });
 
-  describe("getRollingAverage", () => {
+  describe("getMovingAverage", () => {
     it("handles window size of 0", () => {
       const values = [1, 2, 3, 4, 5];
       // Will round up to window size of 1
