@@ -352,7 +352,7 @@ describe("data_utils", () => {
       expect(result).to.deep.equal([15, 30, 45]);
     });
 
-    it("returns NaN when only non-finite values are present", () => {
+    it("returns NaN when only non-finite values are within window", () => {
       const values = [10, 20, NaN, NaN, NaN, Infinity];
       const result = getMovingAverage(values, 3, true);
       expect(result).to.deep.equal([15, 15, 20, NaN, NaN, NaN]);

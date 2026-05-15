@@ -61,13 +61,11 @@ export type PointsData = {
 /**
  * Removes data from all indices where xData or yData is NaN or Infinity.
  */
-const sanitizeNumericDataArrays = (
-  xData: DataArray,
-  yData: DataArray,
-  objectIds: number[],
-  segIds: number[],
-  trackIds: number[]
-): { xData: DataArray; yData: DataArray; objectIds: number[]; segIds: number[]; trackIds: number[] } => {
+export const removeNanDataIndices = (pointsData: PointsData | undefined): PointsData | undefined => {
+  if (!pointsData) {
+    return undefined;
+  }
+  const { xData, yData, objectIds, segIds, trackIds } = pointsData;
   // Boolean array, true if both x and y are not NaN/infinity
   const isFiniteLut = Array.from(Array(xData.length)).map(
     (_, i) => Number.isFinite(xData[i]) && Number.isFinite(yData[i])
@@ -152,8 +150,7 @@ export const filterDataByRange = (
     xData = rawXData;
     yData = rawYData;
   }
-  // TODO: Consider moving this or making it conditional if it causes performance issues.
-  return sanitizeNumericDataArrays(xData, yData, objectIds, segIds, trackIds);
+  return { xData, yData, objectIds, segIds, trackIds };
 };
 
 /**
@@ -498,8 +495,10 @@ export const getAverageLineCurrentFrameShapes = (
     }
     const x = lineData.xData[index];
     const y = lineData.yData[index];
+    if (isNaN(x) || isNaN(y)) {
+      continue;
+    }
     const color = trackColors?.get(trackId) || DEFAULT_AVERAGE_LINE_COLOR;
-
     lineShapes.push(getCircleShape(x, y, 4, `#${color.getHexString()}`));
   }
   return lineShapes;

@@ -35,6 +35,7 @@ import {
   getScatterplotDataAsCsv,
   isHistogramEvent,
   makeLineTrace,
+  removeNanDataIndices,
 } from "src/utils/scatter_plot_data_utils";
 import { areAnyHotkeysPressed } from "src/utils/user_input";
 
@@ -375,7 +376,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     }
 
     // Filter data by the range type, if applicable
-    const pointsData = filterDataByRange(dataset, currentFrame, rawXData, rawYData, rangeType);
+    const pointsData = removeNanDataIndices(filterDataByRange(dataset, currentFrame, rawXData, rawYData, rangeType));
     if (pointsData === undefined) {
       clearPlotAndStopRender();
       return;
