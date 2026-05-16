@@ -423,3 +423,22 @@ export function calculateVectorFlowField(
 
   return { xPos, yPos, zPos, xData, yData, zData, count };
 }
+
+export function thresholdVectorFlowFieldByCount(
+  flowFieldData: VectorFieldData,
+  countThreshold: number
+): VectorFieldData {
+  const { xPos, yPos, zPos, xData, yData, zData, count } = flowFieldData;
+  const passedThreshold = Array(count.length)
+    .fill(false)
+    .map((_, i) => count[i] >= countThreshold);
+  return {
+    xPos: xPos.filter((_, i) => passedThreshold[i]),
+    yPos: yPos.filter((_, i) => passedThreshold[i]),
+    zPos: zPos.filter((_, i) => passedThreshold[i]),
+    xData: xData.filter((_, i) => passedThreshold[i]),
+    yData: yData.filter((_, i) => passedThreshold[i]),
+    zData: zData.filter((_, i) => passedThreshold[i]),
+    count: count.filter((_, i) => passedThreshold[i]),
+  };
+}

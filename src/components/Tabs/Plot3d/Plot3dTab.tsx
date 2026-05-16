@@ -13,6 +13,7 @@ import {
   TabType,
   type VectorFieldData,
 } from "src/colorizer";
+import { thresholdVectorFlowFieldByCount } from "src/colorizer/utils/math_utils";
 import { getSharedWorkerPool } from "src/colorizer/workers/SharedWorkerPool";
 import ColorRampSelection from "src/components/Dropdowns/ColorRampDropdown";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
@@ -30,12 +31,10 @@ export default function Plot3dTab(): ReactElement {
   const plotContainerRef = useRef<HTMLDivElement>(null);
   const plot3dRef = useRef<Plot3d | null>(null);
 
+  const [bins, setBins] = useState(25);
   const [xAxisFeatureKey, setXAxisFeatureKey] = useState<string | null>(null);
   const [yAxisFeatureKey, setYAxisFeatureKey] = useState<string | null>(null);
   const [zAxisFeatureKey, setZAxisFeatureKey] = useState<string | null>(null);
-
-  const [bins, setBins] = useState(25);
-  const [threshold, setThreshold] = useState(5);
 
   const [vectorFieldData, setVectorFieldData] = useState<VectorFieldData | null>(null);
   const [coneTrace, setConeTrace] = useState<Plotly.Data | null>(null);
@@ -52,6 +51,8 @@ export default function Plot3dTab(): ReactElement {
   const coneSize = useDebounce(rawConeSize, 100);
   const [coneColorRampKey, setConeColorRampKey] = useState<string>("matplotlib-turbo");
   const [coneColorRampReversed, setConeColorRampReversed] = useState(false);
+  const [rawThreshold, setThreshold] = useState(5);
+  const threshold = useDebounce(rawThreshold, 100);
 
   const dataset = useViewerStateStore((state) => state.dataset);
   const tracks = useViewerStateStore((state) => state.tracks);
@@ -152,15 +153,15 @@ export default function Plot3dTab(): ReactElement {
       if (!dataset || !vectorFieldData) {
         return null;
       }
-
+      let data = thresholdVectorFlowFieldByCount(vectorFieldData, threshold);
       return {
         type: "cone",
-        x: vectorFieldData.xPos,
-        y: vectorFieldData.yPos,
-        z: vectorFieldData.zPos,
-        u: vectorFieldData.xData,
-        v: vectorFieldData.yData,
-        w: vectorFieldData.zData,
+        x: data.xPos,
+        y: data.yPos,
+        z: data.zPos,
+        u: data.xData,
+        v: data.yData,
+        w: data.zData,
         showscale: false,
         sizemode: "scaled",
         sizeref: coneSize,
@@ -170,7 +171,7 @@ export default function Plot3dTab(): ReactElement {
     };
     const newConeTrace = makeConeTrace();
     setConeTrace(newConeTrace);
-  }, [dataset, vectorFieldData, coneSize, coneColorRampKey, coneColorRampReversed]);
+  }, [dataset, vectorFieldData, threshold, coneSize, coneColorRampKey, coneColorRampReversed]);
 
   // Mount Plotly plot on component mount
   useEffect(() => {
@@ -273,6 +274,21 @@ export default function Plot3dTab(): ReactElement {
             step={0.1}
             marks={[1]}
             numberFormatter={(number) => number?.toFixed(1)}
+          ></LabeledSlider>
+        </div>
+        <h3>Threshold</h3>
+        <div style={{ width: "180px" }}>
+          <LabeledSlider
+            type="value"
+            value={rawThreshold}
+            onChange={setThreshold}
+            minInputBound={0}
+            minSliderBound={0}
+            maxInputBound={50}
+            maxSliderBound={20}
+            step={1}
+            marks={[5]}
+            numberFormatter={(number) => number?.toFixed(0)}
           ></LabeledSlider>
         </div>
         <ColorRampSelection
