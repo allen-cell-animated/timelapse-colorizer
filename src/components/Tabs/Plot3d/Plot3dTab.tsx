@@ -40,8 +40,8 @@ export default function Plot3dTab(): ReactElement {
   const [coneTrace, setConeTrace] = useState<Plotly.Data | null>(null);
 
   const [isPlaybackTempPaused, setIsPlaybackTempPaused] = useState(false);
-  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const resumePlaybackTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const resumePlaybackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // The number of user interactions (left, middle, or right mouse down) that
   // are currently occurring. When 0, no user interaction is occurring.
@@ -149,11 +149,13 @@ export default function Plot3dTab(): ReactElement {
 
   // Build cone trace when dataset or axis keys change
   useEffect(() => {
+    // TODO: Put this in Plot3d as a static method
     const makeConeTrace = (): Plotly.Data | null => {
       if (!dataset || !vectorFieldData) {
         return null;
       }
       let data = thresholdVectorFlowFieldByCount(vectorFieldData, threshold);
+      const colorScale = coneColorRamp.colorRamp.getPlotlyColorScale(coneColorRampReversed);
       return {
         type: "cone",
         x: data.xPos,
@@ -165,7 +167,7 @@ export default function Plot3dTab(): ReactElement {
         showscale: false,
         sizemode: "scaled",
         sizeref: coneSize,
-        colorscale: coneColorRamp.colorRamp.getPlotlyColorScale(coneColorRampReversed),
+        colorscale: colorScale,
         hoverinfo: "none",
       } as Plotly.Data;
     };

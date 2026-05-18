@@ -421,7 +421,27 @@ export function calculateVectorFlowField(
     }
   }
 
-  return { xPos, yPos, zPos, xData, yData, zData, count };
+  // Filter out 0-count bins or NaN/Infinity values
+  const validBins = Array.from(count).map(
+    (c, i) => c > 0 && isFinite(xData[i]) && isFinite(yData[i]) && isFinite(zData[i])
+  );
+  const filteredXPos = xPos.filter((_, i) => validBins[i]);
+  const filteredYPos = yPos.filter((_, i) => validBins[i]);
+  const filteredZPos = zPos.filter((_, i) => validBins[i]);
+  const filteredXData = xData.filter((_, i) => validBins[i]);
+  const filteredYData = yData.filter((_, i) => validBins[i]);
+  const filteredZData = zData.filter((_, i) => validBins[i]);
+  const filteredCount = count.filter((_, i) => validBins[i]);
+
+  return {
+    xPos: filteredXPos,
+    yPos: filteredYPos,
+    zPos: filteredZPos,
+    xData: filteredXData,
+    yData: filteredYData,
+    zData: filteredZData,
+    count: filteredCount,
+  };
 }
 
 export function thresholdVectorFlowFieldByCount(
