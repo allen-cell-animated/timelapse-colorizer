@@ -32,13 +32,16 @@ export const useViewerStateStoreDebounced = <T extends Partial<ViewerStore>>(
 
   const propertyTimeouts = useRef<Partial<Record<keyof T, TimeoutHandle>>>({});
   const pendingValues = useRef<Partial<T>>({});
+
+  const delayMsRef = useRef(delayMs);
+  delayMsRef.current = delayMs;
   const propertyDelayMsRef = useRef(propertyDelayMs);
   propertyDelayMsRef.current = propertyDelayMs;
 
   const debouncedStateRef = useRef(rawState);
 
   const getPropertyDelayMs = (key: keyof T): number => {
-    return Math.max(propertyDelayMsRef.current[key] ?? delayMs, 0);
+    return Math.max(propertyDelayMsRef.current[key] ?? delayMsRef.current, 0);
   };
 
   // Set any properties that can be updated immediately (debounce = 0).
@@ -85,7 +88,7 @@ export const useViewerStateStoreDebounced = <T extends Partial<ViewerStore>>(
         }
       }
     }
-  }, [rawState, delayMs]);
+  }, [rawState]);
 
   // Clear timeouts on unmount
   useEffect(() => {
