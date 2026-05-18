@@ -34,9 +34,9 @@ export default function Plot3dTab(): ReactElement {
 
   const [rawBins, setBins] = useState(25);
   const bins = useDebounce(rawBins, 100);
-  const [xAxisFeatureKey, setXAxisFeatureKey] = useState<string | null>(null);
-  const [yAxisFeatureKey, setYAxisFeatureKey] = useState<string | null>(null);
-  const [zAxisFeatureKey, setZAxisFeatureKey] = useState<string | null>(null);
+  const [xAxisFeatureKey, setXAxisFeatureKey] = useState<string | null>("pc_1");
+  const [yAxisFeatureKey, setYAxisFeatureKey] = useState<string | null>("pc_2");
+  const [zAxisFeatureKey, setZAxisFeatureKey] = useState<string | null>("pc_3");
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -151,14 +151,19 @@ export default function Plot3dTab(): ReactElement {
     setIsLoading(true);
   }, flowFieldDeps);
 
-  // Reset on dataset change
+  // Clear selected features as needed when dataset changes
   useEffect(() => {
-    // if (dataset && dataset?.flowFieldFeatures.size >= 3) {
-    //   const flowFieldKeys = Array.from(dataset.flowFieldFeatures.keys());
-    //   setXAxisFeatureKey(flowFieldKeys[0] ?? null);
-    //   setYAxisFeatureKey(flowFieldKeys[1] ?? null);
-    //   setZAxisFeatureKey(flowFieldKeys[2] ?? null);
-    // }
+    if (dataset) {
+      if (xAxisFeatureKey !== null && !dataset.hasFeatureKey(xAxisFeatureKey)) {
+        setXAxisFeatureKey(null);
+      }
+      if (yAxisFeatureKey !== null && !dataset.hasFeatureKey(yAxisFeatureKey)) {
+        setYAxisFeatureKey(null);
+      }
+      if (zAxisFeatureKey !== null && !dataset.hasFeatureKey(zAxisFeatureKey)) {
+        setZAxisFeatureKey(null);
+      }
+    }
   }, [dataset]);
 
   // Build cone trace when calculated vector field data or cone settings change
