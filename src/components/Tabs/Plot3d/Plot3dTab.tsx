@@ -9,6 +9,7 @@ import {
   DISPLAY_CATEGORICAL_PALETTE_KEYS,
   DISPLAY_COLOR_RAMP_LINEAR_KEYS,
   KNOWN_COLOR_RAMPS,
+  SelectionOutlineColorMode,
   TabType,
   type VectorFieldData,
 } from "src/colorizer";
@@ -61,6 +62,8 @@ export default function Plot3dTab(): ReactElement {
 
   const dataset = useViewerStateStore((state) => state.dataset);
   const tracks = useViewerStateStore((state) => state.tracks);
+  const trackColors = useViewerStateStore((state) => state.trackColors);
+  const outlineColorMode = useViewerStateStore((state) => state.outlineColorMode);
   const currentFrame = useViewerStateStore((state) => state.currentFrame);
   const timeControls = useViewerStateStore((state) => state.timeControls);
 
@@ -196,6 +199,7 @@ export default function Plot3dTab(): ReactElement {
     if (plot3dRef.current && isPlotTabVisible) {
       plot3dRef.current.dataset = dataset;
       plot3dRef.current.tracks = tracks;
+      plot3dRef.current.trackToColor = outlineColorMode === SelectionOutlineColorMode.USE_PALETTE ? trackColors : null;
       plot3dRef.current.coneTrace = coneTrace as Plotly.Data | null;
       plot3dRef.current.lineAverageWindow = movingAverageWindow;
       plot3dRef.current.plot(currentFrame);

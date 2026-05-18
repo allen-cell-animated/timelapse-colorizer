@@ -1,4 +1,5 @@
 import Plotly from "plotly.js-dist-min";
+import { Color } from "three";
 
 import type { Dataset, Track } from "src/colorizer";
 import { getMovingAverage } from "src/colorizer/utils/data_utils";
@@ -24,6 +25,7 @@ export default class Plot3d {
   public parentRef: HTMLElement;
   public dataset: Dataset | null;
   public tracks: Map<number, Track> | null;
+  public trackToColor: Map<number, Color> | null;
   public xAxisFeatureKey: string | null = null;
   public yAxisFeatureKey: string | null = null;
   public zAxisFeatureKey: string | null = null;
@@ -34,6 +36,7 @@ export default class Plot3d {
   constructor(parentRef: HTMLElement) {
     this.dataset = null;
     this.tracks = null;
+    this.trackToColor = null;
     this.parentRef = parentRef;
     Plotly.newPlot(this.parentRef, [], {}, CONFIG);
 
@@ -97,6 +100,14 @@ export default class Plot3d {
         );
 
         if (xData.length > 0 && yData.length > 0 && zData.length > 0) {
+          let color = "rgb(80, 80, 80)";
+          if (this.tracks.size > 1 && this.trackToColor !== null) {
+            const trackColor = this.trackToColor.get(track.trackId);
+            if (trackColor) {
+              color = "#" + trackColor.getHexString();
+              console.log(`Track ${track.trackId} color: ${color}`);
+            }
+          }
           const scatterPlotTrace: Plotly.Data = {
             x: xData,
             y: yData,
@@ -108,7 +119,7 @@ export default class Plot3d {
             opacity: 1,
             line: {
               width: 4,
-              color: "rgb(80, 80, 80)",
+              color,
             },
             showlegend: false,
             hovertemplate: hoverTemplate,
