@@ -19,6 +19,7 @@ import ColorRampSelection from "src/components/Dropdowns/ColorRampDropdown";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import type { SelectItem } from "src/components/Dropdowns/types";
 import LabeledSlider from "src/components/Inputs/LabeledSlider";
+import LoadingSpinner from "src/components/LoadingSpinner";
 import { useViewerStateStore } from "src/state";
 import { FlexColumn, FlexRow, FlexRowAlignCenter } from "src/styles/utils";
 
@@ -31,10 +32,13 @@ export default function Plot3dTab(): ReactElement {
   const plotContainerRef = useRef<HTMLDivElement>(null);
   const plot3dRef = useRef<Plot3d | null>(null);
 
-  const [bins, setBins] = useState(25);
+  const [rawBins, setBins] = useState(25);
+  const bins = useDebounce(rawBins, 100);
   const [xAxisFeatureKey, setXAxisFeatureKey] = useState<string | null>(null);
   const [yAxisFeatureKey, setYAxisFeatureKey] = useState<string | null>(null);
   const [zAxisFeatureKey, setZAxisFeatureKey] = useState<string | null>(null);
+
+  const [isLoading, setIsLoading] = useState(false);
 
   const [vectorFieldData, setVectorFieldData] = useState<VectorFieldData | null>(null);
   const [coneTrace, setConeTrace] = useState<Plotly.Data | null>(null);
@@ -137,6 +141,12 @@ export default function Plot3dTab(): ReactElement {
 
   //// Data Handlers ////
 
+  const flowFieldDeps = [dataset, xAxisFeatureKey, yAxisFeatureKey, zAxisFeatureKey, bins];
+
+  useEffect(() => {
+    setIsLoading(true);
+  }, flowFieldDeps);
+
   // Reset on dataset change
   useEffect(() => {
     // if (dataset && dataset?.flowFieldFeatures.size >= 3) {
@@ -147,7 +157,7 @@ export default function Plot3dTab(): ReactElement {
     // }
   }, [dataset]);
 
-  // Build cone trace when dataset or axis keys change
+  // Build cone trace when calculated vector field data or cone settings change
   useEffect(() => {
     // TODO: Put this in Plot3d as a static method
     const makeConeTrace = (): Plotly.Data | null => {
@@ -191,7 +201,8 @@ export default function Plot3dTab(): ReactElement {
   }, [dataset, tracks, currentFrame, coneTrace, isPlotTabVisible]);
 
   //// Calculation Handlers ////
-  const onClickCalculateFlowField = async (): Promise<void> => {
+
+  const calculateFlowField = async (): Promise<void> => {
     if (!dataset || !xAxisFeatureKey || !yAxisFeatureKey || !zAxisFeatureKey || !plot3dRef.current) {
       return;
     }
@@ -208,7 +219,13 @@ export default function Plot3dTab(): ReactElement {
     plot3dRef.current.xAxisFeatureKey = xAxisFeatureKey;
     plot3dRef.current.yAxisFeatureKey = yAxisFeatureKey;
     plot3dRef.current.zAxisFeatureKey = zAxisFeatureKey;
+    setIsLoading(false);
   };
+
+  useEffect(() => {
+    setIsLoading(true);
+    calculateFlowField().then(() => setIsLoading(false));
+  }, flowFieldDeps);
 
   //// Rendering ////
   const featureDropdownData = useMemo((): SelectItem[] => {
@@ -244,21 +261,34 @@ export default function Plot3dTab(): ReactElement {
       <FlexRow $gap={24}>
         <FlexColumn style={{ flexGrow: 1 }} $gap={8}>
           <FlexRow $gap={8} style={{ flexGrow: 1 }}>
-            <FlexRow $gap={8} style={{ flexGrow: 1 }}>
+            <FlexRow $gap={12} style={{ flexGrow: 1 }}>
               {getFeatureAxisSelector("X Axis", xAxisFeatureKey, setXAxisFeatureKey)}
               {getFeatureAxisSelector("Y Axis", yAxisFeatureKey, setYAxisFeatureKey)}
               {getFeatureAxisSelector("Z Axis", zAxisFeatureKey, setZAxisFeatureKey)}
+              <SelectionDropdown
+                label={"Bins"}
+                selected={rawBins.toString()}
+                items={[10, 25, 50, 100].map((num) => ({ value: num.toString(), label: num.toString() }))}
+                onChange={(value: string) => {
+                  const parsedValue = parseInt(value);
+                  if (!isNaN(parsedValue) && parsedValue > 0) {
+                    setBins(parsedValue);
+                  }
+                }}
+                width="100px"
+                controlWidth="70px"
+              ></SelectionDropdown>
             </FlexRow>
           </FlexRow>
         </FlexColumn>
 
-        <Button
+        {/* <Button
           type="primary"
           onClick={onClickCalculateFlowField}
-          disabled={!xAxisFeatureKey || !yAxisFeatureKey || !zAxisFeatureKey}
+          disabled={!needsRecalculation || !xAxisFeatureKey || !yAxisFeatureKey || !zAxisFeatureKey || !dataset}
         >
           Recalculate
-        </Button>
+        </Button> */}
       </FlexRow>
 
       {/* Plot Controls */}
@@ -309,7 +339,9 @@ export default function Plot3dTab(): ReactElement {
       </FlexRowAlignCenter>
 
       {/* Plot Container */}
-      <div ref={plotContainerRef} style={{ width: "auto", height: "100%", zIndex: "0" }}></div>
+      <LoadingSpinner loading={isLoading} style={{ width: "100%", height: "100%" }}>
+        <div ref={plotContainerRef} style={{ width: "auto", height: "100%", zIndex: "0" }}></div>
+      </LoadingSpinner>
     </FlexColumn>
   );
 }
