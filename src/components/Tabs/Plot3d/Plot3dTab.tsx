@@ -1,4 +1,3 @@
-import { Button } from "antd";
 import type Plotly from "plotly.js-dist-min";
 import type { PlotlyHTMLElement } from "plotly.js-dist-min";
 import React, { type ReactElement, useEffect, useMemo, useRef, useState } from "react";
@@ -57,6 +56,8 @@ export default function Plot3dTab(): ReactElement {
   const [coneColorRampReversed, setConeColorRampReversed] = useState(false);
   const [rawThreshold, setThreshold] = useState(5);
   const threshold = useDebounce(rawThreshold, 100);
+  const [rawMovingAverageWindow, setMovingAverageWindow] = useState(1);
+  const movingAverageWindow = useDebounce(rawMovingAverageWindow, 100);
 
   const dataset = useViewerStateStore((state) => state.dataset);
   const tracks = useViewerStateStore((state) => state.tracks);
@@ -196,9 +197,10 @@ export default function Plot3dTab(): ReactElement {
       plot3dRef.current.dataset = dataset;
       plot3dRef.current.tracks = tracks;
       plot3dRef.current.coneTrace = coneTrace as Plotly.Data | null;
+      plot3dRef.current.lineAverageWindow = movingAverageWindow;
       plot3dRef.current.plot(currentFrame);
     }
-  }, [dataset, tracks, currentFrame, coneTrace, isPlotTabVisible]);
+  }, [dataset, tracks, currentFrame, coneTrace, isPlotTabVisible, movingAverageWindow]);
 
   //// Calculation Handlers ////
 
@@ -262,9 +264,9 @@ export default function Plot3dTab(): ReactElement {
         <FlexColumn style={{ flexGrow: 1 }} $gap={8}>
           <FlexRow $gap={8} style={{ flexGrow: 1 }}>
             <FlexRow $gap={12} style={{ flexGrow: 1 }}>
-              {getFeatureAxisSelector("X Axis", xAxisFeatureKey, setXAxisFeatureKey)}
-              {getFeatureAxisSelector("Y Axis", yAxisFeatureKey, setYAxisFeatureKey)}
-              {getFeatureAxisSelector("Z Axis", zAxisFeatureKey, setZAxisFeatureKey)}
+              {getFeatureAxisSelector("X", xAxisFeatureKey, setXAxisFeatureKey)}
+              {getFeatureAxisSelector("Y", yAxisFeatureKey, setYAxisFeatureKey)}
+              {getFeatureAxisSelector("Z", zAxisFeatureKey, setZAxisFeatureKey)}
               <SelectionDropdown
                 label={"Bins"}
                 selected={rawBins.toString()}
@@ -292,7 +294,7 @@ export default function Plot3dTab(): ReactElement {
       </FlexRow>
 
       {/* Plot Controls */}
-      <FlexRowAlignCenter $gap={8}>
+      <FlexRowAlignCenter $gap={12}>
         <h3>Cone size</h3>
         <div style={{ width: "180px" }}>
           <LabeledSlider
@@ -308,6 +310,19 @@ export default function Plot3dTab(): ReactElement {
             numberFormatter={(number) => number?.toFixed(1)}
           ></LabeledSlider>
         </div>
+        <ColorRampSelection
+          selectedRamp={coneColorRampKey}
+          onChangeRamp={function (colorRampKey: string, reversed: boolean): void {
+            setConeColorRampKey(colorRampKey);
+            setConeColorRampReversed(reversed);
+          }}
+          reversed={coneColorRampReversed}
+          colorRampsToDisplay={DISPLAY_COLOR_RAMP_LINEAR_KEYS}
+          selectedPaletteKey={DEFAULT_CATEGORICAL_PALETTE_KEY}
+          onChangePalette={() => {}}
+          numCategories={0}
+          categoricalPalettesToDisplay={DISPLAY_CATEGORICAL_PALETTE_KEYS}
+        />
         <h3>Threshold</h3>
         <div style={{ width: "180px" }}>
           <LabeledSlider
@@ -323,19 +338,20 @@ export default function Plot3dTab(): ReactElement {
             numberFormatter={(number) => number?.toFixed(0)}
           ></LabeledSlider>
         </div>
-        <ColorRampSelection
-          selectedRamp={coneColorRampKey}
-          onChangeRamp={function (colorRampKey: string, reversed: boolean): void {
-            setConeColorRampKey(colorRampKey);
-            setConeColorRampReversed(reversed);
-          }}
-          reversed={coneColorRampReversed}
-          colorRampsToDisplay={DISPLAY_COLOR_RAMP_LINEAR_KEYS}
-          selectedPaletteKey={DEFAULT_CATEGORICAL_PALETTE_KEY}
-          onChangePalette={() => {}}
-          numCategories={0}
-          categoricalPalettesToDisplay={DISPLAY_CATEGORICAL_PALETTE_KEYS}
-        />
+        <h3>Line Moving Avg.</h3>
+        <div style={{ width: "180px" }}>
+          <LabeledSlider
+            type="value"
+            value={rawMovingAverageWindow}
+            onChange={setMovingAverageWindow}
+            minInputBound={0}
+            minSliderBound={0}
+            maxInputBound={50}
+            maxSliderBound={20}
+            step={1}
+            numberFormatter={(number) => number?.toFixed(0)}
+          ></LabeledSlider>
+        </div>
       </FlexRowAlignCenter>
 
       {/* Plot Container */}

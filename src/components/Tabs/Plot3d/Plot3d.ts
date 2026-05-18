@@ -1,6 +1,7 @@
 import Plotly from "plotly.js-dist-min";
 
 import type { Dataset, Track } from "src/colorizer";
+import { getMovingAverage } from "src/colorizer/utils/data_utils";
 
 const CONFIG: Partial<Plotly.Config> = {
   responsive: true,
@@ -28,6 +29,7 @@ export default class Plot3d {
   public zAxisFeatureKey: string | null = null;
 
   public coneTrace: Plotly.Data | null = null;
+  public lineAverageWindow: number = 5;
 
   constructor(parentRef: HTMLElement) {
     this.dataset = null;
@@ -51,13 +53,12 @@ export default class Plot3d {
       this.zAxisFeatureKey
     ) {
       for (const track of this.tracks.values()) {
-        const endTime = Math.min(currTime, track.endTime());
         // TODO: Show gaps/discontinuities in the track path?
         const ids: number[] = [];
         const times: number[] = [];
         let lastValidId = track.ids[0];
         let lastValidTime = track.startTime();
-        for (let t = track.startTime(); t <= endTime; t++) {
+        for (let t = track.startTime(); t <= track.endTime(); t++) {
           const id = track.getIdAtTime(t);
           if (id !== null) {
             ids.push(id);
@@ -76,14 +77,30 @@ export default class Plot3d {
           `${this.dataset?.getFeatureNameWithUnits(this.zAxisFeatureKey) ?? ""}: %{z}<br>` +
           `Time: %{customdata}`;
 
-        const xData = this.dataset.getFeatureData(this.xAxisFeatureKey)?.data ?? [];
-        const yData = this.dataset.getFeatureData(this.yAxisFeatureKey)?.data ?? [];
-        const zData = this.dataset.getFeatureData(this.zAxisFeatureKey)?.data ?? [];
+        const xFeatureData = this.dataset.getFeatureData(this.xAxisFeatureKey)?.data ?? [];
+        const yFeatureData = this.dataset.getFeatureData(this.yAxisFeatureKey)?.data ?? [];
+        const zFeatureData = this.dataset.getFeatureData(this.zAxisFeatureKey)?.data ?? [];
+        const xData = getMovingAverage(
+          ids.map((id) => xFeatureData[id]),
+          this.lineAverageWindow,
+          true
+        );
+        const yData = getMovingAverage(
+          ids.map((id) => yFeatureData[id]),
+          this.lineAverageWindow,
+          true
+        );
+        const zData = getMovingAverage(
+          ids.map((id) => zFeatureData[id]),
+          this.lineAverageWindow,
+          true
+        );
+
         if (xData.length > 0 && yData.length > 0 && zData.length > 0) {
           const scatterPlotTrace: Plotly.Data = {
-            x: ids.map((id) => xData[id]),
-            y: ids.map((id) => yData[id]),
-            z: ids.map((id) => zData[id]),
+            x: xData,
+            y: yData,
+            z: zData,
             // TODO: use customdata to store time?,
             customdata: times,
             mode: "lines",
@@ -99,12 +116,12 @@ export default class Plot3d {
           traces.push(scatterPlotTrace);
 
           // Add a point for the current time
-          const currId = track.getIdAtTime(currTime);
+          const currId = track.times.indexOf(currTime);
           if (currId !== -1) {
             const currentPointTrace: Plotly.Data = {
-              x: [xData[lastValidId]],
-              y: [yData[lastValidId]],
-              z: [zData[lastValidId]],
+              x: [xData[currId]],
+              y: [yData[currId]],
+              z: [zData[currId]],
               customdata: [currTime],
               mode: "markers",
               type: "scatter3d",
