@@ -1,19 +1,40 @@
 import { unparse } from "papaparse";
-import type { PlotData, PlotMarker, PlotMouseEvent, Shape } from "plotly.js-dist-min";
-import type { Color } from "three";
+import type { LayoutAxis, PlotData, PlotMarker, PlotMouseEvent, Shape } from "plotly.js-dist-min";
+import { Color, type ColorRepresentation, type TypedArray } from "three";
+import { clamp } from "three/src/math/MathUtils";
 
 import {
   type ColorRamp,
+  ColorRampType,
   CSV_COL_FILTERED,
   CSV_COL_OUTLIER,
   CSV_COL_SEG_ID,
   CSV_COL_TIME_WITH_UNITS,
   CSV_COL_TRACK,
   type Dataset,
+  DrawMode,
   type HexColorString,
+  PlotRangeType,
+  type Track,
+  ViewMode,
 } from "src/colorizer";
-import { type FeatureData, FeatureType, TIME_FEATURE_KEY, TRACK_FEATURE_KEY } from "src/colorizer/Dataset";
+import {
+  CENTROID_Y_FEATURE_KEY,
+  type FeatureData,
+  FeatureType,
+  TIME_FEATURE_KEY,
+  TRACK_FEATURE_KEY,
+} from "src/colorizer/Dataset";
+import { removeUndefinedProperties } from "src/colorizer/utils/data_utils";
 import { remap } from "src/colorizer/utils/math_utils";
+import type { ColorizeStateParams } from "src/colorizer/viewport/types";
+
+const MAX_POINTS_PER_TRACE = 1024;
+const COLOR_RAMP_SUBSAMPLES = 100;
+const NUM_RESERVED_BUCKETS = 2;
+const BUCKET_INDEX_OUTOFRANGE = 0;
+const BUCKET_INDEX_OUTLIERS = 1;
+const DEFAULT_AVERAGE_LINE_COLOR = new Color("#444");
 
 export type DataArray = Uint32Array | Float32Array | number[];
 
@@ -26,6 +47,206 @@ export type TraceData = {
   color: HexColorString;
   marker: Partial<PlotMarker>;
 };
+
+export type PointsData = {
+  xData: DataArray;
+  yData: DataArray;
+  objectIds: number[];
+  segIds: number[];
+  trackIds: number[];
+};
+
+//// Data validation ////
+
+/**
+ * Removes data from all indices where xData or yData is NaN or Infinity.
+ */
+export const removeNanDataIndices = (pointsData: PointsData | undefined): PointsData | undefined => {
+  if (!pointsData) {
+    return undefined;
+  }
+  const { xData, yData, objectIds, segIds, trackIds } = pointsData;
+  // Boolean array, true if both x and y are not NaN/infinity
+  const isFiniteLut = Array.from(Array(xData.length)).map(
+    (_, i) => Number.isFinite(xData[i]) && Number.isFinite(yData[i])
+  );
+
+  return {
+    xData: xData.filter((_, i) => isFiniteLut[i]),
+    yData: yData.filter((_, i) => isFiniteLut[i]),
+    objectIds: objectIds.filter((_, i) => isFiniteLut[i]),
+    segIds: segIds.filter((_, i) => isFiniteLut[i]),
+    trackIds: trackIds.filter((_, i) => isFiniteLut[i]),
+  };
+};
+
+/**
+ * Reduces the given data to only show the selected range (frame, track, or
+ * all data points).
+ * @param rawXData raw data for the X-axis feature
+ * @param rawYData raw data for the Y-axis feature.
+ * @param range The range type to filter the data by.
+ * @param track Required if `range` is `PlotRangeType.CURRENT_TRACK`. The
+ * track to filter data by.
+ * @returns One of the following:
+ *   - `undefined` if the data could not be filtered.
+ *   - An object with the following arrays:
+ *     - `xData`: The filtered x data.
+ *     - `yData`: The filtered y data.
+ *     - `objectIds`: The object IDs corresponding to the index of the
+ *       filtered data.
+ */
+export const filterDataByRange = (
+  dataset: Dataset | null,
+  currentFrame: number,
+  rawXData: DataArray,
+  rawYData: DataArray,
+  range: PlotRangeType,
+  track?: Track
+): undefined | PointsData => {
+  if (!dataset || !rawXData || !rawYData) {
+    return undefined;
+  }
+
+  let xData: DataArray = [];
+  let yData: DataArray = [];
+  let objectIds: number[] = [];
+  let segIds: number[] = [];
+  let trackIds: number[] = [];
+
+  if (range === PlotRangeType.CURRENT_FRAME) {
+    // Filter data to only show the current frame.
+    if (!dataset.times) {
+      return undefined;
+    }
+    for (let i = 0; i < dataset.times.length; i++) {
+      if (dataset.times[i] === currentFrame) {
+        objectIds.push(i);
+        segIds.push(dataset.getSegmentationId(i));
+        trackIds.push(dataset.getTrackId(i));
+        xData.push(rawXData[i]);
+        yData.push(rawYData[i]);
+      }
+    }
+  } else if (range === PlotRangeType.CURRENT_TRACK) {
+    // Filter data to only show the current track.
+    if (!track) {
+      return { xData: [], yData: [], objectIds: [], segIds: [], trackIds: [] };
+    }
+    for (let i = 0; i < track.ids.length; i++) {
+      const id = track.ids[i];
+      xData.push(rawXData[id]);
+      yData.push(rawYData[id]);
+    }
+    objectIds = Array.from(track.ids);
+    segIds = objectIds.map(dataset.getSegmentationId);
+    trackIds = Array(track.ids.length).fill(track.trackId);
+  } else {
+    // All time
+    objectIds = [...rawXData.keys()];
+    segIds = objectIds.map(dataset.getSegmentationId);
+    trackIds = Array.from(dataset!.trackIds || []);
+    // Copying the reference is faster than `Array.from()`.
+    xData = rawXData;
+    yData = rawYData;
+  }
+  return { xData, yData, objectIds, segIds, trackIds };
+};
+
+/**
+ * Creates the scatterplot and histogram axes for a given feature. Normalizes for dataset min/max to
+ * prevents axes from jumping during time or track playback.
+ * @param featureKey Name of the feature to generate layouts for.
+ * @param histogramTrace The default histogram trace configuration.
+ * @returns An object with the following keys:
+ *  - `scatterPlotAxis`: Layout for the scatter plot axis.
+ *  - `histogramAxis`: Layout for the histogram axis.
+ *  - `histogramTrace`: A copy of the histogram trace, with potentially updated bin sizes.
+ */
+export const getAxisLayoutsFromRange = (
+  dataset: Dataset | null,
+  featureKey: string,
+  histogramTrace: Partial<PlotData> | undefined,
+  viewMode: ViewMode
+): {
+  scatterPlotAxis: Partial<LayoutAxis>;
+  histogramAxis: Partial<LayoutAxis>;
+} => {
+  const hasHistogram = histogramTrace !== undefined;
+  let scatterPlotAxis: Partial<LayoutAxis> = {
+    domain: hasHistogram ? [0, 0.85] : [0, 1],
+    showgrid: false,
+    showline: true,
+    zeroline: true,
+  };
+
+  let min = dataset?.getFeatureData(featureKey)?.min || 0;
+  let max = dataset?.getFeatureData(featureKey)?.max || 0;
+
+  if (0 < min && min < (max - min) / 20) {
+    // If min is close to zero (within 5% of the range), snap to zero.
+    min = 0;
+  }
+  if (dataset && dataset.isFeatureCategorical(featureKey)) {
+    // Add extra padding for categories so they're nicely centered
+    min -= 0.5;
+    max += 0.5;
+  } else {
+    // Add a little padding to the max so points aren't cut off by the edge of the plot.
+    // (ideally this would be a pixel padding, but plotly doesn't support that.)
+    max += (max - min) / 100;
+  }
+  scatterPlotAxis.range = [min, max];
+  if (viewMode === ViewMode.VIEW_2D && featureKey === CENTROID_Y_FEATURE_KEY) {
+    // In 2D mode, the origin (0,0) is in the top left corner, versus in plot
+    // the origin is in the bottom left by default. Reverse the Y-axis
+    // centroid value in 2D so the plot matches the onscreen objects.
+    scatterPlotAxis.range = [max, min];
+  }
+
+  // TODO: Show categories as box and whisker plots instead of scatterplot?
+  // TODO: Add special handling for integer features once implemented, so their histograms use reasonable
+  // bin sizes to prevent jumping.
+
+  if (dataset && dataset.isFeatureCategorical(featureKey)) {
+    // Create custom tick marks for the categories
+    const categories = dataset.getFeatureCategories(featureKey) || [];
+    scatterPlotAxis = {
+      ...scatterPlotAxis,
+      tickmode: "array",
+      tick0: "0", // start at 0
+      dtick: "1", // tick increment is 1
+      tickvals: [...categories.keys()], // map from category index to category label
+      ticktext: categories,
+      zeroline: false,
+    };
+  }
+
+  const histogramAxis: Partial<LayoutAxis> = {
+    domain: [0.9, 1],
+    showgrid: false,
+    hoverformat: "f",
+  };
+
+  return { scatterPlotAxis, histogramAxis };
+};
+
+/**
+ * VERY roughly estimate the max width in pixels needed for a categorical feature.
+ */
+export const estimateTextWidthPxForCategories = (dataset: Dataset | null, featureKey: string): number => {
+  if (featureKey === null || !dataset?.isFeatureCategorical(featureKey)) {
+    return 0;
+  }
+  const categories = dataset.getFeatureCategories(featureKey) || [];
+  return (
+    categories.reduce((_prev: any, val: string, acc: number) => {
+      return Math.max(val.length, acc);
+    }, 0) * 8
+  );
+};
+
+//// Plotly utilities ////
 
 /**
  * Sample a color ramp at evenly-spaced points, returning the resulting array of colors.
@@ -40,6 +261,299 @@ export function subsampleColorRamp(colorRamp: ColorRamp, numColors: number): Col
   }
   return colors;
 }
+
+type ScatterplotColorizeConfig = {
+  markers: Partial<PlotMarker>;
+  outlierMarkers: Partial<PlotMarker>;
+  outOfRangeMarkers: Partial<PlotMarker>;
+  overrideColor?: Color;
+  opacityMultiplier?: number;
+  allowHover?: boolean;
+};
+
+const defaultScatterplotColorizeConfig = {
+  markers: {},
+  outlierMarkers: {},
+  outOfRangeMarkers: {},
+  opacityMultiplier: 1,
+  allowHover: true,
+} satisfies ScatterplotColorizeConfig;
+
+// TODO: Move to `scatter_plot_data_utils.ts`
+/**
+ * Applies coloring to point traces in a scatterplot. Does this by splitting
+ * the data into multiple traces each with a solid color, which is much faster
+ * than using Plotly's native color ramping. Also enforces a maximum number of
+ * points per trace, which significantly speeds up Plotly renders.
+ *
+ * @param xData
+ * @param yData
+ * @param objectIds
+ * @param trackIds
+ * @param markerConfig Additional marker configuration to apply to all points.
+ * By default, markers are size 4.
+ * @param {Color | undefined} overrideColor When defined, uses a base color
+ * for all points, instead of calculating based on the color ramp or palette.
+ * @param allowHover Whether to allow hover tooltips on the points, true by
+ * default. When false, hover info is disabled.
+ */
+export const colorizeScatterplotPoints = (
+  colorizeState: ColorizeStateParams,
+  xAxisFeatureKey: string | null,
+  yAxisFeatureKey: string | null,
+  data: PointsData,
+  config: Partial<ScatterplotColorizeConfig> = {}
+): Partial<PlotData>[] => {
+  const {
+    dataset,
+    featureKey,
+    colorRamp,
+    colorRampRange,
+    categoricalPaletteRamp,
+    outOfRangeDrawSettings,
+    outlierDrawSettings,
+    inRangeLUT,
+  } = colorizeState;
+
+  config = { ...defaultScatterplotColorizeConfig, ...removeUndefinedProperties(config) };
+  const { markers: markerConfig, outOfRangeMarkers, outlierMarkers, opacityMultiplier, allowHover } = config;
+  let overrideColor = config.overrideColor;
+
+  const { xData, yData, objectIds, segIds, trackIds } = data;
+  if (featureKey === null || dataset === null || !xAxisFeatureKey || !yAxisFeatureKey) {
+    return [];
+  }
+  const featureData = dataset.getFeatureData(featureKey);
+  if (!featureData) {
+    return [];
+  }
+
+  // Generate colors
+  const categories = dataset.getFeatureCategories(featureKey);
+  const isCategorical = categories !== null;
+  const isCategoricalRamp = colorRamp.type === ColorRampType.CATEGORICAL;
+  const usingOverrideColor = markerConfig?.color !== undefined || overrideColor !== undefined;
+  overrideColor = overrideColor ?? new Color(markerConfig?.color as ColorRepresentation);
+
+  let colors: Color[];
+  if (usingOverrideColor) {
+    // Do no coloring! Keep all points in the same bucket, which will still be split up later.
+    colors = [overrideColor];
+  } else if (isCategorical) {
+    colors = categoricalPaletteRamp.colorStops;
+  } else if (isCategoricalRamp) {
+    colors = colorRamp.colorStops;
+  } else {
+    colors = subsampleColorRamp(colorRamp, COLOR_RAMP_SUBSAMPLES);
+  }
+
+  const colorMinValue = isCategorical ? 0 : colorRampRange[0];
+  const colorMaxValue = isCategorical ? categories.length - 1 : colorRampRange[1];
+
+  // Make a bucket group for each ramp/palette color and for the out-of-range and outliers.
+  const traceDataBuckets: TraceData[] = [];
+  const overrideColorHex: HexColorString = `#${overrideColor.getHexString()}`;
+
+  let outOfRangeColor: HexColorString = `#${outOfRangeDrawSettings.color.getHexString()}`;
+  let outlierColor: HexColorString = `#${outlierDrawSettings.color.getHexString()}`;
+  const outOfRangeMarker = { ...markerConfig, ...outOfRangeMarkers };
+  const outlierMarker = { ...markerConfig, ...outlierMarkers };
+  if (usingOverrideColor) {
+    outlierColor = overrideColorHex;
+    outOfRangeColor = overrideColorHex;
+  }
+
+  traceDataBuckets.push(makeEmptyTraceData(outOfRangeColor, outOfRangeMarker)); // 0 = out of range
+  traceDataBuckets.push(makeEmptyTraceData(outlierColor, outlierMarker)); // 1 = outliers
+
+  for (let i = NUM_RESERVED_BUCKETS; i < colors.length + NUM_RESERVED_BUCKETS; i++) {
+    let color: HexColorString = `#${colors[i - NUM_RESERVED_BUCKETS].getHexString()}`;
+    const marker = markerConfig || {};
+    if (usingOverrideColor) {
+      color = overrideColorHex;
+    }
+    traceDataBuckets.push(makeEmptyTraceData(color, marker));
+  }
+
+  // Sort data into buckets
+  for (let i = 0; i < xData.length; i++) {
+    const objectId = objectIds[i];
+    const isMinMaxNaN = Number.isNaN(colorMaxValue) && Number.isNaN(colorMinValue);
+    const isNaN = Number.isNaN(featureData.data[objectId]);
+    const isOutlier = dataset.outliers ? dataset.outliers[objectId] : false;
+    const isOutOfRange = inRangeLUT[objectId] === 0;
+
+    if (Number.isNaN(objectId) || objectId === undefined || objectId <= 0) {
+      continue;
+    }
+
+    let bucketIndex;
+    if (isOutOfRange) {
+      bucketIndex = BUCKET_INDEX_OUTOFRANGE;
+    } else if (isOutlier || isNaN || isMinMaxNaN) {
+      bucketIndex = BUCKET_INDEX_OUTLIERS;
+    } else if (usingOverrideColor) {
+      bucketIndex = NUM_RESERVED_BUCKETS;
+    } else if (isCategorical || isCategoricalRamp) {
+      bucketIndex = (Math.round(featureData.data[objectId]) % colors.length) + NUM_RESERVED_BUCKETS;
+    } else {
+      bucketIndex =
+        getBucketIndex(featureData.data[objectId], colorMinValue, colorMaxValue, colors.length) + NUM_RESERVED_BUCKETS;
+    }
+
+    const bucket = traceDataBuckets[bucketIndex];
+    bucket.x.push(xData[i]);
+    bucket.y.push(yData[i]);
+    bucket.objectIds.push(objectIds[i]);
+    bucket.segIds.push(segIds[i]);
+    bucket.trackIds.push(trackIds[i]);
+  }
+
+  // Apply transparency to the colors
+  const totalPoints = xData.length;
+  const numOutOfRange = traceDataBuckets[BUCKET_INDEX_OUTOFRANGE].x.length;
+  const numOutliers = traceDataBuckets[BUCKET_INDEX_OUTLIERS].x.length;
+  const numInRange = totalPoints - numOutOfRange - numOutliers;
+  // Use total number to calculate transparency for the out of range and outlier buckets, so they do not appear
+  // unusually opaque if there are only a small number of points.
+  traceDataBuckets[BUCKET_INDEX_OUTOFRANGE].color = scaleColorOpacityByMarkerCount(
+    totalPoints,
+    traceDataBuckets[BUCKET_INDEX_OUTOFRANGE].color,
+    opacityMultiplier
+  );
+  traceDataBuckets[BUCKET_INDEX_OUTLIERS].color = scaleColorOpacityByMarkerCount(
+    totalPoints,
+    traceDataBuckets[BUCKET_INDEX_OUTLIERS].color,
+    opacityMultiplier
+  );
+  traceDataBuckets.slice(2).forEach((bucket) => {
+    bucket.color = scaleColorOpacityByMarkerCount(numInRange, bucket.color, opacityMultiplier);
+  });
+
+  // Optionally delete the outlier and out of range buckets to hide the values.
+  if (outlierDrawSettings.mode === DrawMode.HIDE && !outlierMarkers) {
+    traceDataBuckets.splice(1, 1);
+  }
+  if (outOfRangeDrawSettings.mode === DrawMode.HIDE && !outOfRangeMarkers) {
+    traceDataBuckets.splice(0, 1);
+  }
+
+  // Transform buckets into traces
+  const traces: Partial<PlotData>[] = traceDataBuckets
+    .filter((bucket) => bucket.x.length > 0) // Remove empty buckets
+    .reduce((acc: TraceData[], bucket: TraceData) => {
+      // Split the traces into smaller chunks to prevent plotly from freezing.
+      acc.push(...splitTraceData(bucket, MAX_POINTS_PER_TRACE));
+      return acc;
+    }, [])
+    .map((bucket) => {
+      // Custom data is shown in the hover tooltip.
+      // Formatted as [trackId, segId][]
+      const stackedCustomData = bucket.trackIds.map((trackId, index) => {
+        return [trackId.toString(), bucket.segIds[index].toString()];
+      });
+      return {
+        x: bucket.x,
+        y: bucket.y,
+        ids: bucket.objectIds.map((id) => id.toString()),
+        customdata: stackedCustomData,
+        name: "",
+        type: "scattergl",
+        mode: "markers",
+        marker: {
+          color: bucket.color,
+          size: 4,
+          ...bucket.marker,
+        },
+        hoverinfo: allowHover ? "text" : "skip",
+        hovertemplate: allowHover ? getHoverTemplate(dataset, xAxisFeatureKey, yAxisFeatureKey) : undefined,
+      };
+    });
+
+  return traces;
+};
+
+/**
+ * Returns a series of shapes that mark the current time on each track's moving
+ * average line.
+ */
+export const getAverageLineCurrentFrameShapes = (
+  tracks: Map<number, Track>,
+  tracksToAverageLineData: Map<number, { xData: number[]; yData: number[] }>,
+  currentFrame: number,
+  trackColors?: Map<number, Color>
+): Partial<Shape>[] => {
+  const lineShapes: Partial<Shape>[] = [];
+  for (const [trackId, track] of tracks) {
+    const lineData = tracksToAverageLineData.get(trackId);
+    if (!lineData) {
+      continue;
+    }
+    const index = track.times.indexOf(currentFrame);
+    if (index === -1) {
+      continue;
+    }
+    const x = lineData.xData[index];
+    const y = lineData.yData[index];
+    if (isNaN(x) || isNaN(y)) {
+      continue;
+    }
+    const color = trackColors?.get(trackId) || DEFAULT_AVERAGE_LINE_COLOR;
+    lineShapes.push(getCircleShape(x, y, 4, `#${color.getHexString()}`));
+  }
+  return lineShapes;
+};
+
+/**
+ * Returns an array of shapes that draw a crosshair + colored scatterplot dot over the
+ * points in selected tracks visible in the current frame.
+ */
+export const getCurrentFrameShapes = (
+  dataset: Dataset | null,
+  xAxisFeatureKey: string | null,
+  yAxisFeatureKey: string | null,
+  colorizeConfig: ColorizeStateParams,
+  currentFrame: number,
+  tracks: Map<number, Track>,
+  rawXData: TypedArray | undefined,
+  rawYData: TypedArray | undefined
+): Partial<Shape>[] => {
+  const crosshairShapes: Partial<Shape>[] = [];
+  if (!rawXData || !rawYData || !dataset) {
+    return [];
+  }
+  const xData: number[] = [];
+  const yData: number[] = [];
+  const ids: number[] = [];
+  const segIds: number[] = [];
+  const trackIds: number[] = [];
+  for (const track of tracks.values()) {
+    const currentObjectId = track.getIdAtTime(currentFrame);
+    if (currentObjectId !== -1) {
+      // Get crosshair for this shape and store data for rendering the dots
+      crosshairShapes.push(...getCrosshairShapes(rawXData[currentObjectId], rawYData[currentObjectId]));
+      xData.push(rawXData[currentObjectId]);
+      yData.push(rawYData[currentObjectId]);
+      ids.push(currentObjectId);
+      segIds.push(dataset.getSegmentationId(currentObjectId));
+      trackIds.push(track.trackId);
+    }
+  }
+  const outOfRangeOutlineColor = colorizeConfig.outOfRangeDrawSettings.color.clone().multiplyScalar(0.8);
+
+  // Render the dots. See TODO in `scatterplotTraceToShapes` for refactoring
+  // `colorizeScatterplotPoints`.
+  const groupedData = { xData, yData, objectIds: ids, segIds, trackIds };
+  const pointShapes = scatterplotTraceToShapes(
+    colorizeScatterplotPoints(colorizeConfig, xAxisFeatureKey, yAxisFeatureKey, groupedData, {
+      outOfRangeMarkers: {
+        color: "var( --color-background)",
+        line: { width: 2, color: "#" + outOfRangeOutlineColor.getHexString() + "40" },
+      },
+    })
+  );
+  return crosshairShapes.concat(pointShapes);
+};
 
 /**
  * Returns the index of a bucket that a value should be sorted into, based on a provided range and number of buckets.
@@ -120,13 +634,19 @@ export function isHistogramEvent(eventData: PlotMouseEvent): boolean {
 /**
  * Appends alpha opacity information to a hex color string, making it less opaque as the number of markers increases.
  */
-export function scaleColorOpacityByMarkerCount(numMarkers: number, baseColor: HexColorString): HexColorString {
+export function scaleColorOpacityByMarkerCount(
+  numMarkers: number,
+  baseColor: HexColorString,
+  opacityMultiplier: number = 1
+): HexColorString {
   if (baseColor.length !== 7) {
-    throw new Error("ScatterPlotTab.getMarkerColor: Base color '" + baseColor + "' must be 7-character hex string.");
+    throw new Error(
+      "ScatterPlotTab.scaleColorOpacityByMarkerCount: Base color '" + baseColor + "' must be 7-character hex string."
+    );
   }
   // Interpolate linearly between 80% and 25% transparency from 0 up to a max of 1000 markers.
   const opacity = remap(numMarkers, 0, 1000, 0.8, 0.25);
-  const opacityString = Math.floor(opacity * 255)
+  const opacityString = clamp(Math.floor(opacity * 255 * opacityMultiplier), 0, 255)
     .toString(16)
     .padStart(2, "0");
   return (baseColor + opacityString) as HexColorString;
@@ -149,29 +669,45 @@ export function makeLineTrace(
   xData: DataArray,
   yData: DataArray,
   objectIds: number[],
-  segIds: number[],
-  trackIds: number[],
-  hovertemplate?: string
+  config: Partial<{
+    customData: string[][];
+    lineWidth: number;
+    color: string;
+    hoverTemplate: string;
+  }>
 ): Partial<PlotData> {
-  const stackedCustomData = trackIds.map((id, index) => {
-    return [id.toString(), segIds[index].toString()];
-  });
   return {
     x: xData,
     y: yData,
     type: "scattergl",
     mode: "lines",
     line: {
-      color: "#aaaaaa",
+      width: config.lineWidth,
+      color: config.color,
+      smoothing: 1.2,
     },
     ids: objectIds.map((id) => id.toString()),
-    customdata: stackedCustomData,
+    customdata: config.customData,
     hoverinfo: "skip", // will be overridden if hovertemplate is provided
-    hovertemplate,
+    hovertemplate: config.hoverTemplate,
   };
 }
 
-function getLineShape(x: number, y: number, xDim: number, yDim: number, color: string, width: number): Partial<Shape> {
+export function getAverageLineHoverTemplate(
+  trackId: number,
+  dataset: Dataset,
+  xAxisFeatureKey: string,
+  yAxisFeatureKey: string
+): string {
+  return (
+    `<b>Moving Average</b>` +
+    `<br>${dataset.getFeatureName(xAxisFeatureKey)}: %{x} ${dataset.getFeatureUnits(xAxisFeatureKey)}` +
+    `<br>${dataset.getFeatureName(yAxisFeatureKey)}: %{y} ${dataset.getFeatureUnits(yAxisFeatureKey)}` +
+    `<br>Track ID: ${trackId}<br>Time: %{customdata[0]}<extra></extra>`
+  );
+}
+
+function getPlotlyShapeBase(x: number, y: number, xDim: number, yDim: number): Partial<Shape> {
   return {
     xanchor: x,
     yanchor: y,
@@ -181,8 +717,25 @@ function getLineShape(x: number, y: number, xDim: number, yDim: number, color: s
     y1: +yDim / 2,
     xsizemode: "pixel",
     ysizemode: "pixel",
-    type: "line",
     layer: "above",
+  };
+}
+
+function getCircleShape(x: number, y: number, diameter: number, color: string): Partial<Shape> {
+  return {
+    ...getPlotlyShapeBase(x, y, diameter, diameter),
+    type: "circle",
+    fillcolor: color,
+    line: {
+      width: 1,
+    },
+  };
+}
+
+function getLineShape(x: number, y: number, xDim: number, yDim: number, color: string, width: number): Partial<Shape> {
+  return {
+    ...getPlotlyShapeBase(x, y, xDim, yDim),
+    type: "line",
     line: {
       color,
       width,
@@ -253,6 +806,8 @@ function isValueOutOfRange(value: number, range?: [number, number]): boolean {
   }
   return false;
 }
+
+//// CSV export utilities ////
 
 export function getScatterplotDataAsCsv(
   dataset: Dataset,

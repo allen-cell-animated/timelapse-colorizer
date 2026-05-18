@@ -16,7 +16,7 @@ export type TrackSliceState = {
   tracks: Map<number, Track>;
   trackToColorId: Map<number, number>;
 
-  /** Derived values */
+  // Derived values
   trackColors: Map<number, Color>;
   /**
    * LUT that maps from an object ID to whether it is selected (>=1) or not (0).

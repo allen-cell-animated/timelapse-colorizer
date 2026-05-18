@@ -21,8 +21,15 @@ export const StyledRadioGroup = styled(Radio.Group)`
 `;
 
 export const StyledHorizontalRule = styled.hr`
-  width: 100%;
   height: 1px;
-  background-color: var(--color-dividers);
+  width: 100%;
   border: none;
+  background-color: var(--color-dividers);
+`;
+
+export const StyledVerticalRule = styled.hr`
+  width: 1px;
+  height: 100%;
+  border: none;
+  background-color: var(--color-dividers);
 `;
