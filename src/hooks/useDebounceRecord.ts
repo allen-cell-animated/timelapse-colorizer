@@ -7,15 +7,16 @@ type TimeoutHandle = ReturnType<typeof setTimeout>;
  * each property is debounced independently.
  */
 export const useDebounceRecord = <T extends Record<string, any>>(record: T, delayMs: number): [T, boolean] => {
-  const stateRef = useRef(record);
+  const prevRecordRef = useRef(record);
   const timeoutRef = useRef<Partial<Record<keyof T, TimeoutHandle>>>({});
   const [state, setState] = useState(record);
 
   useEffect(() => {
+    // Start a timeout for each property that has changed
     for (const key in record) {
       const value = record[key];
 
-      if (value !== stateRef.current[key]) {
+      if (value !== prevRecordRef.current[key]) {
         const currentTimeout = timeoutRef.current[key];
         if (currentTimeout !== undefined) {
           clearTimeout(currentTimeout);
@@ -30,9 +31,10 @@ export const useDebounceRecord = <T extends Record<string, any>>(record: T, dela
         }, delayMs);
       }
     }
-    stateRef.current = record;
+    prevRecordRef.current = record;
   }, [record, delayMs]);
 
+  // Clear timeouts on unmount
   useEffect(() => {
     return () => {
       for (const timeoutId of Object.values(timeoutRef.current)) {
