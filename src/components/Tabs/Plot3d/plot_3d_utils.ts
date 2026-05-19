@@ -1,5 +1,3 @@
-import { Color } from "three";
-
 import { Dataset, Track } from "src/colorizer";
 import { getMovingAverage } from "src/colorizer/utils/data_utils";
 
@@ -10,7 +8,7 @@ export function make3dTrackPathTrace(
   xAxisFeatureKey: string,
   yAxisFeatureKey: string,
   zAxisFeatureKey: string,
-  config: { lineAverageWindow: number; trackColor: Color }
+  config: { lineAverageWindow: number; trackColor: string }
 ): Plotly.Data[] {
   // TODO: Show gaps/discontinuities in the track path?
   const traces = [];
@@ -57,13 +55,6 @@ export function make3dTrackPathTrace(
     true
   );
 
-  let color = "rgb(80, 80, 80)";
-
-  if (config.trackColor) {
-    color = "#" + config.trackColor.getHexString();
-    console.log(`Track ${track.trackId} color: ${color}`);
-  }
-
   const scatterPlotTrace: Plotly.Data = {
     x: xData,
     y: yData,
@@ -75,7 +66,7 @@ export function make3dTrackPathTrace(
     opacity: 1,
     line: {
       width: 4,
-      color,
+      color: config.trackColor ?? "rgb(80, 80, 80)",
     },
     showlegend: false,
     hovertemplate: hoverTemplate,

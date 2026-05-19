@@ -46,11 +46,20 @@ export default class Plot3d {
 
   //// Helper methods /////
 
+  private getTrackColor(trackId: number): string {
+    let color = this.baseTrackColor;
+    if (this.tracks && this.trackToColor && this.tracks.size > 1) {
+      color = this.trackToColor.get(trackId) ?? this.baseTrackColor;
+    }
+    return "#" + color.getHexString();
+  }
+
   private getTrackTrace(track: Track, time: number): Plotly.Data[] {
     if (!this.dataset || !this.xAxisFeatureKey || !this.yAxisFeatureKey || !this.zAxisFeatureKey) {
       return [];
     }
-    const trackColor = this.trackToColor?.get(track.trackId) ?? this.baseTrackColor;
+    // TODO: Store track traces so they don't need to be recalculated on each
+    // frame.
     return make3dTrackPathTrace(
       this.dataset,
       track,
@@ -60,7 +69,7 @@ export default class Plot3d {
       this.zAxisFeatureKey,
       {
         lineAverageWindow: this.lineAverageWindow,
-        trackColor,
+        trackColor: this.getTrackColor(track.trackId),
       }
     );
   }
