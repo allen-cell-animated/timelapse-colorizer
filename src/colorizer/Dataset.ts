@@ -878,6 +878,11 @@ export default class Dataset {
     }, []) as number[];
   }
 
+  /** Returns the global IDs of all objects in a given frame. */
+  public getIdsInFrame(frame: number): Uint32Array | undefined {
+    return this.frameToGlobalIdLookup?.get(frame)?.globalIds;
+  }
+
   public getTrack(trackId: number): Track | null {
     const cachedTrack = this.cachedTracks.get(trackId);
     if (cachedTrack !== undefined) {
