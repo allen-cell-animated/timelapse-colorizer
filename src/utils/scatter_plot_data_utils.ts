@@ -279,7 +279,6 @@ const defaultScatterplotColorizeConfig = {
   allowHover: true,
 } satisfies ScatterplotColorizeConfig;
 
-// TODO: Move to `scatter_plot_data_utils.ts`
 /**
  * Applies coloring to point traces in a scatterplot. Does this by splitting
  * the data into multiple traces each with a solid color, which is much faster

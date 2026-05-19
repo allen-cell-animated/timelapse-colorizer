@@ -1,5 +1,4 @@
 import { Line3d } from "@aics/vole-core";
-import type { IDrawableObject } from "@aics/vole-core/es/types/types";
 import { Color, Vector3 } from "three";
 
 import type Track from "src/colorizer/Track";
@@ -45,7 +44,7 @@ export default class TrackPath3D {
     this.lineOverlayObject.setRenderAsOverlay(true);
   }
 
-  public getSceneObjects(): IDrawableObject[] {
+  public getSceneObjects(): Line3d[] {
     return [this.lineObject, this.lineOverlayObject];
   }
 
