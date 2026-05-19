@@ -26,7 +26,7 @@ import { FlexColumn, FlexRow, FlexRowAlignCenter } from "src/styles/utils";
 import Plot3d from "./Plot3d";
 
 const SCROLL_PLAYBACK_TIMEOUT_MS = 100;
-const RESUME_PLAYBACK_TIMEOUT_MS = 1000;
+const RESUME_PLAYBACK_TIMEOUT_MS = 500;
 
 export default function Plot3dTab(): ReactElement {
   const plotContainerRef = useRef<HTMLDivElement>(null);
@@ -71,10 +71,17 @@ export default function Plot3dTab(): ReactElement {
 
   const isPlotTabVisible = useViewerStateStore((state) => state.openTab === TabType.PLOT_3D);
 
+  // Mount Plotly plot on component mount
+  useEffect(() => {
+    plot3dRef.current = new Plot3d(plotContainerRef.current!);
+  }, []);
+
   //// Interaction Handlers ////
 
-  // Pause playback when the user interacts with the plot, to prevent slowdowns
-  // due to re-rendering.
+  // Plotly does not respond to user input (panning, zoom) when the plot is
+  // rapidly updating. Therefore, we need to pause playback when the user
+  // interacts with the plot, and resume playback once interactions have
+  // stopped.
 
   useEffect(() => {
     if (timeControls.isPlaying()) {
@@ -194,11 +201,6 @@ export default function Plot3dTab(): ReactElement {
     setConeTrace(newConeTrace);
   }, [dataset, vectorFieldData, threshold, coneSize, coneColorRampKey, coneColorRampReversed]);
 
-  // Mount Plotly plot on component mount
-  useEffect(() => {
-    plot3dRef.current = new Plot3d(plotContainerRef.current!);
-  }, []);
-
   // Sync plot with state changes
   useEffect(() => {
     if (plot3dRef.current && isPlotTabVisible) {
@@ -239,11 +241,11 @@ export default function Plot3dTab(): ReactElement {
   }, flowFieldDeps);
 
   //// Rendering ////
+
   const featureDropdownData = useMemo((): SelectItem[] => {
     if (!dataset) {
       return [];
     }
-    // Add units to the dataset feature names if present
     return dataset.featureKeys.map((key) => {
       return { value: key, label: dataset.getFeatureNameWithUnits(key) };
     });
@@ -292,14 +294,6 @@ export default function Plot3dTab(): ReactElement {
             </FlexRow>
           </FlexRow>
         </FlexColumn>
-
-        {/* <Button
-          type="primary"
-          onClick={onClickCalculateFlowField}
-          disabled={!needsRecalculation || !xAxisFeatureKey || !yAxisFeatureKey || !zAxisFeatureKey || !dataset}
-        >
-          Recalculate
-        </Button> */}
       </FlexRow>
 
       {/* Plot Controls */}
