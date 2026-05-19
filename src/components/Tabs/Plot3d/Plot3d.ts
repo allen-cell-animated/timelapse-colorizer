@@ -181,6 +181,7 @@ export default class Plot3d {
         xaxis: makeAxisLayout(this.xAxisFeatureKey),
         yaxis: makeAxisLayout(this.yAxisFeatureKey),
         zaxis: makeAxisLayout(this.zAxisFeatureKey),
+        aspectmode: "cube",
       },
     };
 
