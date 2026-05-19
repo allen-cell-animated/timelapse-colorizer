@@ -649,8 +649,6 @@ export default class Dataset {
     if (this.hasOpened) {
       return;
     }
-    this.hasOpened = true;
-
     if (!options.manifestLoader) {
       options.manifestLoader = urlUtils.fetchManifestJson;
     }
@@ -798,6 +796,7 @@ export default class Dataset {
       datasetLoadTimeMs: new Date().getTime() - startTime.getTime(),
     });
 
+    this.hasOpened = true;
     // TODO: Pre-process feature data to handle outlier values by interpolating between known good values (#21)
   }
 
@@ -877,6 +876,11 @@ export default class Dataset {
       if (elem === trackId) arr.push(ind);
       return arr;
     }, []) as number[];
+  }
+
+  /** Returns the global IDs of all objects in a given frame. */
+  public getIdsInFrame(frame: number): Uint32Array | undefined {
+    return this.frameToGlobalIdLookup?.get(frame)?.globalIds;
   }
 
   public getTrack(trackId: number): Track | null {

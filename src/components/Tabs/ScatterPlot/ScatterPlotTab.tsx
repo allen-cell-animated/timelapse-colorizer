@@ -3,6 +3,7 @@ import Plotly, { type PlotData } from "plotly.js-dist-min";
 import React, { memo, type ReactElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import { Color } from "three";
+import { useShallow } from "zustand/shallow";
 
 import { SwitchIconSVG } from "src/assets";
 import type { Dataset } from "src/colorizer";
@@ -16,8 +17,7 @@ import type { SelectItem } from "src/components/Dropdowns/types";
 import LoadingSpinner from "src/components/LoadingSpinner";
 import ScatterplotToolbar from "src/components/Tabs/ScatterPlot/ScatterplotToolbar";
 import { SHORTCUT_KEYS } from "src/constants";
-import { useDebounce, useIsMouseButtonDownRef } from "src/hooks";
-import { useViewerStateStoreDebounced } from "src/hooks/useViewerStateStoreDebounced";
+import { useDebounce, useDebounceRecord, useIsMouseButtonDownRef } from "src/hooks";
 import { colorizeStateSelector } from "src/state";
 import { useViewerStateStore } from "src/state/ViewerState";
 import { AppThemeContext } from "src/styles/AppStyle";
@@ -99,9 +99,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
   // Debounce changes to the dataset and other frequently-changing values to
   // prevent noticeably blocking the UI thread with a re-render
-  const [colorizeConfig, isDebouncePending] = useViewerStateStoreDebounced(colorizeStateSelector, 100, {
-    dataset: 500,
-  });
+  const rawColorizeState = useViewerStateStore(useShallow(colorizeStateSelector));
+  const [colorizeConfig, isDebouncePending] = useDebounceRecord(rawColorizeState, 100);
   const { dataset } = colorizeConfig;
 
   const plottedIds = useRef<Set<number>>(new Set());
@@ -316,7 +315,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
   // Plot dependencies, not including time.
   const basePlotDependencies = [
-    ...Array.from(Object.values(colorizeConfig)),
+    colorizeConfig,
     xAxisFeatureKey,
     yAxisFeatureKey,
     showHistograms,
@@ -549,7 +548,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
    * Re-render the plot when the relevant props change.
    */
   useEffect(() => {
-    if (!isVisible) {
+    if (!isVisible || isDebouncePending) {
       return;
     }
     const hasOnlyFrameChanged = !hasAnyValueChanged(basePlotDependencies, prevDependenciesRef.current);
@@ -573,7 +572,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     setIsRendering(true);
     renderPlot();
     prevDependenciesRef.current = basePlotDependencies;
-  }, [...basePlotDependencies, currentFrame]);
+  }, [...basePlotDependencies, isDebouncePending, currentFrame]);
 
   //////////////////////////////////
   // Component Rendering
