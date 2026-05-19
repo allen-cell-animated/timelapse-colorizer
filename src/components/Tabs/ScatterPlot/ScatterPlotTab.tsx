@@ -4,6 +4,7 @@ import Plotly, { type PlotData } from "plotly.js-dist-min";
 import React, { memo, type ReactElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import { Color } from "three";
+import { useShallow } from "zustand/shallow";
 
 import { SwitchIconSVG } from "src/assets";
 import type { Dataset } from "src/colorizer";
@@ -17,8 +18,7 @@ import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import type { SelectItem } from "src/components/Dropdowns/types";
 import LoadingSpinner from "src/components/LoadingSpinner";
 import { SHORTCUT_KEYS } from "src/constants";
-import { useIsMouseButtonDownRef } from "src/hooks";
-import { useViewerStateStoreDebounced } from "src/hooks/useViewerStateStoreDebounced";
+import { useDebounceRecord, useIsMouseButtonDownRef } from "src/hooks";
 import { colorizeStateSelector } from "src/state";
 import { useViewerStateStore } from "src/state/ViewerState";
 import { AppThemeContext } from "src/styles/AppStyle";
@@ -104,9 +104,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
   // Debounce changes to the dataset and other frequently-changing values to
   // prevent noticeably blocking the UI thread with a re-render
-  const [colorizeConfig, isDebouncePending] = useViewerStateStoreDebounced(colorizeStateSelector, 100, {
-    dataset: 500,
-  });
+  const rawColorizeState = useViewerStateStore(useShallow(colorizeStateSelector));
+  const [colorizeConfig, isDebouncePending] = useDebounceRecord(rawColorizeState, 100);
   const { dataset } = colorizeConfig;
 
   const plottedIds = useRef<Set<number>>(new Set());
