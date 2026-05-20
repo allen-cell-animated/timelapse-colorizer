@@ -1,7 +1,7 @@
-import React, { ReactElement, useMemo } from "react";
+import React, { type ReactElement, useMemo } from "react";
 
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
-import { SelectItem } from "src/components/Dropdowns/types";
+import type { SelectItem } from "src/components/Dropdowns/types";
 import { useViewerStateStore } from "src/state";
 import { FlexRow } from "src/styles/utils";
 
@@ -69,7 +69,7 @@ export default function Plot3dFeatureControls(props: Plot3dFeatureControlsProps)
         selected={rawBins.toString()}
         items={[10, 25, 50, 100].map((num) => ({ value: num.toString(), label: num.toString() }))}
         onChange={(value: string) => {
-          const parsedValue = parseInt(value);
+          const parsedValue = parseInt(value, 10);
           if (!isNaN(parsedValue) && parsedValue > 0) {
             setBins(parsedValue);
           }

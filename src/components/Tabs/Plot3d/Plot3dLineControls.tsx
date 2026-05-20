@@ -1,4 +1,4 @@
-import React, { ReactElement } from "react";
+import React, { type ReactElement } from "react";
 
 import LabeledSlider from "src/components/Inputs/LabeledSlider";
 import { FlexRowAlignCenter } from "src/styles/utils";

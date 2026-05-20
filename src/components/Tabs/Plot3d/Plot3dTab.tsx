@@ -12,17 +12,15 @@ import {
   type VectorFieldData,
 } from "src/colorizer";
 import { getSharedWorkerPool } from "src/colorizer/workers/SharedWorkerPool";
-import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
-import type { SelectItem } from "src/components/Dropdowns/types";
 import LoadingSpinner from "src/components/LoadingSpinner";
 import Plot3dConeControls from "src/components/Tabs/Plot3d/Plot3dConeControls";
 import Plot3dFeatureControls from "src/components/Tabs/Plot3d/Plot3dFeatureControls";
 import { useViewerStateStore } from "src/state";
 import { FlexColumn, FlexRow, FlexRowAlignCenter } from "src/styles/utils";
 
+import { make3dConeTrace } from "./plot_3d_utils";
 import Plot3d from "./Plot3d";
 import Plot3dLineControls from "./Plot3dLineControls";
-import { make3dConeTrace } from "./plot_3d_utils";
 
 const SCROLL_PLAYBACK_TIMEOUT_MS = 100;
 const RESUME_PLAYBACK_TIMEOUT_MS = 500;
