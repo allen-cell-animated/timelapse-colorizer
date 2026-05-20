@@ -1,7 +1,7 @@
 import { Vector2 } from "three";
 import { describe, expect, it } from "vitest";
 
-import { Track } from "src/colorizer";
+import type { Track } from "src/colorizer";
 import {
   calculateVectorFlowField,
   convertCanvasOffsetPxToFrameCoords,
