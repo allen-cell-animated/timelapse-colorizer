@@ -1,5 +1,31 @@
-import { Dataset, Track } from "src/colorizer";
+import { ColorRamp, Dataset, Track, VectorFieldData } from "src/colorizer";
 import { getMovingAverage } from "src/colorizer/utils/data_utils";
+import { thresholdVectorFlowFieldByCount } from "src/colorizer/utils/math_utils";
+
+export function make3dConeTrace(
+  vectorFieldData: VectorFieldData,
+  config: { threshold: number; colorRamp: ColorRamp; colorRampReversed: boolean; coneSize: number }
+): Plotly.Data | null {
+  if (!vectorFieldData) {
+    return null;
+  }
+  let data = thresholdVectorFlowFieldByCount(vectorFieldData, config.threshold);
+  const colorScale = config.colorRamp.getPlotlyColorScale(config.colorRampReversed);
+  return {
+    type: "cone",
+    x: data.xPos,
+    y: data.yPos,
+    z: data.zPos,
+    u: data.xData,
+    v: data.yData,
+    w: data.zData,
+    showscale: false,
+    sizemode: "scaled",
+    sizeref: config.coneSize,
+    colorscale: colorScale,
+    hoverinfo: "none",
+  } as Plotly.Data;
+}
 
 export function make3dTrackPathTrace(
   dataset: Dataset,

@@ -4,6 +4,7 @@ import React, { type ReactElement, useEffect, useMemo, useRef, useState } from "
 import { useDebounce } from "usehooks-ts";
 
 import {
+  ColorRamp,
   DEFAULT_CATEGORICAL_PALETTE_KEY,
   DEFAULT_COLOR_RAMP_KEY,
   DISPLAY_CATEGORICAL_PALETTE_KEYS,
@@ -13,13 +14,13 @@ import {
   TabType,
   type VectorFieldData,
 } from "src/colorizer";
-import { thresholdVectorFlowFieldByCount } from "src/colorizer/utils/math_utils";
 import { getSharedWorkerPool } from "src/colorizer/workers/SharedWorkerPool";
 import ColorRampSelection from "src/components/Dropdowns/ColorRampDropdown";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import type { SelectItem } from "src/components/Dropdowns/types";
 import LabeledSlider from "src/components/Inputs/LabeledSlider";
 import LoadingSpinner from "src/components/LoadingSpinner";
+import { make3dConeTrace } from "src/components/Tabs/Plot3d/plot_3d_utils";
 import { useViewerStateStore } from "src/state";
 import { FlexColumn, FlexRow, FlexRowAlignCenter } from "src/styles/utils";
 
@@ -67,7 +68,10 @@ export default function Plot3dTab(): ReactElement {
   const currentFrame = useViewerStateStore((state) => state.currentFrame);
   const timeControls = useViewerStateStore((state) => state.timeControls);
 
-  const coneColorRamp = KNOWN_COLOR_RAMPS.get(coneColorRampKey) ?? KNOWN_COLOR_RAMPS.get(DEFAULT_COLOR_RAMP_KEY)!;
+  const coneColorRampData = KNOWN_COLOR_RAMPS.get(coneColorRampKey) ?? KNOWN_COLOR_RAMPS.get(DEFAULT_COLOR_RAMP_KEY)!;
+  const coneColorRamp = useMemo(() => {
+    return new ColorRamp(coneColorRampData.colorStops);
+  }, [coneColorRampData]);
 
   const isPlotTabVisible = useViewerStateStore((state) => state.openTab === TabType.PLOT_3D);
 
@@ -152,12 +156,6 @@ export default function Plot3dTab(): ReactElement {
 
   //// Data Handlers ////
 
-  const flowFieldDeps = [dataset, xAxisFeatureKey, yAxisFeatureKey, zAxisFeatureKey, bins];
-
-  useEffect(() => {
-    setIsLoading(true);
-  }, flowFieldDeps);
-
   // Clear selected features as needed when dataset changes
   useEffect(() => {
     if (dataset) {
@@ -173,53 +171,12 @@ export default function Plot3dTab(): ReactElement {
     }
   }, [dataset]);
 
-  // Build cone trace when calculated vector field data or cone settings change
-  useEffect(() => {
-    // TODO: Put this in Plot3d as a static method
-    const makeConeTrace = (): Plotly.Data | null => {
-      if (!dataset || !vectorFieldData) {
-        return null;
-      }
-      let data = thresholdVectorFlowFieldByCount(vectorFieldData, threshold);
-      const colorScale = coneColorRamp.colorRamp.getPlotlyColorScale(coneColorRampReversed);
-      return {
-        type: "cone",
-        x: data.xPos,
-        y: data.yPos,
-        z: data.zPos,
-        u: data.xData,
-        v: data.yData,
-        w: data.zData,
-        showscale: false,
-        sizemode: "scaled",
-        sizeref: coneSize,
-        colorscale: colorScale,
-        hoverinfo: "none",
-      } as Plotly.Data;
-    };
-    const newConeTrace = makeConeTrace();
-    setConeTrace(newConeTrace);
-  }, [dataset, vectorFieldData, threshold, coneSize, coneColorRampKey, coneColorRampReversed]);
-
-  // Sync plot with state changes
-  useEffect(() => {
-    if (plot3dRef.current && isPlotTabVisible) {
-      plot3dRef.current.dataset = dataset;
-      plot3dRef.current.tracks = tracks;
-      plot3dRef.current.trackToColor = outlineColorMode === SelectionOutlineColorMode.USE_PALETTE ? trackColors : null;
-      plot3dRef.current.coneTrace = coneTrace as Plotly.Data | null;
-      plot3dRef.current.lineAverageWindow = movingAverageWindow;
-      plot3dRef.current.plot(currentFrame);
-    }
-  }, [dataset, tracks, currentFrame, coneTrace, isPlotTabVisible, movingAverageWindow]);
-
-  //// Calculation Handlers ////
-
+  // Calculate flow field when dataset or selected features change
   const calculateFlowField = async (): Promise<void> => {
     if (!dataset || !xAxisFeatureKey || !yAxisFeatureKey || !zAxisFeatureKey || !plot3dRef.current) {
+      setVectorFieldData(null);
       return;
     }
-
     const workerPool = getSharedWorkerPool();
     const vectorFieldData = await workerPool.getVectorFlowField(
       dataset,
@@ -235,10 +192,40 @@ export default function Plot3dTab(): ReactElement {
     setIsLoading(false);
   };
 
+  const flowFieldDeps = [dataset, xAxisFeatureKey, yAxisFeatureKey, zAxisFeatureKey, bins];
+
   useEffect(() => {
     setIsLoading(true);
     calculateFlowField().then(() => setIsLoading(false));
   }, flowFieldDeps);
+
+  // Build new cone trace when calculated vector field data or cone settings change
+  useEffect(() => {
+    if (!vectorFieldData || !dataset) {
+      setConeTrace(null);
+    } else {
+      setConeTrace(
+        make3dConeTrace(vectorFieldData, {
+          coneSize,
+          colorRamp: coneColorRamp,
+          colorRampReversed: coneColorRampReversed,
+          threshold,
+        })
+      );
+    }
+  }, [dataset, vectorFieldData, threshold, coneSize, coneColorRampKey, coneColorRampReversed]);
+
+  // Sync plot with state changes
+  useEffect(() => {
+    if (plot3dRef.current && isPlotTabVisible) {
+      plot3dRef.current.dataset = dataset;
+      plot3dRef.current.tracks = tracks;
+      plot3dRef.current.trackToColor = outlineColorMode === SelectionOutlineColorMode.USE_PALETTE ? trackColors : null;
+      plot3dRef.current.coneTrace = coneTrace as Plotly.Data | null;
+      plot3dRef.current.lineAverageWindow = movingAverageWindow;
+      plot3dRef.current.plot(currentFrame);
+    }
+  }, [dataset, tracks, currentFrame, coneTrace, isPlotTabVisible, movingAverageWindow]);
 
   //// Rendering ////
 
