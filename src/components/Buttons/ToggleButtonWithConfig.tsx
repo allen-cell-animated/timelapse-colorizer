@@ -17,16 +17,21 @@ export type ToggleButtonWithConfigProps = {
   setVisible: (visible: boolean) => void;
   disabled?: boolean;
   tooltipContents?: ReactNode;
+  configMenuPlacement?: "horizontal" | "vertical";
   configMenuContents: ReactNode | ((setOpen: (open: boolean) => void) => ReactNode[]);
   visibleIcon?: ReactNode;
   hiddenIcon?: ReactNode;
-  settingsLinkText: string;
+  settingsLinkText?: string;
+  popupContainer?: HTMLElement;
+  outlined?: boolean;
 };
 
 const defaultProps: Partial<ToggleButtonWithConfigProps> = {
   disabled: false,
+  configMenuPlacement: "horizontal",
   visibleIcon: <ImagesIconSVG />,
   hiddenIcon: <ImagesSlashIconSVG />,
+  outlined: false,
 };
 
 /**
@@ -81,20 +86,22 @@ export function ToggleButtonWithConfig(inputProps: ToggleButtonWithConfigProps):
         ? props.configMenuContents(setConfigMenuOpen)
         : props.configMenuContents}
 
-      <div key="backdrop-settings-link">
-        <LinkStyleButton
-          onClick={() => {
-            setOpenTab(TabType.SETTINGS);
-            setConfigMenuOpen(false);
-          }}
-          $color={theme.color.text.hint}
-          $hoverColor={theme.color.text.secondary}
-        >
-          <span>
-            {props.settingsLinkText} <VisuallyHidden>(opens settings tab)</VisuallyHidden>
-          </span>
-        </LinkStyleButton>
-      </div>
+      {props.settingsLinkText && (
+        <div key="backdrop-settings-link">
+          <LinkStyleButton
+            onClick={() => {
+              setOpenTab(TabType.SETTINGS);
+              setConfigMenuOpen(false);
+            }}
+            $color={theme.color.text.hint}
+            $hoverColor={theme.color.text.secondary}
+          >
+            <span>
+              {props.settingsLinkText} <VisuallyHidden>(opens settings tab)</VisuallyHidden>
+            </span>
+          </LinkStyleButton>
+        </div>
+      )}
 
       <div style={{ marginLeft: "auto", marginTop: "8px" }}>
         <Button onClick={() => setConfigMenuOpen(false)}>Close</Button>
@@ -103,25 +110,27 @@ export function ToggleButtonWithConfig(inputProps: ToggleButtonWithConfigProps):
   );
 
   const isVisible = props.visible && !props.disabled;
+  const hiddenStyle = props.outlined ? "outlined" : "link";
+  const buttonType = isVisible ? "primary" : hiddenStyle;
 
   return (
     <div ref={popupContainerRef}>
       <Popover
         content={configMenuContents}
-        placement="left"
+        placement={props.configMenuPlacement === "vertical" ? "bottom" : "left"}
         trigger={["click"]}
-        getPopupContainer={() => popupContainerRef.current || document.body}
+        getPopupContainer={() => props.popupContainer || popupContainerRef.current || document.body}
         onOpenChange={(open) => setConfigMenuOpen(open)}
         open={configMenuOpen}
       >
         <TooltipWithSubtitle
           title={tooltipTitle}
-          placement={"right"}
+          placement={props.configMenuPlacement === "vertical" ? "top" : "right"}
           subtitleList={tooltipContents}
           tooltipRef={tooltipRef}
-          getPopupContainer={() => popupContainerRef.current || document.body}
+          getPopupContainer={() => props.popupContainer || popupContainerRef.current || document.body}
         >
-          <IconButton type={isVisible ? "primary" : "link"} onClick={onClick} disabled={props.disabled}>
+          <IconButton type={buttonType} onClick={onClick} disabled={props.disabled}>
             {props.visible ? props.visibleIcon : props.hiddenIcon}
             <VisuallyHidden>{tooltipTitle}</VisuallyHidden>
           </IconButton>

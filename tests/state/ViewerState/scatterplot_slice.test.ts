@@ -14,6 +14,21 @@ import { ANY_ERROR } from "tests/utils";
 import { setDatasetAsync } from "./utils";
 
 describe("ScatterplotSlice", () => {
+  describe("setScatterShowHistograms", () => {
+    it("can set show histograms", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      act(() => {
+        result.current.setScatterShowHistograms(false);
+      });
+      expect(result.current.scatterShowHistograms).toBe(false);
+
+      act(() => {
+        result.current.setScatterShowHistograms(true);
+      });
+      expect(result.current.scatterShowHistograms).toBe(true);
+    });
+  });
+
   it("can set range type", () => {
     const { result } = renderHook(() => useViewerStateStore());
     const types = [PlotRangeType.ALL_TIME, PlotRangeType.CURRENT_FRAME, PlotRangeType.CURRENT_TRACK];
@@ -138,21 +153,25 @@ describe("ScatterplotSlice", () => {
       act(() => {
         result.current.setScatterXAxis(null);
         result.current.setScatterYAxis(null);
+        result.current.setScatterShowHistograms(true);
         result.current.setScatterRangeType(PlotRangeType.ALL_TIME);
       });
       let serializedData = serializeScatterPlotSlice(result.current);
       expect(serializedData[UrlParam.SCATTERPLOT_X_AXIS]).toBeUndefined();
       expect(serializedData[UrlParam.SCATTERPLOT_Y_AXIS]).toBeUndefined();
+      expect(serializedData[UrlParam.SCATTERPLOT_SHOW_HISTOGRAMS]).toBe("1");
       expect(serializedData[UrlParam.SCATTERPLOT_RANGE_MODE]).toBe("all");
 
       act(() => {
         result.current.setScatterXAxis(MockFeatureKeys.FEATURE1);
         result.current.setScatterYAxis(MockFeatureKeys.FEATURE2);
+        result.current.setScatterShowHistograms(false);
         result.current.setScatterRangeType(PlotRangeType.CURRENT_FRAME);
       });
       serializedData = serializeScatterPlotSlice(result.current);
       expect(serializedData[UrlParam.SCATTERPLOT_X_AXIS]).toBe(MockFeatureKeys.FEATURE1);
       expect(serializedData[UrlParam.SCATTERPLOT_Y_AXIS]).toBe(MockFeatureKeys.FEATURE2);
+      expect(serializedData[UrlParam.SCATTERPLOT_SHOW_HISTOGRAMS]).toBe("0");
       expect(serializedData[UrlParam.SCATTERPLOT_RANGE_MODE]).toBe("frame");
     });
   });
@@ -163,6 +182,7 @@ describe("ScatterplotSlice", () => {
       const params = new URLSearchParams();
       params.set(UrlParam.SCATTERPLOT_X_AXIS, MockFeatureKeys.FEATURE1);
       params.set(UrlParam.SCATTERPLOT_Y_AXIS, MockFeatureKeys.FEATURE2);
+      params.set(UrlParam.SCATTERPLOT_SHOW_HISTOGRAMS, "0");
       params.set(UrlParam.SCATTERPLOT_RANGE_MODE, "frame");
 
       act(() => {
@@ -171,6 +191,7 @@ describe("ScatterplotSlice", () => {
 
       expect(result.current.scatterXAxis).toBe(MockFeatureKeys.FEATURE1);
       expect(result.current.scatterYAxis).toBe(MockFeatureKeys.FEATURE2);
+      expect(result.current.scatterShowHistograms).toBe(false);
       expect(result.current.scatterRangeType).toBe(PlotRangeType.CURRENT_FRAME);
     });
 

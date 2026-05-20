@@ -1,6 +1,5 @@
-import { ExportOutlined } from "@ant-design/icons";
-import { Button, Tooltip } from "antd";
-import Plotly, { type PlotData } from "plotly.js-dist-min";
+import { Tooltip } from "antd";
+import Plotly from "plotly.js-dist-min";
 import React, { memo, type ReactElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import { Color } from "three";
@@ -10,19 +9,19 @@ import { SwitchIconSVG } from "src/assets";
 import type { Dataset } from "src/colorizer";
 import { TIME_FEATURE_KEY } from "src/colorizer/Dataset";
 import { PlotRangeType } from "src/colorizer/types";
-import { hasAnyValueChanged, isPositiveInteger } from "src/colorizer/utils/data_utils";
+import { hasAnyValueChanged } from "src/colorizer/utils/data_utils";
 import type { ShowAlertBannerCallback } from "src/components/Banner/hooks";
 import IconButton from "src/components/Buttons/IconButton";
-import TextButton from "src/components/Buttons/TextButton";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import type { SelectItem } from "src/components/Dropdowns/types";
 import LoadingSpinner from "src/components/LoadingSpinner";
+import ScatterplotToolbar from "src/components/Tabs/ScatterPlot/ScatterplotToolbar";
 import { SHORTCUT_KEYS } from "src/constants";
 import { useDebounceRecord, useIsMouseButtonDownRef } from "src/hooks";
 import { colorizeStateSelector } from "src/state";
 import { useViewerStateStore } from "src/state/ViewerState";
 import { AppThemeContext } from "src/styles/AppStyle";
-import { FlexRow, FlexRowAlignCenter } from "src/styles/utils";
+import { FlexColumn, FlexRow, FlexRowAlignCenter } from "src/styles/utils";
 import { downloadCsv } from "src/utils/file_io";
 import {
   colorizeScatterplotPoints,
@@ -46,22 +45,16 @@ const PLOTLY_CONFIG: Partial<Plotly.Config> = {
 
 const DEFAULT_RANGE_TYPE = PlotRangeType.ALL_TIME;
 
-const PLOT_RANGE_SELECT_ITEMS = Object.values(PlotRangeType);
-
-const BIN_COUNTS = [20, 50, 100, 200];
-
 type ScatterPlotTabProps = {
   isVisible: boolean;
   showAlert: ShowAlertBannerCallback;
+  containerRef?: HTMLElement;
 };
 
-const ScatterPlotContainer = styled.div`
-  & canvas {
-    // Remove Plotly border
-    border: 0px solid transparent !important;
+const AxisDropdownContainer = styled.div`
+  .react-select__single-value {
+    text-align: center;
   }
-  // Center plot horizontally
-  margin: 0 auto;
 `;
 
 /**
@@ -83,13 +76,12 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const setTracks = useViewerStateStore((state) => state.setTracks);
   const clearTracks = useViewerStateStore((state) => state.clearTracks);
   const setFrame = useViewerStateStore((state) => state.setFrame);
-  const setRangeType = useViewerStateStore((state) => state.setScatterRangeType);
   const setXAxis = useViewerStateStore((state) => state.setScatterXAxis);
   const setYAxis = useViewerStateStore((state) => state.setScatterYAxis);
   const xAxisFeatureKey = useViewerStateStore((state) => state.scatterXAxis);
   const yAxisFeatureKey = useViewerStateStore((state) => state.scatterYAxis);
+  const showHistograms = useViewerStateStore((state) => state.scatterShowHistograms);
   const histogramBins = useViewerStateStore((state) => state.scatterHistogramBins);
-  const setScatterHistogramBins = useViewerStateStore((state) => state.setScatterHistogramBins);
   const viewMode = useViewerStateStore((state) => state.viewMode);
 
   const xAxisPlotRange = useRef<[number, number]>([-Infinity, Infinity]);
@@ -323,6 +315,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     colorizeConfig,
     xAxisFeatureKey,
     yAxisFeatureKey,
+    showHistograms,
     histogramBins,
     rangeType,
     tracks,
@@ -379,33 +372,36 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     );
     const shapes: Partial<Plotly.Shape>[] = [];
 
-    const xHistogram: Partial<Plotly.PlotData> = {
-      x: xData,
-      name: "x density",
-      marker: { color: theme.color.plots.histogram, line: { color: theme.color.plots.histogramOutline, width: 1 } },
-      yaxis: "y2",
-      type: "histogram",
-      // @ts-ignore. TODO: Update once the plotly types are updated.
-      xbins: getHistogramBins(dataset, xAxisFeatureKey, histogramBins),
-      // When using categorical features, use a fallback of 20 bins for nicer
-      // spacing/alignment of auto-generated bins.
-      // @ts-ignore. TODO: Update once the plotly types are updated.
-      nbinsx: 20,
-    };
-    const yHistogram: Partial<PlotData> = {
-      y: yData,
-      name: "y density",
-      marker: { color: theme.color.plots.histogram, line: { color: theme.color.plots.histogramOutline, width: 1 } },
-      xaxis: "x2",
-      type: "histogram",
-      // @ts-ignore. TODO: Update once the plotly types are updated.
-      ybins: getHistogramBins(dataset, yAxisFeatureKey, histogramBins),
-      // @ts-ignore. TODO: Update once the plotly types are updated.
-      nbinsy: 20,
-    };
-
-    traces.push(xHistogram);
-    traces.push(yHistogram);
+    let xHistogram;
+    let yHistogram;
+    if (showHistograms) {
+      xHistogram = {
+        x: xData,
+        name: "x density",
+        marker: { color: theme.color.plots.histogram, line: { color: theme.color.plots.histogramOutline, width: 1 } },
+        yaxis: "y2",
+        type: "histogram",
+        // @ts-ignore. TODO: Update once the plotly types are updated.
+        xbins: getHistogramBins(dataset, xAxisFeatureKey, histogramBins),
+        // When using categorical features, use a fallback of 20 bins for nicer
+        // spacing/alignment of auto-generated bins.
+        // @ts-ignore. TODO: Update once the plotly types are updated.
+        nbinsx: 20,
+      };
+      yHistogram = {
+        y: yData,
+        name: "y density",
+        marker: { color: theme.color.plots.histogram, line: { color: theme.color.plots.histogramOutline, width: 1 } },
+        xaxis: "x2",
+        type: "histogram",
+        // @ts-ignore. TODO: Update once the plotly types are updated.
+        ybins: getHistogramBins(dataset, yAxisFeatureKey, histogramBins),
+        // @ts-ignore. TODO: Update once the plotly types are updated.
+        nbinsy: 20,
+      };
+      traces.push(xHistogram);
+      traces.push(yHistogram);
+    }
 
     // Render current track as an extra trace.
     for (const track of tracks.values()) {
@@ -465,14 +461,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       viewMode
     );
 
-    scatterPlotXAxis.title = dataset.getFeatureNameWithUnits(xAxisFeatureKey);
-    // Due to limited space in the Y-axis, hide categorical feature names.
-    scatterPlotYAxis.title = dataset.isFeatureCategorical(yAxisFeatureKey)
-      ? ""
-      : dataset.getFeatureNameWithUnits(yAxisFeatureKey);
-
     // Add extra margin for categorical feature labels on the Y axis.
-    const leftMarginPx = Math.max(60, estimateTextWidthPxForCategories(dataset, yAxisFeatureKey));
+    const leftMarginPx = Math.max(40, estimateTextWidthPxForCategories(dataset, yAxisFeatureKey));
     const layout: Partial<Plotly.Layout> = {
       autosize: true,
       showlegend: false,
@@ -480,7 +470,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       yaxis: scatterPlotYAxis,
       xaxis2: histogramXAxis,
       yaxis2: histogramYAxis,
-      margin: { l: leftMarginPx, r: 50, b: 50, t: 20 },
+      margin: { l: leftMarginPx, r: 30, b: 30, t: 20 },
       font: {
         // Unfortunately using the Lato font family causes the text to render with SEVERE
         // aliasing. Using the default plotly font family causes the X and Y axes to be
@@ -565,7 +555,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const canDownloadScatterPlotCsv =
     dataset !== null && xAxisFeatureKey !== null && yAxisFeatureKey !== null && selectedFeatureKey !== null;
 
-  const downloadScatterPlotCsv = useCallback(() => {
+  const onDownloadScatterPlotCsv = useCallback(() => {
     if (!canDownloadScatterPlotCsv) {
       return;
     }
@@ -597,18 +587,58 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     });
   }, [dataset]);
 
-  const makeControlBar = (menuItems: SelectItem[]): ReactElement => {
-    return (
-      <FlexRow $gap={6}>
-        <FlexRowAlignCenter $gap={8} style={{ flexWrap: "wrap", width: "100%" }}>
-          <SelectionDropdown
-            label={"X"}
-            selected={xAxisFeatureKey || ""}
-            items={menuItems}
-            onChange={setXAxis}
-            controlWidth="100%"
-            containerStyle={{ flexGrow: 1, flexBasis: "210px", flexShrink: 1 }}
-          />
+  const onResetZoom = useCallback((): void => {
+    setIsRendering(true);
+    setTimeout(() => renderPlot(true), 100);
+  }, [renderPlot]);
+
+  const onClearTracks = useCallback((): void => {
+    setIsRendering(true);
+    clearTracks();
+  }, [clearTracks]);
+
+  return (
+    <FlexColumn style={{ alignItems: "flex-start" }}>
+      <ScatterplotToolbar
+        popupContainer={props.containerRef}
+        onClickResetZoom={onResetZoom}
+        onClickClearTracks={onClearTracks}
+        onClickDownloadCsv={onDownloadScatterPlotCsv}
+      />
+
+      <LoadingSpinner loading={isRendering || isDebouncePending} style={{ marginTop: "10px" }}>
+        <FlexRowAlignCenter style={{ marginLeft: 15 }}>
+          {/* Y axis label */}
+          <div style={{ width: 28, height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <AxisDropdownContainer
+              style={{
+                height: 28,
+                // Force antialiasing on text
+                WebkitBackfaceVisibility: "hidden",
+                transform: "rotate(-90deg)",
+              }}
+            >
+              <SelectionDropdown
+                label={"Y axis"}
+                hideLabel={true}
+                selected={yAxisFeatureKey || ""}
+                items={menuItems}
+                onChange={setYAxis}
+                selectProps={{
+                  menuPortalTarget: props.containerRef ?? document.body,
+                }}
+                controlTooltipPlacement="left"
+              />
+            </AxisDropdownContainer>
+          </div>
+          {/* Main plot */}
+          <div
+            style={{ width: "calc(min(100%, 680px) - 30px)", aspectRatio: "7 / 6", padding: "5px" }}
+            ref={plotDivRef}
+          ></div>
+        </FlexRowAlignCenter>
+        {/* X axis label */}
+        <FlexRow style={{ width: "calc(min(100%, 680px) - 30px)", paddingLeft: "30px", justifyContent: "center" }}>
           <Tooltip title="Swap axes" trigger={["hover", "focus"]}>
             <IconButton
               onClick={() => {
@@ -621,91 +651,22 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
               <SwitchIconSVG />
             </IconButton>
           </Tooltip>
-          <SelectionDropdown
-            label={"Y"}
-            selected={yAxisFeatureKey || ""}
-            items={menuItems}
-            onChange={setYAxis}
-            controlWidth="100%"
-            containerStyle={{ flexGrow: 1, flexBasis: "210px", flexShrink: 1 }}
-          />
-          <div>
+          <AxisDropdownContainer style={{ paddingRight: "40px", width: "fit-content" }}>
             <SelectionDropdown
-              label={"Show objects from"}
-              selected={rangeType}
-              items={PLOT_RANGE_SELECT_ITEMS}
-              controlWidth={"120px"}
-              onChange={(value: string) => setRangeType(value as PlotRangeType)}
-              showSelectedItemTooltip={false}
-            ></SelectionDropdown>
-          </div>
-          <div style={{ marginLeft: 6 }}>
-            <SelectionDropdown
-              label="Histogram bins"
-              selected={histogramBins.toString()}
-              items={BIN_COUNTS.map((value) => ({ value: value.toString(), label: value.toString() }))}
-              isCreatable={true}
-              isValidNewOption={(value: string) => {
-                const bins = parseInt(value, 10);
-                return isPositiveInteger(value) && BIN_COUNTS.indexOf(bins) === -1;
+              label={"X axis"}
+              hideLabel={true}
+              selected={xAxisFeatureKey || ""}
+              items={menuItems}
+              onChange={setXAxis}
+              containerStyle={{ flexGrow: 1, flexBasis: "210px", flexShrink: 1 }}
+              placement="top"
+              selectProps={{
+                menuPortalTarget: props.containerRef ?? document.body,
               }}
-              onChange={function (value: string): void {
-                const bins = parseInt(value, 10);
-                if (isPositiveInteger(value)) {
-                  setScatterHistogramBins(bins);
-                }
-              }}
-              width="100px"
-              controlWidth="80px"
-            ></SelectionDropdown>
-          </div>
-        </FlexRowAlignCenter>
-        <TextButton onClick={downloadScatterPlotCsv} disabled={!canDownloadScatterPlotCsv}>
-          <ExportOutlined style={{ marginRight: "2px" }} />
-          Export CSV
-        </TextButton>
-      </FlexRow>
-    );
-  };
-
-  const makePlotButtons = (): ReactElement => {
-    return (
-      <FlexRow $gap={6} style={{ position: "absolute", right: "5px", top: "5px", zIndex: 10 }}>
-        <Button
-          onClick={() => {
-            setIsRendering(true);
-            clearTracks();
-          }}
-          disabled={tracks.size === 0}
-        >
-          Clear Tracks
-        </Button>
-
-        <Button
-          onClick={() => {
-            setIsRendering(true);
-            setTimeout(() => renderPlot(true), 100);
-          }}
-          type="primary"
-        >
-          Reset Zoom
-        </Button>
-      </FlexRow>
-    );
-  };
-
-  return (
-    <>
-      {makeControlBar(menuItems)}
-      <div style={{ position: "relative" }}>
-        <LoadingSpinner loading={isRendering || isDebouncePending} style={{ marginTop: "10px" }}>
-          {makePlotButtons()}
-          <ScatterPlotContainer
-            style={{ width: "calc(min(100%, 680px) - 40px)", aspectRatio: "7 / 6", padding: "5px" }}
-            ref={plotDivRef}
-          ></ScatterPlotContainer>
-        </LoadingSpinner>
-      </div>
-    </>
+            />
+          </AxisDropdownContainer>
+        </FlexRow>
+      </LoadingSpinner>
+    </FlexColumn>
   );
 });

@@ -14,6 +14,7 @@ import ChannelToggleButton from "src/components/CanvasWrapper/ChannelToggleButto
 import { TooltipWithSubtitle } from "src/components/Tooltips/TooltipWithSubtitle";
 import type { AnnotationState } from "src/hooks";
 import { useViewerStateStore } from "src/state";
+import { StyledHorizontalRule } from "src/styles/components";
 import { FlexColumn, VisuallyHidden } from "src/styles/utils";
 
 type CanvasToolbarProps = {
@@ -30,14 +31,6 @@ const CanvasControlsContainer = styled(FlexColumn)`
   border-radius: 4px;
   background-color: var(--color-viewport-overlay-background);
   border: 1px solid var(--color-viewport-overlay-outline);
-`;
-
-const SectionDivider = styled.hr`
-  height: 1px;
-  width: 100%;
-  margin: 0;
-  border: none;
-  background-color: var(--color-dividers);
 `;
 
 export default function CanvasToolbar(props: CanvasToolbarProps): ReactElement {
@@ -105,7 +98,7 @@ export default function CanvasToolbar(props: CanvasToolbarProps): ReactElement {
         </IconButton>
       </TooltipWithSubtitle>
 
-      <SectionDivider />
+      <StyledHorizontalRule style={{ margin: 0 }} />
 
       {/* Segmentations toggle */}
       <TooltipWithSubtitle
