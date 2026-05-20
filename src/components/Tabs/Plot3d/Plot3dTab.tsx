@@ -5,26 +5,24 @@ import { useDebounce } from "usehooks-ts";
 
 import {
   ColorRamp,
-  DEFAULT_CATEGORICAL_PALETTE_KEY,
   DEFAULT_COLOR_RAMP_KEY,
-  DISPLAY_CATEGORICAL_PALETTE_KEYS,
-  DISPLAY_COLOR_RAMP_LINEAR_KEYS,
   KNOWN_COLOR_RAMPS,
   SelectionOutlineColorMode,
   TabType,
   type VectorFieldData,
 } from "src/colorizer";
 import { getSharedWorkerPool } from "src/colorizer/workers/SharedWorkerPool";
-import ColorRampSelection from "src/components/Dropdowns/ColorRampDropdown";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import type { SelectItem } from "src/components/Dropdowns/types";
-import LabeledSlider from "src/components/Inputs/LabeledSlider";
 import LoadingSpinner from "src/components/LoadingSpinner";
-import { make3dConeTrace } from "src/components/Tabs/Plot3d/plot_3d_utils";
+import Plot3dConeControls from "src/components/Tabs/Plot3d/Plot3dConeControls";
+import Plot3dFeatureControls from "src/components/Tabs/Plot3d/Plot3dFeatureControls";
 import { useViewerStateStore } from "src/state";
 import { FlexColumn, FlexRow, FlexRowAlignCenter } from "src/styles/utils";
 
 import Plot3d from "./Plot3d";
+import Plot3dLineControls from "./Plot3dLineControls";
+import { make3dConeTrace } from "./plot_3d_utils";
 
 const SCROLL_PLAYBACK_TIMEOUT_MS = 100;
 const RESUME_PLAYBACK_TIMEOUT_MS = 500;
@@ -229,119 +227,38 @@ export default function Plot3dTab(): ReactElement {
 
   //// Rendering ////
 
-  const featureDropdownData = useMemo((): SelectItem[] => {
-    if (!dataset) {
-      return [];
-    }
-    return dataset.featureKeys.map((key) => {
-      return { value: key, label: dataset.getFeatureNameWithUnits(key) };
-    });
-  }, [dataset]);
-
-  const getFeatureAxisSelector = (
-    axisLabel: string,
-    selectedKey: string | null,
-    onChangeKey: (newKey: string) => void
-  ): ReactElement => {
-    return (
-      <SelectionDropdown
-        label={axisLabel}
-        selected={selectedKey || ""}
-        items={featureDropdownData}
-        onChange={onChangeKey}
-        controlWidth="100%"
-        containerStyle={{ flexGrow: 1, flexBasis: "140px", flexShrink: 1 }}
-      ></SelectionDropdown>
-    );
-  };
-
   return (
     <FlexColumn style={{ height: "100%", marginBottom: 10 }} $gap={8}>
-      {/* Toolbar */}
-      <FlexRow $gap={24}>
-        <FlexColumn style={{ flexGrow: 1 }} $gap={8}>
-          <FlexRow $gap={8} style={{ flexGrow: 1 }}>
-            <FlexRow $gap={12} style={{ flexGrow: 1 }}>
-              {getFeatureAxisSelector("X", xAxisFeatureKey, setXAxisFeatureKey)}
-              {getFeatureAxisSelector("Y", yAxisFeatureKey, setYAxisFeatureKey)}
-              {getFeatureAxisSelector("Z", zAxisFeatureKey, setZAxisFeatureKey)}
-              <SelectionDropdown
-                label={"Bins"}
-                selected={rawBins.toString()}
-                items={[10, 25, 50, 100].map((num) => ({ value: num.toString(), label: num.toString() }))}
-                onChange={(value: string) => {
-                  const parsedValue = parseInt(value);
-                  if (!isNaN(parsedValue) && parsedValue > 0) {
-                    setBins(parsedValue);
-                  }
-                }}
-                width="100px"
-                controlWidth="70px"
-              ></SelectionDropdown>
-            </FlexRow>
-          </FlexRow>
-        </FlexColumn>
+      {/* Plot Feature Controls */}
+      <FlexRow $gap={8} style={{ flexGrow: 1 }}>
+        <Plot3dFeatureControls
+          xAxisFeatureKey={xAxisFeatureKey}
+          setXAxisFeatureKey={setXAxisFeatureKey}
+          yAxisFeatureKey={yAxisFeatureKey}
+          setYAxisFeatureKey={setYAxisFeatureKey}
+          zAxisFeatureKey={zAxisFeatureKey}
+          setZAxisFeatureKey={setZAxisFeatureKey}
+          bins={bins}
+          setBins={setBins}
+        />
       </FlexRow>
 
-      {/* Plot Controls */}
+      {/* Cone Controls */}
       <FlexRowAlignCenter $gap={12}>
-        <h3>Cone size</h3>
-        <div style={{ width: "180px" }}>
-          <LabeledSlider
-            type="value"
-            value={rawConeSize}
-            onChange={setConeSize}
-            minInputBound={0}
-            minSliderBound={0}
-            maxInputBound={10}
-            maxSliderBound={2.5}
-            step={0.1}
-            marks={[1]}
-            numberFormatter={(number) => number?.toFixed(1)}
-          ></LabeledSlider>
-        </div>
-        <ColorRampSelection
-          selectedRamp={coneColorRampKey}
-          onChangeRamp={function (colorRampKey: string, reversed: boolean): void {
-            setConeColorRampKey(colorRampKey);
-            setConeColorRampReversed(reversed);
-          }}
-          reversed={coneColorRampReversed}
-          colorRampsToDisplay={DISPLAY_COLOR_RAMP_LINEAR_KEYS}
-          selectedPaletteKey={DEFAULT_CATEGORICAL_PALETTE_KEY}
-          onChangePalette={() => {}}
-          numCategories={0}
-          categoricalPalettesToDisplay={DISPLAY_CATEGORICAL_PALETTE_KEYS}
+        <Plot3dConeControls
+          coneSize={rawConeSize}
+          setConeSize={setConeSize}
+          coneColorRampKey={coneColorRampKey}
+          setConeColorRampKey={setConeColorRampKey}
+          coneColorRampReversed={coneColorRampReversed}
+          setConeColorRampReversed={setConeColorRampReversed}
+          threshold={rawThreshold}
+          setThreshold={setThreshold}
         />
-        <h3>Threshold</h3>
-        <div style={{ width: "180px" }}>
-          <LabeledSlider
-            type="value"
-            value={rawThreshold}
-            onChange={setThreshold}
-            minInputBound={0}
-            minSliderBound={0}
-            maxInputBound={50}
-            maxSliderBound={20}
-            step={1}
-            marks={[5]}
-            numberFormatter={(number) => number?.toFixed(0)}
-          ></LabeledSlider>
-        </div>
-        <h3>Line Moving Avg.</h3>
-        <div style={{ width: "180px" }}>
-          <LabeledSlider
-            type="value"
-            value={rawMovingAverageWindow}
-            onChange={setMovingAverageWindow}
-            minInputBound={0}
-            minSliderBound={0}
-            maxInputBound={50}
-            maxSliderBound={20}
-            step={1}
-            numberFormatter={(number) => number?.toFixed(0)}
-          ></LabeledSlider>
-        </div>
+        <Plot3dLineControls
+          movingAverageWindow={rawMovingAverageWindow}
+          setMovingAverageWindow={setMovingAverageWindow}
+        />
       </FlexRowAlignCenter>
 
       {/* Plot Container */}
