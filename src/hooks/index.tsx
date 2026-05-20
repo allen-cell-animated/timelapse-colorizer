@@ -6,6 +6,7 @@ export { useConstructor } from "./useConstructor";
 export { useDebounce } from "./useDebounce";
 export { useDebounceRecord } from "./useDebounceRecord";
 export { useIsHotkeyHeld } from "./useIsHotkeyHeld";
+export { useInteractionListener } from "./useInteractionListener";
 export { useIsMouseButtonDownRef } from "./useIsMouseButtonDownRef";
 export { useJsxText } from "./useJsxText";
 export { useLongPress } from "./useLongPress";

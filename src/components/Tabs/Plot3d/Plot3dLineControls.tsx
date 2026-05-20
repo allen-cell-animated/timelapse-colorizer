@@ -20,7 +20,7 @@ export default function Plot3dLineControls(props: Plot3dLineControlsProps): Reac
   return (
     <FlexRowAlignCenter>
       <label htmlFor={Plot3dLineControlsHtmlIds.MOVING_AVERAGE_WINDOW_SLIDER}>
-        <h3>Line Moving Avg.</h3>
+        <h3>Line Window Size</h3>
       </label>
       <div style={{ width: "180px" }}>
         <LabeledSlider

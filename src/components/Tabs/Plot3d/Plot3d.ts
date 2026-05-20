@@ -21,6 +21,9 @@ const LAYOUT: Partial<Plotly.Layout> = {
   },
 };
 
+/**
+ * Renders a 3D plot of tracks and vector fields using Plotly.
+ */
 export default class Plot3d {
   public parentRef: HTMLElement;
   public dataset: Dataset | null;

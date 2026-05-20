@@ -1,5 +1,4 @@
 import type Plotly from "plotly.js-dist-min";
-import type { PlotlyHTMLElement } from "plotly.js-dist-min";
 import React, { type ReactElement, useEffect, useMemo, useRef, useState } from "react";
 import { useDebounce } from "usehooks-ts";
 
@@ -15,14 +14,14 @@ import { getSharedWorkerPool } from "src/colorizer/workers/SharedWorkerPool";
 import LoadingSpinner from "src/components/LoadingSpinner";
 import Plot3dConeControls from "src/components/Tabs/Plot3d/Plot3dConeControls";
 import Plot3dFeatureControls from "src/components/Tabs/Plot3d/Plot3dFeatureControls";
+import { useInteractionListener } from "src/hooks";
 import { useViewerStateStore } from "src/state";
 import { FlexColumn, FlexRow, FlexRowAlignCenter } from "src/styles/utils";
 
-import { make3dConeTrace } from "./plot_3d_utils";
 import Plot3d from "./Plot3d";
 import Plot3dLineControls from "./Plot3dLineControls";
+import { make3dConeTrace } from "./plot_3d_utils";
 
-const SCROLL_PLAYBACK_TIMEOUT_MS = 100;
 const RESUME_PLAYBACK_TIMEOUT_MS = 500;
 
 export default function Plot3dTab(): ReactElement {
@@ -41,12 +40,7 @@ export default function Plot3dTab(): ReactElement {
   const [coneTrace, setConeTrace] = useState<Plotly.Data | null>(null);
 
   const [isPlaybackTempPaused, setIsPlaybackTempPaused] = useState(false);
-  const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const resumePlaybackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // The number of user interactions (left, middle, or right mouse down) that
-  // are currently occurring. When 0, no user interaction is occurring.
-  const [numActiveUserInteractions, setNumActiveUserInteractions] = useState(0);
 
   const [rawConeSize, setConeSize] = useState(1);
   const coneSize = useDebounce(rawConeSize, 100);
@@ -83,72 +77,27 @@ export default function Plot3dTab(): ReactElement {
   // interacts with the plot, and resume playback once interactions have
   // stopped.
 
-  useEffect(() => {
+  const onInteractionStart = (): void => {
+    if (resumePlaybackTimeoutRef.current) {
+      clearTimeout(resumePlaybackTimeoutRef.current);
+      resumePlaybackTimeoutRef.current = null;
+    }
     if (timeControls.isPlaying()) {
-      setNumActiveUserInteractions(0);
+      timeControls.pause();
+      setIsPlaybackTempPaused(true);
     }
-  }, [timeControls.isPlaying()]);
+  };
 
-  useEffect(() => {
-    if (numActiveUserInteractions >= 1) {
-      if (timeControls.isPlaying()) {
-        timeControls.pause();
-        setIsPlaybackTempPaused(true);
-      }
-      // Stop any existing timeouts to resume playback
-      if (resumePlaybackTimeoutRef.current) {
-        clearTimeout(resumePlaybackTimeoutRef.current);
-        resumePlaybackTimeoutRef.current = null;
-      }
-    } else if (numActiveUserInteractions === 0 && isPlaybackTempPaused) {
-      // Start timeout to resume playback if one doesn't already exist
-      if (!resumePlaybackTimeoutRef.current) {
-        resumePlaybackTimeoutRef.current = setTimeout(() => {
-          timeControls.play();
-          setIsPlaybackTempPaused(false);
-          resumePlaybackTimeoutRef.current = null;
-        }, RESUME_PLAYBACK_TIMEOUT_MS);
-      }
+  const onInteractionEnd = (): void => {
+    if (isPlaybackTempPaused) {
+      resumePlaybackTimeoutRef.current = setTimeout(() => {
+        timeControls.play();
+        setIsPlaybackTempPaused(false);
+      }, RESUME_PLAYBACK_TIMEOUT_MS);
     }
-  }, [numActiveUserInteractions, isPlaybackTempPaused]);
+  };
 
-  useEffect(() => {
-    const onMouseDown = (): void => {
-      setNumActiveUserInteractions((prev) => prev + 1);
-    };
-    const onMouseUp = (): void => {
-      setNumActiveUserInteractions((prev) => Math.max(prev - 1, 0));
-    };
-    // TODO: clear mouse interactions on window blur, since events will not fire
-    const onScroll = (): void => {
-      // If the user is scrolling, treat it as an interaction
-      if (!scrollTimeoutRef.current) {
-        setNumActiveUserInteractions((prev) => prev + 1);
-        scrollTimeoutRef.current = setTimeout(() => {
-          setNumActiveUserInteractions((prev) => Math.max(prev - 1, 0));
-          scrollTimeoutRef.current = null;
-        }, SCROLL_PLAYBACK_TIMEOUT_MS);
-      } else {
-        // Extend timer
-        clearTimeout(scrollTimeoutRef.current);
-        scrollTimeoutRef.current = setTimeout(() => {
-          setNumActiveUserInteractions((prev) => Math.max(prev - 1, 0));
-          scrollTimeoutRef.current = null;
-        }, SCROLL_PLAYBACK_TIMEOUT_MS);
-      }
-    };
-
-    const plotDiv = plotContainerRef.current as PlotlyHTMLElement | null;
-    plotDiv?.addEventListener("mousedown", onMouseDown);
-    plotDiv?.addEventListener("mouseup", onMouseUp);
-    plotDiv?.addEventListener("wheel", onScroll);
-    return () => {
-      const plotDiv = plotContainerRef.current as PlotlyHTMLElement | null;
-      plotDiv?.removeEventListener("mousedown", onMouseDown);
-      plotDiv?.removeEventListener("mouseup", onMouseUp);
-      plotDiv?.removeEventListener("wheel", onScroll);
-    };
-  }, []);
+  useInteractionListener(plotContainerRef.current, onInteractionStart, onInteractionEnd);
 
   //// Data Handlers ////
 
