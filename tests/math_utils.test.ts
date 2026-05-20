@@ -1,9 +1,13 @@
 import { Vector2 } from "three";
 import { describe, expect, it } from "vitest";
 
+import { Track } from "src/colorizer";
 import {
+  calculateVectorFlowField,
   convertCanvasOffsetPxToFrameCoords,
   formatNumber,
+  getBinIndex,
+  getBinValue,
   getFrameSizeInScreenPx,
   numberToSciNotation,
   remap,
@@ -385,5 +389,157 @@ describe("convertCanvasOffsetPxToFrameCoords", () => {
     expect(getFrameOffset(frameInfo, new Vector2(canvRight, canvBottom))).deep.equals(
       new Vector2(expFrameRight, expYBottom)
     );
+  });
+});
+
+describe("getBinIndex", () => {
+  it("handles single bins", () => {
+    const range: [number, number] = [0, 5];
+    const steps = 1;
+    expect(getBinIndex(-1, range, steps)).to.equal(0);
+    expect(getBinIndex(0, range, steps)).to.equal(0);
+    expect(getBinIndex(1, range, steps)).to.equal(0);
+    expect(getBinIndex(2, range, steps)).to.equal(0);
+  });
+
+  it("bins values correctly", () => {
+    const range: [number, number] = [0, 5];
+    const steps = 5;
+
+    expect(getBinIndex(0, range, steps)).to.equal(0);
+    expect(getBinIndex(0.99, range, steps)).to.equal(0);
+    expect(getBinIndex(1, range, steps)).to.equal(1);
+    expect(getBinIndex(1.99, range, steps)).to.equal(1);
+    expect(getBinIndex(2, range, steps)).to.equal(2);
+    expect(getBinIndex(2.99, range, steps)).to.equal(2);
+    expect(getBinIndex(3, range, steps)).to.equal(3);
+    expect(getBinIndex(3.99, range, steps)).to.equal(3);
+    expect(getBinIndex(4, range, steps)).to.equal(4);
+    expect(getBinIndex(4.99, range, steps)).to.equal(4);
+    expect(getBinIndex(5, range, steps)).to.equal(4);
+  });
+
+  it("handles values outside of range", () => {
+    const range: [number, number] = [0, 5];
+    const steps = 5;
+
+    expect(getBinIndex(-100, range, steps)).to.equal(0);
+    expect(getBinIndex(-10, range, steps)).to.equal(0);
+    expect(getBinIndex(-1, range, steps)).to.equal(0);
+    expect(getBinIndex(5, range, steps)).to.equal(4);
+    expect(getBinIndex(10, range, steps)).to.equal(4);
+    expect(getBinIndex(100, range, steps)).to.equal(4);
+  });
+});
+
+describe("getBinValue", () => {
+  it("calculates bin values in the center of each bin", () => {
+    const range: [number, number] = [0, 5];
+    const steps = 5;
+    expect(getBinValue(0, range, steps)).to.equal(0.5);
+    expect(getBinValue(1, range, steps)).to.equal(1.5);
+    expect(getBinValue(2, range, steps)).to.equal(2.5);
+    expect(getBinValue(3, range, steps)).to.equal(3.5);
+    expect(getBinValue(4, range, steps)).to.equal(4.5);
+  });
+});
+
+describe("calculateVectorFlowField", () => {
+  it("sizes arrays by equal bin counts", () => {
+    const binsPerAxis: [number, number, number] = [2, 2, 2];
+    const xRange = [0, 2] as [number, number];
+    const yRange = [0, 2] as [number, number];
+    const zRange = [0, 2] as [number, number];
+    const vectorFieldData = calculateVectorFlowField(
+      [],
+      new Float32Array(),
+      new Float32Array(),
+      new Float32Array(),
+      xRange,
+      yRange,
+      zRange,
+      binsPerAxis
+    );
+    expect(vectorFieldData.xPos.length).to.equal(8);
+    expect(vectorFieldData.yPos.length).to.equal(8);
+    expect(vectorFieldData.zPos.length).to.equal(8);
+    expect(vectorFieldData.xData.length).to.equal(8);
+    expect(vectorFieldData.yData.length).to.equal(8);
+    expect(vectorFieldData.zData.length).to.equal(8);
+    expect(vectorFieldData.count.length).to.equal(8);
+
+    expect(vectorFieldData.xPos).toEqual(new Float32Array([0.5, 1.5, 0.5, 1.5, 0.5, 1.5, 0.5, 1.5]));
+    expect(vectorFieldData.yPos).toEqual(new Float32Array([0.5, 0.5, 1.5, 1.5, 0.5, 0.5, 1.5, 1.5]));
+    expect(vectorFieldData.zPos).toEqual(new Float32Array([0.5, 0.5, 0.5, 0.5, 1.5, 1.5, 1.5, 1.5]));
+  });
+
+  it("sizes arrays by uneven bin counts", () => {
+    const binsPerAxis: [number, number, number] = [1, 2, 3];
+    const xRange = [0, 1] as [number, number];
+    const yRange = [0, 2] as [number, number];
+    const zRange = [0, 3] as [number, number];
+    const vectorFieldData = calculateVectorFlowField(
+      [],
+      new Float32Array(),
+      new Float32Array(),
+      new Float32Array(),
+      xRange,
+      yRange,
+      zRange,
+      binsPerAxis
+    );
+    expect(vectorFieldData.xPos.length).to.equal(6);
+    expect(vectorFieldData.yPos.length).to.equal(6);
+    expect(vectorFieldData.zPos.length).to.equal(6);
+    expect(vectorFieldData.xData.length).to.equal(6);
+    expect(vectorFieldData.yData.length).to.equal(6);
+    expect(vectorFieldData.zData.length).to.equal(6);
+    expect(vectorFieldData.count.length).to.equal(6);
+
+    expect(vectorFieldData.xPos).toEqual(new Float32Array([0.5, 0.5, 0.5, 0.5, 0.5, 0.5]));
+    expect(vectorFieldData.yPos).toEqual(new Float32Array([0.5, 1.5, 0.5, 1.5, 0.5, 1.5]));
+    expect(vectorFieldData.zPos).toEqual(new Float32Array([0.5, 0.5, 1.5, 1.5, 2.5, 2.5]));
+  });
+
+  it("calculates vector flow fields", () => {
+    const binsPerAxis: [number, number, number] = [2, 2, 2];
+    const xRange = [0, 2] as [number, number];
+    const yRange = [0, 2] as [number, number];
+    const zRange = [0, 2] as [number, number];
+
+    const tracks = [
+      {
+        ids: new Uint32Array([0, 1, 2]),
+        times: new Uint32Array([0, 1, 2]),
+      },
+      {
+        ids: new Uint32Array([0, 1, 2]),
+        times: new Uint32Array([0, 1, 2]),
+      },
+      {
+        ids: new Uint32Array([3, 4, 5]),
+        times: new Uint32Array([0, 1, 2]),
+      },
+    ] as unknown[] as Track[];
+    const xFeatureData = new Float32Array([0, 1, 2, 0, 1, 2]);
+    const yFeatureData = new Float32Array([0, 0, 0, 1, 1, 1]);
+    const zFeatureData = new Float32Array([0, 1, 2, 0, 1, 2]);
+    const vectorFieldData = calculateVectorFlowField(
+      tracks,
+      xFeatureData,
+      yFeatureData,
+      zFeatureData,
+      xRange,
+      yRange,
+      zRange,
+      binsPerAxis
+    );
+    expect(vectorFieldData.xPos).toEqual(new Float32Array([0.5, 1.5, 0.5, 1.5, 0.5, 1.5, 0.5, 1.5]));
+    expect(vectorFieldData.yPos).toEqual(new Float32Array([0.5, 0.5, 1.5, 1.5, 0.5, 0.5, 1.5, 1.5]));
+    expect(vectorFieldData.zPos).toEqual(new Float32Array([0.5, 0.5, 0.5, 0.5, 1.5, 1.5, 1.5, 1.5]));
+    expect(vectorFieldData.xData).toEqual(new Float32Array([1, 0, 1, 0, 0, 1, 0, 1]));
+    expect(vectorFieldData.yData).toEqual(new Float32Array([0, 0, 0, 0, 0, 0, 0, 0]));
+    expect(vectorFieldData.zData).toEqual(new Float32Array([1, 0, 1, 0, 0, 1, 0, 1]));
+    expect(vectorFieldData.count).toEqual(new Uint16Array([2, 0, 1, 0, 0, 2, 0, 1]));
   });
 });

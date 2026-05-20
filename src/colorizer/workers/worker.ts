@@ -9,6 +9,7 @@ import {
   calculateMotionDeltas,
   calculateVectorFlowField,
   constructAllTracksFromData,
+  filterVectorFlowFieldData,
 } from "src/colorizer/utils/math_utils";
 import { arrayToDataTextureInfo } from "src/colorizer/utils/texture_utils";
 
@@ -65,15 +66,17 @@ async function getVectorFlowField(
   zFeature: FeatureRangeData
 ): Promise<TransferType> {
   const tracks = constructAllTracksFromData(trackIds, times);
-  const flowFieldData = calculateVectorFlowField(
-    tracks,
-    xFeature.data,
-    yFeature.data,
-    zFeature.data,
-    xFeature.range,
-    yFeature.range,
-    zFeature.range,
-    [xFeature.bins, yFeature.bins, zFeature.bins]
+  const flowFieldData = filterVectorFlowFieldData(
+    calculateVectorFlowField(
+      tracks,
+      xFeature.data,
+      yFeature.data,
+      zFeature.data,
+      xFeature.range,
+      yFeature.range,
+      zFeature.range,
+      [xFeature.bins, yFeature.bins, zFeature.bins]
+    )
   );
   return new Transfer(flowFieldData, [
     flowFieldData.xPos.buffer,

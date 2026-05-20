@@ -343,17 +343,20 @@ export function padCentroidsTo3d(centroidsData: Uint16Array, numObjects: number)
   }
 }
 
-function getBinIndex(value: number, range: [number, number], steps: number): number {
+export function getBinIndex(value: number, range: [number, number], steps: number): number {
+  if (steps <= 0) {
+    return 0;
+  }
   const [min, max] = range;
   const stepSize = (max - min) / steps;
   const bin = Math.floor((value - min) / stepSize);
   return Math.min(Math.max(bin, 0), steps - 1);
 }
 
-function getBinValue(binIndex: number, range: [number, number], steps: number): number {
+export function getBinValue(binIndex: number, range: [number, number], steps: number): number {
   const [min, max] = range;
   const stepSize = (max - min) / steps;
-  return min + binIndex * stepSize + stepSize / 2;
+  return min + (binIndex + 0.5) * stepSize;
 }
 
 export function calculateVectorFlowField(
@@ -379,8 +382,11 @@ export function calculateVectorFlowField(
 
   for (const track of tracks) {
     for (let i0 = 0; i0 < track.ids.length; i0++) {
-      const time = track.times[i0];
-      const i1 = track.times.indexOf(time + 1);
+      // Times are in sorted order, check if the next timepoint exists
+      if (track.times[i0] + 1 !== track.times[i0 + 1]) {
+        continue;
+      }
+      const i1 = i0 + 1;
       const x0Value = xFeatureData[track.ids[i0]];
       const y0Value = yFeatureData[track.ids[i0]];
       const z0Value = zFeatureData[track.ids[i0]];
@@ -408,7 +414,7 @@ export function calculateVectorFlowField(
   for (let x = 0; x < xSteps; x++) {
     for (let y = 0; y < ySteps; y++) {
       for (let z = 0; z < zSteps; z++) {
-        const binIndex = x * ySteps * zSteps + y * zSteps + z;
+        const binIndex = x + y * xSteps + z * xSteps * ySteps;
         if (count[binIndex] > 0) {
           xData[binIndex] /= count[binIndex];
           yData[binIndex] /= count[binIndex];
@@ -421,6 +427,12 @@ export function calculateVectorFlowField(
     }
   }
 
+  return { xPos, yPos, zPos, xData, yData, zData, count };
+}
+
+/** Removes bins with 0 count or NaN/Infinity values. */
+export function filterVectorFlowFieldData(flowFieldData: VectorFieldData): VectorFieldData {
+  const { xPos, yPos, zPos, xData, yData, zData, count } = flowFieldData;
   // Filter out 0-count bins or NaN/Infinity values
   const validBins = Array.from(count).map(
     (c, i) => c > 0 && isFinite(xData[i]) && isFinite(yData[i]) && isFinite(zData[i])
@@ -432,7 +444,6 @@ export function calculateVectorFlowField(
   const filteredYData = yData.filter((_, i) => validBins[i]);
   const filteredZData = zData.filter((_, i) => validBins[i]);
   const filteredCount = count.filter((_, i) => validBins[i]);
-
   return {
     xPos: filteredXPos,
     yPos: filteredYPos,
