@@ -4,6 +4,7 @@ export { useAnnotations } from "./useAnnotations";
 export { useBackdropShortcuts } from "./useBackdropShortcuts";
 export { useConstructor } from "./useConstructor";
 export { useDebounce } from "./useDebounce";
+export { useDebounceRecord } from "./useDebounceRecord";
 export { useIsHotkeyHeld } from "./useIsHotkeyHeld";
 export { useIsMouseButtonDownRef } from "./useIsMouseButtonDownRef";
 export { useJsxText } from "./useJsxText";

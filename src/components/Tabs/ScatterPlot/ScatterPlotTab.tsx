@@ -1,14 +1,15 @@
 import { ExportOutlined } from "@ant-design/icons";
 import { Button, Tooltip } from "antd";
-import Plotly, { type PlotData, type PlotMarker } from "plotly.js-dist-min";
+import Plotly, { type PlotData } from "plotly.js-dist-min";
 import React, { memo, type ReactElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
-import { Color, type ColorRepresentation } from "three";
+import { Color } from "three";
+import { useShallow } from "zustand/shallow";
 
 import { SwitchIconSVG } from "src/assets";
-import { ColorRampType, type Dataset, type Track } from "src/colorizer";
-import { CENTROID_Y_FEATURE_KEY, TIME_FEATURE_KEY } from "src/colorizer/Dataset";
-import { DrawMode, type HexColorString, PlotRangeType, ViewMode } from "src/colorizer/types";
+import type { Dataset } from "src/colorizer";
+import { TIME_FEATURE_KEY } from "src/colorizer/Dataset";
+import { PlotRangeType } from "src/colorizer/types";
 import { hasAnyValueChanged, isPositiveInteger } from "src/colorizer/utils/data_utils";
 import type { ShowAlertBannerCallback } from "src/components/Banner/hooks";
 import IconButton from "src/components/Buttons/IconButton";
@@ -17,26 +18,22 @@ import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import type { SelectItem } from "src/components/Dropdowns/types";
 import LoadingSpinner from "src/components/LoadingSpinner";
 import { SHORTCUT_KEYS } from "src/constants";
-import { useDebounce, useIsMouseButtonDownRef } from "src/hooks";
+import { useDebounceRecord, useIsMouseButtonDownRef } from "src/hooks";
+import { colorizeStateSelector } from "src/state";
 import { useViewerStateStore } from "src/state/ViewerState";
 import { AppThemeContext } from "src/styles/AppStyle";
 import { FlexRow, FlexRowAlignCenter } from "src/styles/utils";
 import { downloadCsv } from "src/utils/file_io";
 import {
-  type DataArray,
-  getBucketIndex,
-  getCrosshairShapes,
+  colorizeScatterplotPoints,
+  estimateTextWidthPxForCategories,
+  filterDataByRange,
+  getAxisLayoutsFromRange,
+  getCurrentFrameShapes,
   getHistogramBins,
-  getHoverTemplate,
   getScatterplotDataAsCsv,
   isHistogramEvent,
-  makeEmptyTraceData,
   makeLineTrace,
-  scaleColorOpacityByMarkerCount,
-  scatterplotTraceToShapes,
-  splitTraceData,
-  subsampleColorRamp,
-  type TraceData,
 } from "src/utils/scatter_plot_data_utils";
 import { areAnyHotkeysPressed } from "src/utils/user_input";
 
@@ -46,12 +43,6 @@ const PLOTLY_CONFIG: Partial<Plotly.Config> = {
   displayModeBar: false,
   responsive: true,
 };
-
-const MAX_POINTS_PER_TRACE = 1024;
-const COLOR_RAMP_SUBSAMPLES = 100;
-const NUM_RESERVED_BUCKETS = 2;
-const BUCKET_INDEX_OUTOFRANGE = 0;
-const BUCKET_INDEX_OUTLIERS = 1;
 
 const DEFAULT_RANGE_TYPE = PlotRangeType.ALL_TIME;
 
@@ -77,13 +68,12 @@ const ScatterPlotContainer = styled.div`
  * A tab that displays an interactive scatter plot between two features in the dataset.
  */
 export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactElement {
-  // ^ Memo prevents re-rendering if the props haven't changed.
+  //////////////////////////////////
+  // State and Refs
+  //////////////////////////////////
   const theme = useContext(AppThemeContext);
 
-  const colorRamp = useViewerStateStore((state) => state.colorRamp);
   const currentFrame = useViewerStateStore((state) => state.currentFrame);
-  const inRangeLUT = useViewerStateStore((state) => state.inRangeLUT);
-  const outlierDrawSettings = useViewerStateStore((state) => state.outlierDrawSettings);
   const outOfRangeDrawSettings = useViewerStateStore((state) => state.outOfRangeDrawSettings);
   const rangeType = useViewerStateStore((state) => state.scatterRangeType);
   const selectedFeatureKey = useViewerStateStore((state) => state.featureKey);
@@ -112,19 +102,13 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     yAxisPlotRange.current = [-Infinity, Infinity];
   }, []);
 
-  // Debounce changes to the dataset to prevent noticeably blocking the UI thread with a re-render.
-  const datasetKey = useViewerStateStore((state) => state.datasetKey);
-  const rawDataset = useViewerStateStore((state) => state.dataset);
-  const rawCategoricalPalette = useViewerStateStore((state) => state.categoricalPalette);
-  const rawColorRampRange = useViewerStateStore((state) => state.colorRampRange);
-  const dataset = useDebounce(rawDataset, 500);
-  const categoricalPalette = useDebounce(rawCategoricalPalette, 100);
-  const [colorRampMin, colorRampMax] = useDebounce(rawColorRampRange, 100);
+  // Debounce changes to the dataset and other frequently-changing values to
+  // prevent noticeably blocking the UI thread with a re-render
+  const rawColorizeState = useViewerStateStore(useShallow(colorizeStateSelector));
+  const [colorizeConfig, isDebouncePending] = useDebounceRecord(rawColorizeState, 100);
+  const { dataset } = colorizeConfig;
 
   const plottedIds = useRef<Set<number>>(new Set());
-
-  const isDebouncePending =
-    dataset !== rawDataset || colorRampMin !== rawColorRampRange[0] || colorRampMax !== rawColorRampRange[1];
 
   const { isVisible } = props;
 
@@ -304,7 +288,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   // Helper Methods
   //////////////////////////////////
 
-  /** Retrieve feature data, if it exists. Accounts for the artificially-added time feature. */
+  /** Retrieve feature data, if it exists. */
   const getData = (featureKey: string | null, dataset: Dataset | null): Uint32Array | Float32Array | undefined => {
     if (featureKey === null || dataset === null) {
       return undefined;
@@ -330,392 +314,13 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     setIsRendering(false);
   };
 
-  /**
-   * Removes data from all indices where xData or yData is NaN or Infinity.
-   */
-  const sanitizeNumericDataArrays = (
-    xData: DataArray,
-    yData: DataArray,
-    objectIds: number[],
-    segIds: number[],
-    trackIds: number[]
-  ): { xData: DataArray; yData: DataArray; objectIds: number[]; segIds: number[]; trackIds: number[] } => {
-    // Boolean array, true if both x and y are not NaN/infinity
-    const isFiniteLut = Array.from(Array(xData.length)).map(
-      (_, i) => Number.isFinite(xData[i]) && Number.isFinite(yData[i])
-    );
-
-    return {
-      xData: xData.filter((_, i) => isFiniteLut[i]),
-      yData: yData.filter((_, i) => isFiniteLut[i]),
-      objectIds: objectIds.filter((_, i) => isFiniteLut[i]),
-      segIds: segIds.filter((_, i) => isFiniteLut[i]),
-      trackIds: trackIds.filter((_, i) => isFiniteLut[i]),
-    };
-  };
-
-  /**
-   * Reduces the given data to only show the selected range (frame, track, or
-   * all data points).
-   * @param rawXData raw data for the X-axis feature
-   * @param rawYData raw data for the Y-axis feature.
-   * @param range The range type to filter the data by.
-   * @param track Required if `range` is `PlotRangeType.CURRENT_TRACK`. The
-   * track to filter data by.
-   * @returns One of the following:
-   *   - `undefined` if the data could not be filtered.
-   *   - An object with the following arrays:
-   *     - `xData`: The filtered x data.
-   *     - `yData`: The filtered y data.
-   *     - `objectIds`: The object IDs corresponding to the index of the
-   *       filtered data.
-   */
-  const filterDataByRange = (
-    rawXData: DataArray,
-    rawYData: DataArray,
-    range: PlotRangeType,
-    track?: Track
-  ):
-    | undefined
-    | {
-        xData: DataArray;
-        yData: DataArray;
-        objectIds: number[];
-        segIds: number[];
-        trackIds: number[];
-      } => {
-    if (!dataset || !rawXData || !rawYData) {
-      return undefined;
-    }
-
-    let xData: DataArray = [];
-    let yData: DataArray = [];
-    let objectIds: number[] = [];
-    let segIds: number[] = [];
-    let trackIds: number[] = [];
-
-    if (range === PlotRangeType.CURRENT_FRAME) {
-      // Filter data to only show the current frame.
-      if (!dataset.times) {
-        return undefined;
-      }
-      for (let i = 0; i < dataset.times.length; i++) {
-        if (dataset.times[i] === currentFrame) {
-          objectIds.push(i);
-          segIds.push(dataset.getSegmentationId(i));
-          trackIds.push(dataset.getTrackId(i));
-          xData.push(rawXData[i]);
-          yData.push(rawYData[i]);
-        }
-      }
-    } else if (range === PlotRangeType.CURRENT_TRACK) {
-      // Filter data to only show the current track.
-      if (!track) {
-        return { xData: [], yData: [], objectIds: [], segIds: [], trackIds: [] };
-      }
-      for (let i = 0; i < track.ids.length; i++) {
-        const id = track.ids[i];
-        xData.push(rawXData[id]);
-        yData.push(rawYData[id]);
-      }
-      objectIds = Array.from(track.ids);
-      segIds = objectIds.map(dataset.getSegmentationId);
-      trackIds = Array(track.ids.length).fill(track.trackId);
-    } else {
-      // All time
-      objectIds = [...rawXData.keys()];
-      segIds = objectIds.map(dataset.getSegmentationId);
-      trackIds = Array.from(dataset!.trackIds || []);
-      // Copying the reference is faster than `Array.from()`.
-      xData = rawXData;
-      yData = rawYData;
-    }
-    // TODO: Consider moving this or making it conditional if it causes performance issues.
-    return sanitizeNumericDataArrays(xData, yData, objectIds, segIds, trackIds);
-  };
-
-  /**
-   * Creates the scatterplot and histogram axes for a given feature. Normalizes for dataset min/max to
-   * prevents axes from jumping during time or track playback.
-   * @param featureKey Name of the feature to generate layouts for.
-   * @param histogramTrace The default histogram trace configuration.
-   * @returns An object with the following keys:
-   *  - `scatterPlotAxis`: Layout for the scatter plot axis.
-   *  - `histogramAxis`: Layout for the histogram axis.
-   *  - `histogramTrace`: A copy of the histogram trace, with potentially updated bin sizes.
-   */
-  const getAxisLayoutsFromRange = (
-    featureKey: string,
-    histogramTrace: Partial<PlotData>
-  ): {
-    scatterPlotAxis: Partial<Plotly.LayoutAxis>;
-    histogramAxis: Partial<Plotly.LayoutAxis>;
-    histogramTrace: Partial<PlotData>;
-  } => {
-    let scatterPlotAxis: Partial<Plotly.LayoutAxis> = {
-      domain: [0, 0.85],
-      showgrid: false,
-      showline: true,
-      zeroline: true,
-    };
-    const histogramAxis: Partial<Plotly.LayoutAxis> = {
-      domain: [0.9, 1],
-      showgrid: false,
-      hoverformat: "f",
-    };
-    const newHistogramTrace = { ...histogramTrace };
-
-    let min = dataset?.getFeatureData(featureKey)?.min || 0;
-    let max = dataset?.getFeatureData(featureKey)?.max || 0;
-
-    if (0 < min && min < (max - min) / 20) {
-      // If min is close to zero (within 5% of the range), snap to zero.
-      min = 0;
-    }
-    if (dataset && dataset.isFeatureCategorical(featureKey)) {
-      // Add extra padding for categories so they're nicely centered
-      min -= 0.5;
-      max += 0.5;
-    } else {
-      // Add a little padding to the max so points aren't cut off by the edge of the plot.
-      // (ideally this would be a pixel padding, but plotly doesn't support that.)
-      max += (max - min) / 100;
-    }
-    scatterPlotAxis.range = [min, max];
-    if (viewMode === ViewMode.VIEW_2D && featureKey === CENTROID_Y_FEATURE_KEY) {
-      // In 2D mode, the origin (0,0) is in the top left corner, versus in plot
-      // the origin is in the bottom left by default. Reverse the Y-axis
-      // centroid value in 2D so the plot matches the onscreen objects.
-      scatterPlotAxis.range = [max, min];
-    }
-
-    // TODO: Show categories as box and whisker plots instead of scatterplot?
-    // TODO: Add special handling for integer features once implemented, so their histograms use reasonable
-    // bin sizes to prevent jumping.
-
-    if (dataset && dataset.isFeatureCategorical(featureKey)) {
-      // Create custom tick marks for the categories
-      const categories = dataset.getFeatureCategories(featureKey) || [];
-      scatterPlotAxis = {
-        ...scatterPlotAxis,
-        tickmode: "array",
-        tick0: "0", // start at 0
-        dtick: "1", // tick increment is 1
-        tickvals: [...categories.keys()], // map from category index to category label
-        ticktext: categories,
-        zeroline: false,
-      };
-      // Enforce bins on histogram traces for categorical features. This prevents a bug where the histograms
-      // would suddenly change width if a category wasn't present in the given data range.
-      newHistogramTrace.xbins = { start: min, end: max, size: (max - min) / categories.length };
-      // @ts-ignore. TODO: Update once the plotly types are updated.
-      newHistogramTrace.ybins = { start: min, end: max, size: (max - min) / categories.length };
-    }
-    return { scatterPlotAxis, histogramAxis, histogramTrace: newHistogramTrace };
-  };
-
-  /**
-   * VERY roughly estimate the max width in pixels needed for a categorical feature.
-   */
-  const estimateTextWidthPxForCategories = (featureKey: string): number => {
-    if (featureKey === null || !dataset?.isFeatureCategorical(featureKey)) {
-      return 0;
-    }
-    const categories = dataset.getFeatureCategories(featureKey) || [];
-    return (
-      categories.reduce((_prev: any, val: string, acc: number) => {
-        return Math.max(val.length, acc);
-      }, 0) * 8
-    );
-  };
-
-  // TODO: Move to `scatter_plot_data_utils.ts`
-  /**
-   * Applies coloring to point traces in a scatterplot. Does this by splitting
-   * the data into multiple traces each with a solid color, which is much faster
-   * than using Plotly's native color ramping. Also enforces a maximum number of
-   * points per trace, which significantly speeds up Plotly renders.
-   *
-   * @param xData
-   * @param yData
-   * @param objectIds
-   * @param trackIds
-   * @param markerConfig Additional marker configuration to apply to all points.
-   * By default, markers are size 4.
-   * @param {Color | undefined} overrideColor When defined, uses a base color
-   * for all points, instead of calculating based on the color ramp or palette.
-   * @param allowHover Whether to allow hover tooltips on the points, true by
-   * default. When false, hover info is disabled.
-   */
-  const colorizeScatterplotPoints = (
-    xData: DataArray,
-    yData: DataArray,
-    objectIds: number[],
-    segIds: number[],
-    trackIds: number[],
-    markerConfig: Partial<PlotMarker> & { outliers?: Partial<PlotMarker>; outOfRange?: Partial<PlotMarker> } = {},
-    overrideColor?: Color,
-    allowHover = true
-  ): Partial<PlotData>[] => {
-    if (selectedFeatureKey === null || dataset === null || !xAxisFeatureKey || !yAxisFeatureKey) {
-      return [];
-    }
-    const featureData = dataset.getFeatureData(selectedFeatureKey);
-    if (!featureData) {
-      return [];
-    }
-
-    // Generate colors
-    const categories = dataset.getFeatureCategories(selectedFeatureKey);
-    const isCategorical = categories !== null;
-    const isCategoricalRamp = colorRamp.type === ColorRampType.CATEGORICAL;
-    const usingOverrideColor = markerConfig.color || overrideColor;
-    overrideColor = overrideColor || new Color(markerConfig.color as ColorRepresentation);
-
-    let colors: Color[];
-    if (usingOverrideColor) {
-      // Do no coloring! Keep all points in the same bucket, which will still be split up later.
-      colors = [overrideColor];
-    } else if (isCategorical) {
-      colors = categoricalPalette;
-    } else if (isCategoricalRamp) {
-      colors = colorRamp.colorStops;
-    } else {
-      colors = subsampleColorRamp(colorRamp, COLOR_RAMP_SUBSAMPLES);
-    }
-
-    const colorMinValue = isCategorical ? 0 : colorRampMin;
-    const colorMaxValue = isCategorical ? categories.length - 1 : colorRampMax;
-
-    // Make a bucket group for each ramp/palette color and for the out-of-range and outliers.
-    const traceDataBuckets: TraceData[] = [];
-    const overrideColorHex: HexColorString = `#${overrideColor.getHexString()}`;
-
-    let outOfRangeColor: HexColorString = `#${outOfRangeDrawSettings.color.getHexString()}`;
-    let outlierColor: HexColorString = `#${outlierDrawSettings.color.getHexString()}`;
-    const outOfRangeMarker = { ...markerConfig, ...markerConfig.outOfRange };
-    const outlierMarker = { ...markerConfig, ...markerConfig.outliers };
-    if (usingOverrideColor) {
-      outlierColor = overrideColorHex;
-      outOfRangeColor = overrideColorHex;
-    }
-
-    traceDataBuckets.push(makeEmptyTraceData(outOfRangeColor, outOfRangeMarker)); // 0 = out of range
-    traceDataBuckets.push(makeEmptyTraceData(outlierColor, outlierMarker)); // 1 = outliers
-
-    for (let i = NUM_RESERVED_BUCKETS; i < colors.length + NUM_RESERVED_BUCKETS; i++) {
-      let color: HexColorString = `#${colors[i - NUM_RESERVED_BUCKETS].getHexString()}`;
-      const marker = markerConfig;
-      if (usingOverrideColor) {
-        color = overrideColorHex;
-      }
-      traceDataBuckets.push(makeEmptyTraceData(color, marker));
-    }
-
-    // Sort data into buckets
-    for (let i = 0; i < xData.length; i++) {
-      const objectId = objectIds[i];
-      const isMinMaxNaN = Number.isNaN(colorMaxValue) && Number.isNaN(colorMinValue);
-      const isNaN = Number.isNaN(featureData.data[objectId]);
-      const isOutlier = dataset.outliers ? dataset.outliers[objectId] : false;
-      const isOutOfRange = inRangeLUT[objectId] === 0;
-
-      if (Number.isNaN(objectId) || objectId === undefined || objectId <= 0) {
-        continue;
-      }
-
-      let bucketIndex;
-      if (isOutOfRange) {
-        bucketIndex = BUCKET_INDEX_OUTOFRANGE;
-      } else if (isOutlier || isNaN || isMinMaxNaN) {
-        bucketIndex = BUCKET_INDEX_OUTLIERS;
-      } else if (usingOverrideColor) {
-        bucketIndex = NUM_RESERVED_BUCKETS;
-      } else if (isCategorical || isCategoricalRamp) {
-        bucketIndex = (Math.round(featureData.data[objectId]) % colors.length) + NUM_RESERVED_BUCKETS;
-      } else {
-        bucketIndex =
-          getBucketIndex(featureData.data[objectId], colorMinValue, colorMaxValue, colors.length) +
-          NUM_RESERVED_BUCKETS;
-      }
-
-      const bucket = traceDataBuckets[bucketIndex];
-      bucket.x.push(xData[i]);
-      bucket.y.push(yData[i]);
-      bucket.objectIds.push(objectIds[i]);
-      bucket.segIds.push(segIds[i]);
-      bucket.trackIds.push(trackIds[i]);
-    }
-
-    // Apply transparency to the colors
-    const totalPoints = xData.length;
-    const numOutOfRange = traceDataBuckets[BUCKET_INDEX_OUTOFRANGE].x.length;
-    const numOutliers = traceDataBuckets[BUCKET_INDEX_OUTLIERS].x.length;
-    const numInRange = totalPoints - numOutOfRange - numOutliers;
-    // Use total number to calculate transparency for the out of range and outlier buckets, so they do not appear
-    // unusually opaque if there are only a small number of points.
-    traceDataBuckets[BUCKET_INDEX_OUTOFRANGE].color = scaleColorOpacityByMarkerCount(
-      totalPoints,
-      traceDataBuckets[BUCKET_INDEX_OUTOFRANGE].color
-    );
-    traceDataBuckets[BUCKET_INDEX_OUTLIERS].color = scaleColorOpacityByMarkerCount(
-      totalPoints,
-      traceDataBuckets[BUCKET_INDEX_OUTLIERS].color
-    );
-    traceDataBuckets.slice(2).forEach((bucket) => {
-      bucket.color = scaleColorOpacityByMarkerCount(numInRange, bucket.color);
-    });
-
-    // Optionally delete the outlier and out of range buckets to hide the values.
-    if (outlierDrawSettings.mode === DrawMode.HIDE && !markerConfig.outliers) {
-      traceDataBuckets.splice(1, 1);
-    }
-    if (outOfRangeDrawSettings.mode === DrawMode.HIDE && !markerConfig.outOfRange) {
-      traceDataBuckets.splice(0, 1);
-    }
-
-    // Transform buckets into traces
-    const traces: Partial<PlotData>[] = traceDataBuckets
-      .filter((bucket) => bucket.x.length > 0) // Remove empty buckets
-      .reduce((acc: TraceData[], bucket: TraceData) => {
-        // Split the traces into smaller chunks to prevent plotly from freezing.
-        acc.push(...splitTraceData(bucket, MAX_POINTS_PER_TRACE));
-        return acc;
-      }, [])
-      .map((bucket) => {
-        // Custom data is shown in the hover tooltip.
-        // Formatted as [trackId, segId][]
-        const stackedCustomData = bucket.trackIds.map((trackId, index) => {
-          return [trackId.toString(), bucket.segIds[index].toString()];
-        });
-        return {
-          x: bucket.x,
-          y: bucket.y,
-          ids: bucket.objectIds.map((id) => id.toString()),
-          customdata: stackedCustomData,
-          name: "",
-          type: "scattergl",
-          mode: "markers",
-          marker: {
-            color: bucket.color,
-            size: 4,
-            ...bucket.marker,
-          },
-          hoverinfo: allowHover ? "text" : "skip",
-          hovertemplate: allowHover ? getHoverTemplate(dataset, xAxisFeatureKey, yAxisFeatureKey) : undefined,
-        };
-      });
-
-    return traces;
-  };
-
   //////////////////////////////////
   // Plot Rendering
   //////////////////////////////////
 
   // Plot dependencies, not including time.
   const basePlotDependencies = [
-    dataset,
+    colorizeConfig,
     xAxisFeatureKey,
     yAxisFeatureKey,
     histogramBins,
@@ -723,14 +328,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     tracks,
     isVisible,
     plotDivRef.current,
-    outlierDrawSettings,
-    outOfRangeDrawSettings,
-    selectedFeatureKey,
-    colorRampMin,
-    colorRampMax,
-    colorRamp,
-    inRangeLUT,
-    categoricalPalette,
     resetXAxisPlotRange,
     resetYAxisPlotRange,
   ];
@@ -738,49 +335,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const prevDependenciesRef = useRef<typeof basePlotDependencies | null>(null);
   const rawXDataRef = useRef<Uint32Array | Float32Array | undefined>(undefined);
   const rawYDataRef = useRef<Uint32Array | Float32Array | undefined>(undefined);
-
-  /**
-   * Returns an array of shapes that draw a crosshair + colored scatterplot dot over the
-   * points in selected tracks visible in the current frame.
-   */
-  const getCurrentFrameShapes = (): Partial<Plotly.Shape>[] => {
-    const crosshairShapes: Partial<Plotly.Shape>[] = [];
-    if (!rawXDataRef.current || !rawYDataRef.current || !dataset) {
-      return [];
-    }
-    const xData: number[] = [];
-    const yData: number[] = [];
-    const ids: number[] = [];
-    const segIds: number[] = [];
-    const trackIds: number[] = [];
-    for (const track of tracks.values()) {
-      const currentObjectId = track.getIdAtTime(currentFrame);
-      if (currentObjectId !== -1) {
-        // Get crosshair for this shape and store data for rendering the dots
-        crosshairShapes.push(
-          ...getCrosshairShapes(rawXDataRef.current[currentObjectId], rawYDataRef.current[currentObjectId])
-        );
-        xData.push(rawXDataRef.current[currentObjectId]);
-        yData.push(rawYDataRef.current[currentObjectId]);
-        ids.push(currentObjectId);
-        segIds.push(dataset!.getSegmentationId(currentObjectId));
-        trackIds.push(track.trackId);
-      }
-    }
-    const outOfRangeOutlineColor = outOfRangeDrawSettings.color.clone().multiplyScalar(0.8);
-
-    // Render the dots. See TODO in `scatterplotTraceToShapes` for refactoring
-    // `colorizeScatterplotPoints`.
-    const pointShapes = scatterplotTraceToShapes(
-      colorizeScatterplotPoints(xData, yData, ids, segIds, trackIds, {
-        outOfRange: {
-          color: theme.color.layout.background,
-          line: { width: 2, color: "#" + outOfRangeOutlineColor.getHexString() + "40" },
-        },
-      })
-    );
-    return crosshairShapes.concat(pointShapes);
-  };
 
   const renderPlot = (forceRelayout: boolean = false): void => {
     const rawXData = getData(xAxisFeatureKey, dataset);
@@ -795,12 +349,12 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     }
 
     // Filter data by the range type, if applicable
-    const result = filterDataByRange(rawXData, rawYData, rangeType);
-    if (result === undefined) {
+    const pointsData = filterDataByRange(dataset, currentFrame, rawXData, rawYData, rangeType);
+    if (pointsData === undefined) {
       clearPlotAndStopRender();
       return;
     }
-    const { xData, yData, segIds, objectIds, trackIds } = result;
+    const { xData, yData, objectIds } = pointsData;
 
     plottedIds.current = new Set(objectIds);
 
@@ -814,11 +368,10 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
     // Configure traces
     const traces = colorizeScatterplotPoints(
-      xData,
-      yData,
-      objectIds,
-      segIds,
-      trackIds,
+      colorizeConfig,
+      xAxisFeatureKey,
+      yAxisFeatureKey,
+      pointsData,
       {},
       markerBaseColor,
       // disable hover for all points other than the track when one is selected
@@ -856,7 +409,14 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
     // Render current track as an extra trace.
     for (const track of tracks.values()) {
-      const trackData = filterDataByRange(rawXData, rawYData, PlotRangeType.CURRENT_TRACK, track);
+      const trackData = filterDataByRange(
+        dataset,
+        currentFrame,
+        rawXData,
+        rawYData,
+        PlotRangeType.CURRENT_TRACK,
+        track
+      );
       if (trackData && rangeType !== PlotRangeType.CURRENT_FRAME) {
         // Render an extra trace for lines connecting the points in the current track when time is a feature.
         if (isUsingTime) {
@@ -866,35 +426,43 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         }
         // Connect track points as a line trace.
         const outOfRangeOutlineColor = outOfRangeDrawSettings.color.clone().multiplyScalar(0.8);
-        const trackTraces = colorizeScatterplotPoints(
-          trackData.xData,
-          trackData.yData,
-          trackData.objectIds,
-          trackData.segIds,
-          trackData.trackIds,
-          {
-            outOfRange: {
-              color: theme.color.layout.background,
-              line: { width: 1, color: "#" + outOfRangeOutlineColor.getHexString() + "40" },
-            },
-          }
-        );
+        const trackTraces = colorizeScatterplotPoints(colorizeConfig, xAxisFeatureKey, yAxisFeatureKey, trackData, {
+          outOfRange: {
+            color: theme.color.layout.background,
+            line: { width: 1, color: "#" + outOfRangeOutlineColor.getHexString() + "40" },
+          },
+        });
         traces.push(...trackTraces);
         plottedIds.current = new Set([...plottedIds.current, ...trackData.objectIds]);
       }
     }
 
     // Render crosshair at the current time for all tracks.
-    shapes.push(...getCurrentFrameShapes());
+    shapes.push(
+      ...getCurrentFrameShapes(
+        dataset,
+        xAxisFeatureKey,
+        yAxisFeatureKey,
+        colorizeConfig,
+        currentFrame,
+        tracks,
+        rawXData,
+        rawYData
+      )
+    );
 
     // Format axes
     const { scatterPlotAxis: scatterPlotXAxis, histogramAxis: histogramXAxis } = getAxisLayoutsFromRange(
+      dataset,
       xAxisFeatureKey,
-      xHistogram
+      xHistogram,
+      viewMode
     );
     const { scatterPlotAxis: scatterPlotYAxis, histogramAxis: histogramYAxis } = getAxisLayoutsFromRange(
+      dataset,
       yAxisFeatureKey,
-      yHistogram
+      yHistogram,
+      viewMode
     );
 
     scatterPlotXAxis.title = dataset.getFeatureNameWithUnits(xAxisFeatureKey);
@@ -904,7 +472,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       : dataset.getFeatureNameWithUnits(yAxisFeatureKey);
 
     // Add extra margin for categorical feature labels on the Y axis.
-    const leftMarginPx = Math.max(60, estimateTextWidthPxForCategories(yAxisFeatureKey));
+    const leftMarginPx = Math.max(60, estimateTextWidthPxForCategories(dataset, yAxisFeatureKey));
     const layout: Partial<Plotly.Layout> = {
       autosize: true,
       showlegend: false,
@@ -964,20 +532,31 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
    * Re-render the plot when the relevant props change.
    */
   useEffect(() => {
-    if (!isVisible) {
+    if (!isVisible || isDebouncePending) {
       return;
     }
     const hasOnlyFrameChanged = !hasAnyValueChanged(basePlotDependencies, prevDependenciesRef.current);
     const shouldSkipFrameChangeRender = hasOnlyFrameChanged && rangeType === PlotRangeType.ALL_TIME;
     if (shouldSkipFrameChangeRender && plotDivRef.current !== null) {
       // Only the frame changed, so we can skip the render and just do a relayout instead.
-      Plotly.relayout(plotDivRef.current, { shapes: getCurrentFrameShapes() });
+      Plotly.relayout(plotDivRef.current, {
+        shapes: getCurrentFrameShapes(
+          dataset,
+          xAxisFeatureKey,
+          yAxisFeatureKey,
+          colorizeConfig,
+          currentFrame,
+          tracks,
+          rawXDataRef.current,
+          rawYDataRef.current
+        ),
+      });
       return;
     }
     setIsRendering(true);
     renderPlot();
     prevDependenciesRef.current = basePlotDependencies;
-  }, [...basePlotDependencies, currentFrame]);
+  }, [...basePlotDependencies, isDebouncePending, currentFrame]);
 
   //////////////////////////////////
   // Component Rendering
@@ -990,6 +569,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     if (!canDownloadScatterPlotCsv) {
       return;
     }
+    const viewerState = useViewerStateStore.getState();
     const featureSet = new Set([xAxisFeatureKey, yAxisFeatureKey, selectedFeatureKey]);
     // Remove time as a feature axis if present, since it's included already as
     // a metadata column in the CSV.
@@ -999,18 +579,16 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       [xAxisFeatureKey, xAxisPlotRange.current],
       [yAxisFeatureKey, yAxisPlotRange.current],
     ]);
-    const csvString = getScatterplotDataAsCsv(dataset, Array.from(plottedIds.current), inRangeLUT, features, filters);
-    const name = datasetKey ? `${datasetKey}-scatterplot.csv` : "scatterplot.csv";
+    const csvString = getScatterplotDataAsCsv(
+      dataset,
+      Array.from(plottedIds.current),
+      viewerState.inRangeLUT,
+      features,
+      filters
+    );
+    const name = viewerState.datasetKey ? `${viewerState.datasetKey}-scatterplot.csv` : "scatterplot.csv";
     downloadCsv(name, csvString);
-  }, [
-    dataset,
-    datasetKey,
-    xAxisFeatureKey,
-    yAxisFeatureKey,
-    selectedFeatureKey,
-    canDownloadScatterPlotCsv,
-    inRangeLUT,
-  ]);
+  }, [dataset, xAxisFeatureKey, yAxisFeatureKey, selectedFeatureKey, canDownloadScatterPlotCsv]);
 
   const menuItems = useMemo((): SelectItem[] => {
     const featureKeys = dataset ? dataset.featureKeys : [];
