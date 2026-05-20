@@ -14,6 +14,7 @@ export const useInteractionListener = (
 ): void => {
   const numInteractionsRef = useRef(0);
 
+  const heldMouseButtonsRef = useRef<Set<number>>(new Set());
   const onInteractionStartRef = useRef(onInteractionStart);
   const onInteractionEndRef = useRef(onInteractionEnd);
   onInteractionStartRef.current = onInteractionStart;
@@ -35,11 +36,19 @@ export const useInteractionListener = (
     }
   };
 
-  const onMouseDown = (): void => {
+  const onMouseDown = (event: MouseEvent): void => {
+    if (heldMouseButtonsRef.current.has(event.button)) {
+      return;
+    }
+    heldMouseButtonsRef.current.add(event.button);
     onInitiatedInteraction();
   };
 
-  const onMouseUp = (): void => {
+  const onMouseUp = (event: MouseEvent): void => {
+    if (!heldMouseButtonsRef.current.has(event.button)) {
+      return;
+    }
+    heldMouseButtonsRef.current.delete(event.button);
     onEndedInteraction();
   };
 
@@ -63,14 +72,14 @@ export const useInteractionListener = (
     }
 
     element.addEventListener("mousedown", onMouseDown);
-    // TODO: mouseUp events must be added on the window and not the element.
-    // We also need to track which mouse downs are active...
-    element.addEventListener("mouseup", onMouseUp);
+    // Mouse up events are listened to on the window in case the user releases
+    // the mouse button outside the element.
+    window.addEventListener("mouseup", onMouseUp);
     element.addEventListener("wheel", onScroll);
 
     return () => {
       element.removeEventListener("mousedown", onMouseDown);
-      element.removeEventListener("mouseup", onMouseUp);
+      window.removeEventListener("mouseup", onMouseUp);
       element.removeEventListener("wheel", onScroll);
     };
   }, [element]);
