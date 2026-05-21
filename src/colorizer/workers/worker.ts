@@ -9,7 +9,9 @@ import {
   calculateMotionDeltas,
   calculateVectorFlowField,
   constructAllTracksFromData,
+  convolveVectorFlowField,
   filterVectorFlowFieldData,
+  make3dGaussianKernel,
 } from "src/colorizer/utils/math_utils";
 import { arrayToDataTextureInfo } from "src/colorizer/utils/texture_utils";
 
@@ -66,18 +68,26 @@ async function getVectorFlowField(
   zFeature: FeatureRangeData
 ): Promise<TransferType> {
   const tracks = constructAllTracksFromData(trackIds, times);
-  const flowFieldData = filterVectorFlowFieldData(
-    calculateVectorFlowField(
-      tracks,
-      xFeature.data,
-      yFeature.data,
-      zFeature.data,
-      xFeature.range,
-      yFeature.range,
-      zFeature.range,
-      [xFeature.bins, yFeature.bins, zFeature.bins]
-    )
+  const rawFlowFieldData = calculateVectorFlowField(
+    tracks,
+    xFeature.data,
+    yFeature.data,
+    zFeature.data,
+    xFeature.range,
+    yFeature.range,
+    zFeature.range,
+    [xFeature.bins, yFeature.bins, zFeature.bins]
   );
+  const nbins = xFeature.bins;
+  const kernelSize = Math.floor(0.3 * 0.5 * nbins) * 2 + 1;
+  const gaussianKernel = make3dGaussianKernel(kernelSize, 0.15 * nbins);
+  const smoothedFlowFieldData = convolveVectorFlowField(
+    rawFlowFieldData,
+    [xFeature.bins, yFeature.bins, zFeature.bins],
+    gaussianKernel
+  );
+  const flowFieldData = filterVectorFlowFieldData(smoothedFlowFieldData);
+
   return new Transfer(flowFieldData, [
     flowFieldData.xPos.buffer,
     flowFieldData.yPos.buffer,

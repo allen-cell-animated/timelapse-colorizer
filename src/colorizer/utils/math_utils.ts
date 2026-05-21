@@ -377,7 +377,7 @@ export function calculateVectorFlowField(
   const [xSteps, ySteps, zSteps] = binsPerAxis;
 
   const numBins = xSteps * ySteps * zSteps;
-  const count = new Uint32Array(numBins);
+  const count = new Float32Array(numBins);
   const xData = new Float32Array(numBins);
   const yData = new Float32Array(numBins);
   const zData = new Float32Array(numBins);
@@ -476,4 +476,115 @@ export function thresholdVectorFlowFieldByCount(
     zData: zData.filter((_, i) => passedThreshold[i]),
     count: count.filter((_, i) => passedThreshold[i]),
   };
+}
+
+export function make3dGaussianKernel(size: number, bandwidth: number): number[][][] {
+  const kernel: number[][][] = [];
+  for (let x = 0; x < size; x++) {
+    kernel[x] = [];
+    for (let y = 0; y < size; y++) {
+      kernel[x][y] = [];
+    }
+  }
+
+  const mid = (size - 1) / 2;
+  const twoBandwidthSquared = 2 * bandwidth * bandwidth;
+  let sum = 0;
+  for (let x = 0; x < size; x++) {
+    for (let y = 0; y < size; y++) {
+      for (let z = 0; z < size; z++) {
+        // f(x) = exp(-dist^2 / (2 * bandwidth^2))
+        const dist = (x - mid) ** 2 + (y - mid) ** 2 + (z - mid) ** 2;
+        const value = Math.exp(-dist / twoBandwidthSquared);
+        kernel[x][y][z] = value;
+        sum += value;
+      }
+    }
+  }
+
+  // Normalize by sum so integral is 1.
+  for (let x = 0; x < size; x++) {
+    for (let y = 0; y < size; y++) {
+      for (let z = 0; z < size; z++) {
+        kernel[x][y][z] /= sum;
+      }
+    }
+  }
+  return kernel;
+}
+
+function isInBounds(x: number, y: number, z: number, xSteps: number, ySteps: number, zSteps: number): boolean {
+  return x >= 0 && x < xSteps && y >= 0 && y < ySteps && z >= 0 && z < zSteps;
+}
+
+function convolve(
+  arr: Float32Array,
+  binsPerAxis: [number, number, number],
+  kernel: number[][][],
+  arrWeight?: Float32Array
+): Float32Array {
+  const output = new Float32Array(arr.length);
+
+  const [xSteps, ySteps, zSteps] = binsPerAxis;
+  const kernelSize = kernel.length;
+  const kernelMid = Math.floor(kernelSize / 2);
+
+  for (let z = 0; z < zSteps; z++) {
+    for (let y = 0; y < ySteps; y++) {
+      for (let x = 0; x < xSteps; x++) {
+        let sum = 0;
+        let sumWeight = 0;
+        for (let k = 0; k < kernelSize; k++) {
+          for (let j = 0; j < kernelSize; j++) {
+            for (let i = 0; i < kernelSize; i++) {
+              // Skip if kernel index is out of bounds of the input array
+              const kernelValue = kernel[i][j][k];
+              const xIndex = x + i - kernelMid;
+              const yIndex = y + j - kernelMid;
+              const zIndex = z + k - kernelMid;
+              if (isInBounds(xIndex, yIndex, zIndex, xSteps, ySteps, zSteps)) {
+                const index = zIndex * ySteps * xSteps + yIndex * xSteps + xIndex;
+                // Optional weighting of input values.
+                const weight = arrWeight ? arrWeight[index] : 1;
+                sum += arr[index] * weight * kernelValue;
+                sumWeight += kernelValue;
+              }
+            }
+          }
+        }
+        const outputIndex = z * ySteps * xSteps + y * xSteps + x;
+        output[outputIndex] = sumWeight > 0 ? sum / sumWeight : 0;
+      }
+    }
+  }
+  return output;
+}
+
+export function convolveVectorFlowField(
+  flowFieldData: VectorFieldData,
+  binsPerAxis: [number, number, number],
+  kernel: number[][][]
+): VectorFieldData {
+  const { xPos, yPos, zPos, xData: rawXData, yData: rawYData, zData: rawZData, count: rawCountData } = flowFieldData;
+
+  const xData = new Float32Array(rawXData.length);
+  const yData = new Float32Array(rawYData.length);
+  const zData = new Float32Array(rawZData.length);
+  const count = new Float32Array(rawCountData.length);
+
+  count.set(convolve(rawCountData, binsPerAxis, kernel));
+  xData.set(convolve(rawXData, binsPerAxis, kernel));
+  yData.set(convolve(rawYData, binsPerAxis, kernel));
+  zData.set(convolve(rawZData, binsPerAxis, kernel));
+
+  // Divide feature data by smoothed countData
+  // for (let i = 0; i < count.length; i++) {
+  //   if (count[i] > 0) {
+  //     xData[i] /= count[i];
+  //     yData[i] /= count[i];
+  //     zData[i] /= count[i];
+  //   }
+  // }
+
+  return { xPos, yPos, zPos, xData, yData, zData, count: count };
 }
