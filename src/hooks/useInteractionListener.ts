@@ -88,7 +88,12 @@ export const useInteractionListener = (
   useEffect(() => {
     const handleBlur = (): void => {
       numInteractionsRef.current = 0;
+      heldMouseButtonsRef.current.clear();
       onInteractionEndRef.current();
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+        scrollTimeoutRef.current = null;
+      }
     };
     window.addEventListener("blur", handleBlur);
     return () => {

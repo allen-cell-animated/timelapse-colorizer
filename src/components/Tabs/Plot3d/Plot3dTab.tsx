@@ -18,9 +18,9 @@ import { useInteractionListener } from "src/hooks";
 import { useViewerStateStore } from "src/state";
 import { FlexColumn, FlexRow, FlexRowAlignCenter } from "src/styles/utils";
 
-import { make3dConeTrace } from "./plot_3d_utils";
 import Plot3d from "./Plot3d";
 import Plot3dLineControls from "./Plot3dLineControls";
+import { make3dConeTrace } from "./plot_3d_utils";
 
 const RESUME_PLAYBACK_TIMEOUT_MS = 500;
 
@@ -136,32 +136,41 @@ export default function Plot3dTab(): ReactElement {
       setVectorFieldData(null);
       return;
     }
+    setIsLoading(true);
+
     currentVectorFieldRequestIdRef.current += 1;
     const requestId = currentVectorFieldRequestIdRef.current;
     const workerPool = getSharedWorkerPool();
-    const vectorFieldData = await workerPool.getVectorFlowField(
+    const vectorFlowFieldPromise = workerPool.getVectorFlowField(
       dataset,
       xAxisFeatureKey,
       yAxisFeatureKey,
       zAxisFeatureKey,
       [bins, bins, bins]
     );
-    if (requestId !== currentVectorFieldRequestIdRef.current) {
-      // A newer request has been made since this one was initiated, so discard this result
-      return;
-    }
-    setVectorFieldData(vectorFieldData);
-    plot3dRef.current.xAxisFeatureKey = xAxisFeatureKey;
-    plot3dRef.current.yAxisFeatureKey = yAxisFeatureKey;
-    plot3dRef.current.zAxisFeatureKey = zAxisFeatureKey;
-    setIsLoading(false);
+
+    vectorFlowFieldPromise
+      .then((vectorFieldData) => {
+        // Check if a newer requests supercedes this one before updating state
+        if (requestId !== currentVectorFieldRequestIdRef.current || !plot3dRef.current) {
+          return;
+        }
+        setVectorFieldData(vectorFieldData);
+        plot3dRef.current.xAxisFeatureKey = xAxisFeatureKey;
+        plot3dRef.current.yAxisFeatureKey = yAxisFeatureKey;
+        plot3dRef.current.zAxisFeatureKey = zAxisFeatureKey;
+      })
+      .finally(() => {
+        if (requestId === currentVectorFieldRequestIdRef.current) {
+          setIsLoading(false);
+        }
+      });
   };
 
   const flowFieldDeps = [dataset, xAxisFeatureKey, yAxisFeatureKey, zAxisFeatureKey, bins];
 
   useEffect(() => {
-    setIsLoading(true);
-    calculateFlowField().then(() => setIsLoading(false));
+    calculateFlowField();
   }, flowFieldDeps);
 
   // Build new cone trace when calculated vector field data or cone settings change
@@ -205,7 +214,7 @@ export default function Plot3dTab(): ReactElement {
           setYAxisFeatureKey={setYAxisFeatureKey}
           zAxisFeatureKey={zAxisFeatureKey}
           setZAxisFeatureKey={setZAxisFeatureKey}
-          bins={bins}
+          bins={rawBins}
           setBins={setBins}
         />
       </FlexRow>
