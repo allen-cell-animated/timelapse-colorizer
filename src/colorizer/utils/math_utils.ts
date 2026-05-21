@@ -344,17 +344,22 @@ export function padCentroidsTo3d(centroidsData: Uint16Array, numObjects: number)
 }
 
 export function getBinIndex(value: number, range: [number, number], steps: number): number {
-  if (steps <= 0) {
+  const min = Math.min(range[0], range[1]);
+  const max = Math.max(range[0], range[1]);
+  if (min === max || steps <= 0) {
     return 0;
   }
-  const [min, max] = range;
   const stepSize = (max - min) / steps;
   const bin = Math.floor((value - min) / stepSize);
   return Math.min(Math.max(bin, 0), steps - 1);
 }
 
 export function getBinValue(binIndex: number, range: [number, number], steps: number): number {
-  const [min, max] = range;
+  const min = Math.min(range[0], range[1]);
+  const max = Math.max(range[0], range[1]);
+  if (min === max || steps <= 0) {
+    return min;
+  }
   const stepSize = (max - min) / steps;
   return min + (binIndex + 0.5) * stepSize;
 }
@@ -372,7 +377,7 @@ export function calculateVectorFlowField(
   const [xSteps, ySteps, zSteps] = binsPerAxis;
 
   const numBins = xSteps * ySteps * zSteps;
-  const count = new Uint16Array(numBins);
+  const count = new Uint32Array(numBins);
   const xData = new Float32Array(numBins);
   const yData = new Float32Array(numBins);
   const zData = new Float32Array(numBins);
@@ -381,18 +386,17 @@ export function calculateVectorFlowField(
   const zPos = new Float32Array(numBins);
 
   for (const track of tracks) {
-    for (let i0 = 0; i0 < track.ids.length; i0++) {
+    for (let i0 = 0; i0 < track.ids.length - 1; i0++) {
       // Times are in sorted order, check if the next timepoint exists
       if (track.times[i0] + 1 !== track.times[i0 + 1]) {
         continue;
       }
-      const i1 = i0 + 1;
       const x0Value = xFeatureData[track.ids[i0]];
       const y0Value = yFeatureData[track.ids[i0]];
       const z0Value = zFeatureData[track.ids[i0]];
-      const x1Value = xFeatureData[track.ids[i1]];
-      const y1Value = yFeatureData[track.ids[i1]];
-      const z1Value = zFeatureData[track.ids[i1]];
+      const x1Value = xFeatureData[track.ids[i0 + 1]];
+      const y1Value = yFeatureData[track.ids[i0 + 1]];
+      const z1Value = zFeatureData[track.ids[i0 + 1]];
       const deltaX = x1Value - x0Value;
       const deltaY = y1Value - y0Value;
       const deltaZ = z1Value - z0Value;
@@ -400,7 +404,7 @@ export function calculateVectorFlowField(
       const xBin = getBinIndex(x0Value, xRange, xSteps);
       const yBin = getBinIndex(y0Value, yRange, ySteps);
       const zBin = getBinIndex(z0Value, zRange, zSteps);
-      const binIndex = xBin * ySteps * zSteps + yBin * zSteps + zBin;
+      const binIndex = xBin + yBin * xSteps + zBin * xSteps * ySteps;
 
       // TODO: This may result in float imprecision issues
       xData[binIndex] += deltaX;
@@ -411,9 +415,9 @@ export function calculateVectorFlowField(
   }
 
   // Normalize by number of vectors
-  for (let x = 0; x < xSteps; x++) {
+  for (let z = 0; z < zSteps; z++) {
     for (let y = 0; y < ySteps; y++) {
-      for (let z = 0; z < zSteps; z++) {
+      for (let x = 0; x < xSteps; x++) {
         const binIndex = x + y * xSteps + z * xSteps * ySteps;
         if (count[binIndex] > 0) {
           xData[binIndex] /= count[binIndex];

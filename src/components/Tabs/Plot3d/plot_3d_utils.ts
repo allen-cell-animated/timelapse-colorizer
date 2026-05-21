@@ -41,22 +41,8 @@ export function make3dTrackPathTrace(
   // TODO: Show gaps/discontinuities in the track path?
   const traces = [];
 
-  const ids: number[] = [];
-  const times: number[] = [];
-  let lastValidId = track.ids[0];
-  let lastValidTime = track.startTime();
-  for (let t = track.startTime(); t <= track.endTime(); t++) {
-    const id = track.getIdAtTime(t);
-    if (id !== null) {
-      ids.push(id);
-      times.push(t);
-      lastValidTime = t;
-      lastValidId = id;
-    } else {
-      ids.push(lastValidId); // Use the last valid ID to fill gaps
-      times.push(lastValidTime);
-    }
-  }
+  const ids: number[] = track.ids;
+  const times: number[] = track.times;
 
   const hoverTemplate =
     `${dataset?.getFeatureNameWithUnits(xAxisFeatureKey) ?? ""}: %{x}<br>` +
@@ -87,7 +73,6 @@ export function make3dTrackPathTrace(
     x: xData,
     y: yData,
     z: zData,
-    // TODO: use customdata to store time?,
     customdata: times,
     mode: "lines",
     type: "scatter3d",

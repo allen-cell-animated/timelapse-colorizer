@@ -47,6 +47,10 @@ export default class Plot3d {
     this.plot = this.plot.bind(this);
   }
 
+  dispose(): void {
+    Plotly.purge(this.parentRef);
+  }
+
   //// Helper methods /////
 
   private getTrackColor(trackId: number): string {

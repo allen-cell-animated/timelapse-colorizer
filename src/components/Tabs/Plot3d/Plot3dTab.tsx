@@ -18,9 +18,9 @@ import { useInteractionListener } from "src/hooks";
 import { useViewerStateStore } from "src/state";
 import { FlexColumn, FlexRow, FlexRowAlignCenter } from "src/styles/utils";
 
-import { make3dConeTrace } from "./plot_3d_utils";
 import Plot3d from "./Plot3d";
 import Plot3dLineControls from "./Plot3dLineControls";
+import { make3dConeTrace } from "./plot_3d_utils";
 
 const RESUME_PLAYBACK_TIMEOUT_MS = 500;
 
@@ -37,6 +37,7 @@ export default function Plot3dTab(): ReactElement {
   const [isLoading, setIsLoading] = useState(false);
 
   const [vectorFieldData, setVectorFieldData] = useState<VectorFieldData | null>(null);
+  const currentVectorFieldRequestIdRef = useRef(0);
   const [coneTrace, setConeTrace] = useState<Plotly.Data | null>(null);
 
   const [isPlaybackTempPaused, setIsPlaybackTempPaused] = useState(false);
@@ -68,6 +69,10 @@ export default function Plot3dTab(): ReactElement {
   // Mount Plotly plot on component mount
   useEffect(() => {
     plot3dRef.current = new Plot3d(plotContainerRef.current!);
+    return () => {
+      plot3dRef.current?.dispose();
+      plot3dRef.current = null;
+    };
   }, []);
 
   //// Interaction Handlers ////
@@ -99,6 +104,15 @@ export default function Plot3dTab(): ReactElement {
 
   useInteractionListener(plotContainerRef.current, onInteractionStart, onInteractionEnd);
 
+  // Clear timers on unmount
+  useEffect(() => {
+    return () => {
+      if (resumePlaybackTimeoutRef.current) {
+        clearTimeout(resumePlaybackTimeoutRef.current);
+      }
+    };
+  }, []);
+
   //// Data Handlers ////
 
   // Clear selected features as needed when dataset changes
@@ -122,6 +136,8 @@ export default function Plot3dTab(): ReactElement {
       setVectorFieldData(null);
       return;
     }
+    currentVectorFieldRequestIdRef.current += 1;
+    const requestId = currentVectorFieldRequestIdRef.current;
     const workerPool = getSharedWorkerPool();
     const vectorFieldData = await workerPool.getVectorFlowField(
       dataset,
@@ -130,6 +146,10 @@ export default function Plot3dTab(): ReactElement {
       zAxisFeatureKey,
       [bins, bins, bins]
     );
+    if (requestId !== currentVectorFieldRequestIdRef.current) {
+      // A newer request has been made since this one was initiated, so discard this result
+      return;
+    }
     setVectorFieldData(vectorFieldData);
     plot3dRef.current.xAxisFeatureKey = xAxisFeatureKey;
     plot3dRef.current.yAxisFeatureKey = yAxisFeatureKey;

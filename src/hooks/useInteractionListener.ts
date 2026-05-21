@@ -95,4 +95,13 @@ export const useInteractionListener = (
       window.removeEventListener("blur", handleBlur);
     };
   }, []);
+
+  // Clear timers on unmount
+  useEffect(() => {
+    return () => {
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, []);
 };
