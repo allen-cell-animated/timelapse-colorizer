@@ -18,9 +18,9 @@ import { useInteractionListener } from "src/hooks";
 import { useViewerStateStore } from "src/state";
 import { FlexColumn, FlexRow, FlexRowAlignCenter } from "src/styles/utils";
 
+import { make3dConeTrace } from "./plot_3d_utils";
 import Plot3d from "./Plot3d";
 import Plot3dLineControls from "./Plot3dLineControls";
-import { make3dConeTrace } from "./plot_3d_utils";
 
 const RESUME_PLAYBACK_TIMEOUT_MS = 500;
 

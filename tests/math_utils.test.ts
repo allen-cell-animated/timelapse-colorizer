@@ -523,7 +523,7 @@ describe("calculateVectorFlowField", () => {
     ] as unknown[] as Track[];
     const xFeatureData = new Float32Array([0, 1, 2, 0, 1, 2]);
     const yFeatureData = new Float32Array([0, 0, 0, 1, 1, 1]);
-    const zFeatureData = new Float32Array([0, 1, 2, 0, 1, 2]);
+    const zFeatureData = new Float32Array([0, 1, 1, 0, 1, 1]);
     const vectorFieldData = calculateVectorFlowField(
       tracks,
       xFeatureData,
@@ -539,7 +539,7 @@ describe("calculateVectorFlowField", () => {
     expect(vectorFieldData.zPos).toEqual(new Float32Array([0.5, 0.5, 0.5, 0.5, 1.5, 1.5, 1.5, 1.5]));
     expect(vectorFieldData.xData).toEqual(new Float32Array([1, 0, 1, 0, 0, 1, 0, 1]));
     expect(vectorFieldData.yData).toEqual(new Float32Array([0, 0, 0, 0, 0, 0, 0, 0]));
-    expect(vectorFieldData.zData).toEqual(new Float32Array([1, 0, 1, 0, 0, 1, 0, 1]));
-    expect(vectorFieldData.count).toEqual(new Uint16Array([2, 0, 1, 0, 0, 2, 0, 1]));
+    expect(vectorFieldData.zData).toEqual(new Float32Array([1, 0, 1, 0, 0, 0, 0, 0]));
+    expect(vectorFieldData.count).toEqual(new Uint32Array([2, 0, 1, 0, 0, 2, 0, 1]));
   });
 });
