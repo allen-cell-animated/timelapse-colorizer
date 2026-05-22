@@ -100,7 +100,8 @@ export default class SharedWorkerPool {
     xFeatureKey: string,
     yFeatureKey: string,
     zFeatureKey: string,
-    bins: [number, number, number]
+    bins: [number, number, number],
+    smoothingBandwidth?: number
   ): Promise<VectorFieldData> {
     const trackIds = dataset.trackIds;
     const times = dataset.times;
@@ -114,7 +115,14 @@ export default class SharedWorkerPool {
     const yFeature = this.featureToRangeData(yFeatureData, bins[1]);
     const zFeature = this.featureToRangeData(zFeatureData, bins[2]);
 
-    return await this.workerPool.exec("getVectorFlowField", [trackIds, times, xFeature, yFeature, zFeature]);
+    return await this.workerPool.exec("getVectorFlowField", [
+      trackIds,
+      times,
+      xFeature,
+      yFeature,
+      zFeature,
+      smoothingBandwidth,
+    ]);
   }
 
   /**

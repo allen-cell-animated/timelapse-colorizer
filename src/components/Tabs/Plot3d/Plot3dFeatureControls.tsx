@@ -1,9 +1,10 @@
+import { Checkbox } from "antd";
 import React, { type ReactElement, useMemo } from "react";
 
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import type { SelectItem } from "src/components/Dropdowns/types";
 import { useViewerStateStore } from "src/state";
-import { FlexRow } from "src/styles/utils";
+import { FlexRow, FlexRowAlignCenter } from "src/styles/utils";
 
 type Plot3dFeatureControlsProps = {
   xAxisFeatureKey: string | null;
@@ -14,6 +15,8 @@ type Plot3dFeatureControlsProps = {
   setZAxisFeatureKey: (value: string | null) => void;
   bins: number;
   setBins: (value: number) => void;
+  applyGaussian: boolean;
+  setApplyGaussian: (value: boolean) => void;
 };
 
 export default function Plot3dFeatureControls(props: Plot3dFeatureControlsProps): ReactElement {
@@ -26,6 +29,8 @@ export default function Plot3dFeatureControls(props: Plot3dFeatureControlsProps)
     setZAxisFeatureKey,
     bins: rawBins,
     setBins,
+    applyGaussian,
+    setApplyGaussian,
   } = props;
 
   const dataset = useViewerStateStore((state) => state.dataset);
@@ -77,6 +82,12 @@ export default function Plot3dFeatureControls(props: Plot3dFeatureControlsProps)
         width="100px"
         controlWidth="70px"
       ></SelectionDropdown>
+      <FlexRowAlignCenter $gap={6}>
+        <label>
+          <h3>Gaussian</h3>
+        </label>
+        <Checkbox checked={applyGaussian} onChange={(e) => setApplyGaussian(e.target.checked)} />
+      </FlexRowAlignCenter>
     </FlexRow>
   );
 }

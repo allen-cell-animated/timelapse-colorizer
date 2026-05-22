@@ -33,6 +33,7 @@ export default function Plot3dTab(): ReactElement {
   const [xAxisFeatureKey, setXAxisFeatureKey] = useState<string | null>("pc_1");
   const [yAxisFeatureKey, setYAxisFeatureKey] = useState<string | null>("pc_2");
   const [zAxisFeatureKey, setZAxisFeatureKey] = useState<string | null>("pc_3");
+  const [applyGaussian, setApplyGaussian] = useState(true);
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -47,7 +48,7 @@ export default function Plot3dTab(): ReactElement {
   const coneSize = useDebounce(rawConeSize, 100);
   const [coneColorRampKey, setConeColorRampKey] = useState<string>("matplotlib-turbo");
   const [coneColorRampReversed, setConeColorRampReversed] = useState(false);
-  const [rawThreshold, setThreshold] = useState(5);
+  const [rawThreshold, setThreshold] = useState(2);
   const threshold = useDebounce(rawThreshold, 100);
   const [rawMovingAverageWindow, setMovingAverageWindow] = useState(1);
   const movingAverageWindow = useDebounce(rawMovingAverageWindow, 100);
@@ -146,7 +147,8 @@ export default function Plot3dTab(): ReactElement {
       xAxisFeatureKey,
       yAxisFeatureKey,
       zAxisFeatureKey,
-      [bins, bins, bins]
+      [bins, bins, bins],
+      applyGaussian ? 0.15 : undefined
     );
 
     vectorFlowFieldPromise
@@ -167,7 +169,7 @@ export default function Plot3dTab(): ReactElement {
       });
   };
 
-  const flowFieldDeps = [dataset, xAxisFeatureKey, yAxisFeatureKey, zAxisFeatureKey, bins];
+  const flowFieldDeps = [dataset, xAxisFeatureKey, yAxisFeatureKey, zAxisFeatureKey, bins, applyGaussian];
 
   useEffect(() => {
     calculateFlowField();
@@ -216,6 +218,8 @@ export default function Plot3dTab(): ReactElement {
           setZAxisFeatureKey={setZAxisFeatureKey}
           bins={rawBins}
           setBins={setBins}
+          applyGaussian={applyGaussian}
+          setApplyGaussian={setApplyGaussian}
         />
       </FlexRow>
 

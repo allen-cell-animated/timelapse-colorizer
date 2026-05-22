@@ -545,6 +545,7 @@ function convolve(
               if (isInBounds(xIndex, yIndex, zIndex, xSteps, ySteps, zSteps)) {
                 const index = zIndex * ySteps * xSteps + yIndex * xSteps + xIndex;
                 // Optional weighting of input values.
+                // TODO: Remove?
                 const weight = arrWeight ? arrWeight[index] : 1;
                 sum += arr[index] * weight * kernelValue;
                 sumWeight += kernelValue;

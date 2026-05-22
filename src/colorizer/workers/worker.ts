@@ -65,7 +65,8 @@ async function getVectorFlowField(
   times: Uint32Array,
   xFeature: FeatureRangeData,
   yFeature: FeatureRangeData,
-  zFeature: FeatureRangeData
+  zFeature: FeatureRangeData,
+  smoothingBandwidth?: number
 ): Promise<TransferType> {
   const tracks = constructAllTracksFromData(trackIds, times);
   const rawFlowFieldData = calculateVectorFlowField(
@@ -78,15 +79,20 @@ async function getVectorFlowField(
     zFeature.range,
     [xFeature.bins, yFeature.bins, zFeature.bins]
   );
-  const nbins = xFeature.bins;
-  const kernelSize = Math.floor(0.3 * 0.5 * nbins) * 2 + 1;
-  const gaussianKernel = make3dGaussianKernel(kernelSize, 0.15 * nbins);
-  const smoothedFlowFieldData = convolveVectorFlowField(
-    rawFlowFieldData,
-    [xFeature.bins, yFeature.bins, zFeature.bins],
-    gaussianKernel
-  );
-  const flowFieldData = filterVectorFlowFieldData(smoothedFlowFieldData);
+  let flowFieldData;
+  if (smoothingBandwidth) {
+    const nbins = xFeature.bins;
+    const kernelSize = Math.floor(smoothingBandwidth * nbins) * 2 + 1;
+    const gaussianKernel = make3dGaussianKernel(kernelSize, smoothingBandwidth * nbins);
+    const smoothedFlowFieldData = convolveVectorFlowField(
+      rawFlowFieldData,
+      [xFeature.bins, yFeature.bins, zFeature.bins],
+      gaussianKernel
+    );
+    flowFieldData = filterVectorFlowFieldData(smoothedFlowFieldData);
+  } else {
+    flowFieldData = filterVectorFlowFieldData(rawFlowFieldData);
+  }
 
   return new Transfer(flowFieldData, [
     flowFieldData.xPos.buffer,
