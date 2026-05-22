@@ -111,6 +111,16 @@ type ManifestFileV1_1_0 = Spread<
         max?: number;
       }[];
     };
+
+    plot3d?: {
+      dims: number[];
+      flowFieldFeatures: {
+        key: string;
+        data: string;
+        min: number;
+        max: number;
+      }[];
+    };
   }
 >;
 

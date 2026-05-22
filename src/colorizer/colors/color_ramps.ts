@@ -17,6 +17,7 @@ export type RawColorData = {
    * ramps had dark-to-light color stops.
    */
   reverseByDefault?: boolean;
+  categorical?: boolean;
   type: ColorRampType;
 };
 
