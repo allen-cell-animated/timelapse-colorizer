@@ -62,7 +62,7 @@ export default function Plot3dFeatureControls(props: Plot3dFeatureControlsProps)
       <SelectionDropdown
         label={"Bins"}
         selected={bins.toString()}
-        items={[10, 25, 50, 100].map((num) => ({ value: num.toString(), label: num.toString() }))}
+        items={[10, 20, 30, 40, 50].map((num) => ({ value: num.toString(), label: num.toString() }))}
         onChange={(value: string) => {
           const parsedValue = parseInt(value, 10);
           if (!isNaN(parsedValue) && parsedValue > 0) {

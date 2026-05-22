@@ -27,6 +27,10 @@ export type Plot3dSliceState = {
   plot3dVectorScale: number;
   plot3dVectorColorRampKey: string;
   plot3dVectorColorRampReversed: boolean;
+  /**
+   * Minimum number of deltas required for a bin to be included in the vector
+   * field.
+   */
   plot3dVectorThreshold: number;
 
   plot3dLineWidth: number;
