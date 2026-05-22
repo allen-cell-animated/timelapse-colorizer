@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import type { Track } from "src/colorizer";
 import {
-  calculateVectorFlowField,
+  binAndSumVectors,
   convertCanvasOffsetPxToFrameCoords,
   formatNumber,
   getBinIndex,
@@ -450,7 +450,7 @@ describe("calculateVectorFlowField", () => {
     const xRange = [0, 2] as [number, number];
     const yRange = [0, 2] as [number, number];
     const zRange = [0, 2] as [number, number];
-    const vectorFieldData = calculateVectorFlowField(
+    const vectorFieldData = binAndSumVectors(
       [],
       new Float32Array(),
       new Float32Array(),
@@ -478,7 +478,7 @@ describe("calculateVectorFlowField", () => {
     const xRange = [0, 1] as [number, number];
     const yRange = [0, 2] as [number, number];
     const zRange = [0, 3] as [number, number];
-    const vectorFieldData = calculateVectorFlowField(
+    const vectorFieldData = binAndSumVectors(
       [],
       new Float32Array(),
       new Float32Array(),
@@ -524,7 +524,7 @@ describe("calculateVectorFlowField", () => {
     const xFeatureData = new Float32Array([0, 1, 2, 0, 1, 2]);
     const yFeatureData = new Float32Array([0, 0, 0, 1, 1, 1]);
     const zFeatureData = new Float32Array([0, 1, 1, 0, 1, 1]);
-    const vectorFieldData = calculateVectorFlowField(
+    const vectorFieldData = binAndSumVectors(
       tracks,
       xFeatureData,
       yFeatureData,

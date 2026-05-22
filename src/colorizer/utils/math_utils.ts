@@ -1,6 +1,6 @@
 import { Vector2 } from "three";
 
-import type { VectorFieldData } from "src/colorizer";
+import type { VectorFieldData, VectorSumData } from "src/colorizer";
 import Track from "src/colorizer/Track";
 
 /**
@@ -364,7 +364,7 @@ export function getBinValue(binIndex: number, range: [number, number], steps: nu
   return min + (binIndex + 0.5) * stepSize;
 }
 
-export function calculateVectorFlowField(
+export function binAndSumFeatureVectors(
   tracks: Track[],
   xFeatureData: Float32Array | Uint32Array,
   yFeatureData: Float32Array | Uint32Array,
@@ -375,14 +375,14 @@ export function calculateVectorFlowField(
   binsPerAxis: [number, number, number],
   inRangeLUT: Uint8Array | undefined = undefined,
   outliers: Uint8Array | undefined = undefined
-): VectorFieldData {
+): VectorSumData {
   const [xSteps, ySteps, zSteps] = binsPerAxis;
 
   const numBins = xSteps * ySteps * zSteps;
-  const count = new Float32Array(numBins);
-  const xData = new Float32Array(numBins);
-  const yData = new Float32Array(numBins);
-  const zData = new Float32Array(numBins);
+  const count = new Uint32Array(numBins);
+  const xSum = new Float32Array(numBins);
+  const ySum = new Float32Array(numBins);
+  const zSum = new Float32Array(numBins);
   const xPos = new Float32Array(numBins);
   const yPos = new Float32Array(numBins);
   const zPos = new Float32Array(numBins);
@@ -418,31 +418,47 @@ export function calculateVectorFlowField(
       const binIndex = xBin + yBin * xSteps + zBin * xSteps * ySteps;
 
       // TODO: This may result in float imprecision issues
-      xData[binIndex] += deltaX;
-      yData[binIndex] += deltaY;
-      zData[binIndex] += deltaZ;
+      xSum[binIndex] += deltaX;
+      ySum[binIndex] += deltaY;
+      zSum[binIndex] += deltaZ;
       count[binIndex]++;
     }
   }
 
-  // Normalize by number of vectors
   for (let z = 0; z < zSteps; z++) {
     for (let y = 0; y < ySteps; y++) {
       for (let x = 0; x < xSteps; x++) {
         const binIndex = x + y * xSteps + z * xSteps * ySteps;
-        if (count[binIndex] > 0) {
-          xData[binIndex] /= count[binIndex];
-          yData[binIndex] /= count[binIndex];
-          zData[binIndex] /= count[binIndex];
-        }
         xPos[binIndex] = getBinValue(x, xRange, xSteps);
         yPos[binIndex] = getBinValue(y, yRange, ySteps);
         zPos[binIndex] = getBinValue(z, zRange, zSteps);
+        // TODO: add some random jitter here to avoid moire pattern
       }
     }
   }
 
-  return { xPos, yPos, zPos, xData, yData, zData, count };
+  return { xPos, yPos, zPos, xSum, ySum, zSum, count };
+}
+
+export function normalizeVectorFlowFieldData(vectorSumData: VectorSumData): VectorFieldData {
+  const { xPos, yPos, zPos, xSum, ySum, zSum, count: intCount } = vectorSumData;
+  const floatCount = new Float32Array(vectorSumData.count);
+  const xData = new Float32Array(xSum.length);
+  const yData = new Float32Array(ySum.length);
+  const zData = new Float32Array(zSum.length);
+
+  for (let i = 0; i < intCount.length; i++) {
+    if (intCount[i] > 0) {
+      xData[i] = xSum[i]; // / intCount[i];
+      yData[i] = ySum[i]; // / intCount[i];
+      zData[i] = zSum[i]; // / intCount[i];
+    } else {
+      xData[i] = NaN;
+      yData[i] = NaN;
+      zData[i] = NaN;
+    }
+  }
+  return { xPos, yPos, zPos, xData, yData, zData, count: floatCount };
 }
 
 /** Removes bins with 0 count or NaN/Infinity values. */
@@ -529,7 +545,7 @@ function isInBounds(x: number, y: number, z: number, xSteps: number, ySteps: num
 }
 
 function convolve(
-  arr: Float32Array,
+  arr: Float32Array | Uint32Array,
   binsPerAxis: [number, number, number],
   kernel: number[][][],
   arrWeight?: Float32Array
@@ -573,21 +589,21 @@ function convolve(
 }
 
 export function convolveVectorFlowField(
-  flowFieldData: VectorFieldData,
+  flowFieldData: VectorSumData,
   binsPerAxis: [number, number, number],
   kernel: number[][][]
 ): VectorFieldData {
-  const { xPos, yPos, zPos, xData: rawXData, yData: rawYData, zData: rawZData, count: rawCountData } = flowFieldData;
+  const { xPos, yPos, zPos, xSum, ySum, zSum, count: rawCountData } = flowFieldData;
 
-  const xData = new Float32Array(rawXData.length);
-  const yData = new Float32Array(rawYData.length);
-  const zData = new Float32Array(rawZData.length);
+  const xData = new Float32Array(xSum.length);
+  const yData = new Float32Array(ySum.length);
+  const zData = new Float32Array(zSum.length);
   const count = new Float32Array(rawCountData.length);
 
   count.set(convolve(rawCountData, binsPerAxis, kernel));
-  xData.set(convolve(rawXData, binsPerAxis, kernel));
-  yData.set(convolve(rawYData, binsPerAxis, kernel));
-  zData.set(convolve(rawZData, binsPerAxis, kernel));
+  xData.set(convolve(xSum, binsPerAxis, kernel));
+  yData.set(convolve(ySum, binsPerAxis, kernel));
+  zData.set(convolve(zSum, binsPerAxis, kernel));
 
   // Divide feature data by smoothed countData
   // for (let i = 0; i < count.length; i++) {

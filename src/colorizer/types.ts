@@ -373,6 +373,16 @@ export type FeatureRangeData = {
   range: [number, number];
 };
 
+export type VectorSumData = {
+  xPos: Float32Array;
+  yPos: Float32Array;
+  zPos: Float32Array;
+  xSum: Float32Array;
+  ySum: Float32Array;
+  zSum: Float32Array;
+  count: Uint32Array;
+};
+
 export type VectorFieldData = {
   xPos: Float32Array;
   yPos: Float32Array;

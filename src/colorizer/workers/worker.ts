@@ -6,12 +6,13 @@ import { computeCorrelations } from "src/colorizer/utils/correlation";
 import { columnsToCsv, type CsvDataColumn } from "src/colorizer/utils/csv_utils";
 import { type LoadedData, loadFromJsonUrl, loadFromParquetUrl } from "src/colorizer/utils/data_load_utils";
 import {
+  binAndSumFeatureVectors,
   calculateMotionDeltas,
-  calculateVectorFlowField,
   constructAllTracksFromData,
   convolveVectorFlowField,
   filterVectorFlowFieldData,
   make3dGaussianKernel,
+  normalizeVectorFlowFieldData,
 } from "src/colorizer/utils/math_utils";
 import { arrayToDataTextureInfo } from "src/colorizer/utils/texture_utils";
 
@@ -71,7 +72,7 @@ async function getVectorFlowField(
   smoothingBandwidth?: number
 ): Promise<TransferType> {
   const tracks = constructAllTracksFromData(trackIds, times);
-  const rawFlowFieldData = calculateVectorFlowField(
+  const rawFlowFieldData = binAndSumFeatureVectors(
     tracks,
     xFeature.data,
     yFeature.data,
@@ -83,6 +84,7 @@ async function getVectorFlowField(
     inRangeLUT,
     outliers
   );
+
   let flowFieldData;
   if (smoothingBandwidth) {
     const nbins = xFeature.bins;
@@ -95,7 +97,8 @@ async function getVectorFlowField(
     );
     flowFieldData = filterVectorFlowFieldData(smoothedFlowFieldData);
   } else {
-    flowFieldData = filterVectorFlowFieldData(rawFlowFieldData);
+    const normalizedFlowFieldData = normalizeVectorFlowFieldData(rawFlowFieldData);
+    flowFieldData = filterVectorFlowFieldData(normalizedFlowFieldData);
   }
 
   return new Transfer(flowFieldData, [
