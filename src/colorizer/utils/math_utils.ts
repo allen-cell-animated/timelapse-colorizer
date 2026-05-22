@@ -581,7 +581,8 @@ function convolve(
           }
         }
         const outputIndex = z * ySteps * xSteps + y * xSteps + x;
-        output[outputIndex] = sumWeight > 0 ? sum / sumWeight : 0;
+        output[outputIndex] = sum / sumWeight;
+        // output[outputIndex] = sumWeight > 0 ? sum / sumWeight : 0;
       }
     }
   }
