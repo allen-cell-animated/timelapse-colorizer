@@ -36,7 +36,7 @@ export type Plot3dSliceState = {
   plot3dLineWidth: number;
   plot3dLineMovingAverageWindow: number;
 
-  plot3dApplyGaussian: boolean;
+  plot3dUseGaussian: boolean;
   plot3dGaussianBandwidthPct: number;
 
   // Derived state
@@ -56,7 +56,7 @@ export type Plot3dSliceSerializableState = Pick<
   | "plot3dVectorThreshold"
   | "plot3dLineWidth"
   | "plot3dLineMovingAverageWindow"
-  | "plot3dApplyGaussian"
+  | "plot3dUseGaussian"
   | "plot3dGaussianBandwidthPct"
 >;
 
@@ -72,7 +72,7 @@ export type Plot3dSliceActions = {
   setPlot3dVectorThreshold: (threshold: number) => void;
   setPlot3dLineWidth: (width: number) => void;
   setPlot3dLineMovingAverageWindow: (windowSize: number) => void;
-  setPlot3dApplyGaussian: (applyGaussian: boolean) => void;
+  setPlot3dUseGaussian: (applyGaussian: boolean) => void;
   setPlot3dGaussianBandwidthPct: (bandwidthPct: number) => void;
 };
 
@@ -88,7 +88,7 @@ export const createPlot3dSlice: StateCreator<DatasetSlice & Plot3dSlice, [], [],
   plot3dYAxis: null,
   plot3dZAxis: null,
 
-  plot3dShowVectors: false,
+  plot3dShowVectors: true,
   plot3dVectorBins: 25,
   plot3dVectorScale: 1.0,
   plot3dVectorColorRampKey: DEFAULT_COLOR_RAMP_KEY,
@@ -98,7 +98,7 @@ export const createPlot3dSlice: StateCreator<DatasetSlice & Plot3dSlice, [], [],
   plot3dLineWidth: 1.6,
   plot3dLineMovingAverageWindow: 1,
 
-  plot3dApplyGaussian: false,
+  plot3dUseGaussian: false,
   plot3dGaussianBandwidthPct: 10,
 
   // Derived state
@@ -164,7 +164,7 @@ export const createPlot3dSlice: StateCreator<DatasetSlice & Plot3dSlice, [], [],
     const nextOddInteger = Math.floor(windowSize / 2) * 2 + 1;
     set({ plot3dLineMovingAverageWindow: nextOddInteger });
   },
-  setPlot3dApplyGaussian: (applyGaussian) => set({ plot3dApplyGaussian: applyGaussian }),
+  setPlot3dUseGaussian: (applyGaussian) => set({ plot3dUseGaussian: applyGaussian }),
   setPlot3dGaussianBandwidthPct: (bandwidthPct) => {
     if (bandwidthPct <= 0 || !isFinite(bandwidthPct)) {
       return;
@@ -241,8 +241,8 @@ export const serializePlot3dSlice = (slice: Partial<Plot3dSliceSerializableState
   if (slice.plot3dLineMovingAverageWindow !== undefined) {
     ret[UrlParam.PLOT3D_AVERAGE_LINE_WINDOW] = slice.plot3dLineMovingAverageWindow.toString();
   }
-  if (slice.plot3dApplyGaussian !== undefined) {
-    ret[UrlParam.PLOT3D_APPLY_GAUSSIAN] = encodeBoolean(slice.plot3dApplyGaussian);
+  if (slice.plot3dUseGaussian !== undefined) {
+    ret[UrlParam.PLOT3D_USE_GAUSSIAN] = encodeBoolean(slice.plot3dUseGaussian);
   }
   if (slice.plot3dGaussianBandwidthPct !== undefined) {
     ret[UrlParam.PLOT3D_GAUSSIAN_BANDWIDTH] = encodeNumber(slice.plot3dGaussianBandwidthPct);
@@ -262,7 +262,7 @@ export const selectPlot3dSliceSerializationDeps = (slice: Plot3dSlice): Plot3dSl
   plot3dVectorThreshold: slice.plot3dVectorThreshold,
   plot3dLineWidth: slice.plot3dLineWidth,
   plot3dLineMovingAverageWindow: slice.plot3dLineMovingAverageWindow,
-  plot3dApplyGaussian: slice.plot3dApplyGaussian,
+  plot3dUseGaussian: slice.plot3dUseGaussian,
   plot3dGaussianBandwidthPct: slice.plot3dGaussianBandwidthPct,
 });
 
@@ -338,9 +338,9 @@ export const loadPlot3dSliceFromParams = (slice: Plot3dSlice & DatasetSlice, par
     }
   }
 
-  const plot3dApplyGaussian = decodeBoolean(params.get(UrlParam.PLOT3D_APPLY_GAUSSIAN));
-  if (plot3dApplyGaussian !== undefined) {
-    slice.setPlot3dApplyGaussian(plot3dApplyGaussian);
+  const plot3dUseGaussian = decodeBoolean(params.get(UrlParam.PLOT3D_USE_GAUSSIAN));
+  if (plot3dUseGaussian !== undefined) {
+    slice.setPlot3dUseGaussian(plot3dUseGaussian);
   }
 
   const plot3dGaussianBandwidthParam = params.get(UrlParam.PLOT3D_GAUSSIAN_BANDWIDTH);

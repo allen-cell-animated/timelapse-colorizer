@@ -19,8 +19,8 @@ export default function Plot3dFeatureControls(props: Plot3dFeatureControlsProps)
   const setZAxisFeatureKey = useViewerStateStore((state) => state.setPlot3dZAxis);
   const bins = useViewerStateStore((state) => state.plot3dVectorBins);
   const setBins = useViewerStateStore((state) => state.setPlot3dVectorBins);
-  const applyGaussian = useViewerStateStore((state) => state.plot3dApplyGaussian);
-  const setApplyGaussian = useViewerStateStore((state) => state.setPlot3dApplyGaussian);
+  const applyGaussian = useViewerStateStore((state) => state.plot3dUseGaussian);
+  const setApplyGaussian = useViewerStateStore((state) => state.setPlot3dUseGaussian);
 
   const dataset = useViewerStateStore((state) => state.dataset);
 

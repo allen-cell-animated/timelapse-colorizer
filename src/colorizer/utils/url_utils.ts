@@ -101,9 +101,9 @@ export enum UrlParam {
   PLOT3D_VECTOR_SCALE = "p3d-vc-scale",
   PLOT3D_VECTOR_COLOR_RAMP = "p3d-vc-ramp",
   PLOT3D_VECTOR_THRESHOLD = "p3d-vc-thresh",
-  PLOT3D_LINE_WIDTH = "p3d-line-w",
-  PLOT3D_AVERAGE_LINE_WINDOW = "p3d-line-ma",
-  PLOT3D_APPLY_GAUSSIAN = "p3d-gauss",
+  PLOT3D_LINE_WIDTH = "p3d-avg-w",
+  PLOT3D_AVERAGE_LINE_WINDOW = "p3d-avg-n",
+  PLOT3D_USE_GAUSSIAN = "p3d-gauss",
   PLOT3D_GAUSSIAN_BANDWIDTH = "p3d-gauss-bw",
 }
 

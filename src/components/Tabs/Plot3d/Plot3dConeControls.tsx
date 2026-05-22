@@ -41,8 +41,8 @@ export default function Plot3dConeControls(props: Plot3dConeControlsProps): Reac
             type="value"
             value={coneSize}
             onChange={setConeSize}
-            minInputBound={0}
-            minSliderBound={0}
+            minInputBound={0.1}
+            minSliderBound={0.1}
             maxInputBound={10}
             maxSliderBound={2.5}
             step={0.1}

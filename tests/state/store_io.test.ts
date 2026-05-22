@@ -143,6 +143,19 @@ const EXAMPLE_STORE: ViewerStoreSerializableState = {
       dataMax: 65535,
     },
   ],
+  plot3dXAxis: MockFeatureKeys.FEATURE1,
+  plot3dYAxis: MockFeatureKeys.FEATURE2,
+  plot3dZAxis: MockFeatureKeys.FEATURE3,
+  plot3dShowVectors: true,
+  plot3dVectorBins: 20,
+  plot3dVectorScale: 1.5,
+  plot3dVectorColorRampKey: COLOR_RAMP_KEY,
+  plot3dVectorColorRampReversed: false,
+  plot3dVectorThreshold: 10,
+  plot3dLineWidth: 2,
+  plot3dLineMovingAverageWindow: 7,
+  plot3dUseGaussian: true,
+  plot3dGaussianBandwidthPct: 15,
 };
 
 // Omit key "palette" because it is overridden by key "palette-key"
@@ -211,6 +224,18 @@ const EXAMPLE_STORE_EXPECTED_PARAMS: ExpectedParamType = {
   c0: "ven:1,col:ff0000ff,rmp:0:1,rng:-5:5",
   c1: "ven:0,col:00ff0000,rmp:0.300:4.200,rng:0:1",
   c2: "ven:1,col:0000ff04,rmp:3500:64231,rng:0:65535",
+  "p3d-x": MockFeatureKeys.FEATURE1,
+  "p3d-y": MockFeatureKeys.FEATURE2,
+  "p3d-z": MockFeatureKeys.FEATURE3,
+  "p3d-vc": "1",
+  "p3d-vc-bins": "20",
+  "p3d-vc-scale": "1.500",
+  "p3d-vc-ramp": COLOR_RAMP_KEY,
+  "p3d-vc-thresh": "10",
+  "p3d-avg-n": "7",
+  "p3d-avg-w": "2",
+  "p3d-gauss": "1",
+  "p3d-gauss-bw": "15",
 };
 
 const EXAMPLE_STORE_EXPECTED_QUERY_STRING =
@@ -225,7 +250,9 @@ const EXAMPLE_STORE_EXPECTED_QUERY_STRING =
   "&vc=1&vc-key=_motion_&vc-color=ff00ff&vc-scale=5&vc-thickness-scaling=1&vc-thickness=4.500&vc-tooltip=c&vc-time-int=11" +
   "&c0=ven%3A1%2Ccol%3Aff0000ff%2Crmp%3A0%3A1%2Crng%3A-5%3A5" +
   "&c1=ven%3A0%2Ccol%3A00ff0000%2Crmp%3A0.300%3A4.200%2Crng%3A0%3A1" +
-  "&c2=ven%3A1%2Ccol%3A0000ff04%2Crmp%3A3500%3A64231%2Crng%3A0%3A65535";
+  "&c2=ven%3A1%2Ccol%3A0000ff04%2Crmp%3A3500%3A64231%2Crng%3A0%3A65535" +
+  "&p3d-x=feature1&p3d-y=feature2&p3d-z=feature3&p3d-vc=1&p3d-vc-bins=20&p3d-vc-scale=1.500&p3d-vc-ramp=matplotlib-inferno&p3d-vc-thresh=10&p3d-avg-w=2&p3d-avg-n=7&p3d-gauss=1&p3d-gauss-bw=15";
+
 describe("serializeViewerState", () => {
   it("handles empty state", () => {
     const state = {};

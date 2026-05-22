@@ -43,7 +43,7 @@ export default function Plot3dTab(): ReactElement {
   const yAxisFeatureKey = useViewerStateStore((state) => state.plot3dYAxis);
   const zAxisFeatureKey = useViewerStateStore((state) => state.plot3dZAxis);
   const rawConeSize = useViewerStateStore((state) => state.plot3dVectorScale);
-  const applyGaussian = useViewerStateStore((state) => state.plot3dApplyGaussian);
+  const applyGaussian = useViewerStateStore((state) => state.plot3dUseGaussian);
   const coneColorRampKey = useViewerStateStore((state) => state.plot3dVectorColorRampKey);
   const coneColorRampReversed = useViewerStateStore((state) => state.plot3dVectorColorRampReversed);
   const coneColorRamp = useViewerStateStore((state) => state.plot3dColorRamp);
