@@ -43,6 +43,13 @@ import {
   type DatasetSliceState,
 } from "./dataset_slice";
 import {
+  addPlot3dDerivedStateSubscribers,
+  createPlot3dSlice,
+  type Plot3dSliceActions,
+  type Plot3dSliceSerializableState,
+  type Plot3dSliceState,
+} from "./plot_3d_slice";
+import {
   addScatterPlotSliceDerivedStateSubscribers,
   createScatterPlotSlice,
   type ScatterPlotSliceActions,
@@ -96,6 +103,7 @@ export type ViewerStoreState = BackdropSliceState &
   ColorRampSliceState &
   ConfigSliceState &
   DatasetSliceState &
+  Plot3dSliceState &
   ScatterPlotSliceState &
   ThresholdSliceState &
   TimeSliceState &
@@ -109,6 +117,7 @@ export type ViewerStoreActions = BackdropSliceActions &
   ConfigSliceActions &
   DatasetSliceActions &
   ScatterPlotSliceActions &
+  Plot3dSliceActions &
   ThresholdSliceActions &
   TimeSliceActions &
   TrackSliceActions &
@@ -124,6 +133,7 @@ export type ViewerStoreSerializableState = BackdropSliceSerializableState &
   ColorRampSliceSerializableState &
   ConfigSliceSerializableState &
   DatasetSliceSerializableState &
+  Plot3dSliceSerializableState &
   ScatterPlotSliceSerializableState &
   ThresholdSliceSerializableState &
   TimeSliceSerializableState &
@@ -145,6 +155,7 @@ export const viewerStateStoreCreator: StateCreator<ViewerStore> = (...a) => ({
   ...createColorRampSlice(...a),
   ...createConfigSlice(...a),
   ...createDatasetSlice(...a),
+  ...createPlot3dSlice(...a),
   ...createScatterPlotSlice(...a),
   ...createThresholdSlice(...a),
   ...createTimeSlice(...a),
@@ -163,6 +174,7 @@ export const addStoreStateSubscribers = (store: SubscribableStore<ViewerStore>):
   addColorRampDerivedStateSubscribers(store);
   addConfigDerivedStateSubscribers(store);
   addScatterPlotSliceDerivedStateSubscribers(store);
+  addPlot3dDerivedStateSubscribers(store);
   addThresholdDerivedStateSubscribers(store);
   addTimeDerivedStateSubscribers(store);
   addTrackDerivedStateSubscribers(store);

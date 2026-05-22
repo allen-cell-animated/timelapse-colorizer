@@ -7,31 +7,20 @@ import { useViewerStateStore } from "src/state";
 import { FlexRow, FlexRowAlignCenter } from "src/styles/utils";
 
 type Plot3dFeatureControlsProps = {
-  xAxisFeatureKey: string | null;
-  setXAxisFeatureKey: (value: string | null) => void;
-  yAxisFeatureKey: string | null;
-  setYAxisFeatureKey: (value: string | null) => void;
-  zAxisFeatureKey: string | null;
-  setZAxisFeatureKey: (value: string | null) => void;
-  bins: number;
-  setBins: (value: number) => void;
-  applyGaussian: boolean;
-  setApplyGaussian: (value: boolean) => void;
+  disabled?: boolean;
 };
 
 export default function Plot3dFeatureControls(props: Plot3dFeatureControlsProps): ReactElement {
-  const {
-    xAxisFeatureKey,
-    setXAxisFeatureKey,
-    yAxisFeatureKey,
-    setYAxisFeatureKey,
-    zAxisFeatureKey,
-    setZAxisFeatureKey,
-    bins: rawBins,
-    setBins,
-    applyGaussian,
-    setApplyGaussian,
-  } = props;
+  const xAxisFeatureKey = useViewerStateStore((state) => state.plot3dXAxis);
+  const setXAxisFeatureKey = useViewerStateStore((state) => state.setPlot3dXAxis);
+  const yAxisFeatureKey = useViewerStateStore((state) => state.plot3dYAxis);
+  const setYAxisFeatureKey = useViewerStateStore((state) => state.setPlot3dYAxis);
+  const zAxisFeatureKey = useViewerStateStore((state) => state.plot3dZAxis);
+  const setZAxisFeatureKey = useViewerStateStore((state) => state.setPlot3dZAxis);
+  const bins = useViewerStateStore((state) => state.plot3dVectorBins);
+  const setBins = useViewerStateStore((state) => state.setPlot3dVectorBins);
+  const applyGaussian = useViewerStateStore((state) => state.plot3dApplyGaussian);
+  const setApplyGaussian = useViewerStateStore((state) => state.setPlot3dApplyGaussian);
 
   const dataset = useViewerStateStore((state) => state.dataset);
 
@@ -57,6 +46,7 @@ export default function Plot3dFeatureControls(props: Plot3dFeatureControlsProps)
         onChange={onChangeKey}
         controlWidth="100%"
         containerStyle={{ flexGrow: 1, flexBasis: "140px", flexShrink: 1 }}
+        disabled={props.disabled}
       ></SelectionDropdown>
     );
   };
@@ -71,7 +61,7 @@ export default function Plot3dFeatureControls(props: Plot3dFeatureControlsProps)
 
       <SelectionDropdown
         label={"Bins"}
-        selected={rawBins.toString()}
+        selected={bins.toString()}
         items={[10, 25, 50, 100].map((num) => ({ value: num.toString(), label: num.toString() }))}
         onChange={(value: string) => {
           const parsedValue = parseInt(value, 10);
@@ -81,12 +71,17 @@ export default function Plot3dFeatureControls(props: Plot3dFeatureControlsProps)
         }}
         width="100px"
         controlWidth="70px"
+        disabled={props.disabled}
       ></SelectionDropdown>
       <FlexRowAlignCenter $gap={6}>
         <label>
           <h3>Gaussian</h3>
         </label>
-        <Checkbox checked={applyGaussian} onChange={(e) => setApplyGaussian(e.target.checked)} />
+        <Checkbox
+          checked={applyGaussian}
+          onChange={(e) => setApplyGaussian(e.target.checked)}
+          disabled={props.disabled}
+        />
       </FlexRowAlignCenter>
     </FlexRow>
   );

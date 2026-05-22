@@ -1,15 +1,8 @@
 import type Plotly from "plotly.js-dist-min";
-import React, { type ReactElement, useEffect, useMemo, useRef, useState } from "react";
+import React, { type ReactElement, useEffect, useRef, useState } from "react";
 import { useDebounce } from "usehooks-ts";
 
-import {
-  ColorRamp,
-  DEFAULT_COLOR_RAMP_KEY,
-  KNOWN_COLOR_RAMPS,
-  SelectionOutlineColorMode,
-  TabType,
-  type VectorFieldData,
-} from "src/colorizer";
+import { SelectionOutlineColorMode, TabType, type VectorFieldData } from "src/colorizer";
 import { getSharedWorkerPool } from "src/colorizer/workers/SharedWorkerPool";
 import LoadingSpinner from "src/components/LoadingSpinner";
 import Plot3dConeControls from "src/components/Tabs/Plot3d/Plot3dConeControls";
@@ -28,15 +21,7 @@ export default function Plot3dTab(): ReactElement {
   const plotContainerRef = useRef<HTMLDivElement>(null);
   const plot3dRef = useRef<Plot3d | null>(null);
 
-  const [rawBins, setBins] = useState(25);
-  const bins = useDebounce(rawBins, 100);
-  const [xAxisFeatureKey, setXAxisFeatureKey] = useState<string | null>("pc_1");
-  const [yAxisFeatureKey, setYAxisFeatureKey] = useState<string | null>("pc_2");
-  const [zAxisFeatureKey, setZAxisFeatureKey] = useState<string | null>("pc_3");
-  const [applyGaussian, setApplyGaussian] = useState(true);
-
   const [isLoading, setIsLoading] = useState(false);
-
   const [vectorFieldData, setVectorFieldData] = useState<VectorFieldData | null>(null);
   const currentVectorFieldRequestIdRef = useRef(0);
   const [coneTrace, setConeTrace] = useState<Plotly.Data | null>(null);
@@ -44,30 +29,33 @@ export default function Plot3dTab(): ReactElement {
   const [isPlaybackTempPaused, setIsPlaybackTempPaused] = useState(false);
   const resumePlaybackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const [rawConeSize, setConeSize] = useState(1);
-  const coneSize = useDebounce(rawConeSize, 100);
-  const [coneColorRampKey, setConeColorRampKey] = useState<string>("matplotlib-turbo");
-  const [coneColorRampReversed, setConeColorRampReversed] = useState(false);
-  const [rawThreshold, setThreshold] = useState(2);
-  const threshold = useDebounce(rawThreshold, 100);
-  const [rawMovingAverageWindow, setMovingAverageWindow] = useState(1);
-  const movingAverageWindow = useDebounce(rawMovingAverageWindow, 100);
-
+  // Global state
   const dataset = useViewerStateStore((state) => state.dataset);
   const tracks = useViewerStateStore((state) => state.tracks);
   const trackColors = useViewerStateStore((state) => state.trackColors);
   const outlineColorMode = useViewerStateStore((state) => state.outlineColorMode);
   const currentFrame = useViewerStateStore((state) => state.currentFrame);
   const timeControls = useViewerStateStore((state) => state.timeControls);
-
   const inRangeLut = useViewerStateStore((state) => state.inRangeLUT);
-
-  const coneColorRampData = KNOWN_COLOR_RAMPS.get(coneColorRampKey) ?? KNOWN_COLOR_RAMPS.get(DEFAULT_COLOR_RAMP_KEY)!;
-  const coneColorRamp = useMemo(() => {
-    return new ColorRamp(coneColorRampData.colorStops);
-  }, [coneColorRampData]);
+  // 3D plot state
+  const rawBins = useViewerStateStore((state) => state.plot3dVectorBins);
+  const xAxisFeatureKey = useViewerStateStore((state) => state.plot3dXAxis);
+  const yAxisFeatureKey = useViewerStateStore((state) => state.plot3dYAxis);
+  const zAxisFeatureKey = useViewerStateStore((state) => state.plot3dZAxis);
+  const rawConeSize = useViewerStateStore((state) => state.plot3dVectorScale);
+  const applyGaussian = useViewerStateStore((state) => state.plot3dApplyGaussian);
+  const coneColorRampKey = useViewerStateStore((state) => state.plot3dVectorColorRampKey);
+  const coneColorRampReversed = useViewerStateStore((state) => state.plot3dVectorColorRampReversed);
+  const coneColorRamp = useViewerStateStore((state) => state.plot3dColorRamp);
+  const rawThreshold = useViewerStateStore((state) => state.plot3dVectorThreshold);
+  const rawMovingAverageWindow = useViewerStateStore((state) => state.plot3dLineMovingAverageWindow);
 
   const isPlotTabVisible = useViewerStateStore((state) => state.openTab === TabType.PLOT_3D);
+
+  const bins = useDebounce(rawBins, 100);
+  const coneSize = useDebounce(rawConeSize, 100);
+  const threshold = useDebounce(rawThreshold, 100);
+  const movingAverageWindow = useDebounce(rawMovingAverageWindow, 100);
 
   // Mount Plotly plot on component mount
   useEffect(() => {
@@ -117,21 +105,6 @@ export default function Plot3dTab(): ReactElement {
   }, []);
 
   //// Data Handlers ////
-
-  // Clear selected features as needed when dataset changes
-  useEffect(() => {
-    if (dataset) {
-      if (xAxisFeatureKey !== null && !dataset.hasFeatureKey(xAxisFeatureKey)) {
-        setXAxisFeatureKey(null);
-      }
-      if (yAxisFeatureKey !== null && !dataset.hasFeatureKey(yAxisFeatureKey)) {
-        setYAxisFeatureKey(null);
-      }
-      if (zAxisFeatureKey !== null && !dataset.hasFeatureKey(zAxisFeatureKey)) {
-        setZAxisFeatureKey(null);
-      }
-    }
-  }, [dataset]);
 
   // Calculate flow field when dataset or selected features change
   const calculateFlowField = async (): Promise<void> => {
@@ -208,40 +181,19 @@ export default function Plot3dTab(): ReactElement {
 
   //// Rendering ////
 
+  const disabled = !dataset;
+
   return (
     <FlexColumn style={{ height: "100%", marginBottom: 10 }} $gap={8}>
       {/* Plot Feature Controls */}
       <FlexRow $gap={8} style={{ flexGrow: 1 }}>
-        <Plot3dFeatureControls
-          xAxisFeatureKey={xAxisFeatureKey}
-          setXAxisFeatureKey={setXAxisFeatureKey}
-          yAxisFeatureKey={yAxisFeatureKey}
-          setYAxisFeatureKey={setYAxisFeatureKey}
-          zAxisFeatureKey={zAxisFeatureKey}
-          setZAxisFeatureKey={setZAxisFeatureKey}
-          bins={rawBins}
-          setBins={setBins}
-          applyGaussian={applyGaussian}
-          setApplyGaussian={setApplyGaussian}
-        />
+        <Plot3dFeatureControls disabled={disabled} />
       </FlexRow>
 
       {/* Cone Controls */}
       <FlexRowAlignCenter $gap={12}>
-        <Plot3dConeControls
-          coneSize={rawConeSize}
-          setConeSize={setConeSize}
-          coneColorRampKey={coneColorRampKey}
-          setConeColorRampKey={setConeColorRampKey}
-          coneColorRampReversed={coneColorRampReversed}
-          setConeColorRampReversed={setConeColorRampReversed}
-          threshold={rawThreshold}
-          setThreshold={setThreshold}
-        />
-        <Plot3dLineControls
-          movingAverageWindow={rawMovingAverageWindow}
-          setMovingAverageWindow={setMovingAverageWindow}
-        />
+        <Plot3dConeControls disabled={disabled} />
+        <Plot3dLineControls disabled={disabled} />
       </FlexRowAlignCenter>
 
       {/* Plot Container */}

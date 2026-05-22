@@ -7,17 +7,11 @@ import {
 } from "src/colorizer";
 import ColorRampSelection from "src/components/Dropdowns/ColorRampDropdown";
 import LabeledSlider from "src/components/Inputs/LabeledSlider";
+import { useViewerStateStore } from "src/state";
 import { FlexRowAlignCenter } from "src/styles/utils";
 
 type Plot3dConeControlsProps = {
-  coneSize: number;
-  setConeSize: (value: number) => void;
-  coneColorRampKey: string;
-  setConeColorRampKey: (value: string) => void;
-  coneColorRampReversed: boolean;
-  setConeColorRampReversed: (value: boolean) => void;
-  threshold: number;
-  setThreshold: (value: number) => void;
+  disabled?: boolean;
 };
 
 const enum Plot3dConeControlsHtmlIds {
@@ -26,16 +20,14 @@ const enum Plot3dConeControlsHtmlIds {
 }
 
 export default function Plot3dConeControls(props: Plot3dConeControlsProps): ReactElement {
-  const {
-    coneSize,
-    setConeSize,
-    coneColorRampKey,
-    setConeColorRampKey,
-    coneColorRampReversed,
-    setConeColorRampReversed,
-    threshold,
-    setThreshold,
-  } = props;
+  const coneSize = useViewerStateStore((state) => state.plot3dVectorScale);
+  const setConeSize = useViewerStateStore((state) => state.setPlot3dVectorScale);
+  const threshold = useViewerStateStore((state) => state.plot3dVectorThreshold);
+  const setThreshold = useViewerStateStore((state) => state.setPlot3dVectorThreshold);
+  const coneColorRampKey = useViewerStateStore((state) => state.plot3dVectorColorRampKey);
+  const coneColorRampReversed = useViewerStateStore((state) => state.plot3dVectorColorRampReversed);
+  const setConeColorRampKey = useViewerStateStore((state) => state.setPlot3dVectorColorRampKey);
+  const setConeColorRampReversed = useViewerStateStore((state) => state.setPlot3dVectorColorRampReversed);
 
   return (
     <>
@@ -56,6 +48,7 @@ export default function Plot3dConeControls(props: Plot3dConeControlsProps): Reac
             step={0.1}
             marks={[1]}
             numberFormatter={(number) => number?.toFixed(1)}
+            disabled={props.disabled}
           ></LabeledSlider>
         </div>
       </FlexRowAlignCenter>
@@ -72,6 +65,7 @@ export default function Plot3dConeControls(props: Plot3dConeControlsProps): Reac
         onChangePalette={() => {}}
         numCategories={0}
         categoricalPalettesToDisplay={DISPLAY_CATEGORICAL_PALETTE_KEYS}
+        disabled={props.disabled}
       />
 
       <FlexRowAlignCenter $gap={6}>
@@ -91,6 +85,7 @@ export default function Plot3dConeControls(props: Plot3dConeControlsProps): Reac
             step={1}
             marks={[5]}
             numberFormatter={(number) => number?.toFixed(0)}
+            disabled={props.disabled}
           ></LabeledSlider>
         </div>
       </FlexRowAlignCenter>

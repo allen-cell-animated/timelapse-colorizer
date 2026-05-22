@@ -421,20 +421,24 @@ export const DISPLAY_COLOR_RAMP_LINEAR_KEYS = [
   "seaborn-cubehelix_blue",
   "matplotlib-reds",
   "matplotlib-turbo",
-];
-export const DISPLAY_COLOR_RAMP_DIVERGING_KEYS = ["esri-blue_red_8", "esri-green_brown_1", "matplotlib-purple_orange"];
+] as const;
+export const DISPLAY_COLOR_RAMP_DIVERGING_KEYS = [
+  "esri-blue_red_8",
+  "esri-green_brown_1",
+  "matplotlib-purple_orange",
+] as const;
 export const DISPLAY_COLOR_RAMP_CYCLICAL_KEYS = [
   "colorcet-cet_c8",
   "colorcet-cet_c2",
   "fabio_crameri-romao",
   "fabio_crameri-viko",
   "fabio_crameri-broco",
-];
+] as const;
 export const DISPLAY_COLOR_RAMP_CATEGORICAL_KEYS = [
   "colorcet-glasbey",
   "colorcet-glasbey_light",
   "colorcet-glasbey_dark",
-];
+] as const;
 
 /**
  * List of color ramp keys that should be visible on the UI, in order of display.

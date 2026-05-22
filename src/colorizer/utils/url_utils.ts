@@ -92,6 +92,19 @@ export enum UrlParam {
   VECTOR_THICKNESS = "vc-thickness",
   VECTOR_TOOLTIP_MODE = "vc-tooltip",
   VECTOR_TIME_INTERVALS = "vc-time-int",
+  // Plot 3D
+  PLOT3D_X_AXIS = "p3d-x",
+  PLOT3D_Y_AXIS = "p3d-y",
+  PLOT3D_Z_AXIS = "p3d-z",
+  PLOT3D_SHOW_VECTORS = "p3d-vc",
+  PLOT3D_VECTOR_BINS = "p3d-vc-bins",
+  PLOT3D_VECTOR_SCALE = "p3d-vc-scale",
+  PLOT3D_VECTOR_COLOR_RAMP = "p3d-vc-ramp",
+  PLOT3D_VECTOR_THRESHOLD = "p3d-vc-thresh",
+  PLOT3D_LINE_WIDTH = "p3d-line-w",
+  PLOT3D_AVERAGE_LINE_WINDOW = "p3d-line-ma",
+  PLOT3D_APPLY_GAUSSIAN = "p3d-gauss",
+  PLOT3D_GAUSSIAN_BANDWIDTH = "p3d-gauss-bw",
 }
 
 export enum ChannelSettingUrlParam {

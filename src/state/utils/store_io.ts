@@ -36,6 +36,11 @@ import {
   type ViewerStore,
   type ViewerStoreSerializableState,
 } from "src/state/slices";
+import {
+  loadPlot3dSliceFromParams,
+  selectPlot3dSliceSerializationDeps,
+  serializePlot3dSlice,
+} from "src/state/slices/plot_3d_slice";
 import type { SerializedStoreData, Store } from "src/state/types";
 
 // SERIALIZATION /////////////////////////////////////////////////////////////////////////
@@ -52,6 +57,7 @@ export const selectSerializationDependencies = (state: ViewerStore): Partial<Vie
   ...selectBackdropSliceSerializationDeps(state),
   ...selectChannelSliceSerializationDeps(state),
   ...selectVectorSliceSerializationDeps(state),
+  ...selectPlot3dSliceSerializationDeps(state),
 });
 
 /**
@@ -74,6 +80,7 @@ export const serializeViewerState = (state: Partial<ViewerStoreSerializableState
     ...serializeBackdropSlice(state),
     ...serializeVectorSlice(state),
     ...serializeChannelSlice(state),
+    ...serializePlot3dSlice(state),
   });
 };
 
@@ -153,6 +160,7 @@ export const loadViewerStateFromParams = (store: Store<ViewerStore>, params: URL
   loadThresholdSliceFromParams(store.getState(), params);
   loadVectorSliceFromParams(store.getState(), params);
   loadChannelSliceFromParams(store.getState(), params);
+  loadPlot3dSliceFromParams(store.getState(), params);
 
   // 3. Dependent on dataset + track slices:
   loadTimeSliceFromParams(store.getState(), params);
