@@ -60,6 +60,8 @@ export default function Plot3dTab(): ReactElement {
   const currentFrame = useViewerStateStore((state) => state.currentFrame);
   const timeControls = useViewerStateStore((state) => state.timeControls);
 
+  const inRangeLut = useViewerStateStore((state) => state.inRangeLUT);
+
   const coneColorRampData = KNOWN_COLOR_RAMPS.get(coneColorRampKey) ?? KNOWN_COLOR_RAMPS.get(DEFAULT_COLOR_RAMP_KEY)!;
   const coneColorRamp = useMemo(() => {
     return new ColorRamp(coneColorRampData.colorStops);
@@ -148,6 +150,7 @@ export default function Plot3dTab(): ReactElement {
       yAxisFeatureKey,
       zAxisFeatureKey,
       [bins, bins, bins],
+      inRangeLut,
       applyGaussian ? 0.15 : undefined
     );
 
@@ -169,7 +172,7 @@ export default function Plot3dTab(): ReactElement {
       });
   };
 
-  const flowFieldDeps = [dataset, xAxisFeatureKey, yAxisFeatureKey, zAxisFeatureKey, bins, applyGaussian];
+  const flowFieldDeps = [dataset, xAxisFeatureKey, yAxisFeatureKey, zAxisFeatureKey, bins, applyGaussian, inRangeLut];
 
   useEffect(() => {
     calculateFlowField();

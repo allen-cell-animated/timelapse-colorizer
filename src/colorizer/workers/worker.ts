@@ -66,6 +66,8 @@ async function getVectorFlowField(
   xFeature: FeatureRangeData,
   yFeature: FeatureRangeData,
   zFeature: FeatureRangeData,
+  inRangeLUT?: Uint8Array,
+  outliers?: Uint8Array,
   smoothingBandwidth?: number
 ): Promise<TransferType> {
   const tracks = constructAllTracksFromData(trackIds, times);
@@ -77,7 +79,9 @@ async function getVectorFlowField(
     xFeature.range,
     yFeature.range,
     zFeature.range,
-    [xFeature.bins, yFeature.bins, zFeature.bins]
+    [xFeature.bins, yFeature.bins, zFeature.bins],
+    inRangeLUT,
+    outliers
   );
   let flowFieldData;
   if (smoothingBandwidth) {

@@ -372,7 +372,9 @@ export function calculateVectorFlowField(
   xRange: [number, number],
   yRange: [number, number],
   zRange: [number, number],
-  binsPerAxis: [number, number, number]
+  binsPerAxis: [number, number, number],
+  inRangeLUT: Uint8Array | undefined = undefined,
+  outliers: Uint8Array | undefined = undefined
 ): VectorFieldData {
   const [xSteps, ySteps, zSteps] = binsPerAxis;
 
@@ -391,12 +393,21 @@ export function calculateVectorFlowField(
       if (track.times[i0] + 1 !== track.times[i0 + 1]) {
         continue;
       }
-      const x0Value = xFeatureData[track.ids[i0]];
-      const y0Value = yFeatureData[track.ids[i0]];
-      const z0Value = zFeatureData[track.ids[i0]];
-      const x1Value = xFeatureData[track.ids[i0 + 1]];
-      const y1Value = yFeatureData[track.ids[i0 + 1]];
-      const z1Value = zFeatureData[track.ids[i0 + 1]];
+      const id0 = track.ids[i0];
+      const id1 = track.ids[i0 + 1];
+      if (inRangeLUT && (!inRangeLUT[id0] || !inRangeLUT[id1])) {
+        continue;
+      }
+      if (outliers && (outliers[id0] || outliers[id1])) {
+        continue;
+      }
+
+      const x0Value = xFeatureData[id0];
+      const y0Value = yFeatureData[id0];
+      const z0Value = zFeatureData[id0];
+      const x1Value = xFeatureData[id1];
+      const y1Value = yFeatureData[id1];
+      const z1Value = zFeatureData[id1];
       const deltaX = x1Value - x0Value;
       const deltaY = y1Value - y0Value;
       const deltaZ = z1Value - z0Value;

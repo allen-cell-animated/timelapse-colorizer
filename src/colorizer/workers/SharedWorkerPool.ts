@@ -101,6 +101,7 @@ export default class SharedWorkerPool {
     yFeatureKey: string,
     zFeatureKey: string,
     bins: [number, number, number],
+    inRangeLUT?: Uint8Array,
     smoothingBandwidth?: number
   ): Promise<VectorFieldData> {
     const trackIds = dataset.trackIds;
@@ -121,6 +122,8 @@ export default class SharedWorkerPool {
       xFeature,
       yFeature,
       zFeature,
+      inRangeLUT,
+      dataset.outliers,
       smoothingBandwidth,
     ]);
   }
