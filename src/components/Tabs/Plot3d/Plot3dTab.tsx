@@ -108,7 +108,18 @@ export default function Plot3dTab(): ReactElement {
 
   // Calculate flow field when dataset or selected features change
   const calculateFlowField = async (): Promise<void> => {
-    if (!dataset || !xAxisFeatureKey || !yAxisFeatureKey || !zAxisFeatureKey || !plot3dRef.current) {
+    if (
+      !dataset ||
+      !xAxisFeatureKey ||
+      !yAxisFeatureKey ||
+      !zAxisFeatureKey ||
+      !dataset.hasFeatureKey(xAxisFeatureKey) ||
+      !dataset.hasFeatureKey(yAxisFeatureKey) ||
+      !dataset.hasFeatureKey(zAxisFeatureKey) ||
+      !dataset.times ||
+      !dataset.trackIds ||
+      !plot3dRef.current
+    ) {
       setVectorFieldData(null);
       return;
     }
@@ -117,17 +128,16 @@ export default function Plot3dTab(): ReactElement {
     currentVectorFieldRequestIdRef.current += 1;
     const requestId = currentVectorFieldRequestIdRef.current;
     const workerPool = getSharedWorkerPool();
-    const vectorFlowFieldPromise = workerPool.getVectorFlowField(
-      dataset,
-      xAxisFeatureKey,
-      yAxisFeatureKey,
-      zAxisFeatureKey,
-      [bins, bins, bins],
-      inRangeLut,
-      applyGaussian ? 0.15 : undefined
-    );
-
-    vectorFlowFieldPromise
+    workerPool
+      .getVectorFlowField(
+        dataset,
+        xAxisFeatureKey,
+        yAxisFeatureKey,
+        zAxisFeatureKey,
+        [bins, bins, bins],
+        inRangeLut,
+        applyGaussian ? 0.15 : undefined
+      )
       .then((vectorFieldData) => {
         // Check if a newer requests supercedes this one before updating state
         if (requestId !== currentVectorFieldRequestIdRef.current || !plot3dRef.current) {

@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import type { Track } from "src/colorizer";
 import {
-  binAndSumVectors,
+  binAndSumFeatureVectors,
   convertCanvasOffsetPxToFrameCoords,
   formatNumber,
   getBinIndex,
@@ -450,7 +450,7 @@ describe("calculateVectorFlowField", () => {
     const xRange = [0, 2] as [number, number];
     const yRange = [0, 2] as [number, number];
     const zRange = [0, 2] as [number, number];
-    const vectorFieldData = binAndSumVectors(
+    const vectorFieldData = binAndSumFeatureVectors(
       [],
       new Float32Array(),
       new Float32Array(),
@@ -463,9 +463,9 @@ describe("calculateVectorFlowField", () => {
     expect(vectorFieldData.xPos.length).to.equal(8);
     expect(vectorFieldData.yPos.length).to.equal(8);
     expect(vectorFieldData.zPos.length).to.equal(8);
-    expect(vectorFieldData.xData.length).to.equal(8);
-    expect(vectorFieldData.yData.length).to.equal(8);
-    expect(vectorFieldData.zData.length).to.equal(8);
+    expect(vectorFieldData.xSum.length).to.equal(8);
+    expect(vectorFieldData.ySum.length).to.equal(8);
+    expect(vectorFieldData.zSum.length).to.equal(8);
     expect(vectorFieldData.count.length).to.equal(8);
 
     expect(vectorFieldData.xPos).toEqual(new Float32Array([0.5, 1.5, 0.5, 1.5, 0.5, 1.5, 0.5, 1.5]));
@@ -478,7 +478,7 @@ describe("calculateVectorFlowField", () => {
     const xRange = [0, 1] as [number, number];
     const yRange = [0, 2] as [number, number];
     const zRange = [0, 3] as [number, number];
-    const vectorFieldData = binAndSumVectors(
+    const vectorFieldData = binAndSumFeatureVectors(
       [],
       new Float32Array(),
       new Float32Array(),
@@ -491,9 +491,9 @@ describe("calculateVectorFlowField", () => {
     expect(vectorFieldData.xPos.length).to.equal(6);
     expect(vectorFieldData.yPos.length).to.equal(6);
     expect(vectorFieldData.zPos.length).to.equal(6);
-    expect(vectorFieldData.xData.length).to.equal(6);
-    expect(vectorFieldData.yData.length).to.equal(6);
-    expect(vectorFieldData.zData.length).to.equal(6);
+    expect(vectorFieldData.xSum.length).to.equal(6);
+    expect(vectorFieldData.ySum.length).to.equal(6);
+    expect(vectorFieldData.zSum.length).to.equal(6);
     expect(vectorFieldData.count.length).to.equal(6);
 
     expect(vectorFieldData.xPos).toEqual(new Float32Array([0.5, 0.5, 0.5, 0.5, 0.5, 0.5]));
@@ -524,7 +524,7 @@ describe("calculateVectorFlowField", () => {
     const xFeatureData = new Float32Array([0, 1, 2, 0, 1, 2]);
     const yFeatureData = new Float32Array([0, 0, 0, 1, 1, 1]);
     const zFeatureData = new Float32Array([0, 1, 1, 0, 1, 1]);
-    const vectorFieldData = binAndSumVectors(
+    const vectorFieldData = binAndSumFeatureVectors(
       tracks,
       xFeatureData,
       yFeatureData,
@@ -537,9 +537,9 @@ describe("calculateVectorFlowField", () => {
     expect(vectorFieldData.xPos).toEqual(new Float32Array([0.5, 1.5, 0.5, 1.5, 0.5, 1.5, 0.5, 1.5]));
     expect(vectorFieldData.yPos).toEqual(new Float32Array([0.5, 0.5, 1.5, 1.5, 0.5, 0.5, 1.5, 1.5]));
     expect(vectorFieldData.zPos).toEqual(new Float32Array([0.5, 0.5, 0.5, 0.5, 1.5, 1.5, 1.5, 1.5]));
-    expect(vectorFieldData.xData).toEqual(new Float32Array([1, 0, 1, 0, 0, 1, 0, 1]));
-    expect(vectorFieldData.yData).toEqual(new Float32Array([0, 0, 0, 0, 0, 0, 0, 0]));
-    expect(vectorFieldData.zData).toEqual(new Float32Array([1, 0, 1, 0, 0, 0, 0, 0]));
+    expect(vectorFieldData.xSum).toEqual(new Float32Array([2, 0, 1, 0, 0, 2, 0, 1]));
+    expect(vectorFieldData.ySum).toEqual(new Float32Array([0, 0, 0, 0, 0, 0, 0, 0]));
+    expect(vectorFieldData.zSum).toEqual(new Float32Array([2, 0, 1, 0, 0, 0, 0, 0]));
     expect(vectorFieldData.count).toEqual(new Uint32Array([2, 0, 1, 0, 0, 2, 0, 1]));
   });
 });
