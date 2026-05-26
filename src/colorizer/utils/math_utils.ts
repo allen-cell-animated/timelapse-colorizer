@@ -364,6 +364,25 @@ export function getBinValue(binIndex: number, range: [number, number], steps: nu
   return min + (binIndex + 0.5) * stepSize;
 }
 
+/**
+ * Calculates a vector flow field in 3D feature space. For each bin in the 3D
+ * feature space, the vector is calculated as the average delta between feature
+ * values at time `t` and `t+1` for all objects that fall into the bin at time
+ * `t`.
+ * @param tracks Array of tracks, where each track contains object IDs and their
+ * corresponding timepoints.
+ * @param xFeatureData Flat feature data array where the value for object ID `i`
+ * is at index `i`.
+ * @param yFeatureData Flat feature data array where the value for object ID `i`
+ * is at index `i`.
+ * @param zFeatureData Flat feature data array where the value for object ID `i`
+ * is at index `i`.
+ * @param xRange Range of values for the X dimension, as a tuple [min, max].
+ * @param yRange Range of values for the Y dimension, as a tuple [min, max].
+ * @param zRange Range of values for the Z dimension, as a tuple [min, max].
+ * @param binsPerAxis Number of bins per axis, as a tuple [xBins, yBins, zBins].
+ * @returns VectorFieldData containing the calculated vector flow field.
+ */
 export function calculateVectorFlowField(
   tracks: Track[],
   xFeatureData: Float32Array | Uint32Array,
