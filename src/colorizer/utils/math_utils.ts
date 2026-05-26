@@ -435,7 +435,6 @@ export function binAndSumFeatureVectors(
       const zBin = getBinIndex(z0Value, zRange, zSteps);
       const binIndex = xBin + yBin * xSteps + zBin * xSteps * ySteps;
 
-      // TODO: This may result in float imprecision issues
       xSum[binIndex] += deltaX;
       ySum[binIndex] += deltaY;
       zSum[binIndex] += deltaZ;
@@ -458,7 +457,12 @@ export function binAndSumFeatureVectors(
   return { xPos, yPos, zPos, xSum, ySum, zSum, count };
 }
 
-export function normalizeVectorFlowFieldData(vectorSumData: VectorSumData): VectorFieldData {
+/**
+ * Returns the average vector for each bin in the vector sum data by dividing
+ * the summed vector by the count for each bin. If a bin has count 0, the
+ * average vector will be set to NaN.
+ */
+export function averageVectorFlowField(vectorSumData: VectorSumData): VectorFieldData {
   const { xPos, yPos, zPos, xSum, ySum, zSum, count: intCount } = vectorSumData;
   const floatCount = new Float32Array(vectorSumData.count);
   const xData = new Float32Array(xSum.length);
@@ -467,9 +471,9 @@ export function normalizeVectorFlowFieldData(vectorSumData: VectorSumData): Vect
 
   for (let i = 0; i < intCount.length; i++) {
     if (intCount[i] > 0) {
-      xData[i] = xSum[i]; // / intCount[i];
-      yData[i] = ySum[i]; // / intCount[i];
-      zData[i] = zSum[i]; // / intCount[i];
+      xData[i] = xSum[i] / intCount[i];
+      yData[i] = ySum[i] / intCount[i];
+      zData[i] = zSum[i] / intCount[i];
     } else {
       xData[i] = NaN;
       yData[i] = NaN;
@@ -523,6 +527,13 @@ export function thresholdVectorFlowFieldByCount(
   };
 }
 
+/**
+ * Returns a 3D kernel for gaussian smoothing. The kernel is normalized so that
+ * the sum of all values is 1.
+ * @param size Size of the kernel in each dimension
+ * @param bandwidth Standard deviation of the Gaussian
+ * @returns 3D array representing the Gaussian kernel.
+ */
 export function make3dGaussianKernel(size: number, bandwidth: number): number[][][] {
   const kernel: number[][][] = [];
   for (let x = 0; x < size; x++) {
@@ -531,7 +542,6 @@ export function make3dGaussianKernel(size: number, bandwidth: number): number[][
       kernel[x][y] = [];
     }
   }
-
   const mid = (size - 1) / 2;
   const bandwidthSquared = bandwidth * bandwidth;
   let sum = 0;
@@ -540,7 +550,7 @@ export function make3dGaussianKernel(size: number, bandwidth: number): number[][
       for (let z = 0; z < size; z++) {
         // f(x) = exp(-dist^2 / (2 * bandwidth^2))
         const dist = (x - mid) ** 2 + (y - mid) ** 2 + (z - mid) ** 2;
-        const value = Math.exp(-dist / (2 * bandwidthSquared)) / Math.sqrt(2 * Math.PI * bandwidthSquared);
+        const value = Math.exp(-dist / (2 * bandwidthSquared));
         kernel[x][y][z] = value;
         sum += value;
       }
@@ -557,60 +567,74 @@ export function make3dGaussianKernel(size: number, bandwidth: number): number[][
   return kernel;
 }
 
-function isInBounds(x: number, y: number, z: number, xSteps: number, ySteps: number, zSteps: number): boolean {
-  return x >= 0 && x < xSteps && y >= 0 && y < ySteps && z >= 0 && z < zSteps;
-}
-
+/**
+ * Performs a convolution on a flat, 3D array given a kernel and the array
+ * dimensions. The convolution is only applied to values where the kernel fully
+ * overlaps with the array (i.e. no padding is applied).
+ * @param arr 3D array to convolve, as a flat array, in ZYX order. A value at
+ * coordinates (x, y, z) should be located at index `z * arrDims[0] * arrDims[1] * + y * arrDims[0] + x`.
+ * @param arrDims The XYZ dimensions of the array, as a tuple.
+ * @param kernel 3D kernel to convolve with, as a 3D array. The kernel is
+ * assumed to have odd dimensions and be centered at the middle index.
+ * @param normalize Whether to normalize the convolved value by the sum of the
+ * kernel weights that overlap with the array.
+ * @returns A new flat array containing the convolved values, in ZYX order.
+ */
 function convolve(
   arr: Float32Array | Uint32Array,
-  binsPerAxis: [number, number, number],
+  arrDims: [number, number, number],
   kernel: number[][][],
-  arrWeight?: Float32Array
+  normalize: boolean = true
 ): Float32Array {
   const output = new Float32Array(arr.length);
 
-  const [xSteps, ySteps, zSteps] = binsPerAxis;
+  const [xDim, yDim, zDim] = arrDims;
   const kernelSize = kernel.length;
   const kernelMid = Math.floor(kernelSize / 2);
 
-  for (let z = 0; z < zSteps; z++) {
-    for (let y = 0; y < ySteps; y++) {
-      for (let x = 0; x < xSteps; x++) {
+  for (let z = 0; z < zDim; z++) {
+    for (let y = 0; y < yDim; y++) {
+      for (let x = 0; x < xDim; x++) {
         let sum = 0;
         let sumWeight = 0;
         for (let k = 0; k < kernelSize; k++) {
+          const zIndex = Math.floor(z + k - kernelMid);
+          if (zIndex < 0 || zIndex >= zDim) {
+            continue;
+          }
           for (let j = 0; j < kernelSize; j++) {
+            const yIndex = Math.floor(y + j - kernelMid);
+            if (yIndex < 0 || yIndex >= yDim) {
+              continue;
+            }
             for (let i = 0; i < kernelSize; i++) {
-              // Skip if kernel index is out of bounds of the input array
-              const kernelValue = kernel[i][j][k];
-              const xIndex = x + i - kernelMid;
-              const yIndex = y + j - kernelMid;
-              const zIndex = z + k - kernelMid;
-              if (isInBounds(xIndex, yIndex, zIndex, xSteps, ySteps, zSteps)) {
-                const index = zIndex * ySteps * xSteps + yIndex * xSteps + xIndex;
-                // Optional weighting of input values.
-                // TODO: Remove?
-                const weight = arrWeight ? arrWeight[index] : 1;
-                sum += arr[index] * weight * kernelValue;
-                sumWeight += kernelValue;
+              const xIndex = Math.floor(x + i - kernelMid);
+              if (xIndex < 0 || xIndex >= xDim) {
+                continue;
               }
+              const kernelValue = kernel[i][j][k];
+              const index = zIndex * yDim * xDim + yIndex * xDim + xIndex;
+              sum += arr[index] * kernelValue;
+              sumWeight += kernelValue;
             }
           }
         }
-        const outputIndex = z * ySteps * xSteps + y * xSteps + x;
-        output[outputIndex] = sumWeight > 0 ? sum / sumWeight : 0;
+        const outputIndex = z * yDim * xDim + y * xDim + x;
+        const shouldNormalize = sumWeight > 0 && normalize;
+        output[outputIndex] = shouldNormalize ? sum / sumWeight : sum;
       }
     }
   }
   return output;
 }
 
+/** Performs a convolution on summed vector field data. */
 export function convolveVectorFlowField(
-  flowFieldData: VectorSumData,
+  vectorSumData: VectorSumData,
   binsPerAxis: [number, number, number],
   kernel: number[][][]
 ): VectorFieldData {
-  const { xPos, yPos, zPos, xSum, ySum, zSum, count: rawCountData } = flowFieldData;
+  const { xPos, yPos, zPos, xSum, ySum, zSum, count: rawCountData } = vectorSumData;
 
   const xData = new Float32Array(xSum.length);
   const yData = new Float32Array(ySum.length);

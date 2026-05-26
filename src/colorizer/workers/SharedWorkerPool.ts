@@ -95,6 +95,29 @@ export default class SharedWorkerPool {
     };
   }
 
+  /**
+   * Returns a vector flow field computed from the provided features. The flow
+   * field is computed by binning the feature deltas for each track per time,
+   * and either averaging the vectors in each bin or applying a Gaussian
+   * smoothing kernel to the binned vectors.
+   *
+   * @param dataset The dataset containing the features and track data to
+   * compute the flow field from.
+   * @param xFeatureKey The feature key for the x-axis of the flow field.
+   * @param yFeatureKey The feature key for the y-axis of the flow field.
+   * @param zFeatureKey The feature key for the z-axis of the flow field.
+   * @param bins The number of bins to use along each axis, as a tuple [xBins,
+   * yBins, zBins].
+   * @param inRangeLUT Lookup table for whether an object instance is in range
+   * of filters (`=1`) or not (`=0`), as a flat array. Values outside of the
+   * filter range will be ignored when computing the flow field.
+   * @param gaussianBandwidth The bandwidth (or standard deviation) of the
+   * Gaussian kernel to apply to the binned vectors, as a fraction of the number
+   * of bins. If provided, uses Gaussian smoothing; if not provided, uses simple
+   * averaging.
+   * @returns a `VectorFieldData` object containing the computed flow field data
+   * and metadata.
+   */
   async getVectorFlowField(
     dataset: Dataset,
     xFeatureKey: string,
@@ -102,7 +125,7 @@ export default class SharedWorkerPool {
     zFeatureKey: string,
     bins: [number, number, number],
     inRangeLUT?: Uint8Array,
-    smoothingBandwidth?: number
+    gaussianBandwidth?: number
   ): Promise<VectorFieldData> {
     const trackIds = dataset.trackIds;
     const times = dataset.times;
@@ -124,7 +147,7 @@ export default class SharedWorkerPool {
       zFeature,
       inRangeLUT,
       dataset.outliers,
-      smoothingBandwidth,
+      gaussianBandwidth,
     ]);
   }
 
