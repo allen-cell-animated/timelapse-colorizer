@@ -89,12 +89,12 @@ export default class Plot3d {
     if (!featureData) {
       return { title: "" };
     }
-    let range: [number, number] = [featureData.min, featureData.max];
-    // For flow field features, use the min and max of the data. Adjust min
-    //  + max slightly to prevent a bug where cones at the plot edges have
-    //  visual artifacts
-    range = [featureData.min - Math.abs(featureData.min) * 0.01, featureData.max + Math.abs(featureData.max) * 0.01];
-
+    // Adjust min + max slightly to prevent a bug where cones at the plot edges
+    // have visual artifacts
+    const range: [number, number] = [
+      featureData.min - Math.abs(featureData.min) * 0.01,
+      featureData.max + Math.abs(featureData.max) * 0.01,
+    ];
     return {
       title: this.dataset.getFeatureNameWithUnits(featureKey) ?? "",
       range,

@@ -364,6 +364,24 @@ export function getBinValue(binIndex: number, range: [number, number], steps: nu
   return min + (binIndex + 0.5) * stepSize;
 }
 
+/**
+ * Sums vector deltas for objects in a 3D feature space. For each bin in the 3D
+ * feature space, the value is the sum of the delta between feature values at
+ * any time `t` and `t+1` for all objects that fall into the bin at time `t`.
+ * @param tracks Array of tracks, where each track contains object IDs and their
+ * corresponding timepoints.
+ * @param xFeatureData Flat feature data array where the value for object ID `i`
+ * is at index `i`.
+ * @param yFeatureData Flat feature data array where the value for object ID `i`
+ * is at index `i`.
+ * @param zFeatureData Flat feature data array where the value for object ID `i`
+ * is at index `i`.
+ * @param xRange Range of values for the X dimension, as a tuple [min, max].
+ * @param yRange Range of values for the Y dimension, as a tuple [min, max].
+ * @param zRange Range of values for the Z dimension, as a tuple [min, max].
+ * @param binsPerAxis Number of bins per axis, as a tuple [xBins, yBins, zBins].
+ * @returns VectorSumData containing the summed vectors.
+ */
 export function binAndSumFeatureVectors(
   tracks: Track[],
   xFeatureData: Float32Array | Uint32Array,
@@ -388,13 +406,13 @@ export function binAndSumFeatureVectors(
   const zPos = new Float32Array(numBins);
 
   for (const track of tracks) {
-    for (let i0 = 0; i0 < track.ids.length - 1; i0++) {
+    for (let i = 0; i < track.ids.length - 1; i++) {
       // Times are in sorted order, check if the next timepoint exists
-      if (track.times[i0] + 1 !== track.times[i0 + 1]) {
+      if (track.times[i] + 1 !== track.times[i + 1]) {
         continue;
       }
-      const id0 = track.ids[i0];
-      const id1 = track.ids[i0 + 1];
+      const id0 = track.ids[i];
+      const id1 = track.ids[i + 1];
       if (inRangeLUT && (!inRangeLUT[id0] || !inRangeLUT[id1])) {
         continue;
       }
