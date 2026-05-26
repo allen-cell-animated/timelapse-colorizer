@@ -30,9 +30,9 @@ export default function Plot3dTab(): ReactElement {
 
   const [rawBins, setBins] = useState(25);
   const bins = useDebounce(rawBins, 100);
-  const [xAxisFeatureKey, setXAxisFeatureKey] = useState<string | null>("pc_1");
-  const [yAxisFeatureKey, setYAxisFeatureKey] = useState<string | null>("pc_2");
-  const [zAxisFeatureKey, setZAxisFeatureKey] = useState<string | null>("pc_3");
+  const [xAxisFeatureKey, setXAxisFeatureKey] = useState<string | null>(null);
+  const [yAxisFeatureKey, setYAxisFeatureKey] = useState<string | null>(null);
+  const [zAxisFeatureKey, setZAxisFeatureKey] = useState<string | null>(null);
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -132,7 +132,18 @@ export default function Plot3dTab(): ReactElement {
 
   // Calculate flow field when dataset or selected features change
   const calculateFlowField = async (): Promise<void> => {
-    if (!dataset || !xAxisFeatureKey || !yAxisFeatureKey || !zAxisFeatureKey || !plot3dRef.current) {
+    if (
+      !dataset ||
+      !xAxisFeatureKey ||
+      !yAxisFeatureKey ||
+      !zAxisFeatureKey ||
+      !dataset.hasFeatureKey(xAxisFeatureKey) ||
+      !dataset.hasFeatureKey(yAxisFeatureKey) ||
+      !dataset.hasFeatureKey(zAxisFeatureKey) ||
+      !dataset.times ||
+      !dataset.trackIds ||
+      !plot3dRef.current
+    ) {
       setVectorFieldData(null);
       return;
     }
@@ -141,15 +152,8 @@ export default function Plot3dTab(): ReactElement {
     currentVectorFieldRequestIdRef.current += 1;
     const requestId = currentVectorFieldRequestIdRef.current;
     const workerPool = getSharedWorkerPool();
-    const vectorFlowFieldPromise = workerPool.getVectorFlowField(
-      dataset,
-      xAxisFeatureKey,
-      yAxisFeatureKey,
-      zAxisFeatureKey,
-      [bins, bins, bins]
-    );
-
-    vectorFlowFieldPromise
+    workerPool
+      .getVectorFlowField(dataset, xAxisFeatureKey, yAxisFeatureKey, zAxisFeatureKey, [bins, bins, bins])
       .then((vectorFieldData) => {
         // Check if a newer requests supercedes this one before updating state
         if (requestId !== currentVectorFieldRequestIdRef.current || !plot3dRef.current) {
