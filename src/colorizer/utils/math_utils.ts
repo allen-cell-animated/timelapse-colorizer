@@ -515,21 +515,20 @@ export function make3dGaussianKernel(size: number, bandwidth: number): number[][
   }
 
   const mid = (size - 1) / 2;
-  const twoBandwidthSquared = 2 * bandwidth * bandwidth;
+  const bandwidthSquared = bandwidth * bandwidth;
   let sum = 0;
   for (let x = 0; x < size; x++) {
     for (let y = 0; y < size; y++) {
       for (let z = 0; z < size; z++) {
         // f(x) = exp(-dist^2 / (2 * bandwidth^2))
         const dist = (x - mid) ** 2 + (y - mid) ** 2 + (z - mid) ** 2;
-        const value = Math.exp(-dist / twoBandwidthSquared);
+        const value = Math.exp(-dist / (2 * bandwidthSquared)) / Math.sqrt(2 * Math.PI * bandwidthSquared);
         kernel[x][y][z] = value;
         sum += value;
       }
     }
   }
-
-  // Normalize by sum so integral is 1.
+  // Normalize kernel so that sum of all values is 1
   for (let x = 0; x < size; x++) {
     for (let y = 0; y < size; y++) {
       for (let z = 0; z < size; z++) {
@@ -581,8 +580,7 @@ function convolve(
           }
         }
         const outputIndex = z * ySteps * xSteps + y * xSteps + x;
-        output[outputIndex] = sum / sumWeight;
-        // output[outputIndex] = sumWeight > 0 ? sum / sumWeight : 0;
+        output[outputIndex] = sumWeight > 0 ? sum / sumWeight : 0;
       }
     }
   }
@@ -607,13 +605,13 @@ export function convolveVectorFlowField(
   zData.set(convolve(zSum, binsPerAxis, kernel));
 
   // Divide feature data by smoothed countData
-  // for (let i = 0; i < count.length; i++) {
-  //   if (count[i] > 0) {
-  //     xData[i] /= count[i];
-  //     yData[i] /= count[i];
-  //     zData[i] /= count[i];
-  //   }
-  // }
+  for (let i = 0; i < count.length; i++) {
+    if (count[i] > 0.1) {
+      xData[i] /= count[i];
+      yData[i] /= count[i];
+      zData[i] /= count[i];
+    }
+  }
 
   return { xPos, yPos, zPos, xData, yData, zData, count: count };
 }

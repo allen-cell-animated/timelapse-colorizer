@@ -88,7 +88,7 @@ async function getVectorFlowField(
   let flowFieldData;
   if (smoothingBandwidth) {
     const nbins = xFeature.bins;
-    const kernelSize = Math.floor(smoothingBandwidth * nbins) * 2 + 1;
+    const kernelSize = Math.ceil(smoothingBandwidth * nbins) * 2 + 1;
     const gaussianKernel = make3dGaussianKernel(kernelSize, smoothingBandwidth * nbins);
     const smoothedFlowFieldData = convolveVectorFlowField(
       rawFlowFieldData,
