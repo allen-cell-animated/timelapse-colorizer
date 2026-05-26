@@ -386,17 +386,17 @@ export function calculateVectorFlowField(
   const zPos = new Float32Array(numBins);
 
   for (const track of tracks) {
-    for (let i0 = 0; i0 < track.ids.length - 1; i0++) {
+    for (let i = 0; i < track.ids.length - 1; i++) {
       // Times are in sorted order, check if the next timepoint exists
-      if (track.times[i0] + 1 !== track.times[i0 + 1]) {
+      if (track.times[i] + 1 !== track.times[i + 1]) {
         continue;
       }
-      const x0Value = xFeatureData[track.ids[i0]];
-      const y0Value = yFeatureData[track.ids[i0]];
-      const z0Value = zFeatureData[track.ids[i0]];
-      const x1Value = xFeatureData[track.ids[i0 + 1]];
-      const y1Value = yFeatureData[track.ids[i0 + 1]];
-      const z1Value = zFeatureData[track.ids[i0 + 1]];
+      const x0Value = xFeatureData[track.ids[i]];
+      const y0Value = yFeatureData[track.ids[i]];
+      const z0Value = zFeatureData[track.ids[i]];
+      const x1Value = xFeatureData[track.ids[i + 1]];
+      const y1Value = yFeatureData[track.ids[i + 1]];
+      const z1Value = zFeatureData[track.ids[i + 1]];
       const deltaX = x1Value - x0Value;
       const deltaY = y1Value - y0Value;
       const deltaZ = z1Value - z0Value;
