@@ -357,11 +357,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     plottedIds.current = new Set(objectIds);
 
     let markerBaseColor: Color | undefined = undefined;
-    let markerConfig: Partial<Plotly.PlotMarker> = {};
-    if (showContours) {
-      // Shrink points to allow the contours to be seen.
-      markerConfig = { size: 2 };
-    }
     if (rangeType === PlotRangeType.ALL_TIME && tracks.size > 0) {
       // Use a light grey for other markers when a track is selected.
       markerBaseColor = new Color("#dddddd");
@@ -371,7 +366,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
     // Configure traces
     const traces = colorizeScatterplotPoints(colorizeConfig, xAxisFeatureKey, yAxisFeatureKey, pointsData, {
-      markers: markerConfig,
+      // When contours are enabled, make markers smaller so contours are visible
+      markers: showContours ? { size: 2 } : {},
       overrideColor: markerBaseColor,
       // disable hover for all points other than the track when one is selected
       allowHover: tracks.size === 0 || rangeType !== PlotRangeType.ALL_TIME,
