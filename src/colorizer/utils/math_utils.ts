@@ -572,7 +572,7 @@ export function make3dGaussianKernel(size: number, bandwidth: number): number[][
  * dimensions. The convolution is only applied to values where the kernel fully
  * overlaps with the array (i.e. no padding is applied).
  * @param arr 3D array to convolve, as a flat array, in ZYX order. A value at
- * coordinates (x, y, z) should be located at index `z * arrDims[0] * arrDims[1] * + y * arrDims[0] + x`.
+ * coordinates (x, y, z) should be located at index `z * arrDims[0] * arrDims[1] + y * arrDims[0] + x`.
  * @param arrDims The XYZ dimensions of the array, as a tuple.
  * @param kernel 3D kernel to convolve with, as a 3D array. The kernel is
  * assumed to have odd dimensions and be centered at the middle index.
