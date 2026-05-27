@@ -5,14 +5,12 @@ import { useDebounce } from "usehooks-ts";
 import { SelectionOutlineColorMode, TabType, type VectorFieldData } from "src/colorizer";
 import { getSharedWorkerPool } from "src/colorizer/workers/SharedWorkerPool";
 import LoadingSpinner from "src/components/LoadingSpinner";
-import Plot3dConeControls from "src/components/Tabs/Plot3d/Plot3dConeControls";
-import Plot3dFeatureControls from "src/components/Tabs/Plot3d/Plot3dFeatureControls";
+import Plot3dToolbar from "src/components/Tabs/Plot3d/Plot3dToolbar";
 import { useInteractionListener } from "src/hooks";
 import { useViewerStateStore } from "src/state";
-import { FlexColumn, FlexRow, FlexRowAlignCenter } from "src/styles/utils";
+import { FlexColumn } from "src/styles/utils";
 
 import Plot3d from "./Plot3d";
-import Plot3dLineControls from "./Plot3dLineControls";
 import { make3dConeTrace } from "./plot_3d_utils";
 
 const RESUME_PLAYBACK_TIMEOUT_MS = 500;
@@ -201,20 +199,9 @@ export default function Plot3dTab(): ReactElement {
 
   //// Rendering ////
 
-  const disabled = !dataset;
-
   return (
     <FlexColumn style={{ height: "100%", marginBottom: 10 }} $gap={8}>
-      {/* Plot Feature Controls */}
-      <FlexRow $gap={8} style={{ flexGrow: 1 }}>
-        <Plot3dFeatureControls disabled={disabled} />
-      </FlexRow>
-
-      {/* Cone Controls */}
-      <FlexRowAlignCenter $gap={12}>
-        <Plot3dConeControls disabled={disabled} />
-        <Plot3dLineControls disabled={disabled} />
-      </FlexRowAlignCenter>
+      <Plot3dToolbar />
 
       {/* Plot Container */}
       <LoadingSpinner loading={isLoading} style={{ width: "100%", height: "100%" }}>

@@ -1,10 +1,9 @@
-import { Checkbox } from "antd";
 import React, { type ReactElement, useMemo } from "react";
 
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import type { SelectItem } from "src/components/Dropdowns/types";
 import { useViewerStateStore } from "src/state";
-import { FlexRow, FlexRowAlignCenter } from "src/styles/utils";
+import { FlexRow } from "src/styles/utils";
 
 type Plot3dFeatureControlsProps = {
   disabled?: boolean;
@@ -19,8 +18,6 @@ export default function Plot3dFeatureControls(props: Plot3dFeatureControlsProps)
   const setZAxisFeatureKey = useViewerStateStore((state) => state.setPlot3dZAxis);
   const bins = useViewerStateStore((state) => state.plot3dVectorBins);
   const setBins = useViewerStateStore((state) => state.setPlot3dVectorBins);
-  const applyGaussian = useViewerStateStore((state) => state.plot3dUseGaussian);
-  const setApplyGaussian = useViewerStateStore((state) => state.setPlot3dUseGaussian);
 
   const dataset = useViewerStateStore((state) => state.dataset);
 
@@ -73,16 +70,6 @@ export default function Plot3dFeatureControls(props: Plot3dFeatureControlsProps)
         controlWidth="70px"
         disabled={props.disabled}
       ></SelectionDropdown>
-      <FlexRowAlignCenter $gap={6}>
-        <label>
-          <h3>Gaussian</h3>
-        </label>
-        <Checkbox
-          checked={applyGaussian}
-          onChange={(e) => setApplyGaussian(e.target.checked)}
-          disabled={props.disabled}
-        />
-      </FlexRowAlignCenter>
     </FlexRow>
   );
 }

@@ -69,12 +69,10 @@ export function ToggleButtonWithConfig(inputProps: ToggleButtonWithConfigProps):
 
   const onClick = (): void => {
     if (props.visible) {
-      if (!configMenuOpen) {
-        setConfigMenuOpen(true);
-      } else {
-        setConfigMenuOpen(false);
+      if (configMenuOpen) {
         props.setVisible(false);
       }
+      setConfigMenuOpen((value) => !value);
     } else {
       props.setVisible(true);
     }
