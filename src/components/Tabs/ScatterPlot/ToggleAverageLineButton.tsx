@@ -74,7 +74,7 @@ export default function ToggleAverageLineButton(props: ToggleAverageLineButtonPr
       setVisible={setShowAverageLine}
       configMenuContents={configMenu}
       configMenuPlacement="vertical"
-      popupContainer={props.popupContainer}
+      tooltipPopupContainer={props.popupContainer}
       visibleIcon={<LinePlotIconSVG />}
       hiddenIcon={<LinePlotSlashIconSVG />}
       outlined={true}

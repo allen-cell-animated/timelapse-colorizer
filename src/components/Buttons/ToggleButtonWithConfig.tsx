@@ -1,5 +1,5 @@
 import { Button, Popover } from "antd";
-import React, { type ReactElement, type ReactNode, useContext, useRef, useState } from "react";
+import React, { type ReactElement, type ReactNode, useContext, useEffect, useRef, useState } from "react";
 
 import { ImagesIconSVG, ImagesSlashIconSVG } from "src/assets";
 import { TabType } from "src/colorizer";
@@ -22,7 +22,7 @@ export type ToggleButtonWithConfigProps = {
   visibleIcon?: ReactNode;
   hiddenIcon?: ReactNode;
   settingsLinkText?: string;
-  popupContainer?: HTMLElement;
+  tooltipPopupContainer?: HTMLElement;
   outlined?: boolean;
 };
 
@@ -46,6 +46,7 @@ export function ToggleButtonWithConfig(inputProps: ToggleButtonWithConfigProps):
   const [configMenuOpen, setConfigMenuOpen] = useState(false);
   const popupContainerRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
+  const configMenuContainerRef = useRef<HTMLDivElement>(null);
 
   let buttonActionVerb: string;
   if (props.visible) {
@@ -81,7 +82,7 @@ export function ToggleButtonWithConfig(inputProps: ToggleButtonWithConfigProps):
 
   // Passed contents + link to settings in the config menu + close button
   const configMenuContents = (
-    <FlexColumn>
+    <FlexColumn ref={configMenuContainerRef}>
       {typeof props.configMenuContents === "function"
         ? props.configMenuContents(setConfigMenuOpen)
         : props.configMenuContents}
@@ -113,13 +114,27 @@ export function ToggleButtonWithConfig(inputProps: ToggleButtonWithConfigProps):
   const hiddenStyle = props.outlined ? "outlined" : "link";
   const buttonType = isVisible ? "primary" : hiddenStyle;
 
+  // Close the menu when the user is no longer focused
+  useEffect(() => {
+    function onBlur(event: FocusEvent): void {
+      const relatedTarget = event.relatedTarget as Node | null;
+      if (configMenuContainerRef.current && !configMenuContainerRef.current.contains(relatedTarget)) {
+        setConfigMenuOpen(false);
+      }
+    }
+    configMenuContainerRef.current?.addEventListener("focusout", onBlur, true);
+    return () => {
+      configMenuContainerRef.current?.removeEventListener("focusout", onBlur, true);
+    };
+  }, [configMenuContainerRef.current]);
+
   return (
     <div ref={popupContainerRef}>
       <Popover
         content={configMenuContents}
         placement={props.configMenuPlacement === "vertical" ? "bottom" : "left"}
         trigger={["click"]}
-        getPopupContainer={() => props.popupContainer || popupContainerRef.current || document.body}
+        getPopupContainer={() => popupContainerRef.current || document.body}
         onOpenChange={(open) => setConfigMenuOpen(open)}
         open={configMenuOpen}
       >
@@ -128,7 +143,7 @@ export function ToggleButtonWithConfig(inputProps: ToggleButtonWithConfigProps):
           placement={props.configMenuPlacement === "vertical" ? "top" : "right"}
           subtitleList={tooltipContents}
           tooltipRef={tooltipRef}
-          getPopupContainer={() => props.popupContainer || popupContainerRef.current || document.body}
+          getPopupContainer={() => props.tooltipPopupContainer || popupContainerRef.current || document.body}
         >
           <IconButton type={buttonType} onClick={onClick} disabled={props.disabled}>
             {props.visible ? props.visibleIcon : props.hiddenIcon}
