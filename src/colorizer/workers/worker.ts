@@ -6,13 +6,13 @@ import { computeCorrelations } from "src/colorizer/utils/correlation";
 import { columnsToCsv, type CsvDataColumn } from "src/colorizer/utils/csv_utils";
 import { type LoadedData, loadFromJsonUrl, loadFromParquetUrl } from "src/colorizer/utils/data_load_utils";
 import {
+  averageVectorFlowField,
   binAndSumFeatureVectors,
   calculateMotionDeltas,
   constructAllTracksFromData,
   convolveVectorFlowField,
   filterVectorFlowFieldData,
   make3dGaussianKernel,
-  normalizeVectorFlowFieldData,
 } from "src/colorizer/utils/math_utils";
 import { arrayToDataTextureInfo } from "src/colorizer/utils/texture_utils";
 
@@ -69,10 +69,10 @@ async function getVectorFlowField(
   zFeature: FeatureRangeData,
   inRangeLUT?: Uint8Array,
   outliers?: Uint8Array,
-  smoothingBandwidth?: number
+  gaussianBandwidth?: number
 ): Promise<TransferType> {
   const tracks = constructAllTracksFromData(trackIds, times);
-  const rawFlowFieldData = binAndSumFeatureVectors(
+  const vectorSumData = binAndSumFeatureVectors(
     tracks,
     xFeature.data,
     yFeature.data,
@@ -85,30 +85,30 @@ async function getVectorFlowField(
     outliers
   );
 
-  let flowFieldData;
-  if (smoothingBandwidth) {
+  let vectorFlowFieldData;
+  if (gaussianBandwidth) {
     const nbins = xFeature.bins;
-    const kernelSize = Math.ceil(smoothingBandwidth * nbins) * 2 + 1;
-    const gaussianKernel = make3dGaussianKernel(kernelSize, smoothingBandwidth * nbins);
-    const smoothedFlowFieldData = convolveVectorFlowField(
-      rawFlowFieldData,
+    const kernelSize = Math.ceil(gaussianBandwidth * nbins) * 4 + 1;
+    const gaussianKernel = make3dGaussianKernel(kernelSize, gaussianBandwidth * nbins);
+    vectorFlowFieldData = convolveVectorFlowField(
+      vectorSumData,
       [xFeature.bins, yFeature.bins, zFeature.bins],
       gaussianKernel
     );
-    flowFieldData = filterVectorFlowFieldData(smoothedFlowFieldData);
   } else {
-    const normalizedFlowFieldData = normalizeVectorFlowFieldData(rawFlowFieldData);
-    flowFieldData = filterVectorFlowFieldData(normalizedFlowFieldData);
+    vectorFlowFieldData = averageVectorFlowField(vectorSumData);
   }
 
-  return new Transfer(flowFieldData, [
-    flowFieldData.xPos.buffer,
-    flowFieldData.yPos.buffer,
-    flowFieldData.zPos.buffer,
-    flowFieldData.xData.buffer,
-    flowFieldData.yData.buffer,
-    flowFieldData.zData.buffer,
-    flowFieldData.count.buffer,
+  vectorFlowFieldData = filterVectorFlowFieldData(vectorFlowFieldData);
+
+  return new Transfer(vectorFlowFieldData, [
+    vectorFlowFieldData.xPos.buffer,
+    vectorFlowFieldData.yPos.buffer,
+    vectorFlowFieldData.zPos.buffer,
+    vectorFlowFieldData.xData.buffer,
+    vectorFlowFieldData.yData.buffer,
+    vectorFlowFieldData.zData.buffer,
+    vectorFlowFieldData.count.buffer,
   ]);
 }
 
