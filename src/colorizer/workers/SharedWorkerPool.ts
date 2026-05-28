@@ -102,7 +102,8 @@ export default class SharedWorkerPool {
    * smoothing kernel to the binned vectors.
    *
    * @param dataset The dataset containing the features and track data to
-   * compute the flow field from.
+   * compute the flow field from. If the dataset contains outlier data, outliers
+   * will be excluded from the flow field calculation.
    * @param xFeatureKey The feature key for the x-axis of the flow field.
    * @param yFeatureKey The feature key for the y-axis of the flow field.
    * @param zFeatureKey The feature key for the z-axis of the flow field.
