@@ -28,6 +28,11 @@ export type ScatterPlotSliceState = {
   // Contours
   scatterShowContours: boolean;
   scatterContourCount: number;
+
+  // Average line
+  scatterShowAverageLine: boolean;
+  scatterAverageLineWindow: number;
+  scatterAverageLineWidth: number;
 };
 
 export type ScatterPlotSliceSerializableState = Pick<
@@ -39,6 +44,9 @@ export type ScatterPlotSliceSerializableState = Pick<
   | "scatterHistogramBins"
   | "scatterShowContours"
   | "scatterContourCount"
+  | "scatterShowAverageLine"
+  | "scatterAverageLineWindow"
+  | "scatterAverageLineWidth"
 >;
 
 export type ScatterPlotSliceActions = {
@@ -49,6 +57,9 @@ export type ScatterPlotSliceActions = {
   setScatterRangeType: (rangeType: PlotRangeType) => void;
   setScatterShowContours: (showContours: boolean) => void;
   setScatterContourCount: (count: number) => void;
+  setScatterShowAverageLine: (showAverageLine: boolean) => void;
+  setScatterAverageLineWindow: (windowSize: number) => void;
+  setScatterAverageLineWidth: (width: number) => void;
 };
 
 export type ScatterPlotSlice = ScatterPlotSliceState & ScatterPlotSliceActions;
@@ -64,11 +75,17 @@ export const createScatterPlotSlice: StateCreator<DatasetSlice & ScatterPlotSlic
   // State
   scatterXAxis: null,
   scatterYAxis: null,
+  scatterRangeType: PlotRangeType.ALL_TIME,
+
   scatterShowHistograms: true,
   scatterHistogramBins: 20,
-  scatterRangeType: PlotRangeType.ALL_TIME,
+
   scatterShowContours: false,
   scatterContourCount: 10,
+
+  scatterShowAverageLine: false,
+  scatterAverageLineWindow: 5,
+  scatterAverageLineWidth: 1.6,
 
   // Actions
   setScatterXAxis: (xAxis) => {
@@ -101,6 +118,21 @@ export const createScatterPlotSlice: StateCreator<DatasetSlice & ScatterPlotSlic
       return;
     }
     set({ scatterContourCount: count });
+  },
+  setScatterShowAverageLine: (showAverageLine) => set({ scatterShowAverageLine: showAverageLine }),
+  setScatterAverageLineWindow: (windowSize) => {
+    if (windowSize <= 0 || !isFinite(windowSize)) {
+      return;
+    }
+    windowSize = Math.round(windowSize);
+    const nextOddInteger = Math.floor(windowSize / 2) * 2 + 1;
+    set({ scatterAverageLineWindow: nextOddInteger });
+  },
+  setScatterAverageLineWidth: (width) => {
+    if (width <= 0 || !isFinite(width)) {
+      return;
+    }
+    set({ scatterAverageLineWidth: width });
   },
 });
 
@@ -149,6 +181,16 @@ export const serializeScatterPlotSlice = (slice: Partial<ScatterPlotSliceSeriali
   if (slice.scatterContourCount !== undefined) {
     ret[UrlParam.SCATTERPLOT_CONTOUR_COUNT] = slice.scatterContourCount.toString();
   }
+
+  if (slice.scatterShowAverageLine !== undefined) {
+    ret[UrlParam.SCATTERPLOT_SHOW_AVERAGE_LINE] = encodeBoolean(slice.scatterShowAverageLine);
+  }
+  if (slice.scatterAverageLineWindow !== undefined) {
+    ret[UrlParam.SCATTERPLOT_AVERAGE_LINE_WINDOW] = slice.scatterAverageLineWindow.toString();
+  }
+  if (slice.scatterAverageLineWidth !== undefined) {
+    ret[UrlParam.SCATTERPLOT_AVERAGE_LINE_WIDTH] = slice.scatterAverageLineWidth.toString();
+  }
   return ret;
 };
 
@@ -163,6 +205,9 @@ export const selectScatterPlotSliceSerializationDeps = (
   scatterRangeType: slice.scatterRangeType,
   scatterShowContours: slice.scatterShowContours,
   scatterContourCount: slice.scatterContourCount,
+  scatterShowAverageLine: slice.scatterShowAverageLine,
+  scatterAverageLineWindow: slice.scatterAverageLineWindow,
+  scatterAverageLineWidth: slice.scatterAverageLineWidth,
 });
 
 export const loadScatterPlotSliceFromParams = (
@@ -215,6 +260,26 @@ export const loadScatterPlotSliceFromParams = (
     const contourCount = parseInt(scatterContourCountParam, 10);
     if (!isNaN(contourCount) && contourCount > 0) {
       slice.setScatterContourCount(contourCount);
+    }
+  }
+
+  // Average line
+  const scatterShowAverageLine = decodeBoolean(params.get(UrlParam.SCATTERPLOT_SHOW_AVERAGE_LINE));
+  if (scatterShowAverageLine !== undefined) {
+    slice.setScatterShowAverageLine(scatterShowAverageLine);
+  }
+  const scatterAverageLineWindowParam = params.get(UrlParam.SCATTERPLOT_AVERAGE_LINE_WINDOW);
+  if (scatterAverageLineWindowParam !== null && scatterAverageLineWindowParam !== undefined) {
+    const windowSize = parseInt(scatterAverageLineWindowParam, 10);
+    if (!isNaN(windowSize) && windowSize > 0) {
+      slice.setScatterAverageLineWindow(windowSize);
+    }
+  }
+  const scatterAverageLineWidthParam = params.get(UrlParam.SCATTERPLOT_AVERAGE_LINE_WIDTH);
+  if (scatterAverageLineWidthParam !== null && scatterAverageLineWidthParam !== undefined) {
+    const lineWidth = parseFloat(scatterAverageLineWidthParam);
+    if (!isNaN(lineWidth) && lineWidth > 0) {
+      slice.setScatterAverageLineWidth(lineWidth);
     }
   }
 };

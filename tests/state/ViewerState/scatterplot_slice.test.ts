@@ -90,6 +90,54 @@ describe("ScatterplotSlice", () => {
     });
   });
 
+  describe("setScatterAverageLineWindow", () => {
+    it("ignores negative or infinite numbers for average line window size", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      const defaultWindow = result.current.scatterAverageLineWindow;
+      const values = [-1, NaN, Infinity];
+      for (const value of values) {
+        act(() => {
+          result.current.setScatterAverageLineWindow(value);
+        });
+        expect(result.current.scatterAverageLineWindow).toBe(defaultWindow);
+      }
+    });
+
+    it("can set positive integers", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      const values = [
+        [1, 1],
+        [3, 3],
+        [5, 5],
+        [13, 13],
+      ];
+      for (const [input, expected] of values) {
+        act(() => {
+          result.current.setScatterAverageLineWindow(input);
+        });
+        expect(result.current.scatterAverageLineWindow).toBe(expected);
+      }
+    });
+
+    it("rounds to the next positive odd integer", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      const values = [
+        [1.4, 1],
+        [2, 3],
+        [2.5, 3],
+        [4, 5],
+        [6, 7],
+        [12, 13],
+      ];
+      for (const [input, expected] of values) {
+        act(() => {
+          result.current.setScatterAverageLineWindow(input);
+        });
+        expect(result.current.scatterAverageLineWindow).toBe(expected);
+      }
+    });
+  });
+
   describe("setScatterAxes", () => {
     it("can set axes to any value when dataset is not set", () => {
       const { result } = renderHook(() => useViewerStateStore());

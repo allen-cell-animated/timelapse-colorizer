@@ -8,8 +8,8 @@ import { useShallow } from "zustand/shallow";
 import { SwitchIconSVG } from "src/assets";
 import type { Dataset } from "src/colorizer";
 import { TIME_FEATURE_KEY } from "src/colorizer/Dataset";
-import { PlotRangeType } from "src/colorizer/types";
-import { hasAnyValueChanged } from "src/colorizer/utils/data_utils";
+import { PlotRangeType, SelectionOutlineColorMode } from "src/colorizer/types";
+import { getMovingAverage, hasAnyValueChanged } from "src/colorizer/utils/data_utils";
 import type { ShowAlertBannerCallback } from "src/components/Banner/hooks";
 import IconButton from "src/components/Buttons/IconButton";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
@@ -27,12 +27,15 @@ import {
   colorizeScatterplotPoints,
   estimateTextWidthPxForCategories,
   filterDataByRange,
+  getAverageLineCurrentFrameShapes,
+  getAverageLineHoverTemplate,
   getAxisLayoutsFromRange,
   getCurrentFrameShapes,
   getHistogramBins,
   getScatterplotDataAsCsv,
   isHistogramEvent,
   makeLineTrace,
+  removeNanDataIndices,
 } from "src/utils/scatter_plot_data_utils";
 import { areAnyHotkeysPressed } from "src/utils/user_input";
 
@@ -44,6 +47,8 @@ const PLOTLY_CONFIG: Partial<Plotly.Config> = {
 };
 
 const DEFAULT_RANGE_TYPE = PlotRangeType.ALL_TIME;
+const TIME_LINE_TRACE_COLOR = "#aaaaaa";
+const AVERAGE_LINE_TRACE_COLOR = "#444444";
 
 type ScatterPlotTabProps = {
   isVisible: boolean;
@@ -71,6 +76,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const rangeType = useViewerStateStore((state) => state.scatterRangeType);
   const selectedFeatureKey = useViewerStateStore((state) => state.featureKey);
   const tracks = useViewerStateStore((state) => state.tracks);
+  const trackColors = useViewerStateStore((state) => state.trackColors);
+  const outlineColorMode = useViewerStateStore((state) => state.outlineColorMode);
   const addTracks = useViewerStateStore((state) => state.addTracks);
   const toggleTrack = useViewerStateStore((state) => state.toggleTrack);
   const setTracks = useViewerStateStore((state) => state.setTracks);
@@ -85,10 +92,24 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const showContours = useViewerStateStore((state) => state.scatterShowContours);
   const _rawContourCount = useViewerStateStore((state) => state.scatterContourCount);
   const contourCount = useDebounce(_rawContourCount, 100);
+
+  const showAverageLine = useViewerStateStore((state) => state.scatterShowAverageLine);
+  const averageLineWindow = useDebounce(
+    useViewerStateStore((state) => state.scatterAverageLineWindow),
+    100
+  );
+  const averageLineWidth = useDebounce(
+    useViewerStateStore((state) => state.scatterAverageLineWidth),
+    100
+  );
+
   const viewMode = useViewerStateStore((state) => state.viewMode);
 
   const xAxisPlotRange = useRef<[number, number]>([-Infinity, Infinity]);
   const yAxisPlotRange = useRef<[number, number]>([-Infinity, Infinity]);
+  // Stores computed average line points so markers for the current time can be
+  // updated in the layout pass.
+  const trackToAverageLineData = useRef<Map<number, { xData: number[]; yData: number[] }>>(new Map());
 
   const resetXAxisPlotRange = useCallback((): void => {
     xAxisPlotRange.current = [-Infinity, Infinity];
@@ -146,6 +167,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     rangeType !== lastRenderedState.current.rangeType ||
     xAxisFeatureKey !== lastRenderedState.current.xAxisFeatureKey ||
     yAxisFeatureKey !== lastRenderedState.current.yAxisFeatureKey;
+
+  const useTrackColors = tracks.size > 1 && outlineColorMode === SelectionOutlineColorMode.USE_PALETTE;
 
   useEffect(() => {
     if (hasConfigChanged) {
@@ -322,6 +345,11 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     histogramBins,
     showContours,
     contourCount,
+    showAverageLine,
+    averageLineWindow,
+    averageLineWidth,
+    trackColors,
+    outlineColorMode,
     rangeType,
     tracks,
     isVisible,
@@ -347,7 +375,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     }
 
     // Filter data by the range type, if applicable
-    const pointsData = filterDataByRange(dataset, currentFrame, rawXData, rawYData, rangeType);
+    const pointsData = removeNanDataIndices(filterDataByRange(dataset, currentFrame, rawXData, rawYData, rangeType));
     if (pointsData === undefined) {
       clearPlotAndStopRender();
       return;
@@ -425,7 +453,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       traces.push(yHistogram);
     }
 
-    // Render current track as an extra trace.
+    trackToAverageLineData.current.clear();
+    // Render current tracks as extra traces.
     for (const track of tracks.values()) {
       const trackData = filterDataByRange(
         dataset,
@@ -436,12 +465,33 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         track
       );
       if (trackData && rangeType !== PlotRangeType.CURRENT_FRAME) {
-        // Render an extra trace for lines connecting the points in the current track when time is a feature.
-        if (isUsingTime) {
+        // Show rolling average line
+        if (showAverageLine) {
+          const lineXData = getMovingAverage(trackData.xData, averageLineWindow, true);
+          const lineYData = getMovingAverage(trackData.yData, averageLineWindow, true);
+          const trackColor = trackColors.get(track.trackId);
+          const lineConfig = {
+            lineWidth: averageLineWidth,
+            color: useTrackColors ? "#" + trackColor?.getHexString() : AVERAGE_LINE_TRACE_COLOR,
+            hoverTemplate: getAverageLineHoverTemplate(track.trackId, dataset, xAxisFeatureKey, yAxisFeatureKey),
+            customData: track.times.map((time) => [time.toString()]),
+          };
+
+          traces.push(makeLineTrace(lineXData, lineYData, trackData.objectIds, lineConfig));
+          trackToAverageLineData.current.set(track.trackId, { xData: lineXData, yData: lineYData });
+        } else if (isUsingTime) {
+          // Render an extra trace for lines connecting the points in the current track when time is a feature.
+          const stackedCustomData = trackData.trackIds.map((id, index) => {
+            return [id.toString(), trackData.segIds[index].toString()];
+          });
           traces.push(
-            makeLineTrace(trackData.xData, trackData.yData, trackData.objectIds, trackData.segIds, trackData.trackIds)
+            makeLineTrace(trackData.xData, trackData.yData, trackData.objectIds, {
+              customData: stackedCustomData,
+              color: TIME_LINE_TRACE_COLOR,
+            })
           );
         }
+
         // Connect track points as a line trace.
         const outOfRangeOutlineColor = outOfRangeDrawSettings.color.clone().multiplyScalar(0.8);
         const trackTraces = colorizeScatterplotPoints(colorizeConfig, xAxisFeatureKey, yAxisFeatureKey, trackData, {
@@ -456,6 +506,16 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     }
 
     // Render crosshair at the current time for all tracks.
+    if (showAverageLine) {
+      shapes.push(
+        ...getAverageLineCurrentFrameShapes(
+          tracks,
+          trackToAverageLineData.current,
+          currentFrame,
+          useTrackColors ? trackColors : undefined
+        )
+      );
+    }
     shapes.push(
       ...getCurrentFrameShapes(
         dataset,
@@ -551,8 +611,19 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     const shouldSkipFrameChangeRender = hasOnlyFrameChanged && rangeType === PlotRangeType.ALL_TIME;
     if (shouldSkipFrameChangeRender && plotDivRef.current !== null) {
       // Only the frame changed, so we can skip the render and just do a relayout instead.
-      Plotly.relayout(plotDivRef.current, {
-        shapes: getCurrentFrameShapes(
+      const shapes = [];
+      if (showAverageLine) {
+        shapes.push(
+          ...getAverageLineCurrentFrameShapes(
+            tracks,
+            trackToAverageLineData.current,
+            currentFrame,
+            useTrackColors ? trackColors : undefined
+          )
+        );
+      }
+      shapes.push(
+        ...getCurrentFrameShapes(
           dataset,
           xAxisFeatureKey,
           yAxisFeatureKey,
@@ -561,7 +632,10 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
           tracks,
           rawXDataRef.current,
           rawYDataRef.current
-        ),
+        )
+      );
+      Plotly.relayout(plotDivRef.current, {
+        shapes,
       });
       return;
     }

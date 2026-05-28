@@ -34,6 +34,7 @@ const COLOR_RAMP_SUBSAMPLES = 100;
 const NUM_RESERVED_BUCKETS = 2;
 const BUCKET_INDEX_OUTOFRANGE = 0;
 const BUCKET_INDEX_OUTLIERS = 1;
+const DEFAULT_AVERAGE_LINE_COLOR = new Color("#444");
 
 export type DataArray = Uint32Array | Float32Array | number[];
 
@@ -60,13 +61,11 @@ export type PointsData = {
 /**
  * Removes data from all indices where xData or yData is NaN or Infinity.
  */
-const sanitizeNumericDataArrays = (
-  xData: DataArray,
-  yData: DataArray,
-  objectIds: number[],
-  segIds: number[],
-  trackIds: number[]
-): { xData: DataArray; yData: DataArray; objectIds: number[]; segIds: number[]; trackIds: number[] } => {
+export const removeNanDataIndices = (pointsData: PointsData | undefined): PointsData | undefined => {
+  if (!pointsData) {
+    return undefined;
+  }
+  const { xData, yData, objectIds, segIds, trackIds } = pointsData;
   // Boolean array, true if both x and y are not NaN/infinity
   const isFiniteLut = Array.from(Array(xData.length)).map(
     (_, i) => Number.isFinite(xData[i]) && Number.isFinite(yData[i])
@@ -151,8 +150,7 @@ export const filterDataByRange = (
     xData = rawXData;
     yData = rawYData;
   }
-  // TODO: Consider moving this or making it conditional if it causes performance issues.
-  return sanitizeNumericDataArrays(xData, yData, objectIds, segIds, trackIds);
+  return { xData, yData, objectIds, segIds, trackIds };
 };
 
 /**
@@ -475,6 +473,37 @@ export const colorizeScatterplotPoints = (
 };
 
 /**
+ * Returns a series of shapes that mark the current time on each track's moving
+ * average line.
+ */
+export const getAverageLineCurrentFrameShapes = (
+  tracks: Map<number, Track>,
+  tracksToAverageLineData: Map<number, { xData: number[]; yData: number[] }>,
+  currentFrame: number,
+  trackColors?: Map<number, Color>
+): Partial<Shape>[] => {
+  const lineShapes: Partial<Shape>[] = [];
+  for (const [trackId, track] of tracks) {
+    const lineData = tracksToAverageLineData.get(trackId);
+    if (!lineData) {
+      continue;
+    }
+    const index = track.times.indexOf(currentFrame);
+    if (index === -1) {
+      continue;
+    }
+    const x = lineData.xData[index];
+    const y = lineData.yData[index];
+    if (isNaN(x) || isNaN(y)) {
+      continue;
+    }
+    const color = trackColors?.get(trackId) || DEFAULT_AVERAGE_LINE_COLOR;
+    lineShapes.push(getCircleShape(x, y, 4, `#${color.getHexString()}`));
+  }
+  return lineShapes;
+};
+
+/**
  * Returns an array of shapes that draw a crosshair + colored scatterplot dot over the
  * points in selected tracks visible in the current frame.
  */
@@ -639,29 +668,45 @@ export function makeLineTrace(
   xData: DataArray,
   yData: DataArray,
   objectIds: number[],
-  segIds: number[],
-  trackIds: number[],
-  hovertemplate?: string
+  config: Partial<{
+    customData: string[][];
+    lineWidth: number;
+    color: string;
+    hoverTemplate: string;
+  }>
 ): Partial<PlotData> {
-  const stackedCustomData = trackIds.map((id, index) => {
-    return [id.toString(), segIds[index].toString()];
-  });
   return {
     x: xData,
     y: yData,
     type: "scattergl",
     mode: "lines",
     line: {
-      color: "#aaaaaa",
+      width: config.lineWidth,
+      color: config.color,
+      smoothing: 1.2,
     },
     ids: objectIds.map((id) => id.toString()),
-    customdata: stackedCustomData,
+    customdata: config.customData,
     hoverinfo: "skip", // will be overridden if hovertemplate is provided
-    hovertemplate,
+    hovertemplate: config.hoverTemplate,
   };
 }
 
-function getLineShape(x: number, y: number, xDim: number, yDim: number, color: string, width: number): Partial<Shape> {
+export function getAverageLineHoverTemplate(
+  trackId: number,
+  dataset: Dataset,
+  xAxisFeatureKey: string,
+  yAxisFeatureKey: string
+): string {
+  return (
+    `<b>Moving Average</b>` +
+    `<br>${dataset.getFeatureName(xAxisFeatureKey)}: %{x} ${dataset.getFeatureUnits(xAxisFeatureKey)}` +
+    `<br>${dataset.getFeatureName(yAxisFeatureKey)}: %{y} ${dataset.getFeatureUnits(yAxisFeatureKey)}` +
+    `<br>Track ID: ${trackId}<br>Time: %{customdata[0]}<extra></extra>`
+  );
+}
+
+function getPlotlyShapeBase(x: number, y: number, xDim: number, yDim: number): Partial<Shape> {
   return {
     xanchor: x,
     yanchor: y,
@@ -671,8 +716,25 @@ function getLineShape(x: number, y: number, xDim: number, yDim: number, color: s
     y1: +yDim / 2,
     xsizemode: "pixel",
     ysizemode: "pixel",
-    type: "line",
     layer: "above",
+  };
+}
+
+function getCircleShape(x: number, y: number, diameter: number, color: string): Partial<Shape> {
+  return {
+    ...getPlotlyShapeBase(x, y, diameter, diameter),
+    type: "circle",
+    fillcolor: color,
+    line: {
+      width: 1,
+    },
+  };
+}
+
+function getLineShape(x: number, y: number, xDim: number, yDim: number, color: string, width: number): Partial<Shape> {
+  return {
+    ...getPlotlyShapeBase(x, y, xDim, yDim),
+    type: "line",
     line: {
       color,
       width,
