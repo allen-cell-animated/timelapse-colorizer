@@ -69,7 +69,7 @@ export default function ToggleAverageLineButton(props: ToggleAverageLineButtonPr
 
   return (
     <ToggleButtonWithConfig
-      name={"moving average line"}
+      name="moving average line"
       visible={showAverageLine}
       setVisible={setShowAverageLine}
       configMenuContents={configMenu}

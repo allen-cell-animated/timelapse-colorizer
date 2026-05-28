@@ -6,11 +6,13 @@ import {
   DISPLAY_COLOR_RAMP_LINEAR_KEYS,
 } from "src/colorizer";
 import ButtonWithPopover from "src/components/Buttons/ButtonWithConfig";
+import InlineHint from "src/components/Display/InlineHint";
 import ColorRampSelection from "src/components/Dropdowns/ColorRampDropdown";
 import LabeledSlider from "src/components/Inputs/LabeledSlider";
 import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
 import { useViewerStateStore } from "src/state";
 import { StyledHorizontalRule } from "src/styles/components";
+import { FlexRow } from "src/styles/utils";
 
 type Plot3dConeControlsProps = {
   disabled?: boolean;
@@ -34,9 +36,16 @@ export default function Plot3dAppearanceControls(props: Plot3dConeControlsProps)
   const setConeColorRampKey = useViewerStateStore((state) => state.setPlot3dVectorColorRampKey);
   const setConeColorRampReversed = useViewerStateStore((state) => state.setPlot3dVectorColorRampReversed);
 
+  const windowSizeHint = <InlineHint title="Total number of points to average over, including past and future." />;
+  const windowSizeLabel = <FlexRow $gap={6}>Line window size {windowSizeHint}</FlexRow>;
+
   const configMenuContents = (
     <SettingsContainer labelWidth="140px">
-      <SettingsItem label={"Cone size"} htmlFor={Plot3dConeControlsHtmlIds.CONE_SIZE_SLIDER}>
+      <SettingsItem
+        label={"Cone size"}
+        htmlFor={Plot3dConeControlsHtmlIds.CONE_SIZE_SLIDER}
+        style={{ marginBottom: 6 }}
+      >
         <div style={{ width: "180px" }}>
           <LabeledSlider
             id={Plot3dConeControlsHtmlIds.CONE_SIZE_SLIDER}
@@ -75,7 +84,11 @@ export default function Plot3dAppearanceControls(props: Plot3dConeControlsProps)
         <StyledHorizontalRule />
       </div>
 
-      <SettingsItem label={"Line Window Size"} htmlFor={Plot3dConeControlsHtmlIds.MOVING_AVERAGE_WINDOW_SLIDER}>
+      <SettingsItem
+        label={windowSizeLabel}
+        htmlFor={Plot3dConeControlsHtmlIds.MOVING_AVERAGE_WINDOW_SLIDER}
+        style={{ marginBottom: "6px" }}
+      >
         <div style={{ width: "180px" }}>
           <LabeledSlider
             id={Plot3dConeControlsHtmlIds.MOVING_AVERAGE_WINDOW_SLIDER}
@@ -98,7 +111,7 @@ export default function Plot3dAppearanceControls(props: Plot3dConeControlsProps)
   return (
     <>
       <ButtonWithPopover
-        label={"Appearance"}
+        label="Appearance"
         popoverContent={configMenuContents}
         buttonProps={{ type: "default" }}
       ></ButtonWithPopover>

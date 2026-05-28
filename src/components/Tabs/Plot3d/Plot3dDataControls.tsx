@@ -3,6 +3,7 @@ import React, { type ReactElement } from "react";
 
 import ButtonWithPopover from "src/components/Buttons/ButtonWithConfig";
 import InlineHint from "src/components/Display/InlineHint";
+import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import LabeledSlider from "src/components/Inputs/LabeledSlider";
 import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
 import { useViewerStateStore } from "src/state";
@@ -13,15 +14,15 @@ type Plot3dLineControlsProps = {
 };
 
 const enum Plot3dDataControlsHtmlIds {
-  CONE_SIZE_SLIDER = "plot3d-cone-size-slider",
-  CONE_COLOR_RAMP_SELECTION = "plot3d-cone-color-ramp-selection",
-  THRESHOLD_SLIDER = "plot3d-cone-threshold-slider",
-  GAUSSIAN_BANDWIDTH_SLIDER = "plot3d-cone-gaussian-bandwidth-slider",
-  GAUSSIAN_WEIGHTING_TOGGLE = "plot3d-cone-gaussian-weighting-toggle",
+  VECTOR_BINS_DROPDOWN = "plot3d-data-vector-bins-dropdown",
+  GAUSSIAN_BANDWIDTH_SLIDER = "plot3d-data-gaussian-bandwidth-slider",
+  GAUSSIAN_WEIGHTING_TOGGLE = "plot3d-data-gaussian-weighting-toggle",
 }
 
 // TODO: Move properties into global state instead of passing via props.
 export default function Plot3dDataControls(props: Plot3dLineControlsProps): ReactElement {
+  const bins = useViewerStateStore((state) => state.plot3dVectorBins);
+  const setBins = useViewerStateStore((state) => state.setPlot3dVectorBins);
   const useGaussian = useViewerStateStore((state) => state.plot3dUseGaussian);
   const setUseGaussian = useViewerStateStore((state) => state.setPlot3dUseGaussian);
   const gaussianBandwidthPct = useViewerStateStore((state) => state.plot3dGaussianBandwidthPct);
@@ -38,7 +39,24 @@ export default function Plot3dDataControls(props: Plot3dLineControlsProps): Reac
   const gaussianLabel = <FlexRowAlignCenter $gap={4}>Gaussian weighting {gaussianHint}</FlexRowAlignCenter>;
 
   const configMenuContents = (
-    <SettingsContainer labelWidth="140px">
+    <SettingsContainer labelWidth="145px" style={{ width: "325px" }}>
+      <SettingsItem label="Vector bins" htmlFor={Plot3dDataControlsHtmlIds.VECTOR_BINS_DROPDOWN}>
+        <SelectionDropdown
+          id={Plot3dDataControlsHtmlIds.VECTOR_BINS_DROPDOWN}
+          selected={bins.toString()}
+          items={[10, 20, 30, 40, 50].map((num) => ({ value: num.toString(), label: num.toString() }))}
+          onChange={(value: string) => {
+            const parsedValue = parseInt(value, 10);
+            if (!isNaN(parsedValue) && parsedValue > 0) {
+              setBins(parsedValue);
+            }
+          }}
+          width="100px"
+          controlWidth="70px"
+          disabled={props.disabled}
+        ></SelectionDropdown>
+      </SettingsItem>
+
       <SettingsItem label={gaussianLabel} htmlFor={Plot3dDataControlsHtmlIds.GAUSSIAN_WEIGHTING_TOGGLE}>
         <Checkbox
           id={Plot3dDataControlsHtmlIds.GAUSSIAN_WEIGHTING_TOGGLE}
@@ -47,24 +65,30 @@ export default function Plot3dDataControls(props: Plot3dLineControlsProps): Reac
           disabled={props.disabled}
         />
       </SettingsItem>
-      <SettingsItem label="Gaussian bandwidth" htmlFor={Plot3dDataControlsHtmlIds.GAUSSIAN_BANDWIDTH_SLIDER}>
-        <div style={{ width: "180px" }}>
-          <LabeledSlider
-            id={Plot3dDataControlsHtmlIds.GAUSSIAN_BANDWIDTH_SLIDER}
-            type="value"
-            value={gaussianBandwidthPct}
-            onChange={setGaussianBandwidthPct}
-            minInputBound={0}
-            minSliderBound={0}
-            maxInputBound={100}
-            maxSliderBound={30}
-            step={1}
-            marks={[15]}
-            numberFormatter={(number) => number?.toFixed(0) + "%"}
-            disabled={props.disabled}
-          ></LabeledSlider>
-        </div>
-      </SettingsItem>
+      {useGaussian && (
+        <SettingsItem
+          label="Gaussian bandwidth"
+          htmlFor={Plot3dDataControlsHtmlIds.GAUSSIAN_BANDWIDTH_SLIDER}
+          style={{ marginBottom: 6 }}
+        >
+          <div style={{ width: "180px" }}>
+            <LabeledSlider
+              id={Plot3dDataControlsHtmlIds.GAUSSIAN_BANDWIDTH_SLIDER}
+              type="value"
+              value={gaussianBandwidthPct}
+              onChange={setGaussianBandwidthPct}
+              minInputBound={0}
+              minSliderBound={0}
+              maxInputBound={100}
+              maxSliderBound={30}
+              step={1}
+              marks={[15]}
+              numberFormatter={(number) => number?.toFixed(0) + "%"}
+              disabled={props.disabled || !useGaussian}
+            ></LabeledSlider>
+          </div>
+        </SettingsItem>
+      )}
     </SettingsContainer>
   );
 

@@ -5,9 +5,16 @@ type ButtonWithPopoverProps = {
   label: ReactNode;
   buttonProps?: React.ComponentProps<typeof Button>;
   popoverContent: ReactNode;
+  showClose?: boolean;
 };
 
-export default function ButtonWithPopover(props: ButtonWithPopoverProps): ReactElement {
+const defaultProps = {
+  showClose: true,
+};
+
+export default function ButtonWithPopover(inputProps: ButtonWithPopoverProps): ReactElement {
+  const props = { ...defaultProps, ...inputProps };
+
   const [configMenuOpen, setConfigMenuOpen] = useState(false);
   const popupContainerRef = useRef<HTMLDivElement>(null);
   const popoverContentRef = useRef<HTMLDivElement>(null);
@@ -26,10 +33,23 @@ export default function ButtonWithPopover(props: ButtonWithPopoverProps): ReactE
     };
   }, [popoverContentRef.current]);
 
+  const popoverContent = (
+    <div>
+      {props.popoverContent}
+      {props.showClose && (
+        <div style={{ marginTop: "12px", textAlign: "right" }}>
+          <Button size="small" onClick={() => setConfigMenuOpen(false)}>
+            Close
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div ref={popupContainerRef}>
       <Popover
-        content={<div ref={popoverContentRef}>{props.popoverContent}</div>}
+        content={popoverContent}
         placement={"bottom"}
         trigger={["click"]}
         getPopupContainer={() => popupContainerRef.current || document.body}
