@@ -1,5 +1,5 @@
 import { Tooltip } from "antd";
-import Plotly from "plotly.js-dist-min";
+import Plotly, { type PlotData } from "plotly.js-dist-min";
 import React, { memo, type ReactElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import { Color } from "three";
@@ -17,7 +17,7 @@ import type { SelectItem } from "src/components/Dropdowns/types";
 import LoadingSpinner from "src/components/LoadingSpinner";
 import ScatterplotToolbar from "src/components/Tabs/ScatterPlot/ScatterplotToolbar";
 import { SHORTCUT_KEYS } from "src/constants";
-import { useDebounceRecord, useIsMouseButtonDownRef } from "src/hooks";
+import { useDebounce, useDebounceRecord, useIsMouseButtonDownRef } from "src/hooks";
 import { colorizeStateSelector } from "src/state";
 import { useViewerStateStore } from "src/state/ViewerState";
 import { AppThemeContext } from "src/styles/AppStyle";
@@ -82,6 +82,9 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const yAxisFeatureKey = useViewerStateStore((state) => state.scatterYAxis);
   const showHistograms = useViewerStateStore((state) => state.scatterShowHistograms);
   const histogramBins = useViewerStateStore((state) => state.scatterHistogramBins);
+  const showContours = useViewerStateStore((state) => state.scatterShowContours);
+  const _rawContourCount = useViewerStateStore((state) => state.scatterContourCount);
+  const contourCount = useDebounce(_rawContourCount, 100);
   const viewMode = useViewerStateStore((state) => state.viewMode);
 
   const xAxisPlotRange = useRef<[number, number]>([-Infinity, Infinity]);
@@ -317,6 +320,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     yAxisFeatureKey,
     showHistograms,
     histogramBins,
+    showContours,
+    contourCount,
     rangeType,
     tracks,
     isVisible,
@@ -351,7 +356,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
     plottedIds.current = new Set(objectIds);
 
-    let markerBaseColor = undefined;
+    let markerBaseColor: Color | undefined = undefined;
     if (rangeType === PlotRangeType.ALL_TIME && tracks.size > 0) {
       // Use a light grey for other markers when a track is selected.
       markerBaseColor = new Color("#dddddd");
@@ -360,17 +365,34 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     const isUsingTime = xAxisFeatureKey === TIME_FEATURE_KEY || yAxisFeatureKey === TIME_FEATURE_KEY;
 
     // Configure traces
-    const traces = colorizeScatterplotPoints(
-      colorizeConfig,
-      xAxisFeatureKey,
-      yAxisFeatureKey,
-      pointsData,
-      {},
-      markerBaseColor,
+    const traces = colorizeScatterplotPoints(colorizeConfig, xAxisFeatureKey, yAxisFeatureKey, pointsData, {
+      // When contours are enabled, make markers smaller so contours are visible
+      markers: showContours ? { size: 2 } : {},
+      overrideColor: markerBaseColor,
       // disable hover for all points other than the track when one is selected
-      tracks.size === 0 || rangeType !== PlotRangeType.ALL_TIME
-    );
+      allowHover: tracks.size === 0 || rangeType !== PlotRangeType.ALL_TIME,
+      opacityMultiplier: showContours ? 0.35 : 1.0,
+    });
+
     const shapes: Partial<Plotly.Shape>[] = [];
+
+    if (showContours) {
+      const colorScale = [
+        [0, "rgba(255, 255, 255, 1)"],
+        [1, "rgba(80, 80, 80, 1)"],
+      ] as [number, string][];
+      const densityTrace: Partial<PlotData> = {
+        x: xData,
+        y: yData,
+        name: "density",
+        type: "histogram2dcontour",
+        colorscale: colorScale,
+        ncontours: contourCount + 1,
+        hovertemplate: undefined,
+        hoverinfo: "skip",
+      };
+      traces.push(densityTrace);
+    }
 
     let xHistogram;
     let yHistogram;
@@ -423,7 +445,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         // Connect track points as a line trace.
         const outOfRangeOutlineColor = outOfRangeDrawSettings.color.clone().multiplyScalar(0.8);
         const trackTraces = colorizeScatterplotPoints(colorizeConfig, xAxisFeatureKey, yAxisFeatureKey, trackData, {
-          outOfRange: {
+          outOfRangeMarkers: {
             color: theme.color.layout.background,
             line: { width: 1, color: "#" + outOfRangeOutlineColor.getHexString() + "40" },
           },
@@ -628,6 +650,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
                   menuPortalTarget: props.containerRef ?? document.body,
                 }}
                 controlTooltipPlacement="left"
+                tooltipPopupContainer={props.containerRef}
               />
             </AxisDropdownContainer>
           </div>

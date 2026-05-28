@@ -19,14 +19,26 @@ import type { DatasetSlice } from "./dataset_slice";
 export type ScatterPlotSliceState = {
   scatterXAxis: string | null;
   scatterYAxis: string | null;
+  scatterRangeType: PlotRangeType;
+
+  // Histograms
   scatterShowHistograms: boolean;
   scatterHistogramBins: number;
-  scatterRangeType: PlotRangeType;
+
+  // Contours
+  scatterShowContours: boolean;
+  scatterContourCount: number;
 };
 
 export type ScatterPlotSliceSerializableState = Pick<
   ScatterPlotSliceState,
-  "scatterXAxis" | "scatterYAxis" | "scatterRangeType" | "scatterHistogramBins" | "scatterShowHistograms"
+  | "scatterXAxis"
+  | "scatterYAxis"
+  | "scatterRangeType"
+  | "scatterShowHistograms"
+  | "scatterHistogramBins"
+  | "scatterShowContours"
+  | "scatterContourCount"
 >;
 
 export type ScatterPlotSliceActions = {
@@ -35,6 +47,8 @@ export type ScatterPlotSliceActions = {
   setScatterShowHistograms: (showHistograms: boolean) => void;
   setScatterHistogramBins: (bins: number) => void;
   setScatterRangeType: (rangeType: PlotRangeType) => void;
+  setScatterShowContours: (showContours: boolean) => void;
+  setScatterContourCount: (count: number) => void;
 };
 
 export type ScatterPlotSlice = ScatterPlotSliceState & ScatterPlotSliceActions;
@@ -53,6 +67,8 @@ export const createScatterPlotSlice: StateCreator<DatasetSlice & ScatterPlotSlic
   scatterShowHistograms: true,
   scatterHistogramBins: 20,
   scatterRangeType: PlotRangeType.ALL_TIME,
+  scatterShowContours: false,
+  scatterContourCount: 10,
 
   // Actions
   setScatterXAxis: (xAxis) => {
@@ -78,6 +94,14 @@ export const createScatterPlotSlice: StateCreator<DatasetSlice & ScatterPlotSlic
     set({ scatterHistogramBins: bins });
   },
   setScatterRangeType: (rangeType) => set({ scatterRangeType: rangeType }),
+  setScatterShowContours: (showContours) => set({ scatterShowContours: showContours }),
+  setScatterContourCount: (count) => {
+    count = Math.round(count);
+    if (count <= 0 || !isFinite(count)) {
+      return;
+    }
+    set({ scatterContourCount: count });
+  },
 });
 
 export const addScatterPlotSliceDerivedStateSubscribers = (
@@ -119,6 +143,12 @@ export const serializeScatterPlotSlice = (slice: Partial<ScatterPlotSliceSeriali
   if (slice.scatterRangeType !== undefined) {
     ret[UrlParam.SCATTERPLOT_RANGE_MODE] = encodeScatterPlotRangeType(slice.scatterRangeType);
   }
+  if (slice.scatterShowContours !== undefined) {
+    ret[UrlParam.SCATTERPLOT_SHOW_CONTOUR] = encodeBoolean(slice.scatterShowContours);
+  }
+  if (slice.scatterContourCount !== undefined) {
+    ret[UrlParam.SCATTERPLOT_CONTOUR_COUNT] = slice.scatterContourCount.toString();
+  }
   return ret;
 };
 
@@ -131,6 +161,8 @@ export const selectScatterPlotSliceSerializationDeps = (
   scatterShowHistograms: slice.scatterShowHistograms,
   scatterHistogramBins: slice.scatterHistogramBins,
   scatterRangeType: slice.scatterRangeType,
+  scatterShowContours: slice.scatterShowContours,
+  scatterContourCount: slice.scatterContourCount,
 });
 
 export const loadScatterPlotSliceFromParams = (
@@ -171,5 +203,18 @@ export const loadScatterPlotSliceFromParams = (
   const scatterRangeType = decodeScatterPlotRangeType(params.get(UrlParam.SCATTERPLOT_RANGE_MODE));
   if (scatterRangeType !== undefined) {
     slice.setScatterRangeType(scatterRangeType);
+  }
+
+  const scatterShowContours = decodeBoolean(params.get(UrlParam.SCATTERPLOT_SHOW_CONTOUR));
+  if (scatterShowContours !== undefined) {
+    slice.setScatterShowContours(scatterShowContours);
+  }
+
+  const scatterContourCountParam = params.get(UrlParam.SCATTERPLOT_CONTOUR_COUNT);
+  if (scatterContourCountParam !== null && scatterContourCountParam !== undefined) {
+    const contourCount = parseInt(scatterContourCountParam, 10);
+    if (!isNaN(contourCount) && contourCount > 0) {
+      slice.setScatterContourCount(contourCount);
+    }
   }
 };

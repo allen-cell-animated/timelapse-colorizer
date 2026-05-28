@@ -61,6 +61,35 @@ describe("ScatterplotSlice", () => {
     });
   });
 
+  describe("contour settings", () => {
+    it("can set contour visibility", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      act(() => {
+        result.current.setScatterShowContours(true);
+      });
+      expect(result.current.scatterShowContours).toBe(true);
+    });
+
+    it("can set contour bin count", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      act(() => {
+        result.current.setScatterContourCount(50);
+      });
+      expect(result.current.scatterContourCount).toBe(50);
+    });
+
+    it("ignores non-finite or negative contour bin counts", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      const defaultCount = result.current.scatterContourCount;
+      act(() => {
+        result.current.setScatterContourCount(-1);
+        result.current.setScatterContourCount(NaN);
+        result.current.setScatterContourCount(Infinity);
+      });
+      expect(result.current.scatterContourCount).toBe(defaultCount);
+    });
+  });
+
   describe("setScatterAxes", () => {
     it("can set axes to any value when dataset is not set", () => {
       const { result } = renderHook(() => useViewerStateStore());
@@ -155,24 +184,30 @@ describe("ScatterplotSlice", () => {
         result.current.setScatterYAxis(null);
         result.current.setScatterShowHistograms(true);
         result.current.setScatterRangeType(PlotRangeType.ALL_TIME);
+        result.current.setScatterShowContours(false);
       });
       let serializedData = serializeScatterPlotSlice(result.current);
       expect(serializedData[UrlParam.SCATTERPLOT_X_AXIS]).toBeUndefined();
       expect(serializedData[UrlParam.SCATTERPLOT_Y_AXIS]).toBeUndefined();
       expect(serializedData[UrlParam.SCATTERPLOT_SHOW_HISTOGRAMS]).toBe("1");
       expect(serializedData[UrlParam.SCATTERPLOT_RANGE_MODE]).toBe("all");
+      expect(serializedData[UrlParam.SCATTERPLOT_SHOW_CONTOUR]).toBe("0");
 
       act(() => {
         result.current.setScatterXAxis(MockFeatureKeys.FEATURE1);
         result.current.setScatterYAxis(MockFeatureKeys.FEATURE2);
         result.current.setScatterShowHistograms(false);
         result.current.setScatterRangeType(PlotRangeType.CURRENT_FRAME);
+        result.current.setScatterShowContours(true);
+        result.current.setScatterContourCount(40);
       });
       serializedData = serializeScatterPlotSlice(result.current);
       expect(serializedData[UrlParam.SCATTERPLOT_X_AXIS]).toBe(MockFeatureKeys.FEATURE1);
       expect(serializedData[UrlParam.SCATTERPLOT_Y_AXIS]).toBe(MockFeatureKeys.FEATURE2);
       expect(serializedData[UrlParam.SCATTERPLOT_SHOW_HISTOGRAMS]).toBe("0");
       expect(serializedData[UrlParam.SCATTERPLOT_RANGE_MODE]).toBe("frame");
+      expect(serializedData[UrlParam.SCATTERPLOT_SHOW_CONTOUR]).toBe("1");
+      expect(serializedData[UrlParam.SCATTERPLOT_CONTOUR_COUNT]).toBe("40");
     });
   });
 
@@ -184,6 +219,8 @@ describe("ScatterplotSlice", () => {
       params.set(UrlParam.SCATTERPLOT_Y_AXIS, MockFeatureKeys.FEATURE2);
       params.set(UrlParam.SCATTERPLOT_SHOW_HISTOGRAMS, "0");
       params.set(UrlParam.SCATTERPLOT_RANGE_MODE, "frame");
+      params.set(UrlParam.SCATTERPLOT_SHOW_CONTOUR, "1");
+      params.set(UrlParam.SCATTERPLOT_CONTOUR_COUNT, "40");
 
       act(() => {
         loadScatterPlotSliceFromParams(result.current, params);
@@ -193,6 +230,8 @@ describe("ScatterplotSlice", () => {
       expect(result.current.scatterYAxis).toBe(MockFeatureKeys.FEATURE2);
       expect(result.current.scatterShowHistograms).toBe(false);
       expect(result.current.scatterRangeType).toBe(PlotRangeType.CURRENT_FRAME);
+      expect(result.current.scatterShowContours).toBe(true);
+      expect(result.current.scatterContourCount).toBe(40);
     });
 
     it("ignores axes that are not in the dataset when dataset is loaded", async () => {

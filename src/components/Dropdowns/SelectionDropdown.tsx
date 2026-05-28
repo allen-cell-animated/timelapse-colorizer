@@ -1,6 +1,6 @@
 import { type ButtonProps, Tooltip } from "antd";
 import Fuse from "fuse.js";
-import React, { type ReactElement, useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import React, { type ReactElement, useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { components, type ControlProps, type OptionProps, type StylesConfig } from "react-select";
 
 import { useDebounce } from "src/hooks/useDebounce";
@@ -35,6 +35,7 @@ export type SelectionDropdownProps = {
    */
   items: SelectItem[] | string[];
   controlTooltipPlacement?: "top" | "bottom" | "left" | "right";
+  tooltipPopupContainer?: HTMLElement;
   disabled?: boolean;
   isSearchable?: boolean;
   isCreatable?: boolean;
@@ -142,6 +143,7 @@ export default function SelectionDropdown(inputProps: React.PropsWithChildren<Se
   const [_isPending, startTransition] = useTransition();
   const [searchInput, setSearchInput] = useState("");
   const [filteredItems, setFilteredItems] = useState<SelectItem[]>(options);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Value that is pending confirmation (e.g., during async updates). Cleared if
   // the currently selected value changes.
@@ -205,6 +207,7 @@ export default function SelectionDropdown(inputProps: React.PropsWithChildren<Se
           trigger={["hover", "focus"]}
           placement={props.controlTooltipPlacement}
           open={props.showSelectedItemTooltip ? undefined : false}
+          getPopupContainer={() => props.tooltipPopupContainer ?? containerRef.current ?? document.body}
         >
           <div>
             <components.Control {...controlProps}>
@@ -221,7 +224,7 @@ export default function SelectionDropdown(inputProps: React.PropsWithChildren<Se
         </Tooltip>
       );
     },
-    [props.showSelectedItemTooltip, props.controlTooltipPlacement]
+    [props.showSelectedItemTooltip, props.controlTooltipPlacement, props.tooltipPopupContainer]
   );
 
   // Create an ID for the HTML label element if one is provided.
@@ -229,7 +232,11 @@ export default function SelectionDropdown(inputProps: React.PropsWithChildren<Se
   const labelId = props.label ? selectId + "-label" : undefined;
 
   return (
-    <FlexRowAlignCenter $gap={6} style={{ width: props.width, minWidth: props.width, ...props.containerStyle }}>
+    <FlexRowAlignCenter
+      $gap={6}
+      style={{ width: props.width, minWidth: props.width, ...props.containerStyle }}
+      ref={containerRef}
+    >
       {props.label && (
         <label htmlFor={selectId} style={{ whiteSpace: "nowrap" }}>
           {props.hideLabel ? (

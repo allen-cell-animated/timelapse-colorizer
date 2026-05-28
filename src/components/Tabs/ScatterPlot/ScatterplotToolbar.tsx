@@ -6,6 +6,7 @@ import { ResetViewIconSVG } from "src/assets";
 import { PlotRangeType } from "src/colorizer/types";
 import IconButton from "src/components/Buttons/IconButton";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
+import ToggleContoursButton from "src/components/Tabs/ScatterPlot/ToggleContoursButton";
 import ToggleHistogramButton from "src/components/Tabs/ScatterPlot/ToggleHistogramButton";
 import { useViewerStateStore } from "src/state";
 import { StyledVerticalRule } from "src/styles/components";
@@ -42,6 +43,8 @@ export default function ScatterplotToolbar(props: ScatterplotToolbarProps): Reac
       </div>
 
       <ToggleHistogramButton popupContainer={props.popupContainer} />
+
+      <ToggleContoursButton popupContainer={props.popupContainer} />
 
       <StyledVerticalRule style={{ height: 24, margin: "0 4px" }} />
 
