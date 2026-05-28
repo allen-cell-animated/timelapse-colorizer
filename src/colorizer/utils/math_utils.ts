@@ -533,63 +533,34 @@ export function thresholdVectorFlowFieldByCount(
   };
 }
 
-/**
- * Returns a 3D kernel for gaussian smoothing. The kernel is normalized so that
- * the sum of all values is 1.
- * @param size Size of the kernel in each dimension
- * @param bandwidth Standard deviation of the Gaussian
- * @returns 3D array representing the Gaussian kernel.
- */
-export function make3dGaussianKernel(size: number, bandwidth: number): number[][][] {
-  const kernel: number[][][] = [];
-  for (let x = 0; x < size; x++) {
-    kernel[x] = [];
-    for (let y = 0; y < size; y++) {
-      kernel[x][y] = [];
-    }
-  }
+export function make1dGaussianKernel(size: number, bandwidth: number): number[] {
+  const kernel: number[] = [];
   const mid = (size - 1) / 2;
   const bandwidthSquared = bandwidth * bandwidth;
   let sum = 0;
-  for (let x = 0; x < size; x++) {
-    for (let y = 0; y < size; y++) {
-      for (let z = 0; z < size; z++) {
-        // f(x) = exp(-dist^2 / (2 * bandwidth^2))
-        const dist = (x - mid) ** 2 + (y - mid) ** 2 + (z - mid) ** 2;
-        const value = Math.exp(-dist / (2 * bandwidthSquared));
-        kernel[x][y][z] = value;
-        sum += value;
-      }
-    }
+  for (let i = 0; i < size; i++) {
+    const dist = (i - mid) ** 2;
+    const value = Math.exp(-dist / (2 * bandwidthSquared));
+    kernel[i] = value;
+    sum += value;
   }
   // Normalize kernel so that sum of all values is 1
-  for (let x = 0; x < size; x++) {
-    for (let y = 0; y < size; y++) {
-      for (let z = 0; z < size; z++) {
-        kernel[x][y][z] /= sum;
-      }
-    }
+  for (let i = 0; i < size; i++) {
+    kernel[i] /= sum;
   }
   return kernel;
 }
 
-/**
- * Performs a convolution on a flat, 3D array given a kernel and the array
- * dimensions.
- * @param arr 3D array to convolve, as a flat array, in ZYX order. A value at
- * coordinates (x, y, z) should be located at index `z * arrDims[0] * arrDims[1] + y * arrDims[0] + x`.
- * @param arrDims The XYZ dimensions of the array, as a tuple.
- * @param kernel 3D kernel to convolve with, as a 3D array. The kernel is
- * assumed to have odd dimensions and be centered at the middle index.
- * @param normalize Whether to normalize the convolved value by the sum of the
- * kernel weights that overlap with the array.
- * @returns A new flat array containing the convolved values, in ZYX order.
- */
-function convolve(
+function getIndex(x: number, y: number, z: number, dims: [number, number, number]): number {
+  const [xDim, yDim, _zDim] = dims;
+  return z * xDim * yDim + y * xDim + x;
+}
+
+function convolve1dFilter(
   arr: Float32Array | Uint32Array,
   arrDims: [number, number, number],
-  kernel: number[][][],
-  normalize: boolean = true
+  kernel: number[],
+  direction: "x" | "y" | "z"
 ): Float32Array {
   const output = new Float32Array(arr.length);
 
@@ -600,36 +571,53 @@ function convolve(
   for (let z = 0; z < zDim; z++) {
     for (let y = 0; y < yDim; y++) {
       for (let x = 0; x < xDim; x++) {
-        let sum = 0;
-        let sumWeight = 0;
+        let value = 0;
         for (let k = 0; k < kernelSize; k++) {
-          const zIndex = Math.floor(z + k - kernelMid);
-          if (zIndex < 0 || zIndex >= zDim) {
+          let offset = k - kernelMid;
+          const weight = kernel[k];
+          const sampleX = direction === "x" ? x + offset : x;
+          const sampleY = direction === "y" ? y + offset : y;
+          const sampleZ = direction === "z" ? z + offset : z;
+          if (sampleX < 0 || sampleX >= xDim || sampleY < 0 || sampleY >= yDim || sampleZ < 0 || sampleZ >= zDim) {
             continue;
           }
-          for (let j = 0; j < kernelSize; j++) {
-            const yIndex = Math.floor(y + j - kernelMid);
-            if (yIndex < 0 || yIndex >= yDim) {
-              continue;
-            }
-            for (let i = 0; i < kernelSize; i++) {
-              const xIndex = Math.floor(x + i - kernelMid);
-              if (xIndex < 0 || xIndex >= xDim) {
-                continue;
-              }
-              const kernelValue = kernel[i][j][k];
-              const index = zIndex * yDim * xDim + yIndex * xDim + xIndex;
-              sum += arr[index] * kernelValue;
-              sumWeight += kernelValue;
-            }
-          }
+          const arrValue = arr[getIndex(sampleX, sampleY, sampleZ, arrDims)] || 0;
+          value += weight * arrValue;
         }
-        const outputIndex = z * yDim * xDim + y * xDim + x;
-        const shouldNormalize = sumWeight > 0 && normalize;
-        output[outputIndex] = shouldNormalize ? sum / sumWeight : sum;
+        output[getIndex(x, y, z, arrDims)] = value;
       }
     }
   }
+  return output;
+}
+
+/**
+ * Performs a convolution on a flat, 3D array given a series of 1D kernels for
+ * each dimension.
+ * @param arr 3D array to convolve, as a flat array, in ZYX order. A value at
+ * coordinates (x, y, z) should be located at index `z * arrDims[0] * arrDims[1]
+ * + y * arrDims[0] + x`.
+ * @param arrDims The XYZ dimensions of the array, as a tuple.
+ * @param kernel 3D kernel to convolve with, as a 3D array. The kernel is
+ * assumed to have odd dimensions and be centered at the middle index.
+ * @param normalize Whether to normalize the convolved value by the sum of the
+ * kernel weights that overlap with the array.
+ * @returns A new flat array containing the convolved values, in ZYX order.
+ */
+function convolveSeparableFilters(
+  arr: Float32Array | Uint32Array,
+  arrDims: [number, number, number],
+  kernelX: number[],
+  kernelY: number[],
+  kernelZ: number[],
+  normalize: boolean = true
+): Float32Array {
+  let output: Float32Array;
+
+  output = convolve1dFilter(arr, arrDims, kernelX, "x");
+  output = convolve1dFilter(output, arrDims, kernelY, "y");
+  output = convolve1dFilter(output, arrDims, kernelZ, "z");
+
   return output;
 }
 
@@ -637,7 +625,9 @@ function convolve(
 export function convolveVectorFlowField(
   vectorSumData: VectorSumData,
   binsPerAxis: [number, number, number],
-  kernel: number[][][]
+  kernelX: number[],
+  kernelY: number[],
+  kernelZ: number[]
 ): VectorFieldData {
   const { xPos, yPos, zPos, xSum, ySum, zSum, count: rawCountData } = vectorSumData;
 
@@ -646,10 +636,10 @@ export function convolveVectorFlowField(
   const zData = new Float32Array(zSum.length);
   const count = new Float32Array(rawCountData.length);
 
-  count.set(convolve(rawCountData, binsPerAxis, kernel));
-  xData.set(convolve(xSum, binsPerAxis, kernel));
-  yData.set(convolve(ySum, binsPerAxis, kernel));
-  zData.set(convolve(zSum, binsPerAxis, kernel));
+  count.set(convolveSeparableFilters(rawCountData, binsPerAxis, kernelX, kernelY, kernelZ));
+  xData.set(convolveSeparableFilters(xSum, binsPerAxis, kernelX, kernelY, kernelZ));
+  yData.set(convolveSeparableFilters(ySum, binsPerAxis, kernelX, kernelY, kernelZ));
+  zData.set(convolveSeparableFilters(zSum, binsPerAxis, kernelX, kernelY, kernelZ));
 
   // Divide feature data by smoothed countData
   for (let i = 0; i < count.length; i++) {
