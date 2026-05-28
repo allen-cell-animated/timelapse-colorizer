@@ -29,14 +29,16 @@ export default function Plot3dDataControls(props: Plot3dLineControlsProps): Reac
   const setGaussianBandwidthPct = useViewerStateStore((state) => state.setPlot3dGaussianBandwidthPct);
 
   const gaussianHint = (
-    <InlineHint
-      title="Applies Gaussian weighting across vector bins."
-      subtitleList={[
-        "A bin's value is the sum of the Gaussian-weighted value of it and its neighbors divided by the weighted delta count, where each bin contains a sum of feature deltas.",
-      ]}
-    />
+    <InlineHint title="Use density-normalized sum of Gaussian-weighted displacement vectors for each bin and its neighbors." />
   );
-  const gaussianLabel = <FlexRowAlignCenter $gap={4}>Gaussian weighting {gaussianHint}</FlexRowAlignCenter>;
+  const gaussianLabel = <FlexRowAlignCenter $gap={4}>Gaussian smoothing {gaussianHint}</FlexRowAlignCenter>;
+
+  const gaussianBandwidthHint = (
+    <InlineHint title="Standard deviation (or bandwidth), as a percentage of the number of bins." />
+  );
+  const gaussianBandwidthLabel = (
+    <FlexRowAlignCenter $gap={4}>Gaussian std. dev {gaussianBandwidthHint}</FlexRowAlignCenter>
+  );
 
   const configMenuContents = (
     <SettingsContainer labelWidth="145px" style={{ width: "325px" }}>
@@ -67,7 +69,7 @@ export default function Plot3dDataControls(props: Plot3dLineControlsProps): Reac
       </SettingsItem>
       {useGaussian && (
         <SettingsItem
-          label="Gaussian bandwidth"
+          label={gaussianBandwidthLabel}
           htmlFor={Plot3dDataControlsHtmlIds.GAUSSIAN_BANDWIDTH_SLIDER}
           style={{ marginBottom: 6 }}
         >

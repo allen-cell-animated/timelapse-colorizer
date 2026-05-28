@@ -23,14 +23,14 @@ export default function Plot3dToolbar(): ReactElement {
   const threshold = useViewerStateStore((state) => state.plot3dVectorThreshold);
   const setThreshold = useViewerStateStore((state) => state.setPlot3dVectorThreshold);
 
-  const densityHint = <InlineHint title="Minimum vector density for a bin to be displayed. Scales with bin count." />;
+  const densityHint = <InlineHint title="Minimum sample density for bins. Scales with bin count." />;
   const densityThresholdLabel = <FlexRowAlignCenter $gap={6}>Density threshold {densityHint}</FlexRowAlignCenter>;
   const densitySlider = (
     <FlexRow $gap={6}>
       <label htmlFor={Plot3dToolbarHtmlIds.THRESHOLD_SLIDER} style={{ fontSize: theme.font.size.label }}>
         {densityThresholdLabel}
       </label>
-      <div style={{ width: "180px" }}>
+      <div style={{ width: "250px" }}>
         <LabeledSlider
           id={Plot3dToolbarHtmlIds.THRESHOLD_SLIDER}
           type="value"

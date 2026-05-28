@@ -16,8 +16,6 @@ export default function Plot3dFeatureControls(props: Plot3dFeatureControlsProps)
   const setYAxisFeatureKey = useViewerStateStore((state) => state.setPlot3dYAxis);
   const zAxisFeatureKey = useViewerStateStore((state) => state.plot3dZAxis);
   const setZAxisFeatureKey = useViewerStateStore((state) => state.setPlot3dZAxis);
-  const bins = useViewerStateStore((state) => state.plot3dVectorBins);
-  const setBins = useViewerStateStore((state) => state.setPlot3dVectorBins);
 
   const dataset = useViewerStateStore((state) => state.dataset);
 
@@ -41,7 +39,7 @@ export default function Plot3dFeatureControls(props: Plot3dFeatureControlsProps)
         selected={selectedKey || ""}
         items={featureDropdownData}
         onChange={onChangeKey}
-        controlWidth="100%"
+        controlWidth="calc(max(100%, 120px)"
         containerStyle={{ flexGrow: 1, flexBasis: "140px", flexShrink: 1 }}
         disabled={props.disabled}
       ></SelectionDropdown>
@@ -49,27 +47,10 @@ export default function Plot3dFeatureControls(props: Plot3dFeatureControlsProps)
   };
 
   return (
-    <FlexRow $gap={12} style={{ flexGrow: 1 }}>
+    <FlexRow $gap={16} style={{ flexGrow: 1, flexWrap: "wrap" }}>
       {getFeatureAxisSelector("X", xAxisFeatureKey, setXAxisFeatureKey)}
       {getFeatureAxisSelector("Y", yAxisFeatureKey, setYAxisFeatureKey)}
       {getFeatureAxisSelector("Z", zAxisFeatureKey, setZAxisFeatureKey)}
-
-      {/* TODO: Bins probably belongs with the cone controls once it is spun off into a submenu */}
-
-      <SelectionDropdown
-        label={"Bins"}
-        selected={bins.toString()}
-        items={[10, 20, 30, 40, 50].map((num) => ({ value: num.toString(), label: num.toString() }))}
-        onChange={(value: string) => {
-          const parsedValue = parseInt(value, 10);
-          if (!isNaN(parsedValue) && parsedValue > 0) {
-            setBins(parsedValue);
-          }
-        }}
-        width="100px"
-        controlWidth="70px"
-        disabled={props.disabled}
-      ></SelectionDropdown>
     </FlexRow>
   );
 }
