@@ -365,9 +365,9 @@ export function getBinValue(binIndex: number, range: [number, number], steps: nu
 }
 
 /**
- * Sums vector deltas for objects in a 3D feature space. For each bin in the 3D
- * feature space, the value is the sum of the delta between feature values at
- * any time `t` and `t+1` for all objects that fall into the bin at time `t`.
+ * Sums vector deltas for objects in a 3D feature space. For all objects that
+ * fall into bin `b` in the 3D feature space at any time `t`, the value of the
+ * bin is the sum of all deltas between feature values at `t` and `t+1`.
  * @param tracks Array of tracks, where each track contains object IDs and their
  * corresponding timepoints.
  * @param xFeatureData Flat feature data array where the value for object ID `i`
@@ -380,6 +380,12 @@ export function getBinValue(binIndex: number, range: [number, number], steps: nu
  * @param yRange Range of values for the Y dimension, as a tuple [min, max].
  * @param zRange Range of values for the Z dimension, as a tuple [min, max].
  * @param binsPerAxis Number of bins per axis, as a tuple [xBins, yBins, zBins].
+ * @param inRangeLUT Optional lookup table indicating whether each object ID is
+ * in range of current filters. If provided, only objects with `inRangeLUT[id]
+ * === 1` at both time `t` and `t+1` will be included in the sums.
+ * @param outliers Optional lookup table indicating whether each object ID is an
+ * outlier. If provided, objects with `outliers[id] === 1` at either time `t` or
+ * `t+1` will be excluded from the sums.
  * @returns VectorSumData containing the summed vectors.
  */
 export function binAndSumFeatureVectors(
@@ -569,8 +575,7 @@ export function make3dGaussianKernel(size: number, bandwidth: number): number[][
 
 /**
  * Performs a convolution on a flat, 3D array given a kernel and the array
- * dimensions. The convolution is only applied to values where the kernel fully
- * overlaps with the array (i.e. no padding is applied).
+ * dimensions.
  * @param arr 3D array to convolve, as a flat array, in ZYX order. A value at
  * coordinates (x, y, z) should be located at index `z * arrDims[0] * arrDims[1] + y * arrDims[0] + x`.
  * @param arrDims The XYZ dimensions of the array, as a tuple.
