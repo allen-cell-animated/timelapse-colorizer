@@ -12,7 +12,7 @@ import {
   constructAllTracksFromData,
   convolveVectorFlowField,
   filterVectorFlowFieldData,
-  make3dGaussianKernel,
+  make1dGaussianKernel,
 } from "src/colorizer/utils/math_utils";
 import { arrayToDataTextureInfo } from "src/colorizer/utils/texture_utils";
 
@@ -86,14 +86,19 @@ async function getVectorFlowField(
   );
 
   let vectorFlowFieldData;
-  if (gaussianBandwidth) {
+  if (gaussianBandwidth !== undefined && gaussianBandwidth > 0) {
     const nbins = xFeature.bins;
     const kernelSize = Math.ceil(gaussianBandwidth * nbins) * 4 + 1;
-    const gaussianKernel = make3dGaussianKernel(kernelSize, gaussianBandwidth * nbins);
+    const kernelX = make1dGaussianKernel(kernelSize, gaussianBandwidth * nbins);
+    const kernelY = make1dGaussianKernel(kernelSize, gaussianBandwidth * nbins);
+    const kernelZ = make1dGaussianKernel(kernelSize, gaussianBandwidth * nbins);
+
     vectorFlowFieldData = convolveVectorFlowField(
       vectorSumData,
       [xFeature.bins, yFeature.bins, zFeature.bins],
-      gaussianKernel
+      kernelX,
+      kernelY,
+      kernelZ
     );
   } else {
     vectorFlowFieldData = averageVectorFlowField(vectorSumData);
