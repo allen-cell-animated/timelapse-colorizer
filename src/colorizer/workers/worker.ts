@@ -87,11 +87,12 @@ async function getVectorFlowField(
 
   let vectorFlowFieldData;
   if (gaussianBandwidth !== undefined && gaussianBandwidth > 0) {
-    const nbins = xFeature.bins;
-    const kernelSize = Math.ceil(gaussianBandwidth * nbins) * 4 + 1;
-    const kernelX = make1dGaussianKernel(kernelSize, gaussianBandwidth * nbins);
-    const kernelY = make1dGaussianKernel(kernelSize, gaussianBandwidth * nbins);
-    const kernelZ = make1dGaussianKernel(kernelSize, gaussianBandwidth * nbins);
+    const getKernelSize = (nbins: number): number => Math.ceil(gaussianBandwidth * nbins) * 4 + 1;
+
+    // Bandwidth is a fraction of the number of bins
+    const kernelX = make1dGaussianKernel(getKernelSize(xFeature.bins), gaussianBandwidth * xFeature.bins);
+    const kernelY = make1dGaussianKernel(getKernelSize(yFeature.bins), gaussianBandwidth * yFeature.bins);
+    const kernelZ = make1dGaussianKernel(getKernelSize(zFeature.bins), gaussianBandwidth * zFeature.bins);
 
     vectorFlowFieldData = convolveVectorFlowField(
       vectorSumData,
