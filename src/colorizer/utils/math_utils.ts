@@ -553,7 +553,7 @@ export function make1dGaussianKernel(size: number, bandwidth: number): number[] 
 
 /**
  * Performs a 1D convolution on a flat, 3D array with the given kernel and
- * direction. Treats out-of-bounds samples as 0s.
+ * direction. Pads the array with 0s when sampling out of bounds.
  * @param arr 3D array to convolve, as a flat array, in ZYX order. A value at
  * coordinates (x, y, z) should be located at index `z * arrDims[0] * arrDims[1]
  * + y * arrDims[0] + x`.
@@ -579,7 +579,6 @@ export function convolve1dFilter(
   const kernelMid = Math.floor(kernelSize / 2);
 
   const getIndex = (x: number, y: number, z: number): number => z * xDim * yDim + y * xDim + x;
-
   for (let z = 0; z < zDim; z++) {
     for (let y = 0; y < yDim; y++) {
       for (let x = 0; x < xDim; x++) {
@@ -590,7 +589,7 @@ export function convolve1dFilter(
           const sampleX = direction === "x" ? x + offset : x;
           const sampleY = direction === "y" ? y + offset : y;
           const sampleZ = direction === "z" ? z + offset : z;
-          // Ignore out-of-bounds samples (pads array with 0s)
+          // Skip out-of-bounds samples
           if (sampleX < 0 || sampleX >= xDim || sampleY < 0 || sampleY >= yDim || sampleZ < 0 || sampleZ >= zDim) {
             continue;
           }
