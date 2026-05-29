@@ -567,12 +567,16 @@ function getIndex(x: number, y: number, z: number, dims: [number, number, number
  * @param direction The direction to convolve along ("x", "y", or "z").
  * @returns A new flat array containing the convolved values, in ZYX order.
  */
-function convolve1dFilter(
+export function convolve1dFilter(
   arr: Float32Array | Uint32Array,
   arrDims: [number, number, number],
   kernel: number[],
   direction: "x" | "y" | "z"
 ): Float32Array {
+  if (kernel.length === 0) {
+    return new Float32Array(arr);
+  }
+
   const output = new Float32Array(arr.length);
 
   const [xDim, yDim, zDim] = arrDims;
@@ -584,7 +588,7 @@ function convolve1dFilter(
       for (let x = 0; x < xDim; x++) {
         let value = 0;
         for (let k = 0; k < kernelSize; k++) {
-          let offset = k - kernelMid;
+          const offset = k - kernelMid;
           const weight = kernel[k];
           const sampleX = direction === "x" ? x + offset : x;
           const sampleY = direction === "y" ? y + offset : y;
@@ -632,8 +636,16 @@ function convolveSeparableFilters(
 }
 
 /**
- * Performs a convolution on summed vector field data with a series of separable
+ * Performs a convolution on summed 3D vector field data with a series of separable
  * 1D kernels for each dimension.
+ * @param vectorSumData The summed vector field data.
+ * @param binsPerAxis The number of bins per axis, as a tuple.
+ * @param kernelX 1D kernel to convolve with along the X axis.
+ * @param kernelY 1D kernel to convolve with along the Y axis.
+ * @param kernelZ 1D kernel to convolve with along the Z axis.
+ * @param thresholdCount Minimum count threshold for valid data. Bins with fewer than
+ * this threshold will be set to NaN.
+ * @returns The convolved vector field data.
  */
 export function convolveVectorFlowField(
   vectorSumData: VectorSumData,
