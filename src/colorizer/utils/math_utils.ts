@@ -551,11 +551,6 @@ export function make1dGaussianKernel(size: number, bandwidth: number): number[] 
   return kernel;
 }
 
-function getIndex(x: number, y: number, z: number, dims: [number, number, number]): number {
-  const [xDim, yDim, _zDim] = dims;
-  return z * xDim * yDim + y * xDim + x;
-}
-
 /**
  * Performs a 1D convolution on a flat, 3D array with the given kernel and
  * direction. Treats out-of-bounds samples as 0s.
@@ -583,6 +578,8 @@ export function convolve1dFilter(
   const kernelSize = kernel.length;
   const kernelMid = Math.floor(kernelSize / 2);
 
+  const getIndex = (x: number, y: number, z: number): number => z * xDim * yDim + y * xDim + x;
+
   for (let z = 0; z < zDim; z++) {
     for (let y = 0; y < yDim; y++) {
       for (let x = 0; x < xDim; x++) {
@@ -597,10 +594,10 @@ export function convolve1dFilter(
           if (sampleX < 0 || sampleX >= xDim || sampleY < 0 || sampleY >= yDim || sampleZ < 0 || sampleZ >= zDim) {
             continue;
           }
-          const arrValue = arr[getIndex(sampleX, sampleY, sampleZ, arrDims)] || 0;
+          const arrValue = arr[getIndex(sampleX, sampleY, sampleZ)] || 0;
           value += weight * arrValue;
         }
-        output[getIndex(x, y, z, arrDims)] = value;
+        output[getIndex(x, y, z)] = value;
       }
     }
   }
@@ -679,5 +676,5 @@ export function convolveVectorFlowField(
     yData[i] /= count[i];
     zData[i] /= count[i];
   }
-  return { xPos, yPos, zPos, xData, yData, zData, count: count };
+  return { xPos, yPos, zPos, xData, yData, zData, count };
 }

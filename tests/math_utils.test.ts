@@ -614,30 +614,30 @@ describe("convolutions", () => {
     it("returns an empty array when given an empty array", () => {
       const kernel: number[] = [1, 1, 1];
       const data = new Float32Array([]);
-      const dims = [0, 1, 1];
-      const result = convolve1dFilter(data, dims as [number, number, number], kernel, "x");
+      const dims: [number, number, number] = [0, 1, 1];
+      const result = convolve1dFilter(data, dims, kernel, "x");
       expect(result).toEqual(data);
     });
 
     it("handles identity kernel", () => {
       const kernel = [0, 1, 0];
       const data = new Float32Array([1, 2, 3, 4, 5]);
-      const dims = [5, 1, 1];
+      const dims: [number, number, number] = [5, 1, 1];
 
-      let result = convolve1dFilter(data, dims as [number, number, number], kernel, "x");
+      let result = convolve1dFilter(data, dims, kernel, "x");
       expect(result).toEqual(data);
-      result = convolve1dFilter(data, dims as [number, number, number], kernel, "y");
+      result = convolve1dFilter(data, dims, kernel, "y");
       expect(result).toEqual(data);
-      result = convolve1dFilter(data, dims as [number, number, number], kernel, "z");
+      result = convolve1dFilter(data, dims, kernel, "z");
       expect(result).toEqual(data);
     });
 
     it("handles even-length kernel", () => {
       const kernel = [0.5, 0.5];
       const data = new Float32Array([10, 20, 30, 40, 50]);
-      const dims = [5, 1, 1];
+      const dims: [number, number, number] = [5, 1, 1];
 
-      const result = convolve1dFilter(data, dims as [number, number, number], kernel, "x");
+      const result = convolve1dFilter(data, dims, kernel, "x");
       expect(result).toEqual(new Float32Array([5, 15, 25, 35, 45]));
     });
 
