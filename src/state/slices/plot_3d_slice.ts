@@ -22,7 +22,6 @@ export type Plot3dSliceState = {
   plot3dYAxis: string | null;
   plot3dZAxis: string | null;
 
-  plot3dShowVectors: boolean;
   plot3dVectorBins: number;
   plot3dVectorScale: number;
   plot3dVectorColorRampKey: string;
@@ -48,7 +47,6 @@ export type Plot3dSliceSerializableState = Pick<
   | "plot3dXAxis"
   | "plot3dYAxis"
   | "plot3dZAxis"
-  | "plot3dShowVectors"
   | "plot3dVectorBins"
   | "plot3dVectorScale"
   | "plot3dVectorColorRampKey"
@@ -64,7 +62,6 @@ export type Plot3dSliceActions = {
   setPlot3dXAxis: (xAxis: string | null) => void;
   setPlot3dYAxis: (yAxis: string | null) => void;
   setPlot3dZAxis: (zAxis: string | null) => void;
-  setPlot3dShowVectors: (showVectors: boolean) => void;
   setPlot3dVectorBins: (bins: number) => void;
   setPlot3dVectorScale: (scale: number) => void;
   setPlot3dVectorColorRampKey: (key: string) => void;
@@ -88,7 +85,6 @@ export const createPlot3dSlice: StateCreator<DatasetSlice & Plot3dSlice, [], [],
   plot3dYAxis: null,
   plot3dZAxis: null,
 
-  plot3dShowVectors: true,
   plot3dVectorBins: 25,
   plot3dVectorScale: 1.0,
   plot3dVectorColorRampKey: DEFAULT_COLOR_RAMP_KEY,
@@ -123,7 +119,6 @@ export const createPlot3dSlice: StateCreator<DatasetSlice & Plot3dSlice, [], [],
     }
     set({ plot3dZAxis: zAxis });
   },
-  setPlot3dShowVectors: (showVectors) => set({ plot3dShowVectors: showVectors }),
   setPlot3dVectorBins: (bins) => {
     bins = Math.round(bins);
     if (bins <= 0 || !isFinite(bins)) {
@@ -219,9 +214,6 @@ export const serializePlot3dSlice = (slice: Partial<Plot3dSliceSerializableState
   if (slice.plot3dZAxis !== null && slice.plot3dZAxis !== undefined) {
     ret[UrlParam.PLOT3D_Z_AXIS] = slice.plot3dZAxis;
   }
-  if (slice.plot3dShowVectors !== undefined) {
-    ret[UrlParam.PLOT3D_SHOW_VECTORS] = encodeBoolean(slice.plot3dShowVectors);
-  }
   if (slice.plot3dVectorBins !== undefined) {
     ret[UrlParam.PLOT3D_VECTOR_BINS] = slice.plot3dVectorBins.toString();
   }
@@ -254,7 +246,6 @@ export const selectPlot3dSliceSerializationDeps = (slice: Plot3dSlice): Plot3dSl
   plot3dXAxis: slice.plot3dXAxis,
   plot3dYAxis: slice.plot3dYAxis,
   plot3dZAxis: slice.plot3dZAxis,
-  plot3dShowVectors: slice.plot3dShowVectors,
   plot3dVectorBins: slice.plot3dVectorBins,
   plot3dVectorScale: slice.plot3dVectorScale,
   plot3dVectorColorRampKey: slice.plot3dVectorColorRampKey,
@@ -282,11 +273,6 @@ export const loadPlot3dSliceFromParams = (slice: Plot3dSlice & DatasetSlice, par
   const plot3dZAxis = params.get(UrlParam.PLOT3D_Z_AXIS);
   if (plot3dZAxis !== null && isAxisKeyValid(dataset, plot3dZAxis)) {
     slice.setPlot3dZAxis(plot3dZAxis);
-  }
-
-  const plot3dShowVectors = decodeBoolean(params.get(UrlParam.PLOT3D_SHOW_VECTORS));
-  if (plot3dShowVectors !== undefined) {
-    slice.setPlot3dShowVectors(plot3dShowVectors);
   }
 
   const plot3dVectorBinsParam = params.get(UrlParam.PLOT3D_VECTOR_BINS);
