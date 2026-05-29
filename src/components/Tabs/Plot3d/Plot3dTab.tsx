@@ -44,6 +44,7 @@ export default function Plot3dTab(): ReactElement {
   const zAxisFeatureKey = useViewerStateStore((state) => state.plot3dZAxis);
   const rawConeSize = useViewerStateStore((state) => state.plot3dVectorScale);
   const applyGaussian = useViewerStateStore((state) => state.plot3dUseGaussian);
+  const gaussianBandwidthPct = useViewerStateStore((state) => state.plot3dGaussianBandwidthPct);
   const coneColorRampKey = useViewerStateStore((state) => state.plot3dVectorColorRampKey);
   const coneColorRampReversed = useViewerStateStore((state) => state.plot3dVectorColorRampReversed);
   const coneColorRamp = useViewerStateStore((state) => state.plot3dColorRamp);
@@ -136,7 +137,7 @@ export default function Plot3dTab(): ReactElement {
         zAxisFeatureKey,
         [bins, bins, bins],
         inRangeLut,
-        applyGaussian ? 0.15 : undefined
+        applyGaussian ? gaussianBandwidthPct / 100 : undefined
       )
       .then((vectorFieldData) => {
         // Check if a newer requests supercedes this one before updating state
@@ -155,7 +156,16 @@ export default function Plot3dTab(): ReactElement {
       });
   };
 
-  const flowFieldDeps = [dataset, xAxisFeatureKey, yAxisFeatureKey, zAxisFeatureKey, bins, applyGaussian, inRangeLut];
+  const flowFieldDeps = [
+    dataset,
+    xAxisFeatureKey,
+    yAxisFeatureKey,
+    zAxisFeatureKey,
+    bins,
+    applyGaussian,
+    gaussianBandwidthPct,
+    inRangeLut,
+  ];
 
   useEffect(() => {
     calculateFlowField();

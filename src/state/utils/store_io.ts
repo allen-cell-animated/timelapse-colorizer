@@ -6,6 +6,7 @@ import {
   loadColorRampSliceFromParams,
   loadConfigSliceFromParams,
   loadDatasetSliceFromParams,
+  loadPlot3dSliceFromParams,
   loadScatterPlotSliceFromParams,
   loadThresholdSliceFromParams,
   loadTimeSliceFromParams,
@@ -17,6 +18,7 @@ import {
   selectColorRampSliceSerializationDeps,
   selectConfigSliceSerializationDeps,
   selectDatasetSliceSerializationDeps,
+  selectPlot3dSliceSerializationDeps,
   selectScatterPlotSliceSerializationDeps,
   selectThresholdSliceSerializationDeps,
   selectTimeSliceSerializationDeps,
@@ -28,6 +30,7 @@ import {
   serializeColorRampSlice,
   serializeConfigSlice,
   serializeDatasetSlice,
+  serializePlot3dSlice,
   serializeScatterPlotSlice,
   serializeThresholdSlice,
   serializeTimeSlice,
@@ -36,11 +39,6 @@ import {
   type ViewerStore,
   type ViewerStoreSerializableState,
 } from "src/state/slices";
-import {
-  loadPlot3dSliceFromParams,
-  selectPlot3dSliceSerializationDeps,
-  serializePlot3dSlice,
-} from "src/state/slices/plot_3d_slice";
 import type { SerializedStoreData, Store } from "src/state/types";
 
 // SERIALIZATION /////////////////////////////////////////////////////////////////////////

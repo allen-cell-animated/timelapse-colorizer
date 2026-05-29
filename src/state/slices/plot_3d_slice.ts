@@ -85,7 +85,7 @@ export const createPlot3dSlice: StateCreator<DatasetSlice & Plot3dSlice, [], [],
   plot3dYAxis: null,
   plot3dZAxis: null,
 
-  plot3dVectorBins: 25,
+  plot3dVectorBins: 20,
   plot3dVectorScale: 1.0,
   plot3dVectorColorRampKey: DEFAULT_COLOR_RAMP_KEY,
   plot3dVectorColorRampReversed: false,
@@ -178,15 +178,17 @@ export const addPlot3dDerivedStateSubscribers = (store: SubscribableStore<Datase
         return;
       }
       const { plot3dXAxis, plot3dYAxis, plot3dZAxis } = store.getState();
+      const clearedAxes: Partial<Plot3dSlice> = {};
       if (!isAxisKeyValid(dataset, plot3dXAxis)) {
-        store.setState({ plot3dXAxis: null });
+        clearedAxes.plot3dXAxis = null;
       }
       if (!isAxisKeyValid(dataset, plot3dYAxis)) {
-        store.setState({ plot3dYAxis: null });
+        clearedAxes.plot3dYAxis = null;
       }
       if (!isAxisKeyValid(dataset, plot3dZAxis)) {
-        store.setState({ plot3dZAxis: null });
+        clearedAxes.plot3dZAxis = null;
       }
+      return clearedAxes;
     }
   );
 
