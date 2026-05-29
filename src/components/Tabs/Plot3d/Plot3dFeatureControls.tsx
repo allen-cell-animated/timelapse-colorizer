@@ -19,6 +19,8 @@ type Plot3dFeatureControlsProps = {
   setApplyGaussian: (value: boolean) => void;
 };
 
+const GAUSSIAN_CHECKBOX_ID = "plot3d-gaussian-checkbox";
+
 export default function Plot3dFeatureControls(props: Plot3dFeatureControlsProps): ReactElement {
   const {
     xAxisFeatureKey,
@@ -83,10 +85,14 @@ export default function Plot3dFeatureControls(props: Plot3dFeatureControlsProps)
         controlWidth="70px"
       ></SelectionDropdown>
       <FlexRowAlignCenter $gap={6}>
-        <label>
+        <label htmlFor={GAUSSIAN_CHECKBOX_ID}>
           <h3>Gaussian</h3>
         </label>
-        <Checkbox checked={applyGaussian} onChange={(e) => setApplyGaussian(e.target.checked)} />
+        <Checkbox
+          id={GAUSSIAN_CHECKBOX_ID}
+          checked={applyGaussian}
+          onChange={(e) => setApplyGaussian(e.target.checked)}
+        />
       </FlexRowAlignCenter>
     </FlexRow>
   );
