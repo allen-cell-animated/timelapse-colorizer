@@ -149,7 +149,7 @@ export default class ColorRamp {
     const numStops = this.colorStops.length;
     for (let i = 0; i < numStops; i++) {
       const color = this.colorStops[i];
-      let t = i / (numStops - 1);
+      const t = i / (numStops - 1);
       colorScale.push([t, `#${color.getHexString()}`]);
     }
     return colorScale;
