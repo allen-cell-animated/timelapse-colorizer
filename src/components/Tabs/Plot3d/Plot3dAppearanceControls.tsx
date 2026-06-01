@@ -1,3 +1,4 @@
+import { Button } from "antd";
 import React, { type ReactElement } from "react";
 
 import {
@@ -5,7 +6,7 @@ import {
   DISPLAY_CATEGORICAL_PALETTE_KEYS,
   DISPLAY_COLOR_RAMP_LINEAR_KEYS,
 } from "src/colorizer";
-import ButtonWithPopover from "src/components/Buttons/ButtonWithConfig";
+import ConfigWrapper from "src/components/Controls/ConfigMenuWrapper";
 import InlineHint from "src/components/Display/InlineHint";
 import ColorRampSelection from "src/components/Dropdowns/ColorRampDropdown";
 import LabeledSlider from "src/components/Inputs/LabeledSlider";
@@ -130,11 +131,9 @@ export default function Plot3dAppearanceControls(props: Plot3dConeControlsProps)
 
   return (
     <>
-      <ButtonWithPopover
-        label="Appearance"
-        popoverContent={configMenuContents}
-        buttonProps={{ type: "default" }}
-      ></ButtonWithPopover>
+      <ConfigWrapper popoverContent={configMenuContents}>
+        <Button>Appearance</Button>
+      </ConfigWrapper>
     </>
   );
 }

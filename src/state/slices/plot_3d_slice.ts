@@ -182,18 +182,30 @@ export const addPlot3dDerivedStateSubscribers = (store: SubscribableStore<Datase
       if (!dataset) {
         return;
       }
-      const { plot3dXAxis, plot3dYAxis, plot3dZAxis } = store.getState();
-      const clearedAxes: Partial<Plot3dSlice> = {};
+      let { plot3dXAxis, plot3dYAxis, plot3dZAxis } = store.getState();
+
+      // Clear axes if invalid for new dataset
       if (!isAxisKeyValid(dataset, plot3dXAxis)) {
-        clearedAxes.plot3dXAxis = null;
+        plot3dXAxis = null;
       }
       if (!isAxisKeyValid(dataset, plot3dYAxis)) {
-        clearedAxes.plot3dYAxis = null;
+        plot3dYAxis = null;
       }
       if (!isAxisKeyValid(dataset, plot3dZAxis)) {
-        clearedAxes.plot3dZAxis = null;
+        plot3dZAxis = null;
       }
-      return clearedAxes;
+
+      // If all axes are null, auto-assign the first three features in the dataset
+      if (plot3dXAxis === null && plot3dYAxis === null && plot3dZAxis === null) {
+        const featureKeys = dataset.featureKeys;
+        if (featureKeys.length >= 3) {
+          plot3dXAxis = featureKeys[0];
+          plot3dYAxis = featureKeys[1];
+          plot3dZAxis = featureKeys[2];
+        }
+      }
+
+      return { plot3dXAxis, plot3dYAxis, plot3dZAxis };
     }
   );
 

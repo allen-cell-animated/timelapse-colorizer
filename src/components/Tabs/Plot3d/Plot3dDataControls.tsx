@@ -1,7 +1,7 @@
-import { Checkbox } from "antd";
+import { Button, Checkbox } from "antd";
 import React, { type ReactElement } from "react";
 
-import ButtonWithPopover from "src/components/Buttons/ButtonWithConfig";
+import ConfigWrapper from "src/components/Controls/ConfigMenuWrapper";
 import InlineHint from "src/components/Display/InlineHint";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import LabeledSlider from "src/components/Inputs/LabeledSlider";
@@ -59,12 +59,14 @@ export default function Plot3dDataControls(props: Plot3dDataControlsProps): Reac
       </SettingsItem>
 
       <SettingsItem label={gaussianLabel} htmlFor={Plot3dDataControlsHtmlIds.GAUSSIAN_WEIGHTING_TOGGLE}>
-        <Checkbox
-          id={Plot3dDataControlsHtmlIds.GAUSSIAN_WEIGHTING_TOGGLE}
-          checked={useGaussian}
-          onChange={(e) => setUseGaussian(e.target.checked)}
-          disabled={props.disabled}
-        />
+        <div style={{ width: "fit-content" }}>
+          <Checkbox
+            id={Plot3dDataControlsHtmlIds.GAUSSIAN_WEIGHTING_TOGGLE}
+            checked={useGaussian}
+            onChange={(e) => setUseGaussian(e.target.checked)}
+            disabled={props.disabled}
+          />
+        </div>
       </SettingsItem>
       {useGaussian && (
         <SettingsItem
@@ -93,5 +95,9 @@ export default function Plot3dDataControls(props: Plot3dDataControlsProps): Reac
     </SettingsContainer>
   );
 
-  return <ButtonWithPopover label={"Data"} popoverContent={configMenuContents} buttonProps={{ type: "default" }} />;
+  return (
+    <ConfigWrapper popoverContent={configMenuContents}>
+      <Button>Data</Button>
+    </ConfigWrapper>
+  );
 }
