@@ -11,7 +11,7 @@ import { StyledVerticalRule } from "src/styles/components";
 import { FlexColumn, FlexRow, FlexRowAlignCenter } from "src/styles/utils";
 
 const enum Plot3dToolbarHtmlIds {
-  THRESHOLD_SLIDER = "plot3d-cone-threshold-slider",
+  THRESHOLD_SLIDER = "plot3d-toolbar-threshold-slider",
 }
 
 export default function Plot3dToolbar(): ReactElement {

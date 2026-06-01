@@ -100,7 +100,11 @@ export const createPlot3dSlice: StateCreator<DatasetSlice & Plot3dSlice, [], [],
   plot3dLineMovingAverageWindow: 1,
 
   plot3dUseGaussian: false,
-  plot3dGaussianBandwidthPct: 10,
+  /**
+   * The bandwidth or standard deviation for the gaussian smoothing, as a
+   * percentage of the number of bins in the (0, 100] range.
+   */
+  plot3dGaussianBandwidthPct: 15,
 
   // Derived state
   plot3dColorRamp: getColorMap(KNOWN_COLOR_RAMPS, DEFAULT_COLOR_RAMP_KEY),
