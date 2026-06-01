@@ -11,9 +11,9 @@ import { useInteractionListener } from "src/hooks";
 import { useViewerStateStore } from "src/state";
 import { FlexColumn, FlexRow, FlexRowAlignCenter } from "src/styles/utils";
 
-import { make3dConeTrace } from "./plot_3d_utils";
 import Plot3d from "./Plot3d";
 import Plot3dLineControls from "./Plot3dLineControls";
+import { make3dConeTrace } from "./plot_3d_utils";
 
 const RESUME_PLAYBACK_TIMEOUT_MS = 500;
 
@@ -45,8 +45,6 @@ export default function Plot3dTab(): ReactElement {
   const rawConeSize = useViewerStateStore((state) => state.plot3dVectorScale);
   const applyGaussian = useViewerStateStore((state) => state.plot3dUseGaussian);
   const gaussianBandwidthPct = useViewerStateStore((state) => state.plot3dGaussianBandwidthPct);
-  const coneColorRampKey = useViewerStateStore((state) => state.plot3dVectorColorRampKey);
-  const coneColorRampReversed = useViewerStateStore((state) => state.plot3dVectorColorRampReversed);
   const coneColorRamp = useViewerStateStore((state) => state.plot3dColorRamp);
   const rawThreshold = useViewerStateStore((state) => state.plot3dVectorThreshold);
   const rawMovingAverageWindow = useViewerStateStore((state) => state.plot3dLineMovingAverageWindow);
@@ -180,12 +178,11 @@ export default function Plot3dTab(): ReactElement {
         make3dConeTrace(vectorFieldData, {
           coneSize,
           colorRamp: coneColorRamp,
-          colorRampReversed: coneColorRampReversed,
           threshold,
         })
       );
     }
-  }, [dataset, vectorFieldData, threshold, coneSize, coneColorRampKey, coneColorRampReversed]);
+  }, [dataset, vectorFieldData, threshold, coneSize, coneColorRamp]);
 
   // Sync plot with state changes
   useEffect(() => {
