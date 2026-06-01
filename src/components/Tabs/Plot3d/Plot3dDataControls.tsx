@@ -9,7 +9,7 @@ import { SettingsContainer, SettingsItem } from "src/components/SettingsContaine
 import { useViewerStateStore } from "src/state";
 import { FlexRowAlignCenter } from "src/styles/utils";
 
-type Plot3dLineControlsProps = {
+type Plot3dDataControlsProps = {
   disabled?: boolean;
 };
 
@@ -19,8 +19,7 @@ const enum Plot3dDataControlsHtmlIds {
   GAUSSIAN_WEIGHTING_TOGGLE = "plot3d-data-gaussian-weighting-toggle",
 }
 
-// TODO: Move properties into global state instead of passing via props.
-export default function Plot3dDataControls(props: Plot3dLineControlsProps): ReactElement {
+export default function Plot3dDataControls(props: Plot3dDataControlsProps): ReactElement {
   const bins = useViewerStateStore((state) => state.plot3dVectorBins);
   const setBins = useViewerStateStore((state) => state.setPlot3dVectorBins);
   const useGaussian = useViewerStateStore((state) => state.plot3dUseGaussian);

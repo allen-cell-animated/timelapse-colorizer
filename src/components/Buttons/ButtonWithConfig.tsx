@@ -1,6 +1,8 @@
 import { Button, Popover } from "antd";
 import React, { type ReactElement, type ReactNode, useEffect, useRef, useState } from "react";
 
+import { FlexColumn } from "src/styles/utils";
+
 type ButtonWithPopoverProps = {
   label: ReactNode;
   buttonProps?: React.ComponentProps<typeof Button>;
@@ -19,22 +21,25 @@ export default function ButtonWithPopover(inputProps: ButtonWithPopoverProps): R
   const popupContainerRef = useRef<HTMLDivElement>(null);
   const popoverContentRef = useRef<HTMLDivElement>(null);
 
-  // Close the menu when no longer focused
+  // Close the menu when the user focuses on an outside element.
   useEffect(() => {
+    if (!configMenuOpen) {
+      return;
+    }
     function onBlur(event: FocusEvent): void {
       const relatedTarget = event.relatedTarget as Node | null;
-      if (popoverContentRef.current && !popoverContentRef.current.contains(relatedTarget)) {
+      if (relatedTarget !== null && popupContainerRef.current && !popupContainerRef.current.contains(relatedTarget)) {
         setConfigMenuOpen(false);
       }
     }
-    popoverContentRef.current?.addEventListener("focusout", onBlur, true);
+    popupContainerRef.current?.addEventListener("focusout", onBlur, true);
     return () => {
-      popoverContentRef.current?.removeEventListener("focusout", onBlur, true);
+      popupContainerRef.current?.removeEventListener("focusout", onBlur, true);
     };
-  }, [popoverContentRef.current]);
+  }, [configMenuOpen]);
 
   const popoverContent = (
-    <div>
+    <FlexColumn ref={popoverContentRef}>
       {props.popoverContent}
       {props.showClose && (
         <div style={{ marginTop: "12px", textAlign: "right" }}>
@@ -43,7 +48,7 @@ export default function ButtonWithPopover(inputProps: ButtonWithPopoverProps): R
           </Button>
         </div>
       )}
-    </div>
+    </FlexColumn>
   );
 
   return (

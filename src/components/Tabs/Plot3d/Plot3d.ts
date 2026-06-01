@@ -36,7 +36,7 @@ export default class Plot3d {
 
   public coneTrace: Plotly.Data | null = null;
   public lineAverageWindow: number = 5;
-  public lineWidth: number = 1.6;
+  public lineWidth: number = 3;
 
   constructor(parentRef: HTMLElement) {
     this.dataset = null;

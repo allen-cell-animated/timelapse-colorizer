@@ -115,6 +115,7 @@ export default function Plot3dAppearanceControls(props: Plot3dConeControlsProps)
           type="value"
           value={lineWidth}
           onChange={setLineWidth}
+          disabled={props.disabled}
           minInputBound={0.5}
           maxInputBound={10}
           minSliderBound={0.5}

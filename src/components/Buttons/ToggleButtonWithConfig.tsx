@@ -112,11 +112,18 @@ export function ToggleButtonWithConfig(inputProps: ToggleButtonWithConfigProps):
   const hiddenStyle = props.outlined ? "outlined" : "link";
   const buttonType = isVisible ? "primary" : hiddenStyle;
 
-  // Close the menu when the user is no longer focused
+  // Close the menu when the user focuses on an outside element.
   useEffect(() => {
+    if (!configMenuOpen) {
+      return;
+    }
     function onBlur(event: FocusEvent): void {
       const relatedTarget = event.relatedTarget as Node | null;
-      if (configMenuContainerRef.current && !configMenuContainerRef.current.contains(relatedTarget)) {
+      if (
+        relatedTarget !== null &&
+        configMenuContainerRef.current &&
+        !configMenuContainerRef.current.contains(relatedTarget)
+      ) {
         setConfigMenuOpen(false);
       }
     }
@@ -124,7 +131,7 @@ export function ToggleButtonWithConfig(inputProps: ToggleButtonWithConfigProps):
     return () => {
       configMenuContainerRef.current?.removeEventListener("focusout", onBlur, true);
     };
-  }, [configMenuContainerRef.current]);
+  }, [configMenuOpen]);
 
   return (
     <div ref={popupContainerRef}>

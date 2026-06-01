@@ -10,8 +10,8 @@ import { useInteractionListener } from "src/hooks";
 import { useViewerStateStore } from "src/state";
 import { FlexColumn } from "src/styles/utils";
 
-import { make3dConeTrace } from "./plot_3d_utils";
 import Plot3d from "./Plot3d";
+import { make3dConeTrace } from "./plot_3d_utils";
 
 const RESUME_PLAYBACK_TIMEOUT_MS = 500;
 
@@ -40,9 +40,6 @@ export default function Plot3dTab(): ReactElement {
   const xAxisFeatureKey = useViewerStateStore((state) => state.plot3dXAxis);
   const yAxisFeatureKey = useViewerStateStore((state) => state.plot3dYAxis);
   const zAxisFeatureKey = useViewerStateStore((state) => state.plot3dZAxis);
-  const setXAxisFeatureKey = useViewerStateStore((state) => state.setPlot3dXAxis);
-  const setYAxisFeatureKey = useViewerStateStore((state) => state.setPlot3dYAxis);
-  const setZAxisFeatureKey = useViewerStateStore((state) => state.setPlot3dZAxis);
   const rawConeSize = useViewerStateStore((state) => state.plot3dVectorScale);
   const applyGaussian = useViewerStateStore((state) => state.plot3dUseGaussian);
   const gaussianBandwidthPct = useViewerStateStore((state) => state.plot3dGaussianBandwidthPct);
@@ -67,18 +64,6 @@ export default function Plot3dTab(): ReactElement {
       plot3dRef.current = null;
     };
   }, []);
-
-  // If no features are selected, auto-select first three from the dataset.
-  useEffect(() => {
-    if (dataset && !xAxisFeatureKey && !yAxisFeatureKey && !zAxisFeatureKey) {
-      const featureKeys = dataset.featureKeys;
-      if (featureKeys.length >= 3) {
-        setXAxisFeatureKey(featureKeys[0]);
-        setYAxisFeatureKey(featureKeys[1]);
-        setZAxisFeatureKey(featureKeys[2]);
-      }
-    }
-  }, [dataset]);
 
   //// Interaction Handlers ////
 

@@ -39,7 +39,7 @@ export default function Plot3dFeatureControls(props: Plot3dFeatureControlsProps)
         selected={selectedKey ?? { label: "", value: "" }}
         items={featureDropdownData}
         onChange={onChangeKey}
-        controlWidth="calc(max(100%, 120px)"
+        controlWidth="calc(max(100%, 120px))"
         containerStyle={{ flexGrow: 1, flexBasis: "140px", flexShrink: 1 }}
         disabled={props.disabled}
       ></SelectionDropdown>
