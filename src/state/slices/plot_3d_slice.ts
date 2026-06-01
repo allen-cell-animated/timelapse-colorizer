@@ -36,6 +36,7 @@ export type Plot3dSliceState = {
   plot3dLineMovingAverageWindow: number;
 
   plot3dUseGaussian: boolean;
+  /** The bandwidth or standard deviation for the gaussian smoothing. */
   plot3dGaussianBandwidthPct: number;
 
   // Derived state
@@ -68,6 +69,10 @@ export type Plot3dSliceActions = {
   setPlot3dVectorColorRampReversed: (reversed: boolean) => void;
   setPlot3dVectorThreshold: (threshold: number) => void;
   setPlot3dLineWidth: (width: number) => void;
+  /**
+   * Sets the number of timepoints to use for the moving average, rounded to
+   * the nearest odd integer.
+   */
   setPlot3dLineMovingAverageWindow: (windowSize: number) => void;
   setPlot3dUseGaussian: (applyGaussian: boolean) => void;
   setPlot3dGaussianBandwidthPct: (bandwidthPct: number) => void;
@@ -91,7 +96,7 @@ export const createPlot3dSlice: StateCreator<DatasetSlice & Plot3dSlice, [], [],
   plot3dVectorColorRampReversed: false,
   plot3dVectorThreshold: 0,
 
-  plot3dLineWidth: 1.6,
+  plot3dLineWidth: 3,
   plot3dLineMovingAverageWindow: 1,
 
   plot3dUseGaussian: false,
@@ -280,17 +285,13 @@ export const loadPlot3dSliceFromParams = (slice: Plot3dSlice & DatasetSlice, par
   const plot3dVectorBinsParam = params.get(UrlParam.PLOT3D_VECTOR_BINS);
   if (plot3dVectorBinsParam !== null) {
     const bins = parseInt(plot3dVectorBinsParam, 10);
-    if (!isNaN(bins) && bins > 0) {
-      slice.setPlot3dVectorBins(bins);
-    }
+    slice.setPlot3dVectorBins(bins);
   }
 
   const plot3dVectorScaleParam = params.get(UrlParam.PLOT3D_VECTOR_SCALE);
   if (plot3dVectorScaleParam !== null) {
     const scale = parseFloat(plot3dVectorScaleParam);
-    if (!isNaN(scale) && scale > 0) {
-      slice.setPlot3dVectorScale(scale);
-    }
+    slice.setPlot3dVectorScale(scale);
   }
 
   const plot3dVectorColorRampParam = params.get(UrlParam.PLOT3D_VECTOR_COLOR_RAMP);
@@ -305,25 +306,19 @@ export const loadPlot3dSliceFromParams = (slice: Plot3dSlice & DatasetSlice, par
   const plot3dVectorThresholdParam = params.get(UrlParam.PLOT3D_VECTOR_THRESHOLD);
   if (plot3dVectorThresholdParam !== null) {
     const threshold = parseFloat(plot3dVectorThresholdParam);
-    if (!isNaN(threshold) && threshold >= 0) {
-      slice.setPlot3dVectorThreshold(threshold);
-    }
+    slice.setPlot3dVectorThreshold(threshold);
   }
 
   const plot3dLineWidthParam = params.get(UrlParam.PLOT3D_LINE_WIDTH);
   if (plot3dLineWidthParam !== null) {
     const lineWidth = parseFloat(plot3dLineWidthParam);
-    if (!isNaN(lineWidth) && lineWidth > 0) {
-      slice.setPlot3dLineWidth(lineWidth);
-    }
+    slice.setPlot3dLineWidth(lineWidth);
   }
 
   const plot3dLineMAWindowParam = params.get(UrlParam.PLOT3D_AVERAGE_LINE_WINDOW);
   if (plot3dLineMAWindowParam !== null) {
     const windowSize = parseInt(plot3dLineMAWindowParam, 10);
-    if (!isNaN(windowSize) && windowSize > 0) {
-      slice.setPlot3dLineMovingAverageWindow(windowSize);
-    }
+    slice.setPlot3dLineMovingAverageWindow(windowSize);
   }
 
   const plot3dUseGaussian = decodeBoolean(params.get(UrlParam.PLOT3D_USE_GAUSSIAN));
@@ -334,8 +329,6 @@ export const loadPlot3dSliceFromParams = (slice: Plot3dSlice & DatasetSlice, par
   const plot3dGaussianBandwidthParam = params.get(UrlParam.PLOT3D_GAUSSIAN_BANDWIDTH);
   if (plot3dGaussianBandwidthParam !== null) {
     const bandwidthPct = parseFloat(plot3dGaussianBandwidthParam);
-    if (!isNaN(bandwidthPct) && bandwidthPct > 0) {
-      slice.setPlot3dGaussianBandwidthPct(bandwidthPct);
-    }
+    slice.setPlot3dGaussianBandwidthPct(bandwidthPct);
   }
 };
