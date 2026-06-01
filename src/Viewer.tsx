@@ -533,7 +533,7 @@ function Viewer(): ReactElement {
       ),
     },
     {
-      label: "3D plot",
+      label: "Flow plot",
       key: TabType.PLOT_3D,
       children: (
         <div className={styles.tabContent}>
