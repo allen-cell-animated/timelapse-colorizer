@@ -1,5 +1,5 @@
 import { Button, Popover } from "antd";
-import React, { PropsWithChildren, type ReactElement, type ReactNode, useEffect, useRef, useState } from "react";
+import React, { type PropsWithChildren, type ReactElement, type ReactNode, useEffect, useRef, useState } from "react";
 
 import { FlexColumn } from "src/styles/utils";
 
@@ -17,14 +17,14 @@ const defaultProps = {
 } as const;
 
 /**
- * Adds a popup config menu that appears when clicking the child element. The
- * popup is inlined in the DOM and can be navigated to via tabbing.
+ * Adds a popup config menu that appears when clicking the child element (e.g. a
+ * button). The popup is inlined in the DOM and can be navigated to via tabbing.
  */
 export default function ConfigWrapper(inputProps: PropsWithChildren<ConfigWrapperProps>): ReactElement {
   const props = { ...defaultProps, ...inputProps };
 
   const [configMenuOpen, _setConfigMenuOpen] = useState(!!props.open);
-  const setConfigMenuOpen = (open: boolean) => {
+  const setConfigMenuOpen = (open: boolean): void => {
     _setConfigMenuOpen(open);
     props.onOpenChange?.(open);
   };
