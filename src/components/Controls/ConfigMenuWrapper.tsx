@@ -3,10 +3,11 @@ import React, { type PropsWithChildren, type ReactElement, type ReactNode, useEf
 
 import { FlexColumn } from "src/styles/utils";
 
-type ConfigWrapperProps = {
+type ConfigMenuWrapperProps = {
   popoverContent: ReactNode;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  /** Whether to show a close button in the popup. */
   showClose?: boolean;
   placement?: "top" | "left" | "right" | "bottom";
 };
@@ -20,7 +21,7 @@ const defaultProps = {
  * Adds a popup config menu that appears when clicking the child element (e.g. a
  * button). The popup is inlined in the DOM and can be navigated to via tabbing.
  */
-export default function ConfigWrapper(inputProps: PropsWithChildren<ConfigWrapperProps>): ReactElement {
+export default function ConfigMenuWrapper(inputProps: PropsWithChildren<ConfigMenuWrapperProps>): ReactElement {
   const props = { ...defaultProps, ...inputProps };
 
   const [configMenuOpen, _setConfigMenuOpen] = useState(!!props.open);

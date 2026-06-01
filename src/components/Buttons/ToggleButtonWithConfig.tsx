@@ -3,7 +3,7 @@ import React, { type ReactElement, type ReactNode, useContext, useRef, useState 
 import { ImagesIconSVG, ImagesSlashIconSVG } from "src/assets";
 import { TabType } from "src/colorizer";
 import { LinkStyleButton } from "src/components/Buttons/LinkStyleButton";
-import ConfigWrapper from "src/components/Controls/ConfigMenuWrapper";
+import ConfigMenuWrapper from "src/components/Controls/ConfigMenuWrapper";
 import { TooltipWithSubtitle } from "src/components/Tooltips/TooltipWithSubtitle";
 import { useViewerStateStore } from "src/state";
 import { AppThemeContext } from "src/styles/AppStyle";
@@ -72,7 +72,7 @@ export function ToggleButtonWithConfig(inputProps: ToggleButtonWithConfigProps):
       if (configMenuOpen) {
         props.setVisible(false);
       }
-      setConfigMenuOpen((value) => !value);
+      setConfigMenuOpen(!configMenuOpen);
     } else {
       props.setVisible(true);
     }
@@ -110,7 +110,7 @@ export function ToggleButtonWithConfig(inputProps: ToggleButtonWithConfigProps):
 
   return (
     <div ref={popupContainerRef}>
-      <ConfigWrapper
+      <ConfigMenuWrapper
         popoverContent={configMenuContents}
         onOpenChange={setConfigMenuOpen}
         open={configMenuOpen}
@@ -128,7 +128,7 @@ export function ToggleButtonWithConfig(inputProps: ToggleButtonWithConfigProps):
             <VisuallyHidden>{tooltipTitle}</VisuallyHidden>
           </IconButton>
         </TooltipWithSubtitle>
-      </ConfigWrapper>
+      </ConfigMenuWrapper>
     </div>
   );
 }

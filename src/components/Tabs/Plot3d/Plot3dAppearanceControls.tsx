@@ -1,12 +1,7 @@
 import { Button } from "antd";
 import React, { type ReactElement } from "react";
 
-import {
-  DEFAULT_CATEGORICAL_PALETTE_KEY,
-  DISPLAY_CATEGORICAL_PALETTE_KEYS,
-  DISPLAY_COLOR_RAMP_LINEAR_KEYS,
-} from "src/colorizer";
-import ConfigWrapper from "src/components/Controls/ConfigMenuWrapper";
+import ConfigMenuWrapper from "src/components/Controls/ConfigMenuWrapper";
 import InlineHint from "src/components/Display/InlineHint";
 import ColorRampSelection from "src/components/Dropdowns/ColorRampDropdown";
 import LabeledSlider from "src/components/Inputs/LabeledSlider";
@@ -14,6 +9,8 @@ import { SettingsContainer, SettingsItem } from "src/components/SettingsContaine
 import { useViewerStateStore } from "src/state";
 import { StyledHorizontalRule } from "src/styles/components";
 import { FlexRow } from "src/styles/utils";
+
+const SLIDER_WIDTH = "180px";
 
 type Plot3dConeControlsProps = {
   disabled?: boolean;
@@ -50,15 +47,15 @@ export default function Plot3dAppearanceControls(props: Plot3dConeControlsProps)
         htmlFor={Plot3dConeControlsHtmlIds.CONE_SIZE_SLIDER}
         style={{ marginBottom: 6 }}
       >
-        <div style={{ width: "180px" }}>
+        <div style={{ width: SLIDER_WIDTH }}>
           <LabeledSlider
             id={Plot3dConeControlsHtmlIds.CONE_SIZE_SLIDER}
             type="value"
             value={coneSize}
             onChange={setConeSize}
             minInputBound={0.1}
-            minSliderBound={0.1}
             maxInputBound={10}
+            minSliderBound={0.1}
             maxSliderBound={2.5}
             step={0.1}
             marks={[1]}
@@ -75,11 +72,6 @@ export default function Plot3dAppearanceControls(props: Plot3dConeControlsProps)
             setConeColorRampReversed(reversed);
           }}
           reversed={coneColorRampReversed}
-          colorRampsToDisplay={DISPLAY_COLOR_RAMP_LINEAR_KEYS}
-          selectedPaletteKey={DEFAULT_CATEGORICAL_PALETTE_KEY}
-          onChangePalette={() => {}}
-          numCategories={0}
-          categoricalPalettesToDisplay={DISPLAY_CATEGORICAL_PALETTE_KEYS}
           disabled={props.disabled}
         />
       </SettingsItem>
@@ -93,15 +85,15 @@ export default function Plot3dAppearanceControls(props: Plot3dConeControlsProps)
         htmlFor={Plot3dConeControlsHtmlIds.LINE_WINDOW_SLIDER}
         style={{ marginBottom: "6px" }}
       >
-        <div style={{ width: "180px" }}>
+        <div style={{ width: SLIDER_WIDTH }}>
           <LabeledSlider
             id={Plot3dConeControlsHtmlIds.LINE_WINDOW_SLIDER}
             type="value"
             value={movingAverageWindow}
             onChange={setMovingAverageWindow}
             minInputBound={0}
-            minSliderBound={0}
             maxInputBound={50}
+            minSliderBound={0}
             maxSliderBound={20}
             step={1}
             numberFormatter={(number) => number?.toFixed(0)}
@@ -131,9 +123,9 @@ export default function Plot3dAppearanceControls(props: Plot3dConeControlsProps)
 
   return (
     <>
-      <ConfigWrapper popoverContent={configMenuContents}>
+      <ConfigMenuWrapper popoverContent={configMenuContents}>
         <Button>Appearance</Button>
-      </ConfigWrapper>
+      </ConfigMenuWrapper>
     </>
   );
 }

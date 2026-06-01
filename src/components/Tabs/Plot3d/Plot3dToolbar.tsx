@@ -16,12 +16,12 @@ const enum Plot3dToolbarHtmlIds {
 
 export default function Plot3dToolbar(): ReactElement {
   const theme = useContext(AppThemeContext);
+
   const dataset = useViewerStateStore((state) => state.dataset);
-
-  const disabled = !dataset;
-
   const threshold = useViewerStateStore((state) => state.plot3dVectorThreshold);
   const setThreshold = useViewerStateStore((state) => state.setPlot3dVectorThreshold);
+
+  const disabled = !dataset;
 
   const densityHint = <InlineHint title="Minimum sample density for bins. Scales with bin count." />;
   const densityThresholdLabel = <FlexRowAlignCenter $gap={6}>Density threshold {densityHint}</FlexRowAlignCenter>;
@@ -52,7 +52,7 @@ export default function Plot3dToolbar(): ReactElement {
   return (
     <FlexColumn $gap={10}>
       {/* Plot Feature Controls */}
-      <FlexRow $gap={8} style={{ flexGrow: 1 }}>
+      <FlexRow $gap={8}>
         <Plot3dFeatureControls disabled={disabled} />
       </FlexRow>
       {/* Cone Controls */}

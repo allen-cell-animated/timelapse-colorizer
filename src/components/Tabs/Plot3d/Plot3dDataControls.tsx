@@ -1,7 +1,7 @@
 import { Button, Checkbox } from "antd";
 import React, { type ReactElement } from "react";
 
-import ConfigWrapper from "src/components/Controls/ConfigMenuWrapper";
+import ConfigMenuWrapper from "src/components/Controls/ConfigMenuWrapper";
 import InlineHint from "src/components/Display/InlineHint";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import LabeledSlider from "src/components/Inputs/LabeledSlider";
@@ -12,6 +12,10 @@ import { FlexRowAlignCenter } from "src/styles/utils";
 type Plot3dDataControlsProps = {
   disabled?: boolean;
 };
+
+const SLIDER_WIDTH_PX = 180;
+const LABEL_WIDTH_PX = 145;
+const SETTINGS_WIDTH_PX = SLIDER_WIDTH_PX + LABEL_WIDTH_PX;
 
 const enum Plot3dDataControlsHtmlIds {
   VECTOR_BINS_DROPDOWN = "plot3d-data-vector-bins-dropdown",
@@ -40,7 +44,7 @@ export default function Plot3dDataControls(props: Plot3dDataControlsProps): Reac
   );
 
   const configMenuContents = (
-    <SettingsContainer labelWidth="145px" style={{ width: "325px" }}>
+    <SettingsContainer labelWidth={`${LABEL_WIDTH_PX}px`} style={{ width: `${SETTINGS_WIDTH_PX}px` }}>
       <SettingsItem label="Vector bins" htmlFor={Plot3dDataControlsHtmlIds.VECTOR_BINS_DROPDOWN}>
         <SelectionDropdown
           id={Plot3dDataControlsHtmlIds.VECTOR_BINS_DROPDOWN}
@@ -74,15 +78,15 @@ export default function Plot3dDataControls(props: Plot3dDataControlsProps): Reac
           htmlFor={Plot3dDataControlsHtmlIds.GAUSSIAN_BANDWIDTH_SLIDER}
           style={{ marginBottom: 6 }}
         >
-          <div style={{ width: "180px" }}>
+          <div style={{ width: `${SLIDER_WIDTH_PX}px` }}>
             <LabeledSlider
               id={Plot3dDataControlsHtmlIds.GAUSSIAN_BANDWIDTH_SLIDER}
               type="value"
               value={gaussianBandwidthPct}
               onChange={setGaussianBandwidthPct}
               minInputBound={0}
-              minSliderBound={0}
               maxInputBound={100}
+              minSliderBound={0}
               maxSliderBound={30}
               step={1}
               marks={[15]}
@@ -96,8 +100,8 @@ export default function Plot3dDataControls(props: Plot3dDataControlsProps): Reac
   );
 
   return (
-    <ConfigWrapper popoverContent={configMenuContents}>
+    <ConfigMenuWrapper popoverContent={configMenuContents}>
       <Button>Data</Button>
-    </ConfigWrapper>
+    </ConfigMenuWrapper>
   );
 }
