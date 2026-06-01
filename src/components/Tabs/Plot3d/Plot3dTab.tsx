@@ -46,8 +46,6 @@ export default function Plot3dTab(): ReactElement {
   const rawConeSize = useViewerStateStore((state) => state.plot3dVectorScale);
   const applyGaussian = useViewerStateStore((state) => state.plot3dUseGaussian);
   const gaussianBandwidthPct = useViewerStateStore((state) => state.plot3dGaussianBandwidthPct);
-  const coneColorRampKey = useViewerStateStore((state) => state.plot3dVectorColorRampKey);
-  const coneColorRampReversed = useViewerStateStore((state) => state.plot3dVectorColorRampReversed);
   const coneColorRamp = useViewerStateStore((state) => state.plot3dColorRamp);
   const rawThreshold = useViewerStateStore((state) => state.plot3dVectorThreshold);
   const rawMovingAverageWindow = useViewerStateStore((state) => state.plot3dLineMovingAverageWindow);
@@ -195,12 +193,11 @@ export default function Plot3dTab(): ReactElement {
         make3dConeTrace(vectorFieldData, {
           coneSize,
           colorRamp: coneColorRamp,
-          colorRampReversed: coneColorRampReversed,
-          threshold: (threshold / bins) * 10,
+          threshold,
         })
       );
     }
-  }, [dataset, vectorFieldData, threshold, coneSize, coneColorRampKey, coneColorRampReversed]);
+  }, [dataset, vectorFieldData, threshold, coneSize, coneColorRamp]);
 
   // Sync plot with state changes
   useEffect(() => {

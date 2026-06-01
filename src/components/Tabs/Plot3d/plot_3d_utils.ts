@@ -6,13 +6,13 @@ import { thresholdVectorFlowFieldByCount } from "src/colorizer/utils/math_utils"
 
 export function make3dConeTrace(
   vectorFieldData: VectorFieldData,
-  config: { threshold: number; colorRamp: ColorRamp; colorRampReversed: boolean; coneSize: number }
+  config: { threshold: number; colorRamp: ColorRamp; coneSize: number }
 ): Plotly.Data | null {
   if (!vectorFieldData) {
     return null;
   }
   const data = thresholdVectorFlowFieldByCount(vectorFieldData, config.threshold);
-  const colorScale = config.colorRamp.getPlotlyColorScale(config.colorRampReversed);
+  const colorScale = config.colorRamp.getPlotlyColorScale();
   return {
     type: "cone",
     x: data.xPos,

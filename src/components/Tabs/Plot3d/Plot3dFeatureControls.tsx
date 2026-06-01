@@ -36,7 +36,7 @@ export default function Plot3dFeatureControls(props: Plot3dFeatureControlsProps)
     return (
       <SelectionDropdown
         label={axisLabel}
-        selected={selectedKey || ""}
+        selected={selectedKey ?? { label: "", value: "" }}
         items={featureDropdownData}
         onChange={onChangeKey}
         controlWidth="calc(max(100%, 120px)"

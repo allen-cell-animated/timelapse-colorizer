@@ -22,7 +22,6 @@ export type Plot3dSliceState = {
   plot3dYAxis: string | null;
   plot3dZAxis: string | null;
 
-  plot3dShowVectors: boolean;
   plot3dVectorBins: number;
   plot3dVectorScale: number;
   plot3dVectorColorRampKey: string;
@@ -37,6 +36,7 @@ export type Plot3dSliceState = {
   plot3dLineMovingAverageWindow: number;
 
   plot3dUseGaussian: boolean;
+  /** The bandwidth or standard deviation for the gaussian smoothing. */
   plot3dGaussianBandwidthPct: number;
 
   // Derived state
@@ -48,7 +48,6 @@ export type Plot3dSliceSerializableState = Pick<
   | "plot3dXAxis"
   | "plot3dYAxis"
   | "plot3dZAxis"
-  | "plot3dShowVectors"
   | "plot3dVectorBins"
   | "plot3dVectorScale"
   | "plot3dVectorColorRampKey"
@@ -64,13 +63,16 @@ export type Plot3dSliceActions = {
   setPlot3dXAxis: (xAxis: string | null) => void;
   setPlot3dYAxis: (yAxis: string | null) => void;
   setPlot3dZAxis: (zAxis: string | null) => void;
-  setPlot3dShowVectors: (showVectors: boolean) => void;
   setPlot3dVectorBins: (bins: number) => void;
   setPlot3dVectorScale: (scale: number) => void;
   setPlot3dVectorColorRampKey: (key: string) => void;
   setPlot3dVectorColorRampReversed: (reversed: boolean) => void;
   setPlot3dVectorThreshold: (threshold: number) => void;
   setPlot3dLineWidth: (width: number) => void;
+  /**
+   * Sets the number of timepoints to use for the moving average, rounded to
+   * the nearest odd integer.
+   */
   setPlot3dLineMovingAverageWindow: (windowSize: number) => void;
   setPlot3dUseGaussian: (applyGaussian: boolean) => void;
   setPlot3dGaussianBandwidthPct: (bandwidthPct: number) => void;
@@ -88,14 +90,13 @@ export const createPlot3dSlice: StateCreator<DatasetSlice & Plot3dSlice, [], [],
   plot3dYAxis: null,
   plot3dZAxis: null,
 
-  plot3dShowVectors: true,
-  plot3dVectorBins: 25,
+  plot3dVectorBins: 20,
   plot3dVectorScale: 1.0,
   plot3dVectorColorRampKey: DEFAULT_COLOR_RAMP_KEY,
   plot3dVectorColorRampReversed: false,
-  plot3dVectorThreshold: 0,
+  plot3dVectorThreshold: 5,
 
-  plot3dLineWidth: 3.0,
+  plot3dLineWidth: 3,
   plot3dLineMovingAverageWindow: 1,
 
   plot3dUseGaussian: false,
@@ -123,7 +124,6 @@ export const createPlot3dSlice: StateCreator<DatasetSlice & Plot3dSlice, [], [],
     }
     set({ plot3dZAxis: zAxis });
   },
-  setPlot3dShowVectors: (showVectors) => set({ plot3dShowVectors: showVectors }),
   setPlot3dVectorBins: (bins) => {
     bins = Math.round(bins);
     if (bins <= 0 || !isFinite(bins)) {
@@ -183,15 +183,17 @@ export const addPlot3dDerivedStateSubscribers = (store: SubscribableStore<Datase
         return;
       }
       const { plot3dXAxis, plot3dYAxis, plot3dZAxis } = store.getState();
+      const clearedAxes: Partial<Plot3dSlice> = {};
       if (!isAxisKeyValid(dataset, plot3dXAxis)) {
-        store.setState({ plot3dXAxis: null });
+        clearedAxes.plot3dXAxis = null;
       }
       if (!isAxisKeyValid(dataset, plot3dYAxis)) {
-        store.setState({ plot3dYAxis: null });
+        clearedAxes.plot3dYAxis = null;
       }
       if (!isAxisKeyValid(dataset, plot3dZAxis)) {
-        store.setState({ plot3dZAxis: null });
+        clearedAxes.plot3dZAxis = null;
       }
+      return clearedAxes;
     }
   );
 
@@ -218,9 +220,6 @@ export const serializePlot3dSlice = (slice: Partial<Plot3dSliceSerializableState
   }
   if (slice.plot3dZAxis !== null && slice.plot3dZAxis !== undefined) {
     ret[UrlParam.PLOT3D_Z_AXIS] = slice.plot3dZAxis;
-  }
-  if (slice.plot3dShowVectors !== undefined) {
-    ret[UrlParam.PLOT3D_SHOW_VECTORS] = encodeBoolean(slice.plot3dShowVectors);
   }
   if (slice.plot3dVectorBins !== undefined) {
     ret[UrlParam.PLOT3D_VECTOR_BINS] = slice.plot3dVectorBins.toString();
@@ -254,7 +253,6 @@ export const selectPlot3dSliceSerializationDeps = (slice: Plot3dSlice): Plot3dSl
   plot3dXAxis: slice.plot3dXAxis,
   plot3dYAxis: slice.plot3dYAxis,
   plot3dZAxis: slice.plot3dZAxis,
-  plot3dShowVectors: slice.plot3dShowVectors,
   plot3dVectorBins: slice.plot3dVectorBins,
   plot3dVectorScale: slice.plot3dVectorScale,
   plot3dVectorColorRampKey: slice.plot3dVectorColorRampKey,
@@ -284,25 +282,16 @@ export const loadPlot3dSliceFromParams = (slice: Plot3dSlice & DatasetSlice, par
     slice.setPlot3dZAxis(plot3dZAxis);
   }
 
-  const plot3dShowVectors = decodeBoolean(params.get(UrlParam.PLOT3D_SHOW_VECTORS));
-  if (plot3dShowVectors !== undefined) {
-    slice.setPlot3dShowVectors(plot3dShowVectors);
-  }
-
   const plot3dVectorBinsParam = params.get(UrlParam.PLOT3D_VECTOR_BINS);
   if (plot3dVectorBinsParam !== null) {
     const bins = parseInt(plot3dVectorBinsParam, 10);
-    if (!isNaN(bins) && bins > 0) {
-      slice.setPlot3dVectorBins(bins);
-    }
+    slice.setPlot3dVectorBins(bins);
   }
 
   const plot3dVectorScaleParam = params.get(UrlParam.PLOT3D_VECTOR_SCALE);
   if (plot3dVectorScaleParam !== null) {
     const scale = parseFloat(plot3dVectorScaleParam);
-    if (!isNaN(scale) && scale > 0) {
-      slice.setPlot3dVectorScale(scale);
-    }
+    slice.setPlot3dVectorScale(scale);
   }
 
   const plot3dVectorColorRampParam = params.get(UrlParam.PLOT3D_VECTOR_COLOR_RAMP);
@@ -317,25 +306,19 @@ export const loadPlot3dSliceFromParams = (slice: Plot3dSlice & DatasetSlice, par
   const plot3dVectorThresholdParam = params.get(UrlParam.PLOT3D_VECTOR_THRESHOLD);
   if (plot3dVectorThresholdParam !== null) {
     const threshold = parseFloat(plot3dVectorThresholdParam);
-    if (!isNaN(threshold) && threshold >= 0) {
-      slice.setPlot3dVectorThreshold(threshold);
-    }
+    slice.setPlot3dVectorThreshold(threshold);
   }
 
   const plot3dLineWidthParam = params.get(UrlParam.PLOT3D_LINE_WIDTH);
   if (plot3dLineWidthParam !== null) {
     const lineWidth = parseFloat(plot3dLineWidthParam);
-    if (!isNaN(lineWidth) && lineWidth > 0) {
-      slice.setPlot3dLineWidth(lineWidth);
-    }
+    slice.setPlot3dLineWidth(lineWidth);
   }
 
   const plot3dLineMAWindowParam = params.get(UrlParam.PLOT3D_AVERAGE_LINE_WINDOW);
   if (plot3dLineMAWindowParam !== null) {
     const windowSize = parseInt(plot3dLineMAWindowParam, 10);
-    if (!isNaN(windowSize) && windowSize > 0) {
-      slice.setPlot3dLineMovingAverageWindow(windowSize);
-    }
+    slice.setPlot3dLineMovingAverageWindow(windowSize);
   }
 
   const plot3dUseGaussian = decodeBoolean(params.get(UrlParam.PLOT3D_USE_GAUSSIAN));
@@ -346,8 +329,6 @@ export const loadPlot3dSliceFromParams = (slice: Plot3dSlice & DatasetSlice, par
   const plot3dGaussianBandwidthParam = params.get(UrlParam.PLOT3D_GAUSSIAN_BANDWIDTH);
   if (plot3dGaussianBandwidthParam !== null) {
     const bandwidthPct = parseFloat(plot3dGaussianBandwidthParam);
-    if (!isNaN(bandwidthPct) && bandwidthPct > 0) {
-      slice.setPlot3dGaussianBandwidthPct(bandwidthPct);
-    }
+    slice.setPlot3dGaussianBandwidthPct(bandwidthPct);
   }
 };
