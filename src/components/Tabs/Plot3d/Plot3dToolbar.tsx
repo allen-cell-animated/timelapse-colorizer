@@ -1,4 +1,4 @@
-import React, { ReactElement, useContext } from "react";
+import React, { type ReactElement, useContext } from "react";
 
 import InlineHint from "src/components/Display/InlineHint";
 import LabeledSlider from "src/components/Inputs/LabeledSlider";

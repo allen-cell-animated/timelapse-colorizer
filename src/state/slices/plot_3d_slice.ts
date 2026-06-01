@@ -95,7 +95,7 @@ export const createPlot3dSlice: StateCreator<DatasetSlice & Plot3dSlice, [], [],
   plot3dVectorColorRampReversed: false,
   plot3dVectorThreshold: 0,
 
-  plot3dLineWidth: 1.6,
+  plot3dLineWidth: 3.0,
   plot3dLineMovingAverageWindow: 1,
 
   plot3dUseGaussian: false,

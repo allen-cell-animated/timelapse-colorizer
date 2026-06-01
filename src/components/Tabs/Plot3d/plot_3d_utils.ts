@@ -36,7 +36,7 @@ export function make3dTrackPathTrace(
   xAxisFeatureKey: string,
   yAxisFeatureKey: string,
   zAxisFeatureKey: string,
-  config: { lineAverageWindow: number; trackColor: string }
+  config: { lineAverageWindow: number; lineWidth: number; trackColor: string }
 ): Plotly.Data[] {
   // TODO: Show gaps/discontinuities in the track path?
   const traces = [];
@@ -78,7 +78,7 @@ export function make3dTrackPathTrace(
     type: "scatter3d",
     opacity: 1,
     line: {
-      width: 4,
+      width: config.lineWidth,
       color: config.trackColor ?? "rgb(80, 80, 80)",
     },
     showlegend: false,

@@ -21,12 +21,15 @@ type Plot3dConeControlsProps = {
 const enum Plot3dConeControlsHtmlIds {
   CONE_SIZE_SLIDER = "plot3d-cone-size-slider",
   CONE_COLOR_RAMP_SELECTION = "plot3d-cone-color-ramp-selection",
-  MOVING_AVERAGE_WINDOW_SLIDER = "plot3d-line-moving-average-window-slider",
+  LINE_WINDOW_SLIDER = "plot3d-line-moving-average-window-slider",
+  LINE_WIDTH_SLIDER = "plot3d-line-width-slider",
 }
 
 export default function Plot3dAppearanceControls(props: Plot3dConeControlsProps): ReactElement {
   const movingAverageWindow = useViewerStateStore((state) => state.plot3dLineMovingAverageWindow);
   const setMovingAverageWindow = useViewerStateStore((state) => state.setPlot3dLineMovingAverageWindow);
+  const lineWidth = useViewerStateStore((state) => state.plot3dLineWidth);
+  const setLineWidth = useViewerStateStore((state) => state.setPlot3dLineWidth);
 
   const coneSize = useViewerStateStore((state) => state.plot3dVectorScale);
   const setConeSize = useViewerStateStore((state) => state.setPlot3dVectorScale);
@@ -86,12 +89,12 @@ export default function Plot3dAppearanceControls(props: Plot3dConeControlsProps)
 
       <SettingsItem
         label={windowSizeLabel}
-        htmlFor={Plot3dConeControlsHtmlIds.MOVING_AVERAGE_WINDOW_SLIDER}
+        htmlFor={Plot3dConeControlsHtmlIds.LINE_WINDOW_SLIDER}
         style={{ marginBottom: "6px" }}
       >
         <div style={{ width: "180px" }}>
           <LabeledSlider
-            id={Plot3dConeControlsHtmlIds.MOVING_AVERAGE_WINDOW_SLIDER}
+            id={Plot3dConeControlsHtmlIds.LINE_WINDOW_SLIDER}
             type="value"
             value={movingAverageWindow}
             onChange={setMovingAverageWindow}
@@ -104,6 +107,22 @@ export default function Plot3dAppearanceControls(props: Plot3dConeControlsProps)
             disabled={props.disabled}
           ></LabeledSlider>
         </div>
+      </SettingsItem>
+
+      <SettingsItem label="Line width" htmlFor={Plot3dConeControlsHtmlIds.LINE_WIDTH_SLIDER}>
+        <LabeledSlider
+          id={Plot3dConeControlsHtmlIds.LINE_WIDTH_SLIDER}
+          type="value"
+          value={lineWidth}
+          onChange={setLineWidth}
+          minInputBound={0.5}
+          maxInputBound={10}
+          minSliderBound={0.5}
+          maxSliderBound={5}
+          step={0.1}
+          numberFormatter={(number) => number?.toFixed(1)}
+          marks={[3.0]}
+        />
       </SettingsItem>
     </SettingsContainer>
   );

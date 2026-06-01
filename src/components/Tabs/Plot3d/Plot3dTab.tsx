@@ -48,6 +48,7 @@ export default function Plot3dTab(): ReactElement {
   const coneColorRamp = useViewerStateStore((state) => state.plot3dColorRamp);
   const rawThreshold = useViewerStateStore((state) => state.plot3dVectorThreshold);
   const rawMovingAverageWindow = useViewerStateStore((state) => state.plot3dLineMovingAverageWindow);
+  const rawMovingAverageLineWidth = useViewerStateStore((state) => state.plot3dLineWidth);
 
   const isPlotTabVisible = useViewerStateStore((state) => state.openTab === TabType.PLOT_3D);
 
@@ -55,6 +56,7 @@ export default function Plot3dTab(): ReactElement {
   const coneSize = useDebounce(rawConeSize, 100);
   const threshold = useDebounce(rawThreshold, 100);
   const movingAverageWindow = useDebounce(rawMovingAverageWindow, 100);
+  const lineWidth = useDebounce(rawMovingAverageLineWidth, 100);
 
   // Mount Plotly plot on component mount
   useEffect(() => {
@@ -193,9 +195,10 @@ export default function Plot3dTab(): ReactElement {
       plot3dRef.current.trackToColor = outlineColorMode === SelectionOutlineColorMode.USE_PALETTE ? trackColors : null;
       plot3dRef.current.coneTrace = coneTrace as Plotly.Data | null;
       plot3dRef.current.lineAverageWindow = movingAverageWindow;
+      plot3dRef.current.lineWidth = lineWidth;
       plot3dRef.current.plot(currentFrame);
     }
-  }, [dataset, tracks, currentFrame, coneTrace, isPlotTabVisible, movingAverageWindow]);
+  }, [dataset, tracks, currentFrame, coneTrace, isPlotTabVisible, movingAverageWindow, lineWidth]);
 
   //// Rendering ////
 

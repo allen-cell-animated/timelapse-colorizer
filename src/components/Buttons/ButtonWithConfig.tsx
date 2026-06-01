@@ -1,5 +1,5 @@
 import { Button, Popover } from "antd";
-import React, { ReactElement, ReactNode, useEffect, useRef, useState } from "react";
+import React, { type ReactElement, type ReactNode, useEffect, useRef, useState } from "react";
 
 type ButtonWithPopoverProps = {
   label: ReactNode;
