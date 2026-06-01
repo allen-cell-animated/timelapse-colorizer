@@ -39,15 +39,20 @@ export default function ConfigWrapper(inputProps: PropsWithChildren<ConfigWrappe
     }
     function onBlur(event: FocusEvent): void {
       const relatedTarget = event.relatedTarget as Node | null;
-      // Ignore blur events where the focus is moving to a parent containing
-      // element; if a parent has `tabindex=0` set (e.g. Ant's tab components),
-      // it will steal focus.
-      if (relatedTarget === null || (popupContainerRef.current && relatedTarget.contains(popupContainerRef.current))) {
+      const container = popupContainerRef.current;
+      if (!relatedTarget || !container) {
         return;
       }
-      if (popupContainerRef.current && !popupContainerRef.current.contains(relatedTarget)) {
-        setConfigMenuOpen(false);
+      // Ignore blur events where the focus is moving to a child or parent
+      // element. Parents that have `tabindex=0` set (e.g. Ant's tab components)
+      // will otherwise steal focus on click and cause the menu to close
+      // unexpectedly.
+      const isPopupParent = container.contains(relatedTarget);
+      const isTargetParent = relatedTarget.contains(container);
+      if (isPopupParent || isTargetParent) {
+        return;
       }
+      setConfigMenuOpen(false);
     }
     popupContainerRef.current?.addEventListener("focusout", onBlur, true);
     return () => {
