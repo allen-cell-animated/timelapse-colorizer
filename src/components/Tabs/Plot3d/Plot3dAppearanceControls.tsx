@@ -1,6 +1,7 @@
 import { Button } from "antd";
 import React, { type ReactElement } from "react";
 
+import { DISPLAY_COLOR_RAMP_LINEAR_KEYS } from "src/colorizer";
 import ConfigMenuWrapper from "src/components/Controls/ConfigMenuWrapper";
 import InlineHint from "src/components/Display/InlineHint";
 import ColorRampSelection from "src/components/Dropdowns/ColorRampDropdown";
@@ -12,7 +13,7 @@ import { FlexRow } from "src/styles/utils";
 
 const SLIDER_WIDTH = "180px";
 
-type Plot3dConeControlsProps = {
+type Plot3dAppearanceControlsProps = {
   disabled?: boolean;
 };
 
@@ -23,7 +24,7 @@ const enum Plot3dAppearanceControlsHtmlIds {
   LINE_WIDTH_SLIDER = "plot3d-line-width-slider",
 }
 
-export default function Plot3dAppearanceControls(props: Plot3dConeControlsProps): ReactElement {
+export default function Plot3dAppearanceControls(props: Plot3dAppearanceControlsProps): ReactElement {
   const movingAverageWindow = useViewerStateStore((state) => state.plot3dLineMovingAverageWindow);
   const setMovingAverageWindow = useViewerStateStore((state) => state.setPlot3dLineMovingAverageWindow);
   const lineWidth = useViewerStateStore((state) => state.plot3dLineWidth);
@@ -74,6 +75,7 @@ export default function Plot3dAppearanceControls(props: Plot3dConeControlsProps)
           }}
           reversed={coneColorRampReversed}
           disabled={props.disabled}
+          colorRampsToDisplay={DISPLAY_COLOR_RAMP_LINEAR_KEYS}
         />
       </SettingsItem>
 

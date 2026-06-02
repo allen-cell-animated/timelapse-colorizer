@@ -33,9 +33,11 @@ export default function ConfigMenuWrapper(inputProps: PropsWithChildren<ConfigMe
   const popupContainerRef = useRef<HTMLDivElement>(null);
   const popoverContentRef = useRef<HTMLDivElement>(null);
 
+  const isOpen = props.open ?? configMenuOpen;
+
   // Close the menu when the user focuses on an outside element.
   useEffect(() => {
-    if (!configMenuOpen) {
+    if (!isOpen) {
       return;
     }
     function onBlur(event: FocusEvent): void {
@@ -59,7 +61,7 @@ export default function ConfigMenuWrapper(inputProps: PropsWithChildren<ConfigMe
     return () => {
       popupContainerRef.current?.removeEventListener("focusout", onBlur, true);
     };
-  }, [configMenuOpen]);
+  }, [isOpen]);
 
   // Wrap and optionally add a close button to the content
   const popoverContent = (
@@ -83,7 +85,7 @@ export default function ConfigMenuWrapper(inputProps: PropsWithChildren<ConfigMe
         trigger={["click"]}
         getPopupContainer={() => popupContainerRef.current || document.body}
         onOpenChange={setConfigMenuOpen}
-        open={props.open ?? configMenuOpen}
+        open={isOpen}
       >
         {props.children}
       </Popover>
