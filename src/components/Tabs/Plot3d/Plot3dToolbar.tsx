@@ -63,7 +63,7 @@ export default function Plot3dToolbar(): ReactElement {
         <StyledVerticalRule style={{ margin: "0 2px" }} />
 
         {densitySlider}
-      </FlexRowAlignCenter>{" "}
+      </FlexRowAlignCenter>
     </FlexColumn>
   );
 }

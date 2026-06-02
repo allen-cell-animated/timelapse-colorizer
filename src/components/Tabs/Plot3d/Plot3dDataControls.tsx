@@ -84,7 +84,7 @@ export default function Plot3dDataControls(props: Plot3dDataControlsProps): Reac
               type="value"
               value={gaussianBandwidthPct}
               onChange={setGaussianBandwidthPct}
-              minInputBound={0.1}
+              minInputBound={1}
               maxInputBound={100}
               minSliderBound={1}
               maxSliderBound={30}

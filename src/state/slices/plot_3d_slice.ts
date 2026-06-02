@@ -186,30 +186,35 @@ export const addPlot3dDerivedStateSubscribers = (store: SubscribableStore<Datase
       if (!dataset) {
         return;
       }
-      let { plot3dXAxis, plot3dYAxis, plot3dZAxis } = store.getState();
+      const {
+        plot3dXAxis: oldPlot3dXAxis,
+        plot3dYAxis: oldPlot3dYAxis,
+        plot3dZAxis: oldPlot3dZAxis,
+      } = store.getState();
+      const newState: Partial<Plot3dSliceState> = {};
 
       // Clear axes if invalid for new dataset
-      if (!isAxisKeyValid(dataset, plot3dXAxis)) {
-        plot3dXAxis = null;
+      if (!isAxisKeyValid(dataset, oldPlot3dXAxis)) {
+        newState.plot3dXAxis = null;
       }
-      if (!isAxisKeyValid(dataset, plot3dYAxis)) {
-        plot3dYAxis = null;
+      if (!isAxisKeyValid(dataset, oldPlot3dYAxis)) {
+        newState.plot3dYAxis = null;
       }
-      if (!isAxisKeyValid(dataset, plot3dZAxis)) {
-        plot3dZAxis = null;
+      if (!isAxisKeyValid(dataset, oldPlot3dZAxis)) {
+        newState.plot3dZAxis = null;
       }
 
       // If all axes are null, auto-assign the first three features in the dataset
-      if (plot3dXAxis === null && plot3dYAxis === null && plot3dZAxis === null) {
+      if (oldPlot3dXAxis === null && oldPlot3dYAxis === null && oldPlot3dZAxis === null) {
         const featureKeys = dataset.featureKeys;
         if (featureKeys.length >= 3) {
-          plot3dXAxis = featureKeys[0];
-          plot3dYAxis = featureKeys[1];
-          plot3dZAxis = featureKeys[2];
+          newState.plot3dXAxis = featureKeys[0];
+          newState.plot3dYAxis = featureKeys[1];
+          newState.plot3dZAxis = featureKeys[2];
         }
       }
 
-      return { plot3dXAxis, plot3dYAxis, plot3dZAxis };
+      return newState;
     }
   );
 
