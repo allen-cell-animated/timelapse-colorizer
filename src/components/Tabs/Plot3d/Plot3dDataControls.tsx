@@ -73,7 +73,7 @@ export default function Plot3dDataControls(props: Plot3dDataControlsProps): Reac
             value={subsampling}
             onChange={setSubsampling}
             minInputBound={1}
-            maxInputBound={50}
+            maxInputBound={100}
             minSliderBound={1}
             maxSliderBound={6}
             step={1}

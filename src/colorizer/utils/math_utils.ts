@@ -520,28 +520,28 @@ export function filterVectorFlowFieldData(flowFieldData: VectorFieldData): Vecto
  * @param arr Flattened 3D array, where the value at coordinates (x, y, z) is
  * located at index `z * dims[0] * dims[1] + y * dims[0] + x`.
  * @param dims Dimensions of the array, as a tuple `[xDim, yDim, zDim]`.
- * @param subsampling The subsampling factor. Must be >= 1. For example, a
- * subsampling of 2 will take every other value along each axis.
+ * @param subsampleFactor The integer subsampling factor. Must be >= 1. For example,
+ * a subsampling of 2 will take every other value along each axis.
  * @returns A new Float32Array containing the subsampled values.
  */
 export function subsampleFlat3dArray(
   arr: Float32Array | Uint32Array,
   dims: [number, number, number],
-  subsampling: number
+  subsampleFactor: number
 ): Float32Array {
-  if (subsampling <= 1) {
+  subsampleFactor = Math.round(subsampleFactor);
+  if (subsampleFactor <= 1) {
     return new Float32Array(arr);
   }
   const [xDim, yDim, zDim] = dims;
-  subsampling = Math.max(Math.round(subsampling), 1);
-  const subsampledXDim = Math.ceil(xDim / subsampling);
-  const subsampledYDim = Math.ceil(yDim / subsampling);
-  const subsampledZDim = Math.ceil(zDim / subsampling);
+  const subsampledXDim = Math.ceil(xDim / subsampleFactor);
+  const subsampledYDim = Math.ceil(yDim / subsampleFactor);
+  const subsampledZDim = Math.ceil(zDim / subsampleFactor);
   const output = new Float32Array(subsampledXDim * subsampledYDim * subsampledZDim);
   for (let z = 0; z < subsampledZDim; z++) {
     for (let y = 0; y < subsampledYDim; y++) {
       for (let x = 0; x < subsampledXDim; x++) {
-        const inputIndex = z * subsampling * xDim * yDim + y * subsampling * xDim + x * subsampling;
+        const inputIndex = z * subsampleFactor * xDim * yDim + y * subsampleFactor * xDim + x * subsampleFactor;
         const outputIndex = z * subsampledXDim * subsampledYDim + y * subsampledXDim + x;
         output[outputIndex] = arr[inputIndex];
       }
@@ -557,20 +557,20 @@ export function subsampleFlat3dArray(
 export function subsampleVectorFlowField(
   flowFieldData: VectorFieldData,
   dims: [number, number, number],
-  subsampling: number
+  subsamplingFactor: number
 ): VectorFieldData {
-  if (subsampling <= 1) {
+  if (subsamplingFactor <= 1) {
     return flowFieldData;
   }
   const { xPos, yPos, zPos, xData, yData, zData, count } = flowFieldData;
   return {
-    xPos: subsampleFlat3dArray(xPos, dims, subsampling),
-    yPos: subsampleFlat3dArray(yPos, dims, subsampling),
-    zPos: subsampleFlat3dArray(zPos, dims, subsampling),
-    xData: subsampleFlat3dArray(xData, dims, subsampling),
-    yData: subsampleFlat3dArray(yData, dims, subsampling),
-    zData: subsampleFlat3dArray(zData, dims, subsampling),
-    count: subsampleFlat3dArray(count, dims, subsampling),
+    xPos: subsampleFlat3dArray(xPos, dims, subsamplingFactor),
+    yPos: subsampleFlat3dArray(yPos, dims, subsamplingFactor),
+    zPos: subsampleFlat3dArray(zPos, dims, subsamplingFactor),
+    xData: subsampleFlat3dArray(xData, dims, subsamplingFactor),
+    yData: subsampleFlat3dArray(yData, dims, subsamplingFactor),
+    zData: subsampleFlat3dArray(zData, dims, subsamplingFactor),
+    count: subsampleFlat3dArray(count, dims, subsamplingFactor),
   };
 }
 

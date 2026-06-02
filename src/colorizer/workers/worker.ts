@@ -71,7 +71,7 @@ async function getVectorFlowField(
   inRangeLUT?: Uint8Array,
   outliers?: Uint8Array,
   gaussianBandwidth?: number,
-  subsampling?: number
+  subsamplingFactor?: number
 ): Promise<TransferType> {
   const tracks = constructAllTracksFromData(trackIds, times);
   const vectorSumData = binAndSumFeatureVectors(
@@ -110,7 +110,7 @@ async function getVectorFlowField(
   vectorFlowFieldData = subsampleVectorFlowField(
     vectorFlowFieldData,
     [xFeature.bins, yFeature.bins, zFeature.bins],
-    subsampling ?? 1
+    subsamplingFactor ?? 1
   );
   vectorFlowFieldData = filterVectorFlowFieldData(vectorFlowFieldData);
 
