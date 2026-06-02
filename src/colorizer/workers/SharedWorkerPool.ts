@@ -126,7 +126,8 @@ export default class SharedWorkerPool {
     zFeatureKey: string,
     bins: [number, number, number],
     inRangeLUT?: Uint8Array,
-    gaussianBandwidth?: number
+    gaussianBandwidth?: number,
+    subsampling?: number
   ): Promise<VectorFieldData> {
     const trackIds = dataset.trackIds;
     const times = dataset.times;
@@ -149,6 +150,7 @@ export default class SharedWorkerPool {
       inRangeLUT,
       dataset.outliers,
       gaussianBandwidth,
+      subsampling,
     ]);
   }
 

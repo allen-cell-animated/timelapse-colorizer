@@ -57,7 +57,7 @@ export default function Plot3dAppearanceControls(props: Plot3dAppearanceControls
             minInputBound={0.1}
             maxInputBound={10}
             minSliderBound={0.1}
-            maxSliderBound={2.5}
+            maxSliderBound={3}
             step={0.1}
             marks={[1]}
             numberFormatter={(number) => number?.toFixed(1)}

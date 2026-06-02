@@ -97,6 +97,7 @@ export enum UrlParam {
   PLOT3D_Y_AXIS = "p3d-y",
   PLOT3D_Z_AXIS = "p3d-z",
   PLOT3D_VECTOR_BINS = "p3d-vc-bins",
+  PLOT3D_VECTOR_SUBSAMPLING = "p3d-vc-subs",
   PLOT3D_VECTOR_SCALE = "p3d-vc-scale",
   PLOT3D_VECTOR_COLOR_RAMP = "p3d-vc-ramp",
   PLOT3D_VECTOR_THRESHOLD = "p3d-vc-thresh",

@@ -37,6 +37,7 @@ export default function Plot3dTab(): ReactElement {
   const inRangeLut = useViewerStateStore((state) => state.inRangeLUT);
   // 3D plot state
   const rawBins = useViewerStateStore((state) => state.plot3dVectorBins);
+  const rawSubsampling = useViewerStateStore((state) => state.plot3dVectorSubsampling);
   const xAxisFeatureKey = useViewerStateStore((state) => state.plot3dXAxis);
   const yAxisFeatureKey = useViewerStateStore((state) => state.plot3dYAxis);
   const zAxisFeatureKey = useViewerStateStore((state) => state.plot3dZAxis);
@@ -51,6 +52,7 @@ export default function Plot3dTab(): ReactElement {
   const isPlotTabVisible = useViewerStateStore((state) => state.openTab === TabType.PLOT_3D);
 
   const bins = useDebounce(rawBins, 100);
+  const subsampling = useDebounce(rawSubsampling, 100);
   const coneSize = useDebounce(rawConeSize, 100);
   const threshold = useDebounce(rawThreshold, 100);
   const movingAverageWindow = useDebounce(rawMovingAverageWindow, 100);
@@ -135,7 +137,8 @@ export default function Plot3dTab(): ReactElement {
         zAxisFeatureKey,
         [bins, bins, bins],
         inRangeLut,
-        applyGaussian ? gaussianBandwidthPct / 100 : undefined
+        applyGaussian ? gaussianBandwidthPct / 100 : undefined,
+        subsampling
       )
       .then((vectorFieldData) => {
         // Check if a newer requests supercedes this one before updating state
@@ -163,6 +166,7 @@ export default function Plot3dTab(): ReactElement {
     applyGaussian,
     gaussianBandwidthPct,
     inRangeLut,
+    subsampling,
   ];
 
   useEffect(() => {

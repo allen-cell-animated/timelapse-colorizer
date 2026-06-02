@@ -514,6 +514,48 @@ export function filterVectorFlowFieldData(flowFieldData: VectorFieldData): Vecto
   };
 }
 
+function subsampleFlat3dArray(
+  arr: Float32Array | Uint32Array,
+  dims: [number, number, number],
+  subsampling: number
+): Float32Array {
+  const [xDim, yDim, zDim] = dims;
+  const subsampledXDim = Math.floor(xDim / subsampling);
+  const subsampledYDim = Math.floor(yDim / subsampling);
+  const subsampledZDim = Math.floor(zDim / subsampling);
+  const output = new Float32Array(subsampledXDim * subsampledYDim * subsampledZDim);
+  for (let z = 0; z < subsampledZDim; z++) {
+    for (let y = 0; y < subsampledYDim; y++) {
+      for (let x = 0; x < subsampledXDim; x++) {
+        const inputIndex = z * subsampling * xDim * yDim + y * subsampling * xDim + x * subsampling;
+        const outputIndex = z * subsampledXDim * subsampledYDim + y * subsampledXDim + x;
+        output[outputIndex] = arr[inputIndex];
+      }
+    }
+  }
+  return output;
+}
+
+export function subsampleVectorFlowField(
+  flowFieldData: VectorFieldData,
+  dims: [number, number, number],
+  subsampling: number
+): VectorFieldData {
+  if (subsampling <= 1) {
+    return flowFieldData;
+  }
+  const { xPos, yPos, zPos, xData, yData, zData, count } = flowFieldData;
+  return {
+    xPos: subsampleFlat3dArray(xPos, dims, subsampling),
+    yPos: subsampleFlat3dArray(yPos, dims, subsampling),
+    zPos: subsampleFlat3dArray(zPos, dims, subsampling),
+    xData: subsampleFlat3dArray(xData, dims, subsampling),
+    yData: subsampleFlat3dArray(yData, dims, subsampling),
+    zData: subsampleFlat3dArray(zData, dims, subsampling),
+    count: subsampleFlat3dArray(count, dims, subsampling),
+  };
+}
+
 export function thresholdVectorFlowFieldByCount(
   flowFieldData: VectorFieldData,
   countThreshold: number

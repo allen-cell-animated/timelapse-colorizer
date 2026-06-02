@@ -147,6 +147,7 @@ const EXAMPLE_STORE: ViewerStoreSerializableState = {
   plot3dYAxis: MockFeatureKeys.FEATURE2,
   plot3dZAxis: MockFeatureKeys.FEATURE3,
   plot3dVectorBins: 20,
+  plot3dVectorSubsampling: 3,
   plot3dVectorScale: 1.5,
   plot3dVectorColorRampKey: COLOR_RAMP_KEY,
   plot3dVectorColorRampReversed: false,
@@ -227,6 +228,7 @@ const EXAMPLE_STORE_EXPECTED_PARAMS: ExpectedParamType = {
   "p3d-y": MockFeatureKeys.FEATURE2,
   "p3d-z": MockFeatureKeys.FEATURE3,
   "p3d-vc-bins": "20",
+  "p3d-vc-subs": "3",
   "p3d-vc-scale": "1.500",
   "p3d-vc-ramp": COLOR_RAMP_KEY,
   "p3d-vc-thresh": "10",
@@ -249,7 +251,7 @@ const EXAMPLE_STORE_EXPECTED_QUERY_STRING =
   "&c0=ven%3A1%2Ccol%3Aff0000ff%2Crmp%3A0%3A1%2Crng%3A-5%3A5" +
   "&c1=ven%3A0%2Ccol%3A00ff0000%2Crmp%3A0.300%3A4.200%2Crng%3A0%3A1" +
   "&c2=ven%3A1%2Ccol%3A0000ff04%2Crmp%3A3500%3A64231%2Crng%3A0%3A65535" +
-  "&p3d-x=feature1&p3d-y=feature2&p3d-z=feature3&p3d-vc-bins=20&p3d-vc-scale=1.500&p3d-vc-ramp=matplotlib-inferno&p3d-vc-thresh=10&p3d-avg-w=2&p3d-avg-n=7&p3d-gauss=1&p3d-gauss-bw=15";
+  "&p3d-x=feature1&p3d-y=feature2&p3d-z=feature3&p3d-vc-bins=20&p3d-vc-subs=3&p3d-vc-scale=1.500&p3d-vc-ramp=matplotlib-inferno&p3d-vc-thresh=10&p3d-avg-w=2&p3d-avg-n=7&p3d-gauss=1&p3d-gauss-bw=15";
 
 describe("serializeViewerState", () => {
   it("handles empty state", () => {
