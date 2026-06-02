@@ -559,7 +559,8 @@ export function subsampleVectorFlowField(
   dims: [number, number, number],
   subsamplingFactor: number
 ): VectorFieldData {
-  if (subsamplingFactor <= 1) {
+  subsamplingFactor = Math.round(subsamplingFactor);
+  if (subsamplingFactor <= 1 || !Number.isFinite(subsamplingFactor)) {
     return flowFieldData;
   }
   const { xPos, yPos, zPos, xData, yData, zData, count } = flowFieldData;
