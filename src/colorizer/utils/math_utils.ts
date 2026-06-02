@@ -530,7 +530,7 @@ export function subsampleFlat3dArray(
   subsampleFactor: number
 ): Float32Array {
   subsampleFactor = Math.round(subsampleFactor);
-  if (subsampleFactor <= 1) {
+  if (subsampleFactor <= 1 || !Number.isFinite(subsampleFactor)) {
     return new Float32Array(arr);
   }
   const [xDim, yDim, zDim] = dims;
