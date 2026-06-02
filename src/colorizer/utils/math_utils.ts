@@ -514,15 +514,19 @@ export function filterVectorFlowFieldData(flowFieldData: VectorFieldData): Vecto
   };
 }
 
-function subsampleFlat3dArray(
+export function subsampleFlat3dArray(
   arr: Float32Array | Uint32Array,
   dims: [number, number, number],
   subsampling: number
 ): Float32Array {
+  if (subsampling <= 1) {
+    return new Float32Array(arr);
+  }
   const [xDim, yDim, zDim] = dims;
-  const subsampledXDim = Math.floor(xDim / subsampling);
-  const subsampledYDim = Math.floor(yDim / subsampling);
-  const subsampledZDim = Math.floor(zDim / subsampling);
+  subsampling = Math.max(Math.round(subsampling), 1);
+  const subsampledXDim = Math.ceil(xDim / subsampling);
+  const subsampledYDim = Math.ceil(yDim / subsampling);
+  const subsampledZDim = Math.ceil(zDim / subsampling);
   const output = new Float32Array(subsampledXDim * subsampledYDim * subsampledZDim);
   for (let z = 0; z < subsampledZDim; z++) {
     for (let y = 0; y < subsampledYDim; y++) {
