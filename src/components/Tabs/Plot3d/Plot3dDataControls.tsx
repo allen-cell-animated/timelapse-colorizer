@@ -65,11 +65,7 @@ export default function Plot3dDataControls(props: Plot3dDataControlsProps): Reac
         ></SelectionDropdown>
       </SettingsItem>
 
-      <SettingsItem
-        label="Vector subsampling"
-        htmlFor={Plot3dDataControlsHtmlIds.VECTOR_SUBSAMPLING_SLIDER}
-        style={{ marginBottom: 6 }}
-      >
+      <SettingsItem label="Vector subsampling" htmlFor={Plot3dDataControlsHtmlIds.VECTOR_SUBSAMPLING_SLIDER}>
         <div style={{ width: `${SLIDER_WIDTH_PX}px` }}>
           <LabeledSlider
             id={Plot3dDataControlsHtmlIds.VECTOR_SUBSAMPLING_SLIDER}
