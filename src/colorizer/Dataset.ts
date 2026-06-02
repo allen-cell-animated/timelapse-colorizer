@@ -147,22 +147,22 @@ export default class Dataset {
   public outliers?: Uint8Array | null;
 
   private tracksFile?: string;
-  private timesFile?: string;
   public trackIds?: Uint32Array | null;
+  private timesFile?: string;
   public times?: Uint32Array | null;
   private cachedTracks: Map<number, Track | null>;
   private maxTrackLength: number | null;
 
-  public centroidsFile?: string;
+  private centroidsFile?: string;
   public centroids?: Uint16Array | null;
 
-  public boundsFile?: string;
+  private boundsFile?: string;
   public bounds?: Uint16Array | null;
 
   public metadata: ManifestFileMetadata;
 
-  public baseUrl: string;
-  public manifestUrl: string;
+  private baseUrl: string;
+  private manifestUrl: string;
   private hasOpened: boolean;
   private pathResolver: IPathResolver;
 
