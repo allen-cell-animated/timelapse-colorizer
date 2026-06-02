@@ -514,6 +514,16 @@ export function filterVectorFlowFieldData(flowFieldData: VectorFieldData): Vecto
   };
 }
 
+/**
+ * Subsamples a flat 3D array by taking every `nth` value along each axis, where
+ * `n` is the subsampling factor.
+ * @param arr Flattened 3D array, where the value at coordinates (x, y, z) is
+ * located at index `z * dims[0] * dims[1] + y * dims[0] + x`.
+ * @param dims Dimensions of the array, as a tuple `[xDim, yDim, zDim]`.
+ * @param subsampling The subsampling factor. Must be >= 1. For example, a
+ * subsampling of 2 will take every other value along each axis.
+ * @returns A new Float32Array containing the subsampled values.
+ */
 export function subsampleFlat3dArray(
   arr: Float32Array | Uint32Array,
   dims: [number, number, number],
@@ -540,6 +550,10 @@ export function subsampleFlat3dArray(
   return output;
 }
 
+/**
+ * Subsamples the vector flow field data by taking every `nth` value along each
+ * axis, where `n` is the subsampling factor.
+ */
 export function subsampleVectorFlowField(
   flowFieldData: VectorFieldData,
   dims: [number, number, number],
