@@ -5,7 +5,11 @@ import type { FeatureDataType } from "src/colorizer/types";
 import { computeCorrelations } from "src/colorizer/utils/correlation";
 import { columnsToCsv, type CsvDataColumn } from "src/colorizer/utils/csv_utils";
 import { type LoadedData, loadFromJsonUrl, loadFromParquetUrl } from "src/colorizer/utils/data_load_utils";
-import { calculateMotionDeltas, constructAllTracksFromData } from "src/colorizer/utils/math_utils";
+import {
+  applyOutliersToInRangeLut,
+  calculateMotionDeltas,
+  constructAllTracksFromData,
+} from "src/colorizer/utils/math_utils";
 import { arrayToDataTextureInfo } from "src/colorizer/utils/texture_utils";
 
 async function loadUrlData(url: string, type: FeatureDataType): Promise<TransferType> {
@@ -46,10 +50,13 @@ async function getMotionDeltas(
   trackIds: Uint32Array,
   times: Uint32Array,
   centroids: Uint16Array,
+  outliers: Uint8Array,
+  inRangeLUT: Uint8Array,
   timeIntervals: number
 ): Promise<TransferType> {
   const tracks = constructAllTracksFromData(trackIds, times, centroids);
-  const motionDeltas = calculateMotionDeltas(tracks, timeIntervals);
+  const combinedInRangeLut = applyOutliersToInRangeLut(inRangeLUT, outliers);
+  const motionDeltas = calculateMotionDeltas(tracks, timeIntervals, combinedInRangeLut);
   return new Transfer(motionDeltas, [motionDeltas.buffer]);
 }
 
