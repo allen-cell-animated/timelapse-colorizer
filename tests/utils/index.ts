@@ -2,7 +2,7 @@ import { DataTexture, RGBAFormat, type Texture, UnsignedByteType } from "three";
 
 import {
   type ArraySource,
-  Dataset,
+  type Dataset,
   type FeatureArrayType,
   type FeatureDataType,
   featureTypeSpecs,

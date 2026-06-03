@@ -1,17 +1,17 @@
-import { Vector2 } from "three";
+import type { Vector2 } from "three";
 
 import {
   CENTROID_X_FEATURE_KEY,
   CENTROID_Y_FEATURE_KEY,
   CENTROID_Z_FEATURE_KEY,
-  FeatureData,
+  type FeatureData,
   FeatureType,
   TIME_FEATURE_KEY,
   TRACK_FEATURE_KEY,
 } from "src/colorizer/Dataset";
-import { FeatureDataType, LoadTroubleshooting, ReportWarningCallback } from "src/colorizer/types";
+import { FeatureDataType, LoadTroubleshooting, type ReportWarningCallback } from "src/colorizer/types";
 import { formatAsBulletList } from "src/colorizer/utils/data_utils";
-import { ManifestFile, ManifestFileMetadata } from "src/colorizer/utils/dataset_utils";
+import type { ManifestFile, ManifestFileMetadata } from "src/colorizer/utils/dataset_utils";
 import { packDataTexture } from "src/colorizer/utils/texture_utils";
 
 export function getDefaultSegIds(numObjects: number): Uint32Array {

@@ -1,7 +1,7 @@
 import { DEFAULT_COLLECTION_FILENAME, DEFAULT_DATASET_FILENAME } from "src/colorizer/constants";
 import JsonDatasetLoader from "src/colorizer/dataset_loaders/JsonDatasetLoader";
 
-import Dataset from "./Dataset";
+import type Dataset from "./Dataset";
 import type { IArrayLoader, ITextureImageLoader } from "./loaders/ILoader";
 import { FilePathResolver, type IPathResolver, UrlPathResolver } from "./path_resolvers";
 import { LoadErrorMessage, LoadTroubleshooting, type ReportWarningCallback } from "./types";

@@ -1,14 +1,14 @@
 import { RGBAFormat, RGBAIntegerFormat, Vector2 } from "three";
 
 import {
-  FeatureArrayType,
+  type FeatureArrayType,
   FeatureDataType,
-  IArrayLoader,
-  ITextureImageLoader,
+  type IArrayLoader,
+  type ITextureImageLoader,
   LoadTroubleshooting,
   MAX_FEATURE_CATEGORIES,
 } from "src/colorizer";
-import Dataset, { Backdrop3dData, FeatureData, FeatureType, Frames3dData } from "src/colorizer/Dataset";
+import Dataset, { type Backdrop3dData, type FeatureData, FeatureType, type Frames3dData } from "src/colorizer/Dataset";
 import {
   addCentroidFeatures,
   addTimeFeature,
@@ -16,16 +16,16 @@ import {
   getDefaultSegIds,
   reportUnloadedFeatures,
 } from "src/colorizer/dataset_loaders/dataset_loader_utils";
-import { DatasetLoadOptions } from "src/colorizer/dataset_loaders/types";
+import type { DatasetLoadOptions } from "src/colorizer/dataset_loaders/types";
 import ImageFrameLoader from "src/colorizer/loaders/ImageFrameLoader";
 import UrlArrayLoader from "src/colorizer/loaders/UrlArrayLoader";
-import { IPathResolver, UrlPathResolver } from "src/colorizer/path_resolvers";
+import { type IPathResolver, UrlPathResolver } from "src/colorizer/path_resolvers";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "src/colorizer/utils/analytics";
 import { getKeyFromName } from "src/colorizer/utils/data_utils";
 import {
-  AnyManifestFile,
-  ManifestFile,
-  ManifestFileMetadata,
+  type AnyManifestFile,
+  type ManifestFile,
+  type ManifestFileMetadata,
   updateManifestVersion,
 } from "src/colorizer/utils/dataset_utils";
 import { padCentroidsTo3d } from "src/colorizer/utils/math_utils";
@@ -64,7 +64,7 @@ export default class JsonDatasetLoader {
 
   constructor(manifestUrl: string, options?: JsonDatasetLoadOptions) {
     const { reportProgress, reportWarning } = options ?? {};
-    let { frameLoader, arrayLoader, pathResolver, manifestLoader } = options ?? {};
+    const { frameLoader, arrayLoader, pathResolver, manifestLoader } = options ?? {};
     this.frameLoader = frameLoader ?? new ImageFrameLoader(RGBAIntegerFormat);
     this.backdropLoader = frameLoader ?? new ImageFrameLoader(RGBAFormat);
     this.arrayLoader = arrayLoader ?? new UrlArrayLoader();

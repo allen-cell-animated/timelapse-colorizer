@@ -7,6 +7,7 @@ export type DatasetLoadOptions = {
   reportWarning?: ReportWarningCallback;
 
   frameLoader?: ITextureImageLoader;
+  backdropLoader?: ITextureImageLoader;
   arrayLoader?: IArrayLoader;
   pathResolver?: IPathResolver;
 };

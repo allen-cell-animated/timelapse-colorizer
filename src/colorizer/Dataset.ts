@@ -17,9 +17,9 @@ import DataCache from "./DataCache";
 import type { ITextureImageLoader } from "./loaders/ILoader";
 import ImageFrameLoader from "./loaders/ImageFrameLoader";
 import Track from "./Track";
-import { type GlobalIdLookupInfo } from "./types";
+import type { GlobalIdLookupInfo } from "./types";
 import { buildFrameToGlobalIdLookup } from "./utils/data_utils";
-import { type ManifestFileMetadata } from "./utils/dataset_utils";
+import type { ManifestFileMetadata } from "./utils/dataset_utils";
 
 export const TRACK_FEATURE_KEY = "_track_";
 export const TIME_FEATURE_KEY = "_time_";
