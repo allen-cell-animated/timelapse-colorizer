@@ -52,6 +52,7 @@ type BackdropData = {
 };
 
 export type Backdrop3dData = {
+  /** Source for 3D data, resolved to http/https URLs. Expected to be a path to an OME-Zarr array.*/
   source: string;
   name: string;
   description?: string;
@@ -69,6 +70,29 @@ export type Frames3dData = {
   backdrops?: Backdrop3dData[];
 };
 
+export type DatasetInputData = {
+  manifestUrl: string;
+  metadata: ManifestFileMetadata;
+  // Image sources
+  /** List of resolved URLs for each frame in the dataset. */
+  frameFiles: (string | null)[];
+  /**
+   * Map of backdrop names to their data. Note that all backdrop paths must be
+   * resolved to URLs.
+   */
+  backdrops: Map<string, BackdropData>;
+  frames3d: Frames3dData;
+  frameResolution: Vector2;
+  // Data arrays
+  features: Map<string, FeatureData>;
+  segIds: Uint32Array | null;
+  times: Uint32Array | null;
+  trackIds: Uint32Array | null;
+  centroids: Uint16Array | null;
+  bounds: Uint16Array | null;
+  outliers: Uint8Array | null;
+};
+
 const defaultMetadata: ManifestFileMetadata = {
   frameDims: {
     width: 0,
@@ -79,18 +103,44 @@ const defaultMetadata: ManifestFileMetadata = {
   startTimeSeconds: 0,
 };
 
+/**
+ * A data container for the image sources, features, and associated metadata for
+ * a dataset. Provides caching and convenience methods for data access.
+ */
 export default class Dataset {
+  //// Metadata ////
+  public readonly manifestUrl: string | undefined;
+  public readonly metadata: ManifestFileMetadata;
+
+  //// Image sources ////
   private frameLoader: ITextureImageLoader;
   private frameFiles: (string | null)[] | null;
   private frames: DataCache<number, Texture>;
   private frameDimensions: Vector2 | null;
 
-  // TODO: validate frames 3D data
+  private backdropLoader: ITextureImageLoader;
+  private backdropData: Map<string, BackdropData>;
+  private backdropFrames: DataCache<string, Texture>;
+
   public frames3d: Frames3dData | null;
+
+  //// Data arrays ////
+  /** Ordered map from feature keys to feature data. */
+  private features: Map<string, FeatureData>;
+  public trackIds: Uint32Array | null;
+  public times: Uint32Array | null;
 
   /** Lookup from a global index of an object to the raw segmentation ID in the
    * frame/image where it appears. */
   public segIds: Uint32Array | null;
+
+  public outliers: Uint8Array | null;
+  public centroids: Uint16Array | null;
+  public bounds: Uint16Array | null;
+
+  //// Cached Data ////
+  private cachedTracks: Map<number, Track | null>;
+  private maxTrackLength: number | null;
 
   /**
    * Maps from a frame number to a lookup table used to get the global ID of a
@@ -108,46 +158,10 @@ export default class Dataset {
    *
    * See `GlobalIdLookupInfo` for more details.
    */
-  public frameToGlobalIdLookup: Map<number, GlobalIdLookupInfo>;
-
-  private backdropLoader: ITextureImageLoader;
-  private backdropData: Map<string, BackdropData>;
-  private backdropFrames: DataCache<string, Texture>;
-
-  // Use map to enforce ordering
-  /** Ordered map from feature keys to feature data. */
-  private features: Map<string, FeatureData>;
-
-  public trackIds: Uint32Array | null;
-  public times: Uint32Array | null;
-  private cachedTracks: Map<number, Track | null>;
-  private maxTrackLength: number | null;
-
-  public outliers: Uint8Array | null;
-  public centroids: Uint16Array | null;
-  public bounds: Uint16Array | null;
-
-  public readonly manifestUrl: string | undefined;
-  public readonly metadata: ManifestFileMetadata;
+  public readonly frameToGlobalIdLookup: Map<number, GlobalIdLookupInfo>;
 
   constructor(
-    data: {
-      manifestUrl?: string;
-      metadata?: ManifestFileMetadata;
-      // Image sources
-      frameFiles?: (string | null)[];
-      backdrops?: Map<string, BackdropData>;
-      frames3d?: Frames3dData;
-      frameResolution?: Vector2;
-      // Data arrays
-      features: Map<string, FeatureData>;
-      segIds?: Uint32Array | null;
-      times?: Uint32Array | null;
-      trackIds?: Uint32Array | null;
-      centroids?: Uint16Array | null;
-      bounds?: Uint16Array | null;
-      outliers?: Uint8Array | null;
-    },
+    data: Partial<DatasetInputData>,
     options: { frameLoader?: ITextureImageLoader; backdropLoader?: ITextureImageLoader } = {}
   ) {
     this.manifestUrl = data.manifestUrl;
@@ -155,7 +169,6 @@ export default class Dataset {
 
     // Image sources
     this.frameLoader = options.frameLoader || new ImageFrameLoader(RGBAIntegerFormat);
-
     this.frames = new DataCache(MAX_CACHED_FRAME_BYTES);
     this.frameFiles = data.frameFiles || null;
     this.frameDimensions = data.frameResolution ?? null;
@@ -167,7 +180,7 @@ export default class Dataset {
     this.frames3d = data.frames3d || null;
 
     // Data arrays
-    this.features = data.features;
+    this.features = data.features || new Map<string, FeatureData>();
     this.times = data.times || null;
     this.trackIds = data.trackIds || null;
     this.segIds = data.segIds || null;
@@ -347,15 +360,13 @@ export default class Dataset {
   }
 
   public async loadBackdrop(key: string, index: number): Promise<Texture | undefined> {
-    // TODO: Implement caching
     const cacheKey = `${key}-${index}`;
-    const cachedFrame = this.backdropFrames?.get(cacheKey);
+    const cachedFrame = this.backdropFrames.get(cacheKey);
     if (cachedFrame) {
       return cachedFrame;
     }
 
     const backdropFrames = this.backdropData.get(key)?.frames;
-    // TODO: Wrapping or clamping?
     if (!backdropFrames || index < 0 || index >= backdropFrames.length) {
       return undefined;
     }
@@ -365,7 +376,7 @@ export default class Dataset {
       throw new Error(`Failed to resolve path for backdrop '${key}' at index ${index}: '${backdropFrames[index]}'`);
     }
     const loadedBackdrop = await this.backdropLoader.load(fullUrl);
-    this.backdropFrames?.insert(cacheKey, loadedBackdrop);
+    this.backdropFrames.insert(cacheKey, loadedBackdrop);
     return loadedBackdrop;
   }
 
@@ -410,7 +421,7 @@ export default class Dataset {
     return this.times?.[index] || 0;
   }
 
-  public getTotalFrames(): number {
+  private getTotalFrames(): number {
     if (this.has2dFrames()) {
       return this.frameFiles?.length ?? 0;
     } else {
