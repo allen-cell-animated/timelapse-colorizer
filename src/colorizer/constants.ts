@@ -62,3 +62,6 @@ export const CSV_COL_DATASET = "Dataset";
 
 export const BOOLEAN_VALUE_TRUE = "true";
 export const BOOLEAN_VALUE_FALSE = "false";
+
+export const MAX_CACHED_FRAME_BYTES = 500000000; // 500 MB
+export const MAX_CACHED_BACKDROPS_BYTES = 500000000; // 500 MB
