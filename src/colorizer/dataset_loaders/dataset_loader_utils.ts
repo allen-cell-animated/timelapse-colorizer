@@ -135,15 +135,3 @@ export function reportUnloadedFeatures(
     ]);
   }
 }
-
-export function reportUnresolvedPaths(
-  pathType: string,
-  paths: string[],
-  resolvedPaths: (string | null)[],
-  reportWarning: ReportWarningCallback | undefined
-): void {
-  const unresolvedPaths = paths.filter((_, index) => !resolvedPaths[index]);
-  if (unresolvedPaths.length === 0) {
-    return;
-  }
-}
