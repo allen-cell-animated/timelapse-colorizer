@@ -1,4 +1,5 @@
 import { DEFAULT_COLLECTION_FILENAME, DEFAULT_DATASET_FILENAME } from "src/colorizer/constants";
+import JsonDatasetLoader from "src/colorizer/dataset_loaders/JsonDatasetLoader";
 
 import Dataset from "./Dataset";
 import type { IArrayLoader, ITextureImageLoader } from "./loaders/ILoader";
@@ -222,28 +223,16 @@ export default class Collection {
     const path = this.getAbsoluteDatasetPath(datasetKey);
     console.log(`Fetching dataset from path '${path}'`);
 
-    let totalLoadItems = 0;
-    let completedLoadItems = 0;
-    const onLoadStart = (): void => {
-      totalLoadItems++;
-    };
-    const onLoadComplete = (): void => {
-      completedLoadItems++;
-      options.onLoadProgress?.(completedLoadItems, totalLoadItems);
-    };
-
     try {
-      const dataset = new Dataset(path, {
+      const datasetLoader = new JsonDatasetLoader(path, {
         frameLoader: options.frameLoader,
         arrayLoader: options.arrayLoader,
-        pathResolver: this.pathResolver,
-      });
-      await dataset.open({
-        onLoadStart,
-        onLoadComplete,
+        reportProgress: options.onLoadProgress,
         reportWarning: options.reportWarning,
         manifestLoader: options.manifestLoader,
+        pathResolver: this.pathResolver,
       });
+      const dataset = await datasetLoader.open();
       console.timeEnd("loadDataset");
       return { loaded: true, dataset: dataset };
     } catch (e) {

@@ -81,12 +81,12 @@ const defaultMetadata: ManifestFileMetadata = {
 
 export default class Dataset {
   private frameLoader: ITextureImageLoader;
-  private frameFiles?: string[];
+  private frameFiles: (string | null)[] | null;
   private frames: DataCache<number, Texture>;
   private frameDimensions: Vector2 | null;
 
   // TODO: validate frames 3D data
-  public frames3d?: Frames3dData;
+  public frames3d: Frames3dData | null;
 
   /** Lookup from a global index of an object to the raw segmentation ID in the
    * frame/image where it appears. */
@@ -127,20 +127,20 @@ export default class Dataset {
   public centroids: Uint16Array | null;
   public bounds: Uint16Array | null;
 
-  public metadata: ManifestFileMetadata;
+  public readonly manifestUrl: string | undefined;
+  public readonly metadata: ManifestFileMetadata;
 
-  /**
-   * Constructs a new Dataset using the provided manifest path.
-   * @param manifestUrl Must be a path to a .json manifest file.
-   * @param frameLoader Optional.
-   * @param arrayLoader Optional.
-   */
   constructor(
     data: {
-      features: Map<string, FeatureData>;
-      frameFiles?: string[];
-      backdrops: Map<string, BackdropData>;
+      manifestUrl?: string;
       metadata?: ManifestFileMetadata;
+      // Image sources
+      frameFiles?: (string | null)[];
+      backdrops?: Map<string, BackdropData>;
+      frames3d?: Frames3dData;
+      frameResolution?: Vector2;
+      // Data arrays
+      features: Map<string, FeatureData>;
       segIds?: Uint32Array | null;
       times?: Uint32Array | null;
       trackIds?: Uint32Array | null;
@@ -150,15 +150,23 @@ export default class Dataset {
     },
     options: { frameLoader?: ITextureImageLoader }
   ) {
+    this.manifestUrl = data.manifestUrl;
+    this.metadata = defaultMetadata;
+
+    // Image sources
     this.frameLoader = options.frameLoader || new ImageFrameLoader(RGBAIntegerFormat);
+
     this.frames = new DataCache(MAX_CACHED_FRAME_BYTES);
-    this.frameFiles = data.frameFiles;
-    this.frameDimensions = null;
+    this.frameFiles = data.frameFiles || null;
+    this.frameDimensions = data.frameResolution ?? null;
 
     this.backdropLoader = options.frameLoader || new ImageFrameLoader(RGBAFormat);
     this.backdropFrames = new DataCache(MAX_CACHED_BACKDROPS_BYTES);
-    this.backdropData = data.backdrops;
+    this.backdropData = data.backdrops || new Map<string, BackdropData>();
 
+    this.frames3d = data.frames3d || null;
+
+    // Data arrays
     this.features = data.features;
     this.times = data.times || null;
     this.trackIds = data.trackIds || null;
@@ -167,9 +175,9 @@ export default class Dataset {
     this.bounds = data.bounds || null;
     this.outliers = data.outliers || null;
 
+    // Cached data
     this.cachedTracks = new Map();
     this.maxTrackLength = null;
-    this.metadata = defaultMetadata;
 
     this.frameToGlobalIdLookup = buildFrameToGlobalIdLookup(
       this.times ?? new Uint32Array(),
@@ -180,8 +188,8 @@ export default class Dataset {
     this.getSegmentationId = this.getSegmentationId.bind(this);
   }
 
-  public get frames2dPaths(): readonly string[] | undefined {
-    return this.frameFiles;
+  public get frames2dPaths(): readonly (string | null)[] | undefined {
+    return this.frameFiles ?? undefined;
   }
 
   public hasFeatureKey(key: string): boolean {
@@ -304,7 +312,7 @@ export default class Dataset {
 
   /** Loads a single frame from the dataset */
   public async loadFrame(index: number): Promise<Texture | undefined> {
-    if (index < 0 || this.frameFiles === undefined || index >= this.frameFiles.length) {
+    if (index < 0 || this.frameFiles === null || index >= this.frameFiles.length) {
       return undefined;
     }
 
@@ -312,11 +320,6 @@ export default class Dataset {
     if (cachedFrame) {
       this.frameDimensions = new Vector2(cachedFrame.image.width, cachedFrame.image.height);
       return cachedFrame;
-    }
-
-    // Allow for undefined or null frame files in the manifest
-    if (this.frameFiles[index] === undefined || this.frameFiles[index] === null) {
-      return undefined;
     }
 
     const fullUrl = this.frameFiles[index];
@@ -382,24 +385,27 @@ export default class Dataset {
    * structures for garbage collection.
    */
   public dispose(): void {
+    // Image sources
     this.frames.dispose();
     this.backdropFrames.dispose();
+    this.backdropData.clear();
+    this.frameFiles = null;
+    this.frames3d = null;
+    // Data arrays
     this.features.forEach((feature) => {
       feature.data = new Float32Array(0);
       feature.tex.dispose();
     });
     this.features.clear();
-    this.cachedTracks.clear();
-    this.frameToGlobalIdLookup?.clear();
     this.bounds = null;
     this.centroids = null;
     this.outliers = null;
     this.segIds = null;
     this.times = null;
     this.trackIds = null;
-    this.backdropData.clear();
-    this.frameFiles = undefined;
-    this.frames3d = undefined;
+    // Cached data
+    this.cachedTracks.clear();
+    this.frameToGlobalIdLookup?.clear();
   }
 
   /** get frame index of a given cell id */

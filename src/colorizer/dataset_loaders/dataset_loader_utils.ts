@@ -1,4 +1,4 @@
-import { Vector2, Vector3 } from "three";
+import { Vector2 } from "three";
 
 import {
   CENTROID_X_FEATURE_KEY,
@@ -9,9 +9,18 @@ import {
   TIME_FEATURE_KEY,
   TRACK_FEATURE_KEY,
 } from "src/colorizer/Dataset";
-import { FeatureDataType } from "src/colorizer/types";
-import { ManifestFileMetadata } from "src/colorizer/utils/dataset_utils";
+import { FeatureDataType, LoadTroubleshooting, ReportWarningCallback } from "src/colorizer/types";
+import { formatAsBulletList } from "src/colorizer/utils/data_utils";
+import { ManifestFile, ManifestFileMetadata } from "src/colorizer/utils/dataset_utils";
 import { packDataTexture } from "src/colorizer/utils/texture_utils";
+
+export function getDefaultSegIds(numObjects: number): Uint32Array {
+  const segIds = new Uint32Array(numObjects);
+  for (let i = 0; i < numObjects; i++) {
+    segIds[i] = i + 1;
+  }
+  return segIds;
+}
 
 export function addTrackFeature(features: Map<string, FeatureData>, trackIds: Uint32Array | null): void {
   if (trackIds && !features.has(TRACK_FEATURE_KEY)) {
@@ -106,5 +115,35 @@ export function addCentroidFeatures(
       categories: null,
       description,
     });
+  }
+}
+
+export function reportUnloadedFeatures(
+  featureSpec: ManifestFile["features"],
+  loadedFeatures: Map<string, FeatureData>,
+  reportWarning: ReportWarningCallback | undefined
+): void {
+  if (loadedFeatures.size !== featureSpec.length) {
+    // Report the names of all features that could not be loaded.
+    const loadedFeatureNames = new Set(Array.from(loadedFeatures.values()).map((f) => f.name));
+    const missingFeatureNames = featureSpec.filter((f) => !loadedFeatureNames.has(f.name)).map((f) => f.name);
+
+    reportWarning?.("Some features failed to load.", [
+      "The following feature(s) could not be loaded and will not be shown: ",
+      ...formatAsBulletList(missingFeatureNames, 5),
+      LoadTroubleshooting.CHECK_FILE_OR_NETWORK,
+    ]);
+  }
+}
+
+export function reportUnresolvedPaths(
+  pathType: string,
+  paths: string[],
+  resolvedPaths: (string | null)[],
+  reportWarning: ReportWarningCallback | undefined
+): void {
+  const unresolvedPaths = paths.filter((_, index) => !resolvedPaths[index]);
+  if (unresolvedPaths.length === 0) {
+    return;
   }
 }

@@ -4,7 +4,8 @@ import { describe, expect, it } from "vitest";
 
 import { FeatureDataType } from "src/colorizer";
 import { MAX_FEATURE_CATEGORIES } from "src/colorizer/constants";
-import Dataset, { FeatureType } from "src/colorizer/Dataset";
+import { FeatureType } from "src/colorizer/Dataset";
+import JsonDatasetLoader from "src/colorizer/dataset_loaders/JsonDatasetLoader";
 import type { AnyManifestFile, ManifestFile } from "src/colorizer/utils/dataset_utils";
 import {
   MOCK_DATASET_ARRAY_LOADER,
@@ -174,12 +175,13 @@ describe("Dataset", () => {
             feature1: { type: "categorical" },
           },
         };
-        const dataset = new Dataset(DEFAULT_DATASET_PATH, {
+        const mockFetch = makeMockAsyncLoader(DEFAULT_DATASET_PATH, badManifest);
+        const datasetLoader = new JsonDatasetLoader(DEFAULT_DATASET_PATH, {
           frameLoader: new MockFrameLoader(),
           arrayLoader: new MockArrayLoader(),
+          manifestLoader: mockFetch,
         });
-        const mockFetch = makeMockAsyncLoader(DEFAULT_DATASET_PATH, badManifest);
-        await expect(dataset.open({ manifestLoader: mockFetch })).rejects.toThrowError(ANY_ERROR);
+        await expect(datasetLoader.open()).rejects.toThrowError(ANY_ERROR);
       });
 
       it("throws an error if the number of categories exceeds the max", async () => {
@@ -196,12 +198,13 @@ describe("Dataset", () => {
             },
           },
         };
-        const dataset = new Dataset(DEFAULT_DATASET_PATH, {
+        const mockFetch = makeMockAsyncLoader(DEFAULT_DATASET_PATH, badManifest);
+        const datasetLoader = new JsonDatasetLoader(DEFAULT_DATASET_PATH, {
           frameLoader: new MockFrameLoader(),
           arrayLoader: new MockArrayLoader(),
+          manifestLoader: mockFetch,
         });
-        const mockFetch = makeMockAsyncLoader(DEFAULT_DATASET_PATH, badManifest);
-        await expect(dataset.open({ manifestLoader: mockFetch })).rejects.toThrowError(ANY_ERROR);
+        await expect(datasetLoader.open()).rejects.toThrowError(ANY_ERROR);
       });
 
       it("Loads the first frame and retrieves frame dimensions on open", async () => {
@@ -217,12 +220,12 @@ describe("Dataset", () => {
         ];
 
         for (const [width, height] of dimensionTests) {
-          const dataset = new Dataset(DEFAULT_DATASET_PATH, {
+          const datasetLoader = new JsonDatasetLoader(DEFAULT_DATASET_PATH, {
             frameLoader: new MockFrameLoader(width, height),
             arrayLoader: new MockArrayLoader(),
+            manifestLoader: mockFetch,
           });
-          expect(dataset.frameResolution).to.deep.equal(new Vector2(1, 1));
-          await dataset.open({ manifestLoader: mockFetch });
+          const dataset = await datasetLoader.open();
           expect(dataset.frameResolution).to.deep.equal(new Vector2(width, height));
         }
       });
@@ -350,7 +353,6 @@ describe("Dataset", () => {
   describe("toCsvDataColumns", () => {
     it("converts default dataset to CSV data columns", async () => {
       const dataset = await makeMockDataset(MOCK_DATASET_MANIFEST, MOCK_DATASET_ARRAY_LOADER);
-      await dataset.open();
       const csvColumns = dataset.toCsvDataColumns();
       expect(csvColumns[0]).to.deep.equal({
         name: "ID",

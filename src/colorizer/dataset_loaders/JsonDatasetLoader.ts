@@ -14,13 +14,15 @@ import {
   addCentroidFeatures,
   addTimeFeature,
   addTrackFeature,
+  getDefaultSegIds,
+  reportUnloadedFeatures,
 } from "src/colorizer/dataset_loaders/dataset_loader_utils";
 import { DatasetLoadOptions } from "src/colorizer/dataset_loaders/types";
 import ImageFrameLoader from "src/colorizer/loaders/ImageFrameLoader";
 import UrlArrayLoader from "src/colorizer/loaders/UrlArrayLoader";
 import { IPathResolver, UrlPathResolver } from "src/colorizer/path_resolvers";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "src/colorizer/utils/analytics";
-import { formatAsBulletList, getKeyFromName } from "src/colorizer/utils/data_utils";
+import { getKeyFromName } from "src/colorizer/utils/data_utils";
 import {
   AnyManifestFile,
   ManifestFile,
@@ -263,12 +265,13 @@ export default class JsonDatasetLoader {
     const boundsFile = manifest.bounds;
     const segIdsFile = manifest.segIds;
 
-    const backdropData = new Map<string, { name: string; frames: string[] }>();
+    const backdrops = new Map<string, { name: string; frames: (string | null)[] }>();
 
     if (manifest.backdrops && manifest.frames) {
-      for (const { name, key, frames } of manifest.backdrops) {
-        backdropData.set(key, { name, frames });
-        if (frames.length !== frameFiles?.length || 0) {
+      for (const { name, key, frames: backdropFrames } of manifest.backdrops) {
+        const resolvedBackdropFrames = backdropFrames.map((path) => this.resolvePath(path));
+        backdrops.set(key, { name, frames: resolvedBackdropFrames });
+        if (resolvedBackdropFrames.length !== frameFiles?.length || 0) {
           throw new Error(
             `Number of frames (${frameFiles?.length}) does not match number of images (${frames.length}) for backdrop '${key}'. ` +
               ` If you are a dataset author, please ensure that the number of frames in the manifest matches the number of images for each backdrop.`
@@ -354,33 +357,12 @@ export default class JsonDatasetLoader {
 
     //// Post-processing and validation steps ////
 
-    if (features.size !== manifest.features.length) {
-      // Report the names of all features that could not be loaded.
-      const loadedFeatureNames = new Set(Array.from(features.values()).map((f) => f.name));
-      const missingFeatureNames = manifest.features.filter((f) => !loadedFeatureNames.has(f.name)).map((f) => f.name);
-
-      this.reportWarning?.("Some features failed to load.", [
-        "The following feature(s) could not be loaded and will not be shown: ",
-        ...formatAsBulletList(missingFeatureNames, 5),
-        LoadTroubleshooting.CHECK_FILE_OR_NETWORK,
-      ]);
-    }
-
     const numObjects = features.values().next().value?.data.length || times?.length || trackIds?.length || 0;
 
-    // Construct default array of segmentation IDs if not provided in the manifest.
-    if (!segIds) {
-      // Construct default segIds array (0, 1, 2, ...)
-      segIds = new Uint32Array(numObjects);
-      for (let i = 0; i < numObjects; i++) {
-        segIds[i] = i + 1;
-      }
-    }
+    reportUnloadedFeatures(manifest.features, features, this.reportWarning);
 
-    // Fixup 2D centroids to 3D
-    if (centroids) {
-      centroids = padCentroidsTo3d(centroids, numObjects);
-    }
+    segIds = segIds ?? getDefaultSegIds(numObjects);
+    centroids = centroids && padCentroidsTo3d(centroids, numObjects);
 
     addCentroidFeatures(features, centroids, metadata, frames3d ? undefined : frameDimensions);
     addTimeFeature(features, times);
@@ -398,10 +380,15 @@ export default class JsonDatasetLoader {
     // TODO: Resolve all frame and backdrop paths
     return new Dataset(
       {
-        features,
-        frameFiles,
-        backdrops,
+        manifestUrl: resolvedManifestUrl,
         metadata,
+        // Image sources
+        frameFiles,
+        frames3d,
+        backdrops,
+        frameResolution: frameDimensions ?? undefined,
+        // Data arrays
+        features,
         segIds,
         times,
         trackIds,
