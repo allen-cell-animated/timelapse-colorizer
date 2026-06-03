@@ -13,7 +13,6 @@ import {
   MOCK_DATASET_MANIFEST,
 } from "tests/constants";
 import {
-  ANY_ERROR,
   DEFAULT_DATASET_DIR,
   DEFAULT_DATASET_PATH,
   makeMockAsyncLoader,
@@ -165,11 +164,12 @@ describe("Dataset", () => {
         expect(dataset.getFeatureCategories("feature5")).to.deep.equal(["small", "medium", "large"]);
       });
 
-      it("throws an error if categorical data is missing categories", async () => {
+      it("skips categorical features that are missing categories", async () => {
         const badManifest = {
           frames: ["frame0.json"],
           features: {
             feature1: "feature1.json",
+            feature2: "feature2.json",
           },
           featureMetadata: {
             feature1: { type: "categorical" },
@@ -181,15 +181,17 @@ describe("Dataset", () => {
           arrayLoader: new MockArrayLoader(),
           manifestLoader: mockFetch,
         });
-        await expect(datasetLoader.open()).rejects.toThrowError(ANY_ERROR);
+        const dataset = await datasetLoader.open();
+        expect(dataset.featureKeys).to.deep.equal(["feature2"]);
       });
 
-      it("throws an error if the number of categories exceeds the max", async () => {
+      it("skips categorical features that exceed the max number of categories", async () => {
         const categories = [...Array(MAX_FEATURE_CATEGORIES + 1).keys()].map((i) => i.toString());
         const badManifest = {
           frames: ["frame0.json"],
           features: {
             feature1: "feature1.json",
+            feature2: "feature2.json",
           },
           featureMetadata: {
             feature1: {
@@ -204,7 +206,8 @@ describe("Dataset", () => {
           arrayLoader: new MockArrayLoader(),
           manifestLoader: mockFetch,
         });
-        await expect(datasetLoader.open()).rejects.toThrowError(ANY_ERROR);
+        const dataset = await datasetLoader.open();
+        expect(dataset.featureKeys).to.deep.equal(["feature2"]);
       });
 
       it("Loads the first frame and retrieves frame dimensions on open", async () => {

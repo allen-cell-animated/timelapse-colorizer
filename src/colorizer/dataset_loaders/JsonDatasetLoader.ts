@@ -291,9 +291,6 @@ export default class JsonDatasetLoader {
     };
 
     // Load feature data
-    if (manifest.features.length === 0) {
-      throw new Error(LoadErrorMessage.MANIFEST_HAS_NO_FEATURES);
-    }
     const featuresPromises: Promise<[string, FeatureData]>[] = Array.from(manifest.features).map((data) =>
       reportLoadProgress(this.loadFeature(data))
     );

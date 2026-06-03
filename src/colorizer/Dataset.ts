@@ -304,10 +304,7 @@ export default class Dataset {
 
   public get numObjects(): number {
     const featureData = this.getFeatureData(this.featureKeys[0]);
-    if (!featureData) {
-      throw new Error("Dataset.numObjects: The first feature could not be loaded. Is the dataset manifest file valid?");
-    }
-    return featureData.data.length;
+    return featureData?.data.length ?? this.times?.length ?? this.segIds?.length ?? 0;
   }
 
   /** Loads a single frame from the dataset */

@@ -78,7 +78,7 @@ export const createDatasetSlice: StateCreator<CollectionSlice & DatasetSlice, []
     let featureKey = get().featureKey;
     if (featureKey === null || !dataset.hasFeatureKey(featureKey)) {
       // Set to default feature key of the new dataset
-      featureKey = dataset.featureKeys[0];
+      featureKey = dataset.featureKeys[0] ?? null;
     }
 
     // Switch to new dataset's default backdrop if the current one is not in the new dataset.
