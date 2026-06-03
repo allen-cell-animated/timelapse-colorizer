@@ -1,11 +1,10 @@
-import { Vector2 } from "three";
+import { RGBAFormat, RGBAIntegerFormat, Vector2 } from "three";
 
 import {
   FeatureArrayType,
   FeatureDataType,
   IArrayLoader,
   ITextureImageLoader,
-  LoadErrorMessage,
   LoadTroubleshooting,
   MAX_FEATURE_CATEGORIES,
 } from "src/colorizer";
@@ -49,6 +48,7 @@ const DEFAULT_METADATA: ManifestFileMetadata = {
 export default class JsonDatasetLoader {
   private arrayLoader: IArrayLoader;
   private frameLoader: ITextureImageLoader;
+  private backdropLoader: ITextureImageLoader;
   private pathResolver: IPathResolver;
   private manifestLoader: (url: string) => Promise<AnyManifestFile>;
   private cleanupArrayLoaderOnDispose: boolean;
@@ -65,7 +65,8 @@ export default class JsonDatasetLoader {
   constructor(manifestUrl: string, options?: JsonDatasetLoadOptions) {
     const { reportProgress, reportWarning } = options ?? {};
     let { frameLoader, arrayLoader, pathResolver, manifestLoader } = options ?? {};
-    this.frameLoader = frameLoader ?? new ImageFrameLoader();
+    this.frameLoader = frameLoader ?? new ImageFrameLoader(RGBAIntegerFormat);
+    this.backdropLoader = frameLoader ?? new ImageFrameLoader(RGBAFormat);
     this.arrayLoader = arrayLoader ?? new UrlArrayLoader();
     this.pathResolver = pathResolver ?? new UrlPathResolver();
     this.manifestLoader = manifestLoader ?? fetchManifestJson;
@@ -393,7 +394,7 @@ export default class JsonDatasetLoader {
         bounds,
         outliers,
       },
-      { frameLoader: this.frameLoader }
+      { frameLoader: this.frameLoader, backdropLoader: this.backdropLoader }
     );
   }
 

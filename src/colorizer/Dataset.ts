@@ -148,7 +148,7 @@ export default class Dataset {
       bounds?: Uint16Array | null;
       outliers?: Uint8Array | null;
     },
-    options: { frameLoader?: ITextureImageLoader }
+    options: { frameLoader?: ITextureImageLoader; backdropLoader?: ITextureImageLoader } = {}
   ) {
     this.manifestUrl = data.manifestUrl;
     this.metadata = data.metadata ?? defaultMetadata;
@@ -160,7 +160,7 @@ export default class Dataset {
     this.frameFiles = data.frameFiles || null;
     this.frameDimensions = data.frameResolution ?? null;
 
-    this.backdropLoader = options.frameLoader || new ImageFrameLoader(RGBAFormat);
+    this.backdropLoader = options.backdropLoader || new ImageFrameLoader(RGBAFormat);
     this.backdropFrames = new DataCache(MAX_CACHED_BACKDROPS_BYTES);
     this.backdropData = data.backdrops || new Map<string, BackdropData>();
 
