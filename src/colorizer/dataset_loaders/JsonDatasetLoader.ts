@@ -45,6 +45,9 @@ const DEFAULT_METADATA: ManifestFileMetadata = {
   startTimeSeconds: 0,
 };
 
+/**
+ * Loads a dataset from a manifest JSON file.
+ */
 export default class JsonDatasetLoader {
   private arrayLoader: IArrayLoader;
   private frameLoader: ITextureImageLoader;
@@ -61,6 +64,8 @@ export default class JsonDatasetLoader {
 
   private numRequests: number;
   private numCompletedRequests: number;
+
+  private datasetPromise: Promise<Dataset> | null = null;
 
   constructor(manifestUrl: string, options?: JsonDatasetLoadOptions) {
     const { reportProgress, reportWarning } = options ?? {};
@@ -79,6 +84,8 @@ export default class JsonDatasetLoader {
 
     this.numCompletedRequests = 0;
     this.numRequests = 0;
+
+    this.reportLoadProgress = this.reportLoadProgress.bind(this);
   }
 
   private resolveManifestPath = (url: string): string | null => {
@@ -242,7 +249,16 @@ export default class JsonDatasetLoader {
     };
   }
 
-  public async open(): Promise<Dataset> {
+  private reportLoadProgress<T>(promise: Promise<T>): Promise<T> {
+    this.numRequests++;
+    return promise.then((result) => {
+      this.numCompletedRequests++;
+      this.reportProgress?.(this.numCompletedRequests, this.numRequests);
+      return result;
+    });
+  }
+
+  private async loadDataset(): Promise<Dataset> {
     const startTime = new Date();
 
     const resolvedManifestUrl = this.resolveManifestPath(this.manifestUrl);
@@ -274,36 +290,26 @@ export default class JsonDatasetLoader {
         backdrops.set(key, { name, frames: resolvedBackdropFrames });
         if (resolvedBackdropFrames.length !== frameFiles?.length || 0) {
           throw new Error(
-            `Number of frames (${frameFiles?.length}) does not match number of images (${frames.length}) for backdrop '${key}'. ` +
+            `Number of frames (${frameFiles?.length}) does not match number of images (${backdropFrames.length}) for backdrop '${key}'. ` +
               ` If you are a dataset author, please ensure that the number of frames in the manifest matches the number of images for each backdrop.`
           );
         }
       }
     }
 
-    // Wrap an async operation and report progress when it starts + completes
-    const reportLoadProgress = async <T>(promise: Promise<T>): Promise<T> => {
-      this.numRequests++;
-      return promise.then((result) => {
-        this.numCompletedRequests++;
-        this.reportProgress?.(this.numCompletedRequests, this.numRequests);
-        return result;
-      });
-    };
-
     // Load feature data
     const featuresPromises: Promise<[string, FeatureData]>[] = Array.from(manifest.features).map((data) =>
-      reportLoadProgress(this.loadFeature(data))
+      this.reportLoadProgress(this.loadFeature(data))
     );
 
     const result = await Promise.allSettled([
-      reportLoadProgress(this.loadToBuffer(FeatureDataType.U8, outlierFile)),
-      reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, tracksFile)),
-      reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, timesFile)),
-      reportLoadProgress(this.loadToBuffer(FeatureDataType.U16, centroidsFile)),
-      reportLoadProgress(this.loadToBuffer(FeatureDataType.U16, boundsFile)),
-      reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, segIdsFile)),
-      reportLoadProgress(this.getFrameDims(frameFiles)),
+      this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U8, outlierFile)),
+      this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, tracksFile)),
+      this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, timesFile)),
+      this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U16, centroidsFile)),
+      this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U16, boundsFile)),
+      this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, segIdsFile)),
+      this.reportLoadProgress(this.getFrameDims(frameFiles)),
       ...featuresPromises,
     ]);
     const [
@@ -398,9 +404,18 @@ export default class JsonDatasetLoader {
     );
   }
 
+  /** Opens the dataset. */
+  public async open(): Promise<Dataset> {
+    if (!this.datasetPromise) {
+      this.datasetPromise = this.loadDataset();
+    }
+    return this.datasetPromise;
+  }
+
   public dispose() {
     if (this.cleanupArrayLoaderOnDispose) {
       this.arrayLoader.dispose();
     }
+    this.datasetPromise = null;
   }
 }
