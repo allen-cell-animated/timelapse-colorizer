@@ -347,7 +347,7 @@ describe("ChannelSlice", () => {
     function getRandomSerializableNumber(): number {
       // Must have no more than 3 digits of precision
       const value = Math.round(Math.random() * 200_000 - 100_000) / 1000;
-      if (value === -0) {
+      if (Object.is(value, -0)) {
         return 0;
       }
       return value;

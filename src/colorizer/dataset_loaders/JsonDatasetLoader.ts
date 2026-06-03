@@ -412,7 +412,7 @@ export default class JsonDatasetLoader {
     return this.datasetPromise;
   }
 
-  public dispose() {
+  public dispose(): void {
     if (this.cleanupArrayLoaderOnDispose) {
       this.arrayLoader.dispose();
     }
