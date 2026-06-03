@@ -151,7 +151,7 @@ export default class Dataset {
     options: { frameLoader?: ITextureImageLoader }
   ) {
     this.manifestUrl = data.manifestUrl;
-    this.metadata = defaultMetadata;
+    this.metadata = data.metadata ?? defaultMetadata;
 
     // Image sources
     this.frameLoader = options.frameLoader || new ImageFrameLoader(RGBAIntegerFormat);
@@ -287,11 +287,11 @@ export default class Dataset {
   }
 
   public has2dFrames(): boolean {
-    return this.frameFiles !== undefined;
+    return this.frameFiles !== null;
   }
 
   public has3dFrames(): boolean {
-    return this.frames3d !== undefined;
+    return this.frames3d !== null;
   }
 
   public get numberOfFrames(): number {
