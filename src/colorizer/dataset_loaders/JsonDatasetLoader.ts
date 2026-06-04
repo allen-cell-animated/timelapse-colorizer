@@ -69,9 +69,9 @@ export default class JsonDatasetLoader {
 
   constructor(manifestUrl: string, options?: JsonDatasetLoadOptions) {
     const { reportProgress, reportWarning } = options ?? {};
-    const { frameLoader, arrayLoader, pathResolver, manifestLoader } = options ?? {};
+    const { frameLoader, backdropLoader, arrayLoader, pathResolver, manifestLoader } = options ?? {};
     this.frameLoader = frameLoader ?? new ImageFrameLoader(RGBAIntegerFormat);
-    this.backdropLoader = frameLoader ?? new ImageFrameLoader(RGBAFormat);
+    this.backdropLoader = backdropLoader ?? new ImageFrameLoader(RGBAFormat);
     this.arrayLoader = arrayLoader ?? new UrlArrayLoader();
     this.pathResolver = pathResolver ?? new UrlPathResolver();
     this.manifestLoader = manifestLoader ?? fetchManifestJson;
@@ -288,7 +288,7 @@ export default class JsonDatasetLoader {
       for (const { name, key, frames: backdropFrames } of manifest.backdrops) {
         const resolvedBackdropFrames = backdropFrames.map((path) => this.resolvePath(path));
         backdrops.set(key, { name, frames: resolvedBackdropFrames });
-        if (resolvedBackdropFrames.length !== frameFiles?.length || 0) {
+        if (resolvedBackdropFrames.length !== (frameFiles?.length ?? 0)) {
           throw new Error(
             `Number of frames (${frameFiles?.length}) does not match number of images (${backdropFrames.length}) for backdrop '${key}'. ` +
               ` If you are a dataset author, please ensure that the number of frames in the manifest matches the number of images for each backdrop.`
