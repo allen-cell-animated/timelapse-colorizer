@@ -233,6 +233,7 @@ export default class Collection {
         pathResolver: this.pathResolver,
       });
       const dataset = await datasetLoader.open();
+      datasetLoader.dispose();
       console.timeEnd("loadDataset");
       return { loaded: true, dataset: dataset };
     } catch (e) {

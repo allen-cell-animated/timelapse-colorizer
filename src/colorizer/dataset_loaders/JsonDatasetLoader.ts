@@ -251,11 +251,11 @@ export default class JsonDatasetLoader {
 
   private reportLoadProgress<T>(promise: Promise<T>): Promise<T> {
     this.numRequests++;
-    return promise.then((result) => {
+    promise.finally(() => {
       this.numCompletedRequests++;
       this.reportProgress?.(this.numCompletedRequests, this.numRequests);
-      return result;
     });
+    return promise;
   }
 
   private async loadDataset(): Promise<Dataset> {

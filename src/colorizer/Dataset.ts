@@ -192,7 +192,7 @@ export default class Dataset {
     // Cached data
     this.cachedTracks = new Map();
     this.maxTrackLength = null;
-    this.maxTime = Math.max(...(this.times ?? [0]));
+    this.maxTime = this.times?.reduce((max, t) => Math.max(max, t), 0) ?? 0;
 
     this.frameToGlobalIdLookup = buildFrameToGlobalIdLookup(
       this.times ?? new Uint32Array(),
