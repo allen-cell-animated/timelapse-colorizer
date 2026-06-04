@@ -5,7 +5,7 @@ import type { FeatureDataType, FeatureRangeData } from "src/colorizer/types";
 import { columnsToCsv, type CsvDataColumn } from "src/colorizer/utils/csv_utils";
 import { type LoadedData, loadFromJsonUrl, loadFromParquetUrl } from "src/colorizer/utils/data_load_utils";
 import { computeCorrelations } from "src/colorizer/utils/math_utils/correlation";
-import { constructAllTracksFromData } from "src/colorizer/utils/math_utils/data";
+import { constructAllTracksFromData } from "src/colorizer/utils/math_utils/input_data";
 import { calculateMotionDeltas } from "src/colorizer/utils/math_utils/motion_deltas";
 import {
   averageVectorFlowField,
