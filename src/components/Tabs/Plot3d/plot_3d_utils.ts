@@ -2,7 +2,7 @@ import type Plotly from "plotly.js-dist-min";
 
 import type { ColorRamp, Dataset, Track, VectorFieldData } from "src/colorizer";
 import { getMovingAverage } from "src/colorizer/utils/data_utils";
-import { thresholdVectorFlowFieldByCount } from "src/colorizer/utils/math_utils/vectors";
+import { thresholdVectorFlowFieldByCount } from "src/colorizer/utils/math_utils/vector_flow_field";
 
 export function make3dConeTrace(
   vectorFieldData: VectorFieldData,

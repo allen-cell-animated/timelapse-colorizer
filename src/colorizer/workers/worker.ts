@@ -13,7 +13,7 @@ import {
   filterVectorFlowFieldData,
   kernelSmoothVectorFlowField,
   make1dGaussianKernel,
-} from "src/colorizer/utils/math_utils/vectors";
+} from "src/colorizer/utils/math_utils/vector_flow_field";
 import { arrayToDataTextureInfo } from "src/colorizer/utils/texture_utils";
 
 async function loadUrlData(url: string, type: FeatureDataType): Promise<TransferType> {
