@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { computeCorrelations, pearson } from "src/colorizer/utils/correlation";
+import { computeCorrelations, pearson } from "src/colorizer/utils/math_utils/correlation";
 import { ANY_ERROR } from "tests/utils";
 
 describe("pearson", () => {
