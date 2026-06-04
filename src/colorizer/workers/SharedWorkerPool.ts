@@ -113,9 +113,9 @@ export default class SharedWorkerPool {
    * of filters (`=1`) or not (`=0`), as a flat array. Values outside of the
    * filter range will be ignored when computing the flow field.
    * @param gaussianBandwidth The bandwidth (or standard deviation) of the
-   * Gaussian kernel to apply to the binned vectors, as a fraction of the number
-   * of bins. If provided, uses Gaussian smoothing; if not provided, uses simple
-   * averaging.
+   * Gaussian kernel to use when smoothing the binned vectors, as a fraction of
+   * the number of bins. If provided, calculates a smooth, locally-weighted
+   * average across bins; if not provided, uses simple averaging.
    * @returns a `VectorFieldData` object containing the computed flow field data
    * and metadata.
    */
