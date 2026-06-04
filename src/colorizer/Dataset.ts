@@ -141,6 +141,7 @@ export default class Dataset {
   //// Cached Data ////
   private cachedTracks: Map<number, Track | null>;
   private maxTrackLength: number | null;
+  private maxTime: number;
 
   /**
    * Maps from a frame number to a lookup table used to get the global ID of a
@@ -191,6 +192,7 @@ export default class Dataset {
     // Cached data
     this.cachedTracks = new Map();
     this.maxTrackLength = null;
+    this.maxTime = Math.max(...(this.times ?? [0]));
 
     this.frameToGlobalIdLookup = buildFrameToGlobalIdLookup(
       this.times ?? new Uint32Array(),
@@ -334,7 +336,7 @@ export default class Dataset {
 
     const fullUrl = this.frameFiles[index];
     if (!fullUrl) {
-      throw new Error(`Failed to resolve path for frame ${index}: '${this.frameFiles[index]}'`);
+      throw new Error(`Failed to resolve path for frame ${index}: '${fullUrl}'`);
     }
     const loadedFrame = await this.frameLoader.load(fullUrl);
     this.frameDimensions = new Vector2(loadedFrame.image.width, loadedFrame.image.height);
@@ -423,9 +425,11 @@ export default class Dataset {
 
   private getTotalFrames(): number {
     if (this.has2dFrames()) {
-      return this.frameFiles?.length ?? 0;
+      return this.frameFiles!.length;
+    } else if (this.has3dFrames()) {
+      return this.frames3d!.totalFrames;
     } else {
-      return this.frames3d?.totalFrames ?? 0;
+      return this.maxTime + 1;
     }
   }
 
