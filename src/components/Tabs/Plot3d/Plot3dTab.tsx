@@ -37,7 +37,7 @@ export default function Plot3dTab(): ReactElement {
   const inRangeLut = useViewerStateStore((state) => state.inRangeLUT);
   // 3D plot state
   const applyGaussian = useViewerStateStore((state) => state.plot3dUseGaussian);
-  const coneColorRamp = useViewerStateStore((state) => state.plot3dColorRamp);
+  const coneColorRamp = useViewerStateStore((state) => state.plot3dVectorColorRamp);
   const gaussianBandwidthPct = useViewerStateStore((state) => state.plot3dGaussianBandwidthPct);
   const rawBins = useViewerStateStore((state) => state.plot3dVectorBins);
   const rawConeSize = useViewerStateStore((state) => state.plot3dVectorScale);

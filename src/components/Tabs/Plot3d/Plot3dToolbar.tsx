@@ -55,7 +55,6 @@ export default function Plot3dToolbar(): ReactElement {
       <FlexRow $gap={8}>
         <Plot3dFeatureControls disabled={disabled} />
       </FlexRow>
-      {/* Cone Controls */}
       <FlexRowAlignCenter $gap={8}>
         <Plot3dDataControls disabled={disabled} />
         <Plot3dAppearanceControls disabled={disabled} />

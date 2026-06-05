@@ -22,6 +22,9 @@ export type Plot3dSliceState = {
   plot3dYAxis: string | null;
   plot3dZAxis: string | null;
 
+  /**
+   * Number of bins per axis used when calculating the vector field.
+   */
   plot3dVectorBins: number;
   /**
    * The rate to subsample the vector field date when plotting, as an integer
@@ -42,12 +45,24 @@ export type Plot3dSliceState = {
   plot3dLineWidth: number;
   plot3dLineMovingAverageWindow: number;
 
+  /**
+   * Whether to apply kernel smoothing to the vector field, using a gaussian
+   * kernel. When false, uses a simple average of the deltas in each bin
+   * instead.
+   */
   plot3dUseGaussian: boolean;
-  /** The bandwidth or standard deviation for the gaussian smoothing. */
+  /**
+   * The bandwidth or standard deviation for the gaussian smoothing, as a
+   * percentage of the number of bins in the (0, 100] range.
+   */
   plot3dGaussianBandwidthPct: number;
 
   // Derived state
-  plot3dColorRamp: ColorRamp;
+  /**
+   * Current color ramp, calculated from the `plot3dVectorColorRampKey` and
+   * `plot3dVectorColorRampReversed` state.
+   */
+  plot3dVectorColorRamp: ColorRamp;
 };
 
 export type Plot3dSliceSerializableState = Pick<
@@ -117,7 +132,7 @@ export const createPlot3dSlice: StateCreator<DatasetSlice & Plot3dSlice, [], [],
   plot3dGaussianBandwidthPct: 15,
 
   // Derived state
-  plot3dColorRamp: getColorMap(KNOWN_COLOR_RAMPS, DEFAULT_COLOR_RAMP_KEY),
+  plot3dVectorColorRamp: getColorMap(KNOWN_COLOR_RAMPS, DEFAULT_COLOR_RAMP_KEY),
 
   // Actions
   setPlot3dXAxis: (xAxis) => {
@@ -240,9 +255,9 @@ export const addPlot3dDerivedStateSubscribers = (store: SubscribableStore<Datase
     store,
     (state) => [state.plot3dVectorColorRampKey, state.plot3dVectorColorRampReversed],
     ([key, reversed]) => {
-      store.getState().plot3dColorRamp.dispose();
+      store.getState().plot3dVectorColorRamp.dispose();
       return {
-        plot3dColorRamp: getColorMap(KNOWN_COLOR_RAMPS, key, { reversed }),
+        plot3dVectorColorRamp: getColorMap(KNOWN_COLOR_RAMPS, key, { reversed }),
       };
     }
   );
