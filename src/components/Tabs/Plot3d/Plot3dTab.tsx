@@ -43,7 +43,7 @@ export default function Plot3dTab(): ReactElement {
   const rawConeSize = useViewerStateStore((state) => state.plot3dVectorScale);
   const applyGaussian = useViewerStateStore((state) => state.plot3dUseGaussian);
   const gaussianBandwidthPct = useViewerStateStore((state) => state.plot3dGaussianBandwidthPct);
-  const coneColorRamp = useViewerStateStore((state) => state.plot3dColorRamp);
+  const coneColorRamp = useViewerStateStore((state) => state.plot3dVectorColorRamp);
   const rawThreshold = useViewerStateStore((state) => state.plot3dVectorThreshold);
   const rawMovingAverageWindow = useViewerStateStore((state) => state.plot3dLineMovingAverageWindow);
   const rawMovingAverageLineWidth = useViewerStateStore((state) => state.plot3dLineWidth);
