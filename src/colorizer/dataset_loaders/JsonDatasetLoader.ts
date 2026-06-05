@@ -112,12 +112,15 @@ export default class JsonDatasetLoader {
    * Loads a feature from the dataset, fetching its data from the provided url.
    * @returns A promise of an array tuple containing the feature key and its FeatureData.
    */
-  private async loadFeature(metadata: ManifestFile["features"][number]): Promise<[string, FeatureData] | undefined> {
+  private async loadFeature(
+    metadata: ManifestFile["features"][number],
+    index: number
+  ): Promise<[string, FeatureData] | undefined> {
     const name = metadata.name;
     const key = metadata.key || getKeyFromName(name);
     const url = this.resolvePath(metadata.data);
     if (!url) {
-      console.error(`Failed to resolve URL for feature ${name}: '${metadata.data}'`);
+      console.warn(`Feature ${index}: Failed to resolve URL for feature ${name}: '${metadata.data}'`);
       return undefined;
     }
     const featureType = this.parseFeatureType(metadata.type);
@@ -132,12 +135,12 @@ export default class JsonDatasetLoader {
     const featureCategories = metadata?.categories;
     // Validation
     if (featureType === FeatureType.CATEGORICAL && !metadata?.categories) {
-      console.error(`Feature ${name} is categorical but no categories were provided.`);
+      console.warn(`Feature ${index}: ${name} is categorical but no categories were provided.`);
       return undefined;
     }
     if (featureCategories && featureCategories.length > MAX_FEATURE_CATEGORIES) {
-      console.error(
-        `Feature ${name} has too many categories (${featureCategories.length} > max ${MAX_FEATURE_CATEGORIES}).`
+      console.warn(
+        `Feature ${index}: ${name} has too many categories (${featureCategories.length} > max ${MAX_FEATURE_CATEGORIES}).`
       );
       return undefined;
     }
@@ -173,7 +176,6 @@ export default class JsonDatasetLoader {
     if (!fileUrl) {
       return null;
     }
-
     const url = this.resolvePath(fileUrl);
     if (!url) {
       throw new Error(`Failed to resolve path: '${fileUrl}'`);
@@ -183,11 +185,8 @@ export default class JsonDatasetLoader {
   }
 
   private getFrameDims = async (frameFiles: (string | null)[] | undefined): Promise<Vector2 | undefined> => {
-    if (!frameFiles || frameFiles.length === 0) {
-      return undefined;
-    }
     let firstValidFramePath = null;
-    for (const framePath of frameFiles) {
+    for (const framePath of frameFiles ?? []) {
       if (framePath) {
         firstValidFramePath = framePath;
         break;
@@ -196,8 +195,15 @@ export default class JsonDatasetLoader {
     if (!firstValidFramePath) {
       return undefined;
     }
-    const result = await this.frameLoader.load(firstValidFramePath);
-    return new Vector2(result.image.width, result.image.height);
+    try {
+      const result = await this.frameLoader.load(firstValidFramePath);
+      return new Vector2(result.image.width, result.image.height);
+    } catch (error) {
+      console.warn(
+        `Failed to determine frame dimensions; encountered the following error while loading frame from path '${firstValidFramePath}': ${error}`
+      );
+      return undefined;
+    }
   };
 
   private resolveAndValidateFrames3d(data: ManifestFile["frames3d"]): Frames3dData | undefined {
@@ -287,11 +293,14 @@ export default class JsonDatasetLoader {
 
     const backdrops = new Map<string, { name: string; frames: (string | null)[] }>();
 
-    if (manifest.backdrops && manifest.frames) {
+    // Validate backdrops
+    if (manifest.backdrops) {
       for (const { name, key, frames: backdropFrames } of manifest.backdrops) {
         const resolvedBackdropFrames = backdropFrames.map((path) => this.resolvePath(path));
         backdrops.set(key, { name, frames: resolvedBackdropFrames });
-        if (resolvedBackdropFrames.length !== (frameFiles?.length ?? 0)) {
+        if (frameFiles && frameFiles.length !== 0 && resolvedBackdropFrames.length !== frameFiles.length) {
+          // If frames are provided, check that backdrop frames match the frame
+          // count.
           throw new Error(
             `Number of frames (${frameFiles?.length}) does not match number of images (${backdropFrames.length}) for backdrop '${key}'. ` +
               ` If you are a dataset author, please ensure that the number of frames in the manifest matches the number of images for each backdrop.`
@@ -301,8 +310,8 @@ export default class JsonDatasetLoader {
     }
 
     // Load feature data
-    const featuresPromises: Promise<[string, FeatureData] | undefined>[] = Array.from(manifest.features).map((data) =>
-      this.reportLoadProgress(this.loadFeature(data))
+    const featuresPromises: Promise<[string, FeatureData] | undefined>[] = Array.from(manifest.features).map(
+      (data, index) => this.reportLoadProgress(this.loadFeature(data, index))
     );
 
     const result = await Promise.allSettled([
@@ -353,9 +362,10 @@ export default class JsonDatasetLoader {
 
     // Keep original sorting order of features by inserting in promise order.
     const features = new Map<string, FeatureData>();
-    featureResults.forEach((result, index) => {
-      const onFeatureLoadFailed = (reason: any): void => console.warn(`Feature ${index}: `, reason);
-      const featureValue = getPromiseValue(result, onFeatureLoadFailed);
+    featureResults.forEach((result) => {
+      // Load failures are already logged in `loadFeature`, so rejected promises
+      // are ignored.
+      const featureValue = getPromiseValue(result);
       if (featureValue) {
         const [key, data] = featureValue;
         features.set(key, data);
@@ -364,10 +374,10 @@ export default class JsonDatasetLoader {
 
     //// Post-processing and validation steps ////
 
-    const numObjects = features.values().next().value?.data.length || times?.length || trackIds?.length || 0;
-
     reportUnloadedFeatures(manifest.features, features, this.reportWarning);
 
+    const numObjects =
+      features.values().next().value?.data.length || times?.length || trackIds?.length || segIds?.length || 0;
     segIds = segIds ?? getDefaultSegIds(numObjects);
     centroids = centroids && padCentroidsTo3d(centroids, numObjects);
 
@@ -379,12 +389,11 @@ export default class JsonDatasetLoader {
     triggerAnalyticsEvent(AnalyticsEvent.DATASET_LOAD, {
       datasetWriterVersion: metadata.writerVersion || "N/A",
       datasetTotalObjects: numObjects,
-      datasetFeatureCount: features.size,
+      datasetFeatureCount: manifest.features.length,
       datasetFrameCount: frameFiles?.length || frames3d?.totalFrames || 0,
       datasetLoadTimeMs: new Date().getTime() - startTime.getTime(),
     });
 
-    // TODO: Resolve all frame and backdrop paths
     return new Dataset(
       {
         manifestUrl: resolvedManifestUrl,

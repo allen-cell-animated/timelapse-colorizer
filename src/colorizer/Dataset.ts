@@ -52,7 +52,10 @@ type BackdropData = {
 };
 
 export type Backdrop3dData = {
-  /** Source for 3D data, resolved to http/https URLs. Expected to be a path to an OME-Zarr array.*/
+  /**
+   * Source for 3D data, resolved to http/https or blob URL. Expected to be a
+   * path to an OME-Zarr array.
+   */
   source: string;
   name: string;
   description?: string;
@@ -62,7 +65,10 @@ export type Backdrop3dData = {
 };
 
 export type Frames3dData = {
-  /** Source for 3D data, resolved to http/https URLs. Expected to be a path to an OME-Zarr array.*/
+  /**
+   * Source for 3D data, resolved to http/https or blob URL. Expected to be a
+   * path to an OME-Zarr array.
+   */
   source: string;
   /** Index of the segmentation channel in the source data. */
   segmentationChannel: number;
@@ -71,19 +77,20 @@ export type Frames3dData = {
 };
 
 export type DatasetInputData = {
+  //// Metadata ////
   manifestUrl: string;
   metadata: ManifestFileMetadata;
-  // Image sources
-  /** List of resolved URLs for each frame in the dataset. */
+  //// Image sources ////
+  /** List of resolved (http/https or blob) URLs for frames in the dataset. */
   frameFiles: (string | null)[];
   /**
    * Map of backdrop names to their data. Note that all backdrop paths must be
-   * resolved to URLs.
+   * resolved to http/https or blob URLs.
    */
   backdrops: Map<string, BackdropData>;
   frames3d: Frames3dData;
   frameResolution: Vector2;
-  // Data arrays
+  //// Data arrays ////
   features: Map<string, FeatureData>;
   segIds: Uint32Array | null;
   times: Uint32Array | null;
@@ -109,7 +116,7 @@ const defaultMetadata: ManifestFileMetadata = {
  */
 export default class Dataset {
   //// Metadata ////
-  public readonly manifestUrl: string | undefined;
+  public readonly manifestUrl: string | null;
   public readonly metadata: ManifestFileMetadata;
 
   //// Image sources ////
@@ -165,7 +172,7 @@ export default class Dataset {
     data: Partial<DatasetInputData>,
     options: { frameLoader?: ITextureImageLoader; backdropLoader?: ITextureImageLoader } = {}
   ) {
-    this.manifestUrl = data.manifestUrl;
+    this.manifestUrl = data.manifestUrl ?? null;
     this.metadata = data.metadata ?? defaultMetadata;
 
     // Image sources
@@ -302,7 +309,7 @@ export default class Dataset {
   }
 
   public has2dFrames(): boolean {
-    return this.frameFiles !== null;
+    return this.frameFiles !== null || this.backdropData.size > 0;
   }
 
   public has3dFrames(): boolean {
