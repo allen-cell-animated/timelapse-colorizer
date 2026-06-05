@@ -432,12 +432,17 @@ export default class Dataset {
 
   private getTotalFrames(): number {
     if (this.has2dFrames()) {
-      return this.frameFiles!.length;
+      const frameFilesLength = this.frameFiles?.length;
+      const firstBackdropFramesLength = this.backdropData.values().next().value?.frames.length;
+      if (frameFilesLength !== undefined) {
+        return frameFilesLength;
+      } else if (firstBackdropFramesLength !== undefined) {
+        return firstBackdropFramesLength;
+      }
     } else if (this.has3dFrames()) {
       return this.frames3d!.totalFrames;
-    } else {
-      return this.maxTime + 1;
     }
+    return this.maxTime + 1;
   }
 
   public isValidFrameIndex(index: number): boolean {

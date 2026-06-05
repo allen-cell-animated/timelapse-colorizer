@@ -1,6 +1,7 @@
 import { RGBAFormat, RGBAIntegerFormat, Vector2 } from "three";
 
 import {
+  type ArraySource,
   type FeatureArrayType,
   FeatureDataType,
   type IArrayLoader,
@@ -125,12 +126,18 @@ export default class JsonDatasetLoader {
     }
     const featureType = this.parseFeatureType(metadata.type);
 
-    const source = await this.arrayLoader.load(
-      url,
-      FeatureDataType.F32,
-      metadata.min ?? undefined,
-      metadata.max ?? undefined
-    );
+    let source: ArraySource<FeatureDataType.F32> | undefined;
+    try {
+      source = await this.arrayLoader.load(
+        url,
+        FeatureDataType.F32,
+        metadata.min ?? undefined,
+        metadata.max ?? undefined
+      );
+    } catch (error) {
+      console.warn(`Feature ${index}: Failed to load data for feature ${name} from URL '${url}': ${error}`);
+      return undefined;
+    }
 
     const featureCategories = metadata?.categories;
     // Validation

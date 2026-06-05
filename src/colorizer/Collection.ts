@@ -223,32 +223,34 @@ export default class Collection {
     const path = this.getAbsoluteDatasetPath(datasetKey);
     console.log(`Fetching dataset from path '${path}'`);
 
+    let result: DatasetLoadResult;
+    const datasetLoader = new JsonDatasetLoader(path, {
+      frameLoader: options.frameLoader,
+      arrayLoader: options.arrayLoader,
+      reportProgress: options.onLoadProgress,
+      reportWarning: options.reportWarning,
+      manifestLoader: options.manifestLoader,
+      pathResolver: this.pathResolver,
+    });
     try {
-      const datasetLoader = new JsonDatasetLoader(path, {
-        frameLoader: options.frameLoader,
-        arrayLoader: options.arrayLoader,
-        reportProgress: options.onLoadProgress,
-        reportWarning: options.reportWarning,
-        manifestLoader: options.manifestLoader,
-        pathResolver: this.pathResolver,
-      });
       const dataset = await datasetLoader.open();
-      datasetLoader.dispose();
       console.timeEnd("loadDataset");
-      return { loaded: true, dataset: dataset };
+      result = { loaded: true, dataset: dataset };
     } catch (e) {
       console.timeEnd("loadDataset");
       console.error(e);
       if (e instanceof Error) {
-        return {
+        result = {
           loaded: false,
           dataset: null,
           errorMessage: e.message,
         };
       } else {
-        return { loaded: false, dataset: null };
+        result = { loaded: false, dataset: null };
       }
     }
+    datasetLoader.dispose();
+    return result;
   }
 
   public dispose(): void {
