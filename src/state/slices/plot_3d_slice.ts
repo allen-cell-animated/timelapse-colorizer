@@ -23,6 +23,12 @@ export type Plot3dSliceState = {
   plot3dZAxis: string | null;
 
   plot3dVectorBins: number;
+  /**
+   * The rate to subsample the vector field date when plotting, as an integer
+   * `>= 1.` For example, a subsampling rate of 2 will take every other value
+   * along each axis. Note that this does not change the underlying calculated
+   * vector field data, just the plotted subset.
+   */
   plot3dVectorSubsampling: number;
   plot3dVectorScale: number;
   plot3dVectorColorRampKey: string;

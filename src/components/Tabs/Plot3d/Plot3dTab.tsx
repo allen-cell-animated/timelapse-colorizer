@@ -36,18 +36,18 @@ export default function Plot3dTab(): ReactElement {
   const timeControls = useViewerStateStore((state) => state.timeControls);
   const inRangeLut = useViewerStateStore((state) => state.inRangeLUT);
   // 3D plot state
+  const applyGaussian = useViewerStateStore((state) => state.plot3dUseGaussian);
+  const coneColorRamp = useViewerStateStore((state) => state.plot3dColorRamp);
+  const gaussianBandwidthPct = useViewerStateStore((state) => state.plot3dGaussianBandwidthPct);
   const rawBins = useViewerStateStore((state) => state.plot3dVectorBins);
+  const rawConeSize = useViewerStateStore((state) => state.plot3dVectorScale);
+  const rawMovingAverageLineWidth = useViewerStateStore((state) => state.plot3dLineWidth);
+  const rawMovingAverageWindow = useViewerStateStore((state) => state.plot3dLineMovingAverageWindow);
   const rawSubsampling = useViewerStateStore((state) => state.plot3dVectorSubsampling);
+  const rawThreshold = useViewerStateStore((state) => state.plot3dVectorThreshold);
   const xAxisFeatureKey = useViewerStateStore((state) => state.plot3dXAxis);
   const yAxisFeatureKey = useViewerStateStore((state) => state.plot3dYAxis);
   const zAxisFeatureKey = useViewerStateStore((state) => state.plot3dZAxis);
-  const rawConeSize = useViewerStateStore((state) => state.plot3dVectorScale);
-  const applyGaussian = useViewerStateStore((state) => state.plot3dUseGaussian);
-  const gaussianBandwidthPct = useViewerStateStore((state) => state.plot3dGaussianBandwidthPct);
-  const coneColorRamp = useViewerStateStore((state) => state.plot3dColorRamp);
-  const rawThreshold = useViewerStateStore((state) => state.plot3dVectorThreshold);
-  const rawMovingAverageWindow = useViewerStateStore((state) => state.plot3dLineMovingAverageWindow);
-  const rawMovingAverageLineWidth = useViewerStateStore((state) => state.plot3dLineWidth);
 
   const isPlotTabVisible = useViewerStateStore((state) => state.openTab === TabType.PLOT_3D);
 
