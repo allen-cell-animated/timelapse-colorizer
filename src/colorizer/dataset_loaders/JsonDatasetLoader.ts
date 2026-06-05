@@ -112,12 +112,13 @@ export default class JsonDatasetLoader {
    * Loads a feature from the dataset, fetching its data from the provided url.
    * @returns A promise of an array tuple containing the feature key and its FeatureData.
    */
-  private async loadFeature(metadata: ManifestFile["features"][number]): Promise<[string, FeatureData]> {
+  private async loadFeature(metadata: ManifestFile["features"][number]): Promise<[string, FeatureData] | undefined> {
     const name = metadata.name;
     const key = metadata.key || getKeyFromName(name);
     const url = this.resolvePath(metadata.data);
     if (!url) {
-      throw new Error(`Failed to resolve URL for feature ${name}: '${metadata.data}'`);
+      console.error(`Failed to resolve URL for feature ${name}: '${metadata.data}'`);
+      return undefined;
     }
     const featureType = this.parseFeatureType(metadata.type);
 
@@ -131,12 +132,14 @@ export default class JsonDatasetLoader {
     const featureCategories = metadata?.categories;
     // Validation
     if (featureType === FeatureType.CATEGORICAL && !metadata?.categories) {
-      throw new Error(`Feature ${name} is categorical but no categories were provided.`);
+      console.error(`Feature ${name} is categorical but no categories were provided.`);
+      return undefined;
     }
     if (featureCategories && featureCategories.length > MAX_FEATURE_CATEGORIES) {
-      throw new Error(
+      console.error(
         `Feature ${name} has too many categories (${featureCategories.length} > max ${MAX_FEATURE_CATEGORIES}).`
       );
+      return undefined;
     }
 
     return [
@@ -298,7 +301,7 @@ export default class JsonDatasetLoader {
     }
 
     // Load feature data
-    const featuresPromises: Promise<[string, FeatureData]>[] = Array.from(manifest.features).map((data) =>
+    const featuresPromises: Promise<[string, FeatureData] | undefined>[] = Array.from(manifest.features).map((data) =>
       this.reportLoadProgress(this.loadFeature(data))
     );
 
