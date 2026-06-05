@@ -14,6 +14,7 @@ function timeToMotionDelta(track: Track): { [key: number]: [number, number, numb
     const prevTime = track.times[i - 1];
     if (i === 0 || prevTime !== time - 1) {
       deltas[time] = undefined;
+      continue;
     }
 
     const currentCentroidX = track.centroids[i * 3];
@@ -39,9 +40,9 @@ function timeToMotionDelta(track: Track): { [key: number]: [number, number, numb
  * delta will be calculated over time `t` to `t - numTimeIntervals`. If the object is not present for any or all timepoints
  * in the range, the motion deltas will be `NaN`.
  * @returns one of the following:
- * - an array of motion deltas, with length equal to `dataset.numObjects * 2`. For each object id `i`, the x and y components
- * of its motion delta are stored at indices `2i` and `2i + 1`, respectively. If an object does not exist for the specified number
- * of time intervals, both values will be `NaN`.
+ * - an array of motion deltas, with length equal to `dataset.numObjects * 3`. For each object id `i`, the x, y, and z components
+ * of its motion delta are stored at indices `3i`, `3i + 1`, and `3i + 2`, respectively. If an object does not exist for the specified number
+ * of time intervals, all values will be `NaN`.
  */
 export function calculateMotionDeltas(tracks: Track[], numTimeIntervals: number): Float32Array {
   numTimeIntervals = Math.max(numTimeIntervals, 1);

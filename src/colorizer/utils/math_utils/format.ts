@@ -4,14 +4,14 @@
  * @param input The number to format.
  * @param maxSignificantDigitsAfterDecimal The maximum number of significant
  * digits after the decimal place. If `input` is less than 1, this will be the
- * number of significant digits. If `input is greater than 1, this will be the
+ * number of significant digits. If `input` is greater than 1, this will be the
  * number of digits after the decimal point.
  * @param showIntegersAsDecimals If true, integers will be shown as numbers with
  * decimal points. False by default.
  * @returns A string representation of the number.
  * - If the number is `undefined` or `null`, returns `"NaN"`.
- * - If the number is an integer and `skipIntegers` is true, returns the number
- *   as a string without a decimal point.
+ * - If the number is an integer and `showIntegersAsDecimals` is false, returns
+ *   the number as a string without a decimal point.
  * - If the number is less than 1, returns the number with
  *   `maxSignificantDigitsAfterDecimal` significant digits. (using
  *   `toPrecision`).
