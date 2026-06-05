@@ -44,7 +44,7 @@ export function setMaxDecimalPrecision(input: number, decimalPlaces: number): nu
 }
 
 // Adapted from https://gist.github.com/ArneS/2ecfbe4a9d7072ac56c0.
-function digitToUnicodeSupercript(n: number): string {
+function digitToUnicodeSuperscript(n: number): string {
   const subst = [0x2070, 185, 178, 179, 0x2074, 0x2075, 0x2076, 0x2077, 0x2078, 0x2079];
   return String.fromCharCode(subst[n]);
 }
@@ -52,7 +52,7 @@ function digitToUnicodeSupercript(n: number): string {
 function numberToUnicodeSuperscript(input: number): string {
   const prefix = input < 0 ? "⁻" : "";
   const digits = Math.abs(input).toString().split("");
-  return prefix + digits.map((digit) => digitToUnicodeSupercript(parseInt(digit, 10))).join("");
+  return prefix + digits.map((digit) => digitToUnicodeSuperscript(parseInt(digit, 10))).join("");
 }
 
 /**
