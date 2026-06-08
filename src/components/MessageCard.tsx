@@ -43,7 +43,7 @@ export default function MessageCard(props: React.PropsWithChildren<MessageCardPr
     <Card size="small" style={{ ...cardStyle }}>
       <FlexRow $gap={10}>
         <div style={{ marginTop: "2px" }}>{cardIcon}</div>
-        {props.children}
+        <div style={{ maxWidth: "calc(100% - 30px)" }}>{props.children}</div>
       </FlexRow>
     </Card>
   );
