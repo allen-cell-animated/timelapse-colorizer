@@ -118,6 +118,24 @@ export function addCentroidFeatures(
   }
 }
 
+export function interleaveCentroidData(
+  centroidsX: Uint16Array | null,
+  centroidsY: Uint16Array | null,
+  centroidsZ: Uint16Array | null
+): Uint16Array | null {
+  if (!centroidsX && !centroidsY && !centroidsZ) {
+    return null;
+  }
+  const length = centroidsX?.length || centroidsY?.length || centroidsZ?.length || 0;
+  const interleaved = new Uint16Array(length * 3);
+  for (let i = 0; i < length; i++) {
+    interleaved[i * 3] = centroidsX ? centroidsX[i] : 0;
+    interleaved[i * 3 + 1] = centroidsY ? centroidsY[i] : 0;
+    interleaved[i * 3 + 2] = centroidsZ ? centroidsZ[i] : 0;
+  }
+  return interleaved;
+}
+
 export function reportUnloadedFeatures(
   featureSpec: ManifestFile["features"],
   loadedFeatures: Map<string, FeatureData>,

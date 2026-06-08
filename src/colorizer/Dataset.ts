@@ -1,4 +1,4 @@
-import { type DataTexture, RGBAFormat, RGBAIntegerFormat, type Texture, Vector2 } from "three";
+import { type DataTexture, RGBAFormat, RGBAIntegerFormat, type Texture, Vector2, Vector3 } from "three";
 
 import {
   BOOLEAN_VALUE_FALSE,
@@ -89,7 +89,7 @@ export type DatasetInputData = {
    */
   backdrops: Map<string, BackdropData>;
   frames3d: Frames3dData;
-  frameResolution: Vector2;
+  frameResolution: Vector3;
   //// Data arrays ////
   features: Map<string, FeatureData>;
   segIds: Uint32Array | null;
@@ -123,7 +123,7 @@ export default class Dataset {
   private frameLoader: ITextureImageLoader;
   private frameFiles: (string | null)[] | null;
   private frames: DataCache<number, Texture>;
-  private frameDimensions: Vector2 | null;
+  private frameDimensions: Vector3 | null;
 
   private backdropLoader: ITextureImageLoader;
   private backdropData: Map<string, BackdropData>;
@@ -179,7 +179,6 @@ export default class Dataset {
     this.frameLoader = options.frameLoader || new ImageFrameLoader(RGBAIntegerFormat);
     this.frames = new DataCache(MAX_CACHED_FRAME_BYTES);
     this.frameFiles = data.frameFiles || null;
-    this.frameDimensions = data.frameResolution ?? null;
 
     this.backdropLoader = options.backdropLoader || new ImageFrameLoader(RGBAFormat);
     this.backdropFrames = new DataCache(MAX_CACHED_BACKDROPS_BYTES);
@@ -206,8 +205,27 @@ export default class Dataset {
       this.segIds ?? new Uint32Array(),
       this.getTotalFrames()
     );
+    this.frameDimensions = data.frameResolution ?? this.getDefaultFrameDimensionsFromCentroids();
 
     this.getSegmentationId = this.getSegmentationId.bind(this);
+  }
+
+  private getDefaultFrameDimensionsFromCentroids(): Vector3 | null {
+    if (!this.centroids || this.centroids.length === 0) {
+      return null;
+    }
+    let maxX = 0;
+    let maxY = 0;
+    let maxZ = 0;
+    for (let i = 0; i < this.centroids.length; i += 3) {
+      const x = this.centroids[i];
+      const y = this.centroids[i + 1];
+      const z = this.centroids[i + 2];
+      maxX = Math.max(maxX, x);
+      maxY = Math.max(maxY, y);
+      maxZ = Math.max(maxZ, z);
+    }
+    return new Vector3(maxX, maxY, maxZ);
   }
 
   public get frames2dPaths(): readonly (string | null)[] | undefined {
@@ -337,7 +355,7 @@ export default class Dataset {
 
     const cachedFrame = this.frames?.get(index);
     if (cachedFrame) {
-      this.frameDimensions = new Vector2(cachedFrame.image.width, cachedFrame.image.height);
+      this.frameDimensions = new Vector3(cachedFrame.image.width, cachedFrame.image.height, 1);
       return cachedFrame;
     }
 
@@ -346,7 +364,7 @@ export default class Dataset {
       throw new Error(`Failed to resolve path for frame ${index}: '${fullUrl}'`);
     }
     const loadedFrame = await this.frameLoader.load(fullUrl);
-    this.frameDimensions = new Vector2(loadedFrame.image.width, loadedFrame.image.height);
+    this.frameDimensions = new Vector3(loadedFrame.image.width, loadedFrame.image.height, 1);
     const frameSizeBytes = loadedFrame.image.width * loadedFrame.image.height * 4;
     // Note that, due to image compression, images may take up much less space in memory than their raw size.
     this.frames.insert(index, loadedFrame, frameSizeBytes);
@@ -391,10 +409,10 @@ export default class Dataset {
 
   /**
    * Gets the resolution of the last loaded frame.
-   * If no frame has been loaded yet, returns (1,1)
+   * If no frame has been loaded yet, returns (1,1,1)
    */
-  public get frameResolution(): Vector2 {
-    return this.frameDimensions || new Vector2(1, 1);
+  public get frameResolution(): Vector3 {
+    return this.frameDimensions || new Vector3(1, 1, 1);
   }
 
   /**

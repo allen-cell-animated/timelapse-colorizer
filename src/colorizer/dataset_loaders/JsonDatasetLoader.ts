@@ -1,4 +1,4 @@
-import { RGBAFormat, RGBAIntegerFormat, Vector2 } from "three";
+import { RGBAFormat, RGBAIntegerFormat, Vector2, Vector3 } from "three";
 
 import {
   type ArraySource,
@@ -409,7 +409,7 @@ export default class JsonDatasetLoader {
         frameFiles,
         frames3d,
         backdrops,
-        frameResolution: frameDimensions ?? undefined,
+        frameResolution: frameDimensions ? new Vector3(frameDimensions.x, frameDimensions.y, 1) : undefined,
         // Data arrays
         features,
         segIds,

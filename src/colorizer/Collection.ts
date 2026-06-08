@@ -1,5 +1,7 @@
 import { DEFAULT_COLLECTION_FILENAME, DEFAULT_DATASET_FILENAME } from "src/colorizer/constants";
+import { IDatasetLoader } from "src/colorizer/dataset_loaders/IDatasetLoader";
 import JsonDatasetLoader from "src/colorizer/dataset_loaders/JsonDatasetLoader";
+import ParquetDatasetLoader from "src/colorizer/dataset_loaders/ParquetDatasetLoader";
 
 import type Dataset from "./Dataset";
 import type { IArrayLoader, ITextureImageLoader } from "./loaders/ILoader";
@@ -18,6 +20,7 @@ import {
   type fetchManifestJson,
   fetchWithTimeout,
   formatPath,
+  isAbsoluteDatasetFilePath,
   isJson,
   isUrl,
 } from "./utils/url_utils";
@@ -131,11 +134,11 @@ export default class Collection {
     this.metadata = metadata;
     console.log("Collection metadata: ", this.metadata);
 
-    // Check that all entry paths are JSONs.
+    // Check that all entry paths are JSONs or Parquet files.
     this.entries.forEach((value, key) => {
-      if (!isJson(value.path)) {
+      if (!isAbsoluteDatasetFilePath(value.path)) {
         throw new Error(
-          `Expected dataset '${key}' to have an absolute JSON path; collection was provided path '${value.path}'.`
+          `Expected dataset '${key}' to have an absolute JSON or Parquet path; collection was provided path '${value.path}'.`
         );
       }
       if (this.sourceType === CollectionSourceType.URL) {
@@ -224,14 +227,19 @@ export default class Collection {
     console.log(`Fetching dataset from path '${path}'`);
 
     let result: DatasetLoadResult;
-    const datasetLoader = new JsonDatasetLoader(path, {
-      frameLoader: options.frameLoader,
-      arrayLoader: options.arrayLoader,
-      reportProgress: options.onLoadProgress,
-      reportWarning: options.reportWarning,
-      manifestLoader: options.manifestLoader,
-      pathResolver: this.pathResolver,
-    });
+    let datasetLoader: IDatasetLoader;
+    if (path.endsWith(".parquet")) {
+      datasetLoader = new ParquetDatasetLoader(path);
+    } else {
+      datasetLoader = new JsonDatasetLoader(path, {
+        frameLoader: options.frameLoader,
+        arrayLoader: options.arrayLoader,
+        reportProgress: options.onLoadProgress,
+        reportWarning: options.reportWarning,
+        manifestLoader: options.manifestLoader,
+        pathResolver: this.pathResolver,
+      });
+    }
     try {
       const dataset = await datasetLoader.open();
       console.timeEnd("loadDataset");
@@ -274,7 +282,9 @@ export default class Collection {
     // if (!isUrl(datasetPath)) {
     //   throw new Error(`Cannot fetch dataset '${datasetPath}' because it is not a URL.`);
     // }
-    return isJson(datasetPath) ? datasetPath : Collection.joinPath(datasetPath, DEFAULT_DATASET_FILENAME);
+    return isAbsoluteDatasetFilePath(datasetPath)
+      ? datasetPath
+      : Collection.joinPath(datasetPath, DEFAULT_DATASET_FILENAME);
   }
 
   /**
@@ -447,8 +457,8 @@ export default class Collection {
    * The `sourcePath` field of the Collection will also be set to `null`.
    */
   public static makeCollectionFromSingleDataset(datasetUrl: string, config: CollectionConfig = {}): Collection {
-    // Add the default filename if the url is not a .JSON path.
-    if (!isJson(datasetUrl)) {
+    // Add the default filename if the url is not a .JSON or .parquet path.
+    if (!isAbsoluteDatasetFilePath(datasetUrl)) {
       datasetUrl = Collection.joinPath(formatPath(datasetUrl), DEFAULT_DATASET_FILENAME);
     }
     const collectionData: CollectionData = new Map([[datasetUrl, { path: datasetUrl, name: datasetUrl }]]);
