@@ -229,7 +229,13 @@ export default class Collection {
     let result: DatasetLoadResult;
     let datasetLoader: IDatasetLoader;
     if (path.endsWith(".parquet")) {
-      datasetLoader = new ParquetDatasetLoader(path);
+      datasetLoader = new ParquetDatasetLoader(path, undefined, {
+        frameLoader: options.frameLoader,
+        arrayLoader: options.arrayLoader,
+        reportWarning: options.reportWarning,
+        reportProgress: options.onLoadProgress,
+        pathResolver: this.pathResolver,
+      });
     } else {
       datasetLoader = new JsonDatasetLoader(path, {
         frameLoader: options.frameLoader,

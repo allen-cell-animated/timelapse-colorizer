@@ -1,4 +1,4 @@
-import { type DataTexture, RGBAFormat, RGBAIntegerFormat, type Texture, Vector2, Vector3 } from "three";
+import { type DataTexture, RGBAFormat, RGBAIntegerFormat, type Texture, Vector3 } from "three";
 
 import {
   BOOLEAN_VALUE_FALSE,
@@ -72,7 +72,7 @@ export type Frames3dData = {
   source: string;
   /** Index of the segmentation channel in the source data. */
   segmentationChannel: number;
-  totalFrames: number;
+  totalFrames?: number;
   backdrops?: Backdrop3dData[];
 };
 
@@ -457,8 +457,8 @@ export default class Dataset {
       } else if (firstBackdropFramesLength !== undefined) {
         return firstBackdropFramesLength;
       }
-    } else if (this.has3dFrames()) {
-      return this.frames3d!.totalFrames;
+    } else if (this.has3dFrames() && this.frames3d?.totalFrames !== undefined) {
+      return this.frames3d.totalFrames;
     }
     return this.maxTime + 1;
   }

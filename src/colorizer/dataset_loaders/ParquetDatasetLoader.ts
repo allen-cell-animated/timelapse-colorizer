@@ -2,7 +2,7 @@ import { ColumnData, parquetMetadataAsync, parquetRead } from "hyparquet";
 import { compressors } from "hyparquet-compressors";
 import { ParquetType, SchemaElement } from "hyparquet/src/types";
 
-import Dataset, { FeatureData, FeatureType } from "src/colorizer/Dataset";
+import Dataset, { Backdrop3dData, FeatureData, FeatureType, Frames3dData } from "src/colorizer/Dataset";
 import {
   addCentroidFeatures,
   addTimeFeature,
@@ -13,6 +13,22 @@ import { DatasetLoadOptions } from "src/colorizer/dataset_loaders/types";
 import { FeatureDataType } from "src/colorizer/types";
 import { getKeyFromName } from "src/colorizer/utils/data_utils";
 import { arrayToDataTextureInfo, infoToDataTexture } from "src/colorizer/utils/texture_utils";
+import { formatPath } from "src/colorizer/utils/url_utils";
+
+const METADATA_SEG_CHANNEL_COUNT = "num_seg_channels";
+const METADATA_SEG_PREFIX = "seg";
+const METADATA_CHANNEL_COUNT = "num_channels";
+const METADATA_CHANNEL_PREFIX = "c";
+
+const enum MetadataChannelSuffix {
+  SOURCE = "_source",
+  CHANNEL = "_channel",
+  NAME = "_name",
+  // Optional fields
+  DESCRIPTION = "_description",
+  MIN = "_min",
+  MAX = "_max",
+}
 
 const enum ParquetDataType {
   INT32 = "INT32",
@@ -80,6 +96,7 @@ function isMetadataColumn(
 
 export default class ParquetDatasetLoader {
   private url: string;
+  private baseUrl: string;
   private options: DatasetLoadOptions;
   private file?: ArrayBuffer;
 
@@ -122,7 +139,114 @@ export default class ParquetDatasetLoader {
     this.bounds = null;
     this.outliers = null;
 
+    this.baseUrl = formatPath(parquetUrl.substring(0, parquetUrl.lastIndexOf("/")));
+
     this.onLoadedColumnChunk = this.onLoadedColumnChunk.bind(this);
+  }
+
+  private resolvePath(path: string): string {
+    return this.options.pathResolver?.resolve(this.baseUrl, path) ?? path;
+  }
+
+  private getChannelInfo(
+    metadata: Map<string, string | undefined>,
+    index: number,
+    type: "seg" | "channel"
+  ): Backdrop3dData | null {
+    const prefix = type === "seg" ? METADATA_SEG_PREFIX : METADATA_CHANNEL_PREFIX;
+    const readableType = type === "seg" ? "Segmentation channel" : "Channel";
+
+    let source = metadata.get(`${prefix}${index}${MetadataChannelSuffix.SOURCE}`);
+    const channelIdxStr = metadata.get(`${prefix}${index}${MetadataChannelSuffix.CHANNEL}`);
+    let name = metadata.get(`${prefix}${index}${MetadataChannelSuffix.NAME}`);
+    const description = metadata.get(`${prefix}${index}${MetadataChannelSuffix.DESCRIPTION}`);
+    const minStr = metadata.get(`${prefix}${index}${MetadataChannelSuffix.MIN}`);
+    const maxStr = metadata.get(`${prefix}${index}${MetadataChannelSuffix.MAX}`);
+
+    // Try to resolve channel source to absolute path
+    if (source === undefined || source === "") {
+      console.warn(`${readableType} ${index} is missing required source field and will be skipped.`);
+      return null;
+    }
+    source = this.resolvePath(source);
+    if (source === null) {
+      console.warn(`${readableType} ${index} source '${source}' could not be resolved and will be skipped.`);
+      return null;
+    }
+
+    // Validate channel index
+    const channelIndex = Number.parseInt(channelIdxStr ?? "", 10);
+    if (isNaN(channelIndex)) {
+      console.warn(`${readableType} ${index} has invalid channel index '${channelIdxStr}' and will be skipped.`);
+      return null;
+    }
+    name = name ?? `${readableType} ${index}`;
+    let min = minStr !== undefined ? Number.parseFloat(minStr) : undefined;
+    let max = maxStr !== undefined ? Number.parseFloat(maxStr) : undefined;
+
+    return {
+      source,
+      name,
+      channelIndex,
+      min: Number.isFinite(min) ? min : undefined,
+      max: Number.isFinite(max) ? max : undefined,
+      description,
+    };
+  }
+
+  private getFrames3dFromMetadata(metadata: Map<string, string | undefined>): Frames3dData | null {
+    const numSegChannelsStr = metadata.get(METADATA_SEG_CHANNEL_COUNT);
+    const numChannelsStr = metadata.get(METADATA_CHANNEL_COUNT);
+    const numSegChannels = numSegChannelsStr ? Number.parseInt(numSegChannelsStr, 10) : 0;
+    const numChannels = numChannelsStr ? Number.parseInt(numChannelsStr, 10) : 0;
+
+    if (!numSegChannels && !numChannels) {
+      return null;
+    }
+
+    // TODO: Update once Dataset has support for multiple seg channels; for now,
+    // only the first will be included.
+    const segmentations: Backdrop3dData[] = [];
+    const backdrops: Backdrop3dData[] = [];
+    let numUnloadableSegChannels = 0;
+    let numUnloadableChannels = 0;
+
+    for (let i = 0; i < numSegChannels; i++) {
+      const segChannelInfo = this.getChannelInfo(metadata, i, "seg");
+      if (segChannelInfo) {
+        segmentations.push(segChannelInfo);
+      } else {
+        numUnloadableSegChannels++;
+      }
+    }
+    if (numUnloadableSegChannels > 0) {
+      this.options.reportWarning?.(
+        `${numUnloadableSegChannels} segmentation channel(s) were specified in metadata but could not be loaded.`,
+        ""
+      );
+    }
+
+    for (let i = 0; i < numChannels; i++) {
+      const channelInfo = this.getChannelInfo(metadata, i, "channel");
+      if (channelInfo) {
+        backdrops.push(channelInfo);
+      } else {
+        numUnloadableChannels++;
+      }
+    }
+    if (numUnloadableChannels > 0) {
+      this.options.reportWarning?.(
+        `${numUnloadableChannels} channel(s) were specified in metadata but could not be loaded.`,
+        ""
+      );
+    }
+
+    const firstSeg = segmentations[0];
+    return {
+      source: firstSeg.source,
+      segmentationChannel: firstSeg.channelIndex,
+      backdrops,
+    };
   }
 
   private parseColumnData(chunk: ColumnData, schema: SchemaElement): void {
@@ -224,8 +348,12 @@ export default class ParquetDatasetLoader {
       this.file = await result.arrayBuffer();
     }
     const metadata = await parquetMetadataAsync(this.file);
-    console.log(metadata);
-    console.log(metadata.num_rows);
+    const metadataMap = new Map<string, string | undefined>(
+      (metadata.key_value_metadata ?? []).map((entry) => [entry.key, entry.value])
+    );
+    console.log("Parquet file metadata key-value pairs: ", metadataMap);
+    const frames3d = this.getFrames3dFromMetadata(metadataMap);
+
     this.numColumns = metadata.schema.length - 1;
 
     this.columnNameToSchemaMap = new Map(
@@ -254,6 +382,7 @@ export default class ParquetDatasetLoader {
       centroids: interleaveCentroidData(this.centroidsX, this.centroidsY, this.centroidsZ),
       bounds: this.bounds,
       outliers: this.outliers,
+      frames3d: frames3d ?? undefined,
     });
     console.log("Loaded dataset from Parquet file: ", dataset);
     return dataset;
