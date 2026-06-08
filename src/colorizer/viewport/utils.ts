@@ -1,4 +1,4 @@
-import { type Color, Vector2 } from "three";
+import { type Color, Vector2, Vector3 } from "three";
 
 import type Track from "src/colorizer/Track";
 import { SelectionOutlineColorMode } from "src/colorizer/types";
@@ -8,7 +8,7 @@ import type TrackPath3D from "src/colorizer/viewport/tracks/TrackPath3D";
 import { type Canvas2DScaleInfo, CanvasType, type RenderCanvasStateParams } from "./types";
 
 export function get2DCanvasScaling(
-  frameResolution: Vector2,
+  frameResolution: Vector2 | Vector3,
   canvasResolution: Vector2,
   zoomMultiplier: number,
   offset: Vector2
