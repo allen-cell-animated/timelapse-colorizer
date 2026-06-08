@@ -92,9 +92,9 @@ export default class ParquetDatasetLoader {
   private segIds: Uint32Array | null;
   private times: Uint32Array | null;
   private trackIds: Uint32Array | null;
-  private centroidsX: Uint16Array | null;
-  private centroidsY: Uint16Array | null;
-  private centroidsZ: Uint16Array | null;
+  private centroidsX: Float32Array | null;
+  private centroidsY: Float32Array | null;
+  private centroidsZ: Float32Array | null;
   private bounds: Uint16Array | null;
   private outliers: Uint8Array | null;
 
@@ -142,15 +142,15 @@ export default class ParquetDatasetLoader {
       this.segIds = Uint32Array.from(chunk.columnData, (v) => Number(v));
     } else if (isMetadataColumn(columnName, type, CENTROID_X_COLUMN_NAMES, MetadataType.FLOAT_OR_INT)) {
       if (!this.centroidsX) {
-        this.centroidsX = Uint16Array.from(chunk.columnData, (v) => Number(v));
+        this.centroidsX = Float32Array.from(chunk.columnData, (v) => Number(v));
       }
     } else if (isMetadataColumn(columnName, type, CENTROID_Y_COLUMN_NAMES, MetadataType.FLOAT_OR_INT)) {
       if (!this.centroidsY) {
-        this.centroidsY = Uint16Array.from(chunk.columnData, (v) => Number(v));
+        this.centroidsY = Float32Array.from(chunk.columnData, (v) => Number(v));
       }
     } else if (isMetadataColumn(columnName, type, CENTROID_Z_COLUMN_NAMES, MetadataType.FLOAT_OR_INT)) {
       if (!this.centroidsZ) {
-        this.centroidsZ = Uint16Array.from(chunk.columnData, (v) => Number(v));
+        this.centroidsZ = Float32Array.from(chunk.columnData, (v) => Number(v));
       }
     } else if (isMetadataColumn(columnName, type, BOUNDS_COLUMN_NAMES, MetadataType.FLOAT_OR_INT)) {
       this.bounds = Uint16Array.from(chunk.columnData, (v) => Number(v));
@@ -166,14 +166,24 @@ export default class ParquetDatasetLoader {
       const data = Float32Array.from(chunk.columnData, (v) => Number(v));
       const textureInfo = arrayToDataTextureInfo(data, FeatureDataType.F32);
       const texture = infoToDataTexture(textureInfo);
+
+      let min = Number.POSITIVE_INFINITY;
+      let max = Number.NEGATIVE_INFINITY;
+      for (let i = 0; i < data.length; i++) {
+        const value = data[i];
+        if (isFinite(value)) {
+          min = Math.min(min, value);
+          max = Math.max(max, value);
+        }
+      }
+
       this.features.set(key, {
         name: columnName,
         key,
         data: data,
         tex: texture,
-        // TODO: Calculate actual min and max values
-        min: 0,
-        max: 1,
+        min,
+        max,
         unit: "",
         type: FeatureType.CONTINUOUS,
         categories: null,
@@ -197,11 +207,19 @@ export default class ParquetDatasetLoader {
     }
 
     // TODO: Handle duplicate collisions
-    this.parseColumnData(chunk, schema);
+    try {
+      this.parseColumnData(chunk, schema);
+    } finally {
+      this.numColumnsParsed++;
+      if (this.options.reportProgress) {
+        this.options.reportProgress(this.numColumnsParsed, this.numColumns);
+      }
+    }
   }
 
   private async loadDataset(): Promise<Dataset> {
     if (!this.file) {
+      // TODO: Fetch in a way that shows progress?
       const result = await fetch(this.url);
       this.file = await result.arrayBuffer();
     }
@@ -228,7 +246,7 @@ export default class ParquetDatasetLoader {
     addTimeFeature(this.features, this.times);
     addTrackFeature(this.features, this.trackIds);
 
-    return new Dataset({
+    const dataset = new Dataset({
       features: this.features,
       segIds: this.segIds,
       times: this.times,
@@ -237,6 +255,8 @@ export default class ParquetDatasetLoader {
       bounds: this.bounds,
       outliers: this.outliers,
     });
+    console.log("Loaded dataset from Parquet file: ", dataset);
+    return dataset;
   }
 
   public async open(): Promise<Dataset> {

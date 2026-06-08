@@ -95,7 +95,7 @@ export type DatasetInputData = {
   segIds: Uint32Array | null;
   times: Uint32Array | null;
   trackIds: Uint32Array | null;
-  centroids: Uint16Array | null;
+  centroids: Float32Array | null;
   bounds: Uint16Array | null;
   outliers: Uint8Array | null;
 };
@@ -142,7 +142,7 @@ export default class Dataset {
   public segIds: Uint32Array | null;
 
   public outliers: Uint8Array | null;
-  public centroids: Uint16Array | null;
+  public centroids: Float32Array | null;
   public bounds: Uint16Array | null;
 
   //// Cached Data ////

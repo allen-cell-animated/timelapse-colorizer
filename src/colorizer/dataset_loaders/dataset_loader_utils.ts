@@ -60,7 +60,7 @@ export function addTimeFeature(features: Map<string, FeatureData>, times: Uint32
 
 export function addCentroidFeatures(
   features: Map<string, FeatureData>,
-  centroids: Uint16Array | null,
+  centroids: Float32Array | null,
   metadata?: ManifestFileMetadata,
   frameDimensions?: Vector2 | null
 ): void {
@@ -119,15 +119,15 @@ export function addCentroidFeatures(
 }
 
 export function interleaveCentroidData(
-  centroidsX: Uint16Array | null,
-  centroidsY: Uint16Array | null,
-  centroidsZ: Uint16Array | null
-): Uint16Array | null {
+  centroidsX: Float32Array | null,
+  centroidsY: Float32Array | null,
+  centroidsZ: Float32Array | null
+): Float32Array | null {
   if (!centroidsX && !centroidsY && !centroidsZ) {
     return null;
   }
   const length = centroidsX?.length || centroidsY?.length || centroidsZ?.length || 0;
-  const interleaved = new Uint16Array(length * 3);
+  const interleaved = new Float32Array(length * 3);
   for (let i = 0; i < length; i++) {
     interleaved[i * 3] = centroidsX ? centroidsX[i] : 0;
     interleaved[i * 3 + 1] = centroidsY ? centroidsY[i] : 0;

@@ -5,7 +5,6 @@ import styled from "styled-components";
 
 import type { Dataset } from "src/colorizer";
 import type Collection from "src/colorizer/Collection";
-import ParquetDatasetLoader from "src/colorizer/dataset_loaders/ParquetDatasetLoader";
 import HelpDropdown from "src/components/Dropdowns/HelpDropdown";
 import Header from "src/components/Header";
 import LoadDatasetButton from "src/components/LoadDatasetButton";

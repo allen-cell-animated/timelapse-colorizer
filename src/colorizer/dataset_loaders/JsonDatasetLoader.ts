@@ -325,7 +325,7 @@ export default class JsonDatasetLoader {
       this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U8, outlierFile)),
       this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, tracksFile)),
       this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, timesFile)),
-      this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U16, centroidsFile)),
+      this.reportLoadProgress(this.loadToBuffer(FeatureDataType.F32, centroidsFile)),
       this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U16, boundsFile)),
       this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, segIdsFile)),
       this.reportLoadProgress(this.getFrameDims(frameFiles)),
