@@ -228,22 +228,19 @@ export default class Collection {
 
     let result: DatasetLoadResult;
     let datasetLoader: IDatasetLoader;
+    const baseOptions = {
+      frameLoader: options.frameLoader,
+      arrayLoader: options.arrayLoader,
+      reportWarning: options.reportWarning,
+      reportProgress: options.onLoadProgress,
+      pathResolver: this.pathResolver,
+    };
     if (path.endsWith(".parquet")) {
-      datasetLoader = new ParquetDatasetLoader(path, undefined, {
-        frameLoader: options.frameLoader,
-        arrayLoader: options.arrayLoader,
-        reportWarning: options.reportWarning,
-        reportProgress: options.onLoadProgress,
-        pathResolver: this.pathResolver,
-      });
+      datasetLoader = new ParquetDatasetLoader(path, undefined, baseOptions);
     } else {
       datasetLoader = new JsonDatasetLoader(path, {
-        frameLoader: options.frameLoader,
-        arrayLoader: options.arrayLoader,
-        reportProgress: options.onLoadProgress,
-        reportWarning: options.reportWarning,
         manifestLoader: options.manifestLoader,
-        pathResolver: this.pathResolver,
+        ...baseOptions,
       });
     }
     try {
