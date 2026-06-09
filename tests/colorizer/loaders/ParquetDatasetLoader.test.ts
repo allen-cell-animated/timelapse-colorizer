@@ -11,4 +11,14 @@ describe("ParquetDatasetLoader", () => {
     // const dataset = await loader.open();
     // console.log(dataset);
   });
+
+  describe("Frame 3D info", () => {
+    it("returns null if no metadata is provided", () => {
+      // throw new Error("Test not implemented");
+    });
+
+    it("", () => {
+      // throw new Error("Test not implemented");
+    });
+  });
 });

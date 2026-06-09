@@ -317,6 +317,8 @@ export enum LoadTroubleshooting {
   CHECK_ZIP_FORMAT_MANIFEST = "A 'manifest.json' should exist in the base directory.",
   CHECK_ZIP_ZARR_DATA = "Please check if the file exists. If this was a Zarr array, note that Zarr data cannot currently be loaded from ZIP archives. " +
     "Consider opening the dataset locally with the CLI tools provided in colorizer-data; for more details, see Help > Visit GitHub repository.",
+  CHECK_PARQUET_3D_METADATA = "This may be because the provided Parquet file is missing required metadata, especially source data for the 3D volume. " +
+    "Please see the developer console for more details.",
 }
 
 export const enum LoadErrorMessage {

@@ -1,6 +1,6 @@
 import { type ColumnData, parquetMetadataAsync, parquetRead } from "hyparquet";
-import type { ParquetType, SchemaElement } from "hyparquet/src/types";
 import { compressors } from "hyparquet-compressors";
+import type { ParquetType, SchemaElement } from "hyparquet/src/types";
 
 import Dataset, { type Backdrop3dData, type FeatureData, FeatureType, type Frames3dData } from "src/colorizer/Dataset";
 import {
@@ -10,10 +10,11 @@ import {
   interleaveCentroidData,
 } from "src/colorizer/dataset_loaders/dataset_loader_utils";
 import type { DatasetLoadOptions } from "src/colorizer/dataset_loaders/types";
-import { FeatureDataType } from "src/colorizer/types";
+import { FeatureDataType, LoadTroubleshooting } from "src/colorizer/types";
 import { getKeyFromName } from "src/colorizer/utils/data_utils";
 import { arrayToDataTextureInfo, infoToDataTexture } from "src/colorizer/utils/texture_utils";
 import { formatPath } from "src/colorizer/utils/url_utils";
+import { formatQuantityString } from "src/utils/formatting";
 
 const METADATA_SEG_CHANNEL_COUNT = "num_seg_channels";
 const METADATA_SEG_PREFIX = "seg";
@@ -156,7 +157,8 @@ export default class ParquetDatasetLoader {
     const prefix = type === "seg" ? METADATA_SEG_PREFIX : METADATA_CHANNEL_PREFIX;
     const readableType = type === "seg" ? "Segmentation channel" : "Channel";
 
-    let source = metadata.get(`${prefix}${index}${MetadataChannelSuffix.SOURCE}`);
+    const sourceKey = `${prefix}${index}${MetadataChannelSuffix.SOURCE}`;
+    let source = metadata.get(sourceKey);
     const channelIdxStr = metadata.get(`${prefix}${index}${MetadataChannelSuffix.CHANNEL}`);
     let name = metadata.get(`${prefix}${index}${MetadataChannelSuffix.NAME}`);
     const description = metadata.get(`${prefix}${index}${MetadataChannelSuffix.DESCRIPTION}`);
@@ -165,19 +167,28 @@ export default class ParquetDatasetLoader {
 
     // Try to resolve channel source to absolute path
     if (source === undefined || source === "") {
-      console.warn(`${readableType} ${index} is missing required source field and will be skipped.`);
+      console.warn(
+        `${readableType} ${index} is missing required source field in parquet metadata (${sourceKey}) and will be skipped. ` +
+          "Please check the logged metadata for missing volume data sources."
+      );
       return null;
     }
     source = this.resolvePath(source);
     if (source === null) {
-      console.warn(`${readableType} ${index} source '${source}' could not be resolved and will be skipped.`);
+      console.warn(
+        `${readableType} ${index} source path '${source}' could not be resolved and will be skipped. ` +
+          "Please check the logged metadata for malformed paths."
+      );
       return null;
     }
 
     // Validate channel index
     const channelIndex = Number.parseInt(channelIdxStr ?? "", 10);
     if (isNaN(channelIndex)) {
-      console.warn(`${readableType} ${index} has invalid channel index '${channelIdxStr}' and will be skipped.`);
+      console.warn(
+        `${readableType} ${index} has invalid channel index '${channelIdxStr}' and will be skipped. ` +
+          "Please check the logged metadata for invalid channel indices."
+      );
       return null;
     }
     name = name ?? `${readableType} ${index}`;
@@ -221,8 +232,9 @@ export default class ParquetDatasetLoader {
     }
     if (numUnloadableSegChannels > 0) {
       this.options.reportWarning?.(
-        `${numUnloadableSegChannels} segmentation channel(s) were specified in metadata but could not be loaded.`,
-        ""
+        formatQuantityString(numUnloadableSegChannels, "segmentation channel", "segmentation channels") +
+          " could not be loaded.",
+        LoadTroubleshooting.CHECK_PARQUET_3D_METADATA
       );
     }
 
@@ -236,8 +248,8 @@ export default class ParquetDatasetLoader {
     }
     if (numUnloadableChannels > 0) {
       this.options.reportWarning?.(
-        `${numUnloadableChannels} channel(s) were specified in metadata but could not be loaded.`,
-        ""
+        formatQuantityString(numUnloadableChannels, "channel", "channels") + " could not be loaded.",
+        LoadTroubleshooting.CHECK_PARQUET_3D_METADATA
       );
     }
 
@@ -351,7 +363,7 @@ export default class ParquetDatasetLoader {
     const metadataMap = new Map<string, string | undefined>(
       (metadata.key_value_metadata ?? []).map((entry) => [entry.key, entry.value])
     );
-    console.log("Parquet file metadata key-value pairs: ", metadataMap);
+    console.log("Parquet file metadata: ", metadataMap);
     const frames3d = this.getFrames3dFromMetadata(metadataMap);
 
     this.numColumns = metadata.schema.length - 1;
