@@ -1,4 +1,4 @@
-import Dataset from "src/colorizer/Dataset";
+import type Dataset from "src/colorizer/Dataset";
 
 export interface IDatasetLoader {
   open(): Promise<Dataset>;

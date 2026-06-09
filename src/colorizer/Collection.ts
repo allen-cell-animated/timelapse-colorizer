@@ -1,5 +1,5 @@
 import { DEFAULT_COLLECTION_FILENAME, DEFAULT_DATASET_FILENAME } from "src/colorizer/constants";
-import { IDatasetLoader } from "src/colorizer/dataset_loaders/IDatasetLoader";
+import type { IDatasetLoader } from "src/colorizer/dataset_loaders/IDatasetLoader";
 import JsonDatasetLoader from "src/colorizer/dataset_loaders/JsonDatasetLoader";
 import ParquetDatasetLoader from "src/colorizer/dataset_loaders/ParquetDatasetLoader";
 

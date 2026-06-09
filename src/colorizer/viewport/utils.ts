@@ -1,4 +1,4 @@
-import { type Color, Vector2, Vector3 } from "three";
+import { type Color, Vector2, type Vector3 } from "three";
 
 import type Track from "src/colorizer/Track";
 import { SelectionOutlineColorMode } from "src/colorizer/types";

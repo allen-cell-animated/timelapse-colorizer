@@ -1,4 +1,4 @@
-import { Vector2, Vector3 } from "three";
+import { Vector2, type Vector3 } from "three";
 
 import Track from "src/colorizer/Track";
 

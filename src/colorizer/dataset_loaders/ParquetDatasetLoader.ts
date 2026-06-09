@@ -1,15 +1,15 @@
-import { ColumnData, parquetMetadataAsync, parquetRead } from "hyparquet";
+import { type ColumnData, parquetMetadataAsync, parquetRead } from "hyparquet";
+import type { ParquetType, SchemaElement } from "hyparquet/src/types";
 import { compressors } from "hyparquet-compressors";
-import { ParquetType, SchemaElement } from "hyparquet/src/types";
 
-import Dataset, { Backdrop3dData, FeatureData, FeatureType, Frames3dData } from "src/colorizer/Dataset";
+import Dataset, { type Backdrop3dData, type FeatureData, FeatureType, type Frames3dData } from "src/colorizer/Dataset";
 import {
   addCentroidFeatures,
   addTimeFeature,
   addTrackFeature,
   interleaveCentroidData,
 } from "src/colorizer/dataset_loaders/dataset_loader_utils";
-import { DatasetLoadOptions } from "src/colorizer/dataset_loaders/types";
+import type { DatasetLoadOptions } from "src/colorizer/dataset_loaders/types";
 import { FeatureDataType } from "src/colorizer/types";
 import { getKeyFromName } from "src/colorizer/utils/data_utils";
 import { arrayToDataTextureInfo, infoToDataTexture } from "src/colorizer/utils/texture_utils";
@@ -181,8 +181,8 @@ export default class ParquetDatasetLoader {
       return null;
     }
     name = name ?? `${readableType} ${index}`;
-    let min = minStr !== undefined ? Number.parseFloat(minStr) : undefined;
-    let max = maxStr !== undefined ? Number.parseFloat(maxStr) : undefined;
+    const min = minStr !== undefined ? Number.parseFloat(minStr) : undefined;
+    const max = maxStr !== undefined ? Number.parseFloat(maxStr) : undefined;
 
     return {
       source,
