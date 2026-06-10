@@ -47,11 +47,13 @@ export function ToggleButtonWithConfig(inputProps: ToggleButtonWithConfigProps):
   const popupContainerRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
 
+  const hasConfigMenu = !!props.configMenuContents;
+
   let buttonActionVerb: string;
   if (props.visible) {
     // While visible, clicking the first time opens the config menu, and
     // clicking again hides the image layer.
-    if (!configMenuOpen) {
+    if (hasConfigMenu && !configMenuOpen) {
       buttonActionVerb = "Configure";
     } else {
       buttonActionVerb = "Hide";
@@ -68,7 +70,7 @@ export function ToggleButtonWithConfig(inputProps: ToggleButtonWithConfigProps):
 
   const onClick = (): void => {
     if (props.visible) {
-      if (!configMenuOpen) {
+      if (hasConfigMenu && !configMenuOpen) {
         setConfigMenuOpen(true);
       } else {
         setConfigMenuOpen(false);
@@ -121,7 +123,7 @@ export function ToggleButtonWithConfig(inputProps: ToggleButtonWithConfigProps):
         trigger={["click"]}
         getPopupContainer={() => props.popupContainer || popupContainerRef.current || document.body}
         onOpenChange={(open) => setConfigMenuOpen(open)}
-        open={configMenuOpen}
+        open={configMenuOpen && hasConfigMenu}
       >
         <TooltipWithSubtitle
           title={tooltipTitle}
