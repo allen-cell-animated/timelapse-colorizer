@@ -64,7 +64,7 @@ export function ToggleButtonWithConfig(inputProps: ToggleButtonWithConfigProps):
   const tooltipTitle = buttonActionVerb + " " + props.name;
 
   const tooltipContents = Array.isArray(props.tooltipContents) ? [...props.tooltipContents] : [props.tooltipContents];
-  if (props.visible && !configMenuOpen) {
+  if (props.visible && !configMenuOpen && hasConfigMenu) {
     tooltipContents.push("Double-click to hide " + props.name.toLowerCase());
   }
 
