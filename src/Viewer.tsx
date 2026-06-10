@@ -655,7 +655,6 @@ function Viewer(): ReactElement {
                 canv={canv}
                 isRecording={isRecording}
                 onClickId={onClickId}
-                hoveredId={currentHoveredId}
                 onMouseHover={(info: PixelIdInfo | null): void => {
                   const isObject = info !== null;
                   setShowObjectHoverInfo(isObject);
