@@ -69,6 +69,9 @@ export type ConfigSliceState = {
   centroidRadiusPx: number;
   centroidColorMode: CentroidColorMode;
   centroidColor: Color;
+  /** Centroid opacity when backdrops are visible, as a percentage in the `[0, 100]`
+   * range. 50 by default. */
+  centroidOpacity: number;
 
   // Track path settings
   showTrackPath: boolean;
@@ -163,6 +166,7 @@ export type ConfigSliceSerializableState = Pick<
   | "centroidRadiusPx"
   | "centroidColorMode"
   | "centroidColor"
+  | "centroidOpacity"
   | "openTab"
   | "interpolate3d"
 >;
@@ -173,6 +177,7 @@ export type ConfigSliceActions = {
   setCentroidRadiusPx: (radius: number) => void;
   setCentroidColorMode: (centroidColorMode: CentroidColorMode) => void;
   setCentroidColor: (centroidColor: Color) => void;
+  setCentroidOpacity: (centroidOpacity: number) => void;
   setShowTrackPath: (showTrackPath: boolean) => void;
   setTrackPathColor: (trackPathColor: Color) => void;
   setTrackPathWidthPx: (trackPathWidthPx: number) => void;
@@ -221,6 +226,7 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   centroidColorMode: CentroidColorMode.USE_FEATURE_COLOR,
   centroidColor: new Color(CENTROID_COLOR_DEFAULT),
   centroidRadiusPx: 4,
+  centroidOpacity: 50,
   showTrackPath: true,
   trackPathColor: new Color(OUTLINE_COLOR_DEFAULT),
   trackPathWidthPx: 1.5,
@@ -261,6 +267,7 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   setCentroidRadiusPx: (centroidRadiusPx) => set({ centroidRadiusPx: clamp(centroidRadiusPx, 0, 100) }),
   setCentroidColorMode: (centroidColorMode) => set({ centroidColorMode }),
   setCentroidColor: (centroidColor) => set({ centroidColor }),
+  setCentroidOpacity: (centroidOpacity) => set({ centroidOpacity: clamp(centroidOpacity, 0, 100) }),
   setShowTrackPath: (showTrackPath) => set({ showTrackPath }),
   setTrackPathColor: (trackPathColor) => set({ trackPathColor }),
   setTrackPathWidthPx: (trackPathWidthPx) => set({ trackPathWidthPx: clamp(trackPathWidthPx, 0, 100) }),
@@ -348,6 +355,7 @@ export const serializeConfigSlice = (slice: Partial<ConfigSliceSerializableState
     [UrlParam.OUTLINE_COLOR]: encodeMaybeColor(slice.outlineColor),
     [UrlParam.OUTLINE_COLOR_MODE]: slice.outlineColorMode?.toString(),
     [UrlParam.OUTLINE_PALETTE_KEY]: slice.outlinePaletteKey?.toString(),
+    [UrlParam.CENTROID_OPACITY]: encodeMaybeNumber(slice.centroidOpacity),
     [UrlParam.EDGE_MODE]: slice.edgeMode?.toString(),
     [UrlParam.EDGE_COLOR]: encodeMaybeColorWithAlpha(slice.edgeColor, slice.edgeColorAlpha),
     [UrlParam.SHOW_CENTROIDS]: encodeMaybeBoolean(slice.showCentroids),
@@ -389,6 +397,7 @@ export const selectConfigSliceSerializationDeps = (slice: ConfigSlice): ConfigSl
   centroidColorMode: slice.centroidColorMode,
   centroidColor: slice.centroidColor,
   centroidRadiusPx: slice.centroidRadiusPx,
+  centroidOpacity: slice.centroidOpacity,
   openTab: slice.openTab,
   interpolate3d: slice.interpolate3d,
 });
@@ -488,6 +497,10 @@ export const loadConfigSliceFromParams = (slice: ConfigSlice, params: URLSearchP
   const centroidColorModeParam = parseCentroidColorMode(params.get(UrlParam.CENTROID_COLOR_MODE));
   if (centroidColorModeParam !== undefined) {
     slice.setCentroidColorMode(centroidColorModeParam);
+  }
+  const centroidOpacityParam = decodeFloat(params.get(UrlParam.CENTROID_OPACITY));
+  if (centroidOpacityParam !== undefined) {
+    slice.setCentroidOpacity(centroidOpacityParam);
   }
 
   const openTabParam = params.get(UrlParam.OPEN_TAB);

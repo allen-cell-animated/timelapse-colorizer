@@ -60,6 +60,7 @@ export enum UrlParam {
   CENTROID_COLOR_MODE = "centroid-mode",
   CENTROID_COLOR = "centroid-color",
   CENTROID_RADIUS = "centroid-radius",
+  CENTROID_OPACITY = "ct-alpha",
   SHOW_PATH = "path",
   PATH_COLOR = "path-color",
   PATH_COLOR_RAMP = "path-ramp",
