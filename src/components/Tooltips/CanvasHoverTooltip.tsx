@@ -236,11 +236,16 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
 
   // If segmentations and centroids are both hidden, show a warning that click
   // interactions will not work.
+
+  // TODO: Ideally, click interactions should work no matter what. Consider
+  // refactoring the 2D and 3D canvas to secretly enable segmentations even when
+  // they are hidden, so interactions still work as expected. Note that this
+  // will be a performance tradeoff.
   let noInteractionWarning: ReactNode;
   if (!showSegmentations && !showCentroids) {
     noInteractionWarning = (
-      <Tag style={{ width: "fit-content", margin: "0 2px" }} color={theme.color.text.hint}>
-        Segmentations are hidden
+      <Tag style={{ maxWidth: "150px", margin: "0 2px", textWrap: "wrap" }} color={theme.color.text.hint}>
+        Enable segmentations or centroids to interact
       </Tag>
     );
   }
