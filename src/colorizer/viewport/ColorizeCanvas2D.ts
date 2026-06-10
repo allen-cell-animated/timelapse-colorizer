@@ -119,6 +119,7 @@ type ColorizeUniformTypes = {
   useRepeatingCategoricalColors: boolean;
   pointsColor: Color;
   pointsColorMode: number;
+  pointsOpacity: number;
 };
 
 type ColorizeUniforms = { [K in keyof ColorizeUniformTypes]: Uniform<ColorizeUniformTypes[K]> };
@@ -171,6 +172,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
     useRepeatingCategoricalColors: new Uniform(false),
     pointsColor: new Uniform(new Color(CENTROID_COLOR_DEFAULT)),
     pointsColorMode: new Uniform(0),
+    pointsOpacity: new Uniform(1.0),
   };
 };
 
@@ -675,6 +677,9 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     if (hasPropertyChanged(params, prevParams, ["centroidColor", "centroidColorMode"])) {
       this.setUniform("pointsColorMode", params.centroidColorMode);
       this.setUniform("pointsColor", params.centroidColor.clone().convertLinearToSRGB());
+    }
+    if (hasPropertyChanged(params, prevParams, ["centroidOpacity"])) {
+      this.setUniform("pointsOpacity", clamp(params.centroidOpacity, 0, 100) / 100);
     }
 
     // Update color ramp + palette
