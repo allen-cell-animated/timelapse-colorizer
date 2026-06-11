@@ -109,11 +109,13 @@ async function getVectorFlowField(
     vectorFlowFieldData = averageVectorFlowField(vectorSumData);
   }
 
-  vectorFlowFieldData = subsampleVectorFlowField(
-    vectorFlowFieldData,
-    [xFeature.bins, yFeature.bins, zFeature.bins],
-    subsamplingRate ?? 1
-  );
+  if (subsamplingRate !== undefined && subsamplingRate > 1) {
+    vectorFlowFieldData = subsampleVectorFlowField(
+      vectorFlowFieldData,
+      [xFeature.bins, yFeature.bins, zFeature.bins],
+      subsamplingRate
+    );
+  }
   vectorFlowFieldData = filterVectorFlowFieldData(vectorFlowFieldData);
 
   return new Transfer(vectorFlowFieldData, [
