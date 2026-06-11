@@ -2,12 +2,11 @@ import { Button, Checkbox } from "antd";
 import React, { type ReactElement } from "react";
 
 import ConfigMenuWrapper from "src/components/Controls/ConfigMenuWrapper";
-import InlineHint from "src/components/Display/InlineHint";
+import LabelWithHint from "src/components/Display/LabelWithHint";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import LabeledSlider from "src/components/Inputs/LabeledSlider";
 import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
 import { useViewerStateStore } from "src/state";
-import { FlexRowAlignCenter } from "src/styles/utils";
 
 type Plot3dDataControlsProps = {
   disabled?: boolean;
@@ -33,17 +32,20 @@ export default function Plot3dDataControls(props: Plot3dDataControlsProps): Reac
   const setUseGaussian = useViewerStateStore((state) => state.setPlot3dUseGaussian);
   const gaussianBandwidthPct = useViewerStateStore((state) => state.plot3dGaussianBandwidthPct);
   const setGaussianBandwidthPct = useViewerStateStore((state) => state.setPlot3dGaussianBandwidthPct);
-
-  const gaussianHint = (
-    <InlineHint title="Use density-normalized sum of Gaussian-weighted displacement vectors for each bin and its neighbors." />
+  const gaussianLabel = (
+    <LabelWithHint
+      hintProps={{
+        title: "Use density-normalized sum of Gaussian-weighted displacement vectors for each bin and its neighbors.",
+      }}
+    >
+      Gaussian smoothing
+    </LabelWithHint>
   );
-  const gaussianLabel = <FlexRowAlignCenter $gap={4}>Gaussian smoothing {gaussianHint}</FlexRowAlignCenter>;
 
-  const gaussianBandwidthHint = (
-    <InlineHint title="Standard deviation (or bandwidth), as a percentage of the number of bins." />
-  );
   const gaussianBandwidthLabel = (
-    <FlexRowAlignCenter $gap={4}>Gaussian std. dev {gaussianBandwidthHint}</FlexRowAlignCenter>
+    <LabelWithHint hintProps={{ title: "Standard deviation (or bandwidth), as a percentage of the number of bins." }}>
+      Gaussian std. dev
+    </LabelWithHint>
   );
 
   const configMenuContents = (

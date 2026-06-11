@@ -3,13 +3,12 @@ import React, { type ReactElement } from "react";
 
 import { DISPLAY_COLOR_RAMP_LINEAR_KEYS } from "src/colorizer";
 import ConfigMenuWrapper from "src/components/Controls/ConfigMenuWrapper";
-import InlineHint from "src/components/Display/InlineHint";
+import LabelWithHint from "src/components/Display/LabelWithHint";
 import ColorRampSelection from "src/components/Dropdowns/ColorRampDropdown";
 import LabeledSlider from "src/components/Inputs/LabeledSlider";
 import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
 import { useViewerStateStore } from "src/state";
 import { StyledHorizontalRule } from "src/styles/components";
-import { FlexRow } from "src/styles/utils";
 
 const SLIDER_WIDTH = "180px";
 
@@ -38,9 +37,11 @@ export default function Plot3dAppearanceControls(props: Plot3dAppearanceControls
   const setConeColorRampKey = useViewerStateStore((state) => state.setPlot3dVectorColorRampKey);
   const setConeColorRampReversed = useViewerStateStore((state) => state.setPlot3dVectorColorRampReversed);
 
-  const windowSizeHint = <InlineHint title="Total number of points to average over, including past and future." />;
-  const windowSizeLabel = <FlexRow $gap={6}>Line window size {windowSizeHint}</FlexRow>;
-
+  const windowSizeLabel = (
+    <LabelWithHint hintProps={{ title: "Total number of points to average over, including past and future." }}>
+      Line window size
+    </LabelWithHint>
+  );
   const configMenuContents = (
     <SettingsContainer labelWidth="140px">
       <SettingsItem
