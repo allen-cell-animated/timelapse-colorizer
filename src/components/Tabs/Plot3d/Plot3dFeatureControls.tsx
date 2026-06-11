@@ -1,16 +1,13 @@
-import { Checkbox } from "antd";
 import React, { type ReactElement, useMemo } from "react";
 
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import type { SelectItem } from "src/components/Dropdowns/types";
 import { useViewerStateStore } from "src/state";
-import { FlexRow, FlexRowAlignCenter } from "src/styles/utils";
+import { FlexRow } from "src/styles/utils";
 
 type Plot3dFeatureControlsProps = {
   disabled?: boolean;
 };
-
-const GAUSSIAN_CHECKBOX_ID = "plot3d-gaussian-checkbox";
 
 export default function Plot3dFeatureControls(props: Plot3dFeatureControlsProps): ReactElement {
   const xAxisFeatureKey = useViewerStateStore((state) => state.plot3dXAxis);
@@ -19,10 +16,6 @@ export default function Plot3dFeatureControls(props: Plot3dFeatureControlsProps)
   const setYAxisFeatureKey = useViewerStateStore((state) => state.setPlot3dYAxis);
   const zAxisFeatureKey = useViewerStateStore((state) => state.plot3dZAxis);
   const setZAxisFeatureKey = useViewerStateStore((state) => state.setPlot3dZAxis);
-  const bins = useViewerStateStore((state) => state.plot3dVectorBins);
-  const setBins = useViewerStateStore((state) => state.setPlot3dVectorBins);
-  const applyGaussian = useViewerStateStore((state) => state.plot3dUseGaussian);
-  const setApplyGaussian = useViewerStateStore((state) => state.setPlot3dUseGaussian);
 
   const dataset = useViewerStateStore((state) => state.dataset);
 
@@ -46,7 +39,7 @@ export default function Plot3dFeatureControls(props: Plot3dFeatureControlsProps)
         selected={selectedKey ?? { label: "", value: "" }}
         items={featureDropdownData}
         onChange={onChangeKey}
-        controlWidth="100%"
+        controlWidth="calc(max(100%, 120px))"
         containerStyle={{ flexGrow: 1, flexBasis: "140px", flexShrink: 1 }}
         disabled={props.disabled}
       ></SelectionDropdown>
@@ -54,38 +47,10 @@ export default function Plot3dFeatureControls(props: Plot3dFeatureControlsProps)
   };
 
   return (
-    <FlexRow $gap={12} style={{ flexGrow: 1 }}>
+    <FlexRow $gap={16} style={{ flexGrow: 1, flexWrap: "wrap" }}>
       {getFeatureAxisSelector("X", xAxisFeatureKey, setXAxisFeatureKey)}
       {getFeatureAxisSelector("Y", yAxisFeatureKey, setYAxisFeatureKey)}
       {getFeatureAxisSelector("Z", zAxisFeatureKey, setZAxisFeatureKey)}
-
-      {/* TODO: Bins probably belongs with the cone controls once it is spun off into a submenu */}
-
-      <SelectionDropdown
-        label={"Bins"}
-        selected={bins.toString()}
-        items={[10, 20, 30, 40, 50].map((num) => ({ value: num.toString(), label: num.toString() }))}
-        onChange={(value: string) => {
-          const parsedValue = parseInt(value, 10);
-          if (!isNaN(parsedValue) && parsedValue > 0) {
-            setBins(parsedValue);
-          }
-        }}
-        width="100px"
-        controlWidth="70px"
-        disabled={props.disabled}
-      ></SelectionDropdown>
-      <FlexRowAlignCenter $gap={6}>
-        <label htmlFor={GAUSSIAN_CHECKBOX_ID}>
-          <h3>Gaussian</h3>
-        </label>
-        <Checkbox
-          id={GAUSSIAN_CHECKBOX_ID}
-          checked={applyGaussian}
-          onChange={(e) => setApplyGaussian(e.target.checked)}
-          disabled={props.disabled}
-        />
-      </FlexRowAlignCenter>
     </FlexRow>
   );
 }

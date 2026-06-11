@@ -115,7 +115,11 @@ export const createPlot3dSlice: StateCreator<DatasetSlice & Plot3dSlice, [], [],
   plot3dLineMovingAverageWindow: 1,
 
   plot3dUseGaussian: false,
-  plot3dGaussianBandwidthPct: 10,
+  /**
+   * The bandwidth or standard deviation for the gaussian smoothing, as a
+   * percentage of the number of bins in the (0, 100] range.
+   */
+  plot3dGaussianBandwidthPct: 15,
 
   // Derived state
   plot3dVectorColorRamp: getColorMap(KNOWN_COLOR_RAMPS, DEFAULT_COLOR_RAMP_KEY),
@@ -197,18 +201,35 @@ export const addPlot3dDerivedStateSubscribers = (store: SubscribableStore<Datase
       if (!dataset) {
         return;
       }
-      const { plot3dXAxis, plot3dYAxis, plot3dZAxis } = store.getState();
-      const clearedAxes: Partial<Plot3dSlice> = {};
-      if (!isAxisKeyValid(dataset, plot3dXAxis)) {
-        clearedAxes.plot3dXAxis = null;
+      const {
+        plot3dXAxis: oldPlot3dXAxis,
+        plot3dYAxis: oldPlot3dYAxis,
+        plot3dZAxis: oldPlot3dZAxis,
+      } = store.getState();
+      const newState: Partial<Plot3dSliceState> = {};
+
+      // Clear axes if invalid for new dataset
+      if (!isAxisKeyValid(dataset, oldPlot3dXAxis)) {
+        newState.plot3dXAxis = null;
       }
-      if (!isAxisKeyValid(dataset, plot3dYAxis)) {
-        clearedAxes.plot3dYAxis = null;
+      if (!isAxisKeyValid(dataset, oldPlot3dYAxis)) {
+        newState.plot3dYAxis = null;
       }
-      if (!isAxisKeyValid(dataset, plot3dZAxis)) {
-        clearedAxes.plot3dZAxis = null;
+      if (!isAxisKeyValid(dataset, oldPlot3dZAxis)) {
+        newState.plot3dZAxis = null;
       }
-      return clearedAxes;
+
+      // If all axes are null, auto-assign the first three features in the dataset
+      if (oldPlot3dXAxis === null && oldPlot3dYAxis === null && oldPlot3dZAxis === null) {
+        const featureKeys = dataset.featureKeys;
+        if (featureKeys.length >= 3) {
+          newState.plot3dXAxis = featureKeys[0];
+          newState.plot3dYAxis = featureKeys[1];
+          newState.plot3dZAxis = featureKeys[2];
+        }
+      }
+
+      return newState;
     }
   );
 

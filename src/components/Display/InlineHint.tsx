@@ -3,7 +3,7 @@ import React, { type ReactElement, type ReactNode, useRef } from "react";
 
 import { TooltipWithSubtitle } from "src/components/Tooltips/TooltipWithSubtitle";
 
-type InlineHintProps = {
+export type InlineHintProps = {
   title?: ReactNode;
   subtitle?: ReactNode;
   subtitleList?: ReactNode[];
