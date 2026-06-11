@@ -1,6 +1,6 @@
 import React, { type ReactElement, useContext } from "react";
 
-import InlineHint from "src/components/Display/InlineHint";
+import LabelWithHint from "src/components/Display/LabelWithHint";
 import LabeledSlider from "src/components/Inputs/LabeledSlider";
 import Plot3dAppearanceControls from "src/components/Tabs/Plot3d/Plot3dAppearanceControls";
 import Plot3dDataControls from "src/components/Tabs/Plot3d/Plot3dDataControls";
@@ -23,8 +23,11 @@ export default function Plot3dToolbar(): ReactElement {
 
   const disabled = !dataset;
 
-  const densityHint = <InlineHint title="Minimum sample density for bins. Scales with bin count." />;
-  const densityThresholdLabel = <FlexRowAlignCenter $gap={6}>Density threshold {densityHint}</FlexRowAlignCenter>;
+  const densityThresholdLabel = (
+    <LabelWithHint hintProps={{ title: "Minimum sample density for bins. Scales with bin count." }}>
+      Density threshold
+    </LabelWithHint>
+  );
   const densitySlider = (
     <FlexRow $gap={6}>
       <label htmlFor={Plot3dToolbarHtmlIds.THRESHOLD_SLIDER} style={{ fontSize: theme.font.size.label }}>
