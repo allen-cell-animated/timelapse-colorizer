@@ -1,11 +1,11 @@
 import React, { type ReactElement } from "react";
 
 import LabeledSlider from "src/components/Inputs/LabeledSlider";
+import { useViewerStateStore } from "src/state";
 import { FlexRowAlignCenter } from "src/styles/utils";
 
 type Plot3dLineControlsProps = {
-  movingAverageWindow: number;
-  setMovingAverageWindow: (value: number) => void;
+  disabled?: boolean;
 };
 
 const enum Plot3dLineControlsHtmlIds {
@@ -15,7 +15,8 @@ const enum Plot3dLineControlsHtmlIds {
 // TODO: Make this into a toggle button control.
 // TODO: Move properties into global state instead of passing via props.
 export default function Plot3dLineControls(props: Plot3dLineControlsProps): ReactElement {
-  const { movingAverageWindow, setMovingAverageWindow } = props;
+  const movingAverageWindow = useViewerStateStore((state) => state.plot3dLineMovingAverageWindow);
+  const setMovingAverageWindow = useViewerStateStore((state) => state.setPlot3dLineMovingAverageWindow);
 
   return (
     <FlexRowAlignCenter>
@@ -34,6 +35,7 @@ export default function Plot3dLineControls(props: Plot3dLineControlsProps): Reac
           maxSliderBound={20}
           step={1}
           numberFormatter={(number) => number?.toFixed(0)}
+          disabled={props.disabled}
         ></LabeledSlider>
       </div>
     </FlexRowAlignCenter>

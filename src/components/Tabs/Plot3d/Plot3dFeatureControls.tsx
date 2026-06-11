@@ -7,33 +7,22 @@ import { useViewerStateStore } from "src/state";
 import { FlexRow, FlexRowAlignCenter } from "src/styles/utils";
 
 type Plot3dFeatureControlsProps = {
-  xAxisFeatureKey: string | null;
-  setXAxisFeatureKey: (value: string | null) => void;
-  yAxisFeatureKey: string | null;
-  setYAxisFeatureKey: (value: string | null) => void;
-  zAxisFeatureKey: string | null;
-  setZAxisFeatureKey: (value: string | null) => void;
-  bins: number;
-  setBins: (value: number) => void;
-  applyGaussian: boolean;
-  setApplyGaussian: (value: boolean) => void;
+  disabled?: boolean;
 };
 
 const GAUSSIAN_CHECKBOX_ID = "plot3d-gaussian-checkbox";
 
 export default function Plot3dFeatureControls(props: Plot3dFeatureControlsProps): ReactElement {
-  const {
-    xAxisFeatureKey,
-    setXAxisFeatureKey,
-    yAxisFeatureKey,
-    setYAxisFeatureKey,
-    zAxisFeatureKey,
-    setZAxisFeatureKey,
-    bins: rawBins,
-    setBins,
-    applyGaussian,
-    setApplyGaussian,
-  } = props;
+  const xAxisFeatureKey = useViewerStateStore((state) => state.plot3dXAxis);
+  const setXAxisFeatureKey = useViewerStateStore((state) => state.setPlot3dXAxis);
+  const yAxisFeatureKey = useViewerStateStore((state) => state.plot3dYAxis);
+  const setYAxisFeatureKey = useViewerStateStore((state) => state.setPlot3dYAxis);
+  const zAxisFeatureKey = useViewerStateStore((state) => state.plot3dZAxis);
+  const setZAxisFeatureKey = useViewerStateStore((state) => state.setPlot3dZAxis);
+  const bins = useViewerStateStore((state) => state.plot3dVectorBins);
+  const setBins = useViewerStateStore((state) => state.setPlot3dVectorBins);
+  const applyGaussian = useViewerStateStore((state) => state.plot3dUseGaussian);
+  const setApplyGaussian = useViewerStateStore((state) => state.setPlot3dUseGaussian);
 
   const dataset = useViewerStateStore((state) => state.dataset);
 
@@ -54,11 +43,12 @@ export default function Plot3dFeatureControls(props: Plot3dFeatureControlsProps)
     return (
       <SelectionDropdown
         label={axisLabel}
-        selected={selectedKey || ""}
+        selected={selectedKey ?? { label: "", value: "" }}
         items={featureDropdownData}
         onChange={onChangeKey}
         controlWidth="100%"
         containerStyle={{ flexGrow: 1, flexBasis: "140px", flexShrink: 1 }}
+        disabled={props.disabled}
       ></SelectionDropdown>
     );
   };
@@ -73,8 +63,8 @@ export default function Plot3dFeatureControls(props: Plot3dFeatureControlsProps)
 
       <SelectionDropdown
         label={"Bins"}
-        selected={rawBins.toString()}
-        items={[10, 25, 50, 100].map((num) => ({ value: num.toString(), label: num.toString() }))}
+        selected={bins.toString()}
+        items={[10, 20, 30, 40, 50].map((num) => ({ value: num.toString(), label: num.toString() }))}
         onChange={(value: string) => {
           const parsedValue = parseInt(value, 10);
           if (!isNaN(parsedValue) && parsedValue > 0) {
@@ -83,6 +73,7 @@ export default function Plot3dFeatureControls(props: Plot3dFeatureControlsProps)
         }}
         width="100px"
         controlWidth="70px"
+        disabled={props.disabled}
       ></SelectionDropdown>
       <FlexRowAlignCenter $gap={6}>
         <label htmlFor={GAUSSIAN_CHECKBOX_ID}>
@@ -92,6 +83,7 @@ export default function Plot3dFeatureControls(props: Plot3dFeatureControlsProps)
           id={GAUSSIAN_CHECKBOX_ID}
           checked={applyGaussian}
           onChange={(e) => setApplyGaussian(e.target.checked)}
+          disabled={props.disabled}
         />
       </FlexRowAlignCenter>
     </FlexRow>
