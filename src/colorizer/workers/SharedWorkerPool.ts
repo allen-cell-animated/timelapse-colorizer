@@ -1,9 +1,9 @@
 import { type Pool, pool } from "workerpool";
 
 import type Dataset from "src/colorizer/Dataset";
-import type { FeatureData } from "src/colorizer/Dataset";
-import type { FeatureArrayType, FeatureDataType, FeatureRangeData, VectorFieldData } from "src/colorizer/types";
+import type { FeatureArrayType, FeatureDataType, VectorFieldData } from "src/colorizer/types";
 import type { CsvDataColumn } from "src/colorizer/utils/csv_utils";
+import { featureToRangeData } from "src/colorizer/utils/math_utils";
 import type { DataTextureInfo } from "src/colorizer/utils/texture_utils";
 
 // Vite import directive for worker files! See https://vitejs.dev/guide/features.html#import-with-query-suffixes.
@@ -87,14 +87,6 @@ export default class SharedWorkerPool {
     return await this.workerPool.exec("getMotionDeltas", [trackIds, times, centroids, timeIntervals]);
   }
 
-  private featureToRangeData(feature: FeatureData, bins: number): FeatureRangeData {
-    return {
-      data: feature.data,
-      range: [feature.min, feature.max],
-      bins,
-    };
-  }
-
   async getVectorFlowField(
     dataset: Dataset,
     xFeatureKey: string,
@@ -110,9 +102,9 @@ export default class SharedWorkerPool {
     if (!trackIds || !times || !xFeatureData || !yFeatureData || !zFeatureData) {
       throw new Error("Dataset is missing required data for vector flow field calculation.");
     }
-    const xFeature = this.featureToRangeData(xFeatureData, bins[0]);
-    const yFeature = this.featureToRangeData(yFeatureData, bins[1]);
-    const zFeature = this.featureToRangeData(zFeatureData, bins[2]);
+    const xFeature = featureToRangeData(xFeatureData, bins[0]);
+    const yFeature = featureToRangeData(yFeatureData, bins[1]);
+    const zFeature = featureToRangeData(zFeatureData, bins[2]);
 
     return await this.workerPool.exec("getVectorFlowField", [trackIds, times, xFeature, yFeature, zFeature]);
   }
