@@ -33,6 +33,7 @@ export default function Plot3dTab(): ReactElement {
   const [xAxisFeatureKey, setXAxisFeatureKey] = useState<string | null>(null);
   const [yAxisFeatureKey, setYAxisFeatureKey] = useState<string | null>(null);
   const [zAxisFeatureKey, setZAxisFeatureKey] = useState<string | null>(null);
+  const [applyGaussian, setApplyGaussian] = useState(true);
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -47,7 +48,7 @@ export default function Plot3dTab(): ReactElement {
   const coneSize = useDebounce(rawConeSize, 100);
   const [coneColorRampKey, setConeColorRampKey] = useState<string>("matplotlib-turbo");
   const [coneColorRampReversed, setConeColorRampReversed] = useState(false);
-  const [rawThreshold, setThreshold] = useState(5);
+  const [rawThreshold, setThreshold] = useState(2);
   const threshold = useDebounce(rawThreshold, 100);
   const [rawMovingAverageWindow, setMovingAverageWindow] = useState(1);
   const movingAverageWindow = useDebounce(rawMovingAverageWindow, 100);
@@ -58,6 +59,8 @@ export default function Plot3dTab(): ReactElement {
   const outlineColorMode = useViewerStateStore((state) => state.outlineColorMode);
   const currentFrame = useViewerStateStore((state) => state.currentFrame);
   const timeControls = useViewerStateStore((state) => state.timeControls);
+
+  const inRangeLut = useViewerStateStore((state) => state.inRangeLUT);
 
   const coneColorRampData = KNOWN_COLOR_RAMPS.get(coneColorRampKey) ?? KNOWN_COLOR_RAMPS.get(DEFAULT_COLOR_RAMP_KEY)!;
   const coneColorRamp = useMemo(() => {
@@ -153,7 +156,15 @@ export default function Plot3dTab(): ReactElement {
     const requestId = currentVectorFieldRequestIdRef.current;
     const workerPool = getSharedWorkerPool();
     workerPool
-      .getVectorFlowField(dataset, xAxisFeatureKey, yAxisFeatureKey, zAxisFeatureKey, [bins, bins, bins])
+      .getVectorFlowField(
+        dataset,
+        xAxisFeatureKey,
+        yAxisFeatureKey,
+        zAxisFeatureKey,
+        [bins, bins, bins],
+        inRangeLut,
+        applyGaussian ? 0.15 : undefined
+      )
       .then((vectorFieldData) => {
         // Check if a newer requests supercedes this one before updating state
         if (requestId !== currentVectorFieldRequestIdRef.current || !plot3dRef.current) {
@@ -171,7 +182,7 @@ export default function Plot3dTab(): ReactElement {
       });
   };
 
-  const flowFieldDeps = [dataset, xAxisFeatureKey, yAxisFeatureKey, zAxisFeatureKey, bins];
+  const flowFieldDeps = [dataset, xAxisFeatureKey, yAxisFeatureKey, zAxisFeatureKey, bins, applyGaussian, inRangeLut];
 
   useEffect(() => {
     calculateFlowField();
@@ -220,6 +231,8 @@ export default function Plot3dTab(): ReactElement {
           setZAxisFeatureKey={setZAxisFeatureKey}
           bins={rawBins}
           setBins={setBins}
+          applyGaussian={applyGaussian}
+          setApplyGaussian={setApplyGaussian}
         />
       </FlexRow>
 

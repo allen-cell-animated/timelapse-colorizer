@@ -6,10 +6,13 @@ import { computeCorrelations } from "src/colorizer/utils/correlation";
 import { columnsToCsv, type CsvDataColumn } from "src/colorizer/utils/csv_utils";
 import { type LoadedData, loadFromJsonUrl, loadFromParquetUrl } from "src/colorizer/utils/data_load_utils";
 import {
+  averageVectorFlowField,
+  binAndSumFeatureVectors,
   calculateMotionDeltas,
-  calculateVectorFlowField,
   constructAllTracksFromData,
   filterVectorFlowFieldData,
+  kernelSmoothVectorFlowField,
+  make1dGaussianKernel,
 } from "src/colorizer/utils/math_utils";
 import { arrayToDataTextureInfo } from "src/colorizer/utils/texture_utils";
 
@@ -63,29 +66,57 @@ async function getVectorFlowField(
   times: Uint32Array,
   xFeature: FeatureRangeData,
   yFeature: FeatureRangeData,
-  zFeature: FeatureRangeData
+  zFeature: FeatureRangeData,
+  inRangeLUT?: Uint8Array,
+  outliers?: Uint8Array,
+  gaussianBandwidth?: number
 ): Promise<TransferType> {
   const tracks = constructAllTracksFromData(trackIds, times);
-  const flowFieldData = filterVectorFlowFieldData(
-    calculateVectorFlowField(
-      tracks,
-      xFeature.data,
-      yFeature.data,
-      zFeature.data,
-      xFeature.range,
-      yFeature.range,
-      zFeature.range,
-      [xFeature.bins, yFeature.bins, zFeature.bins]
-    )
+  const vectorSumData = binAndSumFeatureVectors(
+    tracks,
+    xFeature.data,
+    yFeature.data,
+    zFeature.data,
+    xFeature.range,
+    yFeature.range,
+    zFeature.range,
+    [xFeature.bins, yFeature.bins, zFeature.bins],
+    inRangeLUT,
+    outliers
   );
-  return new Transfer(flowFieldData, [
-    flowFieldData.xPos.buffer,
-    flowFieldData.yPos.buffer,
-    flowFieldData.zPos.buffer,
-    flowFieldData.xData.buffer,
-    flowFieldData.yData.buffer,
-    flowFieldData.zData.buffer,
-    flowFieldData.count.buffer,
+
+  let vectorFlowFieldData;
+  if (gaussianBandwidth !== undefined && gaussianBandwidth > 0) {
+    // Approximate Nadaraya-Watson estimator using Gaussian kernel to smooth
+    // binned vectors. See https://en.wikipedia.org/wiki/Kernel_regression.
+    const getKernelSize = (nbins: number): number => Math.ceil(gaussianBandwidth * nbins) * 4 + 1;
+
+    // Bandwidth is a fraction of the number of bins
+    const kernelX = make1dGaussianKernel(getKernelSize(xFeature.bins), gaussianBandwidth * xFeature.bins);
+    const kernelY = make1dGaussianKernel(getKernelSize(yFeature.bins), gaussianBandwidth * yFeature.bins);
+    const kernelZ = make1dGaussianKernel(getKernelSize(zFeature.bins), gaussianBandwidth * zFeature.bins);
+
+    vectorFlowFieldData = kernelSmoothVectorFlowField(
+      vectorSumData,
+      [xFeature.bins, yFeature.bins, zFeature.bins],
+      kernelX,
+      kernelY,
+      kernelZ
+    );
+  } else {
+    vectorFlowFieldData = averageVectorFlowField(vectorSumData);
+  }
+
+  vectorFlowFieldData = filterVectorFlowFieldData(vectorFlowFieldData);
+
+  return new Transfer(vectorFlowFieldData, [
+    vectorFlowFieldData.xPos.buffer,
+    vectorFlowFieldData.yPos.buffer,
+    vectorFlowFieldData.zPos.buffer,
+    vectorFlowFieldData.xData.buffer,
+    vectorFlowFieldData.yData.buffer,
+    vectorFlowFieldData.zData.buffer,
+    vectorFlowFieldData.count.buffer,
   ]);
 }
 

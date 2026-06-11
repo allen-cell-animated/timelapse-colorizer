@@ -13,7 +13,7 @@ export type ThresholdSliceState = {
   thresholds: FeatureThreshold[];
 
   // Derived state
-  /** Lookup table from object ID to whether it is in range (=1) or not (=0). */
+  /** Lookup table from object ID to whether it is in range (=1) or not (=0) of the current filter selections. */
   inRangeLUT: Uint8Array;
 };
 
