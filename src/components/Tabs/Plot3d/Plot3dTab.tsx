@@ -10,8 +10,8 @@ import { useInteractionListener } from "src/hooks";
 import { useViewerStateStore } from "src/state";
 import { FlexColumn } from "src/styles/utils";
 
-import { make3dConeTrace } from "./plot_3d_utils";
 import Plot3d from "./Plot3d";
+import { make3dConeTrace } from "./plot_3d_utils";
 
 const RESUME_PLAYBACK_TIMEOUT_MS = 500;
 
@@ -36,21 +36,23 @@ export default function Plot3dTab(): ReactElement {
   const timeControls = useViewerStateStore((state) => state.timeControls);
   const inRangeLut = useViewerStateStore((state) => state.inRangeLUT);
   // 3D plot state
+  const applyGaussian = useViewerStateStore((state) => state.plot3dUseGaussian);
+  const coneColorRamp = useViewerStateStore((state) => state.plot3dVectorColorRamp);
+  const gaussianBandwidthPct = useViewerStateStore((state) => state.plot3dGaussianBandwidthPct);
   const rawBins = useViewerStateStore((state) => state.plot3dVectorBins);
+  const rawConeSize = useViewerStateStore((state) => state.plot3dVectorScale);
+  const rawMovingAverageLineWidth = useViewerStateStore((state) => state.plot3dLineWidth);
+  const rawMovingAverageWindow = useViewerStateStore((state) => state.plot3dLineMovingAverageWindow);
+  const rawSubsampling = useViewerStateStore((state) => state.plot3dVectorSubsampling);
+  const rawThreshold = useViewerStateStore((state) => state.plot3dVectorThreshold);
   const xAxisFeatureKey = useViewerStateStore((state) => state.plot3dXAxis);
   const yAxisFeatureKey = useViewerStateStore((state) => state.plot3dYAxis);
   const zAxisFeatureKey = useViewerStateStore((state) => state.plot3dZAxis);
-  const rawConeSize = useViewerStateStore((state) => state.plot3dVectorScale);
-  const applyGaussian = useViewerStateStore((state) => state.plot3dUseGaussian);
-  const gaussianBandwidthPct = useViewerStateStore((state) => state.plot3dGaussianBandwidthPct);
-  const coneColorRamp = useViewerStateStore((state) => state.plot3dVectorColorRamp);
-  const rawThreshold = useViewerStateStore((state) => state.plot3dVectorThreshold);
-  const rawMovingAverageWindow = useViewerStateStore((state) => state.plot3dLineMovingAverageWindow);
-  const rawMovingAverageLineWidth = useViewerStateStore((state) => state.plot3dLineWidth);
 
   const isPlotTabVisible = useViewerStateStore((state) => state.openTab === TabType.PLOT_3D);
 
   const bins = useDebounce(rawBins, 100);
+  const subsampling = useDebounce(rawSubsampling, 100);
   const coneSize = useDebounce(rawConeSize, 100);
   const threshold = useDebounce(rawThreshold, 100);
   const movingAverageWindow = useDebounce(rawMovingAverageWindow, 100);
@@ -135,7 +137,8 @@ export default function Plot3dTab(): ReactElement {
         zAxisFeatureKey,
         [bins, bins, bins],
         inRangeLut,
-        applyGaussian ? gaussianBandwidthPct / 100 : undefined
+        applyGaussian ? gaussianBandwidthPct / 100 : undefined,
+        subsampling
       )
       .then((vectorFieldData) => {
         // Check if a newer requests supercedes this one before updating state
@@ -163,6 +166,7 @@ export default function Plot3dTab(): ReactElement {
     applyGaussian,
     gaussianBandwidthPct,
     inRangeLut,
+    subsampling,
   ];
 
   useEffect(() => {

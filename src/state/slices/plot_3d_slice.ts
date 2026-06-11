@@ -26,6 +26,13 @@ export type Plot3dSliceState = {
    * Number of bins per axis used when calculating the vector field.
    */
   plot3dVectorBins: number;
+  /**
+   * The rate to subsample the vector field date when plotting, as an integer
+   * `>= 1.` For example, a subsampling rate of 2 will take every other value
+   * along each axis. Note that this does not change the underlying calculated
+   * vector field data, just the plotted subset.
+   */
+  plot3dVectorSubsampling: number;
   plot3dVectorScale: number;
   plot3dVectorColorRampKey: string;
   plot3dVectorColorRampReversed: boolean;
@@ -64,6 +71,7 @@ export type Plot3dSliceSerializableState = Pick<
   | "plot3dYAxis"
   | "plot3dZAxis"
   | "plot3dVectorBins"
+  | "plot3dVectorSubsampling"
   | "plot3dVectorScale"
   | "plot3dVectorColorRampKey"
   | "plot3dVectorColorRampReversed"
@@ -79,6 +87,7 @@ export type Plot3dSliceActions = {
   setPlot3dYAxis: (yAxis: string | null) => void;
   setPlot3dZAxis: (zAxis: string | null) => void;
   setPlot3dVectorBins: (bins: number) => void;
+  setPlot3dVectorSubsampling: (subsampling: number) => void;
   setPlot3dVectorScale: (scale: number) => void;
   setPlot3dVectorColorRampKey: (key: string) => void;
   setPlot3dVectorColorRampReversed: (reversed: boolean) => void;
@@ -106,6 +115,7 @@ export const createPlot3dSlice: StateCreator<DatasetSlice & Plot3dSlice, [], [],
   plot3dZAxis: null,
 
   plot3dVectorBins: 20,
+  plot3dVectorSubsampling: 1,
   plot3dVectorScale: 1.0,
   plot3dVectorColorRampKey: DEFAULT_COLOR_RAMP_KEY,
   plot3dVectorColorRampReversed: false,
@@ -149,6 +159,13 @@ export const createPlot3dSlice: StateCreator<DatasetSlice & Plot3dSlice, [], [],
       return;
     }
     set({ plot3dVectorBins: bins });
+  },
+  setPlot3dVectorSubsampling: (subsampling) => {
+    subsampling = Math.round(subsampling);
+    if (subsampling <= 0 || !isFinite(subsampling)) {
+      return;
+    }
+    set({ plot3dVectorSubsampling: subsampling });
   },
   setPlot3dVectorScale: (scale) => {
     if (scale <= 0 || !isFinite(scale)) {
@@ -260,6 +277,9 @@ export const serializePlot3dSlice = (slice: Partial<Plot3dSliceSerializableState
   if (slice.plot3dVectorBins !== undefined) {
     ret[UrlParam.PLOT3D_VECTOR_BINS] = slice.plot3dVectorBins.toString();
   }
+  if (slice.plot3dVectorSubsampling !== undefined) {
+    ret[UrlParam.PLOT3D_VECTOR_SUBSAMPLING] = slice.plot3dVectorSubsampling.toString();
+  }
   if (slice.plot3dVectorScale !== undefined) {
     ret[UrlParam.PLOT3D_VECTOR_SCALE] = encodeNumber(slice.plot3dVectorScale);
   }
@@ -290,6 +310,7 @@ export const selectPlot3dSliceSerializationDeps = (slice: Plot3dSlice): Plot3dSl
   plot3dYAxis: slice.plot3dYAxis,
   plot3dZAxis: slice.plot3dZAxis,
   plot3dVectorBins: slice.plot3dVectorBins,
+  plot3dVectorSubsampling: slice.plot3dVectorSubsampling,
   plot3dVectorScale: slice.plot3dVectorScale,
   plot3dVectorColorRampKey: slice.plot3dVectorColorRampKey,
   plot3dVectorColorRampReversed: slice.plot3dVectorColorRampReversed,
@@ -322,6 +343,12 @@ export const loadPlot3dSliceFromParams = (slice: Plot3dSlice & DatasetSlice, par
   if (plot3dVectorBinsParam !== null) {
     const bins = parseInt(plot3dVectorBinsParam, 10);
     slice.setPlot3dVectorBins(bins);
+  }
+
+  const plot3dVectorSubsamplingParam = params.get(UrlParam.PLOT3D_VECTOR_SUBSAMPLING);
+  if (plot3dVectorSubsamplingParam !== null) {
+    const subsampling = parseInt(plot3dVectorSubsamplingParam, 10);
+    slice.setPlot3dVectorSubsampling(subsampling);
   }
 
   const plot3dVectorScaleParam = params.get(UrlParam.PLOT3D_VECTOR_SCALE);
