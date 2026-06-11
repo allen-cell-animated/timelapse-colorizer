@@ -1,6 +1,7 @@
 import { Vector2 } from "three";
 
-import type { VectorFieldData, VectorSumData } from "src/colorizer";
+import type { FeatureRangeData, VectorFieldData, VectorSumData } from "src/colorizer";
+import type { FeatureData } from "src/colorizer/Dataset";
 import Track from "src/colorizer/Track";
 
 /**
@@ -343,6 +344,14 @@ export function padCentroidsTo3d(centroidsData: Uint16Array, numObjects: number)
   }
 }
 
+export function featureToRangeData(feature: FeatureData, bins: number): FeatureRangeData {
+  return {
+    data: feature.data,
+    range: [feature.min, feature.max],
+    bins,
+  };
+}
+
 export function getBinIndex(value: number, range: [number, number], steps: number): number {
   const min = Math.min(range[0], range[1]);
   const max = Math.max(range[0], range[1]);
@@ -533,6 +542,15 @@ export function thresholdVectorFlowFieldByCount(
   };
 }
 
+/**
+ * Returns a 1D Gaussian kernel. The kernel is normalized so that the sum of all values
+ * is 1.
+ * @param size The size of the kernel (number of values). Must be a positive odd
+ * integer.
+ * @param bandwidth The bandwidth (or standard deviation) of the Gaussian
+ * distribution. Must be a positive number.
+ * @returns An array of length `size` containing the kernel values.
+ */
 export function make1dGaussianKernel(size: number, bandwidth: number): number[] {
   const kernel: number[] = [];
   const mid = (size - 1) / 2;
@@ -579,6 +597,7 @@ export function convolve1dFilter(
   const kernelMid = Math.floor(kernelSize / 2);
 
   const getIndex = (x: number, y: number, z: number): number => z * xDim * yDim + y * xDim + x;
+
   for (let z = 0; z < zDim; z++) {
     for (let y = 0; y < yDim; y++) {
       for (let x = 0; x < xDim; x++) {
@@ -632,18 +651,24 @@ function convolveSeparableFilters(
 }
 
 /**
- * Performs a convolution on summed 3D vector field data with a series of separable
- * 1D kernels for each dimension.
+ * Returns a locally-weighted, smoothed average for the vector flow field data.
+ * Uses a series of separable 1D kernels for each dimension for performance;
+ * ideally, this should be a series of 1D Gaussian kernels (see
+ * `make1dGaussianKernel`).
+ *
+ *  This approximates the Nadaraya-Watson kernel regression
+ * (https://en.wikipedia.org/wiki/Kernel_regression).
+ *
  * @param vectorSumData The summed vector field data.
  * @param binsPerAxis The number of bins per axis, as a tuple.
  * @param kernelX 1D kernel to convolve with along the X axis.
  * @param kernelY 1D kernel to convolve with along the Y axis.
  * @param kernelZ 1D kernel to convolve with along the Z axis.
- * @param thresholdCount Minimum count threshold for valid data. Bins with fewer than
- * this threshold will be set to NaN.
- * @returns The convolved vector field data.
+ * @param thresholdCount Minimum count threshold for valid data. Bins with fewer
+ * than this threshold will be set to NaN.
+ * @returns The smoothed vector field data.
  */
-export function convolveVectorFlowField(
+export function kernelSmoothVectorFlowField(
   vectorSumData: VectorSumData,
   binsPerAxis: [number, number, number],
   kernelX: number[],
