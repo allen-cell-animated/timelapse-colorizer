@@ -30,17 +30,10 @@ export default function Plot3dDataControls(props: Plot3dDataControlsProps): Reac
   const setUseGaussian = useViewerStateStore((state) => state.setPlot3dUseGaussian);
   const gaussianBandwidthPct = useViewerStateStore((state) => state.plot3dGaussianBandwidthPct);
   const setGaussianBandwidthPct = useViewerStateStore((state) => state.setPlot3dGaussianBandwidthPct);
+  const gaussianLabel = <FlexRowAlignCenter $gap={4}>Gaussian smoothing <InlineHint title="Use density-normalized sum of Gaussian-weighted displacement vectors for each bin and its neighbors." /></FlexRowAlignCenter>;
 
-  const gaussianHint = (
-    <InlineHint title="Use density-normalized sum of Gaussian-weighted displacement vectors for each bin and its neighbors." />
-  );
-  const gaussianLabel = <FlexRowAlignCenter $gap={4}>Gaussian smoothing {gaussianHint}</FlexRowAlignCenter>;
-
-  const gaussianBandwidthHint = (
-    <InlineHint title="Standard deviation (or bandwidth), as a percentage of the number of bins." />
-  );
   const gaussianBandwidthLabel = (
-    <FlexRowAlignCenter $gap={4}>Gaussian std. dev {gaussianBandwidthHint}</FlexRowAlignCenter>
+    <FlexRowAlignCenter $gap={4}>Gaussian std. dev <InlineHint title="Standard deviation (or bandwidth), as a percentage of the number of bins." /></FlexRowAlignCenter>
   );
 
   const configMenuContents = (
