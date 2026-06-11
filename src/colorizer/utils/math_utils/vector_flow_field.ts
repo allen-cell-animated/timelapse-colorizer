@@ -1,5 +1,14 @@
+import type { FeatureData } from "src/colorizer/Dataset";
 import type Track from "src/colorizer/Track";
-import type { VectorFieldData, VectorSumData } from "src/colorizer/types";
+import type { FeatureRangeData, VectorFieldData, VectorSumData } from "src/colorizer/types";
+
+export function featureToRangeData(feature: FeatureData, bins: number): FeatureRangeData {
+  return {
+    data: feature.data,
+    range: [feature.min, feature.max],
+    bins,
+  };
+}
 
 export function getBinIndex(value: number, range: [number, number], steps: number): number {
   const min = Math.min(range[0], range[1]);
