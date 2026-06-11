@@ -57,7 +57,7 @@ export default function ToggleHistogramButton(props: ToggleHistogramButtonProps)
       setVisible={setShowHistograms}
       configMenuContents={configMenuContents}
       configMenuPlacement="vertical"
-      popupContainer={props.popupContainer}
+      tooltipPopupContainer={props.popupContainer}
       outlined={true}
     />
   );

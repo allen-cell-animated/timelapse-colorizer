@@ -13,6 +13,7 @@ import {
   filterVectorFlowFieldData,
   kernelSmoothVectorFlowField,
   make1dGaussianKernel,
+  subsampleVectorFlowField,
 } from "src/colorizer/utils/math_utils/vector_flow_field";
 import { arrayToDataTextureInfo } from "src/colorizer/utils/texture_utils";
 
@@ -69,7 +70,8 @@ async function getVectorFlowField(
   zFeature: FeatureRangeData,
   inRangeLUT?: Uint8Array,
   outliers?: Uint8Array,
-  gaussianBandwidth?: number
+  gaussianBandwidth?: number,
+  subsamplingRate?: number
 ): Promise<TransferType> {
   const tracks = constructAllTracksFromData(trackIds, times);
   const vectorSumData = binAndSumFeatureVectors(
@@ -107,6 +109,13 @@ async function getVectorFlowField(
     vectorFlowFieldData = averageVectorFlowField(vectorSumData);
   }
 
+  if (subsamplingRate !== undefined && subsamplingRate > 1) {
+    vectorFlowFieldData = subsampleVectorFlowField(
+      vectorFlowFieldData,
+      [xFeature.bins, yFeature.bins, zFeature.bins],
+      subsamplingRate
+    );
+  }
   vectorFlowFieldData = filterVectorFlowFieldData(vectorFlowFieldData);
 
   return new Transfer(vectorFlowFieldData, [

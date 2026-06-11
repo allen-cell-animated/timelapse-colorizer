@@ -108,6 +108,9 @@ export default class SharedWorkerPool {
    * Gaussian kernel to use when smoothing the binned vectors, as a fraction of
    * the number of bins. If provided, calculates a smooth, locally-weighted
    * average across bins; if not provided, uses simple averaging.
+   * @param subsamplingRate Optional integer rate to subsample the flow field with.
+   * If provided, every `nth` bin along each axis will be included in the output
+   * flow field, where `n` is the subsampling rate. Must be >= 1.
    * @returns a `VectorFieldData` object containing the computed flow field data
    * and metadata.
    */
@@ -118,7 +121,8 @@ export default class SharedWorkerPool {
     zFeatureKey: string,
     bins: [number, number, number],
     inRangeLUT?: Uint8Array,
-    gaussianBandwidth?: number
+    gaussianBandwidth?: number,
+    subsamplingRate?: number
   ): Promise<VectorFieldData> {
     const trackIds = dataset.trackIds;
     const times = dataset.times;
@@ -141,6 +145,7 @@ export default class SharedWorkerPool {
       inRangeLUT,
       dataset.outliers,
       gaussianBandwidth,
+      subsamplingRate,
     ]);
   }
 

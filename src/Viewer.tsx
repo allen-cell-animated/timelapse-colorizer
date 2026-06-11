@@ -533,9 +533,8 @@ function Viewer(): ReactElement {
       ),
     },
     {
-      label: "3D plot",
+      label: "Flow field plot",
       key: TabType.PLOT_3D,
-      visible: INTERNAL_BUILD,
       children: (
         <div className={styles.tabContent}>
           <Plot3dTab></Plot3dTab>

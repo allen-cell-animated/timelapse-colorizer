@@ -353,3 +353,64 @@ export function kernelSmoothVectorFlowField(
   }
   return { xPos, yPos, zPos, xData, yData, zData, count };
 }
+
+/**
+ * Subsamples a flat 3D array by taking every `nth` value along each axis, where
+ * `n` is the subsampling factor.
+ * @param arr Flattened 3D array, where the value at coordinates (x, y, z) is
+ * located at index `z * dims[0] * dims[1] + y * dims[0] + x`.
+ * @param dims Dimensions of the array, as a tuple `[xDim, yDim, zDim]`.
+ * @param subsampleRate The integer subsampling rate. Must be >= 1. For example,
+ * a subsampling of 2 will take every other value along each axis.
+ * @returns A new Float32Array containing the subsampled values.
+ */
+export function subsampleFlat3dArray(
+  arr: Float32Array | Uint32Array,
+  dims: [number, number, number],
+  subsampleRate: number
+): Float32Array {
+  subsampleRate = Math.round(subsampleRate);
+  if (subsampleRate <= 1 || !Number.isFinite(subsampleRate)) {
+    return new Float32Array(arr);
+  }
+  const [xDim, yDim, zDim] = dims;
+  const subsampledXDim = Math.ceil(xDim / subsampleRate);
+  const subsampledYDim = Math.ceil(yDim / subsampleRate);
+  const subsampledZDim = Math.ceil(zDim / subsampleRate);
+  const output = new Float32Array(subsampledXDim * subsampledYDim * subsampledZDim);
+  for (let z = 0; z < subsampledZDim; z++) {
+    for (let y = 0; y < subsampledYDim; y++) {
+      for (let x = 0; x < subsampledXDim; x++) {
+        const inputIndex = z * subsampleRate * xDim * yDim + y * subsampleRate * xDim + x * subsampleRate;
+        const outputIndex = z * subsampledXDim * subsampledYDim + y * subsampledXDim + x;
+        output[outputIndex] = arr[inputIndex];
+      }
+    }
+  }
+  return output;
+}
+
+/**
+ * Subsamples the vector flow field data by taking every `nth` value along each
+ * axis, where `n` is the subsampling rate.
+ */
+export function subsampleVectorFlowField(
+  flowFieldData: VectorFieldData,
+  dims: [number, number, number],
+  subsamplingRate: number
+): VectorFieldData {
+  subsamplingRate = Math.round(subsamplingRate);
+  if (subsamplingRate <= 1 || !Number.isFinite(subsamplingRate)) {
+    return flowFieldData;
+  }
+  const { xPos, yPos, zPos, xData, yData, zData, count } = flowFieldData;
+  return {
+    xPos: subsampleFlat3dArray(xPos, dims, subsamplingRate),
+    yPos: subsampleFlat3dArray(yPos, dims, subsamplingRate),
+    zPos: subsampleFlat3dArray(zPos, dims, subsamplingRate),
+    xData: subsampleFlat3dArray(xData, dims, subsamplingRate),
+    yData: subsampleFlat3dArray(yData, dims, subsamplingRate),
+    zData: subsampleFlat3dArray(zData, dims, subsamplingRate),
+    count: subsampleFlat3dArray(count, dims, subsamplingRate),
+  };
+}

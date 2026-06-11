@@ -12,6 +12,7 @@ import {
   getFrameSizeInScreenPx,
   numberToSciNotation,
   remap,
+  subsampleFlat3dArray,
 } from "src/colorizer/utils/math_utils";
 
 const DEFAULT_ZOOM = 1;
@@ -674,5 +675,45 @@ describe("convolutions", () => {
         ])
       );
     });
+  });
+});
+
+describe("subsampleFlat3dArray", () => {
+  const DATA_3X3X3 = [
+    // z = 0
+    1, 2, 3, 4, 5, 6, 7, 8, 9,
+    // z = 1
+    10, 11, 12, 13, 14, 15, 16, 17, 18,
+    // z = 2
+    19, 20, 21, 22, 23, 24, 25, 26, 27,
+  ];
+
+  it("handles empty array", () => {
+    const result = subsampleFlat3dArray(new Float32Array(), [0, 0, 0], 1);
+    expect(result).toEqual(new Float32Array());
+  });
+
+  it("returns array when subsampling = 1", () => {
+    const data = [1, 2, 3, 4, 5];
+    const result = subsampleFlat3dArray(new Float32Array(data), [5, 1, 1], 1);
+    expect(result).toEqual(new Float32Array(data));
+  });
+
+  it("subsamples 1D array", () => {
+    const data = [1, 2, 3, 4, 5];
+    const result = subsampleFlat3dArray(new Float32Array(data), [5, 1, 1], 2);
+    expect(result).toEqual(new Float32Array([1, 3, 5]));
+  });
+
+  it("subsamples 3D array", () => {
+    const data = DATA_3X3X3;
+    const result = subsampleFlat3dArray(new Float32Array(data), [3, 3, 3], 2);
+    expect(result).toEqual(new Float32Array([1, 3, 7, 9, 19, 21, 25, 27]));
+  });
+
+  it("returns one value when subsampling is >= array dims", () => {
+    const data = DATA_3X3X3;
+    const result = subsampleFlat3dArray(new Float32Array(data), [3, 3, 3], 3);
+    expect(result).toEqual(new Float32Array([1]));
   });
 });

@@ -2,11 +2,10 @@ import React, { type ReactElement } from "react";
 
 import { LinePlotIconSVG, LinePlotSlashIconSVG } from "src/assets";
 import { ToggleButtonWithConfig } from "src/components/Buttons/ToggleButtonWithConfig";
-import InlineHint from "src/components/Display/InlineHint";
+import LabelWithHint from "src/components/Display/LabelWithHint";
 import LabeledSlider from "src/components/Inputs/LabeledSlider";
 import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
 import { useViewerStateStore } from "src/state/ViewerState";
-import { FlexRow } from "src/styles/utils";
 
 type ToggleAverageLineButtonProps = {
   popupContainer?: HTMLElement;
@@ -29,9 +28,9 @@ export default function ToggleAverageLineButton(props: ToggleAverageLineButtonPr
     <SettingsContainer labelWidth="105px" style={{ width: "300px", marginBottom: "6px" }} gapPx={10}>
       <SettingsItem
         label={
-          <FlexRow $gap={6}>
-            Window size <InlineHint title="Total number of points to average over, including past and future." />
-          </FlexRow>
+          <LabelWithHint hintProps={{ title: "Total number of points to average over, including past and future." }}>
+            Window size
+          </LabelWithHint>
         }
         htmlFor={ToggleAverageLineButtonHtmlIds.WINDOW_SIZE_SLIDER}
       >
@@ -69,12 +68,12 @@ export default function ToggleAverageLineButton(props: ToggleAverageLineButtonPr
 
   return (
     <ToggleButtonWithConfig
-      name={"moving average line"}
+      name="moving average line"
       visible={showAverageLine}
       setVisible={setShowAverageLine}
       configMenuContents={configMenu}
       configMenuPlacement="vertical"
-      popupContainer={props.popupContainer}
+      tooltipPopupContainer={props.popupContainer}
       visibleIcon={<LinePlotIconSVG />}
       hiddenIcon={<LinePlotSlashIconSVG />}
       outlined={true}
