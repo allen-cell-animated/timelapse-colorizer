@@ -41,8 +41,7 @@ export function make3dTrackPathTrace(
   // TODO: Show gaps/discontinuities in the track path?
   const traces = [];
 
-  const ids: number[] = track.ids;
-  const times: number[] = track.times;
+  const { ids, times } = track;
 
   const hoverTemplate =
     `${dataset?.getFeatureNameWithUnits(xAxisFeatureKey) ?? ""}: %{x}<br>` +

@@ -1,6 +1,7 @@
 import { Vector2 } from "three";
 
-import type { VectorFieldData, VectorSumData } from "src/colorizer";
+import type { FeatureRangeData, VectorFieldData, VectorSumData } from "src/colorizer";
+import type { FeatureData } from "src/colorizer/Dataset";
 import Track from "src/colorizer/Track";
 
 /**
@@ -341,6 +342,14 @@ export function padCentroidsTo3d(centroidsData: Uint16Array, numObjects: number)
     );
     return centroidsData;
   }
+}
+
+export function featureToRangeData(feature: FeatureData, bins: number): FeatureRangeData {
+  return {
+    data: feature.data,
+    range: [feature.min, feature.max],
+    bins,
+  };
 }
 
 export function getBinIndex(value: number, range: [number, number], steps: number): number {
