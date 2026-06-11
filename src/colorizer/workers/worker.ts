@@ -10,8 +10,8 @@ import {
   binAndSumFeatureVectors,
   calculateMotionDeltas,
   constructAllTracksFromData,
-  convolveVectorFlowField,
   filterVectorFlowFieldData,
+  kernelSmoothVectorFlowField,
   make1dGaussianKernel,
   subsampleVectorFlowField,
 } from "src/colorizer/utils/math_utils";
@@ -89,6 +89,8 @@ async function getVectorFlowField(
 
   let vectorFlowFieldData;
   if (gaussianBandwidth !== undefined && gaussianBandwidth > 0) {
+    // Approximate Nadaraya-Watson estimator using Gaussian kernel to smooth
+    // binned vectors. See https://en.wikipedia.org/wiki/Kernel_regression.
     const getKernelSize = (nbins: number): number => Math.ceil(gaussianBandwidth * nbins) * 4 + 1;
 
     // Bandwidth is a fraction of the number of bins
@@ -96,7 +98,7 @@ async function getVectorFlowField(
     const kernelY = make1dGaussianKernel(getKernelSize(yFeature.bins), gaussianBandwidth * yFeature.bins);
     const kernelZ = make1dGaussianKernel(getKernelSize(zFeature.bins), gaussianBandwidth * zFeature.bins);
 
-    vectorFlowFieldData = convolveVectorFlowField(
+    vectorFlowFieldData = kernelSmoothVectorFlowField(
       vectorSumData,
       [xFeature.bins, yFeature.bins, zFeature.bins],
       kernelX,

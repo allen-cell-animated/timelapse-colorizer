@@ -30,11 +30,11 @@ export default class Plot3d {
   public tracks: Map<number, Track> | null;
   public trackToColor: Map<number, Color> | null;
   public baseTrackColor: Color = new Color("rgb(80, 80, 80)");
-  public xAxisFeatureKey: string | null = null;
-  public yAxisFeatureKey: string | null = null;
-  public zAxisFeatureKey: string | null = null;
+  public xAxisFeatureKey: string | null;
+  public yAxisFeatureKey: string | null;
+  public zAxisFeatureKey: string | null;
 
-  public coneTrace: Plotly.Data | null = null;
+  public coneTrace: Plotly.Data | null;
   public lineAverageWindow: number = 5;
   public lineWidth: number = 3;
 
@@ -42,6 +42,11 @@ export default class Plot3d {
     this.dataset = null;
     this.tracks = null;
     this.trackToColor = null;
+    this.xAxisFeatureKey = null;
+    this.yAxisFeatureKey = null;
+    this.zAxisFeatureKey = null;
+    this.coneTrace = null;
+
     this.parentRef = parentRef;
     Plotly.newPlot(this.parentRef, [], {}, CONFIG);
 
