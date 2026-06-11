@@ -1,12 +1,18 @@
 import { Vector2 } from "three";
 import { describe, expect, it } from "vitest";
 
+import type { Track } from "src/colorizer";
 import {
+  binAndSumFeatureVectors,
   convertCanvasOffsetPxToFrameCoords,
+  convolve1dFilter,
   formatNumber,
+  getBinIndex,
+  getBinValue,
   getFrameSizeInScreenPx,
   numberToSciNotation,
   remap,
+  subsampleFlat3dArray,
 } from "src/colorizer/utils/math_utils";
 
 const DEFAULT_ZOOM = 1;
@@ -385,5 +391,329 @@ describe("convertCanvasOffsetPxToFrameCoords", () => {
     expect(getFrameOffset(frameInfo, new Vector2(canvRight, canvBottom))).deep.equals(
       new Vector2(expFrameRight, expYBottom)
     );
+  });
+});
+
+describe("getBinIndex", () => {
+  it("handles single bins", () => {
+    const range: [number, number] = [0, 5];
+    const steps = 1;
+    expect(getBinIndex(-1, range, steps)).to.equal(0);
+    expect(getBinIndex(0, range, steps)).to.equal(0);
+    expect(getBinIndex(1, range, steps)).to.equal(0);
+    expect(getBinIndex(2, range, steps)).to.equal(0);
+  });
+
+  it("bins values correctly", () => {
+    const range: [number, number] = [0, 5];
+    const steps = 5;
+
+    expect(getBinIndex(0, range, steps)).to.equal(0);
+    expect(getBinIndex(0.99, range, steps)).to.equal(0);
+    expect(getBinIndex(1, range, steps)).to.equal(1);
+    expect(getBinIndex(1.99, range, steps)).to.equal(1);
+    expect(getBinIndex(2, range, steps)).to.equal(2);
+    expect(getBinIndex(2.99, range, steps)).to.equal(2);
+    expect(getBinIndex(3, range, steps)).to.equal(3);
+    expect(getBinIndex(3.99, range, steps)).to.equal(3);
+    expect(getBinIndex(4, range, steps)).to.equal(4);
+    expect(getBinIndex(4.99, range, steps)).to.equal(4);
+    expect(getBinIndex(5, range, steps)).to.equal(4);
+  });
+
+  it("handles values outside of range", () => {
+    const range: [number, number] = [0, 5];
+    const steps = 5;
+
+    expect(getBinIndex(-100, range, steps)).to.equal(0);
+    expect(getBinIndex(-10, range, steps)).to.equal(0);
+    expect(getBinIndex(-1, range, steps)).to.equal(0);
+    expect(getBinIndex(5, range, steps)).to.equal(4);
+    expect(getBinIndex(10, range, steps)).to.equal(4);
+    expect(getBinIndex(100, range, steps)).to.equal(4);
+  });
+});
+
+describe("getBinValue", () => {
+  it("calculates bin values in the center of each bin", () => {
+    const range: [number, number] = [0, 5];
+    const steps = 5;
+    expect(getBinValue(0, range, steps)).to.equal(0.5);
+    expect(getBinValue(1, range, steps)).to.equal(1.5);
+    expect(getBinValue(2, range, steps)).to.equal(2.5);
+    expect(getBinValue(3, range, steps)).to.equal(3.5);
+    expect(getBinValue(4, range, steps)).to.equal(4.5);
+  });
+});
+
+describe("binAndSumFeatureVectors", () => {
+  it("sizes arrays by equal bin counts", () => {
+    const binsPerAxis: [number, number, number] = [2, 2, 2];
+    const xRange = [0, 2] as [number, number];
+    const yRange = [0, 2] as [number, number];
+    const zRange = [0, 2] as [number, number];
+    const vectorFieldData = binAndSumFeatureVectors(
+      [],
+      new Float32Array(),
+      new Float32Array(),
+      new Float32Array(),
+      xRange,
+      yRange,
+      zRange,
+      binsPerAxis
+    );
+    expect(vectorFieldData.xPos.length).to.equal(8);
+    expect(vectorFieldData.yPos.length).to.equal(8);
+    expect(vectorFieldData.zPos.length).to.equal(8);
+    expect(vectorFieldData.xSum.length).to.equal(8);
+    expect(vectorFieldData.ySum.length).to.equal(8);
+    expect(vectorFieldData.zSum.length).to.equal(8);
+    expect(vectorFieldData.count.length).to.equal(8);
+
+    expect(vectorFieldData.xPos).toEqual(new Float32Array([0.5, 1.5, 0.5, 1.5, 0.5, 1.5, 0.5, 1.5]));
+    expect(vectorFieldData.yPos).toEqual(new Float32Array([0.5, 0.5, 1.5, 1.5, 0.5, 0.5, 1.5, 1.5]));
+    expect(vectorFieldData.zPos).toEqual(new Float32Array([0.5, 0.5, 0.5, 0.5, 1.5, 1.5, 1.5, 1.5]));
+  });
+
+  it("sizes arrays by uneven bin counts", () => {
+    const binsPerAxis: [number, number, number] = [1, 2, 3];
+    const xRange = [0, 1] as [number, number];
+    const yRange = [0, 2] as [number, number];
+    const zRange = [0, 3] as [number, number];
+    const vectorFieldData = binAndSumFeatureVectors(
+      [],
+      new Float32Array(),
+      new Float32Array(),
+      new Float32Array(),
+      xRange,
+      yRange,
+      zRange,
+      binsPerAxis
+    );
+    expect(vectorFieldData.xPos.length).to.equal(6);
+    expect(vectorFieldData.yPos.length).to.equal(6);
+    expect(vectorFieldData.zPos.length).to.equal(6);
+    expect(vectorFieldData.xSum.length).to.equal(6);
+    expect(vectorFieldData.ySum.length).to.equal(6);
+    expect(vectorFieldData.zSum.length).to.equal(6);
+    expect(vectorFieldData.count.length).to.equal(6);
+
+    expect(vectorFieldData.xPos).toEqual(new Float32Array([0.5, 0.5, 0.5, 0.5, 0.5, 0.5]));
+    expect(vectorFieldData.yPos).toEqual(new Float32Array([0.5, 1.5, 0.5, 1.5, 0.5, 1.5]));
+    expect(vectorFieldData.zPos).toEqual(new Float32Array([0.5, 0.5, 1.5, 1.5, 2.5, 2.5]));
+  });
+
+  describe("example vector flow field calculations", () => {
+    const binsPerAxis: [number, number, number] = [2, 2, 2];
+    const xRange = [0, 2] as [number, number];
+    const yRange = [0, 2] as [number, number];
+    const zRange = [0, 2] as [number, number];
+
+    const tracks = [
+      {
+        ids: new Uint32Array([0, 1, 2]),
+        times: new Uint32Array([0, 1, 2]),
+      },
+      {
+        ids: new Uint32Array([0, 1, 2]),
+        times: new Uint32Array([0, 1, 2]),
+      },
+      {
+        ids: new Uint32Array([3, 4, 5]),
+        times: new Uint32Array([0, 1, 2]),
+      },
+    ] as unknown[] as Track[];
+    const xFeatureData = new Float32Array([0, 1, 2, 0, 1, 2]);
+    const yFeatureData = new Float32Array([0, 0, 0, 1, 1, 1]);
+    const zFeatureData = new Float32Array([0, 1, 1, 0, 1, 1]);
+    const inRange = new Uint8Array([1, 1, 1, 1, 1, 1]);
+    const outliers = new Uint8Array([0, 0, 0, 0, 0, 0]);
+
+    it("calculates vector flow fields", () => {
+      const vectorFieldData = binAndSumFeatureVectors(
+        tracks,
+        xFeatureData,
+        yFeatureData,
+        zFeatureData,
+        xRange,
+        yRange,
+        zRange,
+        binsPerAxis,
+        inRange,
+        outliers
+      );
+      expect(vectorFieldData.xPos).toEqual(new Float32Array([0.5, 1.5, 0.5, 1.5, 0.5, 1.5, 0.5, 1.5]));
+      expect(vectorFieldData.yPos).toEqual(new Float32Array([0.5, 0.5, 1.5, 1.5, 0.5, 0.5, 1.5, 1.5]));
+      expect(vectorFieldData.zPos).toEqual(new Float32Array([0.5, 0.5, 0.5, 0.5, 1.5, 1.5, 1.5, 1.5]));
+      expect(vectorFieldData.xSum).toEqual(new Float32Array([2, 0, 1, 0, 0, 2, 0, 1]));
+      expect(vectorFieldData.ySum).toEqual(new Float32Array([0, 0, 0, 0, 0, 0, 0, 0]));
+      expect(vectorFieldData.zSum).toEqual(new Float32Array([2, 0, 1, 0, 0, 0, 0, 0]));
+      expect(vectorFieldData.count).toEqual(new Uint32Array([2, 0, 1, 0, 0, 2, 0, 1]));
+    });
+
+    it("excludes outliers", () => {
+      const customOutliers = new Uint8Array([0, 1, 1, 0, 0, 1]);
+      const vectorFieldData = binAndSumFeatureVectors(
+        tracks,
+        xFeatureData,
+        yFeatureData,
+        zFeatureData,
+        xRange,
+        yRange,
+        zRange,
+        binsPerAxis,
+        inRange,
+        customOutliers
+      );
+      expect(vectorFieldData.xPos).toEqual(new Float32Array([0.5, 1.5, 0.5, 1.5, 0.5, 1.5, 0.5, 1.5]));
+      expect(vectorFieldData.yPos).toEqual(new Float32Array([0.5, 0.5, 1.5, 1.5, 0.5, 0.5, 1.5, 1.5]));
+      expect(vectorFieldData.zPos).toEqual(new Float32Array([0.5, 0.5, 0.5, 0.5, 1.5, 1.5, 1.5, 1.5]));
+      expect(vectorFieldData.xSum).toEqual(new Float32Array([0, 0, 1, 0, 0, 0, 0, 0]));
+      expect(vectorFieldData.ySum).toEqual(new Float32Array([0, 0, 0, 0, 0, 0, 0, 0]));
+      expect(vectorFieldData.zSum).toEqual(new Float32Array([0, 0, 1, 0, 0, 0, 0, 0]));
+      expect(vectorFieldData.count).toEqual(new Uint32Array([0, 0, 1, 0, 0, 0, 0, 0]));
+    });
+
+    it("excludes filtered values", () => {
+      const customInRangeLut = new Uint8Array([0, 0, 0, 0, 1, 1]);
+      const vectorFieldData = binAndSumFeatureVectors(
+        tracks,
+        xFeatureData,
+        yFeatureData,
+        zFeatureData,
+        xRange,
+        yRange,
+        zRange,
+        binsPerAxis,
+        customInRangeLut,
+        outliers
+      );
+      expect(vectorFieldData.xPos).toEqual(new Float32Array([0.5, 1.5, 0.5, 1.5, 0.5, 1.5, 0.5, 1.5]));
+      expect(vectorFieldData.yPos).toEqual(new Float32Array([0.5, 0.5, 1.5, 1.5, 0.5, 0.5, 1.5, 1.5]));
+      expect(vectorFieldData.zPos).toEqual(new Float32Array([0.5, 0.5, 0.5, 0.5, 1.5, 1.5, 1.5, 1.5]));
+      expect(vectorFieldData.xSum).toEqual(new Float32Array([0, 0, 0, 0, 0, 0, 0, 1]));
+      expect(vectorFieldData.ySum).toEqual(new Float32Array([0, 0, 0, 0, 0, 0, 0, 0]));
+      expect(vectorFieldData.zSum).toEqual(new Float32Array([0, 0, 0, 0, 0, 0, 0, 0]));
+      expect(vectorFieldData.count).toEqual(new Uint32Array([0, 0, 0, 0, 0, 0, 0, 1]));
+    });
+  });
+});
+
+describe("convolutions", () => {
+  describe("convolve1dFilter", () => {
+    it("returns copy of array when given empty kernel", () => {
+      const kernel: number[] = [];
+      const data = new Float32Array([1, 2, 3, 4, 5]);
+      const dims = [5, 1, 1];
+
+      const result = convolve1dFilter(data, dims as [number, number, number], kernel, "x");
+      expect(result).toEqual(data);
+      // Should be a new object reference
+      expect(result).not.toBe(data);
+    });
+
+    it("returns an empty array when given an empty array", () => {
+      const kernel: number[] = [1, 1, 1];
+      const data = new Float32Array([]);
+      const dims: [number, number, number] = [0, 1, 1];
+      const result = convolve1dFilter(data, dims, kernel, "x");
+      expect(result).toEqual(data);
+    });
+
+    it("handles identity kernel", () => {
+      const kernel = [0, 1, 0];
+      const data = new Float32Array([1, 2, 3, 4, 5]);
+      const dims: [number, number, number] = [5, 1, 1];
+
+      let result = convolve1dFilter(data, dims, kernel, "x");
+      expect(result).toEqual(data);
+      result = convolve1dFilter(data, dims, kernel, "y");
+      expect(result).toEqual(data);
+      result = convolve1dFilter(data, dims, kernel, "z");
+      expect(result).toEqual(data);
+    });
+
+    it("handles even-length kernel", () => {
+      const kernel = [0.5, 0.5];
+      const data = new Float32Array([10, 20, 30, 40, 50]);
+      const dims: [number, number, number] = [5, 1, 1];
+
+      const result = convolve1dFilter(data, dims, kernel, "x");
+      expect(result).toEqual(new Float32Array([5, 15, 25, 35, 45]));
+    });
+
+    it("pads with 0s", () => {
+      const kernel = [1, 1, 1];
+      const data = new Float32Array([10, 20, 30, 40, 50]);
+      const dims = [5, 1, 1];
+
+      const result = convolve1dFilter(data, dims as [number, number, number], kernel, "x");
+      expect(result).toEqual(new Float32Array([30, 60, 90, 120, 90]));
+    });
+
+    it("convolves over multiple dimensions", () => {
+      const kernel = [1, 1, 1];
+      const data = new Float32Array([
+        // y = 0
+        1, 2, 3,
+        // y = 1
+        4, 5, 6,
+        // y = 2
+        7, 8, 9,
+      ]);
+      const dims = [3, 3, 1];
+
+      const result = convolve1dFilter(data, dims as [number, number, number], kernel, "x");
+      expect(result).toEqual(
+        new Float32Array([
+          // y = 0
+          3, 6, 5,
+          // y = 1
+          9, 15, 11,
+          // y = 2
+          15, 24, 17,
+        ])
+      );
+    });
+  });
+});
+
+describe("subsampleFlat3dArray", () => {
+  const DATA_3X3X3 = [
+    // z = 0
+    1, 2, 3, 4, 5, 6, 7, 8, 9,
+    // z = 1
+    10, 11, 12, 13, 14, 15, 16, 17, 18,
+    // z = 2
+    19, 20, 21, 22, 23, 24, 25, 26, 27,
+  ];
+
+  it("handles empty array", () => {
+    const result = subsampleFlat3dArray(new Float32Array(), [0, 0, 0], 1);
+    expect(result).toEqual(new Float32Array());
+  });
+
+  it("returns array when subsampling = 1", () => {
+    const data = [1, 2, 3, 4, 5];
+    const result = subsampleFlat3dArray(new Float32Array(data), [5, 1, 1], 1);
+    expect(result).toEqual(new Float32Array(data));
+  });
+
+  it("subsamples 1D array", () => {
+    const data = [1, 2, 3, 4, 5];
+    const result = subsampleFlat3dArray(new Float32Array(data), [5, 1, 1], 2);
+    expect(result).toEqual(new Float32Array([1, 3, 5]));
+  });
+
+  it("subsamples 3D array", () => {
+    const data = DATA_3X3X3;
+    const result = subsampleFlat3dArray(new Float32Array(data), [3, 3, 3], 2);
+    expect(result).toEqual(new Float32Array([1, 3, 7, 9, 19, 21, 25, 27]));
+  });
+
+  it("returns one value when subsampling is >= array dims", () => {
+    const data = DATA_3X3X3;
+    const result = subsampleFlat3dArray(new Float32Array(data), [3, 3, 3], 3);
+    expect(result).toEqual(new Float32Array([1]));
   });
 });

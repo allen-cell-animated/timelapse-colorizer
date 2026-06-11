@@ -144,6 +144,17 @@ export default class ColorRamp {
     return canvas;
   }
 
+  public getPlotlyColorScale(): [number, string][] {
+    const colorScale: [number, string][] = [];
+    const numStops = this.colorStops.length;
+    for (let i = 0; i < numStops; i++) {
+      const color = this.colorStops[i];
+      const t = i / (numStops - 1);
+      colorScale.push([t, `#${color.getHexString()}`]);
+    }
+    return colorScale;
+  }
+
   public dispose(): void {
     this.textureSRGB.dispose();
     this.textureLinear.dispose();
