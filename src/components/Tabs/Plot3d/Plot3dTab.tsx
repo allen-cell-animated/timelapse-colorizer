@@ -182,11 +182,11 @@ export default function Plot3dTab(): ReactElement {
         make3dConeTrace(vectorFieldData, {
           coneSize,
           colorRamp: coneColorRamp,
-          threshold,
+          threshold: threshold * (10 / bins),
         })
       );
     }
-  }, [dataset, vectorFieldData, threshold, coneSize, coneColorRamp]);
+  }, [dataset, vectorFieldData, threshold, bins, coneSize, coneColorRamp]);
 
   // Sync plot with state changes
   useEffect(() => {
