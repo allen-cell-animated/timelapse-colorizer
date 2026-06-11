@@ -1,5 +1,7 @@
 import { Vector2 } from "three";
 
+import type { FeatureRangeData, VectorFieldData } from "src/colorizer";
+import type { FeatureData } from "src/colorizer/Dataset";
 import Track from "src/colorizer/Track";
 
 /**
@@ -194,7 +196,11 @@ type TrackData = {
 /**
  * Constructs an array of tracks from the given data.
  */
-export function constructAllTracksFromData(trackIds: Uint32Array, times: Uint32Array, centroids: Uint16Array): Track[] {
+export function constructAllTracksFromData(
+  trackIds: Uint32Array,
+  times: Uint32Array,
+  centroids?: Uint16Array
+): Track[] {
   const trackIdToTrackData = new Map<number, TrackData>();
 
   for (let id = 0; id < trackIds.length; id++) {
@@ -206,7 +212,9 @@ export function constructAllTracksFromData(trackIds: Uint32Array, times: Uint32A
     }
     trackData.ids.push(id);
     trackData.times.push(times[id]);
-    trackData.centroids.push(centroids[id * 3], centroids[id * 3 + 1], centroids[id * 3 + 2]);
+    if (centroids) {
+      trackData.centroids.push(centroids[id * 3], centroids[id * 3 + 1], centroids[id * 3 + 2]);
+    }
   }
 
   // Construct and return tracks. Tracks will automatically sort their data by time.
@@ -334,4 +342,166 @@ export function padCentroidsTo3d(centroidsData: Uint16Array, numObjects: number)
     );
     return centroidsData;
   }
+}
+
+export function featureToRangeData(feature: FeatureData, bins: number): FeatureRangeData {
+  return {
+    data: feature.data,
+    range: [feature.min, feature.max],
+    bins,
+  };
+}
+
+export function getBinIndex(value: number, range: [number, number], steps: number): number {
+  const min = Math.min(range[0], range[1]);
+  const max = Math.max(range[0], range[1]);
+  if (min === max || steps <= 0) {
+    return 0;
+  }
+  const stepSize = (max - min) / steps;
+  const bin = Math.floor((value - min) / stepSize);
+  return Math.min(Math.max(bin, 0), steps - 1);
+}
+
+export function getBinValue(binIndex: number, range: [number, number], steps: number): number {
+  const min = Math.min(range[0], range[1]);
+  const max = Math.max(range[0], range[1]);
+  if (min === max || steps <= 0) {
+    return min;
+  }
+  const stepSize = (max - min) / steps;
+  return min + (binIndex + 0.5) * stepSize;
+}
+
+/**
+ * Calculates a vector flow field in 3D feature space. For each bin in the 3D
+ * feature space, the vector is calculated as the average delta between feature
+ * values at time `t` and `t+1` for all objects that fall into the bin at time
+ * `t`.
+ * @param tracks Array of tracks, where each track contains object IDs and their
+ * corresponding timepoints.
+ * @param xFeatureData Flat feature data array where the value for object ID `i`
+ * is at index `i`.
+ * @param yFeatureData Flat feature data array where the value for object ID `i`
+ * is at index `i`.
+ * @param zFeatureData Flat feature data array where the value for object ID `i`
+ * is at index `i`.
+ * @param xRange Range of values for the X dimension, as a tuple [min, max].
+ * @param yRange Range of values for the Y dimension, as a tuple [min, max].
+ * @param zRange Range of values for the Z dimension, as a tuple [min, max].
+ * @param binsPerAxis Number of bins per axis, as a tuple [xBins, yBins, zBins].
+ * @returns VectorFieldData containing the calculated vector flow field.
+ */
+export function calculateVectorFlowField(
+  tracks: Track[],
+  xFeatureData: Float32Array | Uint32Array,
+  yFeatureData: Float32Array | Uint32Array,
+  zFeatureData: Float32Array | Uint32Array,
+  xRange: [number, number],
+  yRange: [number, number],
+  zRange: [number, number],
+  binsPerAxis: [number, number, number]
+): VectorFieldData {
+  const [xSteps, ySteps, zSteps] = binsPerAxis;
+
+  const numBins = xSteps * ySteps * zSteps;
+  const count = new Uint32Array(numBins);
+  const xData = new Float32Array(numBins);
+  const yData = new Float32Array(numBins);
+  const zData = new Float32Array(numBins);
+  const xPos = new Float32Array(numBins);
+  const yPos = new Float32Array(numBins);
+  const zPos = new Float32Array(numBins);
+
+  for (const track of tracks) {
+    for (let i = 0; i < track.ids.length - 1; i++) {
+      // Times are in sorted order, check if the next timepoint exists
+      if (track.times[i] + 1 !== track.times[i + 1]) {
+        continue;
+      }
+      const x0Value = xFeatureData[track.ids[i]];
+      const y0Value = yFeatureData[track.ids[i]];
+      const z0Value = zFeatureData[track.ids[i]];
+      const x1Value = xFeatureData[track.ids[i + 1]];
+      const y1Value = yFeatureData[track.ids[i + 1]];
+      const z1Value = zFeatureData[track.ids[i + 1]];
+      const deltaX = x1Value - x0Value;
+      const deltaY = y1Value - y0Value;
+      const deltaZ = z1Value - z0Value;
+
+      const xBin = getBinIndex(x0Value, xRange, xSteps);
+      const yBin = getBinIndex(y0Value, yRange, ySteps);
+      const zBin = getBinIndex(z0Value, zRange, zSteps);
+      const binIndex = xBin + yBin * xSteps + zBin * xSteps * ySteps;
+
+      // TODO: This may result in float imprecision issues
+      xData[binIndex] += deltaX;
+      yData[binIndex] += deltaY;
+      zData[binIndex] += deltaZ;
+      count[binIndex]++;
+    }
+  }
+
+  // Normalize by number of vectors
+  for (let z = 0; z < zSteps; z++) {
+    for (let y = 0; y < ySteps; y++) {
+      for (let x = 0; x < xSteps; x++) {
+        const binIndex = x + y * xSteps + z * xSteps * ySteps;
+        if (count[binIndex] > 0) {
+          xData[binIndex] /= count[binIndex];
+          yData[binIndex] /= count[binIndex];
+          zData[binIndex] /= count[binIndex];
+        }
+        xPos[binIndex] = getBinValue(x, xRange, xSteps);
+        yPos[binIndex] = getBinValue(y, yRange, ySteps);
+        zPos[binIndex] = getBinValue(z, zRange, zSteps);
+      }
+    }
+  }
+
+  return { xPos, yPos, zPos, xData, yData, zData, count };
+}
+
+/** Removes bins with 0 count or NaN/Infinity values. */
+export function filterVectorFlowFieldData(flowFieldData: VectorFieldData): VectorFieldData {
+  const { xPos, yPos, zPos, xData, yData, zData, count } = flowFieldData;
+  // Filter out 0-count bins or NaN/Infinity values
+  const validBins = Array.from(count).map(
+    (c, i) => c > 0 && isFinite(xData[i]) && isFinite(yData[i]) && isFinite(zData[i])
+  );
+  const filteredXPos = xPos.filter((_, i) => validBins[i]);
+  const filteredYPos = yPos.filter((_, i) => validBins[i]);
+  const filteredZPos = zPos.filter((_, i) => validBins[i]);
+  const filteredXData = xData.filter((_, i) => validBins[i]);
+  const filteredYData = yData.filter((_, i) => validBins[i]);
+  const filteredZData = zData.filter((_, i) => validBins[i]);
+  const filteredCount = count.filter((_, i) => validBins[i]);
+  return {
+    xPos: filteredXPos,
+    yPos: filteredYPos,
+    zPos: filteredZPos,
+    xData: filteredXData,
+    yData: filteredYData,
+    zData: filteredZData,
+    count: filteredCount,
+  };
+}
+
+export function thresholdVectorFlowFieldByCount(
+  flowFieldData: VectorFieldData,
+  countThreshold: number
+): VectorFieldData {
+  const { xPos, yPos, zPos, xData, yData, zData, count } = flowFieldData;
+  const passedThreshold = Array(count.length)
+    .fill(false)
+    .map((_, i) => count[i] >= countThreshold);
+  return {
+    xPos: xPos.filter((_, i) => passedThreshold[i]),
+    yPos: yPos.filter((_, i) => passedThreshold[i]),
+    zPos: zPos.filter((_, i) => passedThreshold[i]),
+    xData: xData.filter((_, i) => passedThreshold[i]),
+    yData: yData.filter((_, i) => passedThreshold[i]),
+    zData: zData.filter((_, i) => passedThreshold[i]),
+    count: count.filter((_, i) => passedThreshold[i]),
+  };
 }

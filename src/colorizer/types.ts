@@ -209,6 +209,7 @@ export enum TabType {
   CORRELATION_PLOT = "correlation_plot",
   FILTERS = "filters",
   ANNOTATION = "annotation",
+  PLOT_3D = "3d_plot",
   SETTINGS = "settings",
 }
 
@@ -364,4 +365,20 @@ export type ChannelSetting = {
    * data max once volume data is loaded.
    */
   dataMax: number | null;
+};
+
+export type FeatureRangeData = {
+  data: Float32Array | Uint32Array;
+  bins: number;
+  range: [number, number];
+};
+
+export type VectorFieldData = {
+  xPos: Float32Array;
+  yPos: Float32Array;
+  zPos: Float32Array;
+  xData: Float32Array;
+  yData: Float32Array;
+  zData: Float32Array;
+  count: Uint32Array;
 };
