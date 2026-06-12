@@ -13,6 +13,7 @@ import { FlexColumn } from "src/styles/utils";
 import Plot3d from "./Plot3d";
 import { make3dConeTrace } from "./plot_3d_utils";
 
+const MINIMUM_BIN_COUNT = 10;
 const RESUME_PLAYBACK_TIMEOUT_MS = 500;
 
 export default function Plot3dTab(): ReactElement {
@@ -182,11 +183,15 @@ export default function Plot3dTab(): ReactElement {
         make3dConeTrace(vectorFieldData, {
           coneSize,
           colorRamp: coneColorRamp,
-          threshold,
+          // Scale threshold based on bin count. At the minimum bin count, the
+          // `threshold` value maps directly to the number of deltas that fell
+          // into a bin. As the bin count increases, dividing by the number of
+          // bins keeps the thresholding visually consistent.
+          threshold: threshold * (MINIMUM_BIN_COUNT / bins),
         })
       );
     }
-  }, [dataset, vectorFieldData, threshold, coneSize, coneColorRamp]);
+  }, [dataset, vectorFieldData, threshold, bins, coneSize, coneColorRamp]);
 
   // Sync plot with state changes
   useEffect(() => {
