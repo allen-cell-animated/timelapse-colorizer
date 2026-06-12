@@ -264,6 +264,8 @@ export default class ParquetDatasetLoader {
   private parseColumnData(chunk: ColumnData, schema: SchemaElement): void {
     const columnName = schema.name;
     const type = schema.type;
+    console.log(`Parsing column '${columnName}' of type '${type}'`, chunk);
+    // TODO: Handle string arrays (type of BYTE_ARRAY)
 
     if (!type) {
       console.warn(`Column '${columnName}' does not have a type in Parquet schema, skipping`);
@@ -360,6 +362,7 @@ export default class ParquetDatasetLoader {
       this.file = await result.arrayBuffer();
     }
     const metadata = await parquetMetadataAsync(this.file);
+    console.log("Parquet file metadata: ", metadata);
     const metadataMap = new Map<string, string | undefined>(
       (metadata.key_value_metadata ?? []).map((entry) => [entry.key, entry.value])
     );
