@@ -1,3 +1,4 @@
+import { tableFromIPC } from "apache-arrow";
 import { type ColumnData, parquetMetadataAsync, parquetRead } from "hyparquet";
 import { compressors } from "hyparquet-compressors";
 import type { ParquetType, SchemaElement } from "hyparquet/src/types";
@@ -13,7 +14,7 @@ import type { DatasetLoadOptions } from "src/colorizer/dataset_loaders/types";
 import { FeatureDataType, LoadTroubleshooting } from "src/colorizer/types";
 import { getKeyFromName } from "src/colorizer/utils/data_utils";
 import { arrayToDataTextureInfo, infoToDataTexture } from "src/colorizer/utils/texture_utils";
-import { formatPath } from "src/colorizer/utils/url_utils";
+import { decodeFloatOrNull, formatPath } from "src/colorizer/utils/url_utils";
 import { formatQuantityString } from "src/utils/formatting";
 
 const METADATA_SEG_CHANNEL_COUNT = "num_seg_channels";
@@ -41,6 +42,16 @@ const enum ParquetDataType {
   FIXED_LEN_BYTE_ARRAY = "FIXED_LEN_BYTE_ARRAY",
 }
 
+const enum FeatureMetadataKey {
+  KEY = "key",
+  NAME = "name",
+  UNIT = "unit",
+  DESCRIPTION = "description",
+  MIN = "min",
+  MAX = "max",
+  CATEGORIES = "categories",
+}
+
 function isIntType(type: ParquetType): type is ParquetDataType.INT32 | ParquetDataType.INT64 {
   return type === ParquetDataType.INT32 || type === ParquetDataType.INT64;
 }
@@ -51,6 +62,19 @@ function isFloatType(type: ParquetType): type is ParquetDataType.DOUBLE | Parque
 
 function isBooleanType(type: ParquetType): type is ParquetDataType.BOOLEAN {
   return type === ParquetDataType.BOOLEAN;
+}
+
+function decodeBase64ToUint8Array(b64: string): Uint8Array {
+  const bin = atob(b64);
+  return Uint8Array.from(bin, (c) => c.charCodeAt(0));
+}
+
+function parseCategories(categoryString: string | undefined): string[] | null {
+  if (!categoryString) {
+    return null;
+  }
+  // TODO: Handle comma escaping in category names
+  return categoryString.split(",").map((s) => s.trim());
 }
 
 // TODO: Handle string columns
@@ -102,6 +126,7 @@ export default class ParquetDatasetLoader {
   private file?: ArrayBuffer;
 
   private columnNameToSchemaMap: Map<string, SchemaElement>;
+  private columnNameToFieldMetadata: Map<string, Map<string, string>>;
 
   private numColumns: number;
   private numColumnsParsed: number;
@@ -126,6 +151,7 @@ export default class ParquetDatasetLoader {
     this.options = options ?? {};
 
     this.columnNameToSchemaMap = new Map();
+    this.columnNameToFieldMetadata = new Map();
 
     this.numColumns = 0;
     this.numColumnsParsed = 0;
@@ -263,50 +289,53 @@ export default class ParquetDatasetLoader {
 
   private parseColumnData(chunk: ColumnData, schema: SchemaElement): void {
     const columnName = schema.name;
-    const type = schema.type;
-    console.log(`Parsing column '${columnName}' of type '${type}'`, chunk);
+    const schemaType = schema.type;
+    const fieldMetadata = this.columnNameToFieldMetadata.get(columnName);
+    console.log(`Parsing column '${columnName}' of type '${schemaType}'`, chunk, schema, fieldMetadata);
     // TODO: Handle string arrays (type of BYTE_ARRAY)
 
-    if (!type) {
+    if (!schemaType) {
       console.warn(`Column '${columnName}' does not have a type in Parquet schema, skipping`);
       return;
     }
 
-    if (isMetadataColumn(columnName, type, TIMES_COLUMN_NAMES, MetadataType.INT)) {
+    if (isMetadataColumn(columnName, schemaType, TIMES_COLUMN_NAMES, MetadataType.INT)) {
       this.times = Uint32Array.from(chunk.columnData, (v) => Number(v));
-    } else if (isMetadataColumn(columnName, type, TRACK_ID_COLUMN_NAMES, MetadataType.INT)) {
+    } else if (isMetadataColumn(columnName, schemaType, TRACK_ID_COLUMN_NAMES, MetadataType.INT)) {
       this.trackIds = Uint32Array.from(chunk.columnData, (v) => Number(v));
-    } else if (isMetadataColumn(columnName, type, SEG_ID_COLUMN_NAMES, MetadataType.INT)) {
+    } else if (isMetadataColumn(columnName, schemaType, SEG_ID_COLUMN_NAMES, MetadataType.INT)) {
       this.segIds = Uint32Array.from(chunk.columnData, (v) => Number(v));
-    } else if (isMetadataColumn(columnName, type, CENTROID_X_COLUMN_NAMES, MetadataType.FLOAT_OR_INT)) {
+    } else if (isMetadataColumn(columnName, schemaType, CENTROID_X_COLUMN_NAMES, MetadataType.FLOAT_OR_INT)) {
       if (!this.centroidsX) {
         this.centroidsX = Float32Array.from(chunk.columnData, (v) => Number(v));
       }
-    } else if (isMetadataColumn(columnName, type, CENTROID_Y_COLUMN_NAMES, MetadataType.FLOAT_OR_INT)) {
+    } else if (isMetadataColumn(columnName, schemaType, CENTROID_Y_COLUMN_NAMES, MetadataType.FLOAT_OR_INT)) {
       if (!this.centroidsY) {
         this.centroidsY = Float32Array.from(chunk.columnData, (v) => Number(v));
       }
-    } else if (isMetadataColumn(columnName, type, CENTROID_Z_COLUMN_NAMES, MetadataType.FLOAT_OR_INT)) {
+    } else if (isMetadataColumn(columnName, schemaType, CENTROID_Z_COLUMN_NAMES, MetadataType.FLOAT_OR_INT)) {
       if (!this.centroidsZ) {
         this.centroidsZ = Float32Array.from(chunk.columnData, (v) => Number(v));
       }
-    } else if (isMetadataColumn(columnName, type, BOUNDS_COLUMN_NAMES, MetadataType.FLOAT_OR_INT)) {
+    } else if (isMetadataColumn(columnName, schemaType, BOUNDS_COLUMN_NAMES, MetadataType.FLOAT_OR_INT)) {
       this.bounds = Uint16Array.from(chunk.columnData, (v) => Number(v));
-    } else if (isMetadataColumn(columnName, type, OUTLIER_COLUMN_NAMES, MetadataType.INT_OR_BOOLEAN)) {
+    } else if (isMetadataColumn(columnName, schemaType, OUTLIER_COLUMN_NAMES, MetadataType.INT_OR_BOOLEAN)) {
       this.outliers = Uint8Array.from(chunk.columnData, (v) => Number(v));
     } else {
       // Otherwise, treat as feature column
-      const key = getKeyFromName(columnName);
+      const name = fieldMetadata?.get(FeatureMetadataKey.NAME) ?? columnName;
+      const key = getKeyFromName(fieldMetadata?.get(FeatureMetadataKey.KEY) ?? columnName);
       if (this.features.has(key)) {
         console.warn(`Duplicate column name '${columnName}' found in Parquet file, skipping`);
         return;
       }
       const data = Float32Array.from(chunk.columnData, (v) => Number(v));
       const textureInfo = arrayToDataTextureInfo(data, FeatureDataType.F32);
-      const texture = infoToDataTexture(textureInfo);
+      const tex = infoToDataTexture(textureInfo);
 
-      let min = Number.POSITIVE_INFINITY;
-      let max = Number.NEGATIVE_INFINITY;
+      let min, max;
+      min = Number.POSITIVE_INFINITY;
+      max = Number.NEGATIVE_INFINITY;
       for (let i = 0; i < data.length; i++) {
         const value = data[i];
         if (isFinite(value)) {
@@ -315,18 +344,22 @@ export default class ParquetDatasetLoader {
         }
       }
 
-      this.features.set(key, {
-        name: columnName,
-        key,
-        data: data,
-        tex: texture,
-        min,
-        max,
-        unit: "",
-        type: FeatureType.CONTINUOUS,
-        categories: null,
-        description: null,
-      });
+      // Override with metadata values if provided.
+      min = decodeFloatOrNull(fieldMetadata?.get(FeatureMetadataKey.MIN)) ?? min;
+      max = decodeFloatOrNull(fieldMetadata?.get(FeatureMetadataKey.MAX)) ?? max;
+
+      const categories = parseCategories(fieldMetadata?.get(FeatureMetadataKey.CATEGORIES));
+      const description = fieldMetadata?.get(FeatureMetadataKey.DESCRIPTION) ?? null;
+      const unit = fieldMetadata?.get(FeatureMetadataKey.UNIT) ?? "";
+
+      let type = FeatureType.CONTINUOUS;
+      if (categories) {
+        type = FeatureType.CATEGORICAL;
+      } else if (isIntType(schemaType)) {
+        type = FeatureType.DISCRETE;
+      }
+
+      this.features.set(key, { name, key, data, tex, min, max, unit, type, categories, description });
     }
   }
 
@@ -337,9 +370,9 @@ export default class ParquetDatasetLoader {
       return;
     }
     const columnName = schema.name;
-    const type = schema.type;
+    const schemaType = schema.type;
 
-    if (!type) {
+    if (!schemaType) {
       console.warn(`Column '${columnName}' does not have a type in Parquet schema, skipping`);
       return;
     }
@@ -366,7 +399,20 @@ export default class ParquetDatasetLoader {
     const metadataMap = new Map<string, string | undefined>(
       (metadata.key_value_metadata ?? []).map((entry) => [entry.key, entry.value])
     );
-    console.log("Parquet file metadata: ", metadataMap);
+
+    // Hyparquet does not directly read per-column key-value pairs, but it is
+    // stored in the metadata under the "ARROW:schema" key as an Arrow IPC
+    // message.
+    // TODO: Is this standard? Do all Parquet files include this?
+    const hyparquetArrowMetadata = metadataMap.get("ARROW:schema");
+    if (hyparquetArrowMetadata) {
+      const uint8Array = decodeBase64ToUint8Array(hyparquetArrowMetadata);
+      const schema = tableFromIPC(uint8Array).schema;
+      for (const field of schema.fields) {
+        this.columnNameToFieldMetadata.set(field.name, field.metadata);
+      }
+    }
+
     const frames3d = this.getFrames3dFromMetadata(metadataMap);
 
     this.numColumns = metadata.schema.length - 1;
