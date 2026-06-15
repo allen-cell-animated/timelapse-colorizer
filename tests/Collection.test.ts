@@ -8,7 +8,7 @@ import Collection, {
 } from "src/colorizer/Collection";
 import { DEFAULT_COLLECTION_FILENAME, DEFAULT_DATASET_FILENAME } from "src/colorizer/constants";
 import { MOCK_DATASET_FEATURE_1, MOCK_DATASET_MANIFEST, MOCK_DATASET_TIMES } from "tests/constants";
-import { ANY_ERROR, makeMockFetchMethod, MockFetchArrayLoader } from "tests/utils";
+import { ANY_ERROR, disableConsole, makeMockFetchMethod, MockFetchArrayLoader } from "tests/utils";
 
 const collectionData = new Map([
   ["d1", { path: "https://some-path.json", name: "dataset1" }],
@@ -261,6 +261,8 @@ describe("Collection", () => {
     });
 
     it("can load a single dataset from a file map", async () => {
+      disableConsole(["warn"]);
+
       const collection = await Collection.loadFromAmbiguousFile("", MOCK_DATASET_FILEMAP, COLLECTION_LOAD_CONFIG);
 
       expect(collection).to.be.instanceOf(Collection);
@@ -273,6 +275,8 @@ describe("Collection", () => {
     });
 
     it("throws an error if no manifest files exist", async () => {
+      disableConsole(["error"]);
+
       const fileMap = {};
       await expect(Collection.loadFromAmbiguousFile("", fileMap, COLLECTION_LOAD_CONFIG)).rejects.toThrowError(
         ANY_ERROR
@@ -280,6 +284,8 @@ describe("Collection", () => {
     });
 
     it("throws an error if Collection manifest is malformed", async () => {
+      disableConsole(["error"]);
+
       const fileMap = {
         // eslint-disable-next-line
         "collection.json": new File([`{"some-property": "value"}`], "collection.json"),
@@ -290,6 +296,8 @@ describe("Collection", () => {
     });
 
     it("throws an error if dataset manifest is malformed", async () => {
+      disableConsole(["error", "warn"]);
+
       const fileMap = {
         ...MOCK_DATASET_FILEMAP,
         // eslint-disable-next-line
