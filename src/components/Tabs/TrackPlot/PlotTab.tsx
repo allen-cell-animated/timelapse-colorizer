@@ -14,7 +14,7 @@ import { FlexRowAlignCenter, NoSpinnerContainer } from "src/styles/utils";
 const TRACK_SEARCH_ID = "plot-tab-track-search-input";
 
 const TrackTitleBar = styled(FlexRowAlignCenter)`
-  justify-content: end;
+  justify-content: start;
   flex-wrap: wrap;
 `;
 

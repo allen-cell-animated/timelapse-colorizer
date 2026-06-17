@@ -207,6 +207,7 @@ export enum TabType {
   CORRELATION_PLOT = "correlation_plot",
   FILTERS = "filters",
   ANNOTATION = "annotation",
+  PLOT_3D = "3d_plot",
   SETTINGS = "settings",
 }
 
@@ -362,4 +363,59 @@ export type ChannelSetting = {
    * data max once volume data is loaded.
    */
   dataMax: number | null;
+};
+
+export type FeatureRangeData = {
+  data: Float32Array | Uint32Array;
+  bins: number;
+  range: [number, number];
+};
+
+/**
+ * Stores 3D vector data that has been summed into bins in a 3D feature space.
+ * The feature space is defined by any three arbitrary features as the x, y, and
+ * z axes, and is divided into some number of bins along each axis.
+ *
+ * The value of the bin is the sum of the deltas for any objects that fall into
+ * the bin in the 3D feature space at any time `t`. The delta is the difference
+ * between feature values at `t` and `t+1`.
+ *
+ * For each bin `i`:
+ *  - the center of the bin is at `(xPos[i], yPos[i], zPos[i])`
+ *  - the sum of the vector components for objects in that bin is `(xSum[i],
+ *    ySum[i], zSum[i])`
+ *  - the count of objects mapped to that bin is `count[i]`.
+ */
+export type VectorSumData = {
+  xPos: Float32Array;
+  yPos: Float32Array;
+  zPos: Float32Array;
+  xSum: Float32Array;
+  ySum: Float32Array;
+  zSum: Float32Array;
+  count: Uint32Array;
+};
+
+/**
+ * Stores normalized 3D vector data in a 3D feature space. The feature space is
+ * defined by any three arbitrary features as the x, y, and z axes, and is
+ * divided into some number of bins along each axis.
+ *
+ * Normalization can be done in a number of ways, including Gaussian smoothing
+ * with neighboring bins or by averaging.
+ *
+ * For each bin `i`:
+ *  - the center of the bin is at `(xPos[i], yPos[i], zPos[i])`
+ *  - the vector components of the bin is `(xSum[i], ySum[i], zSum[i])`
+ *  - the (possibly smoothed/normalized) count of objects mapped to that bin is
+ *    `count[i]`.
+ */
+export type VectorFieldData = {
+  xPos: Float32Array;
+  yPos: Float32Array;
+  zPos: Float32Array;
+  xData: Float32Array;
+  yData: Float32Array;
+  zData: Float32Array;
+  count: Float32Array;
 };
