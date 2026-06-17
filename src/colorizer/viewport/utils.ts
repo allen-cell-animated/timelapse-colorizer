@@ -109,7 +109,6 @@ export function reassignTrackPaths<T extends TrackPath2D | TrackPath3D>(
     const trackPath = prevTrackPathMap.get(track.trackId);
     if (trackPath) {
       unusedTrackPaths.push(trackPath);
-      removeAndDisposeTrackPath(trackPath);
     }
     newTrackPathMap.delete(track.trackId);
   }
@@ -120,6 +119,10 @@ export function reassignTrackPaths<T extends TrackPath2D | TrackPath3D>(
     addedTrackPaths.push(trackPath);
     newTrackPathMap.set(track.trackId, trackPath);
     addTrackPathToScene(trackPath);
+  }
+
+  for (const trackPath of unusedTrackPaths) {
+    removeAndDisposeTrackPath(trackPath);
   }
 
   return newTrackPathMap;
