@@ -44,6 +44,7 @@ import {
   AnnotationTab,
   CorrelationPlotTab,
   FeatureThresholdsTab,
+  Plot3dTab,
   PlotTab,
   ScatterPlotTab,
   SettingsTab,
@@ -532,6 +533,15 @@ function Viewer(): ReactElement {
       ),
     },
     {
+      label: "Flow field plot",
+      key: TabType.PLOT_3D,
+      children: (
+        <div className={styles.tabContent}>
+          <Plot3dTab></Plot3dTab>
+        </div>
+      ),
+    },
+    {
       label: "Correlation plot",
       key: TabType.CORRELATION_PLOT,
       children: (
@@ -558,6 +568,7 @@ function Viewer(): ReactElement {
         </div>
       ),
     },
+
     {
       label: "Viewer settings",
       key: TabType.SETTINGS,
