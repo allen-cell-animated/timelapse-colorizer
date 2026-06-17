@@ -7,7 +7,7 @@ import Collection, {
   type DatasetLoadOptions,
 } from "src/colorizer/Collection";
 import { DEFAULT_COLLECTION_FILENAME, DEFAULT_DATASET_FILENAME } from "src/colorizer/constants";
-import { MOCK_DATASET_FEATURE_1, MOCK_DATASET_MANIFEST, MOCK_DATASET_TIMES } from "tests/constants";
+import { MOCK_DATASET_FILEMAP } from "tests/constants";
 import { ANY_ERROR, makeMockFetchMethod, MockFetchArrayLoader } from "tests/utils";
 
 const collectionData = new Map([
@@ -189,7 +189,7 @@ describe("Collection", () => {
     const urlToFile: Record<string, File> = {};
 
     window.URL.createObjectURL = (file: File): string => {
-      const url = "http://mocked-created-url/" + generateUUID();
+      const url = "http://mocked-created-url.com/" + generateUUID();
       urlToFile[url] = file;
       return url;
     };
@@ -224,15 +224,6 @@ describe("Collection", () => {
     const MOCK_COLLECTION_FILEMAP = {
       // eslint-disable-next-line
       "collection.json": new File([MOCK_COLLECTION_JSON], "collection.json"),
-    };
-    const MOCK_DATASET_FILEMAP = {
-      // eslint-disable-next-line
-      "manifest.json": new File([JSON.stringify(MOCK_DATASET_MANIFEST)], "manifest.json"),
-      // add minimal files to ensure the Dataset can actually load
-      // eslint-disable-next-line
-      "times.json": new File([JSON.stringify(MOCK_DATASET_TIMES)], "times.json"),
-      // eslint-disable-next-line
-      "feature1.json": new File([JSON.stringify(MOCK_DATASET_FEATURE_1)], "frames.json"),
     };
 
     const DATASET_LOAD_OPTIONS: DatasetLoadOptions = {

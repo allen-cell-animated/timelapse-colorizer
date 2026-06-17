@@ -1,6 +1,7 @@
 import { DEFAULT_COLLECTION_FILENAME, DEFAULT_DATASET_FILENAME } from "src/colorizer/constants";
+import JsonDatasetLoader from "src/colorizer/dataset_loaders/JsonDatasetLoader";
 
-import Dataset from "./Dataset";
+import type Dataset from "./Dataset";
 import type { IArrayLoader, ITextureImageLoader } from "./loaders/ILoader";
 import { FilePathResolver, type IPathResolver, UrlPathResolver } from "./path_resolvers";
 import { LoadErrorMessage, LoadTroubleshooting, type ReportWarningCallback } from "./types";
@@ -222,43 +223,34 @@ export default class Collection {
     const path = this.getAbsoluteDatasetPath(datasetKey);
     console.log(`Fetching dataset from path '${path}'`);
 
-    let totalLoadItems = 0;
-    let completedLoadItems = 0;
-    const onLoadStart = (): void => {
-      totalLoadItems++;
-    };
-    const onLoadComplete = (): void => {
-      completedLoadItems++;
-      options.onLoadProgress?.(completedLoadItems, totalLoadItems);
-    };
-
+    let result: DatasetLoadResult;
+    const datasetLoader = new JsonDatasetLoader(path, {
+      frameLoader: options.frameLoader,
+      arrayLoader: options.arrayLoader,
+      reportProgress: options.onLoadProgress,
+      reportWarning: options.reportWarning,
+      manifestLoader: options.manifestLoader,
+      pathResolver: this.pathResolver,
+    });
     try {
-      const dataset = new Dataset(path, {
-        frameLoader: options.frameLoader,
-        arrayLoader: options.arrayLoader,
-        pathResolver: this.pathResolver,
-      });
-      await dataset.open({
-        onLoadStart,
-        onLoadComplete,
-        reportWarning: options.reportWarning,
-        manifestLoader: options.manifestLoader,
-      });
+      const dataset = await datasetLoader.open();
       console.timeEnd("loadDataset");
-      return { loaded: true, dataset: dataset };
+      result = { loaded: true, dataset: dataset };
     } catch (e) {
       console.timeEnd("loadDataset");
       console.error(e);
       if (e instanceof Error) {
-        return {
+        result = {
           loaded: false,
           dataset: null,
           errorMessage: e.message,
         };
       } else {
-        return { loaded: false, dataset: null };
+        result = { loaded: false, dataset: null };
       }
     }
+    datasetLoader.dispose();
+    return result;
   }
 
   public dispose(): void {

@@ -157,6 +157,21 @@ export const MOCK_DATASET_ARRAY_LOADER_DEFAULT_SOURCE = makeMockDatasetArrayLoad
 
 export const MOCK_DATASET_ARRAY_LOADER = new MockArrayLoader(MOCK_DATASET_ARRAY_LOADER_DEFAULT_SOURCE);
 
+export const fileToData: [string, number[] | Object][] = [
+  ["manifest.json", MOCK_DATASET_MANIFEST],
+  ["times.json", MOCK_DATASET_TIMES],
+  ["seg_ids.json", MOCK_DATASET_SEG_IDS],
+  ["tracks.json", MOCK_DATASET_TRACKS],
+  ["feature1.json", MOCK_DATASET_FEATURE_1],
+  ["feature2.json", MOCK_DATASET_FEATURE_2],
+  ["feature3.json", MOCK_DATASET_FEATURE_3],
+  ["feature4.json", MOCK_DATASET_FEATURE_4],
+  ["centroids.json", MOCK_DATASET_CENTROIDS],
+];
+export const MOCK_DATASET_FILEMAP = Object.fromEntries(
+  fileToData.map(([filename, data]) => [filename, new File([JSON.stringify(data)], filename)])
+);
+
 export const MOCK_DATASET = await makeMockDataset(MOCK_DATASET_MANIFEST, MOCK_DATASET_ARRAY_LOADER);
 
 export const MOCK_DATASET_WITH_TWO_FRAMES = await makeMockDataset(

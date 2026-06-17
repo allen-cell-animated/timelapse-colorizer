@@ -2,13 +2,14 @@ import { DataTexture, RGBAFormat, type Texture, UnsignedByteType } from "three";
 
 import {
   type ArraySource,
-  Dataset,
+  type Dataset,
   type FeatureArrayType,
   type FeatureDataType,
   featureTypeSpecs,
   type IArrayLoader,
   type ITextureImageLoader,
 } from "src/colorizer";
+import JsonDatasetLoader from "src/colorizer/dataset_loaders/JsonDatasetLoader";
 import type { AnyManifestFile } from "src/colorizer/utils/dataset_utils";
 import type { fetchWithTimeout } from "src/colorizer/utils/url_utils";
 
@@ -161,8 +162,12 @@ export const makeMockDataset = async (
   manifest: AnyManifestFile,
   loader: MockArrayLoader = new MockArrayLoader()
 ): Promise<Dataset> => {
-  const dataset = new Dataset(DEFAULT_DATASET_PATH, { frameLoader: new MockFrameLoader(), arrayLoader: loader });
   const mockLoader = makeMockAsyncLoader(DEFAULT_DATASET_PATH, manifest);
-  await dataset.open({ manifestLoader: mockLoader });
+  const datasetLoader = new JsonDatasetLoader(DEFAULT_DATASET_PATH, {
+    frameLoader: new MockFrameLoader(),
+    arrayLoader: loader,
+    manifestLoader: mockLoader,
+  });
+  const dataset = await datasetLoader.open();
   return dataset;
 };
