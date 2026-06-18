@@ -103,23 +103,27 @@ export function reassignTrackPaths<T extends TrackPath2D | TrackPath3D>(
     }
   }
 
-  // Remove unused TrackPath2D objects
+  // Remove unused TrackPath objects
   const unusedTrackPaths: T[] = [];
   for (const track of removedTracks) {
     const trackPath = prevTrackPathMap.get(track.trackId);
     if (trackPath) {
       unusedTrackPaths.push(trackPath);
-      removeAndDisposeTrackPath(trackPath);
     }
     newTrackPathMap.delete(track.trackId);
   }
-  // Add new TrackPath2D objects, reusing unused ones where possible
+  // Add new TrackPath objects, reusing unused ones where possible
   const addedTrackPaths: T[] = [];
   for (const track of addedTracks) {
     const trackPath = unusedTrackPaths.pop() ?? makeNewTrackPath();
     addedTrackPaths.push(trackPath);
     newTrackPathMap.set(track.trackId, trackPath);
     addTrackPathToScene(trackPath);
+  }
+
+  // Dispose of TrackPath objects that were not reused
+  for (const trackPath of unusedTrackPaths) {
+    removeAndDisposeTrackPath(trackPath);
   }
 
   return newTrackPathMap;
