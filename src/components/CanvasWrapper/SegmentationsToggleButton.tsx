@@ -2,7 +2,8 @@ import { Tooltip } from "antd";
 import React, { type ReactElement } from "react";
 
 import { ImageIconSVG, ImageSlashIconSVG } from "src/assets";
-import { ViewMode } from "src/colorizer";
+import { ViewMode } from "src/colorizer/types";
+import { areAnyChannelsVisible } from "src/colorizer/utils/channels";
 import { ToggleButtonWithConfig } from "src/components/Buttons/ToggleButtonWithConfig";
 import LabeledSlider from "src/components/Inputs/LabeledSlider";
 import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
@@ -18,10 +19,16 @@ export default function SegmentationsToggleButton(): ReactElement {
   const setObjectOpacity = useViewerStateStore((state) => state.setObjectOpacity);
   const setShowSegmentations = useViewerStateStore((state) => state.setShowSegmentations);
   const showSegmentations = useViewerStateStore((state) => state.showSegmentations);
+  const channelSettings = useViewerStateStore((state) => state.channelSettings);
+  const channelsVisible = areAnyChannelsVisible(channelSettings);
   const viewMode = useViewerStateStore((state) => state.viewMode);
 
+  const enableOpacityControl =
+    (viewMode === ViewMode.VIEW_3D && channelsVisible) ||
+    (viewMode === ViewMode.VIEW_2D && backdropVisible);
+
   const configMenuContents =
-    viewMode !== ViewMode.VIEW_3D ? (
+    (
       <div style={{ marginBottom: "14px" }}>
         <SettingsContainer labelWidth="65px" style={{ width: "240px" }}>
           <SettingsItem
@@ -30,14 +37,14 @@ export default function SegmentationsToggleButton(): ReactElement {
             style={{ marginBottom: 14 }}
           >
             <Tooltip
-              title="Segmentation opacity is only applied when backdrops are enabled"
-              open={backdropVisible ? false : undefined}
+              title={`Segmentation opacity is only applied when ${viewMode === ViewMode.VIEW_3D ? "channels" : "backdrops"} are enabled`}
+              open={enableOpacityControl ? false : undefined}
               placement="top"
             >
               <div style={{ display: "flex", flexGrow: 1 }}>
                 <LabeledSlider
                   id={SegmentationsToggleButtonHtmlIds.OPACITY_SLIDER}
-                  disabled={!backdropVisible}
+                  disabled={!enableOpacityControl}
                   type="value"
                   value={objectOpacity}
                   onChange={setObjectOpacity}
@@ -53,7 +60,7 @@ export default function SegmentationsToggleButton(): ReactElement {
           </SettingsItem>
         </SettingsContainer>
       </div>
-    ) : null;
+    );
 
   return (
     <ToggleButtonWithConfig

@@ -178,7 +178,7 @@ export default class ColorRamp {
       return this.colorStops[Math.round(tIndex)].clone();
     }
 
-    // For linear ramps, we need to interpolate between the two colors  on
+    // For linear ramps, we need to interpolate between the two colors on
     // either side of the tIndex
     const minIndex = Math.floor(tIndex);
     const maxIndex = Math.ceil(tIndex);
@@ -199,6 +199,19 @@ export default class ColorRamp {
    */
   public reverse(): ColorRamp {
     const newColorStops = [...this.colorStops].reverse();
+    return new ColorRamp(newColorStops, this.type);
+  }
+
+  /**
+   * Returns a new ColorRamp object with all colors multiplied by the given
+   * scalar factor.
+   */
+  public multiply(factor: number): ColorRamp {
+    const newColorStops = this.colorStops.map((color) => {
+      const newColor = new Color(color);
+      newColor.multiplyScalar(factor);
+      return newColor;
+    });
     return new ColorRamp(newColorStops, this.type);
   }
 }
