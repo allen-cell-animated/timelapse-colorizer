@@ -101,7 +101,7 @@ export default function CentroidInnerSettings(inputProps: CentroidInnerSettingsP
             open={backdropVisible ? false : undefined}
             placement="top"
           >
-            <div style={{ display: "flex", flexGrow: 1 }}>
+            <div style={{ maxWidth: props.sliderWidth, width: props.sliderWidth }}>
               <LabeledSlider
                 id={props.idPrefix + CentroidSettingsHtmlIds.CENTROID_OPACITY_SLIDER}
                 disabled={!backdropVisible}
