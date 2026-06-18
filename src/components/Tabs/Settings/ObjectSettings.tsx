@@ -1,4 +1,3 @@
-import { Checkbox } from "antd";
 import type { PresetsItem } from "antd/es/color-picker/interface";
 import React, { type ReactElement } from "react";
 import type { Color } from "three";
@@ -17,7 +16,6 @@ const enum ObjectSettingsHtmlIds {
   EDGE_COLOR_SELECT = "edge-color-select",
   OUTLIER_OBJECT_COLOR_SELECT = "outlier-object-color-select",
   OUT_OF_RANGE_OBJECT_COLOR_SELECT = "out-of-range-object-color-select",
-  SHOW_SEGMENTATIONS_SWITCH = "show-segmentations-switch",
 }
 
 const DRAW_MODE_ITEMS = [
@@ -75,7 +73,12 @@ export default function ObjectSettings(): ReactElement {
   const showSegmentations = useViewerStateStore((state) => state.showSegmentations);
 
   return (
-    <ToggleCollapse label="Objects">
+    <ToggleCollapse
+      label="Segmentations"
+      toggleChecked={showSegmentations}
+      onToggleChange={setShowSegmentations}
+      collapseOnToggle={false}
+    >
       <SettingsContainer gapPx={SETTINGS_GAP_PX}>
         <SettingsItem label="Selected outline" htmlFor={ObjectSettingsHtmlIds.OUTLINE_COLOR_SELECT}>
           <DropdownWithColorPicker
@@ -163,13 +166,6 @@ export default function ObjectSettings(): ReactElement {
               presets: DRAW_MODE_COLOR_PRESETS,
             }}
             showColorPicker={outlierDrawSettings.mode === DrawMode.USE_COLOR}
-          />
-        </SettingsItem>
-        <SettingsItem label="Show segmentations" htmlFor={ObjectSettingsHtmlIds.SHOW_SEGMENTATIONS_SWITCH}>
-          <Checkbox
-            id={ObjectSettingsHtmlIds.SHOW_SEGMENTATIONS_SWITCH}
-            checked={showSegmentations}
-            onChange={(e) => setShowSegmentations(e.target.checked)}
           />
         </SettingsItem>
       </SettingsContainer>

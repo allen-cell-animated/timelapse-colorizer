@@ -24,43 +24,43 @@ export default function SegmentationsToggleButton(): ReactElement {
   const viewMode = useViewerStateStore((state) => state.viewMode);
 
   const enableOpacityControl =
-    (viewMode === ViewMode.VIEW_3D && channelsVisible) ||
-    (viewMode === ViewMode.VIEW_2D && backdropVisible);
+    (viewMode === ViewMode.VIEW_3D && channelsVisible) || (viewMode === ViewMode.VIEW_2D && backdropVisible);
 
-  const configMenuContents =
-    (
-      <div style={{ marginBottom: "14px" }}>
-        <SettingsContainer labelWidth="65px" style={{ width: "240px" }}>
-          <SettingsItem
-            label="Opacity"
-            htmlFor={SegmentationsToggleButtonHtmlIds.OPACITY_SLIDER}
-            style={{ marginBottom: 14 }}
+  const configMenuContents = (
+    <div style={{ marginBottom: "14px" }}>
+      <SettingsContainer labelWidth="65px" style={{ width: "240px" }}>
+        <SettingsItem
+          label="Opacity"
+          htmlFor={SegmentationsToggleButtonHtmlIds.OPACITY_SLIDER}
+          style={{ marginBottom: 14 }}
+        >
+          <Tooltip
+            title={`Segmentation opacity is only applied when ${
+              viewMode === ViewMode.VIEW_3D ? "channels" : "backdrops"
+            } are enabled`}
+            open={enableOpacityControl ? false : undefined}
+            placement="top"
           >
-            <Tooltip
-              title={`Segmentation opacity is only applied when ${viewMode === ViewMode.VIEW_3D ? "channels" : "backdrops"} are enabled`}
-              open={enableOpacityControl ? false : undefined}
-              placement="top"
-            >
-              <div style={{ display: "flex", flexGrow: 1 }}>
-                <LabeledSlider
-                  id={SegmentationsToggleButtonHtmlIds.OPACITY_SLIDER}
-                  disabled={!enableOpacityControl}
-                  type="value"
-                  value={objectOpacity}
-                  onChange={setObjectOpacity}
-                  step={1}
-                  minSliderBound={0}
-                  maxSliderBound={100}
-                  marks={[50]}
-                  showInput={false}
-                  numberFormatter={(value) => value + "%"}
-                />
-              </div>
-            </Tooltip>
-          </SettingsItem>
-        </SettingsContainer>
-      </div>
-    );
+            <div style={{ display: "flex", flexGrow: 1 }}>
+              <LabeledSlider
+                id={SegmentationsToggleButtonHtmlIds.OPACITY_SLIDER}
+                disabled={!enableOpacityControl}
+                type="value"
+                value={objectOpacity}
+                onChange={setObjectOpacity}
+                step={1}
+                minSliderBound={0}
+                maxSliderBound={100}
+                marks={[50]}
+                showInput={false}
+                numberFormatter={(value) => value + "%"}
+              />
+            </div>
+          </Tooltip>
+        </SettingsItem>
+      </SettingsContainer>
+    </div>
+  );
 
   return (
     <ToggleButtonWithConfig
@@ -68,7 +68,7 @@ export default function SegmentationsToggleButton(): ReactElement {
       visible={showSegmentations}
       setVisible={setShowSegmentations}
       configMenuContents={configMenuContents}
-      settingsLinkText="Viewer settings > Objects"
+      settingsLinkText="Viewer settings > Segmentations"
       visibleIcon={<ImageIconSVG />}
       hiddenIcon={<ImageSlashIconSVG />}
     />

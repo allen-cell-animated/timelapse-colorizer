@@ -21,7 +21,7 @@ export default function CentroidsToggleButton(): ReactElement {
       visible={showCentroids}
       setVisible={setShowCentroids}
       configMenuContents={configMenuContents}
-      settingsLinkText="Viewer settings > Objects"
+      settingsLinkText="Viewer settings > Centroids"
       visibleIcon={<CentroidIconSVG />}
       hiddenIcon={<CentroidSlashIconSVG />}
     />
