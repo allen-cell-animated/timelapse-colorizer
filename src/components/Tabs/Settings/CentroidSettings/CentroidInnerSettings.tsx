@@ -1,5 +1,5 @@
 import { Tooltip } from "antd";
-import React, { PropsWithChildren, type ReactElement } from "react";
+import React, { type PropsWithChildren, type ReactElement } from "react";
 
 import { CentroidColorMode, ViewMode } from "src/colorizer";
 import DropdownWithColorPicker from "src/components/Dropdowns/DropdownWithColorPicker";

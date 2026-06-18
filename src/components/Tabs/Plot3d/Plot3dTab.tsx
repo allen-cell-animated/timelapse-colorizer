@@ -10,8 +10,8 @@ import { useInteractionListener } from "src/hooks";
 import { useViewerStateStore } from "src/state";
 import { FlexColumn } from "src/styles/utils";
 
-import Plot3d from "./Plot3d";
 import { make3dConeTrace } from "./plot_3d_utils";
+import Plot3d from "./Plot3d";
 
 const RESUME_PLAYBACK_TIMEOUT_MS = 500;
 

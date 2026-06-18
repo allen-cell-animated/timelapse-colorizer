@@ -1,6 +1,6 @@
-import React, { PropsWithChildren, ReactElement } from "react";
+import React, { type PropsWithChildren, type ReactElement } from "react";
 
-import InlineHint, { InlineHintProps } from "src/components/Display/InlineHint";
+import InlineHint, { type InlineHintProps } from "src/components/Display/InlineHint";
 import { FlexRowAlignCenter } from "src/styles/utils";
 
 type LabelWithHintProps = {
