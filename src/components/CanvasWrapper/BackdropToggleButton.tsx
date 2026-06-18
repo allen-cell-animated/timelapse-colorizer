@@ -4,14 +4,12 @@ import { ToggleButtonWithConfig } from "src/components/Buttons/ToggleButtonWithC
 import ShortcutTooltipHint from "src/components/Display/ShortcutTooltipHint";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import type { SelectItem } from "src/components/Dropdowns/types";
-import LabeledSlider from "src/components/Inputs/LabeledSlider";
 import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
 import { SHORTCUT_KEYS } from "src/constants";
 import { useViewerStateStore } from "src/state";
 import { FlexColumn, FlexRow } from "src/styles/utils";
 
 const enum BackdropToggleButtonHtmlIds {
-  OPACITY_SLIDER = "backdrop-toggle-opacity-slider",
   BACKDROP_SELECT = "backdrop-toggle-backdrop-select",
 }
 
@@ -19,10 +17,8 @@ export default function BackdropToggleButton(): ReactElement {
   const dataset = useViewerStateStore((state) => state.dataset);
   const backdropKey = useViewerStateStore((state) => state.backdropKey);
   const backdropVisible = useViewerStateStore((state) => state.backdropVisible);
-  const objectOpacity = useViewerStateStore((state) => state.objectOpacity);
   const setBackdropKey = useViewerStateStore((state) => state.setBackdropKey);
   const setBackdropVisible = useViewerStateStore((state) => state.setBackdropVisible);
-  const setObjectOpacity = useViewerStateStore((state) => state.setObjectOpacity);
 
   const backdropData = dataset?.getBackdropData();
   const hasBackdrops = backdropData !== undefined && backdropData.size > 0 && backdropKey !== null;
@@ -42,7 +38,7 @@ export default function BackdropToggleButton(): ReactElement {
 
   // Config menu
   const createBackdropConfigMenuContents = [
-    <SettingsContainer labelWidth="85px" key="backdrop-settings-container">
+    <SettingsContainer labelWidth="85px" key="backdrop-settings-container" style={{ marginBottom: "8px" }}>
       <SettingsItem
         label={
           <FlexRow $gap={6}>
@@ -69,25 +65,9 @@ export default function BackdropToggleButton(): ReactElement {
               setBackdropVisible(true);
               setBackdropKey(value);
             }}
-            controlWidth="220px"
+            controlWidth="180px"
           />
         </FlexColumn>
-      </SettingsItem>
-      <SettingsItem label="Opacity" htmlFor={BackdropToggleButtonHtmlIds.OPACITY_SLIDER} style={{ marginBottom: 14 }}>
-        <div style={{ display: "flex", flexGrow: 1 }}>
-          <LabeledSlider
-            id={BackdropToggleButtonHtmlIds.OPACITY_SLIDER}
-            disabled={!backdropVisible}
-            type="value"
-            value={objectOpacity}
-            onChange={setObjectOpacity}
-            step={1}
-            minSliderBound={0}
-            maxSliderBound={100}
-            showInput={false}
-            numberFormatter={(value) => value + "%"}
-          />
-        </div>
       </SettingsItem>
     </SettingsContainer>,
   ];
