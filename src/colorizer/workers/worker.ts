@@ -2,19 +2,19 @@ import { Transfer, worker } from "workerpool";
 import type TransferType from "workerpool/types/transfer";
 
 import type { FeatureDataType, FeatureRangeData } from "src/colorizer/types";
-import { computeCorrelations } from "src/colorizer/utils/correlation";
 import { columnsToCsv, type CsvDataColumn } from "src/colorizer/utils/csv_utils";
 import { type LoadedData, loadFromJsonUrl, loadFromParquetUrl } from "src/colorizer/utils/data_load_utils";
+import { computeCorrelations } from "src/colorizer/utils/math_utils/correlation";
+import { constructAllTracksFromData } from "src/colorizer/utils/math_utils/input_data";
+import { calculateMotionDeltas } from "src/colorizer/utils/math_utils/motion_deltas";
 import {
   averageVectorFlowField,
   binAndSumFeatureVectors,
-  calculateMotionDeltas,
-  constructAllTracksFromData,
   filterVectorFlowFieldData,
   kernelSmoothVectorFlowField,
   make1dGaussianKernel,
   subsampleVectorFlowField,
-} from "src/colorizer/utils/math_utils";
+} from "src/colorizer/utils/math_utils/vector_flow_field";
 import { arrayToDataTextureInfo } from "src/colorizer/utils/texture_utils";
 
 async function loadUrlData(url: string, type: FeatureDataType): Promise<TransferType> {

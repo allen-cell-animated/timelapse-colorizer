@@ -8,30 +8,18 @@ import {
   CSV_COL_SEG_ID,
   CSV_COL_TIME,
   CSV_COL_TRACK,
-  MAX_FEATURE_CATEGORIES,
+  MAX_CACHED_BACKDROPS_BYTES,
+  MAX_CACHED_FRAME_BYTES,
 } from "src/colorizer/constants";
 import type { CsvDataColumn } from "src/colorizer/utils/csv_utils";
 
 import DataCache from "./DataCache";
-import type { IArrayLoader, ITextureImageLoader } from "./loaders/ILoader";
+import type { ITextureImageLoader } from "./loaders/ILoader";
 import ImageFrameLoader from "./loaders/ImageFrameLoader";
-import UrlArrayLoader from "./loaders/UrlArrayLoader";
-import { type IPathResolver, UrlPathResolver } from "./path_resolvers";
 import Track from "./Track";
-import {
-  type FeatureArrayType,
-  FeatureDataType,
-  type GlobalIdLookupInfo,
-  LoadErrorMessage,
-  LoadTroubleshooting,
-  type ReportWarningCallback,
-} from "./types";
-import { AnalyticsEvent, triggerAnalyticsEvent } from "./utils/analytics";
-import { buildFrameToGlobalIdLookup, formatAsBulletList, getKeyFromName } from "./utils/data_utils";
-import { type ManifestFile, type ManifestFileMetadata, updateManifestVersion } from "./utils/dataset_utils";
-import { padCentroidsTo3d } from "./utils/math_utils";
-import { packDataTexture } from "./utils/texture_utils";
-import * as urlUtils from "./utils/url_utils";
+import type { GlobalIdLookupInfo } from "./types";
+import { buildFrameToGlobalIdLookup } from "./utils/data_utils";
+import type { ManifestFileMetadata } from "./utils/dataset_utils";
 
 export const TRACK_FEATURE_KEY = "_track_";
 export const TIME_FEATURE_KEY = "_time_";
@@ -60,10 +48,14 @@ export type FeatureData = {
 
 type BackdropData = {
   name: string;
-  frames: string[];
+  frames: (string | null)[];
 };
 
 export type Backdrop3dData = {
+  /**
+   * Source for 3D data, resolved to http/https or blob URL. Expected to be a
+   * path to an OME-Zarr array.
+   */
   source: string;
   name: string;
   description?: string;
@@ -73,7 +65,10 @@ export type Backdrop3dData = {
 };
 
 export type Frames3dData = {
-  /** Source for 3D data, resolved to http/https URLs. Expected to be a path to an OME-Zarr array.*/
+  /**
+   * Source for 3D data, resolved to http/https or blob URL. Expected to be a
+   * path to an OME-Zarr array.
+   */
   source: string;
   /** Index of the segmentation channel in the source data. */
   segmentationChannel: number;
@@ -81,12 +76,29 @@ export type Frames3dData = {
   backdrops?: Backdrop3dData[];
 };
 
-type OpenOptions = Partial<{
-  manifestLoader: typeof urlUtils.fetchManifestJson;
-  onLoadStart?: () => void;
-  onLoadComplete?: () => void;
-  reportWarning?: ReportWarningCallback;
-}>;
+export type DatasetInputData = {
+  //// Metadata ////
+  manifestUrl: string;
+  metadata: ManifestFileMetadata;
+  //// Image sources ////
+  /** List of resolved (http/https or blob) URLs for frames in the dataset. */
+  frameFiles: (string | null)[];
+  /**
+   * Map of backdrop names to their data. Note that all backdrop paths must be
+   * resolved to http/https or blob URLs.
+   */
+  backdrops: Map<string, BackdropData>;
+  frames3d: Frames3dData;
+  frameResolution: Vector2;
+  //// Data arrays ////
+  features: Map<string, FeatureData>;
+  segIds: Uint32Array | null;
+  times: Uint32Array | null;
+  trackIds: Uint32Array | null;
+  centroids: Uint16Array | null;
+  bounds: Uint16Array | null;
+  outliers: Uint8Array | null;
+};
 
 const defaultMetadata: ManifestFileMetadata = {
   frameDims: {
@@ -98,22 +110,45 @@ const defaultMetadata: ManifestFileMetadata = {
   startTimeSeconds: 0,
 };
 
-const MAX_CACHED_FRAME_BYTES = 500_000_000; // 500 MB
-const MAX_CACHED_BACKDROPS_BYTES = 500_000_000; // 500 MB
-
+/**
+ * A data container for the image sources, features, and associated metadata for
+ * a dataset. Provides caching and convenience methods for data access.
+ */
 export default class Dataset {
+  //// Metadata ////
+  public readonly manifestUrl: string | null;
+  public readonly metadata: ManifestFileMetadata;
+
+  //// Image sources ////
   private frameLoader: ITextureImageLoader;
-  private frameFiles?: string[];
-  private frames: DataCache<number, Texture> | null;
+  private frameFiles: (string | null)[] | null;
+  private frames: DataCache<number, Texture>;
   private frameDimensions: Vector2 | null;
 
-  // TODO: validate frames 3D data
-  public frames3d?: Frames3dData;
+  private backdropLoader: ITextureImageLoader;
+  private backdropData: Map<string, BackdropData>;
+  private backdropFrames: DataCache<string, Texture>;
 
-  private segIdsFile?: string;
+  public frames3d: Frames3dData | null;
+
+  //// Data arrays ////
+  /** Ordered map from feature keys to feature data. */
+  private features: Map<string, FeatureData>;
+  public trackIds: Uint32Array | null;
+  public times: Uint32Array | null;
+
   /** Lookup from a global index of an object to the raw segmentation ID in the
    * frame/image where it appears. */
-  public segIds?: Uint32Array | null;
+  public segIds: Uint32Array | null;
+
+  public outliers: Uint8Array | null;
+  public centroids: Uint16Array | null;
+  public bounds: Uint16Array | null;
+
+  //// Cached Data ////
+  private cachedTracks: Map<number, Track | null>;
+  private maxTrackLength: number | null;
+  private maxTime: number;
 
   /**
    * Maps from a frame number to a lookup table used to get the global ID of a
@@ -131,148 +166,52 @@ export default class Dataset {
    *
    * See `GlobalIdLookupInfo` for more details.
    */
-  public frameToGlobalIdLookup: Map<number, GlobalIdLookupInfo> | null;
+  public readonly frameToGlobalIdLookup: Map<number, GlobalIdLookupInfo>;
 
-  private backdropLoader: ITextureImageLoader;
-  private backdropData: Map<string, BackdropData>;
-  private backdropFrames: DataCache<string, Texture> | null;
-
-  private arrayLoader: IArrayLoader;
-  private cleanupArrayLoaderOnDispose: boolean;
-  // Use map to enforce ordering
-  /** Ordered map from feature keys to feature data. */
-  private features: Map<string, FeatureData>;
-
-  private outlierFile?: string;
-  public outliers?: Uint8Array | null;
-
-  private tracksFile?: string;
-  private timesFile?: string;
-  public trackIds?: Uint32Array | null;
-  public times?: Uint32Array | null;
-  private cachedTracks: Map<number, Track | null>;
-  private maxTrackLength: number | null;
-
-  public centroidsFile?: string;
-  public centroids?: Uint16Array | null;
-
-  public boundsFile?: string;
-  public bounds?: Uint16Array | null;
-
-  public metadata: ManifestFileMetadata;
-
-  public baseUrl: string;
-  public manifestUrl: string;
-  private hasOpened: boolean;
-  private pathResolver: IPathResolver;
-
-  /**
-   * Constructs a new Dataset using the provided manifest path.
-   * @param manifestUrl Must be a path to a .json manifest file.
-   * @param frameLoader Optional.
-   * @param arrayLoader Optional.
-   */
   constructor(
-    manifestUrl: string,
-    options: { frameLoader?: ITextureImageLoader; arrayLoader?: IArrayLoader; pathResolver?: IPathResolver }
+    data: Partial<DatasetInputData>,
+    options: { frameLoader?: ITextureImageLoader; backdropLoader?: ITextureImageLoader } = {}
   ) {
-    this.manifestUrl = manifestUrl;
-    this.pathResolver = options.pathResolver ?? new UrlPathResolver();
+    this.manifestUrl = data.manifestUrl ?? null;
+    this.metadata = data.metadata ?? defaultMetadata;
 
-    this.baseUrl = urlUtils.formatPath(manifestUrl.substring(0, manifestUrl.lastIndexOf("/")));
-    this.hasOpened = false;
-
+    // Image sources
     this.frameLoader = options.frameLoader || new ImageFrameLoader(RGBAIntegerFormat);
-    this.frameFiles = [];
-    this.frames = null;
-    this.backdropFrames = null;
-    this.frameDimensions = null;
+    this.frames = new DataCache(MAX_CACHED_FRAME_BYTES);
+    this.frameFiles = data.frameFiles || null;
+    this.frameDimensions = data.frameResolution ?? null;
 
-    this.frameToGlobalIdLookup = null;
+    this.backdropLoader = options.backdropLoader || new ImageFrameLoader(RGBAFormat);
+    this.backdropFrames = new DataCache(MAX_CACHED_BACKDROPS_BYTES);
+    this.backdropData = data.backdrops || new Map<string, BackdropData>();
 
-    this.backdropLoader = options.frameLoader || new ImageFrameLoader(RGBAFormat);
-    this.backdropData = new Map();
+    this.frames3d = data.frames3d || null;
 
-    this.cleanupArrayLoaderOnDispose = !options.arrayLoader;
-    this.arrayLoader = options.arrayLoader || new UrlArrayLoader();
-    this.features = new Map();
+    // Data arrays
+    this.features = data.features || new Map<string, FeatureData>();
+    this.times = data.times || null;
+    this.trackIds = data.trackIds || null;
+    this.segIds = data.segIds || null;
+    this.centroids = data.centroids || null;
+    this.bounds = data.bounds || null;
+    this.outliers = data.outliers || null;
+
+    // Cached data
     this.cachedTracks = new Map();
     this.maxTrackLength = null;
-    this.metadata = defaultMetadata;
+    this.maxTime = this.times?.reduce((max, t) => Math.max(max, t), 0) ?? 0;
+
+    this.frameToGlobalIdLookup = buildFrameToGlobalIdLookup(
+      this.times ?? new Uint32Array(),
+      this.segIds ?? new Uint32Array(),
+      this.getTotalFrames()
+    );
 
     this.getSegmentationId = this.getSegmentationId.bind(this);
   }
 
-  public get frames2dPaths(): readonly string[] | undefined {
-    return this.frameFiles;
-  }
-
-  private resolveManifestPath = (url: string): string | null => {
-    return this.pathResolver.resolve("", url);
-  };
-
-  private resolvePath = (url: string): string | null => {
-    return this.pathResolver.resolve(this.baseUrl, url);
-  };
-
-  private parseFeatureType(
-    inputType: string | undefined,
-    defaultType: FeatureType = FeatureType.CONTINUOUS
-  ): FeatureType {
-    const isFeatureType = (inputType: string): inputType is FeatureType => {
-      return Object.values(FeatureType).includes(inputType as FeatureType);
-    };
-
-    inputType = inputType?.toLowerCase() || "";
-    return isFeatureType(inputType) ? inputType : defaultType;
-  }
-
-  /**
-   * Loads a feature from the dataset, fetching its data from the provided url.
-   * @returns A promise of an array tuple containing the feature key and its FeatureData.
-   */
-  private async loadFeature(metadata: ManifestFile["features"][number]): Promise<[string, FeatureData]> {
-    const name = metadata.name;
-    const key = metadata.key || getKeyFromName(name);
-    const url = this.resolvePath(metadata.data);
-    if (!url) {
-      throw new Error(`Failed to resolve URL for feature ${name}: '${metadata.data}'`);
-    }
-    const featureType = this.parseFeatureType(metadata.type);
-
-    const source = await this.arrayLoader.load(
-      url,
-      FeatureDataType.F32,
-      metadata.min ?? undefined,
-      metadata.max ?? undefined
-    );
-
-    const featureCategories = metadata?.categories;
-    // Validation
-    if (featureType === FeatureType.CATEGORICAL && !metadata?.categories) {
-      throw new Error(`Feature ${name} is categorical but no categories were provided.`);
-    }
-    if (featureCategories && featureCategories.length > MAX_FEATURE_CATEGORIES) {
-      throw new Error(
-        `Feature ${name} has too many categories (${featureCategories.length} > max ${MAX_FEATURE_CATEGORIES}).`
-      );
-    }
-
-    return [
-      key,
-      {
-        name,
-        key,
-        tex: source.getTexture(),
-        data: source.getBuffer(),
-        min: source.getMin(),
-        max: source.getMax(),
-        unit: metadata.unit || "",
-        type: featureType,
-        categories: featureCategories || null,
-        description: metadata.description || null,
-      },
-    ];
+  public get frames2dPaths(): readonly (string | null)[] | undefined {
+    return this.frameFiles ?? undefined;
   }
 
   public hasFeatureKey(key: string): boolean {
@@ -370,34 +309,11 @@ export default class Dataset {
   }
 
   public has2dFrames(): boolean {
-    return this.frameFiles !== undefined;
+    return this.frameFiles !== null || this.backdropData.size > 0;
   }
 
   public has3dFrames(): boolean {
-    return this.frames3d !== undefined;
-  }
-
-  /**
-   * Fetches and loads a data file as an array and returns its data as a TypedArray using the provided dataType.
-   * @param dataType The expected format of the data.
-   * @param fileUrl String url of the file to be loaded.
-   * @throws An error if the data cannot be loaded from the file.
-   * @returns Promise of a TypedArray loaded from the file. If `fileUrl` is undefined, returns null.
-   */
-  private async loadToBuffer<T extends FeatureDataType>(
-    dataType: T,
-    fileUrl?: string
-  ): Promise<FeatureArrayType[T] | null> {
-    if (!fileUrl) {
-      return null;
-    }
-
-    const url = this.resolvePath(fileUrl);
-    if (!url) {
-      throw new Error(`Failed to resolve path: '${fileUrl}'`);
-    }
-    const source = await this.arrayLoader.load(url, dataType);
-    return source.getBuffer();
+    return this.frames3d !== null;
   }
 
   public get numberOfFrames(): number {
@@ -410,15 +326,12 @@ export default class Dataset {
 
   public get numObjects(): number {
     const featureData = this.getFeatureData(this.featureKeys[0]);
-    if (!featureData) {
-      throw new Error("Dataset.numObjects: The first feature could not be loaded. Is the dataset manifest file valid?");
-    }
-    return featureData.data.length;
+    return featureData?.data.length ?? this.times?.length ?? this.segIds?.length ?? 0;
   }
 
   /** Loads a single frame from the dataset */
   public async loadFrame(index: number): Promise<Texture | undefined> {
-    if (index < 0 || this.frameFiles === undefined || index >= this.frameFiles.length) {
+    if (index < 0 || this.frameFiles === null || index >= this.frameFiles.length) {
       return undefined;
     }
 
@@ -428,20 +341,15 @@ export default class Dataset {
       return cachedFrame;
     }
 
-    // Allow for undefined or null frame files in the manifest
-    if (this.frameFiles[index] === undefined || this.frameFiles[index] === null) {
-      return undefined;
-    }
-
-    const fullUrl = this.resolvePath(this.frameFiles[index]);
+    const fullUrl = this.frameFiles[index];
     if (!fullUrl) {
-      throw new Error(`Failed to resolve path for frame ${index}: '${this.frameFiles[index]}'`);
+      throw new Error(`Failed to resolve path for frame ${index}: '${fullUrl}'`);
     }
     const loadedFrame = await this.frameLoader.load(fullUrl);
     this.frameDimensions = new Vector2(loadedFrame.image.width, loadedFrame.image.height);
     const frameSizeBytes = loadedFrame.image.width * loadedFrame.image.height * 4;
     // Note that, due to image compression, images may take up much less space in memory than their raw size.
-    this.frames?.insert(index, loadedFrame, frameSizeBytes);
+    this.frames.insert(index, loadedFrame, frameSizeBytes);
     return loadedFrame;
   }
 
@@ -461,26 +369,24 @@ export default class Dataset {
   }
 
   public async loadBackdrop(key: string, index: number): Promise<Texture | undefined> {
-    // TODO: Implement caching
     const cacheKey = `${key}-${index}`;
-    const cachedFrame = this.backdropFrames?.get(cacheKey);
+    const cachedFrame = this.backdropFrames.get(cacheKey);
     if (cachedFrame) {
       return cachedFrame;
     }
 
-    const frames = this.backdropData.get(key)?.frames;
-    // TODO: Wrapping or clamping?
-    if (!frames || index < 0 || index >= frames.length) {
+    const backdropFrames = this.backdropData.get(key)?.frames;
+    if (!backdropFrames || index < 0 || index >= backdropFrames.length) {
       return undefined;
     }
 
-    const fullUrl = this.resolvePath(frames[index]);
+    const fullUrl = backdropFrames[index];
     if (!fullUrl) {
-      throw new Error(`Failed to resolve path for backdrop '${key}' at index ${index}: '${frames[index]}'`);
+      throw new Error(`Failed to resolve path for backdrop '${key}' at index ${index}: '${backdropFrames[index]}'`);
     }
-    const loadedFrame = await this.backdropLoader.load(fullUrl);
-    this.backdropFrames?.insert(cacheKey, loadedFrame);
-    return loadedFrame;
+    const loadedBackdrop = await this.backdropLoader.load(fullUrl);
+    this.backdropFrames.insert(cacheKey, loadedBackdrop);
+    return loadedBackdrop;
   }
 
   /**
@@ -491,344 +397,32 @@ export default class Dataset {
     return this.frameDimensions || new Vector2(1, 1);
   }
 
-  /** Adds auto-generated features for time and track to this Dataset. */
-  private addTimeAndTrackFeatures(): void {
-    if (this.trackIds && !this.features.has(TRACK_FEATURE_KEY)) {
-      const trackData = new Float32Array(this.trackIds);
-      this.features.set(TRACK_FEATURE_KEY, {
-        name: "Track ID",
-        key: TRACK_FEATURE_KEY,
-        data: this.trackIds,
-        tex: packDataTexture(trackData, FeatureDataType.F32),
-        min: 0,
-        max: this.trackIds.reduce((max, id) => Math.max(max, id), 0),
-        unit: "",
-        type: FeatureType.DISCRETE,
-        categories: null,
-        description: "Track ID of the object. This feature was added by the viewer from provided data.",
-      });
-    }
-
-    if (this.times && !this.features.has(TIME_FEATURE_KEY)) {
-      const timeData = new Float32Array(this.times);
-      this.features.set(TIME_FEATURE_KEY, {
-        name: "Time (frames)",
-        key: TIME_FEATURE_KEY,
-        data: this.times,
-        tex: packDataTexture(timeData, FeatureDataType.F32),
-        min: 0,
-        max: this.times.reduce((max, id) => Math.max(max, id), 0),
-        unit: "",
-        type: FeatureType.CONTINUOUS,
-        categories: null,
-        description: "Frame number where the object appears. This feature was added by the viewer from provided data.",
-      });
-    }
-  }
-
-  private addCentroidFeatures(): void {
-    const centroidFeatureKeys = [CENTROID_X_FEATURE_KEY, CENTROID_Y_FEATURE_KEY, CENTROID_Z_FEATURE_KEY];
-    const axes = ["X", "Y", "Z"];
-    if (!this.centroids) {
-      return;
-    }
-    // TODO: The handling for centroid scaling is not consistent for 2D and 3D
-    // datasets. Currently, 2D datasets must provide centroids in pixels, while
-    // 3D datasets must provide them in physical units. If both 3D and 2D frame
-    // data is present, centroids would be read as being pixel units, which
-    // cause centroids to be scaled incorrectly in 3D. Add a flag to indicate
-    // whether centroids are in physical or pixel units.
-    const metadataDims = this.metadata.frameDims;
-    const hasMetadataDims = metadataDims && metadataDims.width && metadataDims.height;
-    const physicalDims = hasMetadataDims ? [metadataDims.width, metadataDims.height, 1] : [1, 1, 1];
-    const pixelDims = this.frameDimensions ? [this.frameDimensions.x, this.frameDimensions.y, 1] : physicalDims;
-
-    for (let i = 0; i < centroidFeatureKeys.length; i++) {
-      const key = centroidFeatureKeys[i];
-      if (this.features.has(key)) {
-        continue;
-      }
-
-      const rawData = this.centroids.filter((_, index) => index % 3 === i);
-      const data = new Float32Array(rawData);
-      if (this.frameDimensions) {
-        // If provided, normalize centroid coordinates to physical units.
-        const physicalDim = physicalDims[i];
-        const pixelDim = pixelDims[i];
-        for (let j = 0; j < data.length; j++) {
-          data[j] = (data[j] / pixelDim) * physicalDim;
-        }
-      }
-
-      const axis = axes[i];
-      const min = 0;
-      const dataMax = data.reduce((max, value) => Math.max(max, value), -Infinity);
-      const max = hasMetadataDims ? physicalDims[i] : dataMax;
-      const tex = packDataTexture(data, FeatureDataType.F32);
-      const description = `Centroid ${axis} coordinate, in pixels/voxels. This feature was added by the viewer from provided data.`;
-      this.features.set(key, {
-        name: "Centroid " + axis,
-        key,
-        data,
-        tex,
-        min,
-        max,
-        unit: metadataDims?.units || "",
-        type: FeatureType.DISCRETE,
-        categories: null,
-        description,
-      });
-    }
-  }
-
-  private resolveAndValidateFrames3d(data: ManifestFile["frames3d"], options: OpenOptions): Frames3dData | undefined {
-    if (!data) {
-      return undefined;
-    }
-    const frameSource = this.resolvePath(data.source);
-    const backdrops: Backdrop3dData[] = [];
-    if (!frameSource) {
-      // This will only happen if using a file path resolver, if this file does
-      // not exist in a ZIP file.
-
-      // TODO: This will fail for Zarrs, which are directories and not files, so
-      // `resolvePath` will return `null`. Even if `resolvePath` did handle
-      // directories, Zarrs index from the directory root, which is provided as
-      // a Object URL. Adding additional paths to the end of an Object URL (e.g.
-      // TCZYX specifiers for zarrs, like `/0/0/0`) does not result in a working
-      // URL. This means there is no way to make the current path resolver work
-      // without overriding `fetch` in dependency libraries (vole-core).
-      throw new Error(
-        `Failed to resolve path for 3D frame source '${data.source}'. ${LoadTroubleshooting.CHECK_ZIP_ZARR_DATA}`
-      );
-    }
-    // Validate backdrops
-    if (data.backdrops) {
-      const failedBackdrops: Backdrop3dData[] = [];
-      for (const backdrop of data.backdrops) {
-        const backdropSource = this.resolvePath(backdrop.source);
-        if (!backdropSource) {
-          failedBackdrops.push({ channelIndex: 0, ...backdrop });
-          continue;
-        }
-        backdrops.push({
-          ...backdrop,
-          channelIndex: backdrop.channelIndex ?? 0,
-          source: backdropSource,
-        });
-      }
-      if (failedBackdrops.length > 0) {
-        options.reportWarning?.(
-          "One or more 3D backdrop sources could not be resolved to files, and will not be shown.",
-          [
-            "The following backdrop source(s) could not be resolved:",
-            ...failedBackdrops.map((b) => `- ${b.source} (${b.name})`),
-            LoadTroubleshooting.CHECK_ZIP_ZARR_DATA,
-          ]
-        );
-      }
-    }
-    return {
-      source: frameSource,
-      segmentationChannel: data.segmentationChannel ?? 0,
-      totalFrames: data.totalFrames ?? 0,
-      backdrops,
-    };
-  }
-
-  /**
-   * Opens the dataset and loads all necessary files from the manifest.
-   * @param options Configuration options for the dataset loader.
-   * - `manifestLoader` The function used to load the manifest JSON data. If undefined, uses a default fetch method.
-   * - `onLoadStart` Called once for each data file (other than the manifest) that starts an async load process.
-   * - `onLoadComplete` Called once when each data file finishes loading.
-   * - `reportWarning` Called with a string or array of strings to report warnings to the user. These are non-fatal errors.
-   * @returns A Promise that resolves when loading completes.
-   */
-  public async open(options: OpenOptions = {}): Promise<void> {
-    if (this.hasOpened) {
-      return;
-    }
-    if (!options.manifestLoader) {
-      options.manifestLoader = urlUtils.fetchManifestJson;
-    }
-
-    const startTime = new Date();
-
-    const resolvedManifestUrl = this.resolveManifestPath(this.manifestUrl);
-    if (resolvedManifestUrl === null) {
-      // TODO: Currently, only the FilePathResolver (used for ZIP files) can
-      // return `null` when resolving paths, which indicates that a file does
-      // not exist. If support for loading from other sources (local folders,
-      // etc.) is added, Dataset will need to store metadata about the source.
-      throw new Error(`No '${this.manifestUrl}' was found. ${LoadTroubleshooting.CHECK_ZIP_FORMAT_MANIFEST}`);
-    }
-    const manifest = updateManifestVersion(await options.manifestLoader(resolvedManifestUrl));
-
-    this.frameFiles = manifest.frames;
-    this.frames3d = this.resolveAndValidateFrames3d(manifest.frames3d, options);
-    this.outlierFile = manifest.outliers;
-    this.metadata = { ...defaultMetadata, ...manifest.metadata };
-
-    this.tracksFile = manifest.tracks;
-    this.timesFile = manifest.times;
-    this.centroidsFile = manifest.centroids;
-    this.boundsFile = manifest.bounds;
-    this.segIdsFile = manifest.segIds;
-
-    if (manifest.backdrops && manifest.frames) {
-      for (const { name, key, frames } of manifest.backdrops) {
-        this.backdropData.set(key, { name, frames });
-        if (frames.length !== this.frameFiles?.length || 0) {
-          throw new Error(
-            `Number of frames (${this.frameFiles?.length}) does not match number of images (${frames.length}) for backdrop '${key}'. ` +
-              ` If you are a dataset author, please ensure that the number of frames in the manifest matches the number of images for each backdrop.`
-          );
-        }
-      }
-    }
-
-    this.frames = new DataCache(MAX_CACHED_FRAME_BYTES);
-    this.backdropFrames = new DataCache(MAX_CACHED_BACKDROPS_BYTES);
-
-    // Wrap an async operation and report progress when it starts + completes
-    const reportLoadProgress = async <T>(promise: Promise<T>): Promise<T> => {
-      options.onLoadStart?.();
-      return promise.then((result) => {
-        options.onLoadComplete?.();
-        return result;
-      });
-    };
-
-    // Load feature data
-    if (manifest.features.length === 0) {
-      throw new Error(LoadErrorMessage.MANIFEST_HAS_NO_FEATURES);
-    }
-    const featuresPromises: Promise<[string, FeatureData]>[] = Array.from(manifest.features).map((data) =>
-      reportLoadProgress(this.loadFeature(data))
-    );
-
-    const result = await Promise.allSettled([
-      reportLoadProgress(this.loadToBuffer(FeatureDataType.U8, this.outlierFile)),
-      reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, this.tracksFile)),
-      reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, this.timesFile)),
-      reportLoadProgress(this.loadToBuffer(FeatureDataType.U16, this.centroidsFile)),
-      reportLoadProgress(this.loadToBuffer(FeatureDataType.U16, this.boundsFile)),
-      reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, this.segIdsFile)),
-      reportLoadProgress(this.loadFrame(0)),
-      ...featuresPromises,
-    ]);
-    const [outliers, tracks, times, centroids, bounds, frameIdOffsets, _loadedFrame, ...featureResults] = result;
-
-    const unloadableDataFiles: string[] = [];
-    function makeLoadFailedCallback(fileType: string, url?: string): (reason: any) => void {
-      return (reason: any) => {
-        console.warn(`${fileType} data could not be loaded: ${reason}`);
-        unloadableDataFiles.push(`${fileType}: '${url || "N/A"}'`);
-      };
-    }
-
-    this.outliers = urlUtils.getPromiseValue(outliers, makeLoadFailedCallback("Outliers", this.outlierFile));
-    this.trackIds = urlUtils.getPromiseValue(tracks, makeLoadFailedCallback("Tracks", this.tracksFile));
-    this.times = urlUtils.getPromiseValue(times, makeLoadFailedCallback("Times", this.timesFile));
-    this.centroids = urlUtils.getPromiseValue(centroids, makeLoadFailedCallback("Centroids", this.centroidsFile));
-    this.bounds = urlUtils.getPromiseValue(bounds, makeLoadFailedCallback("Bounds", this.boundsFile));
-    this.segIds = urlUtils.getPromiseValue(frameIdOffsets, makeLoadFailedCallback("Segmentation IDs", this.segIdsFile));
-
-    if (unloadableDataFiles.length > 0) {
-      // Report warning of all the files that couldn't be loaded and their associated errors.
-      options.reportWarning?.("Some data files failed to load.", [
-        "The following data file(s) failed to load, which may cause the viewer to behave unexpectedly:",
-        ...unloadableDataFiles.map((fileType) => ` - ${fileType}`),
-        LoadTroubleshooting.CHECK_FILE_OR_NETWORK,
-      ]);
-    }
-
-    // Keep original sorting order of features by inserting in promise order.
-    featureResults.forEach((result, index) => {
-      const onFeatureLoadFailed = (reason: any): void => console.warn(`Feature ${index}: `, reason);
-      const featureValue = urlUtils.getPromiseValue(result, onFeatureLoadFailed);
-      if (featureValue) {
-        const [key, data] = featureValue;
-        this.features.set(key, data);
-      }
-    });
-
-    if (this.features.size !== manifest.features.length) {
-      // Report the names of all features that could not be loaded.
-      const loadedFeatureNames = new Set(Array.from(this.features.values()).map((f) => f.name));
-      const missingFeatureNames = manifest.features.filter((f) => !loadedFeatureNames.has(f.name)).map((f) => f.name);
-
-      options.reportWarning?.("Some features failed to load.", [
-        "The following feature(s) could not be loaded and will not be shown: ",
-        ...formatAsBulletList(missingFeatureNames, 5),
-        LoadTroubleshooting.CHECK_FILE_OR_NETWORK,
-      ]);
-    }
-
-    // Construct default array of segmentation IDs if not provided in the manifest.
-    if (!this.segIds) {
-      // Construct default segIds array (0, 1, 2, ...)
-      this.segIds = new Uint32Array(this.numObjects);
-      for (let i = 0; i < this.numObjects; i++) {
-        this.segIds[i] = i + 1;
-      }
-    }
-
-    if (this.times) {
-      this.frameToGlobalIdLookup = buildFrameToGlobalIdLookup(this.times, this.segIds, this.getTotalFrames());
-    }
-
-    // Fixup 2D centroids to 3D
-    if (this.centroids) {
-      this.centroids = padCentroidsTo3d(this.centroids, this.numObjects);
-    }
-
-    this.addCentroidFeatures();
-    this.addTimeAndTrackFeatures();
-
-    // Analytics reporting
-    triggerAnalyticsEvent(AnalyticsEvent.DATASET_LOAD, {
-      datasetWriterVersion: this.metadata.writerVersion || "N/A",
-      datasetTotalObjects: this.numObjects,
-      datasetFeatureCount: this.features.size,
-      datasetFrameCount: this.numberOfFrames,
-      datasetLoadTimeMs: new Date().getTime() - startTime.getTime(),
-    });
-
-    this.hasOpened = true;
-    // TODO: Pre-process feature data to handle outlier values by interpolating between known good values (#21)
-  }
-
   /**
    * Frees the GPU resources held by this dataset, and marks internal data
    * structures for garbage collection.
    */
   public dispose(): void {
-    this.frames?.dispose();
-    this.backdropFrames?.dispose();
-    // Cleanup array loader if it was created in the constructor
-    if (this.cleanupArrayLoaderOnDispose) {
-      this.arrayLoader.dispose();
-    }
+    // Image sources
+    this.frames.dispose();
+    this.backdropFrames.dispose();
+    this.backdropData.clear();
+    this.frameFiles = null;
+    this.frames3d = null;
+    // Data arrays
     this.features.forEach((feature) => {
       feature.data = new Float32Array(0);
       feature.tex.dispose();
     });
     this.features.clear();
-    this.cachedTracks.clear();
-    this.frameToGlobalIdLookup?.clear();
     this.bounds = null;
     this.centroids = null;
     this.outliers = null;
     this.segIds = null;
     this.times = null;
     this.trackIds = null;
-    this.backdropData.clear();
-    this.frameFiles = undefined;
-    this.backdropFrames = null;
-    this.frames = null;
-    this.frames3d = undefined;
+    // Cached data
+    this.cachedTracks.clear();
+    this.frameToGlobalIdLookup?.clear();
   }
 
   /** get frame index of a given cell id */
@@ -836,12 +430,19 @@ export default class Dataset {
     return this.times?.[index] || 0;
   }
 
-  public getTotalFrames(): number {
+  private getTotalFrames(): number {
     if (this.has2dFrames()) {
-      return this.frameFiles?.length ?? 0;
-    } else {
-      return this.frames3d?.totalFrames ?? 0;
+      const frameFilesLength = this.frameFiles?.length;
+      const firstBackdropFramesLength = this.backdropData.values().next().value?.frames.length;
+      if (frameFilesLength !== undefined) {
+        return frameFilesLength;
+      } else if (firstBackdropFramesLength !== undefined) {
+        return firstBackdropFramesLength;
+      }
+    } else if (this.has3dFrames()) {
+      return this.frames3d!.totalFrames;
     }
+    return this.maxTime + 1;
   }
 
   public isValidFrameIndex(index: number): boolean {
