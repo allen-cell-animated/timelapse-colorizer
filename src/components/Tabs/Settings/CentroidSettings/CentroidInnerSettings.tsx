@@ -1,5 +1,5 @@
 import { Tooltip } from "antd";
-import React, { type PropsWithChildren, type ReactElement } from "react";
+import React, { type ReactElement } from "react";
 
 import { CentroidColorMode, ViewMode } from "src/colorizer";
 import DropdownWithColorPicker from "src/components/Dropdowns/DropdownWithColorPicker";
@@ -37,7 +37,7 @@ const CENTROID_COLOR_MODE_ITEMS = [
   { value: CentroidColorMode.USE_CUSTOM_COLOR.toString(), label: "Use color" },
 ] as const satisfies SelectItem[];
 
-export default function CentroidInnerSettings(inputProps: PropsWithChildren<CentroidInnerSettingsProps>): ReactElement {
+export default function CentroidInnerSettings(inputProps: CentroidInnerSettingsProps): ReactElement {
   const props = { ...defaultProps, ...inputProps };
 
   const showCentroids = useViewerStateStore((state) => state.showCentroids);
