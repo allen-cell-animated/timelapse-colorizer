@@ -499,7 +499,7 @@ export const loadConfigSliceFromParams = (slice: ConfigSlice, params: URLSearchP
     slice.setCentroidColorMode(centroidColorModeParam);
   }
   const centroidOpacityParam = decodeFloat(params.get(UrlParam.CENTROID_OPACITY));
-  if (centroidOpacityParam !== undefined) {
+  if (centroidOpacityParam !== undefined && Number.isFinite(centroidOpacityParam)) {
     slice.setCentroidOpacity(centroidOpacityParam);
   }
 

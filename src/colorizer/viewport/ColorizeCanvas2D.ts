@@ -664,11 +664,12 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
       this.forceFrameReload();
     }
     if (hasPropertyChanged(params, prevParams, ["backdropVisible", "objectOpacity"])) {
-      if (params.backdropVisible) {
-        this.setUniform("objectOpacity", clamp(params.objectOpacity, 0, 100) / 100);
-      } else {
-        this.setUniform("objectOpacity", 1.0);
-      }
+      const objectOpacity = params.backdropVisible ? clamp(params.objectOpacity, 0, 100) / 100 : 1.0;
+      this.setUniform("objectOpacity", objectOpacity);
+    }
+    if (hasPropertyChanged(params, prevParams, ["backdropVisible", "centroidOpacity"])) {
+      const centroidOpacity = params.backdropVisible ? clamp(params.centroidOpacity, 0, 100) / 100 : 1.0;
+      this.setUniform("pointsOpacity", centroidOpacity);
     }
     this.setUniform("backdropSaturation", clamp(params.backdropSaturation, 0, 100) / 100);
     this.setUniform("backdropBrightness", clamp(params.backdropBrightness, 0, 200) / 100);
@@ -677,9 +678,6 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     if (hasPropertyChanged(params, prevParams, ["centroidColor", "centroidColorMode"])) {
       this.setUniform("pointsColorMode", params.centroidColorMode);
       this.setUniform("pointsColor", params.centroidColor.clone().convertLinearToSRGB());
-    }
-    if (hasPropertyChanged(params, prevParams, ["centroidOpacity"])) {
-      this.setUniform("pointsOpacity", clamp(params.centroidOpacity, 0, 100) / 100);
     }
 
     // Update color ramp + palette
