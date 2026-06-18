@@ -5,6 +5,7 @@ import type { Color } from "three";
 import { DrawMode, KNOWN_CATEGORICAL_PALETTES, SelectionOutlineColorMode } from "src/colorizer";
 import DropdownWithColorPicker from "src/components/Dropdowns/DropdownWithColorPicker";
 import type { SelectItem } from "src/components/Dropdowns/types";
+import OpacitySlider from "src/components/Inputs/OpacitySlider";
 import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
 import ToggleCollapse from "src/components/ToggleCollapse";
 import { useViewerStateStore } from "src/state";
@@ -16,6 +17,7 @@ const enum ObjectSettingsHtmlIds {
   EDGE_COLOR_SELECT = "edge-color-select",
   OUTLIER_OBJECT_COLOR_SELECT = "outlier-object-color-select",
   OUT_OF_RANGE_OBJECT_COLOR_SELECT = "out-of-range-object-color-select",
+  OBJECT_OPACITY_SLIDER = "object-opacity-slider",
 }
 
 const DRAW_MODE_ITEMS = [
@@ -71,6 +73,8 @@ export default function ObjectSettings(): ReactElement {
   const setOutOfRangeDrawSettings = useViewerStateStore((state) => state.setOutOfRangeDrawSettings);
   const setShowSegmentations = useViewerStateStore((state) => state.setShowSegmentations);
   const showSegmentations = useViewerStateStore((state) => state.showSegmentations);
+  const objectOpacity = useViewerStateStore((state) => state.objectOpacity);
+  const setObjectOpacity = useViewerStateStore((state) => state.setObjectOpacity);
 
   return (
     <ToggleCollapse
@@ -168,6 +172,13 @@ export default function ObjectSettings(): ReactElement {
             showColorPicker={outlierDrawSettings.mode === DrawMode.USE_COLOR}
           />
         </SettingsItem>
+        <OpacitySlider
+          id={ObjectSettingsHtmlIds.OBJECT_OPACITY_SLIDER}
+          value={objectOpacity}
+          onChange={setObjectOpacity}
+          type="segmentation"
+          sliderWidth={"220px"}
+        />
       </SettingsContainer>
     </ToggleCollapse>
   );
