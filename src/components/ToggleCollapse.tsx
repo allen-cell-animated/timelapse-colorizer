@@ -25,9 +25,11 @@ type ToggleCollapseProps = {
   /**
    * If defined, includes a toggle switch (or checkbox) in the header row with
    * this checked state. Changes to this state will also trigger collapse/expand
-   * behavior.
+   * behavior, unless `collapseOnToggle` is set to `false`.
    */
   toggleChecked?: boolean;
+  /** Whether the collapse should be triggered when the toggle changes state.
+   * `true` by default. */
   collapseOnToggle?: boolean;
   toggleType?: "toggle" | "checkbox";
   onToggleChange?: (checked: boolean) => void;
