@@ -42,9 +42,7 @@ export default function OpacitySlider(inputProps: OpacitySliderProps): ReactElem
   return (
     <SettingsItem label="Opacity" htmlFor={htmlId} style={{ marginBottom: 14 }}>
       <Tooltip
-        title={`${tooltipLabel} opacity is only applied when ${
-          viewMode === ViewMode.VIEW_3D ? "channels" : "backdrops"
-        } are enabled`}
+        title={`${tooltipLabel} opacity is only applied when backdrops are enabled`}
         open={enableOpacityControl ? false : undefined}
         placement="top"
       >
