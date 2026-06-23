@@ -112,7 +112,6 @@ export default function CentroidInnerSettings(inputProps: CentroidInnerSettingsP
                 minSliderBound={0}
                 maxSliderBound={100}
                 marks={[50]}
-                // showInput={false}
                 numberFormatter={(value) => value + "%"}
               />
             </div>
