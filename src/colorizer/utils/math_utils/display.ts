@@ -1,4 +1,4 @@
-import { Vector2, Vector3 } from "three";
+import { Vector2, type Vector3 } from "three";
 
 /**
  * Calculates the size of a frame in pixels, fit within a canvas with known
