@@ -207,12 +207,22 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     this.canvas.height = Math.round(height * pixelRatio);
   }
 
-  private getUpdatedColorRamp(params: RenderCanvasStateParams, isCategorical: boolean): ColorRamp {
+  /**
+   * Returns a new color map for colorization, based on the current feature
+   * type, with opacity applied.
+   */
+  private getColorizeColorRamp(params: RenderCanvasStateParams, isCategorical: boolean): ColorRamp {
     const areChannelsVisible = areAnyChannelsVisible(params.channelSettings);
     const isSegmentationVisible = params.showSegmentations;
 
-    let opacity = isSegmentationVisible ? params.objectOpacity : 0;
-    if (!areChannelsVisible) {
+    let opacity;
+    if (areChannelsVisible) {
+      if (isSegmentationVisible) {
+        opacity = params.objectOpacity;
+      } else {
+        opacity = 0;
+      }
+    } else {
       opacity = 100;
     }
     const ramp = isCategorical ? params.categoricalPaletteRamp : params.colorRamp;
@@ -234,7 +244,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
         if (this.colorRamp) {
           this.colorRamp.dispose();
         }
-        this.colorRamp = this.getUpdatedColorRamp(this.params, isCategorical);
+        this.colorRamp = this.getColorizeColorRamp(this.params, isCategorical);
 
         const range = isCategorical ? [0, MAX_FEATURE_CATEGORIES - 1] : this.params.colorRampRange;
         const feature: ColorizeFeature = {
