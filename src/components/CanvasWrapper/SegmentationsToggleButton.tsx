@@ -40,7 +40,7 @@ export default function SegmentationsToggleButton(): ReactElement {
       visible={showSegmentations}
       setVisible={setShowSegmentations}
       configMenuContents={configMenuContents}
-      settingsLinkText="Viewer settings > Objects"
+      settingsLinkText="Viewer settings > Segmentations"
       visibleIcon={<ImageIconSVG />}
       hiddenIcon={<ImageSlashIconSVG />}
     />
