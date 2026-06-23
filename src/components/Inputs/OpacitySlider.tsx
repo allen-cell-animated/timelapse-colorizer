@@ -52,11 +52,13 @@ export default function OpacitySlider(inputProps: OpacitySliderProps): ReactElem
             id={htmlId}
             disabled={props.disabled || !enableOpacityControl}
             type="value"
+            minSliderBound={0}
+            maxSliderBound={100}
+            minInputBound={0}
+            maxInputBound={100}
             value={props.value}
             onChange={props.onChange}
             step={1}
-            minInputBound={0}
-            maxInputBound={100}
             marks={[50]}
             showInput={true}
             numberFormatter={(value) => value + "%"}
