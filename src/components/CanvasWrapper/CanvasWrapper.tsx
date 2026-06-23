@@ -125,6 +125,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const showScaleBar = useViewerStateStore((state) => state.showScaleBar);
   const showTimestamp = useViewerStateStore((state) => state.showTimestamp);
   const frameLoadResult = useViewerStateStore((state) => state.frameLoadResult);
+  const showSegmentations = useViewerStateStore((state) => state.showSegmentations);
+  const showCentroids = useViewerStateStore((state) => state.showCentroids);
 
   const isAnnotationModeEnabled = props.annotationState.isAnnotationModeEnabled;
 
@@ -308,6 +310,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     (offsetX: number, offsetY: number): void => {
       if (isMouseDragging.current) {
         canv.domElement.style.cursor = "move";
+      } else if (!showSegmentations && !showCentroids) {
+        canv.domElement.style.cursor = "not-allowed";
       } else if (props.annotationState.isAnnotationModeEnabled) {
         // Check if mouse is over an object, and if it's labeled with an editable label.
         // If so, show the edit cursor.
@@ -339,6 +343,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     [
       isMouseDragging,
       datasetKey,
+      showCentroids,
+      showSegmentations,
       props.annotationState.isAnnotationModeEnabled,
       props.annotationState.data,
       props.annotationState.selectionMode,
@@ -384,6 +390,10 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     async (event: MouseEvent): Promise<void> => {
       setLastClickPosition([event.offsetX, event.offsetY]);
       updateCanvasCursor(event.offsetX, event.offsetY);
+      if (!showSegmentations && !showCentroids) {
+        return;
+      }
+
       const info = canv.getIdAtPixel(event.offsetX, event.offsetY);
       props.onClickId(info);
 
@@ -397,7 +407,17 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         handleBackgroundClicked();
       }
     },
-    [canv, dataset, props.onClickId, clearTracks, handleObjectClicked, handleBackgroundClicked]
+    [
+      canv,
+      dataset,
+      props.onClickId,
+      showSegmentations,
+      showCentroids,
+      clearTracks,
+      updateCanvasCursor,
+      handleObjectClicked,
+      handleBackgroundClicked,
+    ]
   );
 
   // Mouse event handlers

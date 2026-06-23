@@ -1,11 +1,20 @@
 import { Transfer, worker } from "workerpool";
 import type TransferType from "workerpool/types/transfer";
 
-import type { FeatureDataType } from "src/colorizer/types";
-import { computeCorrelations } from "src/colorizer/utils/correlation";
+import type { FeatureDataType, FeatureRangeData } from "src/colorizer/types";
 import { columnsToCsv, type CsvDataColumn } from "src/colorizer/utils/csv_utils";
 import { type LoadedData, loadFromJsonUrl, loadFromParquetUrl } from "src/colorizer/utils/data_load_utils";
-import { calculateMotionDeltas, constructAllTracksFromData } from "src/colorizer/utils/math_utils";
+import { computeCorrelations } from "src/colorizer/utils/math_utils/correlation";
+import { constructAllTracksFromData } from "src/colorizer/utils/math_utils/input_data";
+import { calculateMotionDeltas } from "src/colorizer/utils/math_utils/motion_deltas";
+import {
+  averageVectorFlowField,
+  binAndSumFeatureVectors,
+  filterVectorFlowFieldData,
+  kernelSmoothVectorFlowField,
+  make1dGaussianKernel,
+  subsampleVectorFlowField,
+} from "src/colorizer/utils/math_utils/vector_flow_field";
 import { arrayToDataTextureInfo } from "src/colorizer/utils/texture_utils";
 
 async function loadUrlData(url: string, type: FeatureDataType): Promise<TransferType> {
@@ -53,6 +62,73 @@ async function getMotionDeltas(
   return new Transfer(motionDeltas, [motionDeltas.buffer]);
 }
 
+async function getVectorFlowField(
+  trackIds: Uint32Array,
+  times: Uint32Array,
+  xFeature: FeatureRangeData,
+  yFeature: FeatureRangeData,
+  zFeature: FeatureRangeData,
+  inRangeLUT?: Uint8Array,
+  outliers?: Uint8Array,
+  gaussianBandwidth?: number,
+  subsamplingRate?: number
+): Promise<TransferType> {
+  const tracks = constructAllTracksFromData(trackIds, times);
+  const vectorSumData = binAndSumFeatureVectors(
+    tracks,
+    xFeature.data,
+    yFeature.data,
+    zFeature.data,
+    xFeature.range,
+    yFeature.range,
+    zFeature.range,
+    [xFeature.bins, yFeature.bins, zFeature.bins],
+    inRangeLUT,
+    outliers
+  );
+
+  let vectorFlowFieldData;
+  if (gaussianBandwidth !== undefined && gaussianBandwidth > 0) {
+    // Approximate Nadaraya-Watson estimator using Gaussian kernel to smooth
+    // binned vectors. See https://en.wikipedia.org/wiki/Kernel_regression.
+    const getKernelSize = (nbins: number): number => Math.ceil(gaussianBandwidth * nbins) * 4 + 1;
+
+    // Bandwidth is a fraction of the number of bins
+    const kernelX = make1dGaussianKernel(getKernelSize(xFeature.bins), gaussianBandwidth * xFeature.bins);
+    const kernelY = make1dGaussianKernel(getKernelSize(yFeature.bins), gaussianBandwidth * yFeature.bins);
+    const kernelZ = make1dGaussianKernel(getKernelSize(zFeature.bins), gaussianBandwidth * zFeature.bins);
+
+    vectorFlowFieldData = kernelSmoothVectorFlowField(
+      vectorSumData,
+      [xFeature.bins, yFeature.bins, zFeature.bins],
+      kernelX,
+      kernelY,
+      kernelZ
+    );
+  } else {
+    vectorFlowFieldData = averageVectorFlowField(vectorSumData);
+  }
+
+  if (subsamplingRate !== undefined && subsamplingRate > 1) {
+    vectorFlowFieldData = subsampleVectorFlowField(
+      vectorFlowFieldData,
+      [xFeature.bins, yFeature.bins, zFeature.bins],
+      subsamplingRate
+    );
+  }
+  vectorFlowFieldData = filterVectorFlowFieldData(vectorFlowFieldData);
+
+  return new Transfer(vectorFlowFieldData, [
+    vectorFlowFieldData.xPos.buffer,
+    vectorFlowFieldData.yPos.buffer,
+    vectorFlowFieldData.zPos.buffer,
+    vectorFlowFieldData.xData.buffer,
+    vectorFlowFieldData.yData.buffer,
+    vectorFlowFieldData.zData.buffer,
+    vectorFlowFieldData.count.buffer,
+  ]);
+}
+
 async function getCsvString(columns: CsvDataColumn[], delimiter: string = ","): Promise<string> {
   const csvString = columnsToCsv(columns, delimiter);
   // Note: This could be converted to an array and transferred if there is a
@@ -63,6 +139,7 @@ async function getCsvString(columns: CsvDataColumn[], delimiter: string = ","): 
 worker({
   loadUrlData,
   getMotionDeltas,
+  getVectorFlowField,
   getCorrelations,
   getCsvString,
 });

@@ -1,9 +1,9 @@
-import { Button, Popover } from "antd";
 import React, { type ReactElement, type ReactNode, useContext, useRef, useState } from "react";
 
 import { ImagesIconSVG, ImagesSlashIconSVG } from "src/assets";
 import { TabType } from "src/colorizer";
 import { LinkStyleButton } from "src/components/Buttons/LinkStyleButton";
+import ConfigMenuWrapper from "src/components/Controls/ConfigMenuWrapper";
 import { TooltipWithSubtitle } from "src/components/Tooltips/TooltipWithSubtitle";
 import { useViewerStateStore } from "src/state";
 import { AppThemeContext } from "src/styles/AppStyle";
@@ -22,7 +22,7 @@ export type ToggleButtonWithConfigProps = {
   visibleIcon?: ReactNode;
   hiddenIcon?: ReactNode;
   settingsLinkText?: string;
-  popupContainer?: HTMLElement;
+  tooltipPopupContainer?: HTMLElement;
   outlined?: boolean;
 };
 
@@ -46,12 +46,15 @@ export function ToggleButtonWithConfig(inputProps: ToggleButtonWithConfigProps):
   const [configMenuOpen, setConfigMenuOpen] = useState(false);
   const popupContainerRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
+  const configMenuContainerRef = useRef<HTMLDivElement>(null);
+
+  const hasConfigMenu = !!props.configMenuContents;
 
   let buttonActionVerb: string;
   if (props.visible) {
     // While visible, clicking the first time opens the config menu, and
     // clicking again hides the image layer.
-    if (!configMenuOpen) {
+    if (hasConfigMenu && !configMenuOpen) {
       buttonActionVerb = "Configure";
     } else {
       buttonActionVerb = "Hide";
@@ -62,18 +65,16 @@ export function ToggleButtonWithConfig(inputProps: ToggleButtonWithConfigProps):
   const tooltipTitle = buttonActionVerb + " " + props.name;
 
   const tooltipContents = Array.isArray(props.tooltipContents) ? [...props.tooltipContents] : [props.tooltipContents];
-  if (props.visible && !configMenuOpen) {
+  if (props.visible && !configMenuOpen && hasConfigMenu) {
     tooltipContents.push("Double-click to hide " + props.name.toLowerCase());
   }
 
   const onClick = (): void => {
     if (props.visible) {
-      if (!configMenuOpen) {
-        setConfigMenuOpen(true);
-      } else {
-        setConfigMenuOpen(false);
+      if (configMenuOpen || !hasConfigMenu) {
         props.setVisible(false);
       }
+      setConfigMenuOpen(!configMenuOpen);
     } else {
       props.setVisible(true);
     }
@@ -81,7 +82,7 @@ export function ToggleButtonWithConfig(inputProps: ToggleButtonWithConfigProps):
 
   // Passed contents + link to settings in the config menu + close button
   const configMenuContents = (
-    <FlexColumn>
+    <FlexColumn ref={configMenuContainerRef}>
       {typeof props.configMenuContents === "function"
         ? props.configMenuContents(setConfigMenuOpen)
         : props.configMenuContents}
@@ -102,10 +103,6 @@ export function ToggleButtonWithConfig(inputProps: ToggleButtonWithConfigProps):
           </LinkStyleButton>
         </div>
       )}
-
-      <div style={{ marginLeft: "auto", marginTop: "8px" }}>
-        <Button onClick={() => setConfigMenuOpen(false)}>Close</Button>
-      </div>
     </FlexColumn>
   );
 
@@ -115,27 +112,25 @@ export function ToggleButtonWithConfig(inputProps: ToggleButtonWithConfigProps):
 
   return (
     <div ref={popupContainerRef}>
-      <Popover
-        content={configMenuContents}
+      <ConfigMenuWrapper
+        popoverContent={configMenuContents}
+        onOpenChange={setConfigMenuOpen}
+        open={configMenuOpen && hasConfigMenu}
         placement={props.configMenuPlacement === "vertical" ? "bottom" : "left"}
-        trigger={["click"]}
-        getPopupContainer={() => props.popupContainer || popupContainerRef.current || document.body}
-        onOpenChange={(open) => setConfigMenuOpen(open)}
-        open={configMenuOpen}
       >
         <TooltipWithSubtitle
           title={tooltipTitle}
           placement={props.configMenuPlacement === "vertical" ? "top" : "right"}
           subtitleList={tooltipContents}
           tooltipRef={tooltipRef}
-          getPopupContainer={() => props.popupContainer || popupContainerRef.current || document.body}
+          getPopupContainer={() => props.tooltipPopupContainer || popupContainerRef.current || document.body}
         >
           <IconButton type={buttonType} onClick={onClick} disabled={props.disabled}>
             {props.visible ? props.visibleIcon : props.hiddenIcon}
             <VisuallyHidden>{tooltipTitle}</VisuallyHidden>
           </IconButton>
         </TooltipWithSubtitle>
-      </Popover>
+      </ConfigMenuWrapper>
     </div>
   );
 }

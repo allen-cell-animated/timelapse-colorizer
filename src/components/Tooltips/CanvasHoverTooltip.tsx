@@ -1,5 +1,5 @@
 import { Tag } from "antd";
-import React, { type PropsWithChildren, type ReactElement, useCallback } from "react";
+import React, { type PropsWithChildren, type ReactElement, type ReactNode, useCallback, useContext } from "react";
 import styled from "styled-components";
 import { useShallow } from "zustand/shallow";
 
@@ -9,6 +9,7 @@ import { formatNumber } from "src/colorizer/utils/math_utils";
 import type { AnnotationState } from "src/hooks";
 import { selectVectorConfigFromState } from "src/state/slices";
 import { useViewerStateStore } from "src/state/ViewerState";
+import { AppThemeContext } from "src/styles/AppStyle";
 import { FlexColumn, FlexRow } from "src/styles/utils";
 
 import HoverTooltip from "./HoverTooltip";
@@ -47,10 +48,14 @@ const DebugText = styled.p`
 export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverTooltipProps>): ReactElement {
   const { lastValidHoveredId: lastHoveredId } = props;
 
+  const theme = useContext(AppThemeContext);
+
   const dataset = useViewerStateStore((state) => state.dataset);
   const datasetKey = useViewerStateStore((state) => state.datasetKey);
   const featureKey = useViewerStateStore((state) => state.featureKey);
   const motionDeltas = useViewerStateStore((state) => state.vectorMotionDeltas);
+  const showCentroids = useViewerStateStore((state) => state.showCentroids);
+  const showSegmentations = useViewerStateStore((state) => state.showSegmentations);
   const vectorConfig = useViewerStateStore(useShallow(selectVectorConfigFromState));
 
   const featureName = featureKey ? dataset?.getFeatureName(featureKey) : undefined;
@@ -167,7 +172,7 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
   }
 
   // If editing annotations, also show the current label being applied
-  let annotationLabel: React.ReactNode;
+  let annotationLabel: ReactNode;
   const currentLabelIdx = props.annotationState.currentLabelIdx;
   if (props.annotationState.isAnnotationModeEnabled && currentLabelIdx !== null) {
     const currentLabelData = labelData[currentLabelIdx];
@@ -229,9 +234,26 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
     }
   }
 
+  // If segmentations and centroids are both hidden, show a warning that click
+  // interactions will not work.
+
+  // TODO: Ideally, click interactions should work no matter what. Consider
+  // refactoring the 2D and 3D canvas to secretly enable segmentations even when
+  // they are hidden, so interactions still work as expected. Note that this
+  // will be a performance tradeoff.
+  let noInteractionWarning: ReactNode;
+  if (!showSegmentations && !showCentroids) {
+    noInteractionWarning = (
+      <Tag style={{ maxWidth: "150px", margin: "0 2px", textWrap: "wrap" }} color={theme.color.text.hint}>
+        Enable segmentations or centroids to interact
+      </Tag>
+    );
+  }
+
   const tooltipContent = (
     <FlexColumn $gap={6}>
       {annotationLabel}
+      {noInteractionWarning}
       <ObjectInfoCard style={{ opacity: props.showObjectHoverInfo ? 1 : 0 }}>{objectInfoContent}</ObjectInfoCard>
     </FlexColumn>
   );
