@@ -84,7 +84,8 @@ export default function ToggleCollapse(inputProps: PropsWithChildren<ToggleColla
   const props = { ...defaultProps, ...removeUndefinedProperties(inputProps) };
 
   const theme = useContext(AppThemeContext);
-  const [isExpanded, setIsExpanded] = useState(props.toggleChecked ?? true);
+  const initialExpandedState = props.collapseOnToggle ? props.toggleChecked ?? true : true;
+  const [isExpanded, setIsExpanded] = useState(initialExpandedState);
   const [isAnimating, setIsAnimating] = useState(false);
   const contentContainerRef = useRef<HTMLDivElement>(null);
 
@@ -129,14 +130,7 @@ export default function ToggleCollapse(inputProps: PropsWithChildren<ToggleColla
         }
       }
     },
-    [
-      props.onToggleChange,
-      props.collapseOnToggle,
-      props.scrollIntoViewOnChecked,
-      props.toggleChecked,
-      isExpanded,
-      expandAndScrollIntoView,
-    ]
+    [props.onToggleChange, props.collapseOnToggle, props.scrollIntoViewOnChecked, isExpanded, expandAndScrollIntoView]
   );
 
   const onClickExpandCollapseButton = useCallback(() => {
