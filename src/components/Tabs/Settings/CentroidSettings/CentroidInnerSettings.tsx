@@ -1,10 +1,10 @@
-import { Tooltip } from "antd";
 import React, { type ReactElement } from "react";
 
 import { CentroidColorMode, ViewMode } from "src/colorizer";
 import DropdownWithColorPicker from "src/components/Dropdowns/DropdownWithColorPicker";
 import type { SelectItem } from "src/components/Dropdowns/types";
 import LabeledSlider from "src/components/Inputs/LabeledSlider";
+import OpacitySlider from "src/components/Inputs/OpacitySlider";
 import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
 import { SETTINGS_GAP_PX } from "src/components/Tabs/Settings";
 import {
@@ -51,7 +51,6 @@ export default function CentroidInnerSettings(inputProps: CentroidInnerSettingsP
   const setCentroidOpacity = useViewerStateStore((state) => state.setCentroidOpacity);
 
   const viewMode = useViewerStateStore((state) => state.viewMode);
-  const backdropVisible = useViewerStateStore((state) => state.backdropVisible);
 
   return (
     <SettingsContainer gapPx={SETTINGS_GAP_PX}>
@@ -95,29 +94,14 @@ export default function CentroidInnerSettings(inputProps: CentroidInnerSettingsP
         </div>
       </SettingsItem>
       {viewMode === ViewMode.VIEW_2D && (
-        <SettingsItem label="Opacity" htmlFor={props.idPrefix + CentroidSettingsHtmlIds.CENTROID_OPACITY_SLIDER}>
-          <Tooltip
-            title="Opacity is only applied when backdrops are enabled"
-            open={backdropVisible ? false : undefined}
-            placement="top"
-          >
-            <div style={{ maxWidth: props.sliderWidth, width: props.sliderWidth }}>
-              <LabeledSlider
-                id={props.idPrefix + CentroidSettingsHtmlIds.CENTROID_OPACITY_SLIDER}
-                disabled={!backdropVisible}
-                type="value"
-                value={centroidOpacity}
-                onChange={setCentroidOpacity}
-                step={1}
-                minSliderBound={0}
-                maxSliderBound={100}
-                marks={[50]}
-                // showInput={false}
-                numberFormatter={(value) => value + "%"}
-              />
-            </div>
-          </Tooltip>
-        </SettingsItem>
+        <OpacitySlider
+          type="centroid"
+          id={props.idPrefix + CentroidSettingsHtmlIds.CENTROID_OPACITY_SLIDER}
+          value={centroidOpacity}
+          onChange={setCentroidOpacity}
+          disabled={!showCentroids}
+          sliderWidth={props.sliderWidth}
+        />
       )}
     </SettingsContainer>
   );
