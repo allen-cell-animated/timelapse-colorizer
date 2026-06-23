@@ -25,9 +25,11 @@ type ToggleCollapseProps = {
   /**
    * If defined, includes a toggle switch (or checkbox) in the header row with
    * this checked state. Changes to this state will also trigger collapse/expand
-   * behavior.
+   * behavior, unless `collapseOnToggle` is set to `false`.
    */
   toggleChecked?: boolean;
+  /** Whether the collapse should be triggered when the toggle changes state.
+   * `true` by default. */
   collapseOnToggle?: boolean;
   toggleType?: "toggle" | "checkbox";
   onToggleChange?: (checked: boolean) => void;
@@ -82,7 +84,8 @@ export default function ToggleCollapse(inputProps: PropsWithChildren<ToggleColla
   const props = { ...defaultProps, ...removeUndefinedProperties(inputProps) };
 
   const theme = useContext(AppThemeContext);
-  const [isExpanded, setIsExpanded] = useState(props.toggleChecked ?? true);
+  const initialExpandedState = props.collapseOnToggle ? props.toggleChecked ?? true : true;
+  const [isExpanded, setIsExpanded] = useState(initialExpandedState);
   const [isAnimating, setIsAnimating] = useState(false);
   const contentContainerRef = useRef<HTMLDivElement>(null);
 
@@ -127,14 +130,7 @@ export default function ToggleCollapse(inputProps: PropsWithChildren<ToggleColla
         }
       }
     },
-    [
-      props.onToggleChange,
-      props.collapseOnToggle,
-      props.scrollIntoViewOnChecked,
-      props.toggleChecked,
-      isExpanded,
-      expandAndScrollIntoView,
-    ]
+    [props.onToggleChange, props.collapseOnToggle, props.scrollIntoViewOnChecked, isExpanded, expandAndScrollIntoView]
   );
 
   const onClickExpandCollapseButton = useCallback(() => {

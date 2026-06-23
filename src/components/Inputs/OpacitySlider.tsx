@@ -16,6 +16,7 @@ type OpacitySliderProps = {
   disabled?: boolean;
   onChange: (value: number) => void;
   sliderWidth?: string;
+  /** Additional styles for the SettingsItem container. */
   style?: React.CSSProperties;
 };
 
@@ -28,7 +29,7 @@ const defaultProps = {
 /**
  * Convenience component for an opacity slider for either segmentations or
  * centroids. Handles enabling/disabling based on the current view mode and
- * visibility of channels or backdrops.
+ * whether backdrops are enabled.
  */
 export default function OpacitySlider(inputProps: OpacitySliderProps): ReactElement {
   const props = { ...defaultProps, ...inputProps };
@@ -44,7 +45,7 @@ export default function OpacitySlider(inputProps: OpacitySliderProps): ReactElem
   const tooltipLabel = props.type.charAt(0).toUpperCase() + props.type.slice(1);
 
   return (
-    <SettingsItem label="Opacity" htmlFor={htmlId} style={{ marginBottom: 14 }}>
+    <SettingsItem label="Opacity" htmlFor={htmlId} style={{ marginBottom: 14, ...props.style }}>
       <Tooltip
         title={`${tooltipLabel} opacity is only applied when ${
           viewMode === ViewMode.VIEW_3D ? "channels" : "backdrops"
@@ -57,11 +58,13 @@ export default function OpacitySlider(inputProps: OpacitySliderProps): ReactElem
             id={htmlId}
             disabled={props.disabled || !enableOpacityControl}
             type="value"
+            minSliderBound={0}
+            maxSliderBound={100}
+            minInputBound={0}
+            maxInputBound={100}
             value={props.value}
             onChange={props.onChange}
             step={1}
-            minSliderBound={0}
-            maxSliderBound={100}
             marks={[50]}
             showInput={true}
             numberFormatter={(value) => value + "%"}
