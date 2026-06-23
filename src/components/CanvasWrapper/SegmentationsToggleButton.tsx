@@ -3,10 +3,9 @@ import React, { type ReactElement } from "react";
 import { ImageIconSVG, ImageSlashIconSVG } from "src/assets";
 import { ViewMode } from "src/colorizer";
 import { ToggleButtonWithConfig } from "src/components/Buttons/ToggleButtonWithConfig";
+import OpacitySlider from "src/components/Inputs/OpacitySlider";
 import { SettingsContainer } from "src/components/SettingsContainer";
 import { useViewerStateStore } from "src/state";
-
-import OpacitySlider from "../Inputs/OpacitySlider";
 
 const enum SegmentationsToggleButtonHtmlIds {
   OPACITY_SLIDER = "segmentations-toggle-opacity-slider",
