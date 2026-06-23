@@ -10,15 +10,17 @@ import { useViewerStateStore } from "src/state";
 import LabeledSlider from "./LabeledSlider";
 
 type OpacitySliderProps = {
+  type: "segmentation" | "centroid";
   id?: string;
   value: number;
+  disabled?: boolean;
   onChange: (value: number) => void;
-  type: "segmentation" | "centroid";
   sliderWidth?: string;
   style?: React.CSSProperties;
 };
 
 const defaultProps = {
+  disabled: false,
   sliderWidth: MAX_SETTINGS_SLIDER_WIDTH,
   style: {},
 };
@@ -53,7 +55,7 @@ export default function OpacitySlider(inputProps: OpacitySliderProps): ReactElem
         <div style={{ display: "flex", width: props.sliderWidth, maxWidth: props.sliderWidth }}>
           <LabeledSlider
             id={htmlId}
-            disabled={!enableOpacityControl}
+            disabled={props.disabled || !enableOpacityControl}
             type="value"
             value={props.value}
             onChange={props.onChange}

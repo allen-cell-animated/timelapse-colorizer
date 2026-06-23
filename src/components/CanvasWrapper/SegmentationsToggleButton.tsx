@@ -18,13 +18,13 @@ export default function SegmentationsToggleButton(): ReactElement {
 
   const configMenuContents = (
     <div style={{ marginBottom: "14px" }}>
-      <SettingsContainer labelWidth="65px">
+      <SettingsContainer labelWidth="65px" style={{ width: "260px" }}>
         <OpacitySlider
           id={SegmentationsToggleButtonHtmlIds.OPACITY_SLIDER}
+          type={"segmentation"}
           value={objectOpacity}
           onChange={setObjectOpacity}
-          type="segmentation"
-          sliderWidth={"220px"}
+          sliderWidth={"100%"}
         />
       </SettingsContainer>
     </div>

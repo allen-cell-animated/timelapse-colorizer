@@ -95,10 +95,11 @@ export default function CentroidInnerSettings(inputProps: CentroidInnerSettingsP
       </SettingsItem>
       {viewMode === ViewMode.VIEW_2D && (
         <OpacitySlider
+          type="centroid"
           id={props.idPrefix + CentroidSettingsHtmlIds.CENTROID_OPACITY_SLIDER}
           value={centroidOpacity}
           onChange={setCentroidOpacity}
-          type="centroid"
+          disabled={!showCentroids}
           sliderWidth={props.sliderWidth}
         />
       )}

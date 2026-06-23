@@ -59,6 +59,7 @@ export default function ObjectSettings(): ReactElement {
   const edgeColor = useViewerStateStore((state) => state.edgeColor);
   const edgeColorAlpha = useViewerStateStore((state) => state.edgeColorAlpha);
   const edgeMode = useViewerStateStore((state) => state.edgeMode);
+  const objectOpacity = useViewerStateStore((state) => state.objectOpacity);
   const outlierDrawSettings = useViewerStateStore((state) => state.outlierDrawSettings);
   const outlineColor = useViewerStateStore((state) => state.outlineColor);
   const outlineColorMode = useViewerStateStore((state) => state.outlineColorMode);
@@ -66,6 +67,7 @@ export default function ObjectSettings(): ReactElement {
   const outOfRangeDrawSettings = useViewerStateStore((state) => state.outOfRangeDrawSettings);
   const setEdgeColor = useViewerStateStore((state) => state.setEdgeColor);
   const setEdgeMode = useViewerStateStore((state) => state.setEdgeMode);
+  const setObjectOpacity = useViewerStateStore((state) => state.setObjectOpacity);
   const setOutlierDrawSettings = useViewerStateStore((state) => state.setOutlierDrawSettings);
   const setOutlineColor = useViewerStateStore((state) => state.setOutlineColor);
   const setOutlineColorMode = useViewerStateStore((state) => state.setOutlineColorMode);
@@ -73,8 +75,6 @@ export default function ObjectSettings(): ReactElement {
   const setOutOfRangeDrawSettings = useViewerStateStore((state) => state.setOutOfRangeDrawSettings);
   const setShowSegmentations = useViewerStateStore((state) => state.setShowSegmentations);
   const showSegmentations = useViewerStateStore((state) => state.showSegmentations);
-  const objectOpacity = useViewerStateStore((state) => state.objectOpacity);
-  const setObjectOpacity = useViewerStateStore((state) => state.setObjectOpacity);
 
   return (
     <ToggleCollapse
@@ -173,10 +173,11 @@ export default function ObjectSettings(): ReactElement {
           />
         </SettingsItem>
         <OpacitySlider
+          type="segmentation"
           id={ObjectSettingsHtmlIds.OBJECT_OPACITY_SLIDER}
           value={objectOpacity}
           onChange={setObjectOpacity}
-          type="segmentation"
+          disabled={!showSegmentations}
           sliderWidth={"220px"}
         />
       </SettingsContainer>
