@@ -204,7 +204,8 @@ export default class ColorRamp {
 
   /**
    * Returns a new ColorRamp object with all colors multiplied by the given
-   * scalar factor.
+   * scalar factor. Note that the returned ColorRamp must be disposed of when no
+   * longer needed.
    */
   public multiply(factor: number): ColorRamp {
     const newColorStops = this.colorStops.map((color) => {

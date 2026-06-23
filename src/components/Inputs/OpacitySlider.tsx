@@ -29,7 +29,7 @@ const defaultProps = {
 /**
  * Convenience component for an opacity slider for either segmentations or
  * centroids. Handles enabling/disabling based on the current view mode and
- * whether backdrops are enabled.
+ * whether backdrops or channels are enabled.
  */
 export default function OpacitySlider(inputProps: OpacitySliderProps): ReactElement {
   const props = { ...defaultProps, ...inputProps };

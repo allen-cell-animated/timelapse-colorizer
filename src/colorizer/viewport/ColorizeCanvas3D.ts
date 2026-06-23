@@ -115,7 +115,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     this.timeToVectorData = new Map();
     this.vectorObject = new VectorArrows3d();
     this.centroidsObject = new Spheres3d();
-    this.colorRamp = new ColorRamp(["fff", "000"]);
+    this.colorRamp = new ColorRamp(["#fff", "#000"]);
 
     this.tempCanvas = document.createElement("canvas");
     this.tempCanvas.style.width = "10px";
@@ -215,7 +215,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     const areChannelsVisible = areAnyChannelsVisible(params.channelSettings);
     const isSegmentationVisible = params.showSegmentations;
 
-    let opacity;
+    let opacity: number;
     if (areChannelsVisible) {
       if (isSegmentationVisible) {
         opacity = params.objectOpacity;
@@ -894,6 +894,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     this.view3d.removeDrawableObject(this.centroidsObject);
     this.centroidsObject.cleanup();
     this.view3d.removeAllVolumes();
+    this.colorRamp.dispose();
   }
 
   getIdAtPixel(x: number, y: number): PixelIdInfo | null {
