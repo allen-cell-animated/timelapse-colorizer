@@ -76,6 +76,7 @@ export type RenderCanvasStateParams = {
   centroidRadiusPx: number;
   centroidColorMode: CentroidColorMode;
   centroidColor: Color;
+  centroidOpacity: number;
   edgeColor: Color;
   edgeColorAlpha: number;
   edgeMode: DrawMode;
