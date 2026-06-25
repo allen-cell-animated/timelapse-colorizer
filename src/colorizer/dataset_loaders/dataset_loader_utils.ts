@@ -179,6 +179,9 @@ function resolveChannelSources(
       LoadTroubleshooting.CHECK_ZIP_ZARR_DATA,
     ]);
   }
+  if (resolvedSources.length === 0) {
+    return undefined;
+  }
   return resolvedSources;
 }
 
@@ -235,14 +238,14 @@ function resolveFrameSources(
   const usedKeys = new Set<string>();
   const frameSources: FrameSource[] = [];
   for (let i = 0; i < data.length; i++) {
-    const { frames, name: inputName, key: inputkey, description } = data[i];
+    const { frames, name: inputName, key: inputKey, description } = data[i];
     const name = inputName ?? "Segmentation " + (i + 1);
-    const key = getUniqueKeyName(inputkey, name, usedKeys);
+    const key = getUniqueKeyName(inputKey, name, usedKeys);
     usedKeys.add(key);
     const source = {
       name,
       key,
-      description: description ?? "",
+      description,
       frames: frames.map((path) => resolvePath(path)),
     };
     frameSources.push(source);

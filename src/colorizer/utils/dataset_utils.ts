@@ -235,20 +235,22 @@ export const updateManifestVersion = (manifest: AnyManifestFile): ManifestFile =
   if (isV1_1_0(manifest)) {
     const frames3d = (manifest as ManifestFileV1_1_0).frames3d;
     const frames = (manifest as ManifestFileV1_1_0).frames;
-    if (frames) {
-      manifest = {
-        ...manifest,
-        frames2d: {
-          segmentations: [
-            {
-              frames,
-              name: "Default",
-              key: "default",
-            },
-          ],
-          backdrops: manifest.backdrops,
-        },
-      };
+    const backdrops = (manifest as ManifestFileV1_1_0).backdrops;
+    if (frames || backdrops) {
+      const frames2d: ManifestFile["frames2d"] = {};
+      if (frames) {
+        frames2d.segmentations = [
+          {
+            frames,
+            name: "Default",
+            key: "default",
+          },
+        ];
+      }
+      if (backdrops) {
+        frames2d.backdrops = backdrops;
+      }
+      manifest = { ...manifest, frames2d };
     }
     if (frames3d) {
       manifest = {

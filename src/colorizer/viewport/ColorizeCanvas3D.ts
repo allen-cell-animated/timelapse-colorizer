@@ -698,7 +698,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
 
     const loadSpec = new LoadSpec();
     loadSpec.time = this.params.pendingFrame;
-    const segChannel = this.params.dataset?.frames3d?.segmentations[0].channelIndex;
+    const segChannel = this.params.dataset?.frames3d?.segmentations?.[0]?.channelIndex;
     const volume = await this.loader.createVolume(loadSpec, (v: Volume, channelIndex: number) => {
       const currentVol = v;
 
