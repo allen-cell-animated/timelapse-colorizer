@@ -86,8 +86,10 @@ describe("Dataset", () => {
     },
   };
 
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   const manifestV1_1_0_copy = { ...manifestV1_1_0 };
   delete (manifestV1_1_0_copy as { frames?: string[] }).frames;
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   const manifestV1_8_0: ManifestFile = {
     ...manifestV1_1_0_copy,
     frames2d: {
