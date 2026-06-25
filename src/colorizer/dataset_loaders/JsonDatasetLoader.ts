@@ -9,20 +9,15 @@ import {
   LoadTroubleshooting,
   MAX_FEATURE_CATEGORIES,
 } from "src/colorizer";
-import Dataset, {
-  type ChannelSource,
-  type FeatureData,
-  FeatureType,
-  type Frames2dData,
-  type Frames3dData,
-  type FrameSource,
-} from "src/colorizer/Dataset";
+import Dataset, { type FeatureData, FeatureType, type Frames2dData } from "src/colorizer/Dataset";
 import {
   addCentroidFeatures,
   addTimeFeature,
   addTrackFeature,
   getDefaultSegIds,
   reportUnloadedFeatures,
+  resolveFrames2d,
+  resolveFrames3d,
 } from "src/colorizer/dataset_loaders/dataset_loader_utils";
 import type { DatasetLoadOptions } from "src/colorizer/dataset_loaders/types";
 import ImageFrameLoader from "src/colorizer/loaders/ImageFrameLoader";
@@ -32,10 +27,8 @@ import { AnalyticsEvent, triggerAnalyticsEvent } from "src/colorizer/utils/analy
 import { getKeyFromName } from "src/colorizer/utils/data_utils";
 import {
   type AnyManifestFile,
-  type ManifestChannelSource,
   type ManifestFile,
   type ManifestFileMetadata,
-  type ManifestFrameSource,
   updateManifestVersion,
 } from "src/colorizer/utils/dataset_utils";
 import { padCentroidsTo3d } from "src/colorizer/utils/math_utils";
@@ -96,6 +89,7 @@ export default class JsonDatasetLoader {
     this.numRequests = 0;
 
     this.reportLoadProgress = this.reportLoadProgress.bind(this);
+    this.resolvePath = this.resolvePath.bind(this);
   }
 
   private resolveManifestPath = (url: string): string | null => {
@@ -225,149 +219,6 @@ export default class JsonDatasetLoader {
     }
   };
 
-  private resolveChannelSources(
-    rawSources: ManifestChannelSource[] | undefined,
-    type: "segmentation" | "backdrop"
-  ): ChannelSource[] | undefined {
-    if (!rawSources) {
-      return [];
-    }
-    const resolvedSources: ChannelSource[] = [];
-    const unresolvedSources: ManifestChannelSource[] = [];
-    for (let i = 0; i < rawSources.length; i++) {
-      const source = rawSources[i];
-
-      const resolvedPath = this.resolvePath(source.source);
-      if (resolvedPath) {
-        resolvedSources.push({
-          ...source,
-          source: resolvedPath,
-          channelIndex: source.channelIndex ?? 0,
-          name: source.name ?? `${i}`,
-        });
-      } else {
-        unresolvedSources.push(source);
-      }
-    }
-    if (unresolvedSources.length > 0) {
-      this.reportWarning?.(
-        `One or more ${type} channel sources could not be resolved to files, and will not be shown.`,
-        [
-          `The following ${type} channel source(s) could not be resolved:`,
-          ...unresolvedSources.map((s) => `- ${s.source} (${s.name})`),
-          LoadTroubleshooting.CHECK_ZIP_ZARR_DATA,
-        ]
-      );
-    }
-    return resolvedSources;
-  }
-
-  private resolveAndValidateFrames3d(data: ManifestFile["frames3d"]): Frames3dData | undefined {
-    if (!data) {
-      return undefined;
-    }
-    const segmentations = this.resolveChannelSources(data.segmentations, "segmentation");
-    const backdrops = this.resolveChannelSources(data.backdrops, "backdrop");
-    if (!segmentations) {
-      return undefined;
-    }
-    return {
-      segmentations,
-      totalFrames: data.totalFrames ?? 0,
-      backdrops,
-    };
-  }
-
-  private getUniqueKeyName(key: string, name: string, existingKeys: Set<string>): string {
-    key = key ?? getKeyFromName(name);
-    if (!existingKeys.has(key)) {
-      return key;
-    }
-    let attempts = 1;
-    let newKey = key;
-    while (existingKeys.has(newKey)) {
-      newKey = `${key}_${attempts}`;
-      attempts++;
-    }
-    return newKey;
-  }
-
-  private resolveFrameSources(data: ManifestFrameSource[] | undefined): FrameSource[] | undefined {
-    if (!data) {
-      return undefined;
-    }
-    const usedKeys = new Set<string>();
-    const frameSources: FrameSource[] = [];
-    for (let i = 0; i < data.length; i++) {
-      const { frames, name: inputName, key, description } = data[i];
-      const name = inputName ?? "Segmentation " + (i + 1);
-      const source = {
-        name: name ?? "",
-        key: this.getUniqueKeyName(key ?? "", name, usedKeys),
-        description: description ?? "",
-        frames: frames.map((path) => this.resolvePath(path)),
-      };
-      frameSources.push(source);
-    }
-    return frameSources;
-  }
-
-  /**
-   * Resolves a 2D frames object from the manifest, resolving all paths to
-   * absolute URLs and validating that the number of frames is consistent across
-   * segmentations and backdrops.
-   * @param data "frames2d" field from the manifest.
-   * @returns A Frames2dData object with resolved paths, or undefined if no
-   * segmentations are present.
-   */
-  private resolveFrames2d(data: ManifestFile["frames2d"]): Frames2dData | undefined {
-    if (!data) {
-      return undefined;
-    }
-    const segmentations = this.resolveFrameSources(data.segmentations);
-    const backdrops = this.resolveFrameSources(data.backdrops);
-
-    if (!segmentations && !backdrops) {
-      return undefined;
-    }
-
-    // Validation
-    let frameCount = 0;
-    if (segmentations) {
-      // Check that all segmentations have the same length
-      for (const segData of segmentations) {
-        if (frameCount === 0) {
-          frameCount = segData.frames.length;
-        }
-        if (segData.frames.length !== frameCount) {
-          throw new Error(
-            `Segmentation '${segData.key}' has a different number of frames (${segData.frames.length}) than the default segmentation (${frameCount}).`
-          );
-        }
-      }
-    }
-    if (backdrops) {
-      for (const backdropData of backdrops) {
-        if (frameCount === 0) {
-          frameCount = backdropData.frames.length;
-        }
-        if (backdropData.frames.length !== frameCount) {
-          throw new Error(
-            `Number of frames (${frameCount}) does not match number of images (${backdropData.frames.length}) for backdrop '${backdropData.key}'. ` +
-              ` If you are a dataset author, please ensure that the number of frames in the manifest matches the number of images for each backdrop.`
-          );
-        }
-      }
-    }
-    if (frameCount === 0) {
-      console.error("Frame count is zero for the default segmentation.");
-    }
-    return {
-      segmentations,
-      backdrops,
-    };
-  }
-
   private reportLoadProgress<T>(promise: Promise<T>): Promise<T> {
     this.numRequests++;
     promise.finally(() => {
@@ -390,8 +241,8 @@ export default class JsonDatasetLoader {
     }
     const manifest = updateManifestVersion(await this.manifestLoader(resolvedManifestUrl));
 
-    const frames2d = this.resolveFrames2d(manifest.frames2d);
-    const frames3d = this.resolveAndValidateFrames3d(manifest.frames3d);
+    const frames2d = resolveFrames2d(manifest.frames2d, this.resolvePath);
+    const frames3d = resolveFrames3d(manifest.frames3d, this.resolvePath, this.reportWarning);
     const outlierFile = manifest.outliers;
     const metadata = { ...DEFAULT_METADATA, ...manifest.metadata };
 
