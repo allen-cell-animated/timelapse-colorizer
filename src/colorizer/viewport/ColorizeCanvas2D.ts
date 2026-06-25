@@ -744,9 +744,11 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     if (this.params?.backdropVisible && pendingBackdropKey !== null && dataset?.hasBackdrop(pendingBackdropKey)) {
       backdropPromise = dataset?.loadBackdrop(pendingBackdropKey, index);
     }
-    if (this.params?.showSegmentations) {
-      // TODO: Set segmentation key from state
-      framePromise = dataset?.loadFrame(dataset.getDefaultSegmentationKey() ?? "", index);
+    // TODO: Load by a segmentation key stored in state, so users can switch
+    // between segmentations.
+    const segmentationKey = dataset?.getDefaultSegmentationKey() ?? null;
+    if (this.params?.showSegmentations && segmentationKey !== null && dataset?.hasSegmentation(segmentationKey)) {
+      framePromise = dataset?.loadFrame(segmentationKey, index);
     }
     const result = await Promise.allSettled([framePromise, backdropPromise]);
     const [frame, backdrop] = result;

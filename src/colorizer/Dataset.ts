@@ -70,7 +70,7 @@ export type ChannelSource = {
 };
 
 export type Frames2dData = {
-  segmentations: FrameSource[];
+  segmentations?: FrameSource[];
   backdrops?: FrameSource[];
 };
 

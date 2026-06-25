@@ -1,7 +1,5 @@
 // Defines types for working with dataset manifests, and methods for
 // updating manifests from one version to another.
-
-/** eslint-disable @typescript-eslint/naming-convention */
 import type { Spread } from "./type_utils";
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -54,10 +52,11 @@ type ManifestFileV0_0_0 = {
   metadata?: Partial<ManifestFileMetadataV0_0_0>;
 };
 
+/** Defines the source of 2D segmentation or backdrop frames in the manifest. */
 export type ManifestFrameSource = {
-  name: string;
+  name?: string;
   description?: string;
-  key: string;
+  key?: string;
   frames: string[];
 };
 
@@ -83,6 +82,8 @@ type ManifestFileV1_0_0 = Omit<ManifestFileV0_0_0, "features" | "featureMetadata
   backdrops?: ManifestFrameSource[];
 };
 
+/** Defines the source of 3D segmentation or backdrop channels in the manifest.
+ * */
 export type ManifestChannelSource = {
   source: string;
   name?: string;
@@ -93,6 +94,10 @@ export type ManifestChannelSource = {
   max?: number;
 };
 
+/**
+ * Deprecated frames 3D format, where only one segmentation channel is
+ * supported.
+ */
 // eslint-disable-next-line @typescript-eslint/naming-convention
 type Frames3dV1_1_0 = {
   /**
@@ -155,7 +160,13 @@ type Frames2dV1_8_0 = {
   backdrops?: ManifestFrameSource[];
 };
 
-// v1.8.0 adds support for multiple alternate segmentations.
+/**
+ * Adds support for multiplate alternate segmentations for both 2D and 3D
+ * frames.
+ * - Moves `frames` and `backdrops` argument into `frames2d` field.
+ * - Moves `frames3d.source` and `frames3d.segmentationChannel` into a list of
+ *   segmentations in `frames3d.segmentations`.
+ */
 // eslint-disable-next-line @typescript-eslint/naming-convention
 type ManifestFileV1_8_0 = Spread<
   Omit<ManifestFileV1_1_0, "frames3d" | "frames" | "backdrops"> & {
@@ -189,7 +200,7 @@ function isV1_1_0(manifest: AnyManifestFile): manifest is ManifestFileV1_1_0 {
   const frames3d = (manifest as ManifestFileV1_1_0).frames3d;
   const frames = (manifest as ManifestFileV1_1_0).frames;
   const backdrops = (manifest as ManifestFileV1_1_0).backdrops;
-  return frames !== undefined || backdrops !== undefined || (frames3d !== undefined && !("source" in frames3d));
+  return frames !== undefined || backdrops !== undefined || frames3d?.source !== undefined;
 }
 
 /**
@@ -245,6 +256,7 @@ export const updateManifestVersion = (manifest: AnyManifestFile): ManifestFile =
         frames3d: {
           segmentations: [
             {
+              name: "Default",
               source: frames3d.source,
               channelIndex: frames3d.segmentationChannel,
             },

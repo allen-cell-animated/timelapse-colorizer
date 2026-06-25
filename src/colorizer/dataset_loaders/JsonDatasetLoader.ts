@@ -278,37 +278,67 @@ export default class JsonDatasetLoader {
     };
   }
 
+  private getUniqueKeyName(key: string, name: string, existingKeys: Set<string>): string {
+    key = key ?? getKeyFromName(name);
+    if (!existingKeys.has(key)) {
+      return key;
+    }
+    let attempts = 1;
+    let newKey = key;
+    while (existingKeys.has(newKey)) {
+      newKey = `${key}_${attempts}`;
+      attempts++;
+    }
+    return newKey;
+  }
+
   private resolveFrameSources(data: ManifestFrameSource[] | undefined): FrameSource[] | undefined {
     if (!data) {
       return undefined;
     }
-    // TODO: handle making keys unique
-    return data.map(({ frames, name, key, description }) => ({
-      name: name ?? "",
-      key: key ?? getKeyFromName(name),
-      description: description ?? "",
-      frames: frames.map((path) => this.resolvePath(path)),
-    }));
+    const usedKeys = new Set<string>();
+    const frameSources: FrameSource[] = [];
+    for (let i = 0; i < data.length; i++) {
+      const { frames, name: inputName, key, description } = data[i];
+      const name = inputName ?? "Segmentation " + (i + 1);
+      const source = {
+        name: name ?? "",
+        key: this.getUniqueKeyName(key ?? "", name, usedKeys),
+        description: description ?? "",
+        frames: frames.map((path) => this.resolvePath(path)),
+      };
+      frameSources.push(source);
+    }
+    return frameSources;
   }
 
+  /**
+   * Resolves a 2D frames object from the manifest, resolving all paths to
+   * absolute URLs and validating that the number of frames is consistent across
+   * segmentations and backdrops.
+   * @param data "frames2d" field from the manifest.
+   * @returns A Frames2dData object with resolved paths, or undefined if no
+   * segmentations are present.
+   */
   private resolveFrames2d(data: ManifestFile["frames2d"]): Frames2dData | undefined {
     if (!data) {
       return undefined;
     }
     const segmentations = this.resolveFrameSources(data.segmentations);
     const backdrops = this.resolveFrameSources(data.backdrops);
-    if (!segmentations || segmentations.length === 0) {
+
+    if (!segmentations && !backdrops) {
       return undefined;
     }
 
     // Validation
-    const frameCount = segmentations[0].frames.length;
-    if (frameCount === 0) {
-      console.error("Frame count is zero for the default segmentation.");
-    }
+    let frameCount = 0;
     if (segmentations) {
       // Check that all segmentations have the same length
       for (const segData of segmentations) {
+        if (frameCount === 0) {
+          frameCount = segData.frames.length;
+        }
         if (segData.frames.length !== frameCount) {
           throw new Error(
             `Segmentation '${segData.key}' has a different number of frames (${segData.frames.length}) than the default segmentation (${frameCount}).`
@@ -317,14 +347,20 @@ export default class JsonDatasetLoader {
       }
     }
     if (backdrops) {
-      for (const { frames: backdropFrames, key } of backdrops) {
-        if (backdropFrames.length !== frameCount) {
+      for (const backdropData of backdrops) {
+        if (frameCount === 0) {
+          frameCount = backdropData.frames.length;
+        }
+        if (backdropData.frames.length !== frameCount) {
           throw new Error(
-            `Number of frames (${frameCount}) does not match number of images (${backdropFrames.length}) for backdrop '${key}'. ` +
+            `Number of frames (${frameCount}) does not match number of images (${backdropData.frames.length}) for backdrop '${backdropData.key}'. ` +
               ` If you are a dataset author, please ensure that the number of frames in the manifest matches the number of images for each backdrop.`
           );
         }
       }
+    }
+    if (frameCount === 0) {
+      console.error("Frame count is zero for the default segmentation.");
     }
     return {
       segmentations,

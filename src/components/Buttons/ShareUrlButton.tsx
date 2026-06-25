@@ -55,7 +55,7 @@ export default function ShareUrlButton(props: ShareUrlButtonProps): ReactElement
 
   // Warning conditions
   const collectionUrl = collection?.getUrl() || "";
-  const dataset3dSource = dataset?.frames3d?.segmentations[0].source || "";
+  const dataset3dSource = dataset?.frames3d?.segmentations?.[0]?.source || "";
   const dataset2dSource = dataset?.getSegmentationData().values().next().value?.frames[0] || "";
   const dataset2dBackdropSource = Array.from(dataset?.getBackdropData().values() || [])[0]?.frames[0] || "";
   const datasetManifestUrl = dataset?.manifestUrl || "";
