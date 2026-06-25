@@ -285,8 +285,8 @@ describe("Dataset", () => {
     const dataset = await makeMockDataset(manifestWith3dSource);
     expect(dataset.has3dFrames()).to.be.true;
     const frames3d = dataset.frames3d;
-    expect(frames3d?.source).to.equal(DEFAULT_DATASET_DIR + "seg.ome.zarr");
-    expect(frames3d?.segmentationChannel).to.equal(1);
+    expect(frames3d?.segmentations[0].source).to.equal(DEFAULT_DATASET_DIR + "seg.ome.zarr");
+    expect(frames3d?.segmentations[0].channelIndex).to.equal(1);
     expect(frames3d?.totalFrames).to.equal(4);
   });
 
@@ -302,7 +302,9 @@ describe("Dataset", () => {
     const dataset = await makeMockDataset(manifestWith3dSource);
     expect(dataset.has3dFrames()).to.be.true;
     const frames3d = dataset.frames3d;
-    expect(frames3d?.source).to.equal("https://vast-files.int.allencell.org/assay-dev/some/path/to/seg.ome.zarr");
+    expect(frames3d?.segmentations[0].source).to.equal(
+      "https://vast-files.int.allencell.org/assay-dev/some/path/to/seg.ome.zarr"
+    );
   });
 
   describe("centroids data", () => {

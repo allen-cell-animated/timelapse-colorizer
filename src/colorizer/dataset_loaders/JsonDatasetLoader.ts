@@ -9,7 +9,14 @@ import {
   LoadTroubleshooting,
   MAX_FEATURE_CATEGORIES,
 } from "src/colorizer";
-import Dataset, { type Backdrop3dData, type FeatureData, FeatureType, type Frames3dData } from "src/colorizer/Dataset";
+import Dataset, {
+  type ChannelSource,
+  type FeatureData,
+  FeatureType,
+  Frames2dData,
+  type Frames3dData,
+  FrameSource,
+} from "src/colorizer/Dataset";
 import {
   addCentroidFeatures,
   addTimeFeature,
@@ -25,8 +32,10 @@ import { AnalyticsEvent, triggerAnalyticsEvent } from "src/colorizer/utils/analy
 import { getKeyFromName } from "src/colorizer/utils/data_utils";
 import {
   type AnyManifestFile,
+  ManifestChannelSource,
   type ManifestFile,
   type ManifestFileMetadata,
+  ManifestFrameSource,
   updateManifestVersion,
 } from "src/colorizer/utils/dataset_utils";
 import { padCentroidsTo3d } from "src/colorizer/utils/math_utils";
@@ -191,9 +200,10 @@ export default class JsonDatasetLoader {
     return source.getBuffer();
   }
 
-  private getFrameDims = async (frameFiles: (string | null)[] | undefined): Promise<Vector2 | undefined> => {
+  private getFrameDims = async (frames2d: Frames2dData | undefined): Promise<Vector2 | undefined> => {
     let firstValidFramePath = null;
-    for (const framePath of frameFiles ?? []) {
+    const framePaths = frames2d?.segmentations?.[0]?.frames ?? [];
+    for (const framePath of framePaths) {
       if (framePath) {
         firstValidFramePath = framePath;
         break;
@@ -215,54 +225,109 @@ export default class JsonDatasetLoader {
     }
   };
 
+  private resolveChannelSources(
+    rawSources: ManifestChannelSource[] | undefined,
+    type: "segmentation" | "backdrop"
+  ): ChannelSource[] | undefined {
+    if (!rawSources) {
+      return [];
+    }
+    const resolvedSources: ChannelSource[] = [];
+    const unresolvedSources: ManifestChannelSource[] = [];
+    for (let i = 0; i < rawSources.length; i++) {
+      const source = rawSources[i];
+
+      const resolvedPath = this.resolvePath(source.source);
+      if (resolvedPath) {
+        resolvedSources.push({
+          ...source,
+          source: resolvedPath,
+          channelIndex: source.channelIndex ?? 0,
+          name: source.name ?? `${i}`,
+        });
+      } else {
+        unresolvedSources.push(source);
+      }
+    }
+    if (unresolvedSources.length > 0) {
+      this.reportWarning?.(
+        `One or more ${type} channel sources could not be resolved to files, and will not be shown.`,
+        [
+          `The following ${type} channel source(s) could not be resolved:`,
+          ...unresolvedSources.map((s) => `- ${s.source} (${s.name})`),
+          LoadTroubleshooting.CHECK_ZIP_ZARR_DATA,
+        ]
+      );
+    }
+    return resolvedSources;
+  }
+
   private resolveAndValidateFrames3d(data: ManifestFile["frames3d"]): Frames3dData | undefined {
     if (!data) {
       return undefined;
     }
-    const frameSource = this.resolvePath(data.source);
-    const backdrops: Backdrop3dData[] = [];
-    if (!frameSource) {
-      // This will only happen if using a file path resolver, if this file does
-      // not exist in a ZIP file.
-
-      // TODO: This will fail for Zarrs, which are directories and not files, so
-      // `resolvePath` will return `null`. Even if `resolvePath` did handle
-      // directories, Zarrs index from the directory root, which is provided as
-      // a Object URL. Adding additional paths to the end of an Object URL (e.g.
-      // TCZYX specifiers for zarrs, like `/0/0/0`) does not result in a working
-      // URL. This means there is no way to make the current path resolver work
-      // without overriding `fetch` in dependency libraries (vole-core).
-      throw new Error(
-        `Failed to resolve path for 3D frame source '${data.source}'. ${LoadTroubleshooting.CHECK_ZIP_ZARR_DATA}`
-      );
+    const segmentations = this.resolveChannelSources(data.segmentations, "segmentation");
+    const backdrops = this.resolveChannelSources(data.backdrops, "backdrop");
+    if (!segmentations) {
+      return undefined;
     }
-    // Validate backdrops
-    if (data.backdrops) {
-      const failedBackdrops: Backdrop3dData[] = [];
-      for (const backdrop of data.backdrops) {
-        const backdropSource = this.resolvePath(backdrop.source);
-        if (!backdropSource) {
-          failedBackdrops.push({ channelIndex: 0, ...backdrop });
-          continue;
+    return {
+      segmentations,
+      totalFrames: data.totalFrames ?? 0,
+      backdrops,
+    };
+  }
+
+  private resolveFrameSources(data: ManifestFrameSource[] | undefined): FrameSource[] | undefined {
+    if (!data) {
+      return undefined;
+    }
+    // TODO: handle making keys unique
+    return data.map(({ frames, name, key, description }) => ({
+      name: name ?? "",
+      key: key ?? getKeyFromName(name),
+      description: description ?? "",
+      frames: frames.map((path) => this.resolvePath(path)),
+    }));
+  }
+
+  private resolveFrames2d(data: ManifestFile["frames2d"]): Frames2dData | undefined {
+    if (!data) {
+      return undefined;
+    }
+    const segmentations = this.resolveFrameSources(data.segmentations);
+    const backdrops = this.resolveFrameSources(data.backdrops);
+    if (!segmentations || segmentations.length === 0) {
+      return undefined;
+    }
+
+    // Validation
+    const frameCount = segmentations[0].frames.length;
+    if (frameCount === 0) {
+      console.error("Frame count is zero for the default segmentation.");
+    }
+    if (segmentations) {
+      // Check that all segmentations have the same length
+      for (const segData of segmentations) {
+        if (segData.frames.length !== frameCount) {
+          throw new Error(
+            `Segmentation '${segData.key}' has a different number of frames (${segData.frames.length}) than the default segmentation (${frameCount}).`
+          );
         }
-        backdrops.push({
-          ...backdrop,
-          channelIndex: backdrop.channelIndex ?? 0,
-          source: backdropSource,
-        });
       }
-      if (failedBackdrops.length > 0) {
-        this.reportWarning?.("One or more 3D backdrop sources could not be resolved to files, and will not be shown.", [
-          "The following backdrop source(s) could not be resolved:",
-          ...failedBackdrops.map((b) => `- ${b.source} (${b.name})`),
-          LoadTroubleshooting.CHECK_ZIP_ZARR_DATA,
-        ]);
+    }
+    if (backdrops) {
+      for (const { frames: backdropFrames, key } of backdrops) {
+        if (backdropFrames.length !== frameCount) {
+          throw new Error(
+            `Number of frames (${frameCount}) does not match number of images (${backdropFrames.length}) for backdrop '${key}'. ` +
+              ` If you are a dataset author, please ensure that the number of frames in the manifest matches the number of images for each backdrop.`
+          );
+        }
       }
     }
     return {
-      source: frameSource,
-      segmentationChannel: data.segmentationChannel ?? 0,
-      totalFrames: data.totalFrames ?? 0,
+      segmentations,
       backdrops,
     };
   }
@@ -289,7 +354,7 @@ export default class JsonDatasetLoader {
     }
     const manifest = updateManifestVersion(await this.manifestLoader(resolvedManifestUrl));
 
-    const frameFiles = manifest.frames?.map((frame) => this.resolvePath(frame));
+    const frames2d = this.resolveFrames2d(manifest.frames2d);
     const frames3d = this.resolveAndValidateFrames3d(manifest.frames3d);
     const outlierFile = manifest.outliers;
     const metadata = { ...DEFAULT_METADATA, ...manifest.metadata };
@@ -299,24 +364,6 @@ export default class JsonDatasetLoader {
     const centroidsFile = manifest.centroids;
     const boundsFile = manifest.bounds;
     const segIdsFile = manifest.segIds;
-
-    const backdrops = new Map<string, { name: string; frames: (string | null)[] }>();
-
-    // Validate backdrops
-    if (manifest.backdrops) {
-      for (const { name, key, frames: backdropFrames } of manifest.backdrops) {
-        const resolvedBackdropFrames = backdropFrames.map((path) => this.resolvePath(path));
-        backdrops.set(key, { name, frames: resolvedBackdropFrames });
-        if (frameFiles && frameFiles.length !== 0 && resolvedBackdropFrames.length !== frameFiles.length) {
-          // If frames are provided, check that backdrop frames match the frame
-          // count.
-          throw new Error(
-            `Number of frames (${frameFiles?.length}) does not match number of images (${backdropFrames.length}) for backdrop '${key}'. ` +
-              ` If you are a dataset author, please ensure that the number of frames in the manifest matches the number of images for each backdrop.`
-          );
-        }
-      }
-    }
 
     // Load feature data
     const featuresPromises: Promise<[string, FeatureData] | undefined>[] = Array.from(manifest.features).map(
@@ -330,7 +377,7 @@ export default class JsonDatasetLoader {
       this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U16, centroidsFile)),
       this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U16, boundsFile)),
       this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, segIdsFile)),
-      this.reportLoadProgress(this.getFrameDims(frameFiles)),
+      this.reportLoadProgress(this.getFrameDims(frames2d)),
       ...featuresPromises,
     ]);
     const [
@@ -399,7 +446,7 @@ export default class JsonDatasetLoader {
       datasetWriterVersion: metadata.writerVersion || "N/A",
       datasetTotalObjects: numObjects,
       datasetFeatureCount: manifest.features.length,
-      datasetFrameCount: frameFiles?.length || frames3d?.totalFrames || 0,
+      datasetFrameCount: frames2d?.segmentations?.[0]?.frames?.length || frames3d?.totalFrames || 0,
       datasetLoadTimeMs: new Date().getTime() - startTime.getTime(),
     });
 
@@ -408,9 +455,8 @@ export default class JsonDatasetLoader {
         manifestUrl: resolvedManifestUrl,
         metadata,
         // Image sources
-        frameFiles,
+        frames2d,
         frames3d,
-        backdrops,
         frameResolution: frameDimensions ?? undefined,
         // Data arrays
         features,

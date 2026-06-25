@@ -46,12 +46,15 @@ export type FeatureData = {
   description: string | null;
 };
 
-type BackdropData = {
+export type FrameSource = {
   name: string;
+  key: string;
+  description?: string;
   frames: (string | null)[];
 };
 
-export type Backdrop3dData = {
+/** Source for a segmentation or backdrop channel. */
+export type ChannelSource = {
   /**
    * Source for 3D data, resolved to http/https or blob URL. Expected to be a
    * path to an OME-Zarr array.
@@ -64,16 +67,15 @@ export type Backdrop3dData = {
   max?: number;
 };
 
+export type Frames2dData = {
+  segmentations: FrameSource[];
+  backdrops?: FrameSource[];
+};
+
 export type Frames3dData = {
-  /**
-   * Source for 3D data, resolved to http/https or blob URL. Expected to be a
-   * path to an OME-Zarr array.
-   */
-  source: string;
-  /** Index of the segmentation channel in the source data. */
-  segmentationChannel: number;
   totalFrames: number;
-  backdrops?: Backdrop3dData[];
+  segmentations: ChannelSource[];
+  backdrops?: ChannelSource[];
 };
 
 export type DatasetInputData = {
@@ -81,13 +83,7 @@ export type DatasetInputData = {
   manifestUrl: string;
   metadata: ManifestFileMetadata;
   //// Image sources ////
-  /** List of resolved (http/https or blob) URLs for frames in the dataset. */
-  frameFiles: (string | null)[];
-  /**
-   * Map of backdrop names to their data. Note that all backdrop paths must be
-   * resolved to http/https or blob URLs.
-   */
-  backdrops: Map<string, BackdropData>;
+  frames2d: Frames2dData;
   frames3d: Frames3dData;
   frameResolution: Vector2;
   //// Data arrays ////
@@ -121,13 +117,13 @@ export default class Dataset {
 
   //// Image sources ////
   private frameLoader: ITextureImageLoader;
-  private frameFiles: (string | null)[] | null;
-  private frames: DataCache<number, Texture>;
+  private framesMap: Map<string, FrameSource>;
+  private frameCache: DataCache<string, Texture>;
   private frameDimensions: Vector2 | null;
 
   private backdropLoader: ITextureImageLoader;
-  private backdropData: Map<string, BackdropData>;
-  private backdropFrames: DataCache<string, Texture>;
+  private backdropData: Map<string, FrameSource>;
+  private backdropCache: DataCache<string, Texture>;
 
   public frames3d: Frames3dData | null;
 
@@ -177,13 +173,15 @@ export default class Dataset {
 
     // Image sources
     this.frameLoader = options.frameLoader || new ImageFrameLoader(RGBAIntegerFormat);
-    this.frames = new DataCache(MAX_CACHED_FRAME_BYTES);
-    this.frameFiles = data.frameFiles || null;
+    this.frameCache = new DataCache(MAX_CACHED_FRAME_BYTES);
+    const frames2dData: FrameSource[] = data.frames2d?.segmentations || [];
+    this.framesMap = new Map(frames2dData.map((f) => [f.key, f]));
     this.frameDimensions = data.frameResolution ?? null;
 
     this.backdropLoader = options.backdropLoader || new ImageFrameLoader(RGBAFormat);
-    this.backdropFrames = new DataCache(MAX_CACHED_BACKDROPS_BYTES);
-    this.backdropData = data.backdrops || new Map<string, BackdropData>();
+    this.backdropCache = new DataCache(MAX_CACHED_BACKDROPS_BYTES);
+    const backdropsData: FrameSource[] = data.frames2d?.backdrops || [];
+    this.backdropData = new Map(backdropsData.map((f) => [f.key, f]));
 
     this.frames3d = data.frames3d || null;
 
@@ -208,10 +206,6 @@ export default class Dataset {
     );
 
     this.getSegmentationId = this.getSegmentationId.bind(this);
-  }
-
-  public get frames2dPaths(): readonly (string | null)[] | undefined {
-    return this.frameFiles ?? undefined;
   }
 
   public hasFeatureKey(key: string): boolean {
@@ -309,7 +303,7 @@ export default class Dataset {
   }
 
   public has2dFrames(): boolean {
-    return this.frameFiles !== null || this.backdropData.size > 0;
+    return this.framesMap.size > 0 || this.backdropData.size > 0;
   }
 
   public has3dFrames(): boolean {
@@ -329,27 +323,40 @@ export default class Dataset {
     return featureData?.data.length ?? this.times?.length ?? this.segIds?.length ?? 0;
   }
 
+  public getDefaultSegmentationKey(): string | null {
+    return this.framesMap.keys().next().value ?? null;
+  }
+
+  public hasSegmentation(key: string): boolean {
+    return this.framesMap.has(key);
+  }
+
+  public getSegmentationData(): Map<string, FrameSource> {
+    return new Map(this.framesMap);
+  }
+
   /** Loads a single frame from the dataset */
-  public async loadFrame(index: number): Promise<Texture | undefined> {
-    if (index < 0 || this.frameFiles === null || index >= this.frameFiles.length) {
+  public async loadFrame(key: string, index: number): Promise<Texture | undefined> {
+    if (index < 0 || !this.framesMap.has(key)) {
       return undefined;
     }
 
-    const cachedFrame = this.frames?.get(index);
+    const cacheKey = `${key}-${index}`;
+    const cachedFrame = this.frameCache?.get(cacheKey);
     if (cachedFrame) {
       this.frameDimensions = new Vector2(cachedFrame.image.width, cachedFrame.image.height);
       return cachedFrame;
     }
 
-    const fullUrl = this.frameFiles[index];
+    const fullUrl = this.framesMap.get(key)?.frames[index];
     if (!fullUrl) {
-      throw new Error(`Failed to resolve path for frame ${index}: '${fullUrl}'`);
+      throw new Error(`Failed to resolve path for frame '${key}' at index ${index}: '${fullUrl}'`);
     }
     const loadedFrame = await this.frameLoader.load(fullUrl);
     this.frameDimensions = new Vector2(loadedFrame.image.width, loadedFrame.image.height);
     const frameSizeBytes = loadedFrame.image.width * loadedFrame.image.height * 4;
     // Note that, due to image compression, images may take up much less space in memory than their raw size.
-    this.frames.insert(index, loadedFrame, frameSizeBytes);
+    this.frameCache.insert(cacheKey, loadedFrame, frameSizeBytes);
     return loadedFrame;
   }
 
@@ -364,13 +371,13 @@ export default class Dataset {
   /**
    * Returns a map from backdrop keys to data.
    */
-  public getBackdropData(): Map<string, BackdropData> {
+  public getBackdropData(): Map<string, FrameSource> {
     return new Map(this.backdropData);
   }
 
   public async loadBackdrop(key: string, index: number): Promise<Texture | undefined> {
     const cacheKey = `${key}-${index}`;
-    const cachedFrame = this.backdropFrames.get(cacheKey);
+    const cachedFrame = this.backdropCache.get(cacheKey);
     if (cachedFrame) {
       return cachedFrame;
     }
@@ -385,7 +392,7 @@ export default class Dataset {
       throw new Error(`Failed to resolve path for backdrop '${key}' at index ${index}: '${backdropFrames[index]}'`);
     }
     const loadedBackdrop = await this.backdropLoader.load(fullUrl);
-    this.backdropFrames.insert(cacheKey, loadedBackdrop);
+    this.backdropCache.insert(cacheKey, loadedBackdrop);
     return loadedBackdrop;
   }
 
@@ -403,10 +410,10 @@ export default class Dataset {
    */
   public dispose(): void {
     // Image sources
-    this.frames.dispose();
-    this.backdropFrames.dispose();
+    this.frameCache.dispose();
+    this.backdropCache.dispose();
     this.backdropData.clear();
-    this.frameFiles = null;
+    this.framesMap.clear();
     this.frames3d = null;
     // Data arrays
     this.features.forEach((feature) => {
@@ -432,7 +439,7 @@ export default class Dataset {
 
   private getTotalFrames(): number {
     if (this.has2dFrames()) {
-      const frameFilesLength = this.frameFiles?.length;
+      const frameFilesLength = this.framesMap.get(this.getDefaultSegmentationKey() ?? "")?.frames.length;
       const firstBackdropFramesLength = this.backdropData.values().next().value?.frames.length;
       if (frameFilesLength !== undefined) {
         return frameFilesLength;

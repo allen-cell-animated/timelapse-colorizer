@@ -257,7 +257,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     ) {
       if (this.volume) {
         // Update color ramp for all channels
-        const segChannel = params.dataset?.frames3d?.segmentationChannel ?? 0;
+        const segChannel = params.dataset?.frames3d?.segmentations[0].channelIndex ?? 0;
         for (let i = 0; i < this.volume.numChannels; i++) {
           if (i === segChannel) {
             this.configureColorizeFeature(this.volume, i);
@@ -696,7 +696,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
 
     const loadSpec = new LoadSpec();
     loadSpec.time = this.params.pendingFrame;
-    const segChannel = this.params.dataset?.frames3d?.segmentationChannel ?? 0;
+    const segChannel = this.params.dataset?.frames3d?.segmentations[0].channelIndex ?? 0;
     const volume = await this.loader.createVolume(loadSpec, (v: Volume, channelIndex: number) => {
       const currentVol = v;
 

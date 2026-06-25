@@ -52,6 +52,13 @@ type ManifestFileV0_0_0 = {
   metadata?: Partial<ManifestFileMetadataV0_0_0>;
 };
 
+export type ManifestFrameSource = {
+  name: string;
+  description?: string;
+  key: string;
+  frames: string[];
+};
+
 // v1.0.0 removes the featureMetadata field, replaces the features map with an ordered
 // array of metadata objects.
 // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -71,7 +78,30 @@ type ManifestFileV1_0_0 = Omit<ManifestFileV0_0_0, "features" | "featureMetadata
     description?: string;
   }[];
   /** Optional list of backdrop/overlay images. */
-  backdrops?: { name: string; key: string; frames: string[] }[];
+  backdrops?: ManifestFrameSource[];
+};
+
+export type ManifestChannelSource = {
+  source: string;
+  name?: string;
+  /** Index of the channel in the source volume. 0 by default.*/
+  channelIndex?: number;
+  description?: string;
+  min?: number;
+  max?: number;
+};
+
+type Frames3dV1_1_0 = {
+  /**
+   * URL or path relative to the root of the manifest. Expected to be a
+   * time-series ZARR (e.g. ends with `.ome.zarr`).
+   */
+  source: string;
+  /* The index of the channel to use as a segmentation within the source. */
+  segmentationChannel: number;
+  /** Total number of frames in the time-series volume. */
+  totalFrames: number;
+  backdrops?: ManifestChannelSource[];
 };
 
 // v1.1.0 adds additional optional metadata fields.
@@ -101,23 +131,40 @@ type ManifestFileV1_1_0 = Spread<
       segmentationChannel: number;
       /** Total number of frames in the time-series volume. */
       totalFrames: number;
-      backdrops?: {
-        source: string;
-        name: string;
-        description?: string;
-        /** Index of the channel in the source volume. */
-        channelIndex?: number;
-        min?: number;
-        max?: number;
-      }[];
+      backdrops?: ManifestChannelSource[];
     };
   }
 >;
 
+/**
+ * Removes the `source` and `segmentationChannel` fields from the 3D frames
+ * definition and replaces them with a list of segmentations to support multiple
+ * alternate segmentations.
+ */
+type Frames3dV1_8_0 = Omit<Frames3dV1_1_0, "source" | "segmentationChannel"> & {
+  segmentations?: ManifestChannelSource[];
+};
+
+type Frames2dV1_8_0 = {
+  segmentations?: ManifestFrameSource[];
+  backdrops?: ManifestFrameSource[];
+};
+
+// v1.8.0 adds support for multiple alternate segmentations.
+type ManifestFileV1_8_0 = Spread<
+  Omit<ManifestFileV1_1_0, "frames3d" | "frames" | "backdrops"> & {
+    frames3d?: Frames3dV1_8_0;
+    frames2d?: Frames2dV1_8_0;
+  }
+>;
+
 /** Type definition for the dataset manifest JSON file. */
-export type ManifestFile = ManifestFileV1_1_0;
-/** Any manifest version, including deprecated manifests. Call `update_manifest_version` to transform to an up-to-date version. */
-export type AnyManifestFile = ManifestFileV0_0_0 | ManifestFileV1_0_0 | ManifestFileV1_1_0;
+export type ManifestFile = ManifestFileV1_8_0;
+/**
+ * Any manifest version, including deprecated manifests. Call
+ * `update_manifest_version` to transform to an up-to-date version.
+ */
+export type AnyManifestFile = ManifestFileV0_0_0 | ManifestFileV1_0_0 | ManifestFileV1_1_0 | ManifestFileV1_8_0;
 
 ///////////// Conversion functions /////////////////////
 
@@ -129,6 +176,13 @@ export type AnyManifestFile = ManifestFileV0_0_0 | ManifestFileV1_0_0 | Manifest
 function isV0_0_0(manifest: AnyManifestFile): manifest is ManifestFileV0_0_0 {
   const values = Object.values(manifest.features);
   return values.length === 0 || typeof values[0] === "string";
+}
+
+function isV1_1_0(manifest: AnyManifestFile): manifest is ManifestFileV1_1_0 {
+  const frames3d = (manifest as ManifestFileV1_1_0).frames3d;
+  const frames = (manifest as ManifestFileV1_1_0).frames;
+  const backdrops = (manifest as ManifestFileV1_1_0).backdrops;
+  return frames !== undefined || backdrops !== undefined || (frames3d !== undefined && !("source" in frames3d));
 }
 
 /**
@@ -159,6 +213,40 @@ export const updateManifestVersion = (manifest: AnyManifestFile): ManifestFile =
       ...manifest,
       features,
     };
+  }
+  if (isV1_1_0(manifest)) {
+    const frames3d = (manifest as ManifestFileV1_1_0).frames3d;
+    const frames = (manifest as ManifestFileV1_1_0).frames;
+    if (frames) {
+      manifest = {
+        ...manifest,
+        frames2d: {
+          segmentations: [
+            {
+              frames,
+              name: "Default",
+              key: "default",
+            },
+          ],
+          backdrops: manifest.backdrops,
+        },
+      };
+    }
+    if (frames3d) {
+      manifest = {
+        ...manifest,
+        frames3d: {
+          segmentations: [
+            {
+              source: frames3d.source,
+              channelIndex: frames3d.segmentationChannel,
+            },
+          ],
+          totalFrames: frames3d.totalFrames,
+          backdrops: frames3d.backdrops || [],
+        },
+      };
+    }
   }
 
   return manifest;
