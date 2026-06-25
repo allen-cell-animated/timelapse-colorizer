@@ -25,7 +25,7 @@ import {
 describe("Dataset", () => {
   // eslint-disable-next-line @typescript-eslint/naming-convention
   const manifestV0_0_0: AnyManifestFile = {
-    frames: ["frame0.json"],
+    frames: ["frame0.png"],
     features: {
       feature1: "feature1.json",
       feature2: "feature2.json",
@@ -71,7 +71,7 @@ describe("Dataset", () => {
   };
 
   // eslint-disable-next-line @typescript-eslint/naming-convention
-  const manifestV1_1_0: ManifestFile = {
+  const manifestV1_1_0: AnyManifestFile = {
     ...manifestV1_0_0,
     metadata: {
       ...manifestV1_0_0.metadata,
@@ -86,10 +86,20 @@ describe("Dataset", () => {
     },
   };
 
+  const manifestV1_1_0_copy = { ...manifestV1_1_0 };
+  delete (manifestV1_1_0_copy as { frames?: string[] }).frames;
+  const manifestV1_8_0: ManifestFile = {
+    ...manifestV1_1_0_copy,
+    frames2d: {
+      segmentations: [{ name: "Default", key: "default", frames: ["frame0.png"] }],
+    },
+  };
+
   const manifestsToTest: [string, AnyManifestFile][] = [
     ["v0.0.0", manifestV0_0_0],
     ["v1.0.0", manifestV1_0_0],
     ["v1.1.0", manifestV1_1_0],
+    ["v1.8.0", manifestV1_8_0],
   ];
 
   // Test both normal and deprecated manifests
@@ -210,7 +220,7 @@ describe("Dataset", () => {
         expect(dataset.featureKeys).to.deep.equal(["feature2"]);
       });
 
-      it("Loads the first frame and retrieves frame dimensions on open", async () => {
+      it("loads the first frame and retrieves frame dimensions on open", async () => {
         const mockFetch = makeMockAsyncLoader(DEFAULT_DATASET_PATH, manifest);
         const dimensionTests = [
           [0, 0],
@@ -233,7 +243,7 @@ describe("Dataset", () => {
         }
       });
 
-      it("Loads metadata", async () => {
+      it("loads metadata", async () => {
         const dataset = await makeMockDataset(manifest);
 
         // Default metadata should be auto-filled with default values
@@ -270,10 +280,21 @@ describe("Dataset", () => {
           expect(dataset.metadata.writerVersion).to.equal("v1.1.0");
         }
       });
+
+      it("formats and resolves frames2D", async () => {
+        const dataset = await makeMockDataset(manifest);
+        const segmentationData = dataset.getSegmentationData();
+        expect(dataset.getDefaultSegmentationKey()).to.equal("default");
+        expect(segmentationData.size).to.equal(1);
+        const defaultSegmentation = segmentationData.get("default");
+        expect(defaultSegmentation).to.not.be.undefined;
+        expect(defaultSegmentation?.frames.length).to.equal(1);
+        expect(defaultSegmentation?.frames[0]).to.equal(DEFAULT_DATASET_DIR + "frame0.png");
+      });
     });
   }
 
-  it("changes relative source paths for 3D data to URLs", async () => {
+  it("handles < v1.1.0 3D source and channels", async () => {
     const manifestWith3dSource: AnyManifestFile = {
       ...MOCK_DATASET_MANIFEST,
       frames3d: {
@@ -287,6 +308,46 @@ describe("Dataset", () => {
     const frames3d = dataset.frames3d;
     expect(frames3d?.segmentations[0].source).to.equal(DEFAULT_DATASET_DIR + "seg.ome.zarr");
     expect(frames3d?.segmentations[0].channelIndex).to.equal(1);
+    expect(frames3d?.totalFrames).to.equal(4);
+  });
+
+  it("changes relative source paths for 3D data to URLs", async () => {
+    const manifestWith3dSource: ManifestFile = {
+      ...MOCK_DATASET_MANIFEST,
+      frames3d: {
+        segmentations: [
+          {
+            name: "Segmentation A",
+            source: "seg.ome.zarr",
+            channelIndex: 1,
+          },
+          {
+            name: "Segmentation B",
+            source: "seg.ome.zarr",
+            channelIndex: 2,
+          },
+        ],
+        backdrops: [
+          {
+            name: "Backdrop A",
+            source: "backdrop.ome.zarr",
+            channelIndex: 0,
+          },
+        ],
+        totalFrames: 4,
+      },
+    };
+    const dataset = await makeMockDataset(manifestWith3dSource);
+    expect(dataset.has3dFrames()).to.be.true;
+    const frames3d = dataset.frames3d;
+    expect(frames3d?.segmentations.length).to.equal(2);
+    expect(frames3d?.segmentations[0].source).to.equal(DEFAULT_DATASET_DIR + "seg.ome.zarr");
+    expect(frames3d?.segmentations[0].channelIndex).to.equal(1);
+    expect(frames3d?.segmentations[1].source).to.equal(DEFAULT_DATASET_DIR + "seg.ome.zarr");
+    expect(frames3d?.segmentations[1].channelIndex).to.equal(2);
+    expect(frames3d?.backdrops?.length).to.equal(1);
+    expect(frames3d?.backdrops?.[0].source).to.equal(DEFAULT_DATASET_DIR + "backdrop.ome.zarr");
+    expect(frames3d?.backdrops?.[0].channelIndex).to.equal(0);
     expect(frames3d?.totalFrames).to.equal(4);
   });
 

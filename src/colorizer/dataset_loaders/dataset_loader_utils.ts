@@ -153,14 +153,13 @@ function resolveChannelSources(
   resolvePath: (path: string) => string | null,
   reportWarning: ReportWarningCallback | undefined
 ): ChannelSource[] | undefined {
-  if (!rawSources) {
+  if (!rawSources || rawSources.length === 0) {
     return [];
   }
   const resolvedSources: ChannelSource[] = [];
   const unresolvedSources: ManifestChannelSource[] = [];
   for (let i = 0; i < rawSources.length; i++) {
     const source = rawSources[i];
-
     const resolvedPath = resolvePath(source.source);
     if (resolvedPath) {
       resolvedSources.push({

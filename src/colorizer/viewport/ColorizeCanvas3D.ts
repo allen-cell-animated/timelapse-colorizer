@@ -698,7 +698,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
 
     const loadSpec = new LoadSpec();
     loadSpec.time = this.params.pendingFrame;
-    const segChannel = this.params.dataset?.frames3d?.segmentations[0].channelIndex ?? 0;
+    const segChannel = this.params.dataset?.frames3d?.segmentations[0].channelIndex;
     const volume = await this.loader.createVolume(loadSpec, (v: Volume, channelIndex: number) => {
       const currentVol = v;
 
@@ -727,13 +727,15 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
       this.params.dataset?.frames3d?.backdrops
     );
 
-    this.view3d.setVolumeChannelOptions(volume, segChannel, {
-      isosurfaceEnabled: false,
-      isosurfaceOpacity: 1.0,
-      color: [1, 1, 1],
-      emissiveColor: [0, 0, 0],
-    });
-    this.view3d.enablePicking(volume, true, segChannel);
+    if (segChannel !== undefined) {
+      this.view3d.setVolumeChannelOptions(volume, segChannel, {
+        isosurfaceEnabled: false,
+        isosurfaceOpacity: 1.0,
+        color: [1, 1, 1],
+        emissiveColor: [0, 0, 0],
+      });
+      this.view3d.enablePicking(volume, true, segChannel);
+    }
     this.view3d.setInterpolationEnabled(volume, this.params.interpolate3d);
 
     this.view3d.updateDensity(volume, 0.5);
