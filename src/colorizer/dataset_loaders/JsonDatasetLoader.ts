@@ -13,9 +13,9 @@ import Dataset, {
   type ChannelSource,
   type FeatureData,
   FeatureType,
-  Frames2dData,
+  type Frames2dData,
   type Frames3dData,
-  FrameSource,
+  type FrameSource,
 } from "src/colorizer/Dataset";
 import {
   addCentroidFeatures,
@@ -32,10 +32,10 @@ import { AnalyticsEvent, triggerAnalyticsEvent } from "src/colorizer/utils/analy
 import { getKeyFromName } from "src/colorizer/utils/data_utils";
 import {
   type AnyManifestFile,
-  ManifestChannelSource,
+  type ManifestChannelSource,
   type ManifestFile,
   type ManifestFileMetadata,
-  ManifestFrameSource,
+  type ManifestFrameSource,
   updateManifestVersion,
 } from "src/colorizer/utils/dataset_utils";
 import { padCentroidsTo3d } from "src/colorizer/utils/math_utils";

@@ -1,5 +1,7 @@
 // Defines types for working with dataset manifests, and methods for
 // updating manifests from one version to another.
+
+/** eslint-disable @typescript-eslint/naming-convention */
 import type { Spread } from "./type_utils";
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -91,6 +93,7 @@ export type ManifestChannelSource = {
   max?: number;
 };
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 type Frames3dV1_1_0 = {
   /**
    * URL or path relative to the root of the manifest. Expected to be a
@@ -141,16 +144,19 @@ type ManifestFileV1_1_0 = Spread<
  * definition and replaces them with a list of segmentations to support multiple
  * alternate segmentations.
  */
+// eslint-disable-next-line @typescript-eslint/naming-convention
 type Frames3dV1_8_0 = Omit<Frames3dV1_1_0, "source" | "segmentationChannel"> & {
   segmentations?: ManifestChannelSource[];
 };
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 type Frames2dV1_8_0 = {
   segmentations?: ManifestFrameSource[];
   backdrops?: ManifestFrameSource[];
 };
 
 // v1.8.0 adds support for multiple alternate segmentations.
+// eslint-disable-next-line @typescript-eslint/naming-convention
 type ManifestFileV1_8_0 = Spread<
   Omit<ManifestFileV1_1_0, "frames3d" | "frames" | "backdrops"> & {
     frames3d?: Frames3dV1_8_0;
@@ -178,6 +184,7 @@ function isV0_0_0(manifest: AnyManifestFile): manifest is ManifestFileV0_0_0 {
   return values.length === 0 || typeof values[0] === "string";
 }
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 function isV1_1_0(manifest: AnyManifestFile): manifest is ManifestFileV1_1_0 {
   const frames3d = (manifest as ManifestFileV1_1_0).frames3d;
   const frames = (manifest as ManifestFileV1_1_0).frames;

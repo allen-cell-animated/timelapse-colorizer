@@ -46,14 +46,16 @@ export type FeatureData = {
   description: string | null;
 };
 
+/** Source for a 2D segmentation or backdrop frame sequence. */
 export type FrameSource = {
   name: string;
   key: string;
   description?: string;
+  /** Array of fully-resolved URLs to 2D frames. */
   frames: (string | null)[];
 };
 
-/** Source for a segmentation or backdrop channel. */
+/** Source for a 3D segmentation or backdrop channel. */
 export type ChannelSource = {
   /**
    * Source for 3D data, resolved to http/https or blob URL. Expected to be a

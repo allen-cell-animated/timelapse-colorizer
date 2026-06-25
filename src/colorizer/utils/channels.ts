@@ -1,4 +1,4 @@
-import { ChannelSource, Frames3dData } from "../Dataset";
+import type { ChannelSource, Frames3dData } from "src/colorizer/Dataset";
 
 /**
  * Returns an array of unique volume sources (usually URLs for 3D Zarr arrays)
