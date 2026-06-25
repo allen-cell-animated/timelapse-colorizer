@@ -147,6 +147,7 @@ export default class Dataset {
   private cachedTracks: Map<number, Track | null>;
   private maxTrackLength: number | null;
   private maxTime: number;
+  private totalFrames: number;
 
   /**
    * Maps from a frame number to a lookup table used to get the global ID of a
@@ -200,11 +201,12 @@ export default class Dataset {
     this.cachedTracks = new Map();
     this.maxTrackLength = null;
     this.maxTime = this.times?.reduce((max, t) => Math.max(max, t), 0) ?? 0;
+    this.totalFrames = this.getTotalFrames();
 
     this.frameToGlobalIdLookup = buildFrameToGlobalIdLookup(
       this.times ?? new Uint32Array(),
       this.segIds ?? new Uint32Array(),
-      this.getTotalFrames()
+      this.totalFrames
     );
 
     this.getSegmentationId = this.getSegmentationId.bind(this);
@@ -313,7 +315,7 @@ export default class Dataset {
   }
 
   public get numberOfFrames(): number {
-    return this.getTotalFrames();
+    return this.totalFrames;
   }
 
   public get featureKeys(): string[] {
@@ -339,7 +341,7 @@ export default class Dataset {
 
   /** Loads a single frame from the dataset */
   public async loadFrame(key: string, index: number): Promise<Texture | undefined> {
-    if (index < 0 || index >= this.getTotalFrames() || !this.framesMap.has(key)) {
+    if (index < 0 || index >= this.totalFrames || !this.framesMap.has(key)) {
       return undefined;
     }
 
@@ -455,7 +457,7 @@ export default class Dataset {
   }
 
   public isValidFrameIndex(index: number): boolean {
-    return index >= 0 && index < this.getTotalFrames();
+    return index >= 0 && index < this.totalFrames;
   }
 
   /** get track id of a given cell id */
