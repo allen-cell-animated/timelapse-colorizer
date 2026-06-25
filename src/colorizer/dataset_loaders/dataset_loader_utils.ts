@@ -154,7 +154,7 @@ function resolveChannelSources(
   reportWarning: ReportWarningCallback | undefined
 ): ChannelSource[] | undefined {
   if (!rawSources || rawSources.length === 0) {
-    return [];
+    return undefined;
   }
   const resolvedSources: ChannelSource[] = [];
   const unresolvedSources: ManifestChannelSource[] = [];
@@ -204,8 +204,8 @@ export function resolveFrames3d(
   }
   return {
     segmentations,
-    totalFrames: data.totalFrames ?? 0,
     backdrops,
+    totalFrames: data.totalFrames ?? 0,
   };
 }
 
@@ -256,7 +256,7 @@ function resolveFrameSources(
  * segmentations and backdrops.
  * @param data "frames2d" field from the manifest.
  * @returns A Frames2dData object with resolved paths, or undefined if no
- * segmentations are present.
+ * segmentations or backdrops are present.
  */
 export function resolveFrames2d(
   data: ManifestFile["frames2d"],

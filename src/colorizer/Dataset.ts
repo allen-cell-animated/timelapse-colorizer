@@ -339,7 +339,7 @@ export default class Dataset {
 
   /** Loads a single frame from the dataset */
   public async loadFrame(key: string, index: number): Promise<Texture | undefined> {
-    if (index < 0 || !this.framesMap.has(key)) {
+    if (index < 0 || index >= this.getTotalFrames() || !this.framesMap.has(key)) {
       return undefined;
     }
 

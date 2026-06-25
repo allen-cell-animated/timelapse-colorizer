@@ -161,7 +161,7 @@ type Frames2dV1_8_0 = {
 };
 
 /**
- * Adds support for multiplate alternate segmentations for both 2D and 3D
+ * Adds support for multiple alternate segmentations for both 2D and 3D
  * frames.
  * - Moves `frames` and `backdrops` argument into `frames2d` field.
  * - Moves `frames3d.source` and `frames3d.segmentationChannel` into a list of

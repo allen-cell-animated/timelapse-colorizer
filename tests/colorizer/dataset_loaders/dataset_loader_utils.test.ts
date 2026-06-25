@@ -21,7 +21,7 @@ describe("getUniqueKeyName", () => {
     expect(result).toBe("key3_1");
   });
 
-  it("prevents duplicate keys by appending a number", () => {
+  it("appends the correct number for multiple duplicates", () => {
     const existingKeys = new Set(["key", "key_1", "key_2"]);
     const result = getUniqueKeyName("key", "name", existingKeys);
     expect(result).toBe("key_3");
