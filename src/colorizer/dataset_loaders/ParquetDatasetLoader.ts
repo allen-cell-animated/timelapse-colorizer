@@ -1,9 +1,9 @@
 import { tableFromIPC } from "apache-arrow";
 import { type ColumnData, parquetMetadataAsync, parquetRead } from "hyparquet";
-import { compressors } from "hyparquet-compressors";
 import type { ParquetType, SchemaElement } from "hyparquet/src/types";
+import { compressors } from "hyparquet-compressors";
 
-import Dataset, { type FeatureData, FeatureType, Frames2dData, type Frames3dData } from "src/colorizer/Dataset";
+import Dataset, { type FeatureData, FeatureType, type Frames2dData, type Frames3dData } from "src/colorizer/Dataset";
 import {
   addCentroidFeatures,
   addTimeFeature,
@@ -18,7 +18,7 @@ import { getKeyFromName } from "src/colorizer/utils/data_utils";
 import { arrayToDataTextureInfo, infoToDataTexture } from "src/colorizer/utils/texture_utils";
 import { decodeFloatOrNull, formatPath } from "src/colorizer/utils/url_utils";
 
-import { ManifestFile } from "../utils/dataset_utils";
+import type { ManifestFile } from "../utils/dataset_utils";
 
 const enum ParquetDataType {
   INT32 = "INT32",
