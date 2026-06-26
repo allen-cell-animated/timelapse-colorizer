@@ -1,7 +1,7 @@
 import { tableFromIPC } from "apache-arrow";
 import { type ColumnData, parquetMetadataAsync, parquetRead } from "hyparquet";
-import type { ParquetType, SchemaElement } from "hyparquet/src/types";
 import { compressors } from "hyparquet-compressors";
+import type { ParquetType, SchemaElement } from "hyparquet/src/types";
 
 import Dataset, { type FeatureData, FeatureType, type Frames2dData, type Frames3dData } from "src/colorizer/Dataset";
 import {
@@ -15,10 +15,9 @@ import {
 import type { DatasetLoadOptions } from "src/colorizer/dataset_loaders/types";
 import { FeatureDataType } from "src/colorizer/types";
 import { getKeyFromName } from "src/colorizer/utils/data_utils";
+import type { ManifestFile } from "src/colorizer/utils/dataset_utils";
 import { arrayToDataTextureInfo, infoToDataTexture } from "src/colorizer/utils/texture_utils";
 import { decodeFloatOrNull, formatPath } from "src/colorizer/utils/url_utils";
-
-import type { ManifestFile } from "../utils/dataset_utils";
 
 const enum ParquetDataType {
   INT32 = "INT32",
@@ -62,7 +61,17 @@ function parseCategories(categoryString: string | undefined): string[] | null {
     return null;
   }
   // TODO: Handle comma escaping in category names
-  return categoryString.split(",").map((s) => s.trim());
+  try {
+    const categories = JSON.parse(categoryString);
+    if (Array.isArray(categories) && categories.every((c) => typeof c === "string")) {
+      return categories;
+    } else {
+      console.warn("Failed to parse category string from Parquet metadata:", categoryString);
+    }
+  } catch (e) {
+    console.warn("Failed to parse category string from Parquet metadata:", categoryString, e);
+  }
+  return null;
 }
 
 // TODO: Handle string columns
