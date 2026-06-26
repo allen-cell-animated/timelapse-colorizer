@@ -470,7 +470,8 @@ export default class Dataset {
       } else if (firstBackdropFramesLength) {
         return firstBackdropFramesLength;
       }
-    } else if (this.has3dFrames() && this.frames3d?.totalFrames) {
+    }
+    if (this.has3dFrames() && this.frames3d?.totalFrames) {
       return this.frames3d.totalFrames;
     }
     return this.maxTime + 1;
