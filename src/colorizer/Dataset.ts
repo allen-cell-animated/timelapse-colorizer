@@ -464,12 +464,12 @@ export default class Dataset {
     if (this.has2dFrames()) {
       const frameFilesLength = this.framesMap.values().next().value?.frames.length;
       const firstBackdropFramesLength = this.backdropData.values().next().value?.frames.length;
-      if (frameFilesLength !== undefined) {
+      if (frameFilesLength) {
         return frameFilesLength;
-      } else if (firstBackdropFramesLength !== undefined) {
+      } else if (firstBackdropFramesLength) {
         return firstBackdropFramesLength;
       }
-    } else if (this.has3dFrames() && this.frames3d?.totalFrames !== undefined) {
+    } else if (this.has3dFrames() && this.frames3d?.totalFrames) {
       return this.frames3d.totalFrames;
     }
     return this.maxTime + 1;
