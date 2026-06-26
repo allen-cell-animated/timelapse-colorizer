@@ -3,12 +3,13 @@ import { type ColumnData, parquetMetadataAsync, parquetRead } from "hyparquet";
 import { compressors } from "hyparquet-compressors";
 import type { ParquetType, SchemaElement } from "hyparquet/src/types";
 
-import Dataset, { type FeatureData, FeatureType, type Frames3dData } from "src/colorizer/Dataset";
+import Dataset, { type FeatureData, FeatureType, Frames2dData, type Frames3dData } from "src/colorizer/Dataset";
 import {
   addCentroidFeatures,
   addTimeFeature,
   addTrackFeature,
   interleaveCentroidData,
+  resolveFrames2d,
   resolveFrames3d,
 } from "src/colorizer/dataset_loaders/dataset_loader_utils";
 import type { DatasetLoadOptions } from "src/colorizer/dataset_loaders/types";
@@ -156,6 +157,8 @@ export default class ParquetDatasetLoader {
     this.baseUrl = formatPath(parquetUrl.substring(0, parquetUrl.lastIndexOf("/")));
 
     this.onLoadedColumnChunk = this.onLoadedColumnChunk.bind(this);
+
+    this.resolvePath = this.resolvePath.bind(this);
   }
 
   private resolvePath(path: string): string {
@@ -167,8 +170,27 @@ export default class ParquetDatasetLoader {
     if (!frames3dSource) {
       return undefined;
     }
-    const frames3dArg = JSON.parse(frames3dSource ?? "null") as ManifestFile["frames3d"] | undefined | null;
-    return resolveFrames3d(frames3dArg ?? undefined, this.resolvePath, this.options.reportWarning);
+    try {
+      const frames3dArg = JSON.parse(frames3dSource ?? "null") as ManifestFile["frames3d"] | undefined | null;
+      return resolveFrames3d(frames3dArg ?? undefined, this.resolvePath, this.options.reportWarning);
+    } catch (e) {
+      console.warn("Failed to parse frames3d metadata from Parquet file: ", e);
+      return undefined;
+    }
+  }
+
+  private getFrames2dFromMetadata(metadata: Map<string, string | undefined>): Frames2dData | undefined {
+    const frames2dSource = metadata.get("frames2d");
+    if (!frames2dSource) {
+      return undefined;
+    }
+    try {
+      const frames2dArg = JSON.parse(frames2dSource ?? "null") as ManifestFile["frames2d"] | undefined | null;
+      return resolveFrames2d(frames2dArg ?? undefined, this.resolvePath);
+    } catch (e) {
+      console.warn("Failed to parse frames2d metadata from Parquet file: ", e);
+      return undefined;
+    }
   }
 
   private parseColumnData(chunk: ColumnData, schema: SchemaElement): void {
@@ -297,6 +319,7 @@ export default class ParquetDatasetLoader {
       }
     }
 
+    const frames2d = this.getFrames2dFromMetadata(metadataMap);
     const frames3d = this.getFrames3dFromMetadata(metadataMap);
 
     this.numColumns = metadata.schema.length - 1;
@@ -327,7 +350,9 @@ export default class ParquetDatasetLoader {
       centroids: interleaveCentroidData(this.centroidsX, this.centroidsY, this.centroidsZ),
       bounds: this.bounds,
       outliers: this.outliers,
-      frames3d: frames3d ?? undefined,
+      frames3d: frames3d,
+      frames2d: frames2d,
+      // TODO: Parse other manifest metadata
     });
     console.log("Loaded dataset from Parquet file: ", dataset);
     return dataset;
