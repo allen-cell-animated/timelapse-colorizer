@@ -3,34 +3,21 @@ import { type ColumnData, parquetMetadataAsync, parquetRead } from "hyparquet";
 import { compressors } from "hyparquet-compressors";
 import type { ParquetType, SchemaElement } from "hyparquet/src/types";
 
-import Dataset, { type Backdrop3dData, type FeatureData, FeatureType, type Frames3dData } from "src/colorizer/Dataset";
+import Dataset, { type FeatureData, FeatureType, type Frames3dData } from "src/colorizer/Dataset";
 import {
   addCentroidFeatures,
   addTimeFeature,
   addTrackFeature,
   interleaveCentroidData,
+  resolveFrames3d,
 } from "src/colorizer/dataset_loaders/dataset_loader_utils";
 import type { DatasetLoadOptions } from "src/colorizer/dataset_loaders/types";
-import { FeatureDataType, LoadTroubleshooting } from "src/colorizer/types";
+import { FeatureDataType } from "src/colorizer/types";
 import { getKeyFromName } from "src/colorizer/utils/data_utils";
 import { arrayToDataTextureInfo, infoToDataTexture } from "src/colorizer/utils/texture_utils";
 import { decodeFloatOrNull, formatPath } from "src/colorizer/utils/url_utils";
-import { formatQuantityString } from "src/utils/formatting";
 
-const METADATA_SEG_CHANNEL_COUNT = "num_seg_channels";
-const METADATA_SEG_PREFIX = "seg";
-const METADATA_CHANNEL_COUNT = "num_channels";
-const METADATA_CHANNEL_PREFIX = "c";
-
-const enum MetadataChannelSuffix {
-  SOURCE = "_source",
-  CHANNEL = "_channel",
-  NAME = "_name",
-  // Optional fields
-  DESCRIPTION = "_description",
-  MIN = "_min",
-  MAX = "_max",
-}
+import { ManifestFile } from "../utils/dataset_utils";
 
 const enum ParquetDataType {
   INT32 = "INT32",
@@ -175,116 +162,13 @@ export default class ParquetDatasetLoader {
     return this.options.pathResolver?.resolve(this.baseUrl, path) ?? path;
   }
 
-  private getChannelInfo(
-    metadata: Map<string, string | undefined>,
-    index: number,
-    type: "seg" | "channel"
-  ): Backdrop3dData | null {
-    const prefix = type === "seg" ? METADATA_SEG_PREFIX : METADATA_CHANNEL_PREFIX;
-    const readableType = type === "seg" ? "Segmentation channel" : "Channel";
-
-    const sourceKey = `${prefix}${index}${MetadataChannelSuffix.SOURCE}`;
-    let source = metadata.get(sourceKey);
-    const channelIdxStr = metadata.get(`${prefix}${index}${MetadataChannelSuffix.CHANNEL}`);
-    let name = metadata.get(`${prefix}${index}${MetadataChannelSuffix.NAME}`);
-    const description = metadata.get(`${prefix}${index}${MetadataChannelSuffix.DESCRIPTION}`);
-    const minStr = metadata.get(`${prefix}${index}${MetadataChannelSuffix.MIN}`);
-    const maxStr = metadata.get(`${prefix}${index}${MetadataChannelSuffix.MAX}`);
-
-    // Try to resolve channel source to absolute path
-    if (source === undefined || source === "") {
-      console.warn(
-        `${readableType} ${index} is missing required source field in parquet metadata (${sourceKey}) and will be skipped. ` +
-          "Please check the logged metadata for missing volume data sources."
-      );
-      return null;
+  private getFrames3dFromMetadata(metadata: Map<string, string | undefined>): Frames3dData | undefined {
+    const frames3dSource = metadata.get("frames3d");
+    if (!frames3dSource) {
+      return undefined;
     }
-    source = this.resolvePath(source);
-    if (source === null) {
-      console.warn(
-        `${readableType} ${index} source path '${source}' could not be resolved and will be skipped. ` +
-          "Please check the logged metadata for malformed paths."
-      );
-      return null;
-    }
-
-    // Validate channel index
-    const channelIndex = Number.parseInt(channelIdxStr ?? "", 10);
-    if (isNaN(channelIndex)) {
-      console.warn(
-        `${readableType} ${index} has invalid channel index '${channelIdxStr}' and will be skipped. ` +
-          "Please check the logged metadata for invalid channel indices."
-      );
-      return null;
-    }
-    name = name ?? `${readableType} ${index}`;
-    const min = minStr !== undefined ? Number.parseFloat(minStr) : undefined;
-    const max = maxStr !== undefined ? Number.parseFloat(maxStr) : undefined;
-
-    return {
-      source,
-      name,
-      channelIndex,
-      min: Number.isFinite(min) ? min : undefined,
-      max: Number.isFinite(max) ? max : undefined,
-      description,
-    };
-  }
-
-  private getFrames3dFromMetadata(metadata: Map<string, string | undefined>): Frames3dData | null {
-    const numSegChannelsStr = metadata.get(METADATA_SEG_CHANNEL_COUNT);
-    const numChannelsStr = metadata.get(METADATA_CHANNEL_COUNT);
-    const numSegChannels = numSegChannelsStr ? Number.parseInt(numSegChannelsStr, 10) : 0;
-    const numChannels = numChannelsStr ? Number.parseInt(numChannelsStr, 10) : 0;
-
-    if (!numSegChannels && !numChannels) {
-      return null;
-    }
-
-    // TODO: Update once Dataset has support for multiple seg channels; for now,
-    // only the first will be included.
-    const segmentations: Backdrop3dData[] = [];
-    const backdrops: Backdrop3dData[] = [];
-    let numUnloadableSegChannels = 0;
-    let numUnloadableChannels = 0;
-
-    for (let i = 0; i < numSegChannels; i++) {
-      const segChannelInfo = this.getChannelInfo(metadata, i, "seg");
-      if (segChannelInfo) {
-        segmentations.push(segChannelInfo);
-      } else {
-        numUnloadableSegChannels++;
-      }
-    }
-    if (numUnloadableSegChannels > 0) {
-      this.options.reportWarning?.(
-        formatQuantityString(numUnloadableSegChannels, "segmentation channel", "segmentation channels") +
-          " could not be loaded.",
-        LoadTroubleshooting.CHECK_PARQUET_3D_METADATA
-      );
-    }
-
-    for (let i = 0; i < numChannels; i++) {
-      const channelInfo = this.getChannelInfo(metadata, i, "channel");
-      if (channelInfo) {
-        backdrops.push(channelInfo);
-      } else {
-        numUnloadableChannels++;
-      }
-    }
-    if (numUnloadableChannels > 0) {
-      this.options.reportWarning?.(
-        formatQuantityString(numUnloadableChannels, "channel", "channels") + " could not be loaded.",
-        LoadTroubleshooting.CHECK_PARQUET_3D_METADATA
-      );
-    }
-
-    const firstSeg = segmentations[0];
-    return {
-      source: firstSeg.source,
-      segmentationChannel: firstSeg.channelIndex,
-      backdrops,
-    };
+    const frames3dArg = JSON.parse(frames3dSource ?? "null") as ManifestFile["frames3d"] | undefined | null;
+    return resolveFrames3d(frames3dArg ?? undefined, this.resolvePath, this.options.reportWarning);
   }
 
   private parseColumnData(chunk: ColumnData, schema: SchemaElement): void {
