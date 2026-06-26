@@ -147,7 +147,12 @@ export function reportUnloadedFeatures(
 
 //// 3D channels ////
 
-function resolveChannelSources(
+/**
+ * Parses a list of 3D channel sources from the manifest (either segmentations
+ * or backdrops). Resolves all paths to absolute URLs and adds defaults for
+ * required values.
+ */
+function parseChannelSources(
   rawSources: ManifestChannelSource[] | undefined,
   type: "segmentation" | "backdrop",
   resolvePath: (path: string) => string | null,
@@ -188,7 +193,6 @@ function resolveChannelSources(
 /**
  * Resolves a 3D frames object from the manifest, resolving all paths to
  * absolute URLs and adding defaults for required values.
- * @param data "frames3d" field from the manifest.
  * @returns A Frames3dData object with resolved paths, or undefined if no
  * segmentations are present.
  */
@@ -200,8 +204,8 @@ export function resolveFrames3d(
   if (!data) {
     return undefined;
   }
-  const segmentations = resolveChannelSources(data.segmentations, "segmentation", resolvePath, reportWarning);
-  const backdrops = resolveChannelSources(data.backdrops, "backdrop", resolvePath, reportWarning);
+  const segmentations = parseChannelSources(data.segmentations, "segmentation", resolvePath, reportWarning);
+  const backdrops = parseChannelSources(data.backdrops, "backdrop", resolvePath, reportWarning);
   if (!segmentations) {
     return undefined;
   }
@@ -228,7 +232,12 @@ export function getUniqueKeyName(key: string | undefined, name: string, existing
   return newKey;
 }
 
-function resolveFrameSources(
+/**
+ * Parses an array of 2D frame sources (either segmentations or backdrops) from
+ * the manifest. Resolves all paths to absolute URLs and adds defaults for
+ * required values.
+ */
+function parseFrameSources(
   data: ManifestFrameSource[] | undefined,
   resolvePath: (path: string) => string | null
 ): FrameSource[] | undefined {
@@ -257,7 +266,6 @@ function resolveFrameSources(
  * Resolves a 2D frames object from the manifest, resolving all paths to
  * absolute URLs and validating that the number of frames is consistent across
  * segmentations and backdrops.
- * @param data "frames2d" field from the manifest.
  * @returns A Frames2dData object with resolved paths, or undefined if no
  * segmentations or backdrops are present.
  */
@@ -268,8 +276,8 @@ export function resolveFrames2d(
   if (!data) {
     return undefined;
   }
-  const segmentations = resolveFrameSources(data.segmentations, resolvePath);
-  const backdrops = resolveFrameSources(data.backdrops, resolvePath);
+  const segmentations = parseFrameSources(data.segmentations, resolvePath);
+  const backdrops = parseFrameSources(data.backdrops, resolvePath);
 
   if (!segmentations && !backdrops) {
     return undefined;

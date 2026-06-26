@@ -82,12 +82,13 @@ type ManifestFileV1_0_0 = Omit<ManifestFileV0_0_0, "features" | "featureMetadata
   backdrops?: ManifestFrameSource[];
 };
 
-/** Defines the source of 3D segmentation or backdrop channels in the manifest.
- * */
+/**
+ * Defines the source of 3D segmentation or backdrop channels in the manifest.
+ */
 export type ManifestChannelSource = {
   source: string;
   name?: string;
-  /** Index of the channel in the source volume. 0 by default.*/
+  /** Index of the channel in the source volume. 0 by default. */
   channelIndex?: number;
   description?: string;
   min?: number;
@@ -105,7 +106,7 @@ type Frames3dV1_1_0 = {
    * time-series ZARR (e.g. ends with `.ome.zarr`).
    */
   source: string;
-  /* The index of the channel to use as a segmentation within the source. */
+  /** The index of the channel to use as a segmentation within the source. */
   segmentationChannel: number;
   /** Total number of frames in the time-series volume. */
   totalFrames: number;
