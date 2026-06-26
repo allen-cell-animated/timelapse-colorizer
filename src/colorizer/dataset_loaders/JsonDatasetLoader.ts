@@ -262,6 +262,7 @@ export default class JsonDatasetLoader {
       this.reportLoadProgress(this.loadToBuffer(FeatureDataType.F32, centroidsFile)),
       this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U16, boundsFile)),
       this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, segIdsFile)),
+      // TODO: Can the 3D frame dimensions also be fetched here for 3D datasets?
       this.reportLoadProgress(this.getFrameDims(frames2d)),
       ...featuresPromises,
     ]);

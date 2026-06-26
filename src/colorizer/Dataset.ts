@@ -217,6 +217,7 @@ export default class Dataset {
     if (!this.centroids || this.centroids.length === 0) {
       return null;
     }
+    // Note: This assumes that no centroid coordinates are negative.
     let maxX = 0;
     let maxY = 0;
     let maxZ = 0;
@@ -469,7 +470,8 @@ export default class Dataset {
       } else if (firstBackdropFramesLength) {
         return firstBackdropFramesLength;
       }
-    } else if (this.has3dFrames() && this.frames3d?.totalFrames) {
+    }
+    if (this.has3dFrames() && this.frames3d?.totalFrames) {
       return this.frames3d.totalFrames;
     }
     return this.maxTime + 1;

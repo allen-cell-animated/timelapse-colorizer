@@ -169,7 +169,7 @@ class PointRenderer2D {
       }
       const x = centroid[0];
       const y = dataset.frameResolution.y - centroid[1];
-      const z = 0; // = centroid[2];
+      const z = 0;
       // TODO: Set scale from data in the future (per-point scaling)
       const scale = 1;
       this.positionAndScaleAttribute.setXYZW(i, x, y, z, scale);
