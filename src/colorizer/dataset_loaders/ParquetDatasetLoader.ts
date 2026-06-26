@@ -8,13 +8,13 @@ import {
   addCentroidFeatures,
   addTimeFeature,
   addTrackFeature,
+  getUniqueKeyName,
   interleaveCentroidData,
   resolveFrames2d,
   resolveFrames3d,
 } from "src/colorizer/dataset_loaders/dataset_loader_utils";
 import type { DatasetLoadOptions } from "src/colorizer/dataset_loaders/types";
 import { FeatureDataType } from "src/colorizer/types";
-import { getKeyFromName } from "src/colorizer/utils/data_utils";
 import type { ManifestFile } from "src/colorizer/utils/dataset_utils";
 import { arrayToDataTextureInfo, infoToDataTexture } from "src/colorizer/utils/texture_utils";
 import { decodeFloatOrNull, formatPath } from "src/colorizer/utils/url_utils";
@@ -74,36 +74,84 @@ function parseCategories(categoryString: string | undefined): string[] | null {
   return null;
 }
 
-// TODO: Handle string columns
-
-const TIMES_COLUMN_NAMES = ["t", "t_id", "time", "times", "frame", "frames"];
-const TRACK_ID_COLUMN_NAMES = ["track_id", "trackid", "track", "tracks"];
-const SEG_ID_COLUMN_NAMES = ["id", "ids", "seg_id", "segid", "label", "labels", "label_id", "label id", "seg_label_id"];
-const CENTROID_X_COLUMN_NAMES = ["centroid x", "centroid_x", "x"];
-const CENTROID_Y_COLUMN_NAMES = ["centroid y", "centroid_y", "y"];
-const CENTROID_Z_COLUMN_NAMES = ["centroid z", "centroid_z", "z"];
-const BOUNDS_COLUMN_NAMES = ["bounds", "boundaries"];
-const OUTLIER_COLUMN_NAMES = ["outlier", "outliers"];
-
 const enum MetadataType {
   FLOAT_OR_INT = "float_or_int",
   INT = "int",
   INT_OR_BOOLEAN = "int_or_boolean",
 }
 
+// TODO: Handle string columns
+const enum MetadataColumnKeys {
+  TIMES = "times",
+  TRACKS = "tracks",
+  SEG_IDS = "segIds",
+  CENTROID_X = "centroidsX",
+  CENTROID_Y = "centroidsY",
+  CENTROID_Z = "centroidsZ",
+  BOUNDS = "bounds",
+  OUTLIERS = "outliers",
+}
+
+const MetadataColumnKeyToExpectedType: Record<MetadataColumnKeys, MetadataType> = {
+  [MetadataColumnKeys.TIMES]: MetadataType.INT,
+  [MetadataColumnKeys.TRACKS]: MetadataType.INT,
+  [MetadataColumnKeys.SEG_IDS]: MetadataType.INT,
+  [MetadataColumnKeys.CENTROID_X]: MetadataType.FLOAT_OR_INT,
+  [MetadataColumnKeys.CENTROID_Y]: MetadataType.FLOAT_OR_INT,
+  [MetadataColumnKeys.CENTROID_Z]: MetadataType.FLOAT_OR_INT,
+  [MetadataColumnKeys.BOUNDS]: MetadataType.INT,
+  [MetadataColumnKeys.OUTLIERS]: MetadataType.INT_OR_BOOLEAN,
+};
+
+const MetadataColumnKeyToDefaultNames: Record<MetadataColumnKeys, string[]> = {
+  [MetadataColumnKeys.TIMES]: ["t", "t_id", "time", "times", "frame", "frames"],
+  [MetadataColumnKeys.TRACKS]: ["track_id", "track_ids", "trackids", "trackid", "track", "tracks"],
+  [MetadataColumnKeys.SEG_IDS]: [
+    "id",
+    "ids",
+    "seg_id",
+    "seg_ids",
+    "segid",
+    "segids",
+    "label",
+    "labels",
+    "label_id",
+    "label_ids",
+    "label id",
+    "label ids",
+    "seg_label_id",
+    "seg_label_ids",
+  ],
+  [MetadataColumnKeys.CENTROID_X]: ["centroid x", "centroid_x", "x"],
+  [MetadataColumnKeys.CENTROID_Y]: ["centroid y", "centroid_y", "y"],
+  [MetadataColumnKeys.CENTROID_Z]: ["centroid z", "centroid_z", "z"],
+  [MetadataColumnKeys.BOUNDS]: ["bounds", "boundaries"],
+  [MetadataColumnKeys.OUTLIERS]: ["outlier", "outliers"],
+};
+
 function isMetadataColumn(
   columnName: string,
   type: ParquetType,
-  metadataColumnNames: string[],
-  expectedType: MetadataType
+  key: MetadataColumnKeys,
+  metadata: Map<string, string | undefined>
 ): boolean {
-  const lowerColumnName = columnName.toLowerCase();
-  const matchesMetadataName = metadataColumnNames.includes(lowerColumnName);
-  if (!matchesMetadataName) {
-    return false;
+  // If column is explicitly defined, check against the column name in metadata.
+  if (metadata.has(key)) {
+    if (metadata.get(key) !== columnName) {
+      return false;
+    }
+  } else {
+    // Otherwise, check if the column name matches any of the default names for this
+    // metadata key.
+    const lowerColumnName = columnName.toLowerCase();
+    const matchesMetadataName = MetadataColumnKeyToDefaultNames[key].includes(lowerColumnName);
+    if (!matchesMetadataName) {
+      return false;
+    }
   }
 
   // Check if types match expected values
+  const expectedType = MetadataColumnKeyToExpectedType[key];
   switch (expectedType) {
     case MetadataType.FLOAT_OR_INT:
       return isFloatType(type) || isIntType(type);
@@ -122,6 +170,7 @@ export default class ParquetDatasetLoader {
   private options: DatasetLoadOptions;
   private file?: ArrayBuffer;
 
+  private metadata: Map<string, string | undefined>;
   private columnNameToSchemaMap: Map<string, SchemaElement>;
   private columnNameToFieldMetadata: Map<string, Map<string, string>>;
 
@@ -147,6 +196,7 @@ export default class ParquetDatasetLoader {
     this.file = parquetFile;
     this.options = options ?? {};
 
+    this.metadata = new Map();
     this.columnNameToSchemaMap = new Map();
     this.columnNameToFieldMetadata = new Map();
 
@@ -203,47 +253,36 @@ export default class ParquetDatasetLoader {
   }
 
   private parseColumnData(chunk: ColumnData, schema: SchemaElement): void {
-    const columnName = schema.name;
+    const colName = schema.name;
     const schemaType = schema.type;
-    const fieldMetadata = this.columnNameToFieldMetadata.get(columnName);
-    console.log(`Parsing column '${columnName}' of type '${schemaType}'`, chunk, schema, fieldMetadata);
+    const fieldMetadata = this.columnNameToFieldMetadata.get(colName);
     // TODO: Handle string arrays (type of BYTE_ARRAY)
 
     if (!schemaType) {
-      console.warn(`Column '${columnName}' does not have a type in Parquet schema, skipping`);
+      console.warn(`Column '${colName}' does not have a type in Parquet schema, skipping`);
       return;
     }
 
-    if (isMetadataColumn(columnName, schemaType, TIMES_COLUMN_NAMES, MetadataType.INT)) {
+    if (isMetadataColumn(colName, schemaType, MetadataColumnKeys.TIMES, this.metadata)) {
       this.times = Uint32Array.from(chunk.columnData, (v) => Number(v));
-    } else if (isMetadataColumn(columnName, schemaType, TRACK_ID_COLUMN_NAMES, MetadataType.INT)) {
+    } else if (isMetadataColumn(colName, schemaType, MetadataColumnKeys.TRACKS, this.metadata)) {
       this.trackIds = Uint32Array.from(chunk.columnData, (v) => Number(v));
-    } else if (isMetadataColumn(columnName, schemaType, SEG_ID_COLUMN_NAMES, MetadataType.INT)) {
+    } else if (isMetadataColumn(colName, schemaType, MetadataColumnKeys.SEG_IDS, this.metadata)) {
       this.segIds = Uint32Array.from(chunk.columnData, (v) => Number(v));
-    } else if (isMetadataColumn(columnName, schemaType, CENTROID_X_COLUMN_NAMES, MetadataType.FLOAT_OR_INT)) {
-      if (!this.centroidsX) {
-        this.centroidsX = Float32Array.from(chunk.columnData, (v) => Number(v));
-      }
-    } else if (isMetadataColumn(columnName, schemaType, CENTROID_Y_COLUMN_NAMES, MetadataType.FLOAT_OR_INT)) {
-      if (!this.centroidsY) {
-        this.centroidsY = Float32Array.from(chunk.columnData, (v) => Number(v));
-      }
-    } else if (isMetadataColumn(columnName, schemaType, CENTROID_Z_COLUMN_NAMES, MetadataType.FLOAT_OR_INT)) {
-      if (!this.centroidsZ) {
-        this.centroidsZ = Float32Array.from(chunk.columnData, (v) => Number(v));
-      }
-    } else if (isMetadataColumn(columnName, schemaType, BOUNDS_COLUMN_NAMES, MetadataType.FLOAT_OR_INT)) {
+    } else if (isMetadataColumn(colName, schemaType, MetadataColumnKeys.CENTROID_X, this.metadata)) {
+      this.centroidsX = Float32Array.from(chunk.columnData, (v) => Number(v));
+    } else if (isMetadataColumn(colName, schemaType, MetadataColumnKeys.CENTROID_Y, this.metadata)) {
+      this.centroidsY = Float32Array.from(chunk.columnData, (v) => Number(v));
+    } else if (isMetadataColumn(colName, schemaType, MetadataColumnKeys.CENTROID_Z, this.metadata)) {
+      this.centroidsZ = Float32Array.from(chunk.columnData, (v) => Number(v));
+    } else if (isMetadataColumn(colName, schemaType, MetadataColumnKeys.BOUNDS, this.metadata)) {
       this.bounds = Uint16Array.from(chunk.columnData, (v) => Number(v));
-    } else if (isMetadataColumn(columnName, schemaType, OUTLIER_COLUMN_NAMES, MetadataType.INT_OR_BOOLEAN)) {
+    } else if (isMetadataColumn(colName, schemaType, MetadataColumnKeys.OUTLIERS, this.metadata)) {
       this.outliers = Uint8Array.from(chunk.columnData, (v) => Number(v));
     } else {
       // Otherwise, treat as feature column
-      const name = fieldMetadata?.get(FeatureMetadataKey.NAME) ?? columnName;
-      const key = getKeyFromName(fieldMetadata?.get(FeatureMetadataKey.KEY) ?? columnName);
-      if (this.features.has(key)) {
-        console.warn(`Duplicate column name '${columnName}' found in Parquet file, skipping`);
-        return;
-      }
+      const name = fieldMetadata?.get(FeatureMetadataKey.NAME) ?? colName;
+      const key = getUniqueKeyName(fieldMetadata?.get(FeatureMetadataKey.KEY), name, new Set(this.features.keys()));
       const data = Float32Array.from(chunk.columnData, (v) => Number(v));
       const textureInfo = arrayToDataTextureInfo(data, FeatureDataType.F32);
       const tex = infoToDataTexture(textureInfo);
@@ -311,7 +350,7 @@ export default class ParquetDatasetLoader {
     }
     const metadata = await parquetMetadataAsync(this.file);
     console.log("Parquet file metadata: ", metadata);
-    const metadataMap = new Map<string, string | undefined>(
+    this.metadata = new Map<string, string | undefined>(
       (metadata.key_value_metadata ?? []).map((entry) => [entry.key, entry.value])
     );
 
@@ -319,7 +358,7 @@ export default class ParquetDatasetLoader {
     // stored in the metadata under the "ARROW:schema" key as an Arrow IPC
     // message.
     // TODO: Is this standard? Do all Parquet files include this?
-    const hyparquetArrowMetadata = metadataMap.get("ARROW:schema");
+    const hyparquetArrowMetadata = this.metadata.get("ARROW:schema");
     if (hyparquetArrowMetadata) {
       const uint8Array = decodeBase64ToUint8Array(hyparquetArrowMetadata);
       const schema = tableFromIPC(uint8Array).schema;
@@ -328,8 +367,8 @@ export default class ParquetDatasetLoader {
       }
     }
 
-    const frames2d = this.getFrames2dFromMetadata(metadataMap);
-    const frames3d = this.getFrames3dFromMetadata(metadataMap);
+    const frames2d = this.getFrames2dFromMetadata(this.metadata);
+    const frames3d = this.getFrames3dFromMetadata(this.metadata);
 
     this.numColumns = metadata.schema.length - 1;
 
@@ -342,7 +381,7 @@ export default class ParquetDatasetLoader {
     await parquetRead({
       file: this.file,
       compressors,
-      onChunk: this.onLoadedColumnChunk,
+      onChunk: (chunk) => this.onLoadedColumnChunk(chunk),
     });
 
     const centroids = interleaveCentroidData(this.centroidsX, this.centroidsY, this.centroidsZ);
@@ -363,7 +402,6 @@ export default class ParquetDatasetLoader {
       frames2d: frames2d,
       // TODO: Parse other manifest metadata
     });
-    console.log("Loaded dataset from Parquet file: ", dataset);
     return dataset;
   }
 

@@ -127,6 +127,11 @@ export function addCentroidFeatures(
   }
 }
 
+/**
+ * Returns a Float32Array with interleaved centroid data from the given X, Y,
+ * and Z arrays. If the input arrays are given by `x`, `y`, and `z`, the output
+ * array will be `[x[0], y[0], z[0], x[1], y[1], z[1], ...]`.
+ */
 export function interleaveCentroidData(
   centroidsX: Float32Array | null,
   centroidsY: Float32Array | null,
