@@ -208,7 +208,9 @@ export default class JsonDatasetLoader {
     }
     try {
       const result = await this.frameLoader.load(firstValidFramePath);
-      return new Vector2(result.image.width, result.image.height);
+      const frameDims = new Vector2(result.image.width, result.image.height);
+      result.dispose();
+      return frameDims;
     } catch (error) {
       console.warn(
         `Failed to determine frame dimensions; encountered the following error while loading frame from path '${firstValidFramePath}': ${error}`
@@ -262,6 +264,7 @@ export default class JsonDatasetLoader {
       this.reportLoadProgress(this.loadToBuffer(FeatureDataType.F32, centroidsFile)),
       this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U16, boundsFile)),
       this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, segIdsFile)),
+      // TODO: Can the 3D frame dimensions also be fetched here for 3D datasets?
       this.reportLoadProgress(this.getFrameDims(frames2d)),
       ...featuresPromises,
     ]);
