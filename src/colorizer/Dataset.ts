@@ -443,7 +443,7 @@ export default class Dataset {
 
   private getTotalFrames(): number {
     if (this.has2dFrames()) {
-      const frameFilesLength = this.framesMap.get(this.getDefaultSegmentationKey() ?? "")?.frames.length;
+      const frameFilesLength = this.framesMap.values().next().value?.frames.length;
       const firstBackdropFramesLength = this.backdropData.values().next().value?.frames.length;
       if (frameFilesLength !== undefined) {
         return frameFilesLength;

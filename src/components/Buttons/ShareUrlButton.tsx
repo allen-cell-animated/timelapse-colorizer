@@ -61,8 +61,8 @@ export default function ShareUrlButton(props: ShareUrlButtonProps): ReactElement
     }
     if (dataset) {
       const dataset3dSource = dataset.frames3d?.segmentations?.[0]?.source || "";
-      const dataset2dSegSource = Array.from(dataset.getSegmentationData().values())[0]?.frames[0] || "";
-      const dataset2dBackdropSource = Array.from(dataset.getBackdropData().values())[0]?.frames[0] || "";
+      const dataset2dSegSource = dataset.getSegmentationData().values().next().value?.frames[0] || "";
+      const dataset2dBackdropSource = dataset.getBackdropData().values().next().value?.frames[0] || "";
       const datasetManifestUrl = dataset.manifestUrl || "";
       sources.push(dataset3dSource, dataset2dSegSource, dataset2dBackdropSource, datasetManifestUrl);
     }
