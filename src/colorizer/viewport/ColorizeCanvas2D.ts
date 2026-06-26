@@ -119,6 +119,7 @@ type ColorizeUniformTypes = {
   useRepeatingCategoricalColors: boolean;
   pointsColor: Color;
   pointsColorMode: number;
+  pointsOpacity: number;
 };
 
 type ColorizeUniforms = { [K in keyof ColorizeUniformTypes]: Uniform<ColorizeUniformTypes[K]> };
@@ -171,6 +172,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
     useRepeatingCategoricalColors: new Uniform(false),
     pointsColor: new Uniform(new Color(CENTROID_COLOR_DEFAULT)),
     pointsColorMode: new Uniform(0),
+    pointsOpacity: new Uniform(1.0),
   };
 };
 
@@ -662,11 +664,12 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
       this.forceFrameReload();
     }
     if (hasPropertyChanged(params, prevParams, ["backdropVisible", "objectOpacity"])) {
-      if (params.backdropVisible) {
-        this.setUniform("objectOpacity", clamp(params.objectOpacity, 0, 100) / 100);
-      } else {
-        this.setUniform("objectOpacity", 1.0);
-      }
+      const objectOpacity = params.backdropVisible ? clamp(params.objectOpacity, 0, 100) / 100 : 1.0;
+      this.setUniform("objectOpacity", objectOpacity);
+    }
+    if (hasPropertyChanged(params, prevParams, ["backdropVisible", "centroidOpacity"])) {
+      const centroidOpacity = params.backdropVisible ? clamp(params.centroidOpacity, 0, 100) / 100 : 1.0;
+      this.setUniform("pointsOpacity", centroidOpacity);
     }
     this.setUniform("backdropSaturation", clamp(params.backdropSaturation, 0, 100) / 100);
     this.setUniform("backdropBrightness", clamp(params.backdropBrightness, 0, 200) / 100);
@@ -741,8 +744,11 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     if (this.params?.backdropVisible && pendingBackdropKey !== null && dataset?.hasBackdrop(pendingBackdropKey)) {
       backdropPromise = dataset?.loadBackdrop(pendingBackdropKey, index);
     }
-    if (this.params?.showSegmentations) {
-      framePromise = dataset?.loadFrame(index);
+    // TODO: Load by a segmentation key stored in state, so users can switch
+    // between segmentations.
+    const segmentationKey = dataset?.getDefaultSegmentationKey() ?? null;
+    if (this.params?.showSegmentations && segmentationKey !== null && dataset?.hasSegmentation(segmentationKey)) {
+      framePromise = dataset?.loadFrame(segmentationKey, index);
     }
     const result = await Promise.allSettled([framePromise, backdropPromise]);
     const [frame, backdrop] = result;

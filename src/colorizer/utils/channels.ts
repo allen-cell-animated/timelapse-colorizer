@@ -1,17 +1,16 @@
-import type { ManifestFile } from "./dataset_utils";
-
-type Frames3dInfo = NonNullable<ManifestFile["frames3d"]>;
-type BackdropChannelInfo = NonNullable<NonNullable<ManifestFile["frames3d"]>["backdrops"]>;
+import type { ChannelSource, Frames3dData } from "src/colorizer/Dataset";
 
 /**
  * Returns an array of unique volume sources (usually URLs for 3D Zarr arrays)
  * for the segmentation and additional backdrop channels. The segmentation source is
  * always first.
  */
-export function getVolumeSources(frames3d: Frames3dInfo): string[] {
+export function getVolumeSources(frames3d: Frames3dData): string[] {
   const sources = new Set<string>();
   // Order segmentation source first
-  sources.add(frames3d.source);
+  for (const segmentation of frames3d.segmentations) {
+    sources.add(segmentation.source);
+  }
   if (frames3d.backdrops) {
     for (const backdrop of frames3d.backdrops) {
       sources.add(backdrop.source);
@@ -37,7 +36,7 @@ export function getVolumeSources(frames3d: Frames3dInfo): string[] {
  * `getVolumeSources()`.
  * @param sourceChannelCounts Number of channels in each source, in the same
  * order as `sources`.
- * @param backdropChannelInfo Array of backdrop channel info from the Dataset
+ * @param channelSourceInfo Array of backdrop channel info from the Dataset
  * manifest.
  * @returns An array of channel indices, one for each backdrop channel. If the
  * returned array is `relativeToAbsoluteIndex`, then, for some backdrop channel
@@ -68,9 +67,9 @@ export function getVolumeSources(frames3d: Frames3dInfo): string[] {
 export function getRelativeToAbsoluteChannelIndexMap(
   sources: string[],
   sourceChannelCounts: number[],
-  backdropChannelInfo: BackdropChannelInfo | undefined
+  channelSourceInfo: ChannelSource[] | undefined
 ): number[] {
-  if (!backdropChannelInfo) {
+  if (!channelSourceInfo) {
     return [];
   }
   // Starting offset of each source's channels (sum of previous channel counts)
@@ -82,7 +81,7 @@ export function getRelativeToAbsoluteChannelIndexMap(
   }
 
   const absoluteChannelIndices: number[] = [];
-  for (const backdrop of backdropChannelInfo) {
+  for (const backdrop of channelSourceInfo) {
     const sourceIndex = sources.indexOf(backdrop.source);
     if (sourceIndex !== -1) {
       const relativeIndex = backdrop.channelIndex ?? 0;

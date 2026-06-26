@@ -16,6 +16,7 @@ const EXAMPLE_SLICE_1: Partial<ConfigSlice> = {
   showCentroids: false,
   centroidColorMode: CentroidColorMode.USE_CUSTOM_COLOR,
   centroidColor: new Color("#aabbcc"),
+  centroidOpacity: 15,
   centroidRadiusPx: 2,
   showTrackPath: false,
   trackPathColor: new Color(0x00ff00),
@@ -48,6 +49,7 @@ const EXAMPLE_SLICE_1_PARAMS: SerializedStoreData = {
   [UrlParam.SHOW_CENTROIDS]: "0",
   [UrlParam.CENTROID_COLOR_MODE]: CentroidColorMode.USE_CUSTOM_COLOR.toString(),
   [UrlParam.CENTROID_COLOR]: "aabbcc",
+  [UrlParam.CENTROID_OPACITY]: "15",
   [UrlParam.CENTROID_RADIUS]: "2",
   [UrlParam.SHOW_PATH]: "0",
   [UrlParam.PATH_COLOR]: "00ff00",
@@ -77,6 +79,7 @@ const EXAMPLE_SLICE_2: Partial<ConfigSlice> = {
   showCentroids: true,
   centroidColorMode: CentroidColorMode.USE_FEATURE_COLOR,
   centroidColor: new Color(0xff00ff),
+  centroidOpacity: 87,
   centroidRadiusPx: 15,
   showTrackPath: true,
   trackPathColor: new Color(0xffff00),
@@ -109,6 +112,7 @@ const EXAMPLE_SLICE_2_PARAMS: SerializedStoreData = {
   [UrlParam.SHOW_CENTROIDS]: "1",
   [UrlParam.CENTROID_COLOR_MODE]: CentroidColorMode.USE_FEATURE_COLOR.toString(),
   [UrlParam.CENTROID_COLOR]: "ff00ff",
+  [UrlParam.CENTROID_OPACITY]: "87",
   [UrlParam.CENTROID_RADIUS]: "15",
   [UrlParam.SHOW_PATH]: "1",
   [UrlParam.PATH_COLOR]: "ffff00",
@@ -140,6 +144,7 @@ describe("ConfigSlice", () => {
       result.current.setShowSegmentations(false);
       result.current.setShowCentroids(false);
       result.current.setCentroidRadiusPx(2);
+      result.current.setCentroidOpacity(15);
       result.current.setShowTrackPath(false);
       result.current.setTrackPathColor(new Color(0x00ff00));
       result.current.setTrackPathWidthPx(2);
@@ -162,6 +167,7 @@ describe("ConfigSlice", () => {
     expect(result.current.showSegmentations).toBe(false);
     expect(result.current.showCentroids).toBe(false);
     expect(result.current.centroidRadiusPx).toBe(2);
+    expect(result.current.centroidOpacity).toBe(15);
     expect(result.current.showTrackPath).toBe(false);
     expect(result.current.trackPathColor).toEqual(new Color(0x00ff00));
     expect(result.current.trackPathWidthPx).toBe(2);
@@ -185,6 +191,7 @@ describe("ConfigSlice", () => {
       result.current.setShowSegmentations(true);
       result.current.setShowCentroids(true);
       result.current.setCentroidRadiusPx(15);
+      result.current.setCentroidOpacity(65);
       result.current.setShowTrackPath(true);
       result.current.setTrackPathColor(new Color(0xffff00));
       result.current.setTrackPathWidthPx(3);
@@ -206,6 +213,7 @@ describe("ConfigSlice", () => {
     expect(result.current.showSegmentations).toBe(true);
     expect(result.current.showCentroids).toBe(true);
     expect(result.current.centroidRadiusPx).toBe(15);
+    expect(result.current.centroidOpacity).toBe(65);
     expect(result.current.showTrackPath).toBe(true);
     expect(result.current.trackPathColor).toEqual(new Color(0xffff00));
     expect(result.current.trackPathWidthPx).toBe(3);

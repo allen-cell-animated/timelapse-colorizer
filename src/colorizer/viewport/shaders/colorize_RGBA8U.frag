@@ -82,6 +82,7 @@ uniform vec3 outOfRangeColor;
 uniform uint outOfRangeDrawMode;
 uniform vec3 pointsColor;
 uniform uint pointsColorMode;
+uniform float pointsOpacity;
 
 uniform bool useRepeatingCategoricalColors;
 
@@ -417,7 +418,7 @@ vec4 getPointColor(vec2 uv) {
     vec4 outlineColor = alphaBlend(vec4(edgeColor, edgeColorAlpha), baseColor);
     color = mix(baseColor, outlineColor, t);
   }
-  color.a *= alpha * objectOpacity;
+  color.a *= alpha * pointsOpacity;
   return color;
 }
 
