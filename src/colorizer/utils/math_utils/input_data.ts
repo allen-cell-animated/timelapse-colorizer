@@ -12,7 +12,7 @@ type TrackData = {
 export function constructAllTracksFromData(
   trackIds: Uint32Array,
   times: Uint32Array,
-  centroids?: Uint16Array
+  centroids?: Float32Array
 ): Track[] {
   const trackIdToTrackData = new Map<number, TrackData>();
 
