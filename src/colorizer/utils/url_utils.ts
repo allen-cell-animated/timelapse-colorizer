@@ -687,6 +687,10 @@ export function isJson(path: string): boolean {
   return /.json$/.test(path);
 }
 
+export function isAbsoluteDatasetFilePath(path: string): boolean {
+  return /.json$/.test(path) || /.parquet$/.test(path);
+}
+
 /**
  * Removes trailing slashes and whitespace from a path or url string.
  * @param input the string to be formatted.

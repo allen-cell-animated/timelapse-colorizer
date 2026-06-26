@@ -127,6 +127,29 @@ export function addCentroidFeatures(
   }
 }
 
+/**
+ * Returns a Float32Array with interleaved centroid data from the given X, Y,
+ * and Z arrays. If the input arrays are given by `x`, `y`, and `z`, the output
+ * array will be `[x[0], y[0], z[0], x[1], y[1], z[1], ...]`.
+ */
+export function interleaveCentroidData(
+  centroidsX: Float32Array | null,
+  centroidsY: Float32Array | null,
+  centroidsZ: Float32Array | null
+): Float32Array | null {
+  if (!centroidsX && !centroidsY && !centroidsZ) {
+    return null;
+  }
+  const length = centroidsX?.length || centroidsY?.length || centroidsZ?.length || 0;
+  const interleaved = new Float32Array(length * 3);
+  for (let i = 0; i < length; i++) {
+    interleaved[i * 3] = centroidsX ? centroidsX[i] : 0;
+    interleaved[i * 3 + 1] = centroidsY ? centroidsY[i] : 0;
+    interleaved[i * 3 + 2] = centroidsZ ? centroidsZ[i] : 0;
+  }
+  return interleaved;
+}
+
 export function reportUnloadedFeatures(
   featureSpec: ManifestFile["features"],
   loadedFeatures: Map<string, FeatureData>,
