@@ -1,4 +1,4 @@
-import { RGBAFormat, RGBAIntegerFormat, Vector2 } from "three";
+import { RGBAFormat, RGBAIntegerFormat, Vector2, Vector3 } from "three";
 
 import {
   type ArraySource,
@@ -208,9 +208,7 @@ export default class JsonDatasetLoader {
     }
     try {
       const result = await this.frameLoader.load(firstValidFramePath);
-      const frameDims = new Vector2(result.image.width, result.image.height);
-      result.dispose();
-      return frameDims;
+      return new Vector2(result.image.width, result.image.height);
     } catch (error) {
       console.warn(
         `Failed to determine frame dimensions; encountered the following error while loading frame from path '${firstValidFramePath}': ${error}`
@@ -261,7 +259,7 @@ export default class JsonDatasetLoader {
       this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U8, outlierFile)),
       this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, tracksFile)),
       this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, timesFile)),
-      this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U16, centroidsFile)),
+      this.reportLoadProgress(this.loadToBuffer(FeatureDataType.F32, centroidsFile)),
       this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U16, boundsFile)),
       this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, segIdsFile)),
       this.reportLoadProgress(this.getFrameDims(frames2d)),
@@ -344,7 +342,7 @@ export default class JsonDatasetLoader {
         // Image sources
         frames2d,
         frames3d,
-        frameResolution: frameDimensions ?? undefined,
+        frameResolution: frameDimensions ? new Vector3(frameDimensions.x, frameDimensions.y, 1) : undefined,
         // Data arrays
         features,
         segIds,

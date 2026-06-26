@@ -69,7 +69,7 @@ export function addTimeFeature(features: Map<string, FeatureData>, times: Uint32
 
 export function addCentroidFeatures(
   features: Map<string, FeatureData>,
-  centroids: Uint16Array | null,
+  centroids: Float32Array | null,
   metadata?: ManifestFileMetadata,
   frameDimensions?: Vector2 | null
 ): void {
