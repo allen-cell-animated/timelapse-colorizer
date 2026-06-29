@@ -173,6 +173,7 @@ type ManifestFileV1_8_0 = Spread<
   Omit<ManifestFileV1_1_0, "frames3d" | "frames" | "backdrops"> & {
     frames3d?: Frames3dV1_8_0;
     frames2d?: Frames2dV1_8_0;
+    trackEdges?: { edges: number[]; name: string; description?: string }[];
   }
 >;
 

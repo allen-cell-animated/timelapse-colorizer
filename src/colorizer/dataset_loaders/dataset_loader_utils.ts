@@ -12,6 +12,7 @@ import {
   type FrameSource,
   TIME_FEATURE_KEY,
   TRACK_FEATURE_KEY,
+  TrackEdgeData,
 } from "src/colorizer/Dataset";
 import { FeatureDataType, LoadTroubleshooting, type ReportWarningCallback } from "src/colorizer/types";
 import { formatAsBulletList, getKeyFromName } from "src/colorizer/utils/data_utils";
@@ -341,4 +342,19 @@ export function resolveFrames2d(
     segmentations,
     backdrops,
   };
+}
+
+export function parseTrackEdges(data: ManifestFile["trackEdges"]): Map<string, TrackEdgeData> | undefined {
+  if (!data) {
+    return undefined;
+  }
+  const trackEdges = new Map<string, TrackEdgeData>();
+  for (const edge of data) {
+    trackEdges.set(edge.name, {
+      edges: new Uint32Array(edge.edges),
+      name: edge.name,
+      description: edge.description,
+    });
+  }
+  return trackEdges;
 }

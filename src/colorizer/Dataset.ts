@@ -80,6 +80,12 @@ export type Frames3dData = {
   totalFrames: number;
 };
 
+export type TrackEdgeData = {
+  name: string;
+  edges: Uint32Array;
+  description?: string;
+};
+
 export type DatasetInputData = {
   //// Metadata ////
   manifestUrl: string;
@@ -96,6 +102,7 @@ export type DatasetInputData = {
   centroids: Float32Array | null;
   bounds: Uint16Array | null;
   outliers: Uint8Array | null;
+  trackEdges: Map<string, TrackEdgeData> | null;
 };
 
 const defaultMetadata: ManifestFileMetadata = {
@@ -142,6 +149,8 @@ export default class Dataset {
   public outliers: Uint8Array | null;
   public centroids: Float32Array | null;
   public bounds: Uint16Array | null;
+
+  public trackEdges: Map<string, TrackEdgeData> | null;
 
   //// Cached Data ////
   private cachedTracks: Map<number, Track | null>;
@@ -196,6 +205,7 @@ export default class Dataset {
     this.centroids = data.centroids || null;
     this.bounds = data.bounds || null;
     this.outliers = data.outliers || null;
+    this.trackEdges = data.trackEdges || null;
 
     // Cached data
     this.cachedTracks = new Map();

@@ -67,6 +67,8 @@ import { FlexColumn, FlexRowAlignCenter } from "src/styles/utils";
 import type { LocationState } from "src/types";
 import { loadInitialCollectionAndDataset } from "src/utils/dataset_load_utils";
 
+import LineageTab from "./components/Tabs/Lineage/LineageTab";
+
 // TODO: Refactor with styled-components
 import styles from "./Viewer.module.css";
 
@@ -547,6 +549,15 @@ function Viewer(): ReactElement {
       children: (
         <div className={styles.tabContent}>
           <CorrelationPlotTab openScatterPlotTab={openScatterPlotTab} workerPool={workerPool} dataset={dataset} />
+        </div>
+      ),
+    },
+    {
+      label: "Lineage",
+      key: TabType.LINEAGE,
+      children: (
+        <div className={styles.tabContent}>
+          <LineageTab></LineageTab>
         </div>
       ),
     },
