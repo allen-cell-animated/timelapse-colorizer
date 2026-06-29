@@ -11,6 +11,7 @@ export function getLineageData(dataset: Dataset): LineageData {
     return { trackInfo: [], edges: [] };
   }
 
+  const allTracks = new Set<number>();
   const trackToInfo = new Map<number, { id: number; length: number; startTime: number }>();
   for (let i = 0; i < tracks.length; i++) {
     const trackId = tracks[i];
@@ -23,16 +24,26 @@ export function getLineageData(dataset: Dataset): LineageData {
       info.length += 1;
       info.startTime = Math.min(info.startTime, time);
     }
+    allTracks.add(trackId);
   }
 
   const trackInfo = Array.from(trackToInfo.values());
 
+  const skippedEdges: [number, number][] = [];
   const edges: [number, number][] = [];
-  for (let i = 0; i < trackEdges.edges.length; i++) {
-    const source = trackEdges.edges[2 * i];
-    const target = trackEdges.edges[2 * i + 1];
+  for (let i = 0; i < trackEdges.edges.length; i += 2) {
+    const source = trackEdges.edges[i];
+    const target = trackEdges.edges[i + 1];
+    // Skip edges that do not exist in the dataset
+    if (!allTracks.has(source) || !allTracks.has(target)) {
+      skippedEdges.push([source, target]);
+      continue;
+    }
     edges.push([source, target]);
   }
 
+  if (skippedEdges.length > 0) {
+    console.warn(`Skipped ${skippedEdges.length} edges that reference non-existent tracks:`, skippedEdges);
+  }
   return { trackInfo, edges };
 }
