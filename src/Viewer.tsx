@@ -55,7 +55,6 @@ import { useAnnotations, useBackdropShortcuts, useConstructor, useRecentCollecti
 import { renderCanvasStateParamsSelector } from "src/state";
 import { getDifferingProperties } from "src/state/utils/data_validation";
 import {
-  loadInitialViewerStateFromParams,
   loadViewerStateFromParams,
   selectSerializationDependencies,
   serializeViewerState,
@@ -389,8 +388,6 @@ function Viewer(): ReactElement {
       if (isLoadingInitialDataset.current || isInitialDatasetLoaded) {
         return;
       }
-
-      loadInitialViewerStateFromParams(useViewerStateStore, searchParams);
 
       setIsDatasetLoading(true);
       setDatasetLoadProgress(null);
