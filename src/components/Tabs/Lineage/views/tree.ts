@@ -25,7 +25,7 @@ export function render(container: HTMLDivElement, data: LineageData) {
   const safeLengthMax = lengthMin === lengthMax ? lengthMin + 1 : lengthMax;
 
   const colorScale = d3.scaleSequential(d3.interpolateTurbo).domain([startMin, safeStartMax]);
-  const rScale = d3.scaleSqrt().domain([lengthMin, safeLengthMax]).range([4, 40]);
+  const rScale = d3.scaleSqrt().domain([lengthMin, safeLengthMax]).range([10, 40]);
 
   // ── Find merge nodes (in-degree > 1) ─────────────────────────────────────
   const inDegree = new Map(trackInfo.map((n) => [n.id, 0]));
@@ -159,7 +159,7 @@ export function render(container: HTMLDivElement, data: LineageData) {
     .map((t) => colorScale(startMin + t * (safeStartMax - startMin)))
     .join(",");
 
-  d3.select(container).append("div").attr("class", "legend").html(`
+  d3.select(container).append("div").style("position", "absolute").style("top", "46px").attr("class", "legend").html(`
     <strong>Color</strong> — startTime
     <div style="width:120px;height:10px;border-radius:4px;margin:4px 0 2px;
          background:linear-gradient(to right,${gradCss})"></div>
@@ -193,7 +193,12 @@ export function render(container: HTMLDivElement, data: LineageData) {
   zoom.transform(svg, initT);
 
   // ── Controls ──────────────────────────────────────────────────────────────
-  const ctrl = d3.select(container).append("div").attr("class", "controls");
+  const ctrl = d3
+    .select(container)
+    .append("div")
+    .style("position", "absolute")
+    .style("top", "20px")
+    .attr("class", "controls");
   ctrl
     .append("button")
     .text("Fit to view")
