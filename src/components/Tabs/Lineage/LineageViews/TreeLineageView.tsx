@@ -10,6 +10,8 @@ const TREE_LAYER_DEPTH_PX = 110;
 
 type TreeLineageViewProps = SharedLineageViewProps & {};
 
+type NodeSelection = d3.Selection<SVGGElement | d3.BaseType, d3.HierarchyPointNode<TrackInfo>, SVGGElement, TrackInfo>;
+
 function getRelationships(data: LineageData): {
   idToChildren: Map<number, number[]>;
   idToParents: Map<number, number[]>;
@@ -42,11 +44,9 @@ function getRelationships(data: LineageData): {
 function renderTree(
   g: d3.Selection<SVGGElement, TrackInfo, null, undefined>,
   data: LineageData,
-  radiusScale: d3.ScalePower<number, number>,
-  colorScale: d3.ScaleSequential<string>,
   onClickTrack?: (trackId: number) => void,
   onHoverTrack?: (trackId: number | null) => void
-): void {
+): NodeSelection | undefined {
   const { trackInfo } = data;
   const edges = [...data.edges];
 
@@ -124,9 +124,10 @@ function renderTree(
       .attr("y2", (d) => posOf.get(d[1])?.x ?? 0);
   }
 
-  // Render nodes
   // TODO: return nodes out of this method, so they can be updated/recalculated
   // without updating the entire tree?
+
+  // Render nodes
   const node = g
     .append("g")
     .selectAll("g")
@@ -135,13 +136,7 @@ function renderTree(
     .attr("transform", (d) => `translate(${d.y},${d.x})`);
 
   // Draw circles for each node
-  node
-    .append("circle")
-    .attr("r", (d) => radiusScale(d.data.length))
-    .attr("fill", (d) => colorScale(d.data.startTime))
-    .attr("stroke", "#1a1f2e")
-    .attr("stroke-width", 1.5)
-    .style("cursor", "default");
+  node.append("circle");
 
   // Text labels
   node
@@ -161,17 +156,45 @@ function renderTree(
     d3.select(event.currentTarget).select("circle").attr("stroke", "#fff").attr("stroke-width", 2.5);
     onHoverTrack?.(d.data.id);
   };
-  const handleUnhoverTrack = (event: any, d: d3.HierarchyPointNode<TrackInfo>) => {
+  const handleUnhoverTrack = (event: any, _d: d3.HierarchyPointNode<TrackInfo>) => {
     d3.select(event.currentTarget).select("circle").attr("stroke", "#1a1f2e").attr("stroke-width", 1.5);
     onHoverTrack?.(null);
   };
 
   node.on("click", handleClickTrack).on("mouseover", handleHoverTrack).on("mouseout", handleUnhoverTrack);
+
+  return node;
+}
+
+function updateNodeStyles(
+  node: NodeSelection,
+  radiusScale: d3.ScalePower<number, number>,
+  colorScale: d3.ScaleSequential<string>
+) {
+  // Draw circles for each node
+  node
+    .select<SVGCircleElement>("circle")
+    .attr("r", (d) => radiusScale(d.data.length))
+    .attr("fill", (d) => colorScale(d.data.startTime))
+    .attr("stroke", "#1a1f2e")
+    .attr("stroke-width", 1.5)
+    .style("cursor", "default");
+
+  // Text labels
+  node
+    .select<SVGTextElement>("text")
+    .text((d) => d.data.id)
+    .attr("text-anchor", "middle")
+    .attr("dominant-baseline", "middle")
+    .attr("fill", "#ffffff")
+    .attr("font-size", 9)
+    .attr("pointer-events", "none");
 }
 
 export default function TreeLineageView(props: TreeLineageViewProps): ReactElement {
   const svgRef = useRef<SVGSVGElement>(null);
   const groupRef = useRef<SVGGElement>(null);
+  const nodeRef = useRef<NodeSelection | undefined>(undefined);
 
   const onClickRef = useRef(props.onClick);
   onClickRef.current = props.onClick;
@@ -223,7 +246,7 @@ export default function TreeLineageView(props: TreeLineageViewProps): ReactEleme
       const g = d3.select(groupRef.current) as d3.Selection<SVGGElement, TrackInfo, null, undefined>;
       const onClickTrack = (trackId: number) => onClickRef.current?.(trackId);
       const onHoverTrack = (trackId: number | null) => onHoverRef.current?.(trackId);
-      renderTree(g, props.data, props.radiusScale, props.colorScale, onClickTrack, onHoverTrack);
+      nodeRef.current = renderTree(g, props.data, onClickTrack, onHoverTrack);
     }
     // Clear on unmount
     return () => {
@@ -232,6 +255,13 @@ export default function TreeLineageView(props: TreeLineageViewProps): ReactEleme
       }
     };
   }, [props.data]);
+
+  useEffect(() => {
+    // Update node styling
+    if (nodeRef.current) {
+      updateNodeStyles(nodeRef.current, props.radiusScale, props.colorScale);
+    }
+  }, [props.data, props.radiusScale, props.colorScale]);
 
   // Fit on first render
   useEffect(() => {
