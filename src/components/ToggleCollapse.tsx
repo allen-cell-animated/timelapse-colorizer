@@ -25,9 +25,12 @@ type ToggleCollapseProps = {
   /**
    * If defined, includes a toggle switch (or checkbox) in the header row with
    * this checked state. Changes to this state will also trigger collapse/expand
-   * behavior.
+   * behavior, unless `collapseOnToggle` is set to `false`.
    */
   toggleChecked?: boolean;
+  /** Whether the collapse should be triggered when the toggle changes state.
+   * `true` by default. */
+  collapseOnToggle?: boolean;
   toggleType?: "toggle" | "checkbox";
   onToggleChange?: (checked: boolean) => void;
   toggleDisabled?: boolean;
@@ -63,6 +66,7 @@ const defaultProps: Partial<ToggleCollapseProps> = {
     fontSize: "var(--font-size-label)",
   },
   postToggleContent: null,
+  collapseOnToggle: true,
   scrollIntoViewOnChecked: true,
   contentIndentPx: 16,
   contentPaddingPx: 8,
@@ -80,7 +84,8 @@ export default function ToggleCollapse(inputProps: PropsWithChildren<ToggleColla
   const props = { ...defaultProps, ...removeUndefinedProperties(inputProps) };
 
   const theme = useContext(AppThemeContext);
-  const [isExpanded, setIsExpanded] = useState(props.toggleChecked ?? true);
+  const initialExpandedState = props.collapseOnToggle ? props.toggleChecked ?? true : true;
+  const [isExpanded, setIsExpanded] = useState(initialExpandedState);
   const [isAnimating, setIsAnimating] = useState(false);
   const contentContainerRef = useRef<HTMLDivElement>(null);
 
@@ -93,10 +98,10 @@ export default function ToggleCollapse(inputProps: PropsWithChildren<ToggleColla
 
   // Sync expanded state with toggle state
   useEffect(() => {
-    if (props.toggleChecked !== undefined) {
+    if (props.toggleChecked !== undefined && props.collapseOnToggle) {
       setIsExpanded(props.toggleChecked);
     }
-  }, [props.toggleChecked]);
+  }, [props.toggleChecked, props.collapseOnToggle]);
 
   //// Helper methods ////
 
@@ -115,15 +120,17 @@ export default function ToggleCollapse(inputProps: PropsWithChildren<ToggleColla
 
   const onCheckboxChanged = useCallback(
     (checked: boolean) => {
-      startAnimating();
       if (props.onToggleChange) {
         props.onToggleChange(checked);
       }
-      if (!isExpanded && checked && props.scrollIntoViewOnChecked && contentContainerRef.current) {
-        expandAndScrollIntoView();
+      if (props.collapseOnToggle) {
+        startAnimating();
+        if (!isExpanded && checked && props.scrollIntoViewOnChecked && contentContainerRef.current) {
+          expandAndScrollIntoView();
+        }
       }
     },
-    [props.onToggleChange, props.scrollIntoViewOnChecked, props.toggleChecked, isExpanded, expandAndScrollIntoView]
+    [props.onToggleChange, props.collapseOnToggle, props.scrollIntoViewOnChecked, isExpanded, expandAndScrollIntoView]
   );
 
   const onClickExpandCollapseButton = useCallback(() => {
