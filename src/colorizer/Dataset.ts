@@ -357,6 +357,10 @@ export default class Dataset {
     return featureData?.data.length ?? this.times?.length ?? this.segIds?.length ?? 0;
   }
 
+  public hasLineageData(): boolean {
+    return this.trackEdges !== null && this.trackEdges.size > 0;
+  }
+
   public getDefaultSegmentationKey(): string | null {
     return this.framesMap.keys().next().value ?? null;
   }

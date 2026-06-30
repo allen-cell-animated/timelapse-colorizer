@@ -71,9 +71,9 @@ import LineageTab from "./components/Tabs/Lineage/LineageTab";
 // TODO: Refactor with styled-components
 import styles from "./Viewer.module.css";
 
-type TabItem = {
+type TabItem<T extends string> = {
   label: string;
-  key: string;
+  key: T;
   visible?: boolean;
   children: ReactNode;
 };
@@ -508,7 +508,7 @@ function Viewer(): ReactElement {
 
   const disableUi: boolean = isRecording || !datasetOpen;
 
-  const allTabItems: TabItem[] = [
+  const allTabItems: TabItem<TabType>[] = [
     {
       label: "Track plot",
       key: TabType.TRACK_PLOT,
@@ -552,6 +552,9 @@ function Viewer(): ReactElement {
     {
       label: "Lineage",
       key: TabType.LINEAGE,
+      // Only show the lineage tab if the dataset has lineage data, or if the
+      // user has manually opened the tab.
+      visible: openTab === TabType.LINEAGE || (dataset?.hasLineageData() ?? false),
       children: (
         <div className={styles.tabContent}>
           <LineageTab></LineageTab>
@@ -587,7 +590,14 @@ function Viewer(): ReactElement {
       ),
     },
   ];
-  const tabItems = allTabItems.filter((item) => item.visible !== false);
+  // If non-visible tab is selected, show it
+  console.log(
+    "Open tab:",
+    openTab,
+    "Visible tabs:",
+    allTabItems.filter((item) => item.visible !== false).map((item) => item.key)
+  );
+  const tabItems = allTabItems.filter((item) => item.visible !== false || item.key === openTab);
   const visibleTabKeys = useMemo(() => new Set(tabItems.map((item) => item.key)), [INTERNAL_BUILD]);
   const currentTab = visibleTabKeys.has(openTab) ? openTab : TabType.TRACK_PLOT;
 
