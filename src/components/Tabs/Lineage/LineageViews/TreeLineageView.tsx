@@ -1,5 +1,6 @@
 import * as d3 from "d3";
 import React, { ReactElement, useEffect, useRef } from "react";
+import { Color } from "three";
 
 import { useConstructor } from "src/hooks";
 
@@ -152,12 +153,12 @@ function renderTree(
   const handleClickTrack = (_event: any, d: d3.HierarchyPointNode<TrackInfo>) => {
     onClickTrack?.(d.data.id);
   };
-  const handleHoverTrack = (event: any, d: d3.HierarchyPointNode<TrackInfo>) => {
-    d3.select(event.currentTarget).select("circle").attr("stroke", "#fff").attr("stroke-width", 2.5);
+  const handleHoverTrack = (_event: any, d: d3.HierarchyPointNode<TrackInfo>) => {
+    // d3.select(event.currentTarget).select("circle").attr("stroke", "#fff").attr("stroke-width", 2.5);
     onHoverTrack?.(d.data.id);
   };
-  const handleUnhoverTrack = (event: any, _d: d3.HierarchyPointNode<TrackInfo>) => {
-    d3.select(event.currentTarget).select("circle").attr("stroke", "#1a1f2e").attr("stroke-width", 1.5);
+  const handleUnhoverTrack = (_event: any, _d: d3.HierarchyPointNode<TrackInfo>) => {
+    // d3.select(event.currentTarget).select("circle").attr("stroke", "#1a1f2e").attr("stroke-width", 1.5);
     onHoverTrack?.(null);
   };
 
@@ -169,14 +170,15 @@ function renderTree(
 function updateNodeStyles(
   node: NodeSelection,
   radiusScale: d3.ScalePower<number, number>,
-  colorScale: d3.ScaleSequential<string>
+  colorScale: d3.ScaleSequential<string>,
+  trackColors: Map<number, Color>
 ) {
   // Draw circles for each node
   node
     .select<SVGCircleElement>("circle")
     .attr("r", (d) => radiusScale(d.data.length))
     .attr("fill", (d) => colorScale(d.data.startTime))
-    .attr("stroke", "#1a1f2e")
+    .attr("stroke", (d) => trackColors.get(d.data.id)?.getStyle() ?? "#1a1f2e")
     .attr("stroke-width", 1.5)
     .style("cursor", "default");
 
@@ -259,9 +261,9 @@ export default function TreeLineageView(props: TreeLineageViewProps): ReactEleme
   useEffect(() => {
     // Update node styling
     if (nodeRef.current) {
-      updateNodeStyles(nodeRef.current, props.radiusScale, props.colorScale);
+      updateNodeStyles(nodeRef.current, props.radiusScale, props.colorScale, props.trackColors);
     }
-  }, [props.data, props.radiusScale, props.colorScale]);
+  }, [props.data, props.radiusScale, props.colorScale, props.trackColors]);
 
   // Fit on first render
   useEffect(() => {

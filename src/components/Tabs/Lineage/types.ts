@@ -1,3 +1,5 @@
+import type { Color } from "three";
+
 export type TrackInfo = {
   id: number;
   length: number;
@@ -12,6 +14,8 @@ export type LineageData = {
 export type SharedLineageViewProps = {
   container: React.RefObject<HTMLDivElement>;
   data: LineageData;
+  selectedTracks: Set<number>;
+  trackColors: Map<number, Color>;
   colorScale: d3.ScaleSequential<string>;
   radiusScale: d3.ScalePower<number, number>;
   onClick?: (trackId: number) => void;
