@@ -50,7 +50,6 @@ import {
   SettingsTab,
 } from "src/components/Tabs";
 import CanvasHoverTooltip from "src/components/Tooltips/CanvasHoverTooltip";
-import { INTERNAL_BUILD } from "src/constants";
 import { useAnnotations, useBackdropShortcuts, useConstructor, useRecentCollections } from "src/hooks";
 import { renderCanvasStateParamsSelector } from "src/state";
 import { getDifferingProperties } from "src/state/utils/data_validation";
@@ -388,7 +387,6 @@ function Viewer(): ReactElement {
       if (isLoadingInitialDataset.current || isInitialDatasetLoaded) {
         return;
       }
-
       setIsDatasetLoading(true);
       setDatasetLoadProgress(null);
       isLoadingInitialDataset.current = true;
@@ -508,97 +506,97 @@ function Viewer(): ReactElement {
 
   const disableUi: boolean = isRecording || !datasetOpen;
 
-  const allTabItems: TabItem<TabType>[] = [
-    {
-      label: "Track plot",
-      key: TabType.TRACK_PLOT,
-      children: (
-        <div className={styles.tabContent}>
-          <PlotTab disabled={disableUi} />
-        </div>
-      ),
-    },
-    {
-      label: "Scatter plot",
-      key: TabType.SCATTER_PLOT,
-      children: (
-        <div className={styles.tabContent}>
-          <ScatterPlotTab
-            isVisible={openTab === TabType.SCATTER_PLOT}
-            showAlert={showAlert}
-            containerRef={tabsContainerRef.current ?? undefined}
-          />
-        </div>
-      ),
-    },
-    {
-      label: "Flow field plot",
-      key: TabType.PLOT_3D,
-      children: (
-        <div className={styles.tabContent}>
-          <Plot3dTab></Plot3dTab>
-        </div>
-      ),
-    },
-    {
-      label: "Correlation plot",
-      key: TabType.CORRELATION_PLOT,
-      children: (
-        <div className={styles.tabContent}>
-          <CorrelationPlotTab openScatterPlotTab={openScatterPlotTab} workerPool={workerPool} dataset={dataset} />
-        </div>
-      ),
-    },
-    {
-      label: "Lineage",
-      key: TabType.LINEAGE,
-      // Only show the lineage tab if the dataset has lineage data, or if the
-      // user has manually opened the tab.
-      visible: openTab === TabType.LINEAGE || (dataset?.hasLineageData() ?? false),
-      children: (
-        <div className={styles.tabContent}>
-          <LineageTab></LineageTab>
-        </div>
-      ),
-    },
-    {
-      label: `Filters ${featureThresholds.length > 0 ? `(${featureThresholds.length})` : ""}`,
-      key: TabType.FILTERS,
-      children: (
-        <div className={styles.tabContent}>
-          <FeatureThresholdsTab disabled={disableUi} />
-        </div>
-      ),
-    },
-    {
-      label: "Annotations",
-      key: TabType.ANNOTATION,
-      children: (
-        <div className={styles.tabContent}>
-          <AnnotationTab annotationState={annotationState} hoveredId={currentHoveredId?.globalId ?? null} />
-        </div>
-      ),
-    },
+  const allTabItems: TabItem<TabType>[] = useMemo(
+    () => [
+      {
+        label: "Track plot",
+        key: TabType.TRACK_PLOT,
+        children: (
+          <div className={styles.tabContent}>
+            <PlotTab disabled={disableUi} />
+          </div>
+        ),
+      },
+      {
+        label: "Scatter plot",
+        key: TabType.SCATTER_PLOT,
+        children: (
+          <div className={styles.tabContent}>
+            <ScatterPlotTab
+              isVisible={openTab === TabType.SCATTER_PLOT}
+              showAlert={showAlert}
+              containerRef={tabsContainerRef.current ?? undefined}
+            />
+          </div>
+        ),
+      },
+      {
+        label: "Flow field plot",
+        key: TabType.PLOT_3D,
+        children: (
+          <div className={styles.tabContent}>
+            <Plot3dTab></Plot3dTab>
+          </div>
+        ),
+      },
+      {
+        label: "Correlation plot",
+        key: TabType.CORRELATION_PLOT,
+        children: (
+          <div className={styles.tabContent}>
+            <CorrelationPlotTab openScatterPlotTab={openScatterPlotTab} workerPool={workerPool} dataset={dataset} />
+          </div>
+        ),
+      },
+      {
+        label: "Lineage",
+        key: TabType.LINEAGE,
+        // Only show the lineage tab if the dataset has lineage data, or if the
+        // user has manually opened the tab.
+        visible: dataset?.hasLineageData() ?? false,
+        children: (
+          <div className={styles.tabContent}>
+            <LineageTab></LineageTab>
+          </div>
+        ),
+      },
+      {
+        label: `Filters ${featureThresholds.length > 0 ? `(${featureThresholds.length})` : ""}`,
+        key: TabType.FILTERS,
+        children: (
+          <div className={styles.tabContent}>
+            <FeatureThresholdsTab disabled={disableUi} />
+          </div>
+        ),
+      },
+      {
+        label: "Annotations",
+        key: TabType.ANNOTATION,
+        children: (
+          <div className={styles.tabContent}>
+            <AnnotationTab annotationState={annotationState} hoveredId={currentHoveredId?.globalId ?? null} />
+          </div>
+        ),
+      },
 
-    {
-      label: "Viewer settings",
-      key: TabType.SETTINGS,
-      children: (
-        <div className={styles.tabContent}>
-          <SettingsTab />
-        </div>
-      ),
-    },
-  ];
-  // If non-visible tab is selected, show it
-  console.log(
-    "Open tab:",
-    openTab,
-    "Visible tabs:",
-    allTabItems.filter((item) => item.visible !== false).map((item) => item.key)
+      {
+        label: "Viewer settings",
+        key: TabType.SETTINGS,
+        children: (
+          <div className={styles.tabContent}>
+            <SettingsTab />
+          </div>
+        ),
+      },
+    ],
+    [disableUi, currentHoveredId, annotationState, featureThresholds, openTab]
   );
-  const tabItems = allTabItems.filter((item) => item.visible !== false || item.key === openTab);
-  const visibleTabKeys = useMemo(() => new Set(tabItems.map((item) => item.key)), [INTERNAL_BUILD]);
+  // If non-visible tab is selected, show it
+  const tabItems = useMemo(
+    () => allTabItems.filter((item) => item.visible !== false || item.key === openTab),
+    [allTabItems, openTab]
+  );
+  const visibleTabKeys = useMemo(() => new Set(tabItems.map((item) => item.key)), [tabItems]);
   const currentTab = visibleTabKeys.has(openTab) ? openTab : TabType.TRACK_PLOT;
 
   let datasetHeader: ReactNode = null;
