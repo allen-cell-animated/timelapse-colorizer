@@ -1,11 +1,11 @@
-import { Checkbox } from "antd";
 import type { PresetsItem } from "antd/es/color-picker/interface";
 import React, { type ReactElement } from "react";
 import type { Color } from "three";
 
-import { DrawMode, KNOWN_CATEGORICAL_PALETTES, SelectionOutlineColorMode } from "src/colorizer";
+import { DrawMode, KNOWN_CATEGORICAL_PALETTES, SelectionOutlineColorMode, ViewMode } from "src/colorizer";
 import DropdownWithColorPicker from "src/components/Dropdowns/DropdownWithColorPicker";
 import type { SelectItem } from "src/components/Dropdowns/types";
+import OpacitySlider from "src/components/Inputs/OpacitySlider";
 import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
 import ToggleCollapse from "src/components/ToggleCollapse";
 import { useViewerStateStore } from "src/state";
@@ -17,7 +17,7 @@ const enum ObjectSettingsHtmlIds {
   EDGE_COLOR_SELECT = "edge-color-select",
   OUTLIER_OBJECT_COLOR_SELECT = "outlier-object-color-select",
   OUT_OF_RANGE_OBJECT_COLOR_SELECT = "out-of-range-object-color-select",
-  SHOW_SEGMENTATIONS_SWITCH = "show-segmentations-switch",
+  OBJECT_OPACITY_SLIDER = "object-opacity-slider",
 }
 
 const DRAW_MODE_ITEMS = [
@@ -59,6 +59,7 @@ export default function ObjectSettings(): ReactElement {
   const edgeColor = useViewerStateStore((state) => state.edgeColor);
   const edgeColorAlpha = useViewerStateStore((state) => state.edgeColorAlpha);
   const edgeMode = useViewerStateStore((state) => state.edgeMode);
+  const objectOpacity = useViewerStateStore((state) => state.objectOpacity);
   const outlierDrawSettings = useViewerStateStore((state) => state.outlierDrawSettings);
   const outlineColor = useViewerStateStore((state) => state.outlineColor);
   const outlineColorMode = useViewerStateStore((state) => state.outlineColorMode);
@@ -66,6 +67,7 @@ export default function ObjectSettings(): ReactElement {
   const outOfRangeDrawSettings = useViewerStateStore((state) => state.outOfRangeDrawSettings);
   const setEdgeColor = useViewerStateStore((state) => state.setEdgeColor);
   const setEdgeMode = useViewerStateStore((state) => state.setEdgeMode);
+  const setObjectOpacity = useViewerStateStore((state) => state.setObjectOpacity);
   const setOutlierDrawSettings = useViewerStateStore((state) => state.setOutlierDrawSettings);
   const setOutlineColor = useViewerStateStore((state) => state.setOutlineColor);
   const setOutlineColorMode = useViewerStateStore((state) => state.setOutlineColorMode);
@@ -73,9 +75,15 @@ export default function ObjectSettings(): ReactElement {
   const setOutOfRangeDrawSettings = useViewerStateStore((state) => state.setOutOfRangeDrawSettings);
   const setShowSegmentations = useViewerStateStore((state) => state.setShowSegmentations);
   const showSegmentations = useViewerStateStore((state) => state.showSegmentations);
+  const viewMode = useViewerStateStore((state) => state.viewMode);
 
   return (
-    <ToggleCollapse label="Objects">
+    <ToggleCollapse
+      label="Segmentations"
+      toggleChecked={showSegmentations}
+      onToggleChange={setShowSegmentations}
+      collapseOnToggle={false}
+    >
       <SettingsContainer gapPx={SETTINGS_GAP_PX}>
         <SettingsItem label="Selected outline" htmlFor={ObjectSettingsHtmlIds.OUTLINE_COLOR_SELECT}>
           <DropdownWithColorPicker
@@ -165,13 +173,16 @@ export default function ObjectSettings(): ReactElement {
             showColorPicker={outlierDrawSettings.mode === DrawMode.USE_COLOR}
           />
         </SettingsItem>
-        <SettingsItem label="Show segmentations" htmlFor={ObjectSettingsHtmlIds.SHOW_SEGMENTATIONS_SWITCH}>
-          <Checkbox
-            id={ObjectSettingsHtmlIds.SHOW_SEGMENTATIONS_SWITCH}
-            checked={showSegmentations}
-            onChange={(e) => setShowSegmentations(e.target.checked)}
+        {viewMode === ViewMode.VIEW_2D && (
+          <OpacitySlider
+            type="segmentation"
+            id={ObjectSettingsHtmlIds.OBJECT_OPACITY_SLIDER}
+            value={objectOpacity}
+            onChange={setObjectOpacity}
+            disabled={!showSegmentations}
+            sliderWidth={"220px"}
           />
-        </SettingsItem>
+        )}
       </SettingsContainer>
     </ToggleCollapse>
   );
