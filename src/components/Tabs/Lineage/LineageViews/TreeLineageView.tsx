@@ -5,7 +5,7 @@ import { useConstructor } from "src/hooks";
 
 import { LineageData, SharedLineageViewProps, TrackInfo } from "../types";
 
-const TREE_LEAF_HEIGHT_PX = 20;
+const TREE_LEAF_HEIGHT_PX = 30;
 const TREE_LAYER_DEPTH_PX = 110;
 
 type TreeLineageViewProps = SharedLineageViewProps & {};
@@ -13,14 +13,30 @@ type TreeLineageViewProps = SharedLineageViewProps & {};
 function getRelationships(data: LineageData): {
   idToChildren: Map<number, number[]>;
   idToParents: Map<number, number[]>;
+  crossLinks: [number, number][];
 } {
   const idToChildren = new Map<number, number[]>(data.trackInfo.map((n) => [n.id, []]));
   const idToParents = new Map<number, number[]>(data.trackInfo.map((n) => [n.id, []]));
+
+  // Links to a node where the node already has a parent (i.e. the second parent
+  // of a merge node).
+  const crossLinks: [number, number][] = [];
+  const idsWithParents = new Set<number>();
+
   for (const [source, target] of data.edges) {
-    idToChildren.get(source)?.push(target);
+    if (!idsWithParents.has(target)) {
+      idToChildren.get(source)?.push(target);
+    } else {
+      // If the target node already has a parent, intentionally prevent adding
+      // it to the children of this source node or else it will be duplicated in
+      // the tree. Instead, add it to a list of cross links that will be
+      // rendered separately.
+      crossLinks.push([source, target]);
+    }
     idToParents.get(target)?.push(source);
+    idsWithParents.add(target);
   }
-  return { idToChildren, idToParents };
+  return { idToChildren, idToParents, crossLinks };
 }
 
 function renderTree(
@@ -35,7 +51,7 @@ function renderTree(
   const edges = [...data.edges];
 
   const trackIdToTrackInfo = new Map<number, TrackInfo>(trackInfo.map((track) => [track.id, track]));
-  const { idToChildren, idToParents } = getRelationships(data);
+  const { idToChildren, idToParents, crossLinks } = getRelationships(data);
 
   const mergeNodes = new Set([...idToParents.entries()].filter(([, parents]) => parents.length > 1).map(([id]) => id));
   // All nodes with no parents
@@ -92,21 +108,21 @@ function renderTree(
     .attr("x2", (d) => d.target.y)
     .attr("y2", (d) => d.target.x);
 
-  // if (crossLinks.length) {
-  //   const posOf = new Map(treeRoot.descendants().map((d) => [d.data.id, { x: d.x, y: d.y }]));
-  //   g.append("g")
-  //     .selectAll("line")
-  //     .data(crossLinks)
-  //     .join("line")
-  //     .attr("stroke", "#f6ad55")
-  //     .attr("stroke-opacity", 0.7)
-  //     .attr("stroke-width", 1.5)
-  //     .attr("stroke-dasharray", "4 3")
-  //     .attr("x1", (d) => posOf.get(d.source)?.y ?? 0)
-  //     .attr("y1", (d) => posOf.get(d.source)?.x ?? 0)
-  //     .attr("x2", (d) => posOf.get(d.target)?.y ?? 0)
-  //     .attr("y2", (d) => posOf.get(d.target)?.x ?? 0);
-  // }
+  if (crossLinks.length) {
+    const posOf = new Map(treeRoot.descendants().map((d) => [d.data.id, { x: d.x, y: d.y }]));
+    g.append("g")
+      .selectAll("line")
+      .data(crossLinks)
+      .join("line")
+      .attr("stroke", "#f6ad55")
+      .attr("stroke-opacity", 0.7)
+      .attr("stroke-width", 1.5)
+      .attr("stroke-dasharray", "4 3")
+      .attr("x1", (d) => posOf.get(d[0])?.y ?? 0)
+      .attr("y1", (d) => posOf.get(d[0])?.x ?? 0)
+      .attr("x2", (d) => posOf.get(d[1])?.y ?? 0)
+      .attr("y2", (d) => posOf.get(d[1])?.x ?? 0);
+  }
 
   // Render nodes
   // TODO: return nodes out of this method, so they can be updated/recalculated
