@@ -2,7 +2,7 @@ import type { PresetsItem } from "antd/es/color-picker/interface";
 import React, { type ReactElement } from "react";
 import type { Color } from "three";
 
-import { DrawMode, KNOWN_CATEGORICAL_PALETTES, SelectionOutlineColorMode, ViewMode } from "src/colorizer";
+import { DrawMode, KNOWN_CATEGORICAL_PALETTES, SelectionOutlineColorMode } from "src/colorizer";
 import DropdownWithColorPicker from "src/components/Dropdowns/DropdownWithColorPicker";
 import type { SelectItem } from "src/components/Dropdowns/types";
 import OpacitySlider from "src/components/Inputs/OpacitySlider";
@@ -75,7 +75,6 @@ export default function ObjectSettings(): ReactElement {
   const setOutOfRangeDrawSettings = useViewerStateStore((state) => state.setOutOfRangeDrawSettings);
   const setShowSegmentations = useViewerStateStore((state) => state.setShowSegmentations);
   const showSegmentations = useViewerStateStore((state) => state.showSegmentations);
-  const viewMode = useViewerStateStore((state) => state.viewMode);
 
   return (
     <ToggleCollapse
@@ -173,16 +172,14 @@ export default function ObjectSettings(): ReactElement {
             showColorPicker={outlierDrawSettings.mode === DrawMode.USE_COLOR}
           />
         </SettingsItem>
-        {viewMode === ViewMode.VIEW_2D && (
-          <OpacitySlider
-            type="segmentation"
-            id={ObjectSettingsHtmlIds.OBJECT_OPACITY_SLIDER}
-            value={objectOpacity}
-            onChange={setObjectOpacity}
-            disabled={!showSegmentations}
-            sliderWidth={"220px"}
-          />
-        )}
+        <OpacitySlider
+          type="segmentation"
+          id={ObjectSettingsHtmlIds.OBJECT_OPACITY_SLIDER}
+          value={objectOpacity}
+          onChange={setObjectOpacity}
+          disabled={!showSegmentations}
+          sliderWidth={"220px"}
+        />
       </SettingsContainer>
     </ToggleCollapse>
   );

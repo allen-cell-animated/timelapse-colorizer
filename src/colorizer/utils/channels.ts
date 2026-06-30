@@ -1,3 +1,5 @@
+import type { ChannelSetting } from "src/colorizer/types";
+
 import type { ManifestFile } from "./dataset_utils";
 
 type Frames3dInfo = NonNullable<ManifestFile["frames3d"]>;
@@ -94,4 +96,8 @@ export function getRelativeToAbsoluteChannelIndexMap(
     }
   }
   return absoluteChannelIndices;
+}
+
+export function areAnyChannelsVisible(channels: ChannelSetting[]): boolean {
+  return channels.some((channel) => channel.visible);
 }

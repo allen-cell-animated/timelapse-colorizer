@@ -2,6 +2,7 @@ import { Tooltip } from "antd";
 import React, { type ReactElement } from "react";
 
 import { ViewMode } from "src/colorizer/types";
+import { areAnyChannelsVisible } from "src/colorizer/utils/channels";
 import { SettingsItem } from "src/components/SettingsContainer";
 import { MAX_SETTINGS_SLIDER_WIDTH } from "src/constants";
 import { useViewerStateStore } from "src/state";
@@ -28,14 +29,17 @@ const defaultProps = {
 /**
  * Convenience component for an opacity slider for either segmentations or
  * centroids. Handles enabling/disabling based on the current view mode and
- * whether backdrops are enabled.
+ * whether backdrops or channels are enabled.
  */
 export default function OpacitySlider(inputProps: OpacitySliderProps): ReactElement {
   const props = { ...defaultProps, ...inputProps };
   const backdropVisible = useViewerStateStore((state) => state.backdropVisible);
+  const channelSettings = useViewerStateStore((state) => state.channelSettings);
+  const channelsVisible = areAnyChannelsVisible(channelSettings);
   const viewMode = useViewerStateStore((state) => state.viewMode);
 
-  const enableOpacityControl = viewMode === ViewMode.VIEW_2D && backdropVisible;
+  const enableOpacityControl =
+    (viewMode === ViewMode.VIEW_3D && channelsVisible) || (viewMode === ViewMode.VIEW_2D && backdropVisible);
 
   const htmlId = props.id ?? props.type + "-opacity-slider";
   const tooltipLabel = props.type.charAt(0).toUpperCase() + props.type.slice(1);
@@ -43,7 +47,9 @@ export default function OpacitySlider(inputProps: OpacitySliderProps): ReactElem
   return (
     <SettingsItem label="Opacity" htmlFor={htmlId} style={{ marginBottom: 14, ...props.style }}>
       <Tooltip
-        title={`${tooltipLabel} opacity is only applied when backdrops are enabled`}
+        title={`${tooltipLabel} opacity is only applied when ${
+          viewMode === ViewMode.VIEW_3D ? "channels" : "backdrops"
+        } are enabled`}
         open={enableOpacityControl ? false : undefined}
         placement="top"
       >

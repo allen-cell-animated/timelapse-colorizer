@@ -1,7 +1,6 @@
 import React, { type ReactElement } from "react";
 
 import { ImageIconSVG, ImageSlashIconSVG } from "src/assets";
-import { ViewMode } from "src/colorizer";
 import { ToggleButtonWithConfig } from "src/components/Buttons/ToggleButtonWithConfig";
 import OpacitySlider from "src/components/Inputs/OpacitySlider";
 import { SettingsContainer } from "src/components/SettingsContainer";
@@ -16,22 +15,20 @@ export default function SegmentationsToggleButton(): ReactElement {
   const setObjectOpacity = useViewerStateStore((state) => state.setObjectOpacity);
   const setShowSegmentations = useViewerStateStore((state) => state.setShowSegmentations);
   const showSegmentations = useViewerStateStore((state) => state.showSegmentations);
-  const viewMode = useViewerStateStore((state) => state.viewMode);
 
-  const configMenuContents =
-    viewMode !== ViewMode.VIEW_3D ? (
-      <div style={{ marginBottom: "14px" }}>
-        <SettingsContainer labelWidth="65px" style={{ width: "260px" }}>
-          <OpacitySlider
-            id={SegmentationsToggleButtonHtmlIds.OPACITY_SLIDER}
-            type={"segmentation"}
-            value={objectOpacity}
-            onChange={setObjectOpacity}
-            sliderWidth={"100%"}
-          />
-        </SettingsContainer>
-      </div>
-    ) : null;
+  const configMenuContents = (
+    <div style={{ marginBottom: "14px" }}>
+      <SettingsContainer labelWidth="65px" style={{ width: "260px" }}>
+        <OpacitySlider
+          id={SegmentationsToggleButtonHtmlIds.OPACITY_SLIDER}
+          type={"segmentation"}
+          value={objectOpacity}
+          onChange={setObjectOpacity}
+          sliderWidth={"100%"}
+        />
+      </SettingsContainer>
+    </div>
+  );
 
   return (
     <ToggleButtonWithConfig
