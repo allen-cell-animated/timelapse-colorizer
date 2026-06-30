@@ -1,6 +1,9 @@
 import * as d3 from "d3";
-import React, { ReactElement, useCallback, useMemo, useRef } from "react";
+import React, { ReactElement, useCallback, useMemo, useRef, useState } from "react";
 
+import Track from "src/colorizer/Track";
+import HoverTooltip from "src/components/Tooltips/HoverTooltip";
+import { TooltipCard } from "src/components/Tooltips/TooltipCard";
 import { useViewerStateStore } from "src/state";
 import { FlexColumn, FlexRow } from "src/styles/utils";
 
@@ -12,6 +15,9 @@ export default function LineageTab(): ReactElement {
   const currentFrame = useViewerStateStore((state) => state.currentFrame);
   const setTracks = useViewerStateStore((state) => state.setTracks);
   const setFrame = useViewerStateStore((state) => state.setFrame);
+
+  const [hoveredTrack, setHoveredTrack] = useState<Track | null>(null);
+  const lastHoveredTrack = useRef<Track | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -60,22 +66,54 @@ export default function LineageTab(): ReactElement {
     [dataset, setTracks, currentFrame, setFrame]
   );
 
+  const onHoverTrack = useCallback(
+    (trackId: number | null) => {
+      if (trackId === null) {
+        setHoveredTrack(null);
+      } else {
+        const track = dataset?.getTrack(trackId);
+        if (track) {
+          setHoveredTrack(track);
+          lastHoveredTrack.current = track;
+        }
+      }
+    },
+    [dataset]
+  );
+
+  const tooltipContent = useMemo(() => {
+    return (
+      <TooltipCard style={{ opacity: hoveredTrack ? 1 : 0 }}>
+        {lastHoveredTrack.current && (
+          <FlexColumn>
+            <div>Track ID: {lastHoveredTrack.current.trackId}</div>
+            <div>Start: {lastHoveredTrack.current.startTime()}</div>
+            <div>Length: {lastHoveredTrack.current.duration()}</div>
+          </FlexColumn>
+        )}
+      </TooltipCard>
+    );
+  }, [hoveredTrack]);
+
   return (
     <FlexColumn style={{ width: "100%", height: "100%" }}>
       <FlexRow></FlexRow>
 
-      <div ref={containerRef} style={{ width: "100%", height: "calc(100% - 40px)" }}>
-        <TreeLineageView
-          container={containerRef}
-          data={lineageData}
-          colorScale={colorScale}
-          radiusScale={radiusScale}
-          onClick={onClickTrack}
-        ></TreeLineageView>
-        {lineageData?.edges.length === 0 && (
-          <div style={{ textAlign: "center", marginTop: "20px" }}>No lineage data available.</div>
-        )}
-      </div>
+      <HoverTooltip tooltipContent={tooltipContent} style={{ width: "100%", height: "100%" }}>
+        <div ref={containerRef} style={{ width: "100%", height: "100%" }}>
+          <TreeLineageView
+            container={containerRef}
+            data={lineageData}
+            colorScale={colorScale}
+            radiusScale={radiusScale}
+            onClick={onClickTrack}
+            onHover={onHoverTrack}
+          ></TreeLineageView>
+          {lineageData?.edges.length === 0 && (
+            <div style={{ textAlign: "center", marginTop: "20px" }}>No lineage data available.</div>
+          )}
+        </div>
+      </HoverTooltip>
     </FlexColumn>
   );
 }
