@@ -233,6 +233,11 @@ export default class Dataset {
     return this.trackData?.get(key);
   }
 
+  public hasLineageData(key: string): boolean {
+    const trackData = this.trackData?.get(key);
+    return trackData?.trackEdges !== undefined || trackData?.nodeEdges !== undefined;
+  }
+
   public hasFeatureKey(key: string): boolean {
     return this.featureKeys.includes(key);
   }
@@ -346,11 +351,6 @@ export default class Dataset {
   public get numObjects(): number {
     const featureData = this.getFeatureData(this.featureKeys[0]);
     return featureData?.data.length ?? this.times?.length ?? this.segIds?.length ?? 0;
-  }
-
-  public hasLineageData(): boolean {
-    const firstTrackData = this.trackData?.values().next().value;
-    return firstTrackData?.trackEdges !== undefined || firstTrackData?.nodeEdges !== undefined;
   }
 
   public getDefaultSegmentationKey(): string | null {

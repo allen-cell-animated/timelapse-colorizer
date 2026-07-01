@@ -364,7 +364,12 @@ describe("Dataset", () => {
     };
     const dataset = await makeMockDataset(manifestWithTracks, MOCK_DATASET_ARRAY_LOADER);
     const tracks = dataset.trackIds;
+    const trackDataKeys = dataset.getTrackKeys();
+    const trackData = dataset.getTrackData("track_0");
+
     expect(tracks).to.deep.equal(new Uint32Array(MOCK_DATASET_TRACKS));
+    expect(trackDataKeys).to.deep.equal(["track_0"]);
+    expect(trackData?.trackIds).to.deep.equal(new Uint32Array(MOCK_DATASET_TRACKS));
   });
 
   it("handles >= v1.8.0 track data", async () => {
@@ -391,7 +396,7 @@ describe("Dataset", () => {
         totalFrames: 4,
       },
     };
-    const dataset = await makeMockDataset(manifestWith3dSource, MOCK_DATASET_ARRAY_LOADER);
+    const dataset = await makeMockDataset(manifestWith3dSource);
     expect(dataset.has3dFrames()).to.be.true;
     const frames3d = dataset.frames3d;
     expect(frames3d?.segmentations[0].source).to.equal(

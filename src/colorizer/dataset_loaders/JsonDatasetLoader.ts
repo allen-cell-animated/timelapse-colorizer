@@ -117,11 +117,9 @@ export default class JsonDatasetLoader {
     index: number
   ): Promise<TrackData | undefined> {
     const promises = [];
-    metadata.tracks && promises.push(this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, metadata.tracks)));
-    metadata.trackEdges &&
-      promises.push(this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, metadata.trackEdges)));
-    metadata.nodeEdges &&
-      promises.push(this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, metadata.nodeEdges)));
+    promises.push(this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, metadata.tracks)));
+    promises.push(this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, metadata.trackEdges)));
+    promises.push(this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, metadata.nodeEdges)));
 
     if (promises.length === 0) {
       console.warn(`Track Edge ${index}: No data files specified for track edges.`);
@@ -322,7 +320,6 @@ export default class JsonDatasetLoader {
     }
 
     const outliers = getPromiseValue(outliersResult, makeLoadFailedCallback("Outliers", outlierFile));
-    // const trackIds = getPromiseValue(tracksResult, makeLoadFailedCallback("Tracks", tracksFile));
     const times = getPromiseValue(timesResult, makeLoadFailedCallback("Times", timesFile));
     let centroids = getPromiseValue(centroidsResult, makeLoadFailedCallback("Centroids", centroidsFile));
     const bounds = getPromiseValue(boundsResult, makeLoadFailedCallback("Bounds", boundsFile));
@@ -354,8 +351,7 @@ export default class JsonDatasetLoader {
     trackResults.forEach((result) => {
       const trackValue = getPromiseValue(result);
       if (trackValue) {
-        const { key } = trackValue;
-        trackData.set(key, trackValue);
+        trackData.set(trackValue.key, trackValue);
       }
     });
 
