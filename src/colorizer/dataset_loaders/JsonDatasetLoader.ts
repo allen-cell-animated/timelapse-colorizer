@@ -156,10 +156,12 @@ export default class JsonDatasetLoader {
 
     let source: ArraySource<FeatureDataType.F32> | undefined;
     try {
-      source = await this.arrayLoader.load(url, FeatureDataType.F32, {
-        min: metadata.min ?? undefined,
-        max: metadata.max ?? undefined,
-      });
+      source = await this.arrayLoader.load(
+        url,
+        FeatureDataType.F32,
+        metadata.min ?? undefined,
+        metadata.max ?? undefined
+      );
     } catch (error) {
       console.warn(`Feature ${index}: Failed to load data for feature ${name} from URL '${url}': ${error}`);
       return undefined;
