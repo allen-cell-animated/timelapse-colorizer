@@ -80,10 +80,12 @@ export type Frames3dData = {
   totalFrames: number;
 };
 
-export type TrackEdgeData = {
+export type TrackData = {
   name: string;
-  edges: Uint32Array;
   description?: string;
+  trackIds?: Uint32Array;
+  trackEdges?: Uint32Array;
+  nodeEdges?: Uint32Array;
 };
 
 export type DatasetInputData = {
@@ -98,11 +100,10 @@ export type DatasetInputData = {
   features: Map<string, FeatureData>;
   segIds: Uint32Array | null;
   times: Uint32Array | null;
-  trackIds: Uint32Array | null;
+  trackData: Map<string, TrackData> | null;
   centroids: Uint16Array | null;
   bounds: Uint16Array | null;
   outliers: Uint8Array | null;
-  trackEdges: Map<string, TrackEdgeData> | null;
 };
 
 const defaultMetadata: ManifestFileMetadata = {
@@ -139,7 +140,9 @@ export default class Dataset {
   //// Data arrays ////
   /** Ordered map from feature keys to feature data. */
   private features: Map<string, FeatureData>;
+  // TODO: Deprecate trackIds in favor of the trackData map.
   public trackIds: Uint32Array | null;
+  private trackData: Map<string, TrackData> | null;
   public times: Uint32Array | null;
 
   /** Lookup from a global index of an object to the raw segmentation ID in the
@@ -149,8 +152,6 @@ export default class Dataset {
   public outliers: Uint8Array | null;
   public centroids: Uint16Array | null;
   public bounds: Uint16Array | null;
-
-  public trackEdges: Map<string, TrackEdgeData> | null;
 
   //// Cached Data ////
   private cachedTracks: Map<number, Track | null>;
@@ -200,13 +201,13 @@ export default class Dataset {
     // Data arrays
     this.features = data.features || new Map<string, FeatureData>();
     this.times = data.times || null;
-    this.trackIds = data.trackIds || null;
     this.segIds = data.segIds || null;
     this.centroids = data.centroids || null;
     this.bounds = data.bounds || null;
     this.outliers = data.outliers || null;
-    this.trackEdges = data.trackEdges || null;
-    console.log("Track edges:", this.trackEdges);
+    this.trackData = data.trackData || null;
+
+    this.trackIds = data.trackData?.values().next().value?.trackIds || null;
 
     // Cached data
     this.cachedTracks = new Map();
@@ -339,7 +340,8 @@ export default class Dataset {
   }
 
   public hasLineageData(): boolean {
-    return this.trackEdges !== null && this.trackEdges.size > 0;
+    const firstTrackData = this.trackData?.values().next().value;
+    return firstTrackData?.trackEdges !== undefined || firstTrackData?.nodeEdges !== undefined;
   }
 
   public getDefaultSegmentationKey(): string | null {

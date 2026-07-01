@@ -9,7 +9,7 @@ import {
   LoadTroubleshooting,
   MAX_FEATURE_CATEGORIES,
 } from "src/colorizer";
-import Dataset, { type FeatureData, FeatureType, type Frames2dData, TrackEdgeData } from "src/colorizer/Dataset";
+import Dataset, { type FeatureData, FeatureType, type Frames2dData, TrackData } from "src/colorizer/Dataset";
 import {
   addCentroidFeatures,
   addTimeFeature,
@@ -113,31 +113,28 @@ export default class JsonDatasetLoader {
   }
 
   private async loadTrackEdge(
-    metadata: Required<ManifestFile>["trackEdges"][number],
+    metadata: Required<ManifestFile>["tracks"][number],
     index: number
-  ): Promise<[string, TrackEdgeData] | undefined> {
-    // Load from path if provided, otherwise use the edges array directly
-    let data: Uint32Array | undefined;
-    if (metadata.edges) {
-      data = new Uint32Array(metadata.edges);
-    } else if (metadata.path) {
-      const url = this.resolvePath(metadata.path);
-      if (url) {
-        data = (await this.arrayLoader.load(url, FeatureDataType.U32)).getBuffer();
-      }
-    }
+  ): Promise<TrackData | undefined> {
+    const promises = [];
+    metadata.tracks && promises.push(this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, metadata.tracks)));
+    metadata.trackEdges &&
+      promises.push(this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, metadata.trackEdges)));
+    metadata.nodeEdges &&
+      promises.push(this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, metadata.nodeEdges)));
 
-    if (!data) {
+    if (promises.length === 0) {
+      console.warn(`Track Edge ${index}: No data files specified for track edges.`);
       return undefined;
     }
-    const name = metadata.name ?? `Track Edge ${index + 1}`;
-    return [
-      name,
-      {
-        name,
-        edges: data,
-      },
-    ];
+    const [tracks, trackEdges, nodeEdges] = await Promise.all(promises);
+    return {
+      name: metadata.name ?? `Track Edge ${index}`,
+      description: metadata.description,
+      trackIds: tracks ?? undefined,
+      trackEdges: trackEdges ?? undefined,
+      nodeEdges: nodeEdges ?? undefined,
+    };
   }
 
   /**
@@ -159,12 +156,10 @@ export default class JsonDatasetLoader {
 
     let source: ArraySource<FeatureDataType.F32> | undefined;
     try {
-      source = await this.arrayLoader.load(
-        url,
-        FeatureDataType.F32,
-        metadata.min ?? undefined,
-        metadata.max ?? undefined
-      );
+      source = await this.arrayLoader.load(url, FeatureDataType.F32, {
+        min: metadata.min ?? undefined,
+        max: metadata.max ?? undefined,
+      });
     } catch (error) {
       console.warn(`Feature ${index}: Failed to load data for feature ${name} from URL '${url}': ${error}`);
       return undefined;
@@ -274,7 +269,6 @@ export default class JsonDatasetLoader {
     const outlierFile = manifest.outliers;
     const metadata = { ...DEFAULT_METADATA, ...manifest.metadata };
 
-    const tracksFile = manifest.tracks;
     const timesFile = manifest.times;
     const centroidsFile = manifest.centroids;
     const boundsFile = manifest.bounds;
@@ -285,36 +279,34 @@ export default class JsonDatasetLoader {
       (data, index) => this.reportLoadProgress(this.loadFeature(data, index))
     );
     const allFeaturePromise = Promise.allSettled(featuresPromises);
-
-    const trackEdgePromises: Promise<[string, TrackEdgeData] | undefined>[] = Array.from(manifest.trackEdges ?? []).map(
-      (data, index) => this.reportLoadProgress(this.loadTrackEdge(data, index))
+    // Load tracks data
+    const tracksPromises: Promise<TrackData | undefined>[] = Array.from(manifest.tracks ?? []).map((data, index) =>
+      this.loadTrackEdge(data, index)
     );
-    const allTrackEdgePromise = Promise.allSettled(trackEdgePromises);
+    const allTracksPromise = Promise.allSettled(tracksPromises);
 
     const result = await Promise.allSettled([
       this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U8, outlierFile)),
-      this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, tracksFile)),
       this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, timesFile)),
       this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U16, centroidsFile)),
       this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U16, boundsFile)),
       this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, segIdsFile)),
       this.reportLoadProgress(this.getFrameDims(frames2d)),
+      allTracksPromise,
       allFeaturePromise,
-      allTrackEdgePromise,
     ]);
     const [
       outliersResult,
-      tracksResult,
       timesResult,
       centroidsResult,
       boundsResult,
       frameIdOffsetsResult,
       frameDimensionsResult,
+      allTracksResults,
       allFeatureResults,
-      allTrackEdgeResults,
     ] = result;
     const [...featureResults] = allFeatureResults.status === "fulfilled" ? allFeatureResults.value : [];
-    const [...trackEdgeResults] = allTrackEdgeResults.status === "fulfilled" ? allTrackEdgeResults.value : [];
+    const [...trackResults] = allTracksResults.status === "fulfilled" ? allTracksResults.value : [];
 
     const unloadableDataFiles: string[] = [];
     function makeLoadFailedCallback(fileType: string, url?: string): (reason: any) => void {
@@ -325,17 +317,12 @@ export default class JsonDatasetLoader {
     }
 
     const outliers = getPromiseValue(outliersResult, makeLoadFailedCallback("Outliers", outlierFile));
-    const trackIds = getPromiseValue(tracksResult, makeLoadFailedCallback("Tracks", tracksFile));
+    // const trackIds = getPromiseValue(tracksResult, makeLoadFailedCallback("Tracks", tracksFile));
     const times = getPromiseValue(timesResult, makeLoadFailedCallback("Times", timesFile));
     let centroids = getPromiseValue(centroidsResult, makeLoadFailedCallback("Centroids", centroidsFile));
     const bounds = getPromiseValue(boundsResult, makeLoadFailedCallback("Bounds", boundsFile));
     let segIds = getPromiseValue(frameIdOffsetsResult, makeLoadFailedCallback("Segmentation IDs", segIdsFile));
     const frameDimensions = getPromiseValue(frameDimensionsResult, makeLoadFailedCallback("Frame Dimensions"));
-
-    const filteredTrackEdges = trackEdgeResults
-      .map((result) => (result.status === "fulfilled" ? result.value : undefined))
-      .filter((value): value is [string, TrackEdgeData] => value !== undefined);
-    const trackEdges = new Map(filteredTrackEdges);
 
     if (unloadableDataFiles.length > 0) {
       // Report warning of all the files that couldn't be loaded and their associated errors.
@@ -358,18 +345,28 @@ export default class JsonDatasetLoader {
       }
     });
 
+    const trackData = new Map<string, TrackData>();
+    trackResults.forEach((result) => {
+      const trackValue = getPromiseValue(result);
+      if (trackValue) {
+        const { name } = trackValue;
+        trackData.set(name, trackValue);
+      }
+    });
+
     //// Post-processing and validation steps ////
 
     reportUnloadedFeatures(manifest.features, features, this.reportWarning);
 
+    const defaultTrackIds = trackData.values().next().value?.trackIds ?? null;
     const numObjects =
-      features.values().next().value?.data.length || times?.length || trackIds?.length || segIds?.length || 0;
+      features.values().next().value?.data.length || times?.length || defaultTrackIds?.length || segIds?.length || 0;
     segIds = segIds ?? getDefaultSegIds(numObjects);
     centroids = centroids && padCentroidsTo3d(centroids, numObjects);
 
     addCentroidFeatures(features, centroids, metadata, frames3d ? undefined : frameDimensions);
     addTimeFeature(features, times);
-    addTrackFeature(features, trackIds);
+    addTrackFeature(features, defaultTrackIds);
 
     // Analytics reporting
     triggerAnalyticsEvent(AnalyticsEvent.DATASET_LOAD, {
@@ -392,11 +389,10 @@ export default class JsonDatasetLoader {
         features,
         segIds,
         times,
-        trackIds,
+        trackData,
         centroids,
         bounds,
         outliers,
-        trackEdges,
       },
       { frameLoader: this.frameLoader, backdropLoader: this.backdropLoader }
     );

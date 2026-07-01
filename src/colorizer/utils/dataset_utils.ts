@@ -161,19 +161,30 @@ type Frames2dV1_8_0 = {
   backdrops?: ManifestFrameSource[];
 };
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
+type TrackDataV1_8_0 = {
+  name?: string;
+  description?: string;
+  tracks?: string;
+  trackEdges?: string;
+  nodeEdges?: string;
+};
+
 /**
- * Adds support for multiple alternate segmentations for both 2D and 3D
- * frames.
+ * Adds support for multiple alternate segmentations for both 2D and 3D frames,
+ * and for multiple alternate track data sources (with optional track edge and
+ * node edge files.)
  * - Moves `frames` and `backdrops` argument into `frames2d` field.
  * - Moves `frames3d.source` and `frames3d.segmentationChannel` into a list of
  *   segmentations in `frames3d.segmentations`.
+ * - Changes `tracks` field from a string path to a list of objects.
  */
 // eslint-disable-next-line @typescript-eslint/naming-convention
 type ManifestFileV1_8_0 = Spread<
-  Omit<ManifestFileV1_1_0, "frames3d" | "frames" | "backdrops"> & {
+  Omit<ManifestFileV1_1_0, "frames3d" | "frames" | "backdrops" | "tracks"> & {
     frames3d?: Frames3dV1_8_0;
     frames2d?: Frames2dV1_8_0;
-    trackEdges?: { path?: string; edges?: number[]; name: string; description?: string }[];
+    tracks?: TrackDataV1_8_0[];
   }
 >;
 
@@ -198,11 +209,15 @@ function isV0_0_0(manifest: AnyManifestFile): manifest is ManifestFileV0_0_0 {
 }
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
-function isV1_1_0(manifest: AnyManifestFile): manifest is ManifestFileV1_1_0 {
+function isV1_1_0FrameData(manifest: AnyManifestFile): manifest is ManifestFileV1_1_0 {
   const frames3d = (manifest as ManifestFileV1_1_0).frames3d;
   const frames = (manifest as ManifestFileV1_1_0).frames;
   const backdrops = (manifest as ManifestFileV1_1_0).backdrops;
   return frames !== undefined || backdrops !== undefined || frames3d?.source !== undefined;
+}
+
+function isV1_1_0TrackData(manifest: AnyManifestFile): manifest is ManifestFileV1_1_0 {
+  return typeof (manifest as ManifestFileV1_1_0).tracks === "string";
 }
 
 /**
@@ -234,7 +249,7 @@ export const updateManifestVersion = (manifest: AnyManifestFile): ManifestFile =
       features,
     };
   }
-  if (isV1_1_0(manifest)) {
+  if (isV1_1_0FrameData(manifest)) {
     const frames3d = (manifest as ManifestFileV1_1_0).frames3d;
     const frames = (manifest as ManifestFileV1_1_0).frames;
     const backdrops = (manifest as ManifestFileV1_1_0).backdrops;
@@ -271,6 +286,17 @@ export const updateManifestVersion = (manifest: AnyManifestFile): ManifestFile =
       };
     }
   }
+  if (isV1_1_0TrackData(manifest)) {
+    const tracks = (manifest as ManifestFileV1_1_0).tracks;
+    manifest = {
+      ...manifest,
+      tracks: [
+        {
+          tracks: tracks,
+        },
+      ],
+    };
+  }
 
-  return manifest;
+  return manifest as ManifestFile;
 };
