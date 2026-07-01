@@ -75,9 +75,15 @@ export type Frames2dData = {
 };
 
 export type Frames3dData = {
-  totalFrames: number;
   segmentations: ChannelSource[];
   backdrops?: ChannelSource[];
+  totalFrames: number;
+};
+
+export type TrackEdgeData = {
+  name: string;
+  edges: Uint32Array;
+  description?: string;
 };
 
 export type DatasetInputData = {
@@ -96,6 +102,7 @@ export type DatasetInputData = {
   centroids: Uint16Array | null;
   bounds: Uint16Array | null;
   outliers: Uint8Array | null;
+  trackEdges: Map<string, TrackEdgeData> | null;
 };
 
 const defaultMetadata: ManifestFileMetadata = {
@@ -142,6 +149,8 @@ export default class Dataset {
   public outliers: Uint8Array | null;
   public centroids: Uint16Array | null;
   public bounds: Uint16Array | null;
+
+  public trackEdges: Map<string, TrackEdgeData> | null;
 
   //// Cached Data ////
   private cachedTracks: Map<number, Track | null>;
@@ -196,6 +205,8 @@ export default class Dataset {
     this.centroids = data.centroids || null;
     this.bounds = data.bounds || null;
     this.outliers = data.outliers || null;
+    this.trackEdges = data.trackEdges || null;
+    console.log("Track edges:", this.trackEdges);
 
     // Cached data
     this.cachedTracks = new Map();
@@ -325,6 +336,10 @@ export default class Dataset {
   public get numObjects(): number {
     const featureData = this.getFeatureData(this.featureKeys[0]);
     return featureData?.data.length ?? this.times?.length ?? this.segIds?.length ?? 0;
+  }
+
+  public hasLineageData(): boolean {
+    return this.trackEdges !== null && this.trackEdges.size > 0;
   }
 
   public getDefaultSegmentationKey(): string | null {

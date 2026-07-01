@@ -9,7 +9,7 @@ import {
   LoadTroubleshooting,
   MAX_FEATURE_CATEGORIES,
 } from "src/colorizer";
-import Dataset, { type FeatureData, FeatureType, type Frames2dData } from "src/colorizer/Dataset";
+import Dataset, { type FeatureData, FeatureType, type Frames2dData, TrackEdgeData } from "src/colorizer/Dataset";
 import {
   addCentroidFeatures,
   addTimeFeature,
@@ -110,6 +110,34 @@ export default class JsonDatasetLoader {
 
     inputType = inputType?.toLowerCase() || "";
     return isFeatureType(inputType) ? inputType : defaultType;
+  }
+
+  private async loadTrackEdge(
+    metadata: Required<ManifestFile>["trackEdges"][number],
+    index: number
+  ): Promise<[string, TrackEdgeData] | undefined> {
+    // Load from path if provided, otherwise use the edges array directly
+    let data: Uint32Array | undefined;
+    if (metadata.edges) {
+      data = new Uint32Array(metadata.edges);
+    } else if (metadata.path) {
+      const url = this.resolvePath(metadata.path);
+      if (url) {
+        data = (await this.arrayLoader.load(url, FeatureDataType.U32)).getBuffer();
+      }
+    }
+
+    if (!data) {
+      return undefined;
+    }
+    const name = metadata.name ?? `Track Edge ${index + 1}`;
+    return [
+      name,
+      {
+        name,
+        edges: data,
+      },
+    ];
   }
 
   /**
@@ -256,6 +284,12 @@ export default class JsonDatasetLoader {
     const featuresPromises: Promise<[string, FeatureData] | undefined>[] = Array.from(manifest.features).map(
       (data, index) => this.reportLoadProgress(this.loadFeature(data, index))
     );
+    const allFeaturePromise = Promise.allSettled(featuresPromises);
+
+    const trackEdgePromises: Promise<[string, TrackEdgeData] | undefined>[] = Array.from(manifest.trackEdges ?? []).map(
+      (data, index) => this.reportLoadProgress(this.loadTrackEdge(data, index))
+    );
+    const allTrackEdgePromise = Promise.allSettled(trackEdgePromises);
 
     const result = await Promise.allSettled([
       this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U8, outlierFile)),
@@ -265,7 +299,8 @@ export default class JsonDatasetLoader {
       this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U16, boundsFile)),
       this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, segIdsFile)),
       this.reportLoadProgress(this.getFrameDims(frames2d)),
-      ...featuresPromises,
+      allFeaturePromise,
+      allTrackEdgePromise,
     ]);
     const [
       outliersResult,
@@ -275,8 +310,11 @@ export default class JsonDatasetLoader {
       boundsResult,
       frameIdOffsetsResult,
       frameDimensionsResult,
-      ...featureResults
+      allFeatureResults,
+      allTrackEdgeResults,
     ] = result;
+    const [...featureResults] = allFeatureResults.status === "fulfilled" ? allFeatureResults.value : [];
+    const [...trackEdgeResults] = allTrackEdgeResults.status === "fulfilled" ? allTrackEdgeResults.value : [];
 
     const unloadableDataFiles: string[] = [];
     function makeLoadFailedCallback(fileType: string, url?: string): (reason: any) => void {
@@ -293,6 +331,11 @@ export default class JsonDatasetLoader {
     const bounds = getPromiseValue(boundsResult, makeLoadFailedCallback("Bounds", boundsFile));
     let segIds = getPromiseValue(frameIdOffsetsResult, makeLoadFailedCallback("Segmentation IDs", segIdsFile));
     const frameDimensions = getPromiseValue(frameDimensionsResult, makeLoadFailedCallback("Frame Dimensions"));
+
+    const filteredTrackEdges = trackEdgeResults
+      .map((result) => (result.status === "fulfilled" ? result.value : undefined))
+      .filter((value): value is [string, TrackEdgeData] => value !== undefined);
+    const trackEdges = new Map(filteredTrackEdges);
 
     if (unloadableDataFiles.length > 0) {
       // Report warning of all the files that couldn't be loaded and their associated errors.
@@ -353,6 +396,7 @@ export default class JsonDatasetLoader {
         centroids,
         bounds,
         outliers,
+        trackEdges,
       },
       { frameLoader: this.frameLoader, backdropLoader: this.backdropLoader }
     );
