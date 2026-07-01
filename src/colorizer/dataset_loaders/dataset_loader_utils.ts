@@ -219,7 +219,7 @@ export function resolveFrames3d(
 //// 2D frames ////
 
 export function getUniqueKeyName(key: string | undefined, name: string, existingKeys: Set<string>): string {
-  key = key ?? getKeyFromName(name);
+  key = getKeyFromName(key ?? name);
   if (!existingKeys.has(key)) {
     return key;
   }

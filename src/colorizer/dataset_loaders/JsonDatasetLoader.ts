@@ -15,6 +15,7 @@ import {
   addTimeFeature,
   addTrackFeature,
   getDefaultSegIds,
+  getUniqueKeyName,
   reportUnloadedFeatures,
   resolveFrames2d,
   resolveFrames3d,
@@ -127,7 +128,7 @@ export default class JsonDatasetLoader {
     }
     const [tracks, trackEdges, nodeEdges] = await Promise.all(promises);
     const name = metadata.name ?? `Track ${index}`;
-    const key = metadata.key ?? getKeyFromName(name);
+    const key = metadata.key ?? name;
     return {
       name,
       key: getKeyFromName(key),
@@ -308,8 +309,8 @@ export default class JsonDatasetLoader {
       allTracksResults,
       allFeatureResults,
     ] = result;
-    const [...featureResults] = allFeatureResults.status === "fulfilled" ? allFeatureResults.value : [];
-    const [...trackResults] = allTracksResults.status === "fulfilled" ? allTracksResults.value : [];
+    const featureResults = allFeatureResults.status === "fulfilled" ? allFeatureResults.value : [];
+    const trackResults = allTracksResults.status === "fulfilled" ? allTracksResults.value : [];
 
     const unloadableDataFiles: string[] = [];
     function makeLoadFailedCallback(fileType: string, url?: string): (reason: any) => void {
@@ -348,10 +349,14 @@ export default class JsonDatasetLoader {
     });
 
     const trackData = new Map<string, TrackData>();
+    const trackKeys = new Set<string>();
     trackResults.forEach((result) => {
       const trackValue = getPromiseValue(result);
+
       if (trackValue) {
-        trackData.set(trackValue.key, trackValue);
+        const key = getUniqueKeyName(trackValue.key, trackValue.name, trackKeys);
+        trackKeys.add(key);
+        trackData.set(key, { ...trackValue, key });
       }
     });
 
