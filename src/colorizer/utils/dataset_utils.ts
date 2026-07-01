@@ -164,6 +164,7 @@ type Frames2dV1_8_0 = {
 // eslint-disable-next-line @typescript-eslint/naming-convention
 type TrackDataV1_8_0 = {
   name?: string;
+  key?: string;
   description?: string;
   tracks?: string;
   trackEdges?: string;

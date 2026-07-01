@@ -128,8 +128,10 @@ export default class JsonDatasetLoader {
       return undefined;
     }
     const [tracks, trackEdges, nodeEdges] = await Promise.all(promises);
+    const name = metadata.name ?? `Track ${index}`;
     return {
-      name: metadata.name ?? `Track Edge ${index}`,
+      name,
+      key: metadata.key ?? getKeyFromName(name),
       description: metadata.description,
       trackIds: tracks ?? undefined,
       trackEdges: trackEdges ?? undefined,
@@ -351,8 +353,8 @@ export default class JsonDatasetLoader {
     trackResults.forEach((result) => {
       const trackValue = getPromiseValue(result);
       if (trackValue) {
-        const { name } = trackValue;
-        trackData.set(name, trackValue);
+        const { key } = trackValue;
+        trackData.set(key, trackValue);
       }
     });
 

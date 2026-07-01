@@ -82,6 +82,7 @@ export type Frames3dData = {
 
 export type TrackData = {
   name: string;
+  key: string;
   description?: string;
   trackIds?: Uint32Array;
   trackEdges?: Uint32Array;
@@ -222,6 +223,14 @@ export default class Dataset {
     );
 
     this.getSegmentationId = this.getSegmentationId.bind(this);
+  }
+
+  public getTrackKeys(): string[] {
+    return this.trackData ? Array.from(this.trackData.keys()) : [];
+  }
+
+  public getTrackData(key: string): TrackData | undefined {
+    return this.trackData?.get(key);
   }
 
   public hasFeatureKey(key: string): boolean {
