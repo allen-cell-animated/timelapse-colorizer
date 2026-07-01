@@ -157,8 +157,11 @@ type TrackDataV1_8_0 = {
   name?: string;
   key?: string;
   description?: string;
+  /** Path to the track data file. */
   tracks?: string;
+  /** Path to the track edges file. */
   trackEdges?: string;
+  /** Path to the node edges file. */
   nodeEdges?: string;
 };
 
