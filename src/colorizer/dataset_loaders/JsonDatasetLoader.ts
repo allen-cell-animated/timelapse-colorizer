@@ -123,10 +123,23 @@ export default class JsonDatasetLoader {
     promises.push(this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, metadata.nodeEdges)));
 
     if (promises.length === 0) {
-      console.warn(`Track Edge ${index}: No data files specified for track edges.`);
+      console.warn(`Track ${index}: No data files specified for track edges.`);
       return undefined;
     }
-    const [tracks, trackEdges, nodeEdges] = await Promise.all(promises);
+    const [tracksResult, trackEdgesResult, nodeEdgesResult] = await Promise.allSettled(promises);
+    if (tracksResult.status === "rejected") {
+      console.warn(`Track ${index}: Failed to load track IDs: ${tracksResult.reason}`);
+      return undefined;
+    } else if (trackEdgesResult.status === "rejected") {
+      console.warn(`Track ${index}: Failed to load track edges: ${trackEdgesResult.reason}`);
+      return undefined;
+    } else if (nodeEdgesResult.status === "rejected") {
+      console.warn(`Track ${index}: Failed to load node edges: ${nodeEdgesResult.reason}`);
+      return undefined;
+    }
+    const tracks = tracksResult.status === "fulfilled" ? tracksResult.value : undefined;
+    const trackEdges = trackEdgesResult.status === "fulfilled" ? trackEdgesResult.value : undefined;
+    const nodeEdges = nodeEdgesResult.status === "fulfilled" ? nodeEdgesResult.value : undefined;
     const name = metadata.name ?? `Track ${index}`;
     const key = metadata.key ?? name;
     return {
