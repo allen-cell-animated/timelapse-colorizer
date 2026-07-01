@@ -9,7 +9,7 @@ import {
   LoadTroubleshooting,
   MAX_FEATURE_CATEGORIES,
 } from "src/colorizer";
-import Dataset, { type FeatureData, FeatureType, type Frames2dData, TrackData } from "src/colorizer/Dataset";
+import Dataset, { type FeatureData, FeatureType, type Frames2dData, type TrackData } from "src/colorizer/Dataset";
 import {
   addCentroidFeatures,
   addTimeFeature,
