@@ -6,6 +6,8 @@ import type { CsvDataColumn } from "src/colorizer/utils/csv_utils";
 import { featureToRangeData } from "src/colorizer/utils/math_utils";
 import type { DataTextureInfo } from "src/colorizer/utils/texture_utils";
 
+import { ParquetLoadOptions } from "../utils/data_load_utils";
+
 // Vite import directive for worker files! See https://vitejs.dev/guide/features.html#import-with-query-suffixes.
 // @ts-ignore Ignore missing file warning
 // eslint-disable-next-line import/default
@@ -39,9 +41,10 @@ export default class SharedWorkerPool {
    */
   async loadUrlData<T extends FeatureDataType>(
     url: string,
-    type: T
+    type: T,
+    options?: ParquetLoadOptions
   ): Promise<{ data: FeatureArrayType[T]; textureInfo: DataTextureInfo<T>; min: number; max: number }> {
-    return await this.workerPool.exec("loadUrlData", [url, type]);
+    return await this.workerPool.exec("loadUrlData", [url, type, options]);
   }
 
   /**

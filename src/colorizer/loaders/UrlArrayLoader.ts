@@ -4,6 +4,7 @@ import type { FeatureArrayType, FeatureDataType } from "src/colorizer/types";
 import { infoToDataTexture } from "src/colorizer/utils/texture_utils";
 import SharedWorkerPool from "src/colorizer/workers/SharedWorkerPool";
 
+import { ParquetLoadOptions } from "../utils/data_load_utils";
 import type { ArraySource, IArrayLoader } from "./ILoader";
 
 export class UrlArraySource<T extends FeatureDataType> implements ArraySource<T> {
@@ -58,11 +59,20 @@ export default class UrlArrayLoader implements IArrayLoader {
    * @throws Error if the file format is not supported (not JSON or Parquet).
    * @returns a URLArraySource object containing the loaded data.
    */
-  async load<T extends FeatureDataType>(url: string, type: T, min?: number, max?: number): Promise<UrlArraySource<T>> {
-    const { data, textureInfo, min: newMin, max: newMax } = await this.workerPool.loadUrlData(url, type);
+  async load<T extends FeatureDataType>(
+    url: string,
+    type: T,
+    options: { min?: number; max?: number; parquetOptions?: ParquetLoadOptions } = {}
+  ): Promise<UrlArraySource<T>> {
+    const {
+      data,
+      textureInfo,
+      min: newMin,
+      max: newMax,
+    } = await this.workerPool.loadUrlData(url, type, options.parquetOptions);
 
     const tex = infoToDataTexture(textureInfo);
-    return new UrlArraySource<T>(data, tex, type, min ?? newMin, max ?? newMax);
+    return new UrlArraySource<T>(data, tex, type, options.min ?? newMin, options.max ?? newMax);
   }
 
   dispose(): void {

@@ -1,8 +1,13 @@
-import { parquetRead } from "hyparquet";
+import { parquetMetadataAsync, parquetRead } from "hyparquet";
 import { compressors } from "hyparquet-compressors";
 import JSZip from "jszip";
 
-import { type FeatureArrayType, type FeatureDataType, featureTypeSpecs, type ReportLoadProgressCallback } from "src/colorizer/types";
+import {
+  type FeatureArrayType,
+  type FeatureDataType,
+  featureTypeSpecs,
+  type ReportLoadProgressCallback,
+} from "src/colorizer/types";
 
 const isBoolArray = (arr: number[] | boolean[]): arr is boolean[] => typeof arr[0] === "boolean";
 
@@ -58,7 +63,57 @@ export async function loadFromJsonUrl<T extends FeatureDataType>(url: string, ty
   return { data, min: min ?? dataMin, max: max ?? dataMax };
 }
 
-export async function loadFromParquetUrl<T extends FeatureDataType>(url: string, type: T): Promise<LoadedData<T>> {
+export type ParquetLoadOptions = {
+  /**
+   * Columns to read. If undefined, all columns will be read. The returned array
+   * will be a flat array, where the values are interleaved from each column, in
+   * the order specified. An error will be thrown if any of the specified
+   * columns do not exist in the Parquet file.
+   */
+  columns?: string[];
+};
+
+/**
+ * Selects columns from the specified raw data and interleaves them, in order,
+ * into a single flat array. If no columns are specified, all columns will be
+ * selected and flattened.
+ * @param rawData The raw data read from the Parquet file, organized as an array of rows.
+ * @param columns The columns to select and interleave, in order.
+ * @param schemaColumns The columns available in the Parquet file schema.
+ * @throws An error if any of the specified columns do not exist in the Parquet file.
+ * @returns A flat array containing the interleaved values of the selected columns.
+ */
+function selectAndInterleaveColumns(rawData: number[][], columns: string[], schemaColumns: string[]): number[] {
+  if (columns.length === 0) {
+    return rawData.flat();
+  }
+  // Map from selected column names to index in the schema
+  const columnIndices = columns.map((col) => schemaColumns.indexOf(col));
+  // Validate that all the requested columns exist in the schema
+  for (let i = 0; i < columns.length; i++) {
+    const colName = columns[i];
+    const index = columnIndices[i];
+    if (index === -1) {
+      throw new Error(
+        `Column '${colName}' does not exist in the Parquet file. Columns provided: [${schemaColumns.join(", ")}]`
+      );
+    }
+  }
+  // Select and flatten the data
+  const data = [];
+  for (let i = 0; i < rawData.length; i++) {
+    for (let j = 0; j < columnIndices.length; j++) {
+      data.push(rawData[i][columnIndices[j]]);
+    }
+  }
+  return data;
+}
+
+export async function loadFromParquetUrl<T extends FeatureDataType>(
+  url: string,
+  type: T,
+  options?: ParquetLoadOptions
+): Promise<LoadedData<T>> {
   const result = await fetch(url);
 
   if (!result.ok) {
@@ -70,14 +125,23 @@ export async function loadFromParquetUrl<T extends FeatureDataType>(url: string,
   let dataMin: number = Number.POSITIVE_INFINITY;
   let dataMax: number = Number.NEGATIVE_INFINITY;
 
+  const metadata = await parquetMetadataAsync(arrayBuffer);
+  const requestedColumns = options?.columns ?? [];
+  let schemaColumns = metadata.schema.map((col) => col.name);
+  if (requestedColumns.length > 0) {
+    schemaColumns = schemaColumns.filter((col) => requestedColumns.includes(col));
+  }
+
   await parquetRead({
     file: arrayBuffer,
     compressors,
+    columns: options?.columns,
     onComplete: (rawData: number[][]) => {
-      const flattenedMap = rawData.flat().map((value) => {
+      const reorderedData = selectAndInterleaveColumns(rawData, requestedColumns, schemaColumns);
+      const flattenedData = reorderedData.flat().map((value) => {
         return value === null ? NaN : Number(value);
       });
-      data = new featureTypeSpecs[type].ArrayConstructor(flattenedMap);
+      data = new featureTypeSpecs[type].ArrayConstructor(flattenedData);
       // Get min and max values for the data
       for (let i = 0; i < data.length; i++) {
         const value = Number(data[i]);
