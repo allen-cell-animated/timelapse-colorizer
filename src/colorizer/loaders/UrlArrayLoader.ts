@@ -49,13 +49,21 @@ export default class UrlArrayLoader implements IArrayLoader {
   }
 
   /**
-   * Loads array data from the specified URL, handling both JSON and Parquet files.
-   * @param url The URL to load data from. Must be a ".json" or ".parquet" data file.
-   * @param type `FeatureDataType` for the returned array source (e.g. `F32` or `U8`).
-   * @param min Optional minimum value for the data. If defined, overrides the `min` field
-   *   in JSON files or the calculated minimum value for Parquet files.
-   * @param max Optional maximum value for the data. If defined, overrides the `max` field
-   *   in JSON files or the calculated maximum value for Parquet files.
+   * Loads array data from the specified URL, handling both JSON and Parquet
+   * files.
+   * @param url The URL to load data from. Must be a ".json" or ".parquet" data
+   * file.
+   * @param type `FeatureDataType` for the returned array source (e.g. `F32` or
+   * `U8`).
+   * @param options An object containing optional parameters:
+   *  - `min`: Optional minimum value for the data. If defined, overrides the
+   *    `min` field in JSON files or the calculated minimum value for Parquet
+   *    files.
+   *  - `max`: Optional maximum value for the data. If defined, overrides the
+   *    `max` field in JSON files or the calculated maximum value for Parquet
+   *    files.
+   * - `parquetOptions`: Optional `ParquetLoadOptions` for loading Parquet
+   *   files. Ignored for JSON files.
    * @throws Error if the file format is not supported (not JSON or Parquet).
    * @returns a URLArraySource object containing the loaded data.
    */

@@ -115,7 +115,7 @@ export function selectAndInterleaveColumns(
     const index = columnIndices[i];
     if (index === -1) {
       throw new Error(
-        `Column '${colName}' does not exist in the Parquet file. Columns provided: [${schemaColumns.join(", ")}]`
+        `Column '${colName}' does not exist in the Parquet file. Columns available: [${schemaColumns.join(", ")}]`
       );
     }
   }
@@ -147,18 +147,25 @@ export async function loadFromParquetUrl<T extends FeatureDataType>(
 
   const metadata = await parquetMetadataAsync(arrayBuffer);
   let schemaColumns = metadata.schema.map((col) => col.name);
-  const requestedColumns = options?.columns;
-  if (requestedColumns && requestedColumns.length > 0) {
+  const requestedColumns = options?.columns && options.columns.length > 0 ? options.columns : undefined;
+  if (requestedColumns) {
+    // Validate that all requested columns exist in the schema
+    for (const col of requestedColumns) {
+      if (!schemaColumns.includes(col)) {
+        throw new Error(
+          `Column '${col}' does not exist in the Parquet file. Columns available: [${schemaColumns.join(", ")}]`
+        );
+      }
+    }
     // Filter to requested columns, since parquetRead will ignore all other
-    // columns (but still keeps them in the original schema order). Validation
-    // that the requested columns exist is done in `selectAndInterleaveColumns`.
+    // columns (but still keeps them in the original schema order).
     schemaColumns = schemaColumns.filter((col) => requestedColumns.includes(col));
   }
 
   await parquetRead({
     file: arrayBuffer,
     compressors,
-    columns: options?.columns,
+    columns: requestedColumns,
     onComplete: (rawData: number[][]) => {
       const flattenedData = selectAndInterleaveColumns(rawData, requestedColumns, schemaColumns);
       const filteredData = flattenedData.map((value) => {
