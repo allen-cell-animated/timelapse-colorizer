@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { selectAndInterleaveColumns } from "src/colorizer/utils/data_load_utils";
 import { UrlParam } from "src/colorizer/utils/url_utils";
 import { loadInitialCollectionAndDataset } from "src/utils/dataset_load_utils";
 import {
@@ -60,5 +61,35 @@ describe("loadInitialCollectionAndDataset", () => {
     expect(result?.collection).toStrictEqual(MOCK_COLLECTION);
     expect(result?.datasetKey).toBe(MOCK_DATASET_KEY);
     expect(result?.dataset).not.toBeNull();
+  });
+});
+
+describe("selectAndInterleaveColumns", () => {
+  const schemaColumns = ["col1", "col2", "col3"];
+  const rawData = [
+    [0, 10, 100],
+    [1, 11, 101],
+    [2, 12, 102],
+    [3, 13, 103],
+  ];
+
+  it("returns all columns when no columns are specified", () => {
+    const result = selectAndInterleaveColumns(rawData, [], schemaColumns);
+    expect(result).toEqual([0, 10, 100, 1, 11, 101, 2, 12, 102, 3, 13, 103]);
+  });
+
+  it("selects a single column", () => {
+    const result = selectAndInterleaveColumns(rawData, ["col1"], schemaColumns);
+    expect(result).toEqual([0, 1, 2, 3]);
+  });
+
+  it("selects multiple columns and interleaves the results", () => {
+    const result = selectAndInterleaveColumns(rawData, ["col1", "col3"], schemaColumns);
+    expect(result).toEqual([0, 100, 1, 101, 2, 102, 3, 103]);
+  });
+
+  it("reorders columns to match input column order", () => {
+    const result = selectAndInterleaveColumns(rawData, ["col3", "col1"], schemaColumns);
+    expect(result).toEqual([100, 0, 101, 1, 102, 2, 103, 3]);
   });
 });

@@ -83,7 +83,7 @@ export type ParquetLoadOptions = {
  * @throws An error if any of the specified columns do not exist in the Parquet file.
  * @returns A flat array containing the interleaved values of the selected columns.
  */
-function selectAndInterleaveColumns(rawData: number[][], columns: string[], schemaColumns: string[]): number[] {
+export function selectAndInterleaveColumns(rawData: number[][], columns: string[], schemaColumns: string[]): number[] {
   if (columns.length === 0) {
     return rawData.flat();
   }
