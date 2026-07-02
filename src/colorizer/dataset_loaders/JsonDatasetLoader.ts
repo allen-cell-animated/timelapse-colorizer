@@ -149,7 +149,6 @@ export default class JsonDatasetLoader {
     const tracks = tracksResult.status === "fulfilled" ? tracksResult.value : undefined;
     const trackEdges = trackEdgesResult.status === "fulfilled" ? trackEdgesResult.value : undefined;
     const nodeEdges = nodeEdgesResult.status === "fulfilled" ? nodeEdgesResult.value : undefined;
-    console.log("Loaded track data:", { tracks, trackEdges, nodeEdges });
     const name = metadata.name ?? `Track ${index}`;
     const key = metadata.key ?? name;
     return {
