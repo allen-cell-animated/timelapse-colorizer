@@ -1,10 +1,10 @@
 import type { DataTexture } from "three";
 
 import type { FeatureArrayType, FeatureDataType } from "src/colorizer/types";
+import type { ParquetLoadOptions } from "src/colorizer/utils/data_load_utils";
 import { infoToDataTexture } from "src/colorizer/utils/texture_utils";
 import SharedWorkerPool from "src/colorizer/workers/SharedWorkerPool";
 
-import { ParquetLoadOptions } from "../utils/data_load_utils";
 import type { ArraySource, IArrayLoader } from "./ILoader";
 
 export class UrlArraySource<T extends FeatureDataType> implements ArraySource<T> {

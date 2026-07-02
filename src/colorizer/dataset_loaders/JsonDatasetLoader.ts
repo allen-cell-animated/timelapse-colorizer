@@ -35,7 +35,7 @@ import {
 import { padCentroidsTo3d } from "src/colorizer/utils/math_utils";
 import { fetchManifestJson, formatPath, getPromiseValue } from "src/colorizer/utils/url_utils";
 
-import { ParquetLoadOptions } from "../utils/data_load_utils";
+import type { ParquetLoadOptions } from "../utils/data_load_utils";
 
 export type JsonDatasetLoadOptions = DatasetLoadOptions & {
   manifestLoader?: typeof fetchManifestJson;

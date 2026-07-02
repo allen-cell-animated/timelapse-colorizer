@@ -3,10 +3,9 @@ import { type Pool, pool } from "workerpool";
 import type Dataset from "src/colorizer/Dataset";
 import type { FeatureArrayType, FeatureDataType, VectorFieldData } from "src/colorizer/types";
 import type { CsvDataColumn } from "src/colorizer/utils/csv_utils";
+import type { ParquetLoadOptions } from "src/colorizer/utils/data_load_utils";
 import { featureToRangeData } from "src/colorizer/utils/math_utils";
 import type { DataTextureInfo } from "src/colorizer/utils/texture_utils";
-
-import { ParquetLoadOptions } from "../utils/data_load_utils";
 
 // Vite import directive for worker files! See https://vitejs.dev/guide/features.html#import-with-query-suffixes.
 // @ts-ignore Ignore missing file warning

@@ -7,7 +7,7 @@ import {
   type LoadedData,
   loadFromJsonUrl,
   loadFromParquetUrl,
-  ParquetLoadOptions,
+  type ParquetLoadOptions,
 } from "src/colorizer/utils/data_load_utils";
 import { computeCorrelations } from "src/colorizer/utils/math_utils/correlation";
 import { constructAllTracksFromData } from "src/colorizer/utils/math_utils/input_data";
