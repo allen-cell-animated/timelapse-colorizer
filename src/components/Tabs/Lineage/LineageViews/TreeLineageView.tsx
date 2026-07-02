@@ -12,6 +12,9 @@ import { useConstructor } from "src/hooks";
 
 const TREE_LEAF_HEIGHT_PX = 30;
 const TREE_LAYER_DEPTH_PX = 110;
+const MERGE_EDGE_COLOR = "#ff9410";
+const DEFAULT_EDGE_COLOR = "#4a5568";
+const DEFAULT_NODE_EDGE_COLOR = "#1a1f2e";
 
 type TreeLineageViewProps = SharedLineageViewProps & {};
 
@@ -38,7 +41,6 @@ function renderTree(
   } else if (rootNodeIds.length === 1) {
     rootNode = trackIdToTrackInfo.get(rootNodeIds[0])!;
   } else {
-    // TODO: Hide the dummy root node
     // Multiple root nodes, make a dummy root node that is the parent of all root nodes
     rootNode = { id: -1, length: 0, startTime: 0 };
     // Add dummy track info for the dummy root node
@@ -73,9 +75,7 @@ function renderTree(
     .selectAll("line")
     .data(treeRoot.links())
     .join("line")
-    // TODO: Make colors into constants here? Or parameterize via options
-    .attr("stroke", (d) => (mergeNodes.has(d.target.data.id) ? "#f6ad55" : "#4a5568"))
-    .attr("stroke-opacity", (d) => (mergeNodes.has(d.target.data.id) ? 0.7 : 0.6))
+    .attr("stroke", (d) => (mergeNodes.has(d.target.data.id) ? MERGE_EDGE_COLOR : DEFAULT_EDGE_COLOR))
     .attr("stroke-width", 1.5)
     .attr("stroke-dasharray", (d) => (mergeNodes.has(d.target.data.id) ? "4 3" : null))
     .attr("opacity", (d) => (d.source.data.id === -1 ? 0 : 1)) // Hide links to the dummy root node
@@ -90,8 +90,7 @@ function renderTree(
       .selectAll("line")
       .data(multiparentEdges)
       .join("line")
-      .attr("stroke", "#f6ad55")
-      .attr("stroke-opacity", 0.7)
+      .attr("stroke", MERGE_EDGE_COLOR)
       .attr("stroke-width", 1.5)
       .attr("stroke-dasharray", "4 3")
       .attr("x1", (d) => posOf.get(d[0])?.y ?? 0)
@@ -151,7 +150,7 @@ function updateNodeStyles(
     .attr("r", (d) => radiusScale(d.data.length))
     .attr("fill", (d) => colorScale(d.data.startTime))
     .attr("opacity", (d) => (d.data.id === -1 ? 0 : 1)) // Hide the dummy root node
-    .attr("stroke", (d) => trackColors.get(d.data.id)?.getStyle() ?? "#1a1f2e")
+    .attr("stroke", (d) => trackColors.get(d.data.id)?.getStyle() ?? DEFAULT_NODE_EDGE_COLOR)
     .attr("stroke-width", 1.5)
     .style("cursor", "default");
 

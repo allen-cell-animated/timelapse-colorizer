@@ -27,7 +27,7 @@ function getColorAndRadiusScale(data: LineageData): {
   const safeLengthMax = lengthMin === lengthMax ? lengthMin + 1 : lengthMax;
 
   const colorScale = d3.scaleSequential(d3.interpolateTurbo).domain([startMin, safeStartMax]);
-  const radiusScale = d3.scaleSqrt().domain([lengthMin, safeLengthMax]).range([10, 30]);
+  const radiusScale = d3.scaleSqrt().domain([lengthMin, safeLengthMax]).range([10, 25]);
   return { colorScale, radiusScale };
 }
 
