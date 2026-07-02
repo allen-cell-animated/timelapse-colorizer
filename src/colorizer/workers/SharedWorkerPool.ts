@@ -27,14 +27,18 @@ export default class SharedWorkerPool {
   }
 
   /**
-   * Loads array data from the specified URL, handling both JSON and Parquet files.
+   * Loads array data from the specified URL, handling both JSON and Parquet
+   * files.
    * @param url The URL to load data from. Must end in ".json" or ".parquet".
-   * @param type `FeatureDataType` for the returned array source (e.g. `F32` or `U8`).
+   * @param type `FeatureDataType` for the returned array source (e.g. `F32` or
+   * `U8`).
+   * @param options Optional `ParquetLoadOptions` for loading Parquet files.
+   * Ignored for JSON files.
    * @throws Error if the file format is not supported (not JSON or Parquet).
    * @returns an object containing the loaded data and metadata:
    *  - `data`: The loaded data array.
-   *  - `textureInfo`: Texture data and metadata needed to create a `DataTexture`.
-   * Use with `infoToDataTexture()`.
+   *  - `textureInfo`: Texture data and metadata needed to create a
+   *    `DataTexture`. Use with `infoToDataTexture()`.
    *  - `min`: The minimum value in the data array.
    *  - `max`: The maximum value in the data array.
    */

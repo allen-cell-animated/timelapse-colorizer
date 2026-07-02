@@ -77,11 +77,15 @@ export type ParquetLoadOptions = {
  * Selects columns from the specified raw data and interleaves them, in order,
  * into a single flat array. If no columns are specified, all columns will be
  * selected.
- * @param rawData The raw data read from the Parquet file, organized as an array of rows.
- * @param columns The columns to select and interleave, in order.
+ * @param rawData The raw data read from the Parquet file, organized as an array
+ * of rows.
+ * @param columns The columns to select and interleave, in order. If empty or
+ * undefined, all columns will be selected.
  * @param schemaColumns The columns available in the Parquet file schema.
- * @throws An error if any of the specified columns do not exist in the Parquet file.
- * @returns A flat array containing the interleaved values of the selected columns.
+ * @throws An error if any of the specified columns do not exist in the Parquet
+ * file.
+ * @returns A flat array containing the interleaved values of the selected
+ * columns.
  * @example
  * ```ts
  * const schemaColumns = ["col1", "col2", "col3"];
@@ -95,8 +99,12 @@ export type ParquetLoadOptions = {
  * // = [100, 0, 101, 1, 102, 2, 103, 3]
  * ```
  */
-export function selectAndInterleaveColumns(rawData: number[][], columns: string[], schemaColumns: string[]): number[] {
-  if (columns.length === 0) {
+export function selectAndInterleaveColumns(
+  rawData: (number | null)[][],
+  columns: string[] | undefined,
+  schemaColumns: string[]
+): (number | null)[] {
+  if (!columns || columns.length === 0) {
     return rawData.flat();
   }
   // Map from selected column names to index in the schema
@@ -139,8 +147,8 @@ export async function loadFromParquetUrl<T extends FeatureDataType>(
 
   const metadata = await parquetMetadataAsync(arrayBuffer);
   let schemaColumns = metadata.schema.map((col) => col.name);
-  const requestedColumns = options?.columns ?? [];
-  if (requestedColumns.length > 0) {
+  const requestedColumns = options?.columns;
+  if (requestedColumns && requestedColumns.length > 0) {
     // Filter to requested columns, since parquetRead will ignore all other
     // columns (but still keeps them in the original schema order). Validation
     // that the requested columns exist is done in `selectAndInterleaveColumns`.
