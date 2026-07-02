@@ -1,6 +1,6 @@
-import { Dataset } from "src/colorizer";
+import type { Dataset } from "src/colorizer";
 
-import { LineageData } from "./types";
+import type { LineageData } from "./types";
 
 export function getLineageData(dataset: Dataset): LineageData {
   const tracks = dataset.trackIds;

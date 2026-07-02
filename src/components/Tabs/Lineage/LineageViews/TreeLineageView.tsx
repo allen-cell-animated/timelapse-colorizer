@@ -1,10 +1,10 @@
 import * as d3 from "d3";
-import React, { ReactElement, useEffect, useRef } from "react";
-import { Color } from "three";
+import React, { type ReactElement, useEffect, useRef } from "react";
+import type { Color } from "three";
 
 import { useConstructor } from "src/hooks";
 
-import { LineageData, SharedLineageViewProps, TrackInfo } from "../types";
+import type { LineageData, SharedLineageViewProps, TrackInfo } from "../types";
 
 const TREE_LEAF_HEIGHT_PX = 30;
 const TREE_LAYER_DEPTH_PX = 110;

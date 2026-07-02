@@ -1,7 +1,7 @@
 import * as d3 from "d3";
-import React, { ReactElement, useCallback, useMemo, useRef, useState } from "react";
+import React, { type ReactElement, useCallback, useMemo, useRef, useState } from "react";
 
-import Track from "src/colorizer/Track";
+import type Track from "src/colorizer/Track";
 import HoverTooltip from "src/components/Tooltips/HoverTooltip";
 import { TooltipCard } from "src/components/Tooltips/TooltipCard";
 import { SHORTCUT_KEYS } from "src/constants/shortcuts";
@@ -11,7 +11,7 @@ import { areAnyHotkeysPressed } from "src/utils/user_input";
 
 import { getLineageData } from "./lineage_utils";
 import TreeLineageView from "./LineageViews/TreeLineageView";
-import { LineageData } from "./types";
+import type { LineageData } from "./types";
 
 function getColorAndRadiusScale(data: LineageData): {
   colorScale: d3.ScaleSequential<string>;
