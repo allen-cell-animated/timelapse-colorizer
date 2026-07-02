@@ -1,3 +1,5 @@
+import type * as d3 from "d3";
+import type React from "react";
 import type { Color } from "three";
 
 export type TrackInfo = {

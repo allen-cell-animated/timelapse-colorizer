@@ -2,9 +2,8 @@ import * as d3 from "d3";
 import React, { type ReactElement, useEffect, useRef } from "react";
 import type { Color } from "three";
 
+import type { LineageData, SharedLineageViewProps, TrackInfo } from "src/components/Tabs/Lineage/types";
 import { useConstructor } from "src/hooks";
-
-import type { LineageData, SharedLineageViewProps, TrackInfo } from "../types";
 
 const TREE_LEAF_HEIGHT_PX = 30;
 const TREE_LAYER_DEPTH_PX = 110;
@@ -150,14 +149,14 @@ function renderTree(
     .attr("pointer-events", "none");
 
   // Setup pointer events
-  const handleClickTrack = (_event: any, d: d3.HierarchyPointNode<TrackInfo>) => {
+  const handleClickTrack = (_event: any, d: d3.HierarchyPointNode<TrackInfo>): void => {
     onClickTrack?.(d.data.id);
   };
-  const handleHoverTrack = (_event: any, d: d3.HierarchyPointNode<TrackInfo>) => {
+  const handleHoverTrack = (_event: any, d: d3.HierarchyPointNode<TrackInfo>): void => {
     // d3.select(event.currentTarget).select("circle").attr("stroke", "#fff").attr("stroke-width", 2.5);
     onHoverTrack?.(d.data.id);
   };
-  const handleUnhoverTrack = (_event: any, _d: d3.HierarchyPointNode<TrackInfo>) => {
+  const handleUnhoverTrack = (_event: any, _d: d3.HierarchyPointNode<TrackInfo>): void => {
     // d3.select(event.currentTarget).select("circle").attr("stroke", "#1a1f2e").attr("stroke-width", 1.5);
     onHoverTrack?.(null);
   };
@@ -172,7 +171,7 @@ function updateNodeStyles(
   radiusScale: d3.ScalePower<number, number>,
   colorScale: d3.ScaleSequential<string>,
   trackColors: Map<number, Color>
-) {
+): void {
   // Draw circles for each node
   node
     .select<SVGCircleElement>("circle")
@@ -214,7 +213,7 @@ export default function TreeLineageView(props: TreeLineageViewProps): ReactEleme
       })
   );
 
-  const resetZoom = () => {
+  const resetZoom = (): void => {
     if (!svgRef.current || !groupRef.current) {
       return;
     }
@@ -246,8 +245,8 @@ export default function TreeLineageView(props: TreeLineageViewProps): ReactEleme
   useEffect(() => {
     if (groupRef.current) {
       const g = d3.select(groupRef.current) as d3.Selection<SVGGElement, TrackInfo, null, undefined>;
-      const onClickTrack = (trackId: number) => onClickRef.current?.(trackId);
-      const onHoverTrack = (trackId: number | null) => onHoverRef.current?.(trackId);
+      const onClickTrack = (trackId: number): void => onClickRef.current?.(trackId);
+      const onHoverTrack = (trackId: number | null): void => onHoverRef.current?.(trackId);
       nodeRef.current = renderTree(g, props.data, onClickTrack, onHoverTrack);
     }
     // Clear on unmount
