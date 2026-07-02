@@ -9,12 +9,13 @@ import {
   LoadTroubleshooting,
   MAX_FEATURE_CATEGORIES,
 } from "src/colorizer";
-import Dataset, { type FeatureData, FeatureType, type Frames2dData } from "src/colorizer/Dataset";
+import Dataset, { type FeatureData, FeatureType, type Frames2dData, type TrackData } from "src/colorizer/Dataset";
 import {
   addCentroidFeatures,
   addTimeFeature,
   addTrackFeature,
   getDefaultSegIds,
+  getUniqueKeyName,
   reportUnloadedFeatures,
   resolveFrames2d,
   resolveFrames3d,
@@ -110,6 +111,45 @@ export default class JsonDatasetLoader {
 
     inputType = inputType?.toLowerCase() || "";
     return isFeatureType(inputType) ? inputType : defaultType;
+  }
+
+  private async loadTrackEdge(
+    metadata: Required<ManifestFile>["tracks"][number],
+    index: number
+  ): Promise<TrackData | undefined> {
+    const promises = [];
+    promises.push(this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, metadata.tracks)));
+    promises.push(this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, metadata.trackEdges)));
+    promises.push(this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, metadata.nodeEdges)));
+
+    if (promises.length === 0) {
+      console.warn(`Track ${index}: No data files specified for track edges.`);
+      return undefined;
+    }
+    const [tracksResult, trackEdgesResult, nodeEdgesResult] = await Promise.allSettled(promises);
+    if (tracksResult.status === "rejected") {
+      console.warn(`Track ${index}: Failed to load track IDs: ${tracksResult.reason}`);
+      return undefined;
+    } else if (trackEdgesResult.status === "rejected") {
+      console.warn(`Track ${index}: Failed to load track edges: ${trackEdgesResult.reason}`);
+      return undefined;
+    } else if (nodeEdgesResult.status === "rejected") {
+      console.warn(`Track ${index}: Failed to load node edges: ${nodeEdgesResult.reason}`);
+      return undefined;
+    }
+    const tracks = tracksResult.status === "fulfilled" ? tracksResult.value : undefined;
+    const trackEdges = trackEdgesResult.status === "fulfilled" ? trackEdgesResult.value : undefined;
+    const nodeEdges = nodeEdgesResult.status === "fulfilled" ? nodeEdgesResult.value : undefined;
+    const name = metadata.name ?? `Track ${index}`;
+    const key = metadata.key ?? name;
+    return {
+      name,
+      key: getKeyFromName(key),
+      description: metadata.description,
+      trackIds: tracks ?? undefined,
+      trackEdges: trackEdges ?? undefined,
+      nodeEdges: nodeEdges ?? undefined,
+    };
   }
 
   /**
@@ -246,7 +286,6 @@ export default class JsonDatasetLoader {
     const outlierFile = manifest.outliers;
     const metadata = { ...DEFAULT_METADATA, ...manifest.metadata };
 
-    const tracksFile = manifest.tracks;
     const timesFile = manifest.times;
     const centroidsFile = manifest.centroids;
     const boundsFile = manifest.bounds;
@@ -256,27 +295,35 @@ export default class JsonDatasetLoader {
     const featuresPromises: Promise<[string, FeatureData] | undefined>[] = Array.from(manifest.features).map(
       (data, index) => this.reportLoadProgress(this.loadFeature(data, index))
     );
+    const allFeaturePromise = Promise.allSettled(featuresPromises);
+    // Load tracks data
+    const tracksPromises: Promise<TrackData | undefined>[] = Array.from(manifest.tracks ?? []).map((data, index) =>
+      this.loadTrackEdge(data, index)
+    );
+    const allTracksPromise = Promise.allSettled(tracksPromises);
 
     const result = await Promise.allSettled([
       this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U8, outlierFile)),
-      this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, tracksFile)),
       this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, timesFile)),
       this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U16, centroidsFile)),
       this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U16, boundsFile)),
       this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, segIdsFile)),
       this.reportLoadProgress(this.getFrameDims(frames2d)),
-      ...featuresPromises,
+      allTracksPromise,
+      allFeaturePromise,
     ]);
     const [
       outliersResult,
-      tracksResult,
       timesResult,
       centroidsResult,
       boundsResult,
       frameIdOffsetsResult,
       frameDimensionsResult,
-      ...featureResults
+      allTracksResults,
+      allFeatureResults,
     ] = result;
+    const featureResults = allFeatureResults.status === "fulfilled" ? allFeatureResults.value : [];
+    const trackResults = allTracksResults.status === "fulfilled" ? allTracksResults.value : [];
 
     const unloadableDataFiles: string[] = [];
     function makeLoadFailedCallback(fileType: string, url?: string): (reason: any) => void {
@@ -287,7 +334,6 @@ export default class JsonDatasetLoader {
     }
 
     const outliers = getPromiseValue(outliersResult, makeLoadFailedCallback("Outliers", outlierFile));
-    const trackIds = getPromiseValue(tracksResult, makeLoadFailedCallback("Tracks", tracksFile));
     const times = getPromiseValue(timesResult, makeLoadFailedCallback("Times", timesFile));
     let centroids = getPromiseValue(centroidsResult, makeLoadFailedCallback("Centroids", centroidsFile));
     const bounds = getPromiseValue(boundsResult, makeLoadFailedCallback("Bounds", boundsFile));
@@ -315,18 +361,31 @@ export default class JsonDatasetLoader {
       }
     });
 
+    const trackData = new Map<string, TrackData>();
+    const trackKeys = new Set<string>();
+    trackResults.forEach((result) => {
+      const trackValue = getPromiseValue(result);
+
+      if (trackValue) {
+        const key = getUniqueKeyName(trackValue.key, trackValue.name, trackKeys);
+        trackKeys.add(key);
+        trackData.set(key, { ...trackValue, key });
+      }
+    });
+
     //// Post-processing and validation steps ////
 
     reportUnloadedFeatures(manifest.features, features, this.reportWarning);
 
+    const defaultTrackIds = trackData.values().next().value?.trackIds ?? null;
     const numObjects =
-      features.values().next().value?.data.length || times?.length || trackIds?.length || segIds?.length || 0;
+      features.values().next().value?.data.length || times?.length || defaultTrackIds?.length || segIds?.length || 0;
     segIds = segIds ?? getDefaultSegIds(numObjects);
     centroids = centroids && padCentroidsTo3d(centroids, numObjects);
 
     addCentroidFeatures(features, centroids, metadata, frames3d ? undefined : frameDimensions);
     addTimeFeature(features, times);
-    addTrackFeature(features, trackIds);
+    addTrackFeature(features, defaultTrackIds);
 
     // Analytics reporting
     triggerAnalyticsEvent(AnalyticsEvent.DATASET_LOAD, {
@@ -349,7 +408,7 @@ export default class JsonDatasetLoader {
         features,
         segIds,
         times,
-        trackIds,
+        trackData,
         centroids,
         bounds,
         outliers,

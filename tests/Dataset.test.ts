@@ -11,6 +11,9 @@ import {
   MOCK_DATASET_ARRAY_LOADER,
   MOCK_DATASET_ARRAY_LOADER_DEFAULT_SOURCE,
   MOCK_DATASET_MANIFEST,
+  MOCK_DATASET_NODE_EDGES,
+  MOCK_DATASET_TRACK_EDGES,
+  MOCK_DATASET_TRACKS,
 } from "tests/constants";
 import {
   DEFAULT_DATASET_DIR,
@@ -95,6 +98,7 @@ describe("Dataset", () => {
     frames2d: {
       segmentations: [{ name: "Default", key: "default", frames: ["frame0.png"] }],
     },
+    tracks: undefined,
   };
 
   const manifestsToTest: [string, AnyManifestFile][] = [
@@ -351,6 +355,36 @@ describe("Dataset", () => {
     expect(frames3d?.backdrops?.[0].source).to.equal(DEFAULT_DATASET_DIR + "backdrop.ome.zarr");
     expect(frames3d?.backdrops?.[0].channelIndex).to.equal(0);
     expect(frames3d?.totalFrames).to.equal(4);
+  });
+
+  it("handles < v1.1.0 tracks", async () => {
+    const manifestWithTracks: AnyManifestFile = {
+      ...MOCK_DATASET_MANIFEST,
+      tracks: "tracks.json",
+    };
+    const dataset = await makeMockDataset(manifestWithTracks, MOCK_DATASET_ARRAY_LOADER);
+    const tracks = dataset.trackIds;
+    const trackDataKeys = dataset.getTrackKeys();
+    const trackData = dataset.getTrackData("track_0");
+
+    expect(tracks).to.deep.equal(new Uint32Array(MOCK_DATASET_TRACKS));
+    expect(trackDataKeys).to.deep.equal(["track_0"]);
+    expect(trackData?.trackIds).to.deep.equal(new Uint32Array(MOCK_DATASET_TRACKS));
+  });
+
+  it("handles >= v1.8.0 track data", async () => {
+    const dataset = await makeMockDataset(MOCK_DATASET_MANIFEST, MOCK_DATASET_ARRAY_LOADER);
+    const tracks = dataset.trackIds;
+    expect(tracks).to.deep.equal(new Uint32Array(MOCK_DATASET_TRACKS));
+
+    const trackDataKeys = dataset.getTrackKeys();
+    expect(trackDataKeys).to.deep.equal(["track_0"]);
+    const trackData = dataset.getTrackData("track_0");
+    expect(trackData?.name).to.equal("Track 0");
+    expect(trackData?.key).to.equal("track_0");
+    expect(trackData?.trackIds).to.deep.equal(new Uint32Array(MOCK_DATASET_TRACKS));
+    expect(trackData?.trackEdges).to.deep.equal(new Uint32Array(MOCK_DATASET_TRACK_EDGES));
+    expect(trackData?.nodeEdges).to.deep.equal(new Uint32Array(MOCK_DATASET_NODE_EDGES));
   });
 
   it("converts allen Zarr paths to URLs", async () => {
