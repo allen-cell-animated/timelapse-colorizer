@@ -43,6 +43,7 @@ import {
   AnnotationTab,
   CorrelationPlotTab,
   FeatureThresholdsTab,
+  LineageTab,
   Plot3dTab,
   PlotTab,
   ScatterPlotTab,
@@ -63,8 +64,6 @@ import { AppThemeContext } from "src/styles/AppStyle";
 import { FlexColumn, FlexRowAlignCenter } from "src/styles/utils";
 import type { LocationState } from "src/types";
 import { loadInitialCollectionAndDataset } from "src/utils/dataset_load_utils";
-
-import LineageTab from "./components/Tabs/Lineage/LineageTab";
 
 // TODO: Refactor with styled-components
 import styles from "./Viewer.module.css";
@@ -550,7 +549,8 @@ function Viewer(): ReactElement {
       label: "Lineage",
       key: TabType.LINEAGE,
       // Only show the lineage tab if the dataset has lineage data, or if the
-      // user has manually opened the tab.
+      // user has already has the tab selected (likely via a URL parameter).
+      // TODO: Show the lineage tab in a hidden section under a dropdown?
       visible: dataset?.hasLineageData(dataset.getDefaultTrackKey() ?? "") ?? false,
       children: (
         <div className={styles.tabContent}>
