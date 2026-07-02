@@ -67,7 +67,7 @@ export default function HoverTooltip(props: PropsWithChildren<HoverTooltipProps>
   const visible = isHovered && !props.disabled && props.tooltipContent;
 
   return (
-    <div ref={containerRef} style={{ position: "relative", ...props.style }}>
+    <div ref={containerRef} style={props.style}>
       <TooltipDiv ref={tooltipRef} style={{ opacity: visible ? 1 : 0, maxWidth: `${props.maxWidthPx}px` }}>
         {props.tooltipContent}
       </TooltipDiv>

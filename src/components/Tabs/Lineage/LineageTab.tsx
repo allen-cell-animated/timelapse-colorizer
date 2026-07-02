@@ -9,18 +9,19 @@ import { useViewerStateStore } from "src/state";
 import { FlexColumn, FlexRow } from "src/styles/utils";
 import { areAnyHotkeysPressed } from "src/utils/user_input";
 
-import { getLineageData } from "./lineage_utils";
+import { getLineageData, getLineageRelationships } from "./lineage_utils";
 import TreeLineageView from "./LineageViews/TreeLineageView";
-import type { LineageData } from "./types";
+import type { LineageData, SharedLineageViewProps } from "./types";
 
 function getColorAndRadiusScale(data: LineageData): {
   colorScale: d3.ScaleSequential<string>;
   radiusScale: d3.ScalePower<number, number>;
 } {
-  const startMin = d3.min(data.trackInfo, (d) => d.startTime) ?? 0;
-  const startMax = d3.max(data.trackInfo, (d) => d.startTime) ?? startMin;
-  const lengthMin = d3.min(data.trackInfo, (d) => d.length) ?? 1;
-  const lengthMax = d3.max(data.trackInfo, (d) => d.length) ?? lengthMin;
+  const trackInfo = Array.from(data.trackIdToTrackInfo.values());
+  const startMin = d3.min(trackInfo, (d) => d.startTime) ?? 0;
+  const startMax = d3.max(trackInfo, (d) => d.startTime) ?? startMin;
+  const lengthMin = d3.min(trackInfo, (d) => d.length) ?? 1;
+  const lengthMax = d3.max(trackInfo, (d) => d.length) ?? lengthMin;
 
   const safeStartMax = startMin === startMax ? startMin + 1 : startMax;
   const safeLengthMax = lengthMin === lengthMax ? lengthMin + 1 : lengthMax;
@@ -30,6 +31,12 @@ function getColorAndRadiusScale(data: LineageData): {
   return { colorScale, radiusScale };
 }
 
+const EMPTY_LINEAGE_DATA = { trackIdToTrackInfo: new Map(), edges: [] } satisfies LineageData;
+
+/**
+ * Renders lineage data in a tab. Includes a tree view of the tracks and their
+ * relationships, and a tooltip on hover.
+ */
 export default function LineageTab(): ReactElement {
   const dataset = useViewerStateStore((state) => state.dataset);
   const currentFrame = useViewerStateStore((state) => state.currentFrame);
@@ -45,9 +52,14 @@ export default function LineageTab(): ReactElement {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const lineageData = useMemo(() => {
-    return dataset ? getLineageData(dataset) : { trackInfo: [], edges: [] };
+    return dataset ? getLineageData(dataset) : EMPTY_LINEAGE_DATA;
   }, [dataset]);
+  const lineageRelationships = useMemo(() => {
+    return getLineageRelationships(lineageData);
+  }, [lineageData]);
   const { colorScale, radiusScale } = useMemo(() => getColorAndRadiusScale(lineageData), [lineageData]);
+
+  //// Callbacks ////
 
   const onClickTrack = useCallback(
     (trackId: number) => {
@@ -82,6 +94,8 @@ export default function LineageTab(): ReactElement {
     [dataset]
   );
 
+  //// Rendering ////
+
   const tooltipContent = useMemo(() => {
     return (
       <TooltipCard style={{ opacity: hoveredTrack ? 1 : 0 }}>
@@ -98,22 +112,26 @@ export default function LineageTab(): ReactElement {
 
   const selectedTracks = useMemo(() => new Set(tracks.keys()), [tracks]);
 
+  const lineageViewProps: SharedLineageViewProps = {
+    container: containerRef,
+    data: lineageData,
+    relationships: lineageRelationships,
+    colorScale: colorScale,
+    radiusScale: radiusScale,
+    onClick: onClickTrack,
+    onHover: onHoverTrack,
+    selectedTracks: selectedTracks,
+    trackColors: trackColors,
+  };
+
   return (
     <FlexColumn style={{ width: "100%", height: "100%" }}>
       <FlexRow></FlexRow>
 
       <HoverTooltip tooltipContent={tooltipContent} style={{ width: "100%", height: "100%" }}>
         <div ref={containerRef} style={{ width: "100%", height: "100%" }}>
-          <TreeLineageView
-            container={containerRef}
-            data={lineageData}
-            colorScale={colorScale}
-            radiusScale={radiusScale}
-            onClick={onClickTrack}
-            onHover={onHoverTrack}
-            selectedTracks={selectedTracks}
-            trackColors={trackColors}
-          ></TreeLineageView>
+          <TreeLineageView {...lineageViewProps}></TreeLineageView>
+
           {lineageData?.edges.length === 0 && (
             <div style={{ textAlign: "center", marginTop: "20px" }}>No lineage data available.</div>
           )}

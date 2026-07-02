@@ -2,7 +2,12 @@ import * as d3 from "d3";
 import React, { type ReactElement, useEffect, useRef } from "react";
 import type { Color } from "three";
 
-import type { LineageData, SharedLineageViewProps, TrackInfo } from "src/components/Tabs/Lineage/types";
+import type {
+  LineageData,
+  LineageDataRelationships,
+  SharedLineageViewProps,
+  TrackInfo,
+} from "src/components/Tabs/Lineage/types";
 import { useConstructor } from "src/hooks";
 
 const TREE_LEAF_HEIGHT_PX = 30;
@@ -12,46 +17,16 @@ type TreeLineageViewProps = SharedLineageViewProps & {};
 
 type NodeSelection = d3.Selection<SVGGElement | d3.BaseType, d3.HierarchyPointNode<TrackInfo>, SVGGElement, TrackInfo>;
 
-function getRelationships(data: LineageData): {
-  idToChildren: Map<number, number[]>;
-  idToParents: Map<number, number[]>;
-  crossLinks: [number, number][];
-} {
-  const idToChildren = new Map<number, number[]>(data.trackInfo.map((n) => [n.id, []]));
-  const idToParents = new Map<number, number[]>(data.trackInfo.map((n) => [n.id, []]));
-
-  // Links to a node where the node already has a parent (i.e. the second parent
-  // of a merge node).
-  const crossLinks: [number, number][] = [];
-  const idsWithParents = new Set<number>();
-
-  for (const [source, target] of data.edges) {
-    if (!idsWithParents.has(target)) {
-      idToChildren.get(source)?.push(target);
-    } else {
-      // If the target node already has a parent, intentionally prevent adding
-      // it to the children of this source node or else it will be duplicated in
-      // the tree. Instead, add it to a list of cross links that will be
-      // rendered separately.
-      crossLinks.push([source, target]);
-    }
-    idToParents.get(target)?.push(source);
-    idsWithParents.add(target);
-  }
-  return { idToChildren, idToParents, crossLinks };
-}
-
 function renderTree(
   g: d3.Selection<SVGGElement, TrackInfo, null, undefined>,
   data: LineageData,
+  relationships: LineageDataRelationships,
   onClickTrack?: (trackId: number) => void,
   onHoverTrack?: (trackId: number | null) => void
 ): NodeSelection | undefined {
-  const { trackInfo } = data;
+  const { trackIdToTrackInfo } = data;
   const edges = [...data.edges];
-
-  const trackIdToTrackInfo = new Map<number, TrackInfo>(trackInfo.map((track) => [track.id, track]));
-  const { idToChildren, idToParents, crossLinks } = getRelationships(data);
+  const { idToChildrenRenderable: idToChildren, idToParents, multiparentEdges: multiparentEdges } = relationships;
 
   const mergeNodes = new Set([...idToParents.entries()].filter(([, parents]) => parents.length > 1).map(([id]) => id));
   // All nodes with no parents
@@ -103,16 +78,17 @@ function renderTree(
     .attr("stroke-opacity", (d) => (mergeNodes.has(d.target.data.id) ? 0.7 : 0.6))
     .attr("stroke-width", 1.5)
     .attr("stroke-dasharray", (d) => (mergeNodes.has(d.target.data.id) ? "4 3" : null))
+    .attr("opacity", (d) => (d.source.data.id === -1 ? 0 : 1)) // Hide links to the dummy root node
     .attr("x1", (d) => d.source.y)
     .attr("y1", (d) => d.source.x)
     .attr("x2", (d) => d.target.y)
     .attr("y2", (d) => d.target.x);
 
-  if (crossLinks.length) {
+  if (multiparentEdges.length > 0) {
     const posOf = new Map(treeRoot.descendants().map((d) => [d.data.id, { x: d.x, y: d.y }]));
     g.append("g")
       .selectAll("line")
-      .data(crossLinks)
+      .data(multiparentEdges)
       .join("line")
       .attr("stroke", "#f6ad55")
       .attr("stroke-opacity", 0.7)
@@ -123,9 +99,6 @@ function renderTree(
       .attr("x2", (d) => posOf.get(d[1])?.y ?? 0)
       .attr("y2", (d) => posOf.get(d[1])?.x ?? 0);
   }
-
-  // TODO: return nodes out of this method, so they can be updated/recalculated
-  // without updating the entire tree?
 
   // Render nodes
   const node = g
@@ -177,6 +150,7 @@ function updateNodeStyles(
     .select<SVGCircleElement>("circle")
     .attr("r", (d) => radiusScale(d.data.length))
     .attr("fill", (d) => colorScale(d.data.startTime))
+    .attr("opacity", (d) => (d.data.id === -1 ? 0 : 1)) // Hide the dummy root node
     .attr("stroke", (d) => trackColors.get(d.data.id)?.getStyle() ?? "#1a1f2e")
     .attr("stroke-width", 1.5)
     .style("cursor", "default");
@@ -188,10 +162,12 @@ function updateNodeStyles(
     .attr("text-anchor", "middle")
     .attr("dominant-baseline", "middle")
     .attr("fill", "#ffffff")
+    .attr("opacity", (d) => (d.data.id === -1 ? 0 : 1)) // Hide the dummy root node
     .attr("font-size", 9)
     .attr("pointer-events", "none");
 }
 
+/** Renders a tree view of the lineage data. */
 export default function TreeLineageView(props: TreeLineageViewProps): ReactElement {
   const svgRef = useRef<SVGSVGElement>(null);
   const groupRef = useRef<SVGGElement>(null);
@@ -247,7 +223,7 @@ export default function TreeLineageView(props: TreeLineageViewProps): ReactEleme
       const g = d3.select(groupRef.current) as d3.Selection<SVGGElement, TrackInfo, null, undefined>;
       const onClickTrack = (trackId: number): void => onClickRef.current?.(trackId);
       const onHoverTrack = (trackId: number | null): void => onHoverRef.current?.(trackId);
-      nodeRef.current = renderTree(g, props.data, onClickTrack, onHoverTrack);
+      nodeRef.current = renderTree(g, props.data, props.relationships, onClickTrack, onHoverTrack);
     }
     // Clear on unmount
     return () => {
