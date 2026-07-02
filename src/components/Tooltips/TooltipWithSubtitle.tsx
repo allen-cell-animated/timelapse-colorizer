@@ -17,7 +17,7 @@ type TooltipWithSubtitleProps = TooltipProps & {
  */
 const TooltipWithSubtitle = forwardRef<TooltipRef, TooltipWithSubtitleProps>(function TooltipWithSubtitle(
   props: TooltipWithSubtitleProps,
-  ref
+  ref: React.Ref<TooltipRef>
 ): ReactElement {
   const theme = useContext(AppThemeContext);
 

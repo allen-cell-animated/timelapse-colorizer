@@ -144,7 +144,7 @@ const StyledButton = styled(Button)<{ $type: IconButtonProps["type"]; $sizePx?: 
  */
 const IconButton = forwardRef<HTMLButtonElement, PropsWithChildren<IconButtonProps>>(function IconButton(
   props: PropsWithChildren<IconButtonProps>,
-  ref
+  ref: React.Ref<HTMLButtonElement>
 ): ReactElement {
   const themeContext = useContext(AppThemeContext);
 
