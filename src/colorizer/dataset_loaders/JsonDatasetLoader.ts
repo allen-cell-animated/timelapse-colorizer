@@ -25,6 +25,7 @@ import ImageFrameLoader from "src/colorizer/loaders/ImageFrameLoader";
 import UrlArrayLoader from "src/colorizer/loaders/UrlArrayLoader";
 import { type IPathResolver, UrlPathResolver } from "src/colorizer/path_resolvers";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "src/colorizer/utils/analytics";
+import type { ParquetLoadOptions } from "src/colorizer/utils/data_load_utils";
 import { getKeyFromName } from "src/colorizer/utils/data_utils";
 import {
   type AnyManifestFile,
@@ -34,8 +35,6 @@ import {
 } from "src/colorizer/utils/dataset_utils";
 import { padCentroidsTo3d } from "src/colorizer/utils/math_utils";
 import { fetchManifestJson, formatPath, getPromiseValue } from "src/colorizer/utils/url_utils";
-
-import type { ParquetLoadOptions } from "../utils/data_load_utils";
 
 export type JsonDatasetLoadOptions = DatasetLoadOptions & {
   manifestLoader?: typeof fetchManifestJson;

@@ -12,7 +12,7 @@ import {
   MOCK_DATASET_MANIFEST,
   MOCK_DATASET_PATH,
 } from "tests/constants";
-import { makeMockAsyncLoader, makeMockFetchMethod, MockFrameLoader } from "tests/utils";
+import { ANY_ERROR, makeMockAsyncLoader, makeMockFetchMethod, MockFrameLoader } from "tests/utils";
 
 describe("loadInitialCollectionAndDataset", () => {
   it("reports missing dataset if no params are provided", async () => {
@@ -76,6 +76,10 @@ describe("selectAndInterleaveColumns", () => {
   it("returns all columns when no columns are specified", () => {
     const result = selectAndInterleaveColumns(rawData, [], schemaColumns);
     expect(result).toEqual([0, 10, 100, 1, 11, 101, 2, 12, 102, 3, 13, 103]);
+  });
+
+  it("throws an error when a column does not exist", () => {
+    expect(() => selectAndInterleaveColumns(rawData, ["col1", "nonexistent"], schemaColumns)).toThrowError(ANY_ERROR);
   });
 
   it("selects a single column", () => {

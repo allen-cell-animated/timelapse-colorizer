@@ -1,8 +1,7 @@
 import type { DataTexture, Texture } from "three";
 
 import type { FeatureArrayType, FeatureDataType } from "src/colorizer/types";
-
-import type { ParquetLoadOptions } from "../utils/data_load_utils";
+import type { ParquetLoadOptions } from "src/colorizer/utils/data_load_utils";
 
 export interface ArraySource<T extends FeatureDataType> {
   /** Create a `TypedArray` of the specified type from this data source */
