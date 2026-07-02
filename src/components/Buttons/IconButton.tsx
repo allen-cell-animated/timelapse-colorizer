@@ -1,5 +1,5 @@
 import { Button, ConfigProvider } from "antd";
-import React, { type PropsWithChildren, type ReactElement, useContext } from "react";
+import React, { forwardRef, type PropsWithChildren, type ReactElement, useContext } from "react";
 import styled, { css } from "styled-components";
 
 import { AppThemeContext } from "src/styles/AppStyle";
@@ -139,15 +139,19 @@ const StyledButton = styled(Button)<{ $type: IconButtonProps["type"]; $sizePx?: 
  *
  * @example
  * <IconButton onClick={myClickHandler}>
- *    <PauseOutlined /> // From Antd Icons
+ *    <PauseOutlined />
  * </IconButton>
  */
-export default function IconButton(props: PropsWithChildren<IconButtonProps>): ReactElement {
+const IconButton = forwardRef<HTMLButtonElement, PropsWithChildren<IconButtonProps>>(function IconButton(
+  props: PropsWithChildren<IconButtonProps>,
+  ref
+): ReactElement {
   const themeContext = useContext(AppThemeContext);
 
   return (
     <ConfigProvider theme={{ components: { Button: { colorPrimaryActive: themeContext.color.button.hover } } }}>
       <StyledButton
+        ref={ref}
         type="primary"
         $type={props.type || "primary"}
         $sizePx={props.sizePx}
@@ -166,4 +170,5 @@ export default function IconButton(props: PropsWithChildren<IconButtonProps>): R
       </StyledButton>
     </ConfigProvider>
   );
-}
+});
+export default IconButton;
