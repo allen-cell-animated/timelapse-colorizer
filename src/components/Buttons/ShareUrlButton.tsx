@@ -1,7 +1,7 @@
 import { CheckCircleOutlined, ExclamationCircleFilled, InfoCircleFilled, ShareAltOutlined } from "@ant-design/icons";
 import { Popconfirm } from "antd";
 import type { NotificationInstance } from "antd/es/notification/interface";
-import React, { type ReactElement, type ReactNode, useContext, useRef, useState } from "react";
+import React, { type ReactElement, type ReactNode, useContext, useMemo, useRef, useState } from "react";
 
 import { isAllenPath, PUBLIC_TFE_URL, VAST_FILES_URL } from "src/colorizer/utils/url_utils";
 import { ButtonStyleLink } from "src/components/Buttons/ButtonStyleLink";
@@ -54,16 +54,22 @@ export default function ShareUrlButton(props: ShareUrlButtonProps): ReactElement
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Warning conditions
-  const collectionUrl = collection?.getUrl() || "";
-  const dataset3dSource = dataset?.frames3d?.source || "";
-  const dataset2dSource = dataset?.frames2dPaths?.[0] || "";
-  const dataset2dBackdropSource = Array.from(dataset?.getBackdropData().values() || [])[0]?.frames[0] || "";
-  const datasetManifestUrl = dataset?.manifestUrl || "";
-  const dataSources = [collectionUrl, dataset3dSource, dataset2dSource, dataset2dBackdropSource, datasetManifestUrl];
+  const { hasLocalUrls, hasInternalUrls } = useMemo(() => {
+    const sources: string[] = [];
+    if (collection) {
+      sources.push(collection.getUrl() || "");
+    }
+    if (dataset) {
+      const dataset3dSource = dataset.frames3d?.segmentations?.[0]?.source || "";
+      const dataset2dSegSource = dataset.getSegmentationData().values().next().value?.frames[0] || "";
+      const dataset2dBackdropSource = dataset.getBackdropData().values().next().value?.frames[0] || "";
+      const datasetManifestUrl = dataset.manifestUrl || "";
+      sources.push(dataset3dSource, dataset2dSegSource, dataset2dBackdropSource, datasetManifestUrl);
+    }
+    return { hasLocalUrls: sources.some(isLocalUrl), hasInternalUrls: sources.some(isInternalUrl) };
+  }, [collection, dataset]);
 
   const isLocalTfeInstance = window.location.hostname === "localhost";
-  const hasLocalUrls = dataSources.some(isLocalUrl);
-  const hasInternalUrls = dataSources.some(isInternalUrl);
 
   const copyUrlAndShowNotification = (): void => {
     navigator.clipboard.writeText(document.URL);

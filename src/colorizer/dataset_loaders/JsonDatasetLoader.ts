@@ -9,13 +9,15 @@ import {
   LoadTroubleshooting,
   MAX_FEATURE_CATEGORIES,
 } from "src/colorizer";
-import Dataset, { type Backdrop3dData, type FeatureData, FeatureType, type Frames3dData } from "src/colorizer/Dataset";
+import Dataset, { type FeatureData, FeatureType, type Frames2dData } from "src/colorizer/Dataset";
 import {
   addCentroidFeatures,
   addTimeFeature,
   addTrackFeature,
   getDefaultSegIds,
   reportUnloadedFeatures,
+  resolveFrames2d,
+  resolveFrames3d,
 } from "src/colorizer/dataset_loaders/dataset_loader_utils";
 import type { DatasetLoadOptions } from "src/colorizer/dataset_loaders/types";
 import ImageFrameLoader from "src/colorizer/loaders/ImageFrameLoader";
@@ -87,6 +89,7 @@ export default class JsonDatasetLoader {
     this.numRequests = 0;
 
     this.reportLoadProgress = this.reportLoadProgress.bind(this);
+    this.resolvePath = this.resolvePath.bind(this);
   }
 
   private resolveManifestPath = (url: string): string | null => {
@@ -191,9 +194,10 @@ export default class JsonDatasetLoader {
     return source.getBuffer();
   }
 
-  private getFrameDims = async (frameFiles: (string | null)[] | undefined): Promise<Vector2 | undefined> => {
+  private getFrameDims = async (frames2d: Frames2dData | undefined): Promise<Vector2 | undefined> => {
     let firstValidFramePath = null;
-    for (const framePath of frameFiles ?? []) {
+    const framePaths = frames2d?.segmentations?.[0]?.frames ?? [];
+    for (const framePath of framePaths) {
       if (framePath) {
         firstValidFramePath = framePath;
         break;
@@ -214,58 +218,6 @@ export default class JsonDatasetLoader {
       return undefined;
     }
   };
-
-  private resolveAndValidateFrames3d(data: ManifestFile["frames3d"]): Frames3dData | undefined {
-    if (!data) {
-      return undefined;
-    }
-    const frameSource = this.resolvePath(data.source);
-    const backdrops: Backdrop3dData[] = [];
-    if (!frameSource) {
-      // This will only happen if using a file path resolver, if this file does
-      // not exist in a ZIP file.
-
-      // TODO: This will fail for Zarrs, which are directories and not files, so
-      // `resolvePath` will return `null`. Even if `resolvePath` did handle
-      // directories, Zarrs index from the directory root, which is provided as
-      // a Object URL. Adding additional paths to the end of an Object URL (e.g.
-      // TCZYX specifiers for zarrs, like `/0/0/0`) does not result in a working
-      // URL. This means there is no way to make the current path resolver work
-      // without overriding `fetch` in dependency libraries (vole-core).
-      throw new Error(
-        `Failed to resolve path for 3D frame source '${data.source}'. ${LoadTroubleshooting.CHECK_ZIP_ZARR_DATA}`
-      );
-    }
-    // Validate backdrops
-    if (data.backdrops) {
-      const failedBackdrops: Backdrop3dData[] = [];
-      for (const backdrop of data.backdrops) {
-        const backdropSource = this.resolvePath(backdrop.source);
-        if (!backdropSource) {
-          failedBackdrops.push({ channelIndex: 0, ...backdrop });
-          continue;
-        }
-        backdrops.push({
-          ...backdrop,
-          channelIndex: backdrop.channelIndex ?? 0,
-          source: backdropSource,
-        });
-      }
-      if (failedBackdrops.length > 0) {
-        this.reportWarning?.("One or more 3D backdrop sources could not be resolved to files, and will not be shown.", [
-          "The following backdrop source(s) could not be resolved:",
-          ...failedBackdrops.map((b) => `- ${b.source} (${b.name})`),
-          LoadTroubleshooting.CHECK_ZIP_ZARR_DATA,
-        ]);
-      }
-    }
-    return {
-      source: frameSource,
-      segmentationChannel: data.segmentationChannel ?? 0,
-      totalFrames: data.totalFrames ?? 0,
-      backdrops,
-    };
-  }
 
   private reportLoadProgress<T>(promise: Promise<T>): Promise<T> {
     this.numRequests++;
@@ -289,8 +241,8 @@ export default class JsonDatasetLoader {
     }
     const manifest = updateManifestVersion(await this.manifestLoader(resolvedManifestUrl));
 
-    const frameFiles = manifest.frames?.map((frame) => this.resolvePath(frame));
-    const frames3d = this.resolveAndValidateFrames3d(manifest.frames3d);
+    const frames2d = resolveFrames2d(manifest.frames2d, this.resolvePath);
+    const frames3d = resolveFrames3d(manifest.frames3d, this.resolvePath, this.reportWarning);
     const outlierFile = manifest.outliers;
     const metadata = { ...DEFAULT_METADATA, ...manifest.metadata };
 
@@ -299,24 +251,6 @@ export default class JsonDatasetLoader {
     const centroidsFile = manifest.centroids;
     const boundsFile = manifest.bounds;
     const segIdsFile = manifest.segIds;
-
-    const backdrops = new Map<string, { name: string; frames: (string | null)[] }>();
-
-    // Validate backdrops
-    if (manifest.backdrops) {
-      for (const { name, key, frames: backdropFrames } of manifest.backdrops) {
-        const resolvedBackdropFrames = backdropFrames.map((path) => this.resolvePath(path));
-        backdrops.set(key, { name, frames: resolvedBackdropFrames });
-        if (frameFiles && frameFiles.length !== 0 && resolvedBackdropFrames.length !== frameFiles.length) {
-          // If frames are provided, check that backdrop frames match the frame
-          // count.
-          throw new Error(
-            `Number of frames (${frameFiles?.length}) does not match number of images (${backdropFrames.length}) for backdrop '${key}'. ` +
-              ` If you are a dataset author, please ensure that the number of frames in the manifest matches the number of images for each backdrop.`
-          );
-        }
-      }
-    }
 
     // Load feature data
     const featuresPromises: Promise<[string, FeatureData] | undefined>[] = Array.from(manifest.features).map(
@@ -330,7 +264,7 @@ export default class JsonDatasetLoader {
       this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U16, centroidsFile)),
       this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U16, boundsFile)),
       this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, segIdsFile)),
-      this.reportLoadProgress(this.getFrameDims(frameFiles)),
+      this.reportLoadProgress(this.getFrameDims(frames2d)),
       ...featuresPromises,
     ]);
     const [
@@ -399,7 +333,7 @@ export default class JsonDatasetLoader {
       datasetWriterVersion: metadata.writerVersion || "N/A",
       datasetTotalObjects: numObjects,
       datasetFeatureCount: manifest.features.length,
-      datasetFrameCount: frameFiles?.length || frames3d?.totalFrames || 0,
+      datasetFrameCount: frames2d?.segmentations?.[0]?.frames?.length || frames3d?.totalFrames || 0,
       datasetLoadTimeMs: new Date().getTime() - startTime.getTime(),
     });
 
@@ -408,9 +342,8 @@ export default class JsonDatasetLoader {
         manifestUrl: resolvedManifestUrl,
         metadata,
         // Image sources
-        frameFiles,
+        frames2d,
         frames3d,
-        backdrops,
         frameResolution: frameDimensions ?? undefined,
         // Data arrays
         features,

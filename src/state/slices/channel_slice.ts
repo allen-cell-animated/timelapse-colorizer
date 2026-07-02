@@ -1,7 +1,7 @@
 import { Color } from "three";
 import type { StateCreator } from "zustand";
 
-import type { Backdrop3dData } from "src/colorizer/Dataset";
+import type { ChannelSource } from "src/colorizer/Dataset";
 import { ChannelRangePreset, type ChannelSetting, type VolumeLoadResult } from "src/colorizer/types";
 import { decodeMaybeChannelSetting, encodeChannelSetting, isChannelKey } from "src/colorizer/utils/url_utils";
 import type { SerializedStoreData, SubscribableStore } from "src/state/types";
@@ -30,7 +30,7 @@ function getDefaultColorForChannel(index: number, totalChannels: number): Color 
   }
 }
 
-function getDefaultChannelSetting(index: number, totalChannels: number, backdropData?: Backdrop3dData): ChannelSetting {
+function getDefaultChannelSetting(index: number, totalChannels: number, backdropData?: ChannelSource): ChannelSetting {
   return {
     visible: false,
     color: getDefaultColorForChannel(index, totalChannels),
