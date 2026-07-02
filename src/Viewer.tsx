@@ -7,7 +7,6 @@ import React, {
   useCallback,
   useContext,
   useEffect,
-  useMemo,
   useRef,
   useState,
   useTransition,
@@ -50,7 +49,6 @@ import {
   SettingsTab,
 } from "src/components/Tabs";
 import CanvasHoverTooltip from "src/components/Tooltips/CanvasHoverTooltip";
-import { INTERNAL_BUILD } from "src/constants";
 import { useAnnotations, useBackdropShortcuts, useConstructor, useRecentCollections } from "src/hooks";
 import { renderCanvasStateParamsSelector } from "src/state";
 import { getDifferingProperties } from "src/state/utils/data_validation";
@@ -66,12 +64,14 @@ import { FlexColumn, FlexRowAlignCenter } from "src/styles/utils";
 import type { LocationState } from "src/types";
 import { loadInitialCollectionAndDataset } from "src/utils/dataset_load_utils";
 
+import LineageTab from "./components/Tabs/Lineage/LineageTab";
+
 // TODO: Refactor with styled-components
 import styles from "./Viewer.module.css";
 
-type TabItem = {
+type TabItem<T extends string> = {
   label: string;
-  key: string;
+  key: T;
   visible?: boolean;
   children: ReactNode;
 };
@@ -386,7 +386,6 @@ function Viewer(): ReactElement {
       if (isLoadingInitialDataset.current || isInitialDatasetLoaded) {
         return;
       }
-
       setIsDatasetLoading(true);
       setDatasetLoadProgress(null);
       isLoadingInitialDataset.current = true;
@@ -506,7 +505,7 @@ function Viewer(): ReactElement {
 
   const disableUi: boolean = isRecording || !datasetOpen;
 
-  const allTabItems: TabItem[] = [
+  const allTabItems: TabItem<TabType>[] = [
     {
       label: "Track plot",
       key: TabType.TRACK_PLOT,
@@ -548,6 +547,18 @@ function Viewer(): ReactElement {
       ),
     },
     {
+      label: "Lineage",
+      key: TabType.LINEAGE,
+      // Only show the lineage tab if the dataset has lineage data, or if the
+      // user has manually opened the tab.
+      visible: dataset?.hasLineageData(dataset.getDefaultTrackKey() ?? "") ?? false,
+      children: (
+        <div className={styles.tabContent}>
+          <LineageTab></LineageTab>
+        </div>
+      ),
+    },
+    {
       label: `Filters ${featureThresholds.length > 0 ? `(${featureThresholds.length})` : ""}`,
       key: TabType.FILTERS,
       children: (
@@ -576,8 +587,9 @@ function Viewer(): ReactElement {
       ),
     },
   ];
-  const tabItems = allTabItems.filter((item) => item.visible !== false);
-  const visibleTabKeys = useMemo(() => new Set(tabItems.map((item) => item.key)), [INTERNAL_BUILD]);
+  // If non-visible tab is selected, show it
+  const tabItems = allTabItems.filter((item) => item.visible !== false || item.key === openTab);
+  const visibleTabKeys = new Set(tabItems.map((item) => item.key));
   const currentTab = visibleTabKeys.has(openTab) ? openTab : TabType.TRACK_PLOT;
 
   let datasetHeader: ReactNode = null;
