@@ -2,7 +2,7 @@ import type * as d3 from "d3";
 import type React from "react";
 import type { Color } from "three";
 
-import type { Track } from "src/colorizer";
+import type { Dataset, Track } from "src/colorizer";
 
 export type TrackInfo = {
   id: number;
@@ -16,8 +16,13 @@ export type LineageObjectInfo = {
   time: number;
 };
 
-export type LineageData = {
-  trackIdToTrackInfo: Map<number, TrackInfo>;
+export type LineageData<T extends TrackInfo | LineageObjectInfo> = {
+  idToInfo: Map<number, T>;
+  edges: [number, number][];
+};
+
+export type LineageObjectData = {
+  idToInfo: Map<number, LineageObjectInfo>;
   edges: [number, number][];
 };
 
@@ -40,8 +45,8 @@ export type LineageDataRelationships = {
 
 export type SharedLineageViewProps = {
   container: React.RefObject<HTMLDivElement>;
-  data: LineageData;
-  relationships: LineageDataRelationships;
+  dataset: Dataset | null;
+
   selectedTracks: Map<number, Track>;
   trackColors: Map<number, Color>;
   colorScale: d3.ScaleSequential<string>;

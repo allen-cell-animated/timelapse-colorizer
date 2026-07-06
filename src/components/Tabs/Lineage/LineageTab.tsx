@@ -9,15 +9,17 @@ import { useViewerStateStore } from "src/state";
 import { FlexColumn, FlexRow } from "src/styles/utils";
 import { areAnyHotkeysPressed } from "src/utils/user_input";
 
-import { getLineageData, getLineageRelationships } from "./lineage_utils";
+import { getLineageData, getLineageRelationships, getObjectLineageData } from "./lineage_utils";
+import LineageTrackDetailView from "./LineageViews/TrackDetailLineageView";
 import TreeLineageView from "./LineageViews/TreeLineageView";
+import type { LineageObjectInfo, TrackInfo } from "./types";
 import type { LineageData, SharedLineageViewProps } from "./types";
 
-function getColorAndRadiusScale(data: LineageData): {
+function getColorAndRadiusScale(data: LineageData<TrackInfo>): {
   colorScale: d3.ScaleSequential<string>;
   radiusScale: d3.ScalePower<number, number>;
 } {
-  const trackInfo = Array.from(data.trackIdToTrackInfo.values());
+  const trackInfo = Array.from(data.idToInfo.values());
   const startMin = d3.min(trackInfo, (d) => d.startTime) ?? 0;
   const startMax = d3.max(trackInfo, (d) => d.startTime) ?? startMin;
   const lengthMin = d3.min(trackInfo, (d) => d.length) ?? 1;
@@ -31,7 +33,7 @@ function getColorAndRadiusScale(data: LineageData): {
   return { colorScale, radiusScale };
 }
 
-const EMPTY_LINEAGE_DATA = { trackIdToTrackInfo: new Map(), edges: [] } satisfies LineageData;
+const EMPTY_LINEAGE_DATA = { idToInfo: new Map(), edges: [] } satisfies LineageData<TrackInfo>;
 
 /**
  * Renders lineage data in a tab. Includes a tree view of the tracks and their
@@ -49,8 +51,10 @@ export default function LineageTab(): ReactElement {
   const [hoveredTrack, setHoveredTrack] = useState<Track | null>(null);
   const lastHoveredTrack = useRef<Track | null>(null);
 
-  const containerRef = useRef<HTMLDivElement>(null);
+  const treeViewContainerRef = useRef<HTMLDivElement>(null);
+  const detailViewContainerRef = useRef<HTMLDivElement>(null);
 
+  // Track data and relationships
   const lineageData = useMemo(() => {
     return dataset ? getLineageData(dataset) : EMPTY_LINEAGE_DATA;
   }, [dataset]);
@@ -58,6 +62,14 @@ export default function LineageTab(): ReactElement {
     return getLineageRelationships(lineageData);
   }, [lineageData]);
   const { colorScale, radiusScale } = useMemo(() => getColorAndRadiusScale(lineageData), [lineageData]);
+
+  // Per-object data and relationships
+  const objectLineageData: LineageData<LineageObjectInfo> = useMemo(() => {
+    return dataset ? getObjectLineageData(dataset) : EMPTY_LINEAGE_DATA;
+  }, [dataset]);
+  const objectLineageRelationships = useMemo(() => {
+    return getLineageRelationships(objectLineageData);
+  }, [objectLineageData]);
 
   //// Callbacks ////
 
@@ -110,10 +122,9 @@ export default function LineageTab(): ReactElement {
     );
   }, [hoveredTrack]);
 
-  const lineageViewProps: SharedLineageViewProps = {
-    container: containerRef,
-    data: lineageData,
-    relationships: lineageRelationships,
+  const sharedProps: SharedLineageViewProps = {
+    container: treeViewContainerRef,
+    dataset: dataset,
     colorScale: colorScale,
     radiusScale: radiusScale,
     onClick: onClickTrack,
@@ -122,17 +133,36 @@ export default function LineageTab(): ReactElement {
     trackColors: trackColors,
   };
 
+  const lineageViewProps = {
+    ...sharedProps,
+    data: lineageData,
+    relationships: lineageRelationships,
+  };
+
+  const lineageDetailViewProps = {
+    ...sharedProps,
+    data: objectLineageData,
+    relationships: objectLineageRelationships,
+    time: currentFrame,
+  };
+
   return (
     <FlexColumn style={{ width: "100%", height: "100%" }}>
       <FlexRow></FlexRow>
 
       <HoverTooltip tooltipContent={tooltipContent} style={{ width: "100%", height: "100%" }}>
-        <div ref={containerRef} style={{ width: "100%", height: "100%" }}>
+        {/* <div ref={treeViewContainerRef} style={{ width: "100%", height: "100%" }}>
           <TreeLineageView {...lineageViewProps}></TreeLineageView>
 
           {lineageData?.edges.length === 0 && (
             <div style={{ textAlign: "center", marginTop: "20px" }}>No lineage data available.</div>
           )}
+        </div> */}
+        <div ref={detailViewContainerRef} style={{ width: "100%", height: "100%" }}>
+          <LineageTrackDetailView
+            {...lineageDetailViewProps}
+            container={detailViewContainerRef}
+          ></LineageTrackDetailView>
         </div>
       </HoverTooltip>
     </FlexColumn>

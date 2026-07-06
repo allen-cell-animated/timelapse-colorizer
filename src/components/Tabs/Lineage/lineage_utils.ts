@@ -1,8 +1,8 @@
 import type { Dataset } from "src/colorizer";
 
-import type { LineageData, LineageDataRelationships, TrackInfo } from "./types";
+import type { LineageData, LineageDataRelationships, LineageObjectInfo, TrackInfo } from "./types";
 
-export function getLineageData(dataset: Dataset): LineageData {
+export function getLineageData(dataset: Dataset): LineageData<TrackInfo> {
   const tracks = dataset.trackIds;
   const times = dataset.times;
   // Get first track edge (TODO: handle multiple track edges in the future?)
@@ -10,7 +10,7 @@ export function getLineageData(dataset: Dataset): LineageData {
   const trackData = defaultTrackKey ? dataset.getTrackData(defaultTrackKey) : undefined;
   const trackEdges = trackData?.trackEdges;
   if (!tracks || !times || !trackEdges) {
-    return { trackIdToTrackInfo: new Map<number, TrackInfo>(), edges: [] };
+    return { idToInfo: new Map<number, TrackInfo>(), edges: [] };
   }
 
   const allTracks = new Set<number>();
@@ -45,14 +45,41 @@ export function getLineageData(dataset: Dataset): LineageData {
   if (skippedEdges.length > 0) {
     console.warn(`Skipped ${skippedEdges.length} edges that reference non-existent tracks:`, skippedEdges);
   }
-  return { trackIdToTrackInfo, edges };
+  return { idToInfo: trackIdToTrackInfo, edges };
 }
 
-export function getLineageRelationships(data: LineageData): LineageDataRelationships {
-  const trackIds = Array.from(data.trackIdToTrackInfo.keys());
-  const idToChildren = new Map<number, number[]>(trackIds.map((id) => [id, []]));
-  const idToChildrenRenderable = new Map<number, number[]>(trackIds.map((id) => [id, []]));
-  const idToParents = new Map<number, number[]>(trackIds.map((id) => [id, []]));
+export function getObjectLineageData(dataset: Dataset): LineageData<LineageObjectInfo> {
+  const numObjects = dataset.numObjects;
+  const trackData = dataset.getTrackData(dataset.getDefaultTrackKey() ?? "");
+  const nodeEdges = trackData?.nodeEdges;
+  if (!trackData || !nodeEdges) {
+    return { idToInfo: new Map<number, LineageObjectInfo>(), edges: [] };
+  }
+
+  const idToInfo = new Map<number, LineageObjectInfo>();
+  for (let i = 0; i < numObjects; i++) {
+    const trackId = dataset.trackIds?.[i] ?? -1;
+    const time = dataset.times?.[i] ?? -1;
+    idToInfo.set(i, { id: i, trackId, time });
+  }
+
+  const edges: [number, number][] = [];
+  for (let i = 0; i < nodeEdges.length; i += 2) {
+    const source = nodeEdges[i];
+    const target = nodeEdges[i + 1];
+    edges.push([source, target]);
+  }
+  // TODO: Handle remapping from node IDs to object IDs here.
+  return { idToInfo, edges };
+}
+
+export function getLineageRelationships(
+  data: LineageData<TrackInfo> | LineageData<LineageObjectInfo>
+): LineageDataRelationships {
+  const ids = Array.from(data.idToInfo.keys());
+  const idToChildren = new Map<number, number[]>(ids.map((id) => [id, []]));
+  const idToChildrenRenderable = new Map<number, number[]>(ids.map((id) => [id, []]));
+  const idToParents = new Map<number, number[]>(ids.map((id) => [id, []]));
 
   // Links to a node where the node already has a parent (i.e. the second parent
   // of a merge node).

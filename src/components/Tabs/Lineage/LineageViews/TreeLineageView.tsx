@@ -16,21 +16,24 @@ const MERGE_EDGE_COLOR = "#ff9410";
 const DEFAULT_EDGE_COLOR = "#4a5568";
 const DEFAULT_NODE_EDGE_COLOR = "#1a1f2e";
 
-type TreeLineageViewProps = SharedLineageViewProps & {};
+type TreeLineageViewProps = SharedLineageViewProps & {
+  data: LineageData<TrackInfo>;
+  relationships: LineageDataRelationships;
+};
 
 type NodeSelection = d3.Selection<SVGGElement | d3.BaseType, d3.HierarchyPointNode<TrackInfo>, SVGGElement, TrackInfo>;
 
 function renderTree(
   g: d3.Selection<SVGGElement, TrackInfo, null, undefined>,
-  data: LineageData,
+  data: LineageData<TrackInfo>,
   relationships: LineageDataRelationships,
   onClickTrack?: (trackId: number) => void,
   onHoverTrack?: (trackId: number | null) => void
 ): NodeSelection | undefined {
-  const { trackIdToTrackInfo } = data;
-  const edges = [...data.edges];
-  const { idToChildrenRenderable: idToChildren, idToParents, multiparentEdges: multiparentEdges } = relationships;
+  const { idToInfo: trackIdToTrackInfo } = data;
+  const { idToChildrenRenderable, idToParents, multiparentEdges: multiparentEdges } = relationships;
 
+  const idToChildren = new Map(idToChildrenRenderable);
   const mergeNodes = new Set([...idToParents.entries()].filter(([, parents]) => parents.length > 1).map(([id]) => id));
   // All nodes with no parents
   const rootNodeIds = [...idToParents.entries()].filter(([, parents]) => parents.length === 0).map(([id]) => id);
@@ -45,9 +48,6 @@ function renderTree(
     rootNode = { id: -1, length: 0, startTime: 0 };
     // Add dummy track info for the dummy root node
     trackIdToTrackInfo.set(rootNode.id, rootNode);
-    for (const root of rootNodeIds) {
-      edges.push([rootNode.id, root]);
-    }
     idToChildren.set(rootNode.id, rootNodeIds);
   }
 
