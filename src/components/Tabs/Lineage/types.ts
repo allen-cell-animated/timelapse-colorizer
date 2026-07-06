@@ -46,7 +46,6 @@ export type LineageDataRelationships = {
 export type SharedLineageViewProps = {
   container: React.RefObject<HTMLDivElement>;
   dataset: Dataset | null;
-
   selectedTracks: Map<number, Track>;
   trackColors: Map<number, Color>;
   colorScale: d3.ScaleSequential<string>;

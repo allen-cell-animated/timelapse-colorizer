@@ -6,19 +6,26 @@ import { Dataset, Track } from "src/colorizer";
 import { useConstructor } from "src/hooks";
 
 import { getLineageRelationships } from "../lineage_utils";
-import { LineageData, LineageDataRelationships, LineageObjectInfo, SharedLineageViewProps, TrackInfo } from "../types";
+import { LineageData, LineageDataRelationships, LineageObjectInfo, SharedLineageViewProps } from "../types";
 
-type TrackDetailLineageViewProps = SharedLineageViewProps & {
+type TrackDetailLineageViewProps = {
+  container: React.RefObject<HTMLDivElement>;
+  dataset: Dataset | null;
   data: LineageData<LineageObjectInfo>;
+  selectedTracks: Map<number, Track>;
+  trackColors: Map<number, Color>;
   relationships: LineageDataRelationships;
   time: number;
+  onClick?: (info: LineageObjectInfo) => void;
+  onHover?: (info: LineageObjectInfo | null) => void;
 };
 
 // const enum TrackDetailLineageViewHtmlIds {}
 
-const TREE_LEAF_HEIGHT_PX = 30;
-const TREE_LAYER_DEPTH_PX = 30;
+const TREE_LEAF_HEIGHT_PX = 35;
+const TREE_LAYER_DEPTH_PX = 35;
 const MERGE_EDGE_COLOR = "#ff9410";
+const DEFAULT_NODE_FILL_COLOR = "#1a1f2e";
 const DEFAULT_EDGE_COLOR = "#4a5568";
 const DEFAULT_NODE_EDGE_COLOR = "#1a1f2e";
 
@@ -44,9 +51,10 @@ function idToNode(id: number, dataset: Dataset): LineageObjectInfo | undefined {
 function renderView(
   g: d3.Selection<SVGGElement, LineageObjectInfo, null, undefined>,
   data: LineageData<LineageObjectInfo>,
-  relationships: LineageDataRelationships,
   dataset: Dataset,
-  selectedTracks: Map<number, Track>
+  selectedTracks: Map<number, Track>,
+  onClick?: React.RefObject<undefined | ((info: LineageObjectInfo) => void)>,
+  onHover?: React.RefObject<undefined | ((info: LineageObjectInfo | null) => void)>
 ): NodeSelection | undefined {
   const track = selectedTracks.values().next().value;
   console.log("renderView: selectedTracks", selectedTracks, "track", track);
@@ -136,6 +144,10 @@ function renderView(
     root
   );
 
+  function isSplitEdge(sourceId: number, targetId: number): boolean {
+    return parentIds.has(sourceId) || childIds.has(targetId) || mergeNodes.has(targetId);
+  }
+
   // Render tree edges, coloring merge edges as an orange dotted line
   g.append("g")
     .selectAll("line")
@@ -143,7 +155,7 @@ function renderView(
     .join("line")
     .attr("stroke", (d) => (mergeNodes.has(d.target.data.id) ? MERGE_EDGE_COLOR : DEFAULT_EDGE_COLOR))
     .attr("stroke-width", 1.5)
-    .attr("stroke-dasharray", (d) => (mergeNodes.has(d.target.data.id) ? "4 3" : null))
+    .attr("stroke-dasharray", (d) => (isSplitEdge(d.source.data.id, d.target.data.id) ? "4 3" : null))
     .attr("opacity", (d) => (d.source.data.id === -1 ? 0 : 1)) // Hide links to the dummy root node
     .attr("x1", (d) => d.source.y)
     .attr("y1", (d) => d.source.x)
@@ -186,17 +198,36 @@ function renderView(
     .attr("font-size", 9)
     .attr("pointer-events", "none");
 
+  // Click and hover events
+  // Setup pointer events
+  const handleClickTrack = (_event: any, d: d3.HierarchyPointNode<LineageObjectInfo>): void => {
+    onClick?.current?.(d.data);
+  };
+  const handleHoverTrack = (_event: any, d: d3.HierarchyPointNode<LineageObjectInfo>): void => {
+    // d3.select(event.currentTarget).select("circle").attr("stroke", "#fff").attr("stroke-width", 2.5);
+    onHover?.current?.(d.data);
+  };
+  const handleUnhoverTrack = (_event: any, _d: d3.HierarchyPointNode<LineageObjectInfo>): void => {
+    // d3.select(event.currentTarget).select("circle").attr("stroke", "#1a1f2e").attr("stroke-width", 1.5);
+    onHover?.current?.(null);
+  };
+
+  node.on("click", handleClickTrack).on("mouseover", handleHoverTrack).on("mouseout", handleUnhoverTrack);
+
   return node;
 }
 
 function updateNodeStyles(node: NodeSelection, trackColors: Map<number, Color>, time: number): void {
   node
     .select<SVGCircleElement>("circle")
-    .attr("r", 10)
-    .attr("fill", "#000000")
-    // .attr("fill", (d) => trackColors.get(d.data.id)?.getStyle() ?? DEFAULT_NODE_FILL_COLOR)
+    .attr("r", 15)
+    .attr("fill", (d) =>
+      d.data.time === time
+        ? trackColors.get(d.data.trackId)?.getStyle() ?? DEFAULT_NODE_FILL_COLOR
+        : DEFAULT_NODE_FILL_COLOR
+    )
     .attr("opacity", (d) => (d.data.id === -1 ? 0 : 1)) // Hide the dummy root node
-    // .attr("stroke", (d) => trackColors.get(d.data.id)?.getStyle() ?? DEFAULT_NODE_EDGE_COLOR)
+    .attr("stroke", (d) => trackColors.get(d.data.trackId)?.getStyle() ?? "#000000")
     .attr("stroke-width", 1.5)
     .style("cursor", "default");
 
@@ -266,7 +297,7 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
       const g = d3.select(groupRef.current) as d3.Selection<SVGGElement, LineageObjectInfo, null, undefined>;
       // const onClickTrack = (trackId: number): void => onClickRef.current?.(trackId);
       // const onHoverTrack = (trackId: number | null): void => onHoverRef.current?.(trackId);
-      nodeRef.current = renderView(g, props.data, props.relationships, props.dataset, props.selectedTracks);
+      nodeRef.current = renderView(g, props.data, props.dataset, props.selectedTracks, onClickRef, onHoverRef);
     }
     // Clear on unmount
     return () => {
@@ -281,7 +312,7 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
     if (nodeRef.current) {
       updateNodeStyles(nodeRef.current, props.trackColors, props.time);
     }
-  }, [props.data, props.radiusScale, props.colorScale, props.trackColors]);
+  }, [props.data, props.time, props.trackColors]);
 
   // Fit on first render
   useEffect(() => {

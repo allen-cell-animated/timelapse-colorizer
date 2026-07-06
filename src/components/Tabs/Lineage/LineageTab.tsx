@@ -6,6 +6,7 @@ import HoverTooltip from "src/components/Tooltips/HoverTooltip";
 import { TooltipCard } from "src/components/Tooltips/TooltipCard";
 import { SHORTCUT_KEYS } from "src/constants/shortcuts";
 import { useViewerStateStore } from "src/state";
+import { StyledHorizontalRule } from "src/styles/components";
 import { FlexColumn, FlexRow } from "src/styles/utils";
 import { areAnyHotkeysPressed } from "src/utils/user_input";
 
@@ -150,18 +151,26 @@ export default function LineageTab(): ReactElement {
     <FlexColumn style={{ width: "100%", height: "100%" }}>
       <FlexRow></FlexRow>
 
-      <HoverTooltip tooltipContent={tooltipContent} style={{ width: "100%", height: "100%" }}>
-        {/* <div ref={treeViewContainerRef} style={{ width: "100%", height: "100%" }}>
+      <HoverTooltip tooltipContent={tooltipContent} style={{ width: "100%", height: "75%" }}>
+        <div ref={treeViewContainerRef} style={{ width: "100%", height: "100%" }}>
           <TreeLineageView {...lineageViewProps}></TreeLineageView>
 
           {lineageData?.edges.length === 0 && (
             <div style={{ textAlign: "center", marginTop: "20px" }}>No lineage data available.</div>
           )}
-        </div> */}
-        <div ref={detailViewContainerRef} style={{ width: "100%", height: "100%" }}>
+        </div>
+        <StyledHorizontalRule style={{ margin: "0" }} />
+        <div ref={detailViewContainerRef} style={{ width: "100%", height: "25%" }}>
           <LineageTrackDetailView
-            {...lineageDetailViewProps}
             container={detailViewContainerRef}
+            dataset={dataset}
+            selectedTracks={tracks}
+            trackColors={trackColors}
+            data={objectLineageData}
+            relationships={objectLineageRelationships}
+            time={currentFrame}
+            onClick={(info) => setFrame(info.time)}
+            // onHover={}
           ></LineageTrackDetailView>
         </div>
       </HoverTooltip>
