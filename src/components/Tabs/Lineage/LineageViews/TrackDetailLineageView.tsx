@@ -188,23 +188,37 @@ function renderView(
     .attr("font-size", 9)
     .attr("pointer-events", "none");
 
-  // Click and hover events
-  // Setup pointer events
-  const handleClickTrack = (_event: any, d: d3.HierarchyPointNode<LineageObjectInfo>): void => {
+  return { node, parentIds, childIds };
+}
+
+function setupPointerHandlers(
+  node: NodeSelection,
+  svg: React.RefObject<SVGSVGElement>,
+  onClick?: React.RefObject<undefined | ((info: LineageObjectInfo) => void)>,
+  onHover?: React.RefObject<undefined | ((info: LineageObjectInfo | null) => void)>
+): () => void {
+  const handleClickNode = (_event: any, d: d3.HierarchyPointNode<LineageObjectInfo>): void => {
     onClick?.current?.(d.data);
   };
-  const handleHoverTrack = (_event: any, d: d3.HierarchyPointNode<LineageObjectInfo>): void => {
+  const handleHoverNode = (_event: any, d: d3.HierarchyPointNode<LineageObjectInfo>): void => {
     // d3.select(event.currentTarget).select("circle").attr("stroke", "#fff").attr("stroke-width", 2.5);
+    if (svg.current) {
+      svg.current.style.cursor = "pointer";
+    }
     onHover?.current?.(d.data);
   };
-  const handleUnhoverTrack = (_event: any, _d: d3.HierarchyPointNode<LineageObjectInfo>): void => {
+  const handleUnhoverNode = (_event: any, d: d3.HierarchyPointNode<LineageObjectInfo>): void => {
     // d3.select(event.currentTarget).select("circle").attr("stroke", "#1a1f2e").attr("stroke-width", 1.5);
+    if (svg.current) {
+      svg.current.style.cursor = "default";
+    }
     onHover?.current?.(null);
   };
+  node.on("click", handleClickNode).on("mouseenter", handleHoverNode).on("mouseleave", handleUnhoverNode);
 
-  node.on("click", handleClickTrack).on("mouseover", handleHoverTrack).on("mouseout", handleUnhoverTrack);
-
-  return { node, parentIds, childIds };
+  return () => {
+    node.on("click", null).on("mouseenter", null).on("mouseleave", null);
+  };
 }
 
 function updateNodeStyles(renderData: RenderData, trackColors: Map<number, Color>, time: number): void {
@@ -236,8 +250,7 @@ function updateNodeStyles(renderData: RenderData, trackColors: Map<number, Color
     .attr("fill", (d) => getFillColor(d))
     .attr("opacity", (d) => (d.data.id === -1 ? 0 : 1)) // Hide the dummy root node
     .attr("stroke", (d) => getStrokeColor(d))
-    .attr("stroke-width", 1.5)
-    .style("cursor", "default");
+    .attr("stroke-width", 1.5);
 
   // Text labels
   node
@@ -301,19 +314,33 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
 
   //// Viewport ////
   useEffect(() => {
-    if (groupRef.current && props.dataset) {
+    let cleanupPointerHandlers: (() => void) | undefined;
+    if (svgRef.current && groupRef.current && props.dataset) {
       const g = d3.select(groupRef.current) as d3.Selection<SVGGElement, LineageObjectInfo, null, undefined>;
-      // const onClickTrack = (trackId: number): void => onClickRef.current?.(trackId);
-      // const onHoverTrack = (trackId: number | null): void => onHoverRef.current?.(trackId);
-      renderDataRef.current = renderView(g, props.data, props.dataset, props.selectedTracks, onClickRef, onHoverRef);
+      const renderData = renderView(g, props.data, props.dataset, props.selectedTracks);
+      renderDataRef.current = renderData;
+      if (renderData) {
+        cleanupPointerHandlers = setupPointerHandlers(renderData.node, svgRef, onClickRef, onHoverRef);
+      }
     }
+
     // Clear on unmount
     return () => {
+      if (cleanupPointerHandlers) {
+        cleanupPointerHandlers();
+      }
       if (groupRef.current) {
         d3.select(groupRef.current).selectAll("*").remove();
       }
     };
   }, [props.data, props.relationships, props.dataset, props.selectedTracks]);
+
+  useEffect(() => {
+    if (!svgRef.current || !renderDataRef.current) {
+      return;
+    }
+    return setupPointerHandlers(renderDataRef.current.node, svgRef, onClickRef, onHoverRef);
+  }, []);
 
   useEffect(() => {
     // Update node styling
