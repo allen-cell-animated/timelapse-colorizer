@@ -1,3 +1,5 @@
+import * as d3 from "d3";
+
 import type { Dataset } from "src/colorizer";
 
 import type { LineageData, LineageDataRelationships, LineageObjectInfo, TrackInfo } from "./types";
@@ -15,9 +17,9 @@ export function getLineageData(dataset: Dataset): LineageData<TrackInfo> {
 
   const allTracks = new Set<number>();
   const trackIdToTrackInfo = new Map<number, TrackInfo>();
-  for (let i = 0; i < tracks.length; i++) {
-    const trackId = tracks[i];
-    const time = times[i];
+  for (let id = 0; id < tracks.length; id++) {
+    const trackId = tracks[id];
+    const time = times[id];
 
     if (!trackIdToTrackInfo.has(trackId)) {
       trackIdToTrackInfo.set(trackId, { id: trackId, length: 1, startTime: time });
@@ -31,7 +33,10 @@ export function getLineageData(dataset: Dataset): LineageData<TrackInfo> {
 
   const skippedEdges: [number, number][] = [];
   const edges: [number, number][] = [];
-  for (let i = 0; i < trackEdges.length; i += 2) {
+  if (trackEdges.length % 2 !== 0) {
+    console.warn(`Track edges array has an odd length (${trackEdges.length}), skipping the last edge.`);
+  }
+  for (let i = 0; i + 1 < trackEdges.length; i += 2) {
     const source = trackEdges[i];
     const target = trackEdges[i + 1];
     // Skip edges that do not exist in the dataset
@@ -81,8 +86,10 @@ export function getLineageRelationships(
   const idToChildrenRenderable = new Map<number, number[]>(ids.map((id) => [id, []]));
   const idToParents = new Map<number, number[]>(ids.map((id) => [id, []]));
 
-  // Links to a node where the node already has a parent (i.e. the second parent
-  // of a merge node).
+  /**
+   * Edges to a node where the node already has a parent (i.e. edges that would
+   * create the second/nth parent of a merge node).
+   */
   const multiparentEdges: [number, number][] = [];
   const idsWithParents = new Set<number>();
 
@@ -91,9 +98,9 @@ export function getLineageRelationships(
       idToChildrenRenderable.get(source)?.push(target);
     } else {
       // If the target node already has a parent, intentionally prevent adding
-      // it to the children of this source node or else it will be duplicated in
-      // the tree. Instead, add it to a list of cross links that will be
-      // rendered separately.
+      // it to the children of this source node or else it (and all its
+      // children) will be duplicated in the tree. Instead, add it to a list of
+      // edges that will be rendered separately.
       multiparentEdges.push([source, target]);
     }
     idToChildren.get(source)?.push(target);
@@ -101,4 +108,23 @@ export function getLineageRelationships(
     idsWithParents.add(target);
   }
   return { idToChildren, idToChildrenRenderable, idToParents, multiparentEdges };
+}
+
+/**
+ * Returns a d3 zoom transform that will fit the groupNode within the svgNode
+ * with some padding.
+ */
+export function getDefaultZoomTransform(
+  svgNode: SVGSVGElement,
+  groupNode: SVGGElement,
+  paddingPx: [number, number] = [10, 10]
+): d3.ZoomTransform {
+  const bbox = groupNode.getBBox();
+  const clientwidth = svgNode.clientWidth;
+  const clientHeight = svgNode.clientHeight;
+  const scale = Math.min((clientwidth - paddingPx[0]) / bbox.width, (clientHeight - paddingPx[1]) / bbox.height);
+  const panX = (clientwidth - bbox.width * scale) / 2 - bbox.x * scale;
+  const panY = (clientHeight - bbox.height * scale) / 2 - bbox.y * scale;
+  const initialTransform = d3.zoomIdentity.translate(panX, panY).scale(scale);
+  return initialTransform;
 }
