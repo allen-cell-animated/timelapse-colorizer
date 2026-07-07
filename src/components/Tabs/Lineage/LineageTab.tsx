@@ -107,6 +107,24 @@ export default function LineageTab(): ReactElement {
     [dataset]
   );
 
+  const onClickObject = useCallback(
+    (info: LineageObjectInfo) => {
+      if (!dataset) {
+        return;
+      }
+      const { trackId, time } = info;
+      if (!tracks.has(trackId)) {
+        onClickTrack(trackId);
+      } else {
+        // Just jump to the time of the object in the track.
+        setFrame(time);
+      }
+    },
+    [onClickTrack, tracks]
+  );
+
+  const onHoverObject = useCallback((_info: LineageObjectInfo | null) => {}, []);
+
   //// Rendering ////
 
   const tooltipVisible = hoveredTrack !== null;
@@ -141,16 +159,13 @@ export default function LineageTab(): ReactElement {
     relationships: lineageRelationships,
   };
 
-  const lineageDetailViewProps = {
-    ...sharedProps,
-    data: objectLineageData,
-    relationships: objectLineageRelationships,
-    time: currentFrame,
-  };
-
   return (
-    <FlexColumn style={{ width: "100%", height: "100%" }}>
-      <HoverTooltip tooltipContent={tooltipContent} style={{ width: "100%", height: "75%" }} disabled={!tooltipVisible}>
+    <FlexColumn style={{ width: "100%", maxHeight: "100%" }}>
+      <HoverTooltip
+        tooltipContent={tooltipContent}
+        style={{ width: "100%", flexGrow: 1, flexBasis: 3 }}
+        disabled={!tooltipVisible}
+      >
         <div ref={treeViewContainerRef} style={{ width: "100%", height: "100%" }}>
           <TreeLineageView {...lineageViewProps}></TreeLineageView>
 
@@ -158,8 +173,11 @@ export default function LineageTab(): ReactElement {
             <div style={{ textAlign: "center", marginTop: "20px" }}>No lineage data available.</div>
           )}
         </div>
-        <StyledHorizontalRule style={{ margin: "0" }} />
-        <div ref={detailViewContainerRef} style={{ width: "100%", height: "25%" }}>
+        <StyledHorizontalRule style={{ margin: "0", flexGrow: 0 }} />
+        <div
+          ref={detailViewContainerRef}
+          style={{ width: "100%", flexGrow: 1, flexBasis: 1, backgroundColor: "#f0f0f0" }}
+        >
           <LineageTrackDetailView
             container={detailViewContainerRef}
             dataset={dataset}
@@ -168,8 +186,8 @@ export default function LineageTab(): ReactElement {
             data={objectLineageData}
             relationships={objectLineageRelationships}
             time={currentFrame}
-            onClick={(info) => setFrame(info.time)}
-            // onHover={}
+            onClick={onClickObject}
+            onHover={onHoverObject}
           ></LineageTrackDetailView>
         </div>
       </HoverTooltip>
