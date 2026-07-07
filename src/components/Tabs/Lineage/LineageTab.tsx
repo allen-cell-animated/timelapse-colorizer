@@ -6,7 +6,7 @@ import HoverTooltip from "src/components/Tooltips/HoverTooltip";
 import { TooltipCard } from "src/components/Tooltips/TooltipCard";
 import { SHORTCUT_KEYS } from "src/constants/shortcuts";
 import { useViewerStateStore } from "src/state";
-import { FlexColumn, FlexRow } from "src/styles/utils";
+import { FlexColumn } from "src/styles/utils";
 import { areAnyHotkeysPressed } from "src/utils/user_input";
 
 import { getLineageData, getLineageRelationships } from "./lineage_utils";
@@ -19,15 +19,15 @@ function getColorAndRadiusScale(data: LineageData): {
 } {
   const trackInfo = Array.from(data.trackIdToTrackInfo.values());
   const startMin = d3.min(trackInfo, (d) => d.startTime) ?? 0;
-  const startMax = d3.max(trackInfo, (d) => d.startTime) ?? startMin;
+  let startMax = d3.max(trackInfo, (d) => d.startTime) ?? startMin;
   const lengthMin = d3.min(trackInfo, (d) => d.length) ?? 1;
-  const lengthMax = d3.max(trackInfo, (d) => d.length) ?? lengthMin;
+  let lengthMax = d3.max(trackInfo, (d) => d.length) ?? lengthMin;
 
-  const safeStartMax = startMin === startMax ? startMin + 1 : startMax;
-  const safeLengthMax = lengthMin === lengthMax ? lengthMin + 1 : lengthMax;
+  startMax = startMin === startMax ? startMin + 1 : startMax;
+  lengthMax = lengthMin === lengthMax ? lengthMin + 1 : lengthMax;
 
-  const colorScale = d3.scaleSequential(d3.interpolateTurbo).domain([startMin, safeStartMax]);
-  const radiusScale = d3.scaleSqrt().domain([lengthMin, safeLengthMax]).range([10, 25]);
+  const colorScale = d3.scaleSequential(d3.interpolateTurbo).domain([startMin, startMax]);
+  const radiusScale = d3.scaleSqrt().domain([lengthMin, lengthMax]).range([10, 25]);
   return { colorScale, radiusScale };
 }
 
@@ -96,9 +96,10 @@ export default function LineageTab(): ReactElement {
 
   //// Rendering ////
 
+  const tooltipVisible = hoveredTrack !== null;
   const tooltipContent = useMemo(() => {
     return (
-      <TooltipCard style={{ opacity: hoveredTrack ? 1 : 0 }}>
+      <TooltipCard>
         {lastHoveredTrack.current && (
           <FlexColumn>
             <div>Track ID: {lastHoveredTrack.current.trackId}</div>
@@ -126,9 +127,11 @@ export default function LineageTab(): ReactElement {
 
   return (
     <FlexColumn style={{ width: "100%", height: "100%" }}>
-      <FlexRow></FlexRow>
-
-      <HoverTooltip tooltipContent={tooltipContent} style={{ width: "100%", height: "100%" }}>
+      <HoverTooltip
+        tooltipContent={tooltipContent}
+        style={{ width: "100%", height: "100%" }}
+        disabled={!tooltipVisible}
+      >
         <div ref={containerRef} style={{ width: "100%", height: "100%" }}>
           <TreeLineageView {...lineageViewProps}></TreeLineageView>
 
