@@ -1,12 +1,11 @@
 import * as d3 from "d3";
-import React, { ReactElement, useEffect, useRef } from "react";
-import { Color } from "three";
+import React, { type ReactElement, useEffect, useRef } from "react";
+import type { Color } from "three";
 
-import { Dataset, Track } from "src/colorizer";
+import type { Dataset, Track } from "src/colorizer";
+import { getLineageRelationships } from "src/components/Tabs/Lineage/lineage_utils";
+import type { LineageData, LineageDataRelationships, LineageObjectInfo } from "src/components/Tabs/Lineage/types";
 import { useConstructor } from "src/hooks";
-
-import { getLineageRelationships } from "../lineage_utils";
-import { LineageData, LineageDataRelationships, LineageObjectInfo } from "../types";
 
 type TrackDetailLineageViewProps = {
   container: React.RefObject<HTMLDivElement>;
@@ -63,16 +62,13 @@ function renderView(
   onClick?: React.RefObject<undefined | ((info: LineageObjectInfo) => void)>,
   onHover?: React.RefObject<undefined | ((info: LineageObjectInfo | null) => void)>
 ): RenderData | undefined {
-  const track = selectedTracks.values().next().value;
-  console.log("renderView: selectedTracks", selectedTracks, "track", track);
-  if (!track) {
-    return;
+  const tracks = selectedTracks.values();
+  const selectedTrackIds = new Set<number>();
+
+  for (const track of tracks) {
+    track.ids.forEach((id) => selectedTrackIds.add(id));
   }
 
-  // TODO: will also need to handle node IDs => lookup from object IDs
-
-  const selectedTrackIds = new Set(track.ids);
-  const selectedIds = new Set(track.ids);
   const parentIds = new Set<number>();
   const childIds = new Set<number>();
   const selectedEdges = new Set<[number, number]>();
@@ -92,9 +88,9 @@ function renderView(
     }
   }
 
-  const allSelectedIds = new Set([...selectedIds, ...parentIds, ...childIds]);
+  const allIds = new Set<number>([...selectedTrackIds, ...parentIds, ...childIds]);
   const trackNodes: LineageObjectInfo[] = [];
-  for (const id of allSelectedIds) {
+  for (const id of allIds) {
     const node = idToNode(id, dataset);
     if (node) {
       trackNodes.push(node);

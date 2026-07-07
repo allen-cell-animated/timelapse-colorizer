@@ -13,8 +13,7 @@ import { areAnyHotkeysPressed } from "src/utils/user_input";
 import { getLineageData, getLineageRelationships, getObjectLineageData } from "./lineage_utils";
 import LineageTrackDetailView from "./LineageViews/TrackDetailLineageView";
 import TreeLineageView from "./LineageViews/TreeLineageView";
-import type { LineageObjectInfo, TrackInfo } from "./types";
-import type { LineageData, SharedLineageViewProps } from "./types";
+import type { LineageData, LineageObjectInfo, SharedLineageViewProps, TrackInfo } from "./types";
 
 function getColorAndRadiusScale(data: LineageData<TrackInfo>): {
   colorScale: d3.ScaleSequential<string>;
@@ -160,10 +159,10 @@ export default function LineageTab(): ReactElement {
   };
 
   return (
-    <FlexColumn style={{ width: "100%", maxHeight: "100%" }}>
+    <FlexColumn style={{ width: "100%", height: "100%" }}>
       <HoverTooltip
         tooltipContent={tooltipContent}
-        style={{ width: "100%", flexGrow: 1, flexBasis: 3 }}
+        style={{ width: "100%", flexGrow: 3, flexBasis: "300px" }}
         disabled={!tooltipVisible}
       >
         <div ref={treeViewContainerRef} style={{ width: "100%", height: "100%" }}>
@@ -173,24 +172,24 @@ export default function LineageTab(): ReactElement {
             <div style={{ textAlign: "center", marginTop: "20px" }}>No lineage data available.</div>
           )}
         </div>
-        <StyledHorizontalRule style={{ margin: "0", flexGrow: 0 }} />
-        <div
-          ref={detailViewContainerRef}
-          style={{ width: "100%", flexGrow: 1, flexBasis: 1, backgroundColor: "#f0f0f0" }}
-        >
-          <LineageTrackDetailView
-            container={detailViewContainerRef}
-            dataset={dataset}
-            selectedTracks={tracks}
-            trackColors={trackColors}
-            data={objectLineageData}
-            relationships={objectLineageRelationships}
-            time={currentFrame}
-            onClick={onClickObject}
-            onHover={onHoverObject}
-          ></LineageTrackDetailView>
-        </div>
       </HoverTooltip>
+      <StyledHorizontalRule style={{ margin: "0", flexGrow: 0 }} />
+      <div
+        ref={detailViewContainerRef}
+        style={{ width: "100%", flexGrow: 1, flexBasis: "50px", backgroundColor: "#f0f0f0" }}
+      >
+        <LineageTrackDetailView
+          container={detailViewContainerRef}
+          dataset={dataset}
+          selectedTracks={tracks}
+          trackColors={trackColors}
+          data={objectLineageData}
+          relationships={objectLineageRelationships}
+          time={currentFrame}
+          onClick={onClickObject}
+          onHover={onHoverObject}
+        ></LineageTrackDetailView>
+      </div>
     </FlexColumn>
   );
 }
