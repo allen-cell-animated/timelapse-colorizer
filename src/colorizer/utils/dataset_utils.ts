@@ -211,6 +211,7 @@ function isV1_1_0FrameData(manifest: AnyManifestFile): manifest is ManifestFileV
   return frames !== undefined || backdrops !== undefined || frames3d?.source !== undefined;
 }
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 function isV1_1_0TrackData(manifest: AnyManifestFile): manifest is ManifestFileV1_1_0 {
   return typeof (manifest as ManifestFileV1_1_0).tracks === "string";
 }
