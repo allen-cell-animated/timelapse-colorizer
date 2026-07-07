@@ -96,9 +96,10 @@ export default function LineageTab(): ReactElement {
 
   //// Rendering ////
 
+  const tooltipVisible = hoveredTrack !== null;
   const tooltipContent = useMemo(() => {
     return (
-      <TooltipCard style={{ opacity: hoveredTrack ? 1 : 0 }}>
+      <TooltipCard>
         {lastHoveredTrack.current && (
           <FlexColumn>
             <div>Track ID: {lastHoveredTrack.current.trackId}</div>
@@ -128,7 +129,11 @@ export default function LineageTab(): ReactElement {
     <FlexColumn style={{ width: "100%", height: "100%" }}>
       <FlexRow></FlexRow>
 
-      <HoverTooltip tooltipContent={tooltipContent} style={{ width: "100%", height: "100%" }}>
+      <HoverTooltip
+        tooltipContent={tooltipContent}
+        style={{ width: "100%", height: "100%" }}
+        disabled={!tooltipVisible}
+      >
         <div ref={containerRef} style={{ width: "100%", height: "100%" }}>
           <TreeLineageView {...lineageViewProps}></TreeLineageView>
 

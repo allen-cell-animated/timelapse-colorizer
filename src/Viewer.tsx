@@ -549,7 +549,7 @@ function Viewer(): ReactElement {
       label: "Lineage",
       key: TabType.LINEAGE,
       // Only show the lineage tab if the dataset has lineage data, or if the
-      // user has already has the tab selected (likely via a URL parameter).
+      // user has already the tab selected (likely via a URL parameter).
       // TODO: Show the lineage tab in a hidden section under a dropdown?
       visible: dataset?.hasLineageData(dataset.getDefaultTrackKey() ?? "") ?? false,
       children: (

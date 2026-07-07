@@ -31,7 +31,10 @@ export function getLineageData(dataset: Dataset): LineageData {
 
   const skippedEdges: [number, number][] = [];
   const edges: [number, number][] = [];
-  for (let i = 0; i < trackEdges.length; i += 2) {
+  if (trackEdges.length % 2 !== 0) {
+    console.warn(`Track edges array has an odd length (${trackEdges.length}), skipping the last edge.`);
+  }
+  for (let i = 0; i < trackEdges.length + 1; i += 2) {
     const source = trackEdges[i];
     const target = trackEdges[i + 1];
     // Skip edges that do not exist in the dataset

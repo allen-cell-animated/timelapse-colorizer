@@ -27,9 +27,10 @@ function renderTree(
   onClickTrack?: (trackId: number) => void,
   onHoverTrack?: (trackId: number | null) => void
 ): NodeSelection | undefined {
-  const { trackIdToTrackInfo } = data;
-  const edges = [...data.edges];
-  const { idToChildrenRenderable: idToChildren, idToParents, multiparentEdges: multiparentEdges } = relationships;
+  const { idToChildrenRenderable, idToParents, multiparentEdges: multiparentEdges } = relationships;
+
+  const trackIdToTrackInfo = new Map(data.trackIdToTrackInfo);
+  const idToChildren = new Map(idToChildrenRenderable);
 
   const mergeNodes = new Set([...idToParents.entries()].filter(([, parents]) => parents.length > 1).map(([id]) => id));
   // All nodes with no parents
@@ -45,9 +46,6 @@ function renderTree(
     rootNode = { id: -1, length: 0, startTime: 0 };
     // Add dummy track info for the dummy root node
     trackIdToTrackInfo.set(rootNode.id, rootNode);
-    for (const root of rootNodeIds) {
-      edges.push([rootNode.id, root]);
-    }
     idToChildren.set(rootNode.id, rootNodeIds);
   }
 
@@ -133,7 +131,11 @@ function renderTree(
     onHoverTrack?.(null);
   };
 
-  node.on("click", handleClickTrack).on("mouseover", handleHoverTrack).on("mouseout", handleUnhoverTrack);
+  node
+    .filter((d) => d.data.id !== -1)
+    .on("click", handleClickTrack)
+    .on("mouseover", handleHoverTrack)
+    .on("mouseout", handleUnhoverTrack);
 
   return node;
 }
