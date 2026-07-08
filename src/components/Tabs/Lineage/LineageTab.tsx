@@ -44,6 +44,7 @@ export default function LineageTab(): ReactElement {
   const currentFrame = useViewerStateStore((state) => state.currentFrame);
   const tracks = useViewerStateStore((state) => state.tracks);
   const trackColors = useViewerStateStore((state) => state.trackColors);
+  const addTracks = useViewerStateStore((state) => state.addTracks);
   const setTracks = useViewerStateStore((state) => state.setTracks);
   const toggleTrack = useViewerStateStore((state) => state.toggleTrack);
   const setFrame = useViewerStateStore((state) => state.setFrame);
@@ -112,14 +113,17 @@ export default function LineageTab(): ReactElement {
         return;
       }
       const { trackId, time } = info;
-      if (!tracks.has(trackId)) {
-        onClickTrack(trackId);
-      } else {
-        // Just jump to the time of the object in the track.
-        setFrame(time);
+      const track = dataset.getTrack(trackId);
+      if (track) {
+        if (time == currentFrame) {
+          toggleTrack(track);
+        } else {
+          addTracks([track]);
+        }
       }
+      setFrame(time);
     },
-    [onClickTrack, tracks]
+    [onClickTrack, currentFrame, tracks]
   );
 
   const onHoverObject = useCallback((_info: LineageObjectInfo | null) => {}, []);

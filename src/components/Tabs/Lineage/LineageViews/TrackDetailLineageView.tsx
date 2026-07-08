@@ -1,5 +1,5 @@
 import * as d3 from "d3";
-import React, { type ReactElement, useEffect, useRef } from "react";
+import React, { MouseEvent, type ReactElement, useEffect, useRef } from "react";
 import type { Color } from "three";
 
 import type { Dataset, Track } from "src/colorizer";
@@ -21,7 +21,7 @@ type TrackDetailLineageViewProps = {
 
 // const enum TrackDetailLineageViewHtmlIds {}
 
-const TREE_LEAF_HEIGHT_PX = 35;
+const TREE_LEAF_HEIGHT_PX = 40;
 const TREE_LAYER_DEPTH_PX = 35;
 const MERGE_EDGE_COLOR = "#ff9410";
 const DEFAULT_NODE_FILL_COLOR = "#414141";
@@ -58,9 +58,7 @@ function renderView(
   g: d3.Selection<SVGGElement, LineageObjectInfo, null, undefined>,
   data: LineageData<LineageObjectInfo>,
   dataset: Dataset,
-  selectedTracks: Map<number, Track>,
-  onClick?: React.RefObject<undefined | ((info: LineageObjectInfo) => void)>,
-  onHover?: React.RefObject<undefined | ((info: LineageObjectInfo | null) => void)>
+  selectedTracks: Map<number, Track>
 ): RenderData | undefined {
   const tracks = selectedTracks.values();
   const selectedTrackIds = new Set<number>();
@@ -147,13 +145,15 @@ function renderView(
     .attr("stroke-width", 1.5)
     .attr("stroke-dasharray", (d) => (isSplitEdge(d.source.data.id, d.target.data.id) ? "4 3" : null))
     .attr("opacity", (d) => (d.source.data.id === -1 ? 0 : 1)) // Hide links to the dummy root node
-    .attr("x1", (d) => d.source.y)
+    .attr("x1", (d) => d.source.data.time * TREE_LAYER_DEPTH_PX)
     .attr("y1", (d) => d.source.x)
-    .attr("x2", (d) => d.target.y)
+    .attr("x2", (d) => d.target.data.time * TREE_LAYER_DEPTH_PX)
     .attr("y2", (d) => d.target.x);
 
   if (multiparentEdges.length > 0) {
-    const posOf = new Map(treeRoot.descendants().map((d) => [d.data.id, { x: d.x, y: d.y }]));
+    const posOf = new Map(
+      treeRoot.descendants().map((d) => [d.data.id, { x: d.x, y: d.data.time * TREE_LAYER_DEPTH_PX }])
+    );
     g.append("g")
       .selectAll("line")
       .data(multiparentEdges)
@@ -173,20 +173,13 @@ function renderView(
     .selectAll("g")
     .data(treeRoot.descendants())
     .join("g")
-    .attr("transform", (d) => `translate(${d.y},${d.x})`);
+    .attr("transform", (d) => `translate(${d.data.time * TREE_LAYER_DEPTH_PX},${d.x})`);
 
   // Draw circles for each node
   node.append("circle");
 
   // Text labels
-  node
-    .append("text")
-    .text((d) => d.data.id)
-    .attr("text-anchor", "middle")
-    .attr("dominant-baseline", "middle")
-    .attr("fill", "#ffffff")
-    .attr("font-size", 9)
-    .attr("pointer-events", "none");
+  node.append("text");
 
   return { node, parentIds, childIds };
 }
@@ -194,23 +187,37 @@ function renderView(
 function setupPointerHandlers(
   node: NodeSelection,
   svg: React.RefObject<SVGSVGElement>,
+  hoveredNodeRef: React.MutableRefObject<undefined | (EventTarget & Element)>,
   onClick?: React.RefObject<undefined | ((info: LineageObjectInfo) => void)>,
   onHover?: React.RefObject<undefined | ((info: LineageObjectInfo | null) => void)>
 ): () => void {
   const handleClickNode = (_event: any, d: d3.HierarchyPointNode<LineageObjectInfo>): void => {
     onClick?.current?.(d.data);
   };
-  const handleHoverNode = (_event: any, d: d3.HierarchyPointNode<LineageObjectInfo>): void => {
-    // d3.select(event.currentTarget).select("circle").attr("stroke", "#fff").attr("stroke-width", 2.5);
+
+  const handleHoverNode = (event: MouseEvent, d: d3.HierarchyPointNode<LineageObjectInfo>): void => {
+    d3.select(event.currentTarget).select("text").attr("opacity", "1");
     if (svg.current) {
       svg.current.style.cursor = "pointer";
     }
+    if (hoveredNodeRef) {
+      hoveredNodeRef.current = event.currentTarget;
+    }
     onHover?.current?.(d.data);
   };
-  const handleUnhoverNode = (_event: any, d: d3.HierarchyPointNode<LineageObjectInfo>): void => {
+
+  if (hoveredNodeRef?.current) {
+    d3.select(hoveredNodeRef.current).select("text").attr("opacity", "1");
+  }
+
+  const handleUnhoverNode = (event: MouseEvent, _d: d3.HierarchyPointNode<LineageObjectInfo>): void => {
     // d3.select(event.currentTarget).select("circle").attr("stroke", "#1a1f2e").attr("stroke-width", 1.5);
+    d3.select(event.currentTarget).select("text").attr("opacity", "0");
     if (svg.current) {
       svg.current.style.cursor = "default";
+    }
+    if (hoveredNodeRef) {
+      hoveredNodeRef.current = undefined;
     }
     onHover?.current?.(null);
   };
@@ -244,6 +251,17 @@ function updateNodeStyles(renderData: RenderData, trackColors: Map<number, Color
     return trackColors.get(d.data.trackId)?.getStyle() ?? DEFAULT_NODE_EDGE_COLOR;
   };
 
+  const getTextLabel = (d: d3.HierarchyPointNode<LineageObjectInfo>): string => {
+    if (d.data.id === -1) {
+      return "";
+    } else if (isNotSelected(d)) {
+      return "+";
+    } else if (d.data.time === time) {
+      return "-";
+    }
+    return "";
+  };
+
   node
     .select<SVGCircleElement>("circle")
     .attr("r", 15)
@@ -253,14 +271,15 @@ function updateNodeStyles(renderData: RenderData, trackColors: Map<number, Color
     .attr("stroke-width", 1.5);
 
   // Text labels
+
   node
     .select<SVGTextElement>("text")
-    .text((d) => "t=" + d.data.time)
+    .text((d) => getTextLabel(d))
     .attr("text-anchor", "middle")
     .attr("dominant-baseline", "middle")
     .attr("fill", "#ffffff")
-    .attr("opacity", (d) => (d.data.id === -1 ? 0 : 1)) // Hide the dummy root node
-    .attr("font-size", 9)
+    .attr("opacity", 0) // Hide the dummy root node
+    .attr("font-size", 20)
     .attr("pointer-events", "none");
 }
 
@@ -268,6 +287,8 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
   const svgRef = useRef<SVGSVGElement>(null);
   const groupRef = useRef<SVGGElement>(null);
   const renderDataRef = useRef<RenderData | undefined>(undefined);
+
+  const hoveredNodeRef = useRef<undefined | (EventTarget & Element)>(undefined);
 
   const onClickRef = useRef(props.onClick);
   onClickRef.current = props.onClick;
@@ -320,7 +341,7 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
       const renderData = renderView(g, props.data, props.dataset, props.selectedTracks);
       renderDataRef.current = renderData;
       if (renderData) {
-        cleanupPointerHandlers = setupPointerHandlers(renderData.node, svgRef, onClickRef, onHoverRef);
+        cleanupPointerHandlers = setupPointerHandlers(renderData.node, svgRef, hoveredNodeRef, onClickRef, onHoverRef);
       }
     }
 
@@ -336,18 +357,18 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
   }, [props.data, props.relationships, props.dataset, props.selectedTracks]);
 
   useEffect(() => {
-    if (!svgRef.current || !renderDataRef.current) {
-      return;
-    }
-    return setupPointerHandlers(renderDataRef.current.node, svgRef, onClickRef, onHoverRef);
-  }, []);
-
-  useEffect(() => {
     // Update node styling
     if (renderDataRef.current) {
       updateNodeStyles(renderDataRef.current, props.trackColors, props.time);
     }
   }, [props.data, props.time, props.trackColors]);
+
+  useEffect(() => {
+    if (!svgRef.current || !renderDataRef.current) {
+      return;
+    }
+    return setupPointerHandlers(renderDataRef.current.node, svgRef, hoveredNodeRef, onClickRef, onHoverRef);
+  }, [props.time]);
 
   // Fit on first render
   useEffect(() => {
