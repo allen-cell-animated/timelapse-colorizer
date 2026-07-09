@@ -3,12 +3,7 @@ import React, { type ReactElement, useEffect, useRef } from "react";
 import type { Color } from "three";
 
 import { getDefaultZoomTransform } from "src/components/Tabs/Lineage/lineage_utils";
-import type {
-  LineageData,
-  LineageDataRelationships,
-  SharedLineageViewProps,
-  TrackInfo,
-} from "src/components/Tabs/Lineage/types";
+import type { LineageData, LineageDataRelationships, TrackInfo } from "src/components/Tabs/Lineage/types";
 import { useConstructor } from "src/hooks";
 
 const DUMMY_ROOT_NODE_ID = -1;
@@ -21,54 +16,32 @@ const DEFAULT_NODE_EDGE_COLOR = "#1a1f2e";
 
 const INNER_HIGHLIGHT_CLASS = "inner-highlight";
 
-type TreeLineageViewProps = SharedLineageViewProps;
+export type TreeLineageViewProps = {
+  container: React.RefObject<HTMLDivElement>;
+  data: LineageData;
+  relationships: LineageDataRelationships;
+  hierarchy: d3.HierarchyNode<TrackInfo> | undefined;
+  selectedTracks: Set<number>;
+  trackColors: Map<number, Color>;
+  colorScale: d3.ScaleSequential<string>;
+  radiusScale: d3.ScalePower<number, number>;
+  onClick?: (trackId: number) => void;
+  onHover?: (trackId: number | null) => void;
+};
 
 type NodeSelection = d3.Selection<SVGGElement | d3.BaseType, d3.HierarchyPointNode<TrackInfo>, SVGGElement, TrackInfo>;
 
 function renderTree(
   g: d3.Selection<SVGGElement, TrackInfo, null, undefined>,
-  data: LineageData,
+  hierarchy: d3.HierarchyNode<TrackInfo>,
   relationships: LineageDataRelationships,
   onClickTrack?: (trackId: number) => void,
   onHoverTrack?: (trackId: number | null) => void
 ): NodeSelection | undefined {
-  const { idToChildrenRenderable, idToParents, multiparentEdges } = relationships;
-
-  const trackIdToTrackInfo = new Map(data.trackIdToTrackInfo);
-  const idToChildren = new Map(idToChildrenRenderable);
-
+  const { idToParents, multiparentEdges: multiparentEdges } = relationships;
   const mergeNodes = new Set([...idToParents.entries()].filter(([, parents]) => parents.length > 1).map(([id]) => id));
-  // All nodes with no parents
-  const rootNodeIds = [...idToParents.entries()].filter(([, parents]) => parents.length === 0).map(([id]) => id);
 
-  let rootNode: TrackInfo;
-  if (rootNodeIds.length === 0) {
-    console.warn("No root nodes found in lineage data, skipping tree rendering.");
-    return;
-  } else if (rootNodeIds.length === 1) {
-    rootNode = trackIdToTrackInfo.get(rootNodeIds[0])!;
-  } else {
-    // Multiple root nodes, make a dummy root node that is the parent of all root nodes
-    rootNode = { id: DUMMY_ROOT_NODE_ID, length: 0, startTime: 0 };
-    // Add dummy track info for the dummy root node
-    trackIdToTrackInfo.set(rootNode.id, rootNode);
-    idToChildren.set(rootNode.id, rootNodeIds);
-  }
-
-  const root = d3.hierarchy<TrackInfo>(
-    rootNode,
-    // Returns an array of the trackInfo for each child of a track
-    (trackInfo) => {
-      const childIds = idToChildren.get(trackInfo.id) ?? [];
-      const childTrackInfo = childIds
-        .map((id) => {
-          return trackIdToTrackInfo.get(id);
-        })
-        .filter((trackInfo) => !!trackInfo);
-      return childTrackInfo;
-    }
-  );
-
+  const root = hierarchy;
   const leafCount = root.leaves().length;
   const depth = root.height;
 
@@ -230,11 +203,11 @@ export default function TreeLineageView(props: TreeLineageViewProps): ReactEleme
   //// Viewport ////
 
   useEffect(() => {
-    if (groupRef.current) {
+    if (groupRef.current && props.hierarchy) {
       const g = d3.select(groupRef.current) as d3.Selection<SVGGElement, TrackInfo, null, undefined>;
       const onClickTrack = (trackId: number): void => onClickRef.current?.(trackId);
       const onHoverTrack = (trackId: number | null): void => onHoverRef.current?.(trackId);
-      nodeRef.current = renderTree(g, props.data, props.relationships, onClickTrack, onHoverTrack);
+      nodeRef.current = renderTree(g, props.hierarchy, props.relationships, onClickTrack, onHoverTrack);
     }
     // Clear on unmount
     return () => {
@@ -242,7 +215,7 @@ export default function TreeLineageView(props: TreeLineageViewProps): ReactEleme
         d3.select(groupRef.current).selectAll("*").remove();
       }
     };
-  }, [props.data, props.relationships]);
+  }, [props.data, props.hierarchy, props.relationships]);
 
   useEffect(() => {
     // Update node styling

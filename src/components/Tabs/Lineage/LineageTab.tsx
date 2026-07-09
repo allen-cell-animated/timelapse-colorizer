@@ -9,9 +9,9 @@ import { useViewerStateStore } from "src/state";
 import { FlexColumn } from "src/styles/utils";
 import { areAnyHotkeysPressed } from "src/utils/user_input";
 
-import { getLineageData, getLineageRelationships } from "./lineage_utils";
+import { getLineageData, getLineageRelationships, getTreeHierarchy } from "./lineage_utils";
 import TreeLineageView from "./LineageViews/TreeLineageView";
-import type { LineageData, SharedLineageViewProps } from "./types";
+import type { LineageData } from "./types";
 
 function getColorAndRadiusScale(data: LineageData): {
   colorScale: d3.ScaleSequential<string>;
@@ -57,6 +57,10 @@ export default function LineageTab(): ReactElement {
   const lineageRelationships = useMemo(() => {
     return getLineageRelationships(lineageData);
   }, [lineageData]);
+  const hierarchy = useMemo(() => {
+    return getTreeHierarchy(lineageData, lineageRelationships);
+  }, [lineageData, lineageRelationships]);
+
   const { colorScale, radiusScale } = useMemo(() => getColorAndRadiusScale(lineageData), [lineageData]);
 
   //// Callbacks ////
@@ -113,9 +117,10 @@ export default function LineageTab(): ReactElement {
 
   const selectedTracks = useMemo(() => new Set(tracks.keys()), [tracks]);
 
-  const lineageViewProps: SharedLineageViewProps = {
+  const lineageViewProps = {
     container: containerRef,
     data: lineageData,
+    hierarchy: hierarchy,
     relationships: lineageRelationships,
     colorScale: colorScale,
     radiusScale: radiusScale,
