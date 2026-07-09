@@ -21,8 +21,9 @@ type TrackDetailLineageViewProps = {
 
 // const enum TrackDetailLineageViewHtmlIds {}
 
-const TREE_LEAF_HEIGHT_PX = 40;
-const TREE_LAYER_DEPTH_PX = 35;
+const TREE_LEAF_HEIGHT_PX = 30;
+const NODE_HEIGHT_PX = 20;
+const TREE_LAYER_DEPTH_PX = 5;
 const MERGE_EDGE_COLOR = "#ff9410";
 const DEFAULT_NODE_FILL_COLOR = "#414141";
 const PARENT_NODE_FILL_COLOR = "#c4c4c4";
@@ -175,8 +176,8 @@ function renderView(
     .join("g")
     .attr("transform", (d) => `translate(${d.data.time * TREE_LAYER_DEPTH_PX},${d.x})`);
 
-  // Draw circles for each node
-  node.append("circle");
+  // Draw rectangles for each node
+  node.append("rect");
 
   // Text labels
   node.append("text");
@@ -263,8 +264,10 @@ function updateNodeStyles(renderData: RenderData, trackColors: Map<number, Color
   };
 
   node
-    .select<SVGCircleElement>("circle")
-    .attr("r", 15)
+    .select<SVGCircleElement>("rect")
+    .attr("transform", `translate(${-TREE_LAYER_DEPTH_PX / 2},${-NODE_HEIGHT_PX / 2})`)
+    .attr("width", TREE_LAYER_DEPTH_PX)
+    .attr("height", NODE_HEIGHT_PX)
     .attr("fill", (d) => getFillColor(d))
     .attr("opacity", (d) => (d.data.id === -1 ? 0 : 1)) // Hide the dummy root node
     .attr("stroke", (d) => getStrokeColor(d))
