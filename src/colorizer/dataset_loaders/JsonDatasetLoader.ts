@@ -119,7 +119,7 @@ export default class JsonDatasetLoader {
     index: number
   ): Promise<TrackData | undefined> {
     const promises = [];
-    promises.push(this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, metadata.tracks)));
+    promises.push(this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, metadata.trackIds)));
     promises.push(
       this.reportLoadProgress(
         this.loadToBuffer(FeatureDataType.U32, metadata.trackEdges, { columns: ["track_start", "track_end"] })

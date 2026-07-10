@@ -120,7 +120,7 @@ export const MOCK_DATASET_MANIFEST: ManifestFile = {
     ],
   },
   times: "times.json",
-  tracks: [{ tracks: "tracks.json", trackEdges: "track_edges.json", nodeEdges: "node_edges.json" }],
+  tracks: [{ trackIds: "tracks.json", trackEdges: "track_edges.json", nodeEdges: "node_edges.json" }],
   segIds: "seg_ids.json",
   centroids: "centroids.json",
 };
