@@ -10,10 +10,10 @@ import { StyledHorizontalRule } from "src/styles/components";
 import { FlexColumn } from "src/styles/utils";
 import { areAnyHotkeysPressed } from "src/utils/user_input";
 
-import { getLineageData, getLineageRelationships, getObjectLineageData, getTreeHierarchy } from "./lineage_utils";
+import { getLineageData, getLineageRelationships, getTreeHierarchy } from "./lineage_utils";
 import LineageTrackDetailView from "./LineageViews/TrackDetailLineageView";
 import TreeLineageView from "./LineageViews/TreeLineageView";
-import type { LineageData, LineageObjectInfo, TrackInfo } from "./types";
+import type { LineageData, TrackInfo } from "./types";
 
 function getColorAndRadiusScale(data: LineageData<TrackInfo>): {
   colorScale: d3.ScaleSequential<string>;
@@ -68,14 +68,6 @@ export default function LineageTab(): ReactElement {
 
   const { colorScale, radiusScale } = useMemo(() => getColorAndRadiusScale(lineageData), [lineageData]);
 
-  // Per-object data and relationships
-  const objectLineageData: LineageData<LineageObjectInfo> = useMemo(() => {
-    return dataset ? getObjectLineageData(dataset) : EMPTY_LINEAGE_DATA;
-  }, [dataset]);
-  const objectLineageRelationships = useMemo(() => {
-    return getLineageRelationships(objectLineageData);
-  }, [objectLineageData]);
-
   //// Callbacks ////
 
   const onClickTrack = useCallback(
@@ -112,12 +104,11 @@ export default function LineageTab(): ReactElement {
   );
 
   const onClickObject = useCallback(
-    (info: LineageObjectInfo) => {
+    (info: TrackInfo, time: number) => {
       if (!dataset) {
         return;
       }
-      const { trackId, time } = info;
-      const track = dataset.getTrack(trackId);
+      const track = dataset.getTrack(info.id);
       if (track) {
         if (time == currentFrame) {
           toggleTrack(track);
@@ -130,7 +121,7 @@ export default function LineageTab(): ReactElement {
     [onClickTrack, currentFrame, tracks]
   );
 
-  const onHoverObject = useCallback((_info: LineageObjectInfo | null) => {}, []);
+  const onHoverObject = useCallback((_info: TrackInfo | null) => {}, []);
 
   //// Rendering ////
 
@@ -189,8 +180,8 @@ export default function LineageTab(): ReactElement {
           dataset={dataset}
           selectedTracks={tracks}
           trackColors={trackColors}
-          data={objectLineageData}
-          relationships={objectLineageRelationships}
+          data={lineageData}
+          relationships={lineageRelationships}
           time={currentFrame}
           onClick={onClickObject}
           onHover={onHoverObject}

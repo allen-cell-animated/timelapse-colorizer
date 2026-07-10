@@ -181,45 +181,32 @@ export function getTreeHierarchy(
   return root;
 }
 
-export function getSubtrees(
-  root: d3.HierarchyNode<TrackInfo>,
+/**
+ * Returns only the subset of lineage data that includes the specified track
+ * IDs and their related parents and children.
+ */
+export function getLineageSubset(
+  data: LineageData<TrackInfo>,
   relationships: LineageDataRelationships,
-  tracks: Map<number, TrackInfo>
-): d3.HierarchyNode<TrackInfo> | undefined {
-  const trackIds = new Set(tracks.keys());
-  const { idToParents } = relationships;
+  trackIds: Set<number>
+): LineageData<TrackInfo> {
+  const { idToParents, idToChildren } = relationships;
 
-  // Find parents/children that are not selected.
-  const parentIds = new Set<number>();
-  const childIds = new Set<number>();
-
+  // Get set of IDs + related parents and children.
+  const relatedIds = new Set([...trackIds]);
   for (const trackId of trackIds) {
     const parents = idToParents.get(trackId) ?? [];
-    for (const parentId of parents) {
-      if (!trackIds.has(parentId)) {
-        parentIds.add(parentId);
-        childIds.add(trackId);
-      }
-    }
-  }
-  const allIds = new Set([...trackIds, ...parentIds, ...childIds]);
-
-  // Traverse the original tree, pulling out selected nodes.
-  const treeNodes = [];
-  const parentNodes = [];
-  const childNodes = [];
-  for (const node of root.descendants()) {
-    if (parentIds.has(node.data.id)) {
-      parentNodes.push(node);
-      new d3.HierarchyNode();
-    } else if (childIds.has(node.data.id)) {
-      childNodes.push(node);
-    } else if (trackIds.has(node.data.id)) {
-      treeNodes.push(node);
+    const children = idToChildren.get(trackId) ?? [];
+    const allRelatedIds = [...parents, ...children];
+    for (const relatedId of allRelatedIds) {
+      relatedIds.add(relatedId);
     }
   }
 
-  let rootNode: d3.HierarchyNode<TrackInfo>;
-
-  return;
+  // Filter lineage data to only include related IDs.
+  const filteredData: LineageData<TrackInfo> = {
+    idToInfo: new Map([...data.idToInfo.entries()].filter(([id]) => relatedIds.has(id))),
+    edges: data.edges.filter(([source, target]) => relatedIds.has(source) && relatedIds.has(target)),
+  };
+  return filteredData;
 }
