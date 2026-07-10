@@ -10,10 +10,10 @@ import { StyledHorizontalRule } from "src/styles/components";
 import { FlexColumn } from "src/styles/utils";
 import { areAnyHotkeysPressed } from "src/utils/user_input";
 
-import { getLineageData, getLineageRelationships, getObjectLineageData } from "./lineage_utils";
+import { getLineageData, getLineageRelationships, getObjectLineageData, getTreeHierarchy } from "./lineage_utils";
 import LineageTrackDetailView from "./LineageViews/TrackDetailLineageView";
 import TreeLineageView from "./LineageViews/TreeLineageView";
-import type { LineageData, LineageObjectInfo, SharedLineageViewProps, TrackInfo } from "./types";
+import type { LineageData, LineageObjectInfo, TrackInfo } from "./types";
 
 function getColorAndRadiusScale(data: LineageData<TrackInfo>): {
   colorScale: d3.ScaleSequential<string>;
@@ -62,6 +62,10 @@ export default function LineageTab(): ReactElement {
   const lineageRelationships = useMemo(() => {
     return getLineageRelationships(lineageData);
   }, [lineageData]);
+  const hierarchy = useMemo(() => {
+    return getTreeHierarchy(lineageData, lineageRelationships);
+  }, [lineageData, lineageRelationships]);
+
   const { colorScale, radiusScale } = useMemo(() => getColorAndRadiusScale(lineageData), [lineageData]);
 
   // Per-object data and relationships
@@ -145,21 +149,19 @@ export default function LineageTab(): ReactElement {
     );
   }, [hoveredTrack]);
 
-  const sharedProps: SharedLineageViewProps = {
+  const selectedTracks = useMemo(() => new Set(tracks.keys()), [tracks]);
+
+  const lineageViewProps = {
     container: treeViewContainerRef,
-    dataset: dataset,
+    data: lineageData,
+    hierarchy: hierarchy,
+    relationships: lineageRelationships,
     colorScale: colorScale,
     radiusScale: radiusScale,
     onClick: onClickTrack,
     onHover: onHoverTrack,
-    selectedTracks: tracks,
+    selectedTracks: selectedTracks,
     trackColors: trackColors,
-  };
-
-  const lineageViewProps = {
-    ...sharedProps,
-    data: lineageData,
-    relationships: lineageRelationships,
   };
 
   return (

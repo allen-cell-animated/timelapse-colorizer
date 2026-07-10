@@ -2,7 +2,10 @@ import * as d3 from "d3";
 
 import type { Dataset } from "src/colorizer";
 
+import { DUMMY_ROOT_NODE_ID } from "./constants";
 import type { LineageData, LineageDataRelationships, LineageObjectInfo, TrackInfo } from "./types";
+
+// TODO: Move to colorizer/utils/data_utils?
 
 export function getLineageData(dataset: Dataset): LineageData<TrackInfo> {
   const tracks = dataset.trackIds;
@@ -127,4 +130,53 @@ export function getDefaultZoomTransform(
   const panY = (clientHeight - bbox.height * scale) / 2 - bbox.y * scale;
   const initialTransform = d3.zoomIdentity.translate(panX, panY).scale(scale);
   return initialTransform;
+}
+
+/**
+ * Returns a d3 hierarchy of the lineage data. If there are multiple root nodes
+ * (e.g. nodes with no parents), a dummy root node with a track ID of
+ * DUMMY_ROOT_NODE_ID will be created as the parent of all root nodes.
+ * @returns the root of the hierarchy, or undefined if there are no root nodes
+ * (indicating no nodes or a cyclical graph).
+ */
+export function getTreeHierarchy(
+  data: LineageData<TrackInfo>,
+  relationships: LineageDataRelationships
+): d3.HierarchyNode<TrackInfo> | undefined {
+  const { idToChildrenRenderable, idToParents } = relationships;
+  const trackIdToTrackInfo = new Map(data.idToInfo);
+  const idToChildren = new Map(idToChildrenRenderable);
+
+  // All nodes with no parents
+  const rootNodeIds = [...idToParents.entries()].filter(([, parents]) => parents.length === 0).map(([id]) => id);
+
+  let rootNode: TrackInfo;
+  if (rootNodeIds.length === 0) {
+    console.warn("No root nodes found in lineage data, skipping tree rendering.");
+    return;
+  } else if (rootNodeIds.length === 1) {
+    rootNode = trackIdToTrackInfo.get(rootNodeIds[0])!;
+  } else {
+    // Multiple root nodes, make a dummy root node that is the parent of all root nodes
+    rootNode = { id: DUMMY_ROOT_NODE_ID, length: 0, startTime: 0 };
+    // Add dummy track info for the dummy root node
+    trackIdToTrackInfo.set(rootNode.id, rootNode);
+    idToChildren.set(rootNode.id, rootNodeIds);
+  }
+
+  const root = d3.hierarchy<TrackInfo>(
+    rootNode,
+    // Returns an array of the trackInfo for each child of a track
+    (trackInfo) => {
+      const childIds = idToChildren.get(trackInfo.id) ?? [];
+      const childTrackInfo = childIds
+        .map((id) => {
+          return trackIdToTrackInfo.get(id);
+        })
+        .filter((trackInfo) => !!trackInfo);
+      return childTrackInfo;
+    }
+  );
+
+  return root;
 }
