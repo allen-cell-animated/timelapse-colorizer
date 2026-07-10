@@ -180,3 +180,46 @@ export function getTreeHierarchy(
 
   return root;
 }
+
+export function getSubtrees(
+  root: d3.HierarchyNode<TrackInfo>,
+  relationships: LineageDataRelationships,
+  tracks: Map<number, TrackInfo>
+): d3.HierarchyNode<TrackInfo> | undefined {
+  const trackIds = new Set(tracks.keys());
+  const { idToParents } = relationships;
+
+  // Find parents/children that are not selected.
+  const parentIds = new Set<number>();
+  const childIds = new Set<number>();
+
+  for (const trackId of trackIds) {
+    const parents = idToParents.get(trackId) ?? [];
+    for (const parentId of parents) {
+      if (!trackIds.has(parentId)) {
+        parentIds.add(parentId);
+        childIds.add(trackId);
+      }
+    }
+  }
+  const allIds = new Set([...trackIds, ...parentIds, ...childIds]);
+
+  // Traverse the original tree, pulling out selected nodes.
+  const treeNodes = [];
+  const parentNodes = [];
+  const childNodes = [];
+  for (const node of root.descendants()) {
+    if (parentIds.has(node.data.id)) {
+      parentNodes.push(node);
+      new d3.HierarchyNode();
+    } else if (childIds.has(node.data.id)) {
+      childNodes.push(node);
+    } else if (trackIds.has(node.data.id)) {
+      treeNodes.push(node);
+    }
+  }
+
+  let rootNode: d3.HierarchyNode<TrackInfo>;
+
+  return;
+}
