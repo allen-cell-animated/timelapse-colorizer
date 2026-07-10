@@ -5,6 +5,8 @@ import type { Dataset } from "src/colorizer";
 import { DUMMY_ROOT_NODE_ID } from "./constants";
 import type { LineageData, LineageDataRelationships, TrackInfo } from "./types";
 
+// TODO: Move to colorizer/utils/data_utils?
+
 export function getLineageData(dataset: Dataset): LineageData {
   const tracks = dataset.trackIds;
   const times = dataset.times;
@@ -103,6 +105,13 @@ export function getDefaultZoomTransform(
   return initialTransform;
 }
 
+/**
+ * Returns a d3 hierarchy of the lineage data. If there are multiple root nodes
+ * (e.g. nodes with no parents), a dummy root node with a track ID of
+ * DUMMY_ROOT_NODE_ID will be created as the parent of all root nodes.
+ * @returns the root of the hierarchy, or undefined if there are no root nodes
+ * (indicating no nodes or a cyclical graph).
+ */
 export function getTreeHierarchy(
   data: LineageData,
   relationships: LineageDataRelationships
