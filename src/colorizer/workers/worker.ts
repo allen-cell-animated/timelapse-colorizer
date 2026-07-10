@@ -3,7 +3,12 @@ import type TransferType from "workerpool/types/transfer";
 
 import type { FeatureDataType, FeatureRangeData } from "src/colorizer/types";
 import { columnsToCsv, type CsvDataColumn } from "src/colorizer/utils/csv_utils";
-import { type LoadedData, loadFromJsonUrl, loadFromParquetUrl } from "src/colorizer/utils/data_load_utils";
+import {
+  type LoadedData,
+  loadFromJsonUrl,
+  loadFromParquetUrl,
+  type ParquetLoadOptions,
+} from "src/colorizer/utils/data_load_utils";
 import { computeCorrelations } from "src/colorizer/utils/math_utils/correlation";
 import { constructAllTracksFromData } from "src/colorizer/utils/math_utils/input_data";
 import { calculateMotionDeltas } from "src/colorizer/utils/math_utils/motion_deltas";
@@ -17,12 +22,12 @@ import {
 } from "src/colorizer/utils/math_utils/vector_flow_field";
 import { arrayToDataTextureInfo } from "src/colorizer/utils/texture_utils";
 
-async function loadUrlData(url: string, type: FeatureDataType): Promise<TransferType> {
+async function loadUrlData(url: string, type: FeatureDataType, options?: ParquetLoadOptions): Promise<TransferType> {
   let result: LoadedData<typeof type>;
   if (url.endsWith(".json")) {
     result = await loadFromJsonUrl(url, type);
   } else if (url.endsWith(".parquet")) {
-    result = await loadFromParquetUrl(url, type);
+    result = await loadFromParquetUrl(url, type, options);
   } else {
     // Try loading as either format.
     try {

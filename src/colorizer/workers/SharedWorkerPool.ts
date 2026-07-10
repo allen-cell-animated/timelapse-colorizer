@@ -3,6 +3,7 @@ import { type Pool, pool } from "workerpool";
 import type Dataset from "src/colorizer/Dataset";
 import type { FeatureArrayType, FeatureDataType, VectorFieldData } from "src/colorizer/types";
 import type { CsvDataColumn } from "src/colorizer/utils/csv_utils";
+import type { ParquetLoadOptions } from "src/colorizer/utils/data_load_utils";
 import { featureToRangeData } from "src/colorizer/utils/math_utils";
 import type { DataTextureInfo } from "src/colorizer/utils/texture_utils";
 
@@ -26,22 +27,27 @@ export default class SharedWorkerPool {
   }
 
   /**
-   * Loads array data from the specified URL, handling both JSON and Parquet files.
+   * Loads array data from the specified URL, handling both JSON and Parquet
+   * files.
    * @param url The URL to load data from. Must end in ".json" or ".parquet".
-   * @param type `FeatureDataType` for the returned array source (e.g. `F32` or `U8`).
+   * @param type `FeatureDataType` for the returned array source (e.g. `F32` or
+   * `U8`).
+   * @param options Optional `ParquetLoadOptions` for loading Parquet files.
+   * Ignored for JSON files.
    * @throws Error if the file format is not supported (not JSON or Parquet).
    * @returns an object containing the loaded data and metadata:
    *  - `data`: The loaded data array.
-   *  - `textureInfo`: Texture data and metadata needed to create a `DataTexture`.
-   * Use with `infoToDataTexture()`.
+   *  - `textureInfo`: Texture data and metadata needed to create a
+   *    `DataTexture`. Use with `infoToDataTexture()`.
    *  - `min`: The minimum value in the data array.
    *  - `max`: The maximum value in the data array.
    */
   async loadUrlData<T extends FeatureDataType>(
     url: string,
-    type: T
+    type: T,
+    options?: ParquetLoadOptions
   ): Promise<{ data: FeatureArrayType[T]; textureInfo: DataTextureInfo<T>; min: number; max: number }> {
-    return await this.workerPool.exec("loadUrlData", [url, type]);
+    return await this.workerPool.exec("loadUrlData", [url, type, options]);
   }
 
   /**

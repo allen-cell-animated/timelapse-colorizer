@@ -25,6 +25,7 @@ import ImageFrameLoader from "src/colorizer/loaders/ImageFrameLoader";
 import UrlArrayLoader from "src/colorizer/loaders/UrlArrayLoader";
 import { type IPathResolver, UrlPathResolver } from "src/colorizer/path_resolvers";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "src/colorizer/utils/analytics";
+import type { ParquetLoadOptions } from "src/colorizer/utils/data_load_utils";
 import { getKeyFromName } from "src/colorizer/utils/data_utils";
 import {
   type AnyManifestFile,
@@ -118,9 +119,17 @@ export default class JsonDatasetLoader {
     index: number
   ): Promise<TrackData | undefined> {
     const promises = [];
-    promises.push(this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, metadata.tracks)));
-    promises.push(this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, metadata.trackEdges)));
-    promises.push(this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, metadata.nodeEdges)));
+    promises.push(this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, metadata.trackIds)));
+    promises.push(
+      this.reportLoadProgress(
+        this.loadToBuffer(FeatureDataType.U32, metadata.trackEdges, { columns: ["track_start", "track_end"] })
+      )
+    );
+    promises.push(
+      this.reportLoadProgress(
+        this.loadToBuffer(FeatureDataType.U32, metadata.nodeEdges, { columns: ["node_start", "node_end"] })
+      )
+    );
 
     if (promises.length === 0) {
       console.warn(`Track ${index}: No data files specified for track edges.`);
@@ -171,12 +180,10 @@ export default class JsonDatasetLoader {
 
     let source: ArraySource<FeatureDataType.F32> | undefined;
     try {
-      source = await this.arrayLoader.load(
-        url,
-        FeatureDataType.F32,
-        metadata.min ?? undefined,
-        metadata.max ?? undefined
-      );
+      source = await this.arrayLoader.load(url, FeatureDataType.F32, {
+        min: metadata.min ?? undefined,
+        max: metadata.max ?? undefined,
+      });
     } catch (error) {
       console.warn(`Feature ${index}: Failed to load data for feature ${name} from URL '${url}': ${error}`);
       return undefined;
@@ -221,7 +228,8 @@ export default class JsonDatasetLoader {
    */
   private async loadToBuffer<T extends FeatureDataType>(
     dataType: T,
-    fileUrl?: string
+    fileUrl?: string,
+    parquetOptions?: ParquetLoadOptions
   ): Promise<FeatureArrayType[T] | null> {
     if (!fileUrl) {
       return null;
@@ -230,7 +238,7 @@ export default class JsonDatasetLoader {
     if (!url) {
       throw new Error(`Failed to resolve path: '${fileUrl}'`);
     }
-    const source = await this.arrayLoader.load(url, dataType);
+    const source = await this.arrayLoader.load(url, dataType, { parquetOptions });
     return source.getBuffer();
   }
 
