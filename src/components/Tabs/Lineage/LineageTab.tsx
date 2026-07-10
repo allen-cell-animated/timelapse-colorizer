@@ -173,7 +173,7 @@ export default function LineageTab(): ReactElement {
       <StyledHorizontalRule style={{ margin: "0", flexGrow: 0 }} />
       <div
         ref={detailViewContainerRef}
-        style={{ width: "100%", flexGrow: 1, flexBasis: "50px", backgroundColor: "#f0f0f0" }}
+        style={{ width: "100%", flexGrow: 1, flexBasis: "300px", backgroundColor: "#f0f0f0" }}
       >
         <LineageTrackDetailView
           container={detailViewContainerRef}
