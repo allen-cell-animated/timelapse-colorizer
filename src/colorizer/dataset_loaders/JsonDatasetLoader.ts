@@ -118,7 +118,7 @@ export default class JsonDatasetLoader {
     index: number
   ): Promise<[string, FeatureData] | undefined> {
     const name = metadata.name;
-    const key = metadata.key || getKeyFromName(name);
+    const key = getKeyFromName(metadata.key || name);
     const url = this.resolvePath(metadata.data);
     if (!url) {
       console.warn(`Feature ${index}: Failed to resolve URL for feature ${name}: '${metadata.data}'`);
