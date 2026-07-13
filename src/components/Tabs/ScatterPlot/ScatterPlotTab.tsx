@@ -17,7 +17,7 @@ import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import type { SelectItem } from "src/components/Dropdowns/types";
 import LoadingSpinner from "src/components/LoadingSpinner";
 import ScatterplotToolbar from "src/components/Tabs/ScatterPlot/ScatterplotToolbar";
-import { SHORTCUT_KEYS } from "src/constants";
+import { SCATTERPLOT_SYNC_AXIS_KEY, SHORTCUT_KEYS } from "src/constants";
 import { useDebounce, useDebounceRecord, useIsMouseButtonDownRef } from "src/hooks";
 import { colorizeStateSelector } from "src/state";
 import { useViewerStateStore } from "src/state/ViewerState";
@@ -88,16 +88,14 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const setYAxis = useViewerStateStore((state) => state.setScatterYAxis);
   const _xAxisFeatureKey = useViewerStateStore((state) => state.scatterXAxis);
   const _yAxisFeatureKey = useViewerStateStore((state) => state.scatterYAxis);
-  const syncXAxisFeatureKey = useViewerStateStore((state) => state.scatterSyncXAxis);
-  const syncYAxisFeatureKey = useViewerStateStore((state) => state.scatterSyncYAxis);
-  const setSyncXAxisFeatureKey = useViewerStateStore((state) => state.setScatterSyncXAxis);
-  const setSyncYAxisFeatureKey = useViewerStateStore((state) => state.setScatterSyncYAxis);
   const showHistograms = useViewerStateStore((state) => state.scatterShowHistograms);
   const histogramBins = useViewerStateStore((state) => state.scatterHistogramBins);
   const showContours = useViewerStateStore((state) => state.scatterShowContours);
   const _rawContourCount = useViewerStateStore((state) => state.scatterContourCount);
   const contourCount = useDebounce(_rawContourCount, 100);
 
+  const syncXAxisFeatureKey = _xAxisFeatureKey === SCATTERPLOT_SYNC_AXIS_KEY;
+  const syncYAxisFeatureKey = _yAxisFeatureKey === SCATTERPLOT_SYNC_AXIS_KEY;
   const xAxisFeatureKey = syncXAxisFeatureKey ? selectedFeatureKey : _xAxisFeatureKey;
   const yAxisFeatureKey = syncYAxisFeatureKey ? selectedFeatureKey : _yAxisFeatureKey;
 
@@ -744,9 +742,11 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
                   <IconButton
                     type={syncYAxisFeatureKey ? "primary" : "link"}
                     onClick={() => {
-                      setSyncYAxisFeatureKey(!syncYAxisFeatureKey);
-                      // Sync with selected feature on release.
-                      syncYAxisFeatureKey && setYAxis(selectedFeatureKey);
+                      if (!syncYAxisFeatureKey) {
+                        setYAxis(SCATTERPLOT_SYNC_AXIS_KEY);
+                      } else {
+                        setYAxis(selectedFeatureKey);
+                      }
                     }}
                   >
                     {syncYAxisFeatureKey ? <LockOutlined /> : <UnlockOutlined />}
@@ -769,9 +769,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
                 const temp = xAxisFeatureKey;
                 setXAxis(yAxisFeatureKey);
                 setYAxis(temp);
-                // Swap sync state
-                setSyncXAxisFeatureKey(syncYAxisFeatureKey);
-                setSyncYAxisFeatureKey(syncXAxisFeatureKey);
               }}
               type="link"
             >
@@ -800,9 +797,11 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
                 <IconButton
                   type={syncXAxisFeatureKey ? "primary" : "link"}
                   onClick={() => {
-                    setSyncXAxisFeatureKey(!syncXAxisFeatureKey);
-                    // Sync with selected feature on release
-                    syncXAxisFeatureKey && setXAxis(selectedFeatureKey);
+                    if (!syncXAxisFeatureKey) {
+                      setXAxis(SCATTERPLOT_SYNC_AXIS_KEY);
+                    } else {
+                      setXAxis(selectedFeatureKey);
+                    }
                   }}
                 >
                   {syncXAxisFeatureKey ? <LockOutlined /> : <UnlockOutlined />}
