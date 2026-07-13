@@ -1,15 +1,11 @@
 import * as d3 from "d3";
 import React, { MouseEvent, type ReactElement, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import styled from "styled-components";
 import type { Color } from "three";
 
 import type { Dataset, Track } from "src/colorizer";
 import { getLineageRelationships, getLineageSubset, getTreeHierarchy } from "src/components/Tabs/Lineage/lineage_utils";
-import type {
-  LineageData,
-  LineageDataRelationships,
-  LineageObjectInfo,
-  TrackInfo,
-} from "src/components/Tabs/Lineage/types";
+import type { LineageData, LineageDataRelationships, TrackInfo } from "src/components/Tabs/Lineage/types";
 import { useConstructor } from "src/hooks";
 
 type TrackDetailLineageViewProps = {
@@ -25,9 +21,11 @@ type TrackDetailLineageViewProps = {
   onHover?: (info: TrackInfo | null, time: number) => void;
 };
 
-const RECT_BUTTON_CLASS = "rect-button";
-const COLLAPSE_BUTTON_CLASS = "collapse-button";
-const EXPAND_BUTTON_CLASS = "expand-button";
+const SVG_BUTTON_CLASS = "svg-button";
+const SVG_BUTTON_TEXT_CLASS = "expand-button-text";
+const SVG_EXPAND_BUTTON_CLASS = "expand-button";
+const SVG_COLLAPSE_BUTTON_CLASS = "collapse-button";
+const TRACK_LABEL_CLASS = "track-label";
 
 const TREE_LEAF_HEIGHT_PX = 30;
 const NODE_HEIGHT_PX = 20;
@@ -43,6 +41,18 @@ const DEFAULT_NODE_EDGE_COLOR = "#1a1f2e";
 
 const MERGE_EDGE_COLOR = "#ff9410";
 const DEFAULT_EDGE_COLOR = "#4a5568";
+
+const StyledSVG = styled.svg`
+  .${SVG_BUTTON_CLASS} {
+    cursor: pointer;
+    transition: fill 0.3s, stroke 0.3s;
+
+    &:hover {
+      fill: ${COLLAPSED_NODE_FILL_HOVER_COLOR};
+      color: ${COLLAPSED_NODE_FILL_COLOR};
+    }
+  }
+`;
 
 type NodeSelection = d3.Selection<SVGGElement | d3.BaseType, d3.HierarchyPointNode<TrackInfo>, SVGGElement, TrackInfo>;
 
@@ -124,19 +134,21 @@ function renderView(
   node.append("rect");
 
   // Add expand/collapse button for each node
-  node
+  const expandButtonNodes = node
     .filter((d) => !selectedTrackIds.has(d.data.id))
-    .append("rect")
-    .attr("class", `${EXPAND_BUTTON_CLASS} ${RECT_BUTTON_CLASS}`)
-    .append("text");
-  node
+    .append("g")
+    .attr("class", SVG_EXPAND_BUTTON_CLASS);
+  const collapseButtonNodes = node
     .filter((d) => selectedTrackIds.has(d.data.id))
-    .append("rect")
-    .attr("class", `${COLLAPSE_BUTTON_CLASS} ${RECT_BUTTON_CLASS}`)
-    .append("text");
+    .append("g")
+    .attr("class", SVG_COLLAPSE_BUTTON_CLASS);
+  expandButtonNodes.append("rect").attr("class", `${SVG_BUTTON_CLASS}`);
+  expandButtonNodes.append("text").attr("class", `${SVG_BUTTON_TEXT_CLASS}`);
+  collapseButtonNodes.append("rect").attr("class", `${SVG_BUTTON_CLASS}`);
+  collapseButtonNodes.append("text").attr("class", `${SVG_BUTTON_TEXT_CLASS}`);
 
   // Track ID label
-  node.append("text");
+  node.append("text").attr("class", TRACK_LABEL_CLASS);
 
   return node;
 }
@@ -149,38 +161,16 @@ function setupPointerHandlers(
   onClick?: React.RefObject<undefined | ((info: TrackInfo, time: number) => void)>,
   onHover?: React.RefObject<undefined | ((info: TrackInfo | null, time: number) => void)>
 ): () => void {
-  const handleClickNode = (event: any, d: d3.HierarchyPointNode<TrackInfo>): void => {
+  const handleClickNode = (event: MouseEvent, d: d3.HierarchyPointNode<TrackInfo>): void => {
     if (event) onClick?.current?.(d.data, 0);
   };
 
   const handleHoverNode = (event: MouseEvent, d: d3.HierarchyPointNode<TrackInfo>): void => {
-    if (
-      event.currentTarget instanceof SVGElement &&
-      event.currentTarget.attributes.getNamedItem("class")?.value.includes(RECT_BUTTON_CLASS)
-    ) {
-      d3.select(event.currentTarget).select("text").transition().duration(200).attr("fill", "#ffffff");
-      d3.select(event.currentTarget)
-        .select("rect")
-        .transition()
-        .duration(200)
-        .attr("fill", COLLAPSED_NODE_FILL_HOVER_COLOR);
-    }
-    if (svg.current) {
-      svg.current.style.cursor = "pointer";
-    }
     hoveredNodeRef.current = event.currentTarget;
     onHover?.current?.(d.data, 0);
   };
 
   const handleUnhoverNode = (event: MouseEvent, d: d3.HierarchyPointNode<TrackInfo>): void => {
-    // d3.select(event.currentTarget).select("circle").attr("stroke", "#1a1f2e").attr("stroke-width", 1.5);
-    if (!isSelected(d)) {
-      d3.select(event.currentTarget).select("text").transition().duration(200).attr("fill", COLLAPSED_NODE_EDGE_COLOR);
-      d3.select(event.currentTarget).select("rect").transition().duration(200).attr("fill", COLLAPSED_NODE_FILL_COLOR);
-    }
-    if (svg.current) {
-      svg.current.style.cursor = "default";
-    }
     if (hoveredNodeRef) {
       hoveredNodeRef.current = undefined;
     }
@@ -223,8 +213,10 @@ function updateNodeStyles(
     .attr("transition", "fill 0.3s, stroke 0.3s");
 
   // Buttons
-  node
-    .select<SVGRectElement>(`.${EXPAND_BUTTON_CLASS}`)
+  const expandButtonGroup = node.select<SVGGElement>(`g.${SVG_EXPAND_BUTTON_CLASS}`);
+  expandButtonGroup
+    .select<SVGRectElement>("rect")
+    // .attr("x", -COLLAPSED_NODE_WIDTH_PX / 2)
     .attr("y", -NODE_HEIGHT_PX / 2)
     .attr("width", COLLAPSED_NODE_WIDTH_PX)
     .attr("height", NODE_HEIGHT_PX)
@@ -233,10 +225,40 @@ function updateNodeStyles(
     .attr("stroke", COLLAPSED_NODE_EDGE_COLOR)
     .attr("stroke-width", 2)
     .attr("transition", "fill 0.3s, stroke 0.3s")
-    .attr("rx", 4)
+    // .attr("rx", COLLAPSED_NODE_WIDTH_PX / 2);
+    .attr("rx", 4);
 
+  expandButtonGroup
     .select<SVGTextElement>("text")
     .text("+")
+    .attr("x", COLLAPSED_NODE_WIDTH_PX / 2)
+    .attr("y", 1)
+    .attr("text-anchor", "middle")
+    .attr("dominant-baseline", "middle")
+    .attr("fill", COLLAPSED_NODE_EDGE_COLOR)
+    .attr("font-size", 16)
+    .attr("pointer-events", "none")
+    .attr("transition", "fill 0.3s");
+
+  const collapseButtonGroup = node.select<SVGGElement>(`g.${SVG_COLLAPSE_BUTTON_CLASS}`);
+  collapseButtonGroup
+    .select<SVGRectElement>("rect")
+    // .attr("x", -COLLAPSED_NODE_WIDTH_PX)
+    .attr("y", -NODE_HEIGHT_PX / 2)
+    .attr("width", COLLAPSED_NODE_WIDTH_PX)
+    .attr("height", NODE_HEIGHT_PX)
+    .attr("fill", COLLAPSED_NODE_FILL_COLOR)
+    .attr("opacity", (d) => (d.data.id === -1 ? 0 : 1))
+    .attr("stroke", COLLAPSED_NODE_EDGE_COLOR)
+    .attr("stroke-width", 2)
+    .attr("transition", "fill 0.3s, stroke 0.3s")
+    .attr("rx", 4);
+
+  collapseButtonGroup
+    .select<SVGTextElement>("text")
+    .text("-")
+    // .attr("x", -COLLAPSED_NODE_WIDTH_PX / 2)
+    .attr("y", 1)
     .attr("text-anchor", "middle")
     .attr("dominant-baseline", "middle")
     .attr("fill", COLLAPSED_NODE_EDGE_COLOR)
@@ -246,7 +268,7 @@ function updateNodeStyles(
 
   // track label
   node
-    .selectChild<SVGTextElement>("text")
+    .select<SVGTextElement>(`text.${TRACK_LABEL_CLASS}`)
     .text((d) => d.data.id)
     .attr("x", 2)
     .attr("y", -14)
@@ -541,7 +563,6 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
     };
   }, [props.data, props.relationships, props.dataset, expandedTracks, isSelected]);
 
-  console.log("Rendering LineageTrackDetailView with expandedTracks:", expandedTracks);
   useEffect(() => {
     // Update node styling
     if (nodeSelectionRef.current) {
@@ -563,8 +584,12 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
   }, [props.data]);
 
   return (
-    <svg ref={svgRef} style={{ width: "100%", height: "100%", display: "block" }} id="track-detail-lineage-view-svg">
+    <StyledSVG
+      ref={svgRef}
+      style={{ width: "100%", height: "100%", display: "block" }}
+      id="track-detail-lineage-view-svg"
+    >
       <g ref={groupRef}></g>
-    </svg>
+    </StyledSVG>
   );
 }
