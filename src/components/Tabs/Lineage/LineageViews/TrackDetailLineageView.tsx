@@ -203,26 +203,11 @@ function updateNodeStyles(
     return trackIds.has(d.data.id);
   };
 
-  const isParentOfSelected = (d: d3.HierarchyPointNode<TrackInfo>): boolean => {
-    return !isSelected(d) && (d.children?.some((child) => trackIds.has(child.data.id)) ?? false);
-  };
-
   const getFillColor = (d: d3.HierarchyPointNode<TrackInfo>): string => {
     // TODO: Show CSS gradient here
     return d.data.startTime <= time && time < d.data.startTime + d.data.length
       ? trackColors.get(d.data.id)?.getStyle() ?? DEFAULT_NODE_FILL_COLOR
       : DEFAULT_NODE_FILL_COLOR;
-  };
-
-  const getTextLabel = (d: d3.HierarchyPointNode<TrackInfo>): string => {
-    if (d.data.id === -1) {
-      return "";
-    } else if (!isSelected(d)) {
-      return "+";
-    } else if (d.data.startTime <= time && time < d.data.startTime + d.data.length) {
-      return "-";
-    }
-    return "";
   };
 
   node
@@ -255,7 +240,7 @@ function updateNodeStyles(
     .attr("text-anchor", "middle")
     .attr("dominant-baseline", "middle")
     .attr("fill", COLLAPSED_NODE_EDGE_COLOR)
-    .attr("font-size", 20)
+    .attr("font-size", 16)
     .attr("pointer-events", "none")
     .attr("transition", "fill 0.3s");
 
@@ -330,25 +315,76 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
     return nodes;
   });
 
-  const expandTrack = (trackId: number): void => {
-    const newExpandedTracks = new Set(expandedTracks);
-    newExpandedTracks.add(trackId);
-    trackIdToExpanded.set(trackId, true);
-    const node = trackIdToNode.get(trackId);
-    // Expand all parents of the node, up to a root node.
-    for (const parent of node?.ancestors() ?? []) {
-      newExpandedTracks.add(parent.data.id);
-    }
-    // Traverse children, expand if previously expanded too.
-    const traverseChildren = (node: d3.HierarchyNode<TrackInfo>): void => {
-      for (const child of node.children ?? []) {
-        if (trackIdToExpanded.get(child.data.id)) {
-          newExpandedTracks.add(child.data.id);
-          traverseChildren(child);
+  const forEachParent = useCallback(
+    (
+      node: d3.HierarchyNode<TrackInfo> | undefined,
+      idToParents: Map<number, number[]>,
+      callback: (parent: d3.HierarchyNode<TrackInfo>) => boolean
+    ): void => {
+      if (!node) {
+        return;
+      }
+      const parents = idToParents.get(node.data.id) ?? [];
+      for (const parentId of parents) {
+        const parentNode = trackIdToNode.get(parentId);
+        if (parentNode) {
+          if (!callback(parentNode)) {
+            continue;
+          }
+          forEachParent(parentNode, idToParents, callback);
         }
       }
-    };
-    node && traverseChildren(node);
+    },
+    [trackIdToNode]
+  );
+
+  const forEachChild = useCallback(
+    (
+      node: d3.HierarchyNode<TrackInfo> | undefined,
+      idToChildren: Map<number, number[]>,
+      callback: (child: d3.HierarchyNode<TrackInfo>) => boolean
+    ): void => {
+      if (!node) {
+        return;
+      }
+      const children = idToChildren.get(node.data.id) ?? [];
+      for (const childId of children) {
+        const childNode = trackIdToNode.get(childId);
+        if (childNode) {
+          if (!callback(childNode)) {
+            continue;
+          }
+          forEachChild(childNode, idToChildren, callback);
+        }
+      }
+    },
+    [trackIdToNode]
+  );
+
+  const expandTrack = (trackId: number): void => {
+    const newExpandedTracks = new Set(expandedTracks);
+    const coparentIds = props.relationships.idToCoparents.get(trackId) ?? new Set();
+    const ids = coparentIds.size > 0 ? coparentIds : new Set([trackId]);
+
+    for (const id of ids) {
+      newExpandedTracks.add(id);
+      trackIdToExpanded.set(id, true);
+      const node = trackIdToNode.get(id);
+      const { idToChildren } = props.relationships;
+      // Expand all parents of the node, up to a root node.
+      forEachParent(node, props.relationships.idToParents, (parentNode) => {
+        newExpandedTracks.add(parentNode.data.id);
+        return true;
+      });
+      // Traverse children, expand if previously expanded too.
+      forEachChild(node, idToChildren, (childNode) => {
+        if (trackIdToExpanded.get(childNode.data.id)) {
+          newExpandedTracks.add(childNode.data.id);
+          return true;
+        }
+        return false;
+      });
+    }
     setExpandedTracks(newExpandedTracks);
   };
 
@@ -360,13 +396,51 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
     const node = trackIdToNode.get(trackId);
 
     // Remove all children of the node from the expanded set.
-    const traverseChildren = (node: d3.HierarchyNode<TrackInfo>): void => {
-      for (const child of node.children ?? []) {
-        newExpandedTracks.delete(child.data.id);
-        traverseChildren(child);
-      }
+    const traversedNodes = new Set<number>([trackId]);
+    const collapseAllChildren = (node: d3.HierarchyNode<TrackInfo> | undefined): void => {
+      forEachChild(node, props.relationships.idToChildren, (childNode) => {
+        if (traversedNodes.has(childNode.data.id)) {
+          return false;
+        }
+        newExpandedTracks.delete(childNode.data.id);
+        traversedNodes.add(childNode.data.id);
+
+        // Check coparents
+        const coparents = props.relationships.idToCoparents.get(childNode.data.id) ?? new Set();
+        for (const coparentId of coparents) {
+          if (traversedNodes.has(coparentId)) {
+            continue;
+          } else {
+            if (newExpandedTracks.has(coparentId)) {
+              newExpandedTracks.delete(coparentId);
+              trackIdToExpanded.set(coparentId, false);
+              traversedNodes.add(coparentId);
+              collapseAllChildren(trackIdToNode.get(coparentId));
+            }
+          }
+        }
+        // Check if any of the child node's parents are still expanded.
+        const parents = props.relationships.idToParents.get(childNode.data.id) ?? [];
+        if (parents.length > 1) {
+          for (const parent of parents) {
+            if (traversedNodes.has(parent)) {
+              continue;
+            } else {
+              // Collapse the parent if currently expanded (and all of its children?????)
+              if (newExpandedTracks.has(parent)) {
+                newExpandedTracks.delete(parent);
+                trackIdToExpanded.set(parent, false);
+                traversedNodes.add(parent);
+                collapseAllChildren(trackIdToNode.get(parent));
+              }
+            }
+          }
+        }
+
+        return true;
+      });
     };
-    node && traverseChildren(node);
+    collapseAllChildren(node);
 
     setExpandedTracks(newExpandedTracks);
   };

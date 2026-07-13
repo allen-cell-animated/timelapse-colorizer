@@ -35,4 +35,10 @@ export type LineageDataRelationships = {
   multiparentEdges: [number, number][];
   /** A map from a track ID to its parent track IDs. */
   idToParents: Map<number, number[]>;
+
+  /**
+   * Maps from an ID to a set of its co-parents (other direct parent of its
+   * direct children, which happens in the case of merge nodes).
+   */
+  idToCoparents: Map<number, Set<number>>;
 };

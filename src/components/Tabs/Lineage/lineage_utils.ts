@@ -81,6 +81,29 @@ export function getObjectLineageData(dataset: Dataset): LineageData<LineageObjec
   return { idToInfo, edges };
 }
 
+function getCoparents(
+  idToChildren: Map<number, number[]>,
+  idToParents: Map<number, number[]>
+): Map<number, Set<number>> {
+  // Calculate co-parents for each node (other direct parents of its direct
+  // children).
+  const idToCoparents = new Map<number, Set<number>>();
+
+  for (const [id, childIds] of idToChildren.entries()) {
+    // Get other parents of the children of this node.
+    const parents = new Set<number>();
+    for (const childId of childIds) {
+      const childParents = idToParents.get(childId) ?? [];
+      childParents.forEach(parents.add, parents);
+    }
+    if (parents.size === 1 && parents.has(id)) {
+      continue;
+    }
+    idToCoparents.set(id, parents);
+  }
+  return idToCoparents;
+}
+
 export function getLineageRelationships(
   data: LineageData<TrackInfo> | LineageData<LineageObjectInfo>
 ): LineageDataRelationships {
@@ -110,7 +133,12 @@ export function getLineageRelationships(
     idToParents.get(target)?.push(source);
     idsWithParents.add(target);
   }
-  return { idToChildren, idToChildrenRenderable, idToParents, multiparentEdges };
+
+  // Calculate co-parents for each node (other direct parents of its direct
+  // children).
+  const idToCoparents = getCoparents(idToChildren, idToParents);
+
+  return { idToChildren, idToChildrenRenderable, idToParents, idToCoparents, multiparentEdges };
 }
 
 /**
