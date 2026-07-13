@@ -20,6 +20,8 @@ export type ScatterPlotSliceState = {
   scatterXAxis: string | null;
   scatterYAxis: string | null;
   scatterRangeType: PlotRangeType;
+  scatterSyncXAxis: boolean;
+  scatterSyncYAxis: boolean;
 
   // Histograms
   scatterShowHistograms: boolean;
@@ -40,6 +42,8 @@ export type ScatterPlotSliceSerializableState = Pick<
   | "scatterXAxis"
   | "scatterYAxis"
   | "scatterRangeType"
+  | "scatterSyncXAxis"
+  | "scatterSyncYAxis"
   | "scatterShowHistograms"
   | "scatterHistogramBins"
   | "scatterShowContours"
@@ -52,6 +56,8 @@ export type ScatterPlotSliceSerializableState = Pick<
 export type ScatterPlotSliceActions = {
   setScatterXAxis: (xAxis: string | null) => void;
   setScatterYAxis: (yAxis: string | null) => void;
+  setScatterSyncXAxis: (sync: boolean) => void;
+  setScatterSyncYAxis: (sync: boolean) => void;
   setScatterShowHistograms: (showHistograms: boolean) => void;
   setScatterHistogramBins: (bins: number) => void;
   setScatterRangeType: (rangeType: PlotRangeType) => void;
@@ -76,6 +82,8 @@ export const createScatterPlotSlice: StateCreator<DatasetSlice & ScatterPlotSlic
   scatterXAxis: null,
   scatterYAxis: null,
   scatterRangeType: PlotRangeType.ALL_TIME,
+  scatterSyncXAxis: false,
+  scatterSyncYAxis: false,
 
   scatterShowHistograms: true,
   scatterHistogramBins: 20,
@@ -100,6 +108,8 @@ export const createScatterPlotSlice: StateCreator<DatasetSlice & ScatterPlotSlic
     }
     set({ scatterYAxis: yAxis });
   },
+  setScatterSyncXAxis: (sync) => set({ scatterSyncXAxis: sync }),
+  setScatterSyncYAxis: (sync) => set({ scatterSyncYAxis: sync }),
   setScatterShowHistograms: (showHistograms) => {
     set({ scatterShowHistograms: showHistograms });
   },
@@ -166,6 +176,12 @@ export const serializeScatterPlotSlice = (slice: Partial<ScatterPlotSliceSeriali
   if (slice.scatterYAxis !== null && slice.scatterYAxis !== undefined) {
     ret[UrlParam.SCATTERPLOT_Y_AXIS] = slice.scatterYAxis;
   }
+  if (slice.scatterSyncXAxis !== undefined) {
+    ret[UrlParam.SCATTERPLOT_SYNC_X_AXIS] = encodeBoolean(slice.scatterSyncXAxis);
+  }
+  if (slice.scatterSyncYAxis !== undefined) {
+    ret[UrlParam.SCATTERPLOT_SYNC_Y_AXIS] = encodeBoolean(slice.scatterSyncYAxis);
+  }
   if (slice.scatterShowHistograms !== undefined) {
     ret[UrlParam.SCATTERPLOT_SHOW_HISTOGRAMS] = encodeBoolean(slice.scatterShowHistograms);
   }
@@ -200,6 +216,8 @@ export const selectScatterPlotSliceSerializationDeps = (
 ): ScatterPlotSliceSerializableState => ({
   scatterXAxis: slice.scatterXAxis,
   scatterYAxis: slice.scatterYAxis,
+  scatterSyncXAxis: slice.scatterSyncXAxis,
+  scatterSyncYAxis: slice.scatterSyncYAxis,
   scatterShowHistograms: slice.scatterShowHistograms,
   scatterHistogramBins: slice.scatterHistogramBins,
   scatterRangeType: slice.scatterRangeType,
@@ -230,6 +248,15 @@ export const loadScatterPlotSliceFromParams = (
   }
   if (scatterYAxis !== null && scatterYAxis !== undefined && isAxisKeyValid(dataset, scatterYAxis)) {
     slice.setScatterYAxis(scatterYAxis);
+  }
+
+  const scatterSyncXAxis = decodeBoolean(params.get(UrlParam.SCATTERPLOT_SYNC_X_AXIS));
+  if (scatterSyncXAxis !== undefined) {
+    slice.setScatterSyncXAxis(scatterSyncXAxis);
+  }
+  const scatterSyncYAxis = decodeBoolean(params.get(UrlParam.SCATTERPLOT_SYNC_Y_AXIS));
+  if (scatterSyncYAxis !== undefined) {
+    slice.setScatterSyncYAxis(scatterSyncYAxis);
   }
 
   const scatterShowHistograms = decodeBoolean(params.get(UrlParam.SCATTERPLOT_SHOW_HISTOGRAMS));

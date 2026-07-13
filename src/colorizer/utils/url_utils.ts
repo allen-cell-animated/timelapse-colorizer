@@ -75,6 +75,8 @@ export enum UrlParam {
   KEEP_RANGE = "keep-range",
   SCATTERPLOT_X_AXIS = "scatter-x",
   SCATTERPLOT_Y_AXIS = "scatter-y",
+  SCATTERPLOT_SYNC_X_AXIS = "sc-sync-x",
+  SCATTERPLOT_SYNC_Y_AXIS = "sc-sync-y",
   SCATTERPLOT_BINS = "scatter-bins",
   SCATTERPLOT_RANGE_MODE = "scatter-range",
   SCATTERPLOT_SHOW_CONTOUR = "sc-cont",
