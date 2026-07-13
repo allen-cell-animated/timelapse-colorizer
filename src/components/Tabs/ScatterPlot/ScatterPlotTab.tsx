@@ -737,13 +737,17 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
                   tooltipPopupContainer={props.containerRef}
                 />
                 <Tooltip
-                  title={`${syncYAxisFeatureKey ? "Unlock Y axis from" : "Lock Y axis to"} selected feature`}
+                  title={`${syncYAxisFeatureKey ? "Unlock Y axis from" : "Lock Y axis to"} colorized feature`}
                   placement="left"
                   trigger={["hover", "focus"]}
                 >
                   <IconButton
                     type={syncYAxisFeatureKey ? "primary" : "link"}
-                    onClick={() => setSyncYAxisFeatureKey(!syncYAxisFeatureKey)}
+                    onClick={() => {
+                      setSyncYAxisFeatureKey(!syncYAxisFeatureKey);
+                      // Sync with selected feature on release.
+                      syncYAxisFeatureKey && setYAxis(selectedFeatureKey);
+                    }}
                   >
                     {syncYAxisFeatureKey ? <LockOutlined /> : <UnlockOutlined />}
                   </IconButton>
@@ -790,12 +794,16 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
                 }}
               />
               <Tooltip
-                title={`${syncXAxisFeatureKey ? "Unlock X axis from" : "Lock X axis to"} selected feature`}
+                title={`${syncXAxisFeatureKey ? "Unlock X axis from" : "Lock X axis to"} colorized feature`}
                 trigger={["hover", "focus"]}
               >
                 <IconButton
                   type={syncXAxisFeatureKey ? "primary" : "link"}
-                  onClick={() => setSyncXAxisFeatureKey(!syncXAxisFeatureKey)}
+                  onClick={() => {
+                    setSyncXAxisFeatureKey(!syncXAxisFeatureKey);
+                    // Sync with selected feature on release
+                    syncXAxisFeatureKey && setXAxis(selectedFeatureKey);
+                  }}
                 >
                   {syncXAxisFeatureKey ? <LockOutlined /> : <UnlockOutlined />}
                 </IconButton>
