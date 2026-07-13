@@ -724,13 +724,13 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
                 <SelectionDropdown
                   label={"Y axis"}
                   hideLabel={true}
+                  disabled={syncYAxisFeatureKey}
                   selected={yAxisFeatureKey || ""}
                   items={menuItems}
                   onChange={setYAxis}
                   selectProps={{
                     menuPortalTarget: props.containerRef ?? document.body,
                   }}
-                  disabled={syncYAxisFeatureKey}
                   controlTooltipPlacement="left"
                   tooltipPopupContainer={props.containerRef}
                 />
@@ -779,8 +779,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
             <FlexRowAlignCenter $gap={6}>
               <SelectionDropdown
                 label={"X axis"}
-                disabled={syncXAxisFeatureKey}
                 hideLabel={true}
+                disabled={syncXAxisFeatureKey}
                 selected={xAxisFeatureKey || ""}
                 items={menuItems}
                 onChange={setXAxis}
