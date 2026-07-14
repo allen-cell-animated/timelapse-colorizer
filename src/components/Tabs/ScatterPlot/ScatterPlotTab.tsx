@@ -766,8 +766,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
           <Tooltip title="Swap axes" trigger={["hover", "focus"]}>
             <IconButton
               onClick={() => {
-                const temp = xAxisFeatureKey;
-                setXAxis(yAxisFeatureKey);
+                const temp = _xAxisFeatureKey;
+                setXAxis(_yAxisFeatureKey);
                 setYAxis(temp);
               }}
               type="link"
