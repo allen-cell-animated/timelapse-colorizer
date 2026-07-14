@@ -4,11 +4,16 @@ import styled from "styled-components";
 import type { Color } from "three";
 
 import type { Dataset, Track } from "src/colorizer";
-import { getLineageRelationships, getLineageSubset, getTreeHierarchy } from "src/components/Tabs/Lineage/lineage_utils";
+import {
+  getDefaultZoomTransform,
+  getLineageRelationships,
+  getLineageSubset,
+  getTreeHierarchy,
+} from "src/components/Tabs/Lineage/lineage_utils";
 import type { LineageData, LineageDataRelationships, TrackInfo } from "src/components/Tabs/Lineage/types";
 import { useConstructor } from "src/hooks";
 
-import { forEachChild, forEachParent } from "../tree_utils";
+import { collapseTrack, expandTrack, getInitialExpandedState, TreeExpandedState } from "../tree_utils";
 
 type TrackDetailLineageViewProps = {
   container: React.RefObject<HTMLDivElement>;
@@ -349,8 +354,6 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
   const onHoverRef = useRef(props.onHover);
   onHoverRef.current = props.onHover;
 
-  const { idToInfo: trackIdToInfo } = props.data;
-
   const prevTracks = useRef<Map<number, Track>>(new Map());
   const newTracks = useMemo(() => {
     const newTracks = new Set<number>();
@@ -362,133 +365,31 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
     return newTracks;
   }, [props.selectedTracks]);
 
-  // Whether individual tracks are expanded or collapsed, regardless of their
-  // children or parent state. Traversed from the root to calculate/update the
-  // current set of expanded tracks.
-  const trackIdToExpanded = useMemo(() => {
-    const map = new Map<number, boolean>();
-    for (const trackId of trackIdToInfo.keys()) {
-      if (props.selectedTracks.has(trackId)) {
-        map.set(trackId, true);
-      } else {
-        map.set(trackId, false);
-      }
-    }
-    return map;
-  }, [props.selectedTracks]);
-  prevTracks.current = props.selectedTracks;
+  const [expandedState, setExpandedState] = useState<TreeExpandedState>(() =>
+    getInitialExpandedState(trackIds, props.data, props.relationships)
+  );
+  const { expandedTracks } = expandedState;
 
-  // Current set of all tracks that are expanded. If a track is expanded, its
-  // parents up to a root node must also be expanded; if a track is collapsed,
-  // all of its children must also be collapsed.
-  const [expandedTracks, setExpandedTracks] = useState(() => {
-    // On initial render, expand all the currently selected tracks and
-    // their parents up to a root node.
-    const nodes = new Set<number>();
-    for (const track of props.selectedTracks.values()) {
-      const parents = props.hierarchy?.ancestors().map((d) => d.data.id) ?? [];
-      for (const parentId of parents) {
-        nodes.add(parentId);
-      }
-      nodes.add(track.trackId);
-    }
-    return nodes;
-  });
-
-  const expandTrack = (expandedTracks: Set<number>, trackId: number): Set<number> => {
-    const newExpandedTracks = new Set(expandedTracks);
-    const coparentIds = props.relationships.idToCoparents.get(trackId) ?? new Set();
-    const ids = coparentIds.size > 0 ? coparentIds : new Set([trackId]);
-
-    for (const id of ids) {
-      newExpandedTracks.add(id);
-      trackIdToExpanded.set(id, true);
-      const { idToChildren } = props.relationships;
-      // Expand all parents of the node, up to a root node.
-      forEachParent(id, trackIdToInfo, props.relationships.idToParents, (parentData) => {
-        trackIdToExpanded.set(id, true);
-        newExpandedTracks.add(parentData.id);
-        return true;
-      });
-      // Traverse children, expand if previously expanded too.
-      forEachChild(id, trackIdToInfo, idToChildren, (childData) => {
-        if (trackIdToExpanded.get(childData.id)) {
-          newExpandedTracks.add(childData.id);
-          return true;
-        }
-        return false;
-      });
-    }
-    return newExpandedTracks;
-  };
-
-  const collapseTrack = (expandedTracks: Set<number>, trackId: number): Set<number> => {
-    const newExpandedTracks = new Set(expandedTracks);
-    newExpandedTracks.delete(trackId);
-    trackIdToExpanded.set(trackId, false);
-
-    // Remove all children of the node from the expanded set.
-    const traversedNodes = new Set<number>([trackId]);
-    const collapseAllChildren = (trackId: number): void => {
-      forEachChild(trackId, trackIdToInfo, props.relationships.idToChildren, (childData) => {
-        if (traversedNodes.has(childData.id)) {
-          return false;
-        }
-        newExpandedTracks.delete(childData.id);
-        traversedNodes.add(childData.id);
-
-        // Check coparents
-        const coparents = props.relationships.idToCoparents.get(childData.id) ?? new Set();
-        for (const coparentId of coparents) {
-          if (traversedNodes.has(coparentId)) {
-            continue;
-          } else {
-            if (newExpandedTracks.has(coparentId)) {
-              newExpandedTracks.delete(coparentId);
-              trackIdToExpanded.set(coparentId, false);
-              traversedNodes.add(coparentId);
-              collapseAllChildren(coparentId);
-            }
-          }
-        }
-        // Check if any of the child node's parents are still expanded.
-        const parentIds = props.relationships.idToParents.get(childData.id) ?? [];
-        if (parentIds.length > 1) {
-          for (const parentId of parentIds) {
-            if (traversedNodes.has(parentId)) {
-              continue;
-            } else if (newExpandedTracks.has(parentId)) {
-              // Collapse the parent if currently expanded (and all of its
-              // children)
-              newExpandedTracks.delete(parentId);
-              trackIdToExpanded.set(parentId, false);
-              traversedNodes.add(parentId);
-              collapseAllChildren(parentId);
-            }
-          }
-        }
-        return true;
-      });
-    };
-    collapseAllChildren(trackId);
-    return newExpandedTracks;
-  };
-
+  // Reset expanded state when the data or relationships change (e.g. when the user switches to a different dataset)
   useEffect(() => {
-    for (const trackId of props.selectedTracks.keys()) {
-      // TODO: Possible bug here where the set of expanded tracks is overwritten
-      // because all instances of `expandTrack` are calling the same setter.
-      setExpandedTracks((prev) => expandTrack(prev, trackId));
+    setExpandedState(getInitialExpandedState(trackIds, props.data, props.relationships));
+  }, [props.data, props.relationships]);
+
+  // Apply newly selected tracks to expanded state-- updates only on new tracks
+  // to avoid expanding selected tracks that were previously collapsed.
+  useEffect(() => {
+    for (const trackId of newTracks) {
+      setExpandedState((prev) => expandTrack(trackId, prev, props.data, props.relationships));
     }
-  }, [props.selectedTracks]);
+  }, [newTracks]);
 
   // Expand/collapse the tree below a node. Triggered by the node's
   // expand/collapse button.
   const onToggleExpanded = (info: TrackInfo): void => {
     if (expandedTracks.has(info.id)) {
-      setExpandedTracks((prev) => collapseTrack(prev, info.id));
+      setExpandedState((prev) => collapseTrack(info.id, prev, props.data, props.relationships));
     } else {
-      setExpandedTracks((prev) => expandTrack(prev, info.id));
+      setExpandedState((prev) => expandTrack(info.id, prev, props.data, props.relationships));
     }
   };
   const onToggleExpandedRef = useRef(onToggleExpanded);
@@ -515,14 +416,10 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
     if (!gNode || !svgNode || !svg) {
       return;
     }
-    const bbox = gNode.getBBox();
-    const clientWidth = svgNode.clientWidth;
-    const clientHeight = svgNode.clientHeight;
-    const scale = Math.min(clientWidth / (bbox.width + 80), clientHeight / (bbox.height + 40)) * 0.92;
-    const tx = (clientWidth - bbox.width * scale) / 2 - bbox.x * scale;
-    const ty = (clientHeight - bbox.height * scale) / 2 - bbox.y * scale;
-    const initT = d3.zoomIdentity.translate(tx, ty).scale(scale);
-    zoom.current.transform(svg, initT);
+    const initialTransform = getDefaultZoomTransform(svgNode, gNode);
+    if (initialTransform) {
+      zoom.current.transform(svg, initialTransform);
+    }
   };
 
   useEffect(() => {
@@ -572,25 +469,17 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
     };
   }, [props.data, props.relationships, props.dataset, expandedTracks, isSelected]);
 
+  // Update node styling
   useEffect(() => {
-    // Update node styling
     if (nodeSelectionRef.current) {
       updateNodeStyles(nodeSelectionRef.current, expandedTracks, props.trackColors, props.time);
     }
   }, [props.data, props.time, props.trackColors, expandedTracks]);
 
-  useEffect(() => {
-    if (!svgRef.current || !nodeSelectionRef.current) {
-      return;
-    }
-
-    return setupPointerHandlers(nodeSelectionRef.current, hoveredNodeRef, onClickRef, onToggleExpandedRef, onHoverRef);
-  }, [props.time, isSelected]);
-
   // Fit on first render
   useEffect(() => {
     resetZoom();
-  }, [props.data]);
+  }, [props.data, props.relationships, props.dataset]);
 
   return (
     <StyledSVG

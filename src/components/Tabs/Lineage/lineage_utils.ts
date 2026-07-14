@@ -132,10 +132,13 @@ export function getDefaultZoomTransform(
   svgNode: SVGSVGElement,
   groupNode: SVGGElement,
   paddingPx: [number, number] = [10, 10]
-): d3.ZoomTransform {
+): d3.ZoomTransform | null {
   const bbox = groupNode.getBBox();
   const clientwidth = svgNode.clientWidth;
   const clientHeight = svgNode.clientHeight;
+  if (bbox.width === 0 || bbox.height === 0) {
+    return null;
+  }
   const scale = Math.min((clientwidth - paddingPx[0]) / bbox.width, (clientHeight - paddingPx[1]) / bbox.height);
   const panX = (clientwidth - bbox.width * scale) / 2 - bbox.x * scale;
   const panY = (clientHeight - bbox.height * scale) / 2 - bbox.y * scale;
