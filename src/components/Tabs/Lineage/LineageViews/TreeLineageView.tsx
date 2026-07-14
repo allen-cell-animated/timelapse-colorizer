@@ -18,7 +18,7 @@ const INNER_HIGHLIGHT_CLASS = "inner-highlight";
 
 export type TreeLineageViewProps = {
   container: React.RefObject<HTMLDivElement>;
-  data: LineageData<TrackInfo>;
+  data: LineageData;
   relationships: LineageDataRelationships;
   hierarchy: d3.HierarchyNode<TrackInfo> | undefined;
   selectedTracks: Set<number>;

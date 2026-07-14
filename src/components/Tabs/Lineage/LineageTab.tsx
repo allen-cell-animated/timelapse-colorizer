@@ -15,7 +15,7 @@ import LineageTrackDetailView from "./LineageViews/TrackDetailLineageView";
 import TreeLineageView from "./LineageViews/TreeLineageView";
 import type { LineageData, TrackInfo } from "./types";
 
-function getColorAndRadiusScale(data: LineageData<TrackInfo>): {
+function getColorAndRadiusScale(data: LineageData): {
   colorScale: d3.ScaleSequential<string>;
   radiusScale: d3.ScalePower<number, number>;
 } {
@@ -33,7 +33,7 @@ function getColorAndRadiusScale(data: LineageData<TrackInfo>): {
   return { colorScale, radiusScale };
 }
 
-const EMPTY_LINEAGE_DATA = { idToInfo: new Map(), edges: [] } satisfies LineageData<TrackInfo>;
+const EMPTY_LINEAGE_DATA = { idToInfo: new Map(), edges: [] } satisfies LineageData;
 
 /**
  * Renders lineage data in a tab. Includes a tree view of the tracks and their

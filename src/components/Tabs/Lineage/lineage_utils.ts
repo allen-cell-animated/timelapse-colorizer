@@ -3,11 +3,11 @@ import * as d3 from "d3";
 import type { Dataset } from "src/colorizer";
 
 import { DUMMY_ROOT_NODE_ID } from "./constants";
-import type { LineageData, LineageDataRelationships, LineageObjectInfo, TrackInfo } from "./types";
+import type { LineageData, LineageDataRelationships, TrackInfo } from "./types";
 
 // TODO: Move to colorizer/utils/data_utils?
 
-export function getLineageData(dataset: Dataset): LineageData<TrackInfo> {
+export function getLineageData(dataset: Dataset): LineageData {
   const tracks = dataset.trackIds;
   const times = dataset.times;
   // Get first track edge (TODO: handle multiple track edges in the future?)
@@ -19,19 +19,29 @@ export function getLineageData(dataset: Dataset): LineageData<TrackInfo> {
   }
 
   const allTracks = new Set<number>();
-  const trackIdToTrackInfo = new Map<number, TrackInfo>();
+  const trackToTimeMinMax = new Map<number, { min: number; max: number }>();
   for (let id = 0; id < tracks.length; id++) {
     const trackId = tracks[id];
     const time = times[id];
 
-    if (!trackIdToTrackInfo.has(trackId)) {
-      trackIdToTrackInfo.set(trackId, { id: trackId, length: 1, startTime: time });
+    if (!trackToTimeMinMax.has(trackId)) {
+      trackToTimeMinMax.set(trackId, { min: time, max: time });
     } else {
-      const info = trackIdToTrackInfo.get(trackId)!;
-      info.length += 1;
-      info.startTime = Math.min(info.startTime, time);
+      const timeMinMax = trackToTimeMinMax.get(trackId)!;
+      timeMinMax.min = Math.min(timeMinMax.min, time);
+      timeMinMax.max = Math.max(timeMinMax.max, time);
     }
     allTracks.add(trackId);
+  }
+
+  const trackIdToTrackInfo = new Map<number, TrackInfo>();
+  for (const trackId of allTracks) {
+    const timeMinMax = trackToTimeMinMax.get(trackId)!;
+    trackIdToTrackInfo.set(trackId, {
+      length: timeMinMax.max - timeMinMax.min + 1,
+      startTime: timeMinMax.min,
+      id: trackId,
+    });
   }
 
   const skippedEdges: [number, number][] = [];
@@ -54,31 +64,6 @@ export function getLineageData(dataset: Dataset): LineageData<TrackInfo> {
     console.warn(`Skipped ${skippedEdges.length} edges that reference non-existent tracks:`, skippedEdges);
   }
   return { idToInfo: trackIdToTrackInfo, edges };
-}
-
-export function getObjectLineageData(dataset: Dataset): LineageData<LineageObjectInfo> {
-  const numObjects = dataset.numObjects;
-  const trackData = dataset.getTrackData(dataset.getDefaultTrackKey() ?? "");
-  const nodeEdges = trackData?.nodeEdges;
-  if (!trackData || !nodeEdges) {
-    return { idToInfo: new Map<number, LineageObjectInfo>(), edges: [] };
-  }
-
-  const idToInfo = new Map<number, LineageObjectInfo>();
-  for (let i = 0; i < numObjects; i++) {
-    const trackId = dataset.trackIds?.[i] ?? -1;
-    const time = dataset.times?.[i] ?? -1;
-    idToInfo.set(i, { id: i, trackId, time });
-  }
-
-  const edges: [number, number][] = [];
-  for (let i = 0; i < nodeEdges.length; i += 2) {
-    const source = nodeEdges[i];
-    const target = nodeEdges[i + 1];
-    edges.push([source, target]);
-  }
-  // TODO: Handle remapping from node IDs to object IDs here.
-  return { idToInfo, edges };
 }
 
 function getCoparents(
@@ -104,9 +89,7 @@ function getCoparents(
   return idToCoparents;
 }
 
-export function getLineageRelationships(
-  data: LineageData<TrackInfo> | LineageData<LineageObjectInfo>
-): LineageDataRelationships {
+export function getLineageRelationships(data: LineageData): LineageDataRelationships {
   const ids = Array.from(data.idToInfo.keys());
   const idToChildren = new Map<number, number[]>(ids.map((id) => [id, []]));
   const idToChildrenRenderable = new Map<number, number[]>(ids.map((id) => [id, []]));
@@ -168,7 +151,7 @@ export function getDefaultZoomTransform(
  * (indicating no nodes or a cyclical graph).
  */
 export function getTreeHierarchy(
-  data: LineageData<TrackInfo>,
+  data: LineageData,
   relationships: LineageDataRelationships
 ): d3.HierarchyNode<TrackInfo> | undefined {
   const { idToChildrenRenderable, idToParents } = relationships;
@@ -214,10 +197,10 @@ export function getTreeHierarchy(
  * IDs and their related parents and children.
  */
 export function getLineageSubset(
-  data: LineageData<TrackInfo>,
+  data: LineageData,
   relationships: LineageDataRelationships,
   trackIds: Set<number>
-): LineageData<TrackInfo> {
+): LineageData {
   const { idToParents, idToChildren } = relationships;
 
   // Get set of IDs + related parents and children.
@@ -232,7 +215,7 @@ export function getLineageSubset(
   }
 
   // Filter lineage data to only include related IDs.
-  const filteredData: LineageData<TrackInfo> = {
+  const filteredData: LineageData = {
     idToInfo: new Map([...data.idToInfo.entries()].filter(([id]) => relatedIds.has(id))),
     edges: data.edges.filter(([source, target]) => relatedIds.has(source) && relatedIds.has(target)),
   };

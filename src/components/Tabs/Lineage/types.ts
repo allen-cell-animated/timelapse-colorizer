@@ -4,19 +4,8 @@ export type TrackInfo = {
   startTime: number;
 };
 
-export type LineageObjectInfo = {
-  id: number;
-  trackId: number;
-  time: number;
-};
-
-export type LineageData<T extends TrackInfo | LineageObjectInfo> = {
-  idToInfo: Map<number, T>;
-  edges: [number, number][];
-};
-
-export type LineageObjectData = {
-  idToInfo: Map<number, LineageObjectInfo>;
+export type LineageData = {
+  idToInfo: Map<number, TrackInfo>;
   edges: [number, number][];
 };
 

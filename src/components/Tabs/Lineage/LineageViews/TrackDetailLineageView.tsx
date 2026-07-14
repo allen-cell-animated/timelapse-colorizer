@@ -11,7 +11,7 @@ import { useConstructor } from "src/hooks";
 type TrackDetailLineageViewProps = {
   container: React.RefObject<HTMLDivElement>;
   dataset: Dataset | null;
-  data: LineageData<TrackInfo>;
+  data: LineageData;
   selectedTracks: Map<number, Track>;
   trackColors: Map<number, Color>;
   relationships: LineageDataRelationships;
@@ -25,6 +25,7 @@ const SVG_BUTTON_CLASS = "svg-button";
 const SVG_BUTTON_TEXT_CLASS = "expand-button-text";
 const SVG_EXPAND_BUTTON_CLASS = "expand-button";
 const SVG_COLLAPSE_BUTTON_CLASS = "collapse-button";
+const SVG_TIME_INDICATOR_CLASS = "time-indicator";
 const MAIN_NODE_CLASS = "main-node";
 const TRACK_LABEL_CLASS = "track-label";
 
@@ -63,7 +64,7 @@ type NodeSelection = d3.Selection<SVGGElement | d3.BaseType, d3.HierarchyPointNo
  */
 function renderView(
   g: d3.Selection<SVGGElement, TrackInfo, null, undefined>,
-  fullData: LineageData<TrackInfo>,
+  fullData: LineageData,
   fullRelationships: LineageDataRelationships,
   selectedTracks: Set<number>
 ): NodeSelection | undefined {
@@ -133,6 +134,7 @@ function renderView(
 
   // Draw rectangles for each node
   node.append("rect").attr("class", MAIN_NODE_CLASS);
+  node.append("line").attr("class", SVG_TIME_INDICATOR_CLASS);
 
   // Add expand/collapse button for each node
   const expandButtonNodes = node
@@ -168,7 +170,7 @@ function setupPointerHandlers(
     event.currentTarget.clientWidth;
     const boundingRect = event.currentTarget.getBoundingClientRect();
     const relativeX = event.clientX - boundingRect.left;
-    const time = d.data.startTime + (relativeX / boundingRect.width) * d.data.length;
+    const time = Math.round(d.data.startTime + (relativeX / boundingRect.width) * d.data.length);
     onToggleSelection?.current?.(d.data, time);
   };
 
@@ -214,11 +216,14 @@ function updateNodeStyles(
     return trackIds.has(d.data.id);
   };
 
-  const getFillColor = (d: d3.HierarchyPointNode<TrackInfo>): string => {
-    // TODO: Show CSS gradient here
-    return d.data.startTime <= time && time < d.data.startTime + d.data.length
-      ? trackColors.get(d.data.id)?.getStyle() ?? DEFAULT_NODE_FILL_COLOR
-      : DEFAULT_NODE_FILL_COLOR;
+  const getLineTransform = (d: d3.HierarchyPointNode<TrackInfo>): string => {
+    const progress = time - d.data.startTime;
+    const x = progress * TREE_LAYER_DEPTH_PX;
+    return `translate(${x},0)`;
+  };
+
+  const isInTimeRange = (d: d3.HierarchyPointNode<TrackInfo>): boolean => {
+    return time >= d.data.startTime && time < d.data.startTime + d.data.length;
   };
 
   node
@@ -227,7 +232,7 @@ function updateNodeStyles(
     .attr("width", (d) => d.data.length * TREE_LAYER_DEPTH_PX)
     .attr("height", NODE_HEIGHT_PX)
     .attr("rx", 4)
-    .attr("fill", (d) => getFillColor(d))
+    .attr("fill", DEFAULT_NODE_FILL_COLOR)
     .attr("opacity", (d) => (isSelected(d) ? 1 : 0)) // Hide the dummy root node
     // Only clickable when visible, so collapsed nodes toggle via their expand button.
     .attr("cursor", (d) => (isSelected(d) ? "pointer" : "default"))
@@ -235,6 +240,18 @@ function updateNodeStyles(
     .attr("stroke", (d) => trackColors.get(d.data.id)?.getStyle() ?? DEFAULT_NODE_EDGE_COLOR)
     .attr("stroke-width", 2)
     .attr("transition", "fill 0.3s, stroke 0.3s");
+
+  node
+    .select<SVGTextElement>(`line.${SVG_TIME_INDICATOR_CLASS}`)
+    .attr("transform", getLineTransform)
+    .attr("opacity", (d) => (isInTimeRange(d) && isSelected(d) ? 1 : 0))
+    .attr("x1", 0)
+    .attr("y1", -NODE_HEIGHT_PX / 2)
+    .attr("x2", 0)
+    .attr("y2", NODE_HEIGHT_PX / 2)
+    .attr("stroke", (d) => trackColors.get(d.data.id)?.getStyle() ?? DEFAULT_NODE_EDGE_COLOR)
+    .attr("stroke-width", TREE_LAYER_DEPTH_PX)
+    .attr("pointer-events", "none");
 
   // Buttons
   const expandButtonGroup = node.select<SVGGElement>(`g.${SVG_EXPAND_BUTTON_CLASS}`);
