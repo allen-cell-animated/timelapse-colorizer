@@ -8,6 +8,8 @@ import { getLineageRelationships, getLineageSubset, getTreeHierarchy } from "src
 import type { LineageData, LineageDataRelationships, TrackInfo } from "src/components/Tabs/Lineage/types";
 import { useConstructor } from "src/hooks";
 
+import { forEachChild, forEachParent } from "../tree_utils";
+
 type TrackDetailLineageViewProps = {
   container: React.RefObject<HTMLDivElement>;
   dataset: Dataset | null;
@@ -21,10 +23,11 @@ type TrackDetailLineageViewProps = {
   onHover?: (info: TrackInfo | null, time: number) => void;
 };
 
+const SVG_EXPAND_BUTTON_GROUP_CLASS = "expand-button";
+const SVG_COLLAPSE_BUTTON_GROUP_CLASS = "collapse-button";
+
 const SVG_BUTTON_CLASS = "svg-button";
 const SVG_BUTTON_TEXT_CLASS = "expand-button-text";
-const SVG_EXPAND_BUTTON_CLASS = "expand-button";
-const SVG_COLLAPSE_BUTTON_CLASS = "collapse-button";
 const SVG_TIME_INDICATOR_CLASS = "time-indicator";
 const MAIN_NODE_CLASS = "main-node";
 const TRACK_LABEL_CLASS = "track-label";
@@ -38,20 +41,27 @@ const COLLAPSED_NODE_FILL_COLOR = "#e0e0e0";
 const COLLAPSED_NODE_FILL_HOVER_COLOR = "#8f8f8f";
 const COLLAPSED_NODE_EDGE_COLOR = "#8f8f8f";
 
-const DEFAULT_NODE_FILL_COLOR = "#ffffff";
-const DEFAULT_NODE_EDGE_COLOR = "#1a1f2e";
+const DEFAULT_NODE_FILL_COLOR = "#fafafa";
+const DEFAULT_NODE_EDGE_COLOR = "#8e8f94";
 
 const MERGE_EDGE_COLOR = "#ff9410";
 const DEFAULT_EDGE_COLOR = "#4a5568";
 
 const StyledSVG = styled.svg`
-  .${SVG_BUTTON_CLASS} {
+  .${SVG_COLLAPSE_BUTTON_GROUP_CLASS}, .${SVG_EXPAND_BUTTON_GROUP_CLASS} {
     cursor: pointer;
-    transition: fill 0.3s, stroke 0.3s;
+
+    & * {
+      transition: fill 0.2s ease-out, stroke 0.2s;
+    }
 
     &:hover {
-      fill: ${COLLAPSED_NODE_FILL_HOVER_COLOR};
-      color: ${COLLAPSED_NODE_FILL_COLOR};
+      & rect {
+        fill: ${COLLAPSED_NODE_FILL_HOVER_COLOR};
+      }
+      & text {
+        fill: #ffffff;
+      }
     }
   }
 `;
@@ -140,11 +150,11 @@ function renderView(
   const expandButtonNodes = node
     .filter((d) => !selectedTrackIds.has(d.data.id))
     .append("g")
-    .attr("class", SVG_EXPAND_BUTTON_CLASS);
+    .attr("class", SVG_EXPAND_BUTTON_GROUP_CLASS);
   const collapseButtonNodes = node
     .filter((d) => selectedTrackIds.has(d.data.id))
     .append("g")
-    .attr("class", SVG_COLLAPSE_BUTTON_CLASS);
+    .attr("class", SVG_COLLAPSE_BUTTON_GROUP_CLASS);
   expandButtonNodes.append("rect").attr("class", `${SVG_BUTTON_CLASS}`);
   expandButtonNodes.append("text").attr("class", `${SVG_BUTTON_TEXT_CLASS}`);
   collapseButtonNodes.append("rect").attr("class", `${SVG_BUTTON_CLASS}`);
@@ -192,7 +202,7 @@ function setupPointerHandlers(
 
   const mainNodeRect = node.select<SVGRectElement>(`rect.${MAIN_NODE_CLASS}`);
   const buttonGroups = node.selectAll<SVGGElement, d3.HierarchyNode<TrackInfo>>(
-    `g.${SVG_EXPAND_BUTTON_CLASS}, g.${SVG_COLLAPSE_BUTTON_CLASS}`
+    `g.${SVG_EXPAND_BUTTON_GROUP_CLASS}, g.${SVG_COLLAPSE_BUTTON_GROUP_CLASS}`
   );
 
   mainNodeRect.on("click", handleClickMainNode);
@@ -254,7 +264,7 @@ function updateNodeStyles(
     .attr("pointer-events", "none");
 
   // Buttons
-  const expandButtonGroup = node.select<SVGGElement>(`g.${SVG_EXPAND_BUTTON_CLASS}`);
+  const expandButtonGroup = node.select<SVGGElement>(`g.${SVG_EXPAND_BUTTON_GROUP_CLASS}`);
   expandButtonGroup
     .select<SVGRectElement>("rect")
     // .attr("x", -COLLAPSED_NODE_WIDTH_PX / 2)
@@ -281,7 +291,7 @@ function updateNodeStyles(
     .attr("pointer-events", "none")
     .attr("transition", "fill 0.3s");
 
-  const collapseButtonGroup = node.select<SVGGElement>(`g.${SVG_COLLAPSE_BUTTON_CLASS}`);
+  const collapseButtonGroup = node.select<SVGGElement>(`g.${SVG_COLLAPSE_BUTTON_GROUP_CLASS}`);
   collapseButtonGroup
     .select<SVGRectElement>("rect")
     // .attr("x", -COLLAPSED_NODE_WIDTH_PX)
@@ -298,7 +308,7 @@ function updateNodeStyles(
   collapseButtonGroup
     .select<SVGTextElement>("text")
     .text("-")
-    // .attr("x", -COLLAPSED_NODE_WIDTH_PX / 2)
+    .attr("x", COLLAPSED_NODE_WIDTH_PX / 2)
     .attr("y", 1)
     .attr("text-anchor", "middle")
     .attr("dominant-baseline", "middle")
@@ -333,6 +343,7 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
   const onHoverRef = useRef(props.onHover);
   onHoverRef.current = props.onHover;
 
+  const { idToInfo: trackIdToInfo } = props.data;
   const trackIdToNode = useMemo(() => {
     const map = new Map<number, d3.HierarchyNode<TrackInfo>>();
     if (props.hierarchy) {
@@ -350,7 +361,7 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
   // current set of expanded tracks.
   const trackIdToExpanded = useMemo(() => {
     const map = new Map<number, boolean>();
-    for (const trackId of props.data.idToInfo.keys()) {
+    for (const trackId of trackIdToInfo.keys()) {
       if (props.selectedTracks.has(trackId)) {
         map.set(trackId, true);
       } else {
@@ -378,53 +389,7 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
     return nodes;
   });
 
-  const forEachParent = useCallback(
-    (
-      node: d3.HierarchyNode<TrackInfo> | undefined,
-      idToParents: Map<number, number[]>,
-      callback: (parent: d3.HierarchyNode<TrackInfo>) => boolean
-    ): void => {
-      if (!node) {
-        return;
-      }
-      const parents = idToParents.get(node.data.id) ?? [];
-      for (const parentId of parents) {
-        const parentNode = trackIdToNode.get(parentId);
-        if (parentNode) {
-          if (!callback(parentNode)) {
-            continue;
-          }
-          forEachParent(parentNode, idToParents, callback);
-        }
-      }
-    },
-    [trackIdToNode]
-  );
-
-  const forEachChild = useCallback(
-    (
-      node: d3.HierarchyNode<TrackInfo> | undefined,
-      idToChildren: Map<number, number[]>,
-      callback: (child: d3.HierarchyNode<TrackInfo>) => boolean
-    ): void => {
-      if (!node) {
-        return;
-      }
-      const children = idToChildren.get(node.data.id) ?? [];
-      for (const childId of children) {
-        const childNode = trackIdToNode.get(childId);
-        if (childNode) {
-          if (!callback(childNode)) {
-            continue;
-          }
-          forEachChild(childNode, idToChildren, callback);
-        }
-      }
-    },
-    [trackIdToNode]
-  );
-
-  const expandTrack = (trackId: number): void => {
+  const expandTrack = (expandedTracks: Set<number>, trackId: number): Set<number> => {
     const newExpandedTracks = new Set(expandedTracks);
     const coparentIds = props.relationships.idToCoparents.get(trackId) ?? new Set();
     const ids = coparentIds.size > 0 ? coparentIds : new Set([trackId]);
@@ -432,44 +397,41 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
     for (const id of ids) {
       newExpandedTracks.add(id);
       trackIdToExpanded.set(id, true);
-      const node = trackIdToNode.get(id);
       const { idToChildren } = props.relationships;
       // Expand all parents of the node, up to a root node.
-      forEachParent(node, props.relationships.idToParents, (parentNode) => {
-        newExpandedTracks.add(parentNode.data.id);
+      forEachParent(id, trackIdToInfo, props.relationships.idToParents, (parentData) => {
+        newExpandedTracks.add(parentData.id);
         return true;
       });
       // Traverse children, expand if previously expanded too.
-      forEachChild(node, idToChildren, (childNode) => {
-        if (trackIdToExpanded.get(childNode.data.id)) {
-          newExpandedTracks.add(childNode.data.id);
+      forEachChild(id, trackIdToInfo, idToChildren, (childData) => {
+        if (trackIdToExpanded.get(childData.id)) {
+          newExpandedTracks.add(childData.id);
           return true;
         }
         return false;
       });
     }
-    setExpandedTracks(newExpandedTracks);
+    return newExpandedTracks;
   };
 
-  const collapseTrack = (trackId: number): void => {
+  const collapseTrack = (expandedTracks: Set<number>, trackId: number): Set<number> => {
     const newExpandedTracks = new Set(expandedTracks);
     newExpandedTracks.delete(trackId);
     trackIdToExpanded.set(trackId, false);
 
-    const node = trackIdToNode.get(trackId);
-
     // Remove all children of the node from the expanded set.
     const traversedNodes = new Set<number>([trackId]);
-    const collapseAllChildren = (node: d3.HierarchyNode<TrackInfo> | undefined): void => {
-      forEachChild(node, props.relationships.idToChildren, (childNode) => {
-        if (traversedNodes.has(childNode.data.id)) {
+    const collapseAllChildren = (trackId: number): void => {
+      forEachChild(trackId, trackIdToInfo, props.relationships.idToChildren, (childData) => {
+        if (traversedNodes.has(childData.id)) {
           return false;
         }
-        newExpandedTracks.delete(childNode.data.id);
-        traversedNodes.add(childNode.data.id);
+        newExpandedTracks.delete(childData.id);
+        traversedNodes.add(childData.id);
 
         // Check coparents
-        const coparents = props.relationships.idToCoparents.get(childNode.data.id) ?? new Set();
+        const coparents = props.relationships.idToCoparents.get(childData.id) ?? new Set();
         for (const coparentId of coparents) {
           if (traversedNodes.has(coparentId)) {
             continue;
@@ -478,39 +440,38 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
               newExpandedTracks.delete(coparentId);
               trackIdToExpanded.set(coparentId, false);
               traversedNodes.add(coparentId);
-              collapseAllChildren(trackIdToNode.get(coparentId));
+              collapseAllChildren(coparentId);
             }
           }
         }
         // Check if any of the child node's parents are still expanded.
-        const parents = props.relationships.idToParents.get(childNode.data.id) ?? [];
-        if (parents.length > 1) {
-          for (const parent of parents) {
-            if (traversedNodes.has(parent)) {
+        const parentIds = props.relationships.idToParents.get(childData.id) ?? [];
+        if (parentIds.length > 1) {
+          for (const parentId of parentIds) {
+            if (traversedNodes.has(parentId)) {
               continue;
-            } else {
-              // Collapse the parent if currently expanded (and all of its children?????)
-              if (newExpandedTracks.has(parent)) {
-                newExpandedTracks.delete(parent);
-                trackIdToExpanded.set(parent, false);
-                traversedNodes.add(parent);
-                collapseAllChildren(trackIdToNode.get(parent));
-              }
+            } else if (newExpandedTracks.has(parentId)) {
+              // Collapse the parent if currently expanded (and all of its
+              // children)
+              newExpandedTracks.delete(parentId);
+              trackIdToExpanded.set(parentId, false);
+              traversedNodes.add(parentId);
+              collapseAllChildren(parentId);
             }
           }
         }
-
         return true;
       });
     };
-    collapseAllChildren(node);
-
-    setExpandedTracks(newExpandedTracks);
+    collapseAllChildren(trackId);
+    return newExpandedTracks;
   };
 
   useEffect(() => {
     for (const trackId of props.selectedTracks.keys()) {
-      expandTrack(trackId);
+      // TODO: Possible bug here where the set of expanded tracks is overwritten
+      // because all instances of `expandTrack` are calling the same setter.
+      setExpandedTracks((prev) => expandTrack(prev, trackId));
     }
   }, [props.selectedTracks]);
 
@@ -518,9 +479,9 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
   // expand/collapse button.
   const onToggleExpanded = (info: TrackInfo): void => {
     if (expandedTracks.has(info.id)) {
-      collapseTrack(info.id);
+      setExpandedTracks((prev) => collapseTrack(prev, info.id));
     } else {
-      expandTrack(info.id);
+      setExpandedTracks((prev) => expandTrack(prev, info.id));
     }
   };
   const onToggleExpandedRef = useRef(onToggleExpanded);
