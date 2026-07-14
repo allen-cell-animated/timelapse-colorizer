@@ -25,6 +25,7 @@ const SVG_BUTTON_CLASS = "svg-button";
 const SVG_BUTTON_TEXT_CLASS = "expand-button-text";
 const SVG_EXPAND_BUTTON_CLASS = "expand-button";
 const SVG_COLLAPSE_BUTTON_CLASS = "collapse-button";
+const MAIN_NODE_CLASS = "main-node";
 const TRACK_LABEL_CLASS = "track-label";
 
 const TREE_LEAF_HEIGHT_PX = 30;
@@ -131,7 +132,7 @@ function renderView(
     .attr("transform", (d) => `translate(${d.data.startTime * TREE_LAYER_DEPTH_PX},${d.x})`);
 
   // Draw rectangles for each node
-  node.append("rect");
+  node.append("rect").attr("class", MAIN_NODE_CLASS);
 
   // Add expand/collapse button for each node
   const expandButtonNodes = node
@@ -155,31 +156,51 @@ function renderView(
 
 function setupPointerHandlers(
   node: NodeSelection,
-  svg: React.RefObject<SVGSVGElement>,
   hoveredNodeRef: React.MutableRefObject<undefined | (EventTarget & Element)>,
-  isSelected: (d: d3.HierarchyPointNode<TrackInfo>) => boolean,
-  onClick?: React.RefObject<undefined | ((info: TrackInfo, time: number) => void)>,
+  onToggleSelection?: React.RefObject<undefined | ((info: TrackInfo, time: number) => void)>,
+  onToggleExpanded?: React.RefObject<undefined | ((info: TrackInfo) => void)>,
   onHover?: React.RefObject<undefined | ((info: TrackInfo | null, time: number) => void)>
 ): () => void {
-  const handleClickNode = (event: MouseEvent, d: d3.HierarchyPointNode<TrackInfo>): void => {
-    if (event) onClick?.current?.(d.data, 0);
+  // Clicking the main track rectangle toggles the track's selection.
+  const handleClickMainNode = (event: MouseEvent, d: d3.HierarchyNode<TrackInfo>): void => {
+    event.stopPropagation();
+    // TODO: Determine position along axis, jump to time accordingly
+    event.currentTarget.clientWidth;
+    const boundingRect = event.currentTarget.getBoundingClientRect();
+    const relativeX = event.clientX - boundingRect.left;
+    const time = d.data.startTime + (relativeX / boundingRect.width) * d.data.length;
+    onToggleSelection?.current?.(d.data, time);
   };
 
-  const handleHoverNode = (event: MouseEvent, d: d3.HierarchyPointNode<TrackInfo>): void => {
+  // Clicking an expand/collapse button toggles whether the tree is expanded.
+  const handleClickButton = (event: MouseEvent, d: d3.HierarchyNode<TrackInfo>): void => {
+    event.stopPropagation();
+    onToggleExpanded?.current?.(d.data);
+  };
+
+  const handleHoverNode = (event: MouseEvent, d: d3.HierarchyNode<TrackInfo>): void => {
     hoveredNodeRef.current = event.currentTarget;
     onHover?.current?.(d.data, 0);
   };
 
-  const handleUnhoverNode = (event: MouseEvent, d: d3.HierarchyPointNode<TrackInfo>): void => {
-    if (hoveredNodeRef) {
-      hoveredNodeRef.current = undefined;
-    }
+  const handleUnhoverNode = (): void => {
+    hoveredNodeRef.current = undefined;
     onHover?.current?.(null, 0);
   };
-  node.on("click", handleClickNode).on("mouseenter", handleHoverNode).on("mouseleave", handleUnhoverNode);
+
+  const mainNodeRect = node.select<SVGRectElement>(`rect.${MAIN_NODE_CLASS}`);
+  const buttonGroups = node.selectAll<SVGGElement, d3.HierarchyNode<TrackInfo>>(
+    `g.${SVG_EXPAND_BUTTON_CLASS}, g.${SVG_COLLAPSE_BUTTON_CLASS}`
+  );
+
+  mainNodeRect.on("click", handleClickMainNode);
+  buttonGroups.on("click", handleClickButton);
+  node.on("mouseenter", handleHoverNode).on("mouseleave", handleUnhoverNode);
 
   return () => {
-    node.on("click", null).on("mouseenter", null).on("mouseleave", null);
+    mainNodeRect.on("click", null);
+    buttonGroups.on("click", null);
+    node.on("mouseenter", null).on("mouseleave", null);
   };
 }
 
@@ -201,13 +222,16 @@ function updateNodeStyles(
   };
 
   node
-    .select<SVGRectElement>("rect")
+    .select<SVGRectElement>(`rect.${MAIN_NODE_CLASS}`)
     .attr("transform", `translate(${-TREE_LAYER_DEPTH_PX / 2},${-NODE_HEIGHT_PX / 2})`)
     .attr("width", (d) => d.data.length * TREE_LAYER_DEPTH_PX)
     .attr("height", NODE_HEIGHT_PX)
     .attr("rx", 4)
     .attr("fill", (d) => getFillColor(d))
     .attr("opacity", (d) => (isSelected(d) ? 1 : 0)) // Hide the dummy root node
+    // Only clickable when visible, so collapsed nodes toggle via their expand button.
+    .attr("cursor", (d) => (isSelected(d) ? "pointer" : "default"))
+    .attr("pointer-events", (d) => (isSelected(d) ? "auto" : "none"))
     .attr("stroke", (d) => trackColors.get(d.data.id)?.getStyle() ?? DEFAULT_NODE_EDGE_COLOR)
     .attr("stroke-width", 2)
     .attr("transition", "fill 0.3s, stroke 0.3s");
@@ -473,16 +497,17 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
     }
   }, [props.selectedTracks]);
 
-  const onClickNode = (info: TrackInfo, time: number): void => {
-    if (trackIdToExpanded.get(info.id)) {
+  // Expand/collapse the tree below a node. Triggered by the node's
+  // expand/collapse button.
+  const onToggleExpanded = (info: TrackInfo): void => {
+    if (expandedTracks.has(info.id)) {
       collapseTrack(info.id);
     } else {
       expandTrack(info.id);
     }
-    onClickRef.current?.(info, time);
   };
-  const onClickNodeRef = useRef(onClickNode);
-  onClickNodeRef.current = onClickNode;
+  const onToggleExpandedRef = useRef(onToggleExpanded);
+  onToggleExpandedRef.current = onToggleExpanded;
 
   //// SVG Elements ////
 
@@ -543,10 +568,9 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
       if (node) {
         cleanupPointerHandlers = setupPointerHandlers(
           node,
-          svgRef,
           hoveredNodeRef,
-          isSelected,
-          onClickNodeRef,
+          onClickRef,
+          onToggleExpandedRef,
           onHoverRef
         );
       }
@@ -575,7 +599,7 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
       return;
     }
 
-    return setupPointerHandlers(nodeSelectionRef.current, svgRef, hoveredNodeRef, isSelected, onClickRef, onHoverRef);
+    return setupPointerHandlers(nodeSelectionRef.current, hoveredNodeRef, onClickRef, onToggleExpandedRef, onHoverRef);
   }, [props.time, isSelected]);
 
   // Fit on first render
