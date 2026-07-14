@@ -37,27 +37,33 @@ const NODE_HEIGHT_PX = 20;
 const TREE_LAYER_DEPTH_PX = 5;
 
 const COLLAPSED_NODE_WIDTH_PX = 20;
-const COLLAPSED_NODE_FILL_COLOR = "#e0e0e0";
+const COLLAPSED_NODE_FILL_COLOR = "#e7e7e7";
 const COLLAPSED_NODE_FILL_HOVER_COLOR = "#8f8f8f";
 const COLLAPSED_NODE_EDGE_COLOR = "#8f8f8f";
 
-const DEFAULT_NODE_FILL_COLOR = "#fafafa";
+const DEFAULT_NODE_FILL_COLOR = "#ffffff";
 const DEFAULT_NODE_EDGE_COLOR = "#8e8f94";
 
 const MERGE_EDGE_COLOR = "#ff9410";
 const DEFAULT_EDGE_COLOR = "#4a5568";
 
 const StyledSVG = styled.svg`
+  .${SVG_COLLAPSE_BUTTON_GROUP_CLASS} rect {
+    // Hide the collapse button by default.
+    opacity: 0;
+  }
+
   .${SVG_COLLAPSE_BUTTON_GROUP_CLASS}, .${SVG_EXPAND_BUTTON_GROUP_CLASS} {
     cursor: pointer;
 
     & * {
-      transition: fill 0.2s ease-out, stroke 0.2s;
+      transition: all 0.2s ease-out;
     }
 
     &:hover {
       & rect {
         fill: ${COLLAPSED_NODE_FILL_HOVER_COLOR};
+        opacity: 1;
       }
       & text {
         fill: #ffffff;
@@ -173,14 +179,13 @@ function setupPointerHandlers(
   onToggleExpanded?: React.RefObject<undefined | ((info: TrackInfo) => void)>,
   onHover?: React.RefObject<undefined | ((info: TrackInfo | null, time: number) => void)>
 ): () => void {
-  // Clicking the main track rectangle toggles the track's selection.
+  // Clicking the main track rectangle toggles the track selection.
   const handleClickMainNode = (event: MouseEvent, d: d3.HierarchyNode<TrackInfo>): void => {
     event.stopPropagation();
-    // TODO: Determine position along axis, jump to time accordingly
     event.currentTarget.clientWidth;
     const boundingRect = event.currentTarget.getBoundingClientRect();
     const relativeX = event.clientX - boundingRect.left;
-    const time = Math.round(d.data.startTime + (relativeX / boundingRect.width) * d.data.length);
+    const time = d.data.startTime + Math.round((relativeX / boundingRect.width) * d.data.length);
     onToggleSelection?.current?.(d.data, time);
   };
 
@@ -218,24 +223,23 @@ function setupPointerHandlers(
 
 function updateNodeStyles(
   node: NodeSelection,
-  trackIds: Set<number>,
+  expandedTrackIds: Set<number>,
   trackColors: Map<number, Color>,
   time: number
 ): void {
-  const isSelected = (d: d3.HierarchyPointNode<TrackInfo>): boolean => {
-    return trackIds.has(d.data.id);
+  const isExpanded = (d: d3.HierarchyPointNode<TrackInfo>): boolean => {
+    return expandedTrackIds.has(d.data.id);
   };
-
   const getLineTransform = (d: d3.HierarchyPointNode<TrackInfo>): string => {
     const progress = time - d.data.startTime;
     const x = progress * TREE_LAYER_DEPTH_PX;
     return `translate(${x},0)`;
   };
-
   const isInTimeRange = (d: d3.HierarchyPointNode<TrackInfo>): boolean => {
     return time >= d.data.startTime && time < d.data.startTime + d.data.length;
   };
 
+  // Main node rectangle
   node
     .select<SVGRectElement>(`rect.${MAIN_NODE_CLASS}`)
     .attr("transform", `translate(${-TREE_LAYER_DEPTH_PX / 2},${-NODE_HEIGHT_PX / 2})`)
@@ -243,18 +247,19 @@ function updateNodeStyles(
     .attr("height", NODE_HEIGHT_PX)
     .attr("rx", 4)
     .attr("fill", DEFAULT_NODE_FILL_COLOR)
-    .attr("opacity", (d) => (isSelected(d) ? 1 : 0)) // Hide the dummy root node
-    // Only clickable when visible, so collapsed nodes toggle via their expand button.
-    .attr("cursor", (d) => (isSelected(d) ? "pointer" : "default"))
-    .attr("pointer-events", (d) => (isSelected(d) ? "auto" : "none"))
+    .attr("opacity", (d) => (isExpanded(d) ? 1 : 0)) // Hide the dummy root node
+    // Hide node when collapsed
+    .attr("cursor", (d) => (isExpanded(d) ? "pointer" : "default"))
+    .attr("pointer-events", (d) => (isExpanded(d) ? "auto" : "none"))
     .attr("stroke", (d) => trackColors.get(d.data.id)?.getStyle() ?? DEFAULT_NODE_EDGE_COLOR)
     .attr("stroke-width", 2)
     .attr("transition", "fill 0.3s, stroke 0.3s");
 
+  // Indicator for current time
   node
     .select<SVGTextElement>(`line.${SVG_TIME_INDICATOR_CLASS}`)
     .attr("transform", getLineTransform)
-    .attr("opacity", (d) => (isInTimeRange(d) && isSelected(d) ? 1 : 0))
+    .attr("opacity", (d) => (isInTimeRange(d) && isExpanded(d) ? 1 : 0))
     .attr("x1", 0)
     .attr("y1", -NODE_HEIGHT_PX / 2)
     .attr("x2", 0)
@@ -263,11 +268,26 @@ function updateNodeStyles(
     .attr("stroke-width", TREE_LAYER_DEPTH_PX)
     .attr("pointer-events", "none");
 
-  // Buttons
+  // Track label
+  node
+    .select<SVGTextElement>(`text.${TRACK_LABEL_CLASS}`)
+    .text((d) => d.data.id)
+    .attr("x", 2)
+    .attr("y", -14)
+    .attr("fill", COLLAPSED_NODE_EDGE_COLOR)
+    .attr("font-size", 14)
+    .attr("pointer-events", "none")
+    .attr("transition", "fill 0.3s");
+
+  // Expand/collapse buttons
+
+  // TODO: Use the foreignObject element to render React buttons
+  // directly into the SVG, instead of using SVG text and rectangles for
+  // accessibility? See
+  // https://developer.mozilla.org/en-US/docs/Web/SVG/Element/foreignObjecthttps://developer.mozilla.org/en-US/docs/Web/SVG/Element/foreignObject
   const expandButtonGroup = node.select<SVGGElement>(`g.${SVG_EXPAND_BUTTON_GROUP_CLASS}`);
   expandButtonGroup
     .select<SVGRectElement>("rect")
-    // .attr("x", -COLLAPSED_NODE_WIDTH_PX / 2)
     .attr("y", -NODE_HEIGHT_PX / 2)
     .attr("width", COLLAPSED_NODE_WIDTH_PX)
     .attr("height", NODE_HEIGHT_PX)
@@ -276,7 +296,6 @@ function updateNodeStyles(
     .attr("stroke", COLLAPSED_NODE_EDGE_COLOR)
     .attr("stroke-width", 2)
     .attr("transition", "fill 0.3s, stroke 0.3s")
-    // .attr("rx", COLLAPSED_NODE_WIDTH_PX / 2);
     .attr("rx", 4);
 
   expandButtonGroup
@@ -288,13 +307,12 @@ function updateNodeStyles(
     .attr("dominant-baseline", "middle")
     .attr("fill", COLLAPSED_NODE_EDGE_COLOR)
     .attr("font-size", 16)
-    .attr("pointer-events", "none")
-    .attr("transition", "fill 0.3s");
+    .attr("pointer-events", "none");
 
   const collapseButtonGroup = node.select<SVGGElement>(`g.${SVG_COLLAPSE_BUTTON_GROUP_CLASS}`);
   collapseButtonGroup
     .select<SVGRectElement>("rect")
-    // .attr("x", -COLLAPSED_NODE_WIDTH_PX)
+    .attr("x", -2)
     .attr("y", -NODE_HEIGHT_PX / 2)
     .attr("width", COLLAPSED_NODE_WIDTH_PX)
     .attr("height", NODE_HEIGHT_PX)
@@ -308,25 +326,13 @@ function updateNodeStyles(
   collapseButtonGroup
     .select<SVGTextElement>("text")
     .text("-")
-    .attr("x", COLLAPSED_NODE_WIDTH_PX / 2)
+    .attr("x", COLLAPSED_NODE_WIDTH_PX / 2 - 2)
     .attr("y", 1)
     .attr("text-anchor", "middle")
     .attr("dominant-baseline", "middle")
     .attr("fill", COLLAPSED_NODE_EDGE_COLOR)
     .attr("font-size", 16)
-    .attr("pointer-events", "none")
-    .attr("transition", "fill 0.3s");
-
-  // track label
-  node
-    .select<SVGTextElement>(`text.${TRACK_LABEL_CLASS}`)
-    .text((d) => d.data.id)
-    .attr("x", 2)
-    .attr("y", -14)
-    .attr("fill", COLLAPSED_NODE_EDGE_COLOR)
-    .attr("font-size", 14)
-    .attr("pointer-events", "none")
-    .attr("transition", "fill 0.3s");
+    .attr("pointer-events", "none");
 }
 
 export default function LineageTrackDetailView(props: TrackDetailLineageViewProps): ReactElement {
@@ -344,18 +350,18 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
   onHoverRef.current = props.onHover;
 
   const { idToInfo: trackIdToInfo } = props.data;
-  const trackIdToNode = useMemo(() => {
-    const map = new Map<number, d3.HierarchyNode<TrackInfo>>();
-    if (props.hierarchy) {
-      map.set(props.hierarchy.data.id, props.hierarchy);
-      for (const node of props.hierarchy.descendants() ?? []) {
-        map.set(node.data.id, node);
-      }
-    }
-    return map;
-  }, [props.hierarchy]);
 
   const prevTracks = useRef<Map<number, Track>>(new Map());
+  const newTracks = useMemo(() => {
+    const newTracks = new Set<number>();
+    for (const trackId of props.selectedTracks.keys()) {
+      if (!prevTracks.current.has(trackId)) {
+        newTracks.add(trackId);
+      }
+    }
+    return newTracks;
+  }, [props.selectedTracks]);
+
   // Whether individual tracks are expanded or collapsed, regardless of their
   // children or parent state. Traversed from the root to calculate/update the
   // current set of expanded tracks.
@@ -400,6 +406,7 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
       const { idToChildren } = props.relationships;
       // Expand all parents of the node, up to a root node.
       forEachParent(id, trackIdToInfo, props.relationships.idToParents, (parentData) => {
+        trackIdToExpanded.set(id, true);
         newExpandedTracks.add(parentData.id);
         return true;
       });
