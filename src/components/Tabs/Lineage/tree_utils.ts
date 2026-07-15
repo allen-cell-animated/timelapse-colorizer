@@ -140,7 +140,10 @@ export function collapseTrack(
   const previouslyExpandedTracks = new Set<number>(_previouslyExpandedTracks);
 
   // Remove current track and its coparents
-  const coparentIds = relationships.idToCoparents.get(trackId) ?? new Set([trackId]);
+  let coparentIds = relationships.idToCoparents.get(trackId);
+  if (!coparentIds || coparentIds.size === 0) {
+    coparentIds = new Set([trackId]);
+  }
   for (const coparentId of coparentIds) {
     expandedTracks.delete(coparentId);
     previouslyExpandedTracks.delete(coparentId);
