@@ -110,7 +110,7 @@ export default function LineageTab(): ReactElement {
       }
       const track = dataset.getTrack(info.id);
       if (track) {
-        if (time == currentFrame) {
+        if (time === currentFrame) {
           toggleTrack(track);
         } else {
           addTracks([track]);

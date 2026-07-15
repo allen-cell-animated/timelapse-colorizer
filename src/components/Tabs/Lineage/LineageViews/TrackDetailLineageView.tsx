@@ -1,5 +1,5 @@
 import * as d3 from "d3";
-import React, { MouseEvent, type ReactElement, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { type MouseEvent, type ReactElement, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import type { Color } from "three";
 
@@ -10,10 +10,14 @@ import {
   getLineageSubset,
   getTreeHierarchy,
 } from "src/components/Tabs/Lineage/lineage_utils";
+import {
+  collapseTrack,
+  expandTrack,
+  getInitialExpandedState,
+  type TreeExpandedState,
+} from "src/components/Tabs/Lineage/tree_utils";
 import type { LineageData, LineageDataRelationships, TrackInfo } from "src/components/Tabs/Lineage/types";
 import { useConstructor } from "src/hooks";
-
-import { collapseTrack, expandTrack, getInitialExpandedState, TreeExpandedState } from "../tree_utils";
 
 type TrackDetailLineageViewProps = {
   container: React.RefObject<HTMLDivElement>;

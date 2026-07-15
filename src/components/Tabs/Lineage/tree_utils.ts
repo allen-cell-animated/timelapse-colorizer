@@ -1,4 +1,4 @@
-import { LineageData, LineageDataRelationships, TrackInfo } from "./types";
+import type { LineageData, LineageDataRelationships, TrackInfo } from "./types";
 
 /**
  * Recursively calls the provided callback function for all ancestors (parents,
