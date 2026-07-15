@@ -28,7 +28,7 @@ type TrackDetailLineageViewProps = {
   relationships: LineageDataRelationships;
   hierarchy: d3.HierarchyNode<TrackInfo> | null;
   time: number;
-  onClick?: (info: TrackInfo, time: number) => void;
+  onClick?: (info: TrackInfo, time: number | null) => void;
   onHover?: (info: TrackInfo | null, time: number) => void;
 };
 
@@ -51,7 +51,10 @@ const COLLAPSED_NODE_FILL_HOVER_COLOR = "#8f8f8f";
 const COLLAPSED_NODE_EDGE_COLOR = "#8f8f8f";
 
 const DEFAULT_NODE_FILL_COLOR = "#ffffff";
+const DEFAULT_NODE_FILL_COVER_HOVER_COLOR = "#f6f6f6";
 const DEFAULT_NODE_EDGE_COLOR = "#8e8f94";
+
+const TRACK_LABEL_HOVER_COLOR = "#2c2c2c";
 
 const MERGE_EDGE_COLOR = "#ff9410";
 const DEFAULT_EDGE_COLOR = "#4a5568";
@@ -62,6 +65,7 @@ const StyledSVG = styled.svg`
     opacity: 0;
   }
 
+  // Style the expand/collapse buttons and their hover states.
   .${SVG_COLLAPSE_BUTTON_GROUP_CLASS}, .${SVG_EXPAND_BUTTON_GROUP_CLASS} {
     cursor: pointer;
 
@@ -77,6 +81,20 @@ const StyledSVG = styled.svg`
       & text {
         fill: #ffffff;
       }
+    }
+  }
+
+  // Add hover colors to the main node rectangle and track label
+  .${MAIN_NODE_CLASS} {
+    transition: all 0.2s ease-out;
+    &:hover {
+      fill: ${DEFAULT_NODE_FILL_COVER_HOVER_COLOR};
+    }
+  }
+  .${TRACK_LABEL_CLASS} {
+    transition: all 0.2s ease-out;
+    &:hover {
+      fill: ${TRACK_LABEL_HOVER_COLOR};
     }
   }
 `;
@@ -184,7 +202,7 @@ function renderView(
 function setupPointerHandlers(
   node: NodeSelection,
   hoveredNodeRef: React.MutableRefObject<undefined | (EventTarget & Element)>,
-  onToggleSelection?: React.RefObject<undefined | ((info: TrackInfo, time: number) => void)>,
+  onToggleSelection?: React.RefObject<undefined | ((info: TrackInfo, time: number | null) => void)>,
   onToggleExpanded?: React.RefObject<undefined | ((info: TrackInfo) => void)>,
   onHover?: React.RefObject<undefined | ((info: TrackInfo | null, time: number) => void)>
 ): () => void {
@@ -196,6 +214,11 @@ function setupPointerHandlers(
     const relativeX = event.clientX - boundingRect.left;
     const time = d.data.startTime + Math.round((relativeX / boundingRect.width) * d.data.length);
     onToggleSelection?.current?.(d.data, time);
+  };
+
+  const handleClickTrackLabel = (event: MouseEvent, d: d3.HierarchyNode<TrackInfo>): void => {
+    event.stopPropagation();
+    onToggleSelection?.current?.(d.data, null);
   };
 
   // Clicking an expand/collapse button toggles whether the tree is expanded.
@@ -215,16 +238,19 @@ function setupPointerHandlers(
   };
 
   const mainNodeRect = node.select<SVGRectElement>(`rect.${MAIN_NODE_CLASS}`);
+  const trackLabelText = node.select<SVGTextElement>(`text.${TRACK_LABEL_CLASS}`);
   const buttonGroups = node.selectAll<SVGGElement, d3.HierarchyNode<TrackInfo>>(
     `g.${SVG_EXPAND_BUTTON_GROUP_CLASS}, g.${SVG_COLLAPSE_BUTTON_GROUP_CLASS}`
   );
 
   mainNodeRect.on("click", handleClickMainNode);
+  trackLabelText.on("click", handleClickTrackLabel);
   buttonGroups.on("click", handleClickButton);
   node.on("mouseenter", handleHoverNode).on("mouseleave", handleUnhoverNode);
 
   return () => {
     mainNodeRect.on("click", null);
+    trackLabelText.on("click", null);
     buttonGroups.on("click", null);
     node.on("mouseenter", null).on("mouseleave", null);
   };
@@ -285,7 +311,8 @@ function updateNodeStyles(
     .attr("y", -14)
     .attr("fill", COLLAPSED_NODE_EDGE_COLOR)
     .attr("font-size", 14)
-    .attr("pointer-events", "none")
+    .attr("cursor", "pointer")
+    // .attr("pointer-events", "none")
     .attr("transition", "fill 0.3s");
 
   // Expand/collapse buttons

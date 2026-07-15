@@ -104,19 +104,21 @@ export default function LineageTab(): ReactElement {
   );
 
   const onClickObject = useCallback(
-    (info: TrackInfo, time: number) => {
+    (info: TrackInfo, time: number | null) => {
       if (!dataset) {
         return;
       }
       const track = dataset.getTrack(info.id);
       if (track) {
-        if (time === currentFrame) {
+        if (time === currentFrame || time === null) {
           toggleTrack(track);
         } else {
           addTracks([track]);
         }
       }
-      setFrame(time);
+      if (time !== null) {
+        setFrame(time);
+      }
     },
     [onClickTrack, currentFrame, tracks]
   );
