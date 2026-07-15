@@ -19,7 +19,7 @@ function getColorAndRadiusScale(data: LineageData): {
   colorScale: d3.ScaleSequential<string>;
   radiusScale: d3.ScalePower<number, number>;
 } {
-  const trackInfo = Array.from(data.idToInfo.values());
+  const trackInfo = Array.from(data.trackIdToTrackInfo.values());
   const startMin = d3.min(trackInfo, (d) => d.startTime) ?? 0;
   let startMax = d3.max(trackInfo, (d) => d.startTime) ?? startMin;
   const lengthMin = d3.min(trackInfo, (d) => d.length) ?? 1;
@@ -33,7 +33,7 @@ function getColorAndRadiusScale(data: LineageData): {
   return { colorScale, radiusScale };
 }
 
-const EMPTY_LINEAGE_DATA = { idToInfo: new Map(), edges: [] } satisfies LineageData;
+const EMPTY_LINEAGE_DATA = { trackIdToTrackInfo: new Map(), edges: [] } satisfies LineageData;
 
 /**
  * Renders lineage data in a tab. Includes a tree view of the tracks and their

@@ -109,13 +109,13 @@ export function expandTrack(
     expandedTracks.add(id);
     previouslyExpandedTracks.add(id);
     // Expand all parents of the node, up to a root node.
-    forEachParent(id, data.idToInfo, relationships.idToParents, (parentData) => {
+    forEachParent(id, data.trackIdToTrackInfo, relationships.idToParents, (parentData) => {
       expandedTracks.add(parentData.id);
       previouslyExpandedTracks.add(parentData.id);
       return true;
     });
     // Traverse children, expand if previously expanded too.
-    forEachChild(id, data.idToInfo, relationships.idToChildren, (childData) => {
+    forEachChild(id, data.trackIdToTrackInfo, relationships.idToChildren, (childData) => {
       if (previouslyExpandedTracks.has(childData.id)) {
         expandedTracks.add(childData.id);
         return true;
@@ -152,7 +152,7 @@ export function collapseTrack(
   // Remove all children of the track from the expanded set.
   const traversedNodes = new Set<number>([trackId]);
   const collapseAllChildren = (trackId: number): void => {
-    forEachChild(trackId, data.idToInfo, relationships.idToChildren, (childData) => {
+    forEachChild(trackId, data.trackIdToTrackInfo, relationships.idToChildren, (childData) => {
       if (traversedNodes.has(childData.id)) {
         return false;
       }

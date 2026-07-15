@@ -5,7 +5,7 @@ export type TrackInfo = {
 };
 
 export type LineageData = {
-  idToInfo: Map<number, TrackInfo>;
+  trackIdToTrackInfo: Map<number, TrackInfo>;
   edges: [number, number][];
 };
 

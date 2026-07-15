@@ -312,7 +312,6 @@ function updateNodeStyles(
     .attr("fill", COLLAPSED_NODE_EDGE_COLOR)
     .attr("font-size", 14)
     .attr("cursor", "pointer")
-    // .attr("pointer-events", "none")
     .attr("transition", "fill 0.3s");
 
   // Expand/collapse buttons

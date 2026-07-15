@@ -15,7 +15,7 @@ export function getLineageData(dataset: Dataset): LineageData {
   const trackData = defaultTrackKey ? dataset.getTrackData(defaultTrackKey) : undefined;
   const trackEdges = trackData?.trackEdges;
   if (!tracks || !times || !trackEdges) {
-    return { idToInfo: new Map<number, TrackInfo>(), edges: [] };
+    return { trackIdToTrackInfo: new Map<number, TrackInfo>(), edges: [] };
   }
 
   const allTracks = new Set<number>();
@@ -63,7 +63,7 @@ export function getLineageData(dataset: Dataset): LineageData {
   if (skippedEdges.length > 0) {
     console.warn(`Skipped ${skippedEdges.length} edges that reference non-existent tracks:`, skippedEdges);
   }
-  return { idToInfo: trackIdToTrackInfo, edges };
+  return { trackIdToTrackInfo: trackIdToTrackInfo, edges };
 }
 
 function getCoparents(
@@ -90,7 +90,7 @@ function getCoparents(
 }
 
 export function getLineageRelationships(data: LineageData): LineageDataRelationships {
-  const ids = Array.from(data.idToInfo.keys());
+  const ids = Array.from(data.trackIdToTrackInfo.keys());
   const idToChildren = new Map<number, number[]>(ids.map((id) => [id, []]));
   const idToChildrenRenderable = new Map<number, number[]>(ids.map((id) => [id, []]));
   const idToParents = new Map<number, number[]>(ids.map((id) => [id, []]));
@@ -158,7 +158,7 @@ export function getTreeHierarchy(
   relationships: LineageDataRelationships
 ): d3.HierarchyNode<TrackInfo> | undefined {
   const { idToChildrenRenderable, idToParents } = relationships;
-  const trackIdToTrackInfo = new Map(data.idToInfo);
+  const trackIdToTrackInfo = new Map(data.trackIdToTrackInfo);
   const idToChildren = new Map(idToChildrenRenderable);
 
   // All nodes with no parents
@@ -219,7 +219,7 @@ export function getLineageSubset(
 
   // Filter lineage data to only include related IDs.
   const filteredData: LineageData = {
-    idToInfo: new Map([...data.idToInfo.entries()].filter(([id]) => relatedIds.has(id))),
+    trackIdToTrackInfo: new Map([...data.trackIdToTrackInfo.entries()].filter(([id]) => relatedIds.has(id))),
     edges: data.edges.filter(([source, target]) => relatedIds.has(source) && relatedIds.has(target)),
   };
   return filteredData;
