@@ -297,6 +297,7 @@ function updateNodeStyles(
   const expandButtonGroup = node.select<SVGGElement>(`g.${SVG_EXPAND_BUTTON_GROUP_CLASS}`);
   expandButtonGroup
     .select<SVGRectElement>("rect")
+    .attr("x", -2)
     .attr("y", -NODE_HEIGHT_PX / 2)
     .attr("width", COLLAPSED_NODE_WIDTH_PX)
     .attr("height", NODE_HEIGHT_PX)
@@ -310,7 +311,7 @@ function updateNodeStyles(
   expandButtonGroup
     .select<SVGTextElement>("text")
     .text("+")
-    .attr("x", COLLAPSED_NODE_WIDTH_PX / 2)
+    .attr("x", COLLAPSED_NODE_WIDTH_PX / 2 - 2)
     .attr("y", 1)
     .attr("text-anchor", "middle")
     .attr("dominant-baseline", "middle")
