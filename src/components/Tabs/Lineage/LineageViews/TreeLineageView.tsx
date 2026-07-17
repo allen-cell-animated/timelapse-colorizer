@@ -6,7 +6,8 @@ import { getDefaultZoomTransform } from "src/components/Tabs/Lineage/lineage_uti
 import type { LineageData, LineageDataRelationships, TrackInfo } from "src/components/Tabs/Lineage/types";
 import { useConstructor } from "src/hooks";
 
-const DUMMY_ROOT_NODE_ID = -1;
+import { DUMMY_ROOT_NODE_ID } from "../constants";
+
 const TREE_LEAF_HEIGHT_PX = 30;
 const TREE_LAYER_DEPTH_PX = 110;
 const MERGE_EDGE_COLOR = "#ff9410";
