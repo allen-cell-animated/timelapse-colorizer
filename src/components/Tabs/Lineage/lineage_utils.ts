@@ -19,19 +19,29 @@ export function getLineageData(dataset: Dataset): LineageData {
   }
 
   const allTracks = new Set<number>();
-  const trackIdToTrackInfo = new Map<number, TrackInfo>();
+  const trackToTimeMinMax = new Map<number, { min: number; max: number }>();
   for (let id = 0; id < tracks.length; id++) {
     const trackId = tracks[id];
     const time = times[id];
 
-    if (!trackIdToTrackInfo.has(trackId)) {
-      trackIdToTrackInfo.set(trackId, { id: trackId, length: 1, startTime: time });
+    if (!trackToTimeMinMax.has(trackId)) {
+      trackToTimeMinMax.set(trackId, { min: time, max: time });
     } else {
-      const info = trackIdToTrackInfo.get(trackId)!;
-      info.length += 1;
-      info.startTime = Math.min(info.startTime, time);
+      const timeMinMax = trackToTimeMinMax.get(trackId)!;
+      timeMinMax.min = Math.min(timeMinMax.min, time);
+      timeMinMax.max = Math.max(timeMinMax.max, time);
     }
     allTracks.add(trackId);
+  }
+
+  const trackIdToTrackInfo = new Map<number, TrackInfo>();
+  for (const trackId of allTracks) {
+    const timeMinMax = trackToTimeMinMax.get(trackId)!;
+    trackIdToTrackInfo.set(trackId, {
+      length: timeMinMax.max - timeMinMax.min + 1,
+      startTime: timeMinMax.min,
+      id: trackId,
+    });
   }
 
   const skippedEdges: [number, number][] = [];
@@ -53,14 +63,37 @@ export function getLineageData(dataset: Dataset): LineageData {
   if (skippedEdges.length > 0) {
     console.warn(`Skipped ${skippedEdges.length} edges that reference non-existent tracks:`, skippedEdges);
   }
-  return { trackIdToTrackInfo, edges };
+  return { trackIdToTrackInfo: trackIdToTrackInfo, edges };
+}
+
+function getCoparents(
+  idToChildren: Map<number, number[]>,
+  idToParents: Map<number, number[]>
+): Map<number, Set<number>> {
+  // Calculate co-parents for each node (other direct parents of its direct
+  // children).
+  const idToCoparents = new Map<number, Set<number>>();
+
+  for (const [id, childIds] of idToChildren.entries()) {
+    // Get other parents of the children of this node.
+    const parents = new Set<number>();
+    for (const childId of childIds) {
+      const childParents = idToParents.get(childId) ?? [];
+      childParents.forEach(parents.add, parents);
+    }
+    if (parents.size === 1 && parents.has(id)) {
+      continue;
+    }
+    idToCoparents.set(id, parents);
+  }
+  return idToCoparents;
 }
 
 export function getLineageRelationships(data: LineageData): LineageDataRelationships {
-  const trackIds = Array.from(data.trackIdToTrackInfo.keys());
-  const idToChildren = new Map<number, number[]>(trackIds.map((id) => [id, []]));
-  const idToChildrenRenderable = new Map<number, number[]>(trackIds.map((id) => [id, []]));
-  const idToParents = new Map<number, number[]>(trackIds.map((id) => [id, []]));
+  const ids = Array.from(data.trackIdToTrackInfo.keys());
+  const idToChildren = new Map<number, number[]>(ids.map((id) => [id, []]));
+  const idToChildrenRenderable = new Map<number, number[]>(ids.map((id) => [id, []]));
+  const idToParents = new Map<number, number[]>(ids.map((id) => [id, []]));
 
   /**
    * Edges to a node where the node already has a parent (i.e. edges that would
@@ -83,7 +116,12 @@ export function getLineageRelationships(data: LineageData): LineageDataRelations
     idToParents.get(target)?.push(source);
     idsWithParents.add(target);
   }
-  return { idToChildren, idToChildrenRenderable, idToParents, multiparentEdges };
+
+  // Calculate co-parents for each node (other direct parents of its direct
+  // children).
+  const idToCoparents = getCoparents(idToChildren, idToParents);
+
+  return { idToChildren, idToChildrenRenderable, idToParents, idToCoparents, multiparentEdges };
 }
 
 /**
@@ -94,10 +132,13 @@ export function getDefaultZoomTransform(
   svgNode: SVGSVGElement,
   groupNode: SVGGElement,
   paddingPx: [number, number] = [10, 10]
-): d3.ZoomTransform {
+): d3.ZoomTransform | null {
   const bbox = groupNode.getBBox();
   const clientwidth = svgNode.clientWidth;
   const clientHeight = svgNode.clientHeight;
+  if (bbox.width === 0 || bbox.height === 0) {
+    return null;
+  }
   const scale = Math.min((clientwidth - paddingPx[0]) / bbox.width, (clientHeight - paddingPx[1]) / bbox.height);
   const panX = (clientwidth - bbox.width * scale) / 2 - bbox.x * scale;
   const panY = (clientHeight - bbox.height * scale) / 2 - bbox.y * scale;
@@ -152,4 +193,34 @@ export function getTreeHierarchy(
   );
 
   return root;
+}
+
+/**
+ * Returns only the subset of lineage data that includes the specified track
+ * IDs and their related parents and children.
+ */
+export function getLineageSubset(
+  data: LineageData,
+  relationships: LineageDataRelationships,
+  trackIds: Set<number>
+): LineageData {
+  const { idToParents, idToChildren } = relationships;
+
+  // Get set of IDs + related parents and children.
+  const relatedIds = new Set([...trackIds]);
+  for (const trackId of trackIds) {
+    const parents = idToParents.get(trackId) ?? [];
+    const children = idToChildren.get(trackId) ?? [];
+    const allRelatedIds = [...parents, ...children];
+    for (const relatedId of allRelatedIds) {
+      relatedIds.add(relatedId);
+    }
+  }
+
+  // Filter lineage data to only include related IDs.
+  const filteredData: LineageData = {
+    trackIdToTrackInfo: new Map([...data.trackIdToTrackInfo.entries()].filter(([id]) => relatedIds.has(id))),
+    edges: data.edges.filter(([source, target]) => relatedIds.has(source) && relatedIds.has(target)),
+  };
+  return filteredData;
 }
