@@ -9,8 +9,8 @@ import StyledModal from "src/components/Modals/StyledModal";
 import { INTERNAL_BUILD, SHORTCUT_KEYS } from "src/constants";
 import { VisuallyHidden } from "src/styles/utils";
 
-import AccessibleDropdown from "./AccessibleDropdown";
 import DropdownItemList from "./DropdownItemList";
+import KeyboardNavigableDropdown from "./KeyboardNavigableDropdown";
 
 const listButtonStyling = css`
   border-radius: 4px;
@@ -86,7 +86,7 @@ export default function HelpDropdown(): ReactElement {
 
   return (
     <div>
-      <AccessibleDropdown
+      <KeyboardNavigableDropdown
         dropdownContent={dropdownContent}
         buttonText={"Help"}
         buttonType="default"
