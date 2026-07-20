@@ -357,6 +357,46 @@ describe("Dataset", () => {
     expect(frames3d?.totalFrames).to.equal(4);
   });
 
+  it("changes relative source paths for 3D data to URLs", async () => {
+    const manifestWith3dSource: ManifestFile = {
+      ...MOCK_DATASET_MANIFEST,
+      frames3d: {
+        segmentations: [
+          {
+            name: "Segmentation A",
+            source: "seg.ome.zarr",
+            channelIndex: 1,
+          },
+          {
+            name: "Segmentation B",
+            source: "seg.ome.zarr",
+            channelIndex: 2,
+          },
+        ],
+        backdrops: [
+          {
+            name: "Backdrop A",
+            source: "backdrop.ome.zarr",
+            channelIndex: 0,
+          },
+        ],
+        totalFrames: 4,
+      },
+    };
+    const dataset = await makeMockDataset(manifestWith3dSource);
+    expect(dataset.has3dFrames()).to.be.true;
+    const frames3d = dataset.frames3d;
+    expect(frames3d?.segmentations.length).to.equal(2);
+    expect(frames3d?.segmentations[0].source).to.equal(DEFAULT_DATASET_DIR + "seg.ome.zarr");
+    expect(frames3d?.segmentations[0].channelIndex).to.equal(1);
+    expect(frames3d?.segmentations[1].source).to.equal(DEFAULT_DATASET_DIR + "seg.ome.zarr");
+    expect(frames3d?.segmentations[1].channelIndex).to.equal(2);
+    expect(frames3d?.backdrops?.length).to.equal(1);
+    expect(frames3d?.backdrops?.[0].source).to.equal(DEFAULT_DATASET_DIR + "backdrop.ome.zarr");
+    expect(frames3d?.backdrops?.[0].channelIndex).to.equal(0);
+    expect(frames3d?.totalFrames).to.equal(4);
+  });
+
   it("handles < v1.1.0 tracks", async () => {
     const manifestWithTracks: AnyManifestFile = {
       ...MOCK_DATASET_MANIFEST,
