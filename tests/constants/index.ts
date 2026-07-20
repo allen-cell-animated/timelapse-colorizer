@@ -124,7 +124,7 @@ export const MOCK_DATASET_MANIFEST: ManifestFile = {
     ],
   },
   times: "times.json",
-  tracks: "tracks.json",
+  tracks: [{ trackIds: "tracks.json", trackEdges: "track_edges.json", nodeEdges: "node_edges.json" }],
   segIds: "seg_ids.json",
   centroids: "centroids.json",
 };
@@ -136,12 +136,12 @@ export const MOCK_DATASET_MANIFEST: ManifestFile = {
  * | 0     | 0     | 0       | 0      | 0.1       | 0         | 0         | 0.1       |
  * | 1     | 0     | 1       | 1      | 0.2       | 10        | 0         | 0.2       |
  * | 2     | 0     | 2       | 2      | 0.3       | 20        | 0         | 0.3       |
- * | 3     | 1     | 3       | 3      | 0.4       | 30        | 1         | 0.4       |
- * | 4     | 1     | 4       | 4      | 0.5       | 40        | 1         | 0.5       |
- * | 5     | 1     | 5       | 5      | 0.6       | 50        | 1         | 0.6       |
- * | 6     | 2     | 6       | 6      | 0.7       | 60        | 2         | 0.7       |
- * | 7     | 2     | 7       | 7      | 0.8       | 70        | 2         | 0.8       |
- * | 8     | 3     | 8       | 8      | 0.9       | 80        | 2         | 0.9       |
+ * | 3     | 1     | 3       | 0      | 0.4       | 30        | 1         | 0.4       |
+ * | 4     | 1     | 4       | 1      | 0.5       | 40        | 1         | 0.5       |
+ * | 5     | 1     | 5       | 2      | 0.6       | 50        | 1         | 0.6       |
+ * | 6     | 2     | 6       | 0      | 0.7       | 60        | 2         | 0.7       |
+ * | 7     | 2     | 7       | 1      | 0.8       | 70        | 2         | 0.8       |
+ * | 8     | 3     | 8       | 2      | 0.9       | 80        | 2         | 0.9       |
  */
 
 export const MOCK_DATASET_TIMES = [0, 0, 0, 1, 1, 1, 2, 2, 3];
@@ -155,12 +155,16 @@ export const MOCK_DATASET_FEATURE_4 = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0
 export const MOCK_DATASET_CENTROIDS = [
   10, 20, 30, 11, 21, 31, 12, 22, 32, 13, 23, 33, 14, 24, 34, 15, 25, 35, 16, 26, 36, 17, 27, 37, 18, 28, 38,
 ];
+export const MOCK_DATASET_TRACK_EDGES = [1, 3, 2, 4, 2, 5];
+export const MOCK_DATASET_NODE_EDGES = [0, 3, 1, 4, 2, 5, 3, 6, 4, 7, 5, 8];
 
 export const makeMockDatasetArrayLoader = (basePath: string): Record<string, MockArraySource<FeatureDataType>> => ({
   [basePath + "times.json"]: new MockArraySource(FeatureDataType.U32, new Uint32Array(MOCK_DATASET_TIMES)),
   [basePath + "seg_ids.json"]: new MockArraySource(FeatureDataType.U32, new Uint32Array(MOCK_DATASET_SEG_IDS)),
   [basePath + "tracks.json"]: new MockArraySource(FeatureDataType.U32, new Uint32Array(MOCK_DATASET_TRACKS)),
   [basePath + "tracks_alt.json"]: new MockArraySource(FeatureDataType.U32, new Uint32Array(MOCK_DATASET_TRACKS_ALT)),
+  [basePath + "track_edges.json"]: new MockArraySource(FeatureDataType.U32, new Uint32Array(MOCK_DATASET_TRACK_EDGES)),
+  [basePath + "node_edges.json"]: new MockArraySource(FeatureDataType.U32, new Uint32Array(MOCK_DATASET_NODE_EDGES)),
   [basePath + "feature1.json"]: new MockArraySource(FeatureDataType.F32, new Float32Array(MOCK_DATASET_FEATURE_1)),
   [basePath + "feature2.json"]: new MockArraySource(FeatureDataType.F32, new Float32Array(MOCK_DATASET_FEATURE_2)),
   [basePath + "feature3.json"]: new MockArraySource(FeatureDataType.F32, new Float32Array(MOCK_DATASET_FEATURE_3)),
@@ -177,6 +181,9 @@ export const fileToData: [string, number[] | Object][] = [
   ["times.json", MOCK_DATASET_TIMES],
   ["seg_ids.json", MOCK_DATASET_SEG_IDS],
   ["tracks.json", MOCK_DATASET_TRACKS],
+  ["tracks_alt.json", MOCK_DATASET_TRACKS_ALT],
+  ["track_edges.json", MOCK_DATASET_TRACK_EDGES],
+  ["node_edges.json", MOCK_DATASET_NODE_EDGES],
   ["feature1.json", MOCK_DATASET_FEATURE_1],
   ["feature2.json", MOCK_DATASET_FEATURE_2],
   ["feature3.json", MOCK_DATASET_FEATURE_3],

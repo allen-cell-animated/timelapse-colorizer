@@ -80,6 +80,15 @@ export type Frames3dData = {
   totalFrames: number;
 };
 
+export type TrackData = {
+  name: string;
+  key: string;
+  description?: string;
+  trackIds?: Uint32Array;
+  trackEdges?: Uint32Array;
+  nodeEdges?: Uint32Array;
+};
+
 export type DatasetInputData = {
   //// Metadata ////
   manifestUrl: string;
@@ -92,7 +101,7 @@ export type DatasetInputData = {
   features: Map<string, FeatureData>;
   segIds: Uint32Array | null;
   times: Uint32Array | null;
-  trackIds: Uint32Array | null;
+  trackData: Map<string, TrackData> | null;
   centroids: Float32Array | null;
   bounds: Uint16Array | null;
   outliers: Uint8Array | null;
@@ -132,7 +141,9 @@ export default class Dataset {
   //// Data arrays ////
   /** Ordered map from feature keys to feature data. */
   private features: Map<string, FeatureData>;
+  // TODO: Deprecate trackIds in favor of the trackData map.
   public trackIds: Uint32Array | null;
+  private trackData: Map<string, TrackData> | null;
   public times: Uint32Array | null;
 
   /** Lookup from a global index of an object to the raw segmentation ID in the
@@ -191,11 +202,13 @@ export default class Dataset {
     // Data arrays
     this.features = data.features || new Map<string, FeatureData>();
     this.times = data.times || null;
-    this.trackIds = data.trackIds || null;
     this.segIds = data.segIds || null;
     this.centroids = data.centroids || null;
     this.bounds = data.bounds || null;
     this.outliers = data.outliers || null;
+    this.trackData = data.trackData || null;
+
+    this.trackIds = data.trackData?.values().next().value?.trackIds || null;
 
     // Cached data
     this.cachedTracks = new Map();
@@ -211,6 +224,19 @@ export default class Dataset {
     this.frameDimensions = data.frameResolution ?? this.getDefaultFrameDimensionsFromCentroids();
 
     this.getSegmentationId = this.getSegmentationId.bind(this);
+  }
+
+  public getTrackKeys(): string[] {
+    return this.trackData ? Array.from(this.trackData.keys()) : [];
+  }
+
+  public getTrackData(key: string): TrackData | undefined {
+    return this.trackData?.get(key);
+  }
+
+  public hasLineageData(key: string): boolean {
+    const trackData = this.trackData?.get(key);
+    return trackData?.trackEdges !== undefined || trackData?.nodeEdges !== undefined;
   }
 
   private getDefaultFrameDimensionsFromCentroids(): Vector3 | null {
