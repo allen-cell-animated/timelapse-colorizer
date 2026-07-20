@@ -1,4 +1,5 @@
 import type { ChannelSource, Frames3dData } from "src/colorizer/Dataset";
+import type { ChannelSetting } from "src/colorizer/types";
 
 /**
  * Returns an array of unique volume sources (usually URLs for 3D Zarr arrays)
@@ -93,4 +94,8 @@ export function getRelativeToAbsoluteChannelIndexMap(
     }
   }
   return absoluteChannelIndices;
+}
+
+export function areAnyChannelsVisible(channels: ChannelSetting[]): boolean {
+  return channels.some((channel) => channel.visible);
 }

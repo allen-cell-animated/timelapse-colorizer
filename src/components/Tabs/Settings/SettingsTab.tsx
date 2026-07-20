@@ -7,7 +7,7 @@ import { StyledHorizontalRule } from "src/styles/components";
 import { FlexColumn } from "src/styles/utils";
 
 import ChannelSettingsControl from "./ChannelSettingsControl";
-import ObjectSettings from "./ObjectSettings";
+import SegmentationSettings from "./SegmentationSettings";
 import TrackPathSettings from "./TrackPathSettings";
 import VectorFieldSettings from "./VectorFieldSettings";
 import ViewportSettings from "./ViewportSettings";
@@ -24,7 +24,7 @@ export default function SettingsTab(): ReactElement {
       <ViewportSettings />
       <StyledHorizontalRule />
 
-      <ObjectSettings />
+      <SegmentationSettings />
       <StyledHorizontalRule />
 
       <TrackPathSettings />

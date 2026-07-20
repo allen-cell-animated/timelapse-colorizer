@@ -18,7 +18,7 @@ import {
 import { Box3, Color, Matrix4, Quaternion, Vector2, Vector3 } from "three";
 import { clamp, inverseLerp, lerp } from "three/src/math/MathUtils";
 
-import { ColorRampType } from "src/colorizer/ColorRamp";
+import ColorRamp, { ColorRampType } from "src/colorizer/ColorRamp";
 import { MAX_FEATURE_CATEGORIES } from "src/colorizer/constants";
 import {
   CentroidColorMode,
@@ -31,7 +31,11 @@ import {
   SelectionOutlineColorMode,
   type VolumeLoadResult,
 } from "src/colorizer/types";
-import { getRelativeToAbsoluteChannelIndexMap, getVolumeSources } from "src/colorizer/utils/channels";
+import {
+  areAnyChannelsVisible,
+  getRelativeToAbsoluteChannelIndexMap,
+  getVolumeSources,
+} from "src/colorizer/utils/channels";
 import {
   bucketVectorDataByTime,
   computeVertexColorsFromIds,
@@ -71,6 +75,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
   private canvasResolution: Vector2;
 
   private tempCanvas: HTMLCanvasElement;
+  private colorRamp: ColorRamp;
 
   private loader: WorkerLoader | RawArrayLoader | TiffLoader | null = null;
   private volume: Volume | null = null;
@@ -110,6 +115,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     this.timeToVectorData = new Map();
     this.vectorObject = new VectorArrows3d();
     this.centroidsObject = new Spheres3d();
+    this.colorRamp = new ColorRamp(["#fff", "#000"]);
 
     this.tempCanvas = document.createElement("canvas");
     this.tempCanvas.style.width = "10px";
@@ -201,6 +207,28 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     this.canvas.height = Math.round(height * pixelRatio);
   }
 
+  /**
+   * Returns a new color map for colorization, based on the current feature
+   * type, with opacity applied.
+   */
+  private getColorizeColorRamp(params: RenderCanvasStateParams, isCategorical: boolean): ColorRamp {
+    const areChannelsVisible = areAnyChannelsVisible(params.channelSettings);
+    const isSegmentationVisible = params.showSegmentations;
+
+    let opacity: number;
+    if (areChannelsVisible) {
+      if (isSegmentationVisible) {
+        opacity = params.objectOpacity;
+      } else {
+        opacity = 0;
+      }
+    } else {
+      opacity = 100;
+    }
+    const ramp = isCategorical ? params.categoricalPaletteRamp : params.colorRamp;
+    return ramp.multiply(opacity / 100);
+  }
+
   private configureColorizeFeature(volume: Volume, channelIndex: number): void {
     if (!this.params) {
       return;
@@ -212,12 +240,17 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
       if (featureData) {
         const useOutlinePalette = this.params.outlineColorMode === SelectionOutlineColorMode.USE_PALETTE;
         const isCategorical = dataset.isFeatureCategorical(featureKey);
-        const ramp = isCategorical ? this.params.categoricalPaletteRamp : this.params.colorRamp;
+
+        if (this.colorRamp) {
+          this.colorRamp.dispose();
+        }
+        this.colorRamp = this.getColorizeColorRamp(this.params, isCategorical);
+
         const range = isCategorical ? [0, MAX_FEATURE_CATEGORIES - 1] : this.params.colorRampRange;
         const feature: ColorizeFeature = {
           idsToFeatureValue: featureData.tex,
-          featureValueToColor: ramp.texture,
-          useRepeatingColor: ramp.type === ColorRampType.CATEGORICAL,
+          featureValueToColor: this.colorRamp.texture,
+          useRepeatingColor: this.colorRamp.type === ColorRampType.CATEGORICAL,
           inRangeIds: packDataTexture(Array.from(this.params.inRangeLUT), FeatureDataType.U8),
           outlierData: packDataTexture(
             Array.from(dataset.outliers ?? Array(dataset.numObjects).fill(0)),
@@ -253,6 +286,8 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
         "showSegmentations",
         "tracks",
         "trackColors",
+        "objectOpacity",
+        "channelSettings",
       ])
     ) {
       if (this.volume) {
@@ -863,6 +898,7 @@ export class ColorizeCanvas3D implements IInnerRenderCanvas {
     this.view3d.removeDrawableObject(this.centroidsObject);
     this.centroidsObject.cleanup();
     this.view3d.removeAllVolumes();
+    this.colorRamp.dispose();
   }
 
   getIdAtPixel(x: number, y: number): PixelIdInfo | null {

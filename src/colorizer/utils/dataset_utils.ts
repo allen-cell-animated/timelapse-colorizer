@@ -130,18 +130,7 @@ type ManifestFileV1_1_0 = Spread<
     /**
      * Optional 3D volumetric segmentation data.
      */
-    frames3d?: {
-      /**
-       * URL or path relative to the root of the manifest. Expected to be a
-       * time-series ZARR (e.g. ends with `.ome.zarr`).
-       */
-      source: string;
-      /* The index of the channel to use as a segmentation within the source. */
-      segmentationChannel: number;
-      /** Total number of frames in the time-series volume. */
-      totalFrames: number;
-      backdrops?: ManifestChannelSource[];
-    };
+    frames3d?: Frames3dV1_1_0;
   }
 >;
 
@@ -151,8 +140,10 @@ type ManifestFileV1_1_0 = Spread<
  * alternate segmentations.
  */
 // eslint-disable-next-line @typescript-eslint/naming-convention
-type Frames3dV1_8_0 = Omit<Frames3dV1_1_0, "source" | "segmentationChannel"> & {
+type Frames3dV1_8_0 = {
   segmentations?: ManifestChannelSource[];
+  backdrops?: ManifestChannelSource[];
+  totalFrames?: number;
 };
 
 // eslint-disable-next-line @typescript-eslint/naming-convention

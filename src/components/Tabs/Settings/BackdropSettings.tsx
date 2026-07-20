@@ -29,12 +29,10 @@ export default function BackdropSettings(): ReactElement {
   const backdropVisible = useViewerStateStore((state) => state.backdropVisible);
   const dataset = useViewerStateStore((state) => state.dataset);
 
-  const objectOpacity = useViewerStateStore((state) => state.objectOpacity);
   const setBackdropBrightness = useViewerStateStore((state) => state.setBackdropBrightness);
   const setBackdropKey = useViewerStateStore((state) => state.setBackdropKey);
   const setBackdropSaturation = useViewerStateStore((state) => state.setBackdropSaturation);
   const setBackdropVisible = useViewerStateStore((state) => state.setBackdropVisible);
-  const setObjectOpacity = useViewerStateStore((state) => state.setObjectOpacity);
 
   let backdropOptions = useMemo(
     () =>
@@ -105,24 +103,6 @@ export default function BackdropSettings(): ReactElement {
               step={1}
               numberFormatter={(value?: number) => `${value}%`}
               disabled={isBackdropOptionsDisabled}
-            />
-          </div>
-        </SettingsItem>
-        <SettingsItem label="Object opacity" htmlFor={BackdropSettingsHtmlIds.OBJECT_OPACITY_SLIDER}>
-          <div style={{ maxWidth: MAX_SETTINGS_SLIDER_WIDTH, width: "100%" }}>
-            <LabeledSlider
-              id={BackdropSettingsHtmlIds.OBJECT_OPACITY_SLIDER}
-              type="value"
-              disabled={isBackdropOptionsDisabled}
-              minSliderBound={0}
-              maxSliderBound={100}
-              minInputBound={0}
-              maxInputBound={100}
-              value={objectOpacity}
-              onChange={setObjectOpacity}
-              marks={[100]}
-              step={1}
-              numberFormatter={(value?: number) => `${value}%`}
             />
           </div>
         </SettingsItem>
