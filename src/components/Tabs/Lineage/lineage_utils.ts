@@ -90,10 +90,10 @@ export function getCoparents(
 }
 
 export function getLineageRelationships(data: LineageData): LineageDataRelationships {
-  const ids = Array.from(data.trackIdToTrackInfo.keys());
-  const idToChildren = new Map<number, number[]>(ids.map((id) => [id, []]));
-  const idToChildrenRenderable = new Map<number, number[]>(ids.map((id) => [id, []]));
-  const idToParents = new Map<number, number[]>(ids.map((id) => [id, []]));
+  const trackIds = Array.from(data.trackIdToTrackInfo.keys());
+  const idToChildren = new Map<number, number[]>(trackIds.map((id) => [id, []]));
+  const idToChildrenRenderable = new Map<number, number[]>(trackIds.map((id) => [id, []]));
+  const idToParents = new Map<number, number[]>(trackIds.map((id) => [id, []]));
 
   /**
    * Edges to a node where the node already has a parent (i.e. edges that would
