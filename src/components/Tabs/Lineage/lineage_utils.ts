@@ -66,22 +66,23 @@ export function getLineageData(dataset: Dataset): LineageData {
   return { trackIdToTrackInfo: trackIdToTrackInfo, edges };
 }
 
-function getCoparents(
+export function getCoparents(
   idToChildren: Map<number, number[]>,
   idToParents: Map<number, number[]>
 ): Map<number, Set<number>> {
-  // Calculate co-parents for each node (other direct parents of its direct
-  // children).
   const idToCoparents = new Map<number, Set<number>>();
 
   for (const [id, childIds] of idToChildren.entries()) {
-    // Get other parents of the children of this node.
-    const parents = new Set<number>();
+    if (childIds.length === 0) {
+      continue;
+    }
+    // Get parents of the children of this id, including self
+    const parents = new Set<number>([id]);
     for (const childId of childIds) {
       const childParents = idToParents.get(childId) ?? [];
       childParents.forEach(parents.add, parents);
     }
-    if (parents.size === 1 && parents.has(id)) {
+    if (parents.size === 1) {
       continue;
     }
     idToCoparents.set(id, parents);
@@ -134,13 +135,13 @@ export function getDefaultZoomTransform(
   paddingPx: [number, number] = [10, 10]
 ): d3.ZoomTransform | null {
   const bbox = groupNode.getBBox();
-  const clientwidth = svgNode.clientWidth;
+  const clientWidth = svgNode.clientWidth;
   const clientHeight = svgNode.clientHeight;
   if (bbox.width === 0 || bbox.height === 0) {
     return null;
   }
-  const scale = Math.min((clientwidth - paddingPx[0]) / bbox.width, (clientHeight - paddingPx[1]) / bbox.height);
-  const panX = (clientwidth - bbox.width * scale) / 2 - bbox.x * scale;
+  const scale = Math.min((clientWidth - paddingPx[0]) / bbox.width, (clientHeight - paddingPx[1]) / bbox.height);
+  const panX = (clientWidth - bbox.width * scale) / 2 - bbox.x * scale;
   const panY = (clientHeight - bbox.height * scale) / 2 - bbox.y * scale;
   const initialTransform = d3.zoomIdentity.translate(panX, panY).scale(scale);
   return initialTransform;

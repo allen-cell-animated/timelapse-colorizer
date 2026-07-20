@@ -97,6 +97,13 @@ export function expandTrack(
   const expandedTracks = new Set<number>(_expandedTracks);
   const previouslyExpandedTracks = new Set<number>(_previouslyExpandedTracks);
 
+  if (!data.trackIdToTrackInfo.has(trackId)) {
+    return {
+      expandedTracks,
+      previouslyExpandedTracks,
+    };
+  }
+
   // Add current track to expanded tracks and previously expanded tracks
   expandedTracks.add(trackId);
   previouslyExpandedTracks.add(trackId);
@@ -138,6 +145,13 @@ export function collapseTrack(
   const { expandedTracks: _expandedTracks, previouslyExpandedTracks: _previouslyExpandedTracks } = expandedState;
   const expandedTracks = new Set<number>(_expandedTracks);
   const previouslyExpandedTracks = new Set<number>(_previouslyExpandedTracks);
+
+  if (!data.trackIdToTrackInfo.has(trackId)) {
+    return {
+      expandedTracks,
+      previouslyExpandedTracks,
+    };
+  }
 
   // Remove current track and its coparents
   let coparentIds = relationships.idToCoparents.get(trackId);
