@@ -54,7 +54,7 @@ async function getCorrelations(features: (Float32Array | Uint32Array)[]): Promis
 async function getMotionDeltas(
   trackIds: Uint32Array,
   times: Uint32Array,
-  centroids: Uint16Array,
+  centroids: Float32Array,
   timeIntervals: number
 ): Promise<TransferType> {
   const tracks = constructAllTracksFromData(trackIds, times, centroids);
