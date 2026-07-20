@@ -1,4 +1,4 @@
-import { RGBAFormat, RGBAIntegerFormat, Vector2 } from "three";
+import { RGBAFormat, RGBAIntegerFormat, Vector2, Vector3 } from "three";
 
 import {
   type ArraySource,
@@ -261,9 +261,10 @@ export default class JsonDatasetLoader {
       this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U8, outlierFile)),
       this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, tracksFile)),
       this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, timesFile)),
-      this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U16, centroidsFile)),
+      this.reportLoadProgress(this.loadToBuffer(FeatureDataType.F32, centroidsFile)),
       this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U16, boundsFile)),
       this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, segIdsFile)),
+      // TODO: Can the 3D frame dimensions also be fetched here for 3D datasets?
       this.reportLoadProgress(this.getFrameDims(frames2d)),
       ...featuresPromises,
     ]);
@@ -344,7 +345,7 @@ export default class JsonDatasetLoader {
         // Image sources
         frames2d,
         frames3d,
-        frameResolution: frameDimensions ?? undefined,
+        frameResolution: frameDimensions ? new Vector3(frameDimensions.x, frameDimensions.y, 1) : undefined,
         // Data arrays
         features,
         segIds,
