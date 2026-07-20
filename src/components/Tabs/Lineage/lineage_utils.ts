@@ -63,25 +63,26 @@ export function getLineageData(dataset: Dataset): LineageData {
   if (skippedEdges.length > 0) {
     console.warn(`Skipped ${skippedEdges.length} edges that reference non-existent tracks:`, skippedEdges);
   }
-  return { trackIdToTrackInfo: trackIdToTrackInfo, edges };
+  return { trackIdToTrackInfo, edges };
 }
 
 export function getCoparents(
   idToChildren: Map<number, number[]>,
   idToParents: Map<number, number[]>
 ): Map<number, Set<number>> {
-  // Calculate co-parents for each node (other direct parents of its direct
-  // children).
   const idToCoparents = new Map<number, Set<number>>();
 
   for (const [id, childIds] of idToChildren.entries()) {
-    // Get other parents of the children of this node.
-    const parents = new Set<number>();
+    if (childIds.length === 0) {
+      continue;
+    }
+    // Get parents of the children of this id, including self
+    const parents = new Set<number>([id]);
     for (const childId of childIds) {
       const childParents = idToParents.get(childId) ?? [];
       childParents.forEach(parents.add, parents);
     }
-    if (parents.size === 1 && parents.has(id)) {
+    if (parents.size === 1) {
       continue;
     }
     idToCoparents.set(id, parents);

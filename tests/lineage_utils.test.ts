@@ -11,12 +11,18 @@ describe("getCoparents", () => {
   });
 
   it("does not return coparents when there are no merge nodes", () => {
+    // 1 -> 2 -> 4
+    //  \
+    //   -> 3 -> 5
     const idToChildren = new Map<number, number[]>([
       [1, [2, 3]],
       [2, [4]],
       [3, [5]],
+      [4, []],
+      [5, []],
     ]);
     const idToParents = new Map<number, number[]>([
+      [1, []],
       [2, [1]],
       [3, [1]],
       [4, [2]],
@@ -29,17 +35,19 @@ describe("getCoparents", () => {
   it("returns coparents when a child has multiple parents", () => {
     /** 1 -> 2 -> 3
      *         /
-     *        4
+     *       4
      */
     const idToChildren = new Map<number, number[]>([
       [1, [2]],
       [2, [3]],
+      [3, []],
       [4, [3]],
     ]);
     const idToParents = new Map<number, number[]>([
+      [1, []],
       [2, [1]],
       [3, [2, 4]],
-      [4, [1]],
+      [4, []],
     ]);
     const result = getCoparents(idToChildren, idToParents);
     expect(result.size).toBe(2);
@@ -60,8 +68,13 @@ describe("getCoparents", () => {
       [1, [4]],
       [2, [4, 5]],
       [3, [5]],
+      [4, []],
+      [5, []],
     ]);
     const idToParents = new Map<number, number[]>([
+      [1, []],
+      [2, []],
+      [3, []],
       [4, [1, 2]],
       [5, [2, 3]],
     ]);

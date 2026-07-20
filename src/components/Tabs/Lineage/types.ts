@@ -26,8 +26,9 @@ export type LineageDataRelationships = {
   idToParents: Map<number, number[]>;
 
   /**
-   * Maps from an ID to a set of its co-parents (other direct parent of its
-   * direct children, which happens in the case of merge nodes).
+   * Maps from an ID to a set of parents IDs that share at least one direct
+   * child with the ID (including itself). This occurs when merge nodes are
+   * present (e.g. node with multiple parents).
    */
   idToCoparents: Map<number, Set<number>>;
 };
