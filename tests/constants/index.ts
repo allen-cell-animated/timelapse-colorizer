@@ -1,7 +1,7 @@
 import { FeatureDataType } from "src/colorizer";
 import Collection from "src/colorizer/Collection";
 import type { CollectionFile } from "src/colorizer/utils/collection_utils";
-import type { AnyManifestFile, ManifestFile } from "src/colorizer/utils/dataset_utils";
+import type { ManifestFile } from "src/colorizer/utils/dataset_utils";
 import { DEFAULT_DATASET_DIR, makeMockDataset, MockArrayLoader, MockArraySource } from "tests/utils";
 
 // TODO: Move to /tests/constants.ts so other tests can use these constants
@@ -66,30 +66,41 @@ export enum MockChannelKeys {
 
 export const DEFAULT_INITIAL_FEATURE_KEY = MockFeatureKeys.FEATURE1;
 
-export const MOCK_DATASET_MANIFEST: AnyManifestFile = {
+export const MOCK_DATASET_MANIFEST: ManifestFile = {
   features: [
     MOCK_FEATURE_DATA[MockFeatureKeys.FEATURE1],
     MOCK_FEATURE_DATA[MockFeatureKeys.FEATURE2],
     MOCK_FEATURE_DATA[MockFeatureKeys.FEATURE3],
     MOCK_FEATURE_DATA[MockFeatureKeys.FEATURE4_ILLEGAL_CHARS],
   ],
-  frames: ["frame0.png", "frame1.png", "frame2.png", "frame3.png"],
-  backdrops: [
-    {
-      name: MockBackdropKeys.BACKDROP1,
-      key: MockBackdropKeys.BACKDROP1,
-      frames: ["frame0.png", "frame1.png", "frame2.png", "frame3.png"],
-    },
-    {
-      name: MockBackdropKeys.BACKDROP2,
-      key: MockBackdropKeys.BACKDROP2,
-      frames: ["frame0.png", "frame1.png", "frame2.png", "frame3.png"],
-    },
-  ],
+  frames2d: {
+    segmentations: [
+      {
+        frames: ["frame0.png", "frame1.png", "frame2.png", "frame3.png"],
+      },
+    ],
+    backdrops: [
+      {
+        name: MockBackdropKeys.BACKDROP1,
+        key: MockBackdropKeys.BACKDROP1,
+        frames: ["frame0.png", "frame1.png", "frame2.png", "frame3.png"],
+      },
+      {
+        name: MockBackdropKeys.BACKDROP2,
+        key: MockBackdropKeys.BACKDROP2,
+        frames: ["frame0.png", "frame1.png", "frame2.png", "frame3.png"],
+      },
+    ],
+  },
   frames3d: {
-    source: "https://some-url.com/frames3d.ome.zarr",
-    segmentationChannel: 0,
     totalFrames: 4,
+    segmentations: [
+      {
+        source: "https://some-url.com/frames3d.ome.zarr",
+        name: "Segmentation 1",
+        channelIndex: 0,
+      },
+    ],
     backdrops: [
       {
         source: "https://some-url.com/frames3d.ome.zarr",
@@ -177,8 +188,15 @@ export const MOCK_DATASET = await makeMockDataset(MOCK_DATASET_MANIFEST, MOCK_DA
 export const MOCK_DATASET_WITH_TWO_FRAMES = await makeMockDataset(
   {
     ...MOCK_DATASET_MANIFEST,
-    frames: ["frame0.png", "frame1.png"],
-    backdrops: [],
+    frames2d: {
+      ...MOCK_DATASET_MANIFEST.frames2d,
+      segmentations: [
+        {
+          frames: ["frame0.png", "frame1.png"],
+        },
+      ],
+      backdrops: [],
+    },
   },
   MOCK_DATASET_ARRAY_LOADER
 );
@@ -194,7 +212,10 @@ export const MOCK_DATASET_2D_ONLY = await makeMockDataset(
 export const MOCK_DATASET_WITHOUT_BACKDROP = await makeMockDataset(
   {
     ...MOCK_DATASET_MANIFEST,
-    backdrops: undefined,
+    frames2d: {
+      ...MOCK_DATASET_MANIFEST.frames2d,
+      backdrops: [],
+    },
   },
   MOCK_DATASET_ARRAY_LOADER
 );

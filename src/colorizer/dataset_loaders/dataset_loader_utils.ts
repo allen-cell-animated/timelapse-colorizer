@@ -4,14 +4,23 @@ import {
   CENTROID_X_FEATURE_KEY,
   CENTROID_Y_FEATURE_KEY,
   CENTROID_Z_FEATURE_KEY,
+  type ChannelSource,
   type FeatureData,
   FeatureType,
+  type Frames2dData,
+  type Frames3dData,
+  type FrameSource,
   TIME_FEATURE_KEY,
   TRACK_FEATURE_KEY,
 } from "src/colorizer/Dataset";
 import { FeatureDataType, LoadTroubleshooting, type ReportWarningCallback } from "src/colorizer/types";
-import { formatAsBulletList } from "src/colorizer/utils/data_utils";
-import type { ManifestFile, ManifestFileMetadata } from "src/colorizer/utils/dataset_utils";
+import { formatAsBulletList, getKeyFromName } from "src/colorizer/utils/data_utils";
+import type {
+  ManifestChannelSource,
+  ManifestFile,
+  ManifestFileMetadata,
+  ManifestFrameSource,
+} from "src/colorizer/utils/dataset_utils";
 import { packDataTexture } from "src/colorizer/utils/texture_utils";
 
 export function getDefaultSegIds(numObjects: number): Uint32Array {
@@ -134,4 +143,181 @@ export function reportUnloadedFeatures(
       LoadTroubleshooting.CHECK_FILE_OR_NETWORK,
     ]);
   }
+}
+
+//// 3D channels ////
+
+/**
+ * Parses a list of 3D channel sources from the manifest (either segmentations
+ * or backdrops). Resolves all paths to absolute URLs and adds defaults for
+ * required values.
+ */
+function parseChannelSources(
+  rawSources: ManifestChannelSource[] | undefined,
+  type: "segmentation" | "backdrop",
+  resolvePath: (path: string) => string | null,
+  reportWarning: ReportWarningCallback | undefined
+): ChannelSource[] | undefined {
+  if (!rawSources || rawSources.length === 0) {
+    return undefined;
+  }
+  const resolvedSources: ChannelSource[] = [];
+  const unresolvedSources: ManifestChannelSource[] = [];
+  for (let i = 0; i < rawSources.length; i++) {
+    const source = rawSources[i];
+    const resolvedPath = resolvePath(source.source);
+    if (resolvedPath) {
+      resolvedSources.push({
+        ...source,
+        source: resolvedPath,
+        channelIndex: source.channelIndex ?? 0,
+        name: source.name ?? `${i}`,
+      });
+    } else {
+      unresolvedSources.push(source);
+    }
+  }
+  if (unresolvedSources.length > 0) {
+    reportWarning?.(`One or more ${type} channel sources could not be resolved to files, and will not be shown.`, [
+      `The following ${type} channel source(s) could not be resolved:`,
+      ...unresolvedSources.map((s) => `- ${s.source} (${s.name})`),
+      LoadTroubleshooting.CHECK_ZIP_ZARR_DATA,
+    ]);
+  }
+  if (resolvedSources.length === 0) {
+    return undefined;
+  }
+  return resolvedSources;
+}
+
+/**
+ * Resolves a 3D frames object from the manifest, resolving all paths to
+ * absolute URLs and adding defaults for required values.
+ * @returns A Frames3dData object with resolved paths, or undefined if no
+ * segmentations are present.
+ */
+export function resolveFrames3d(
+  data: ManifestFile["frames3d"],
+  resolvePath: (path: string) => string | null,
+  reportWarning: ReportWarningCallback | undefined
+): Frames3dData | undefined {
+  if (!data) {
+    return undefined;
+  }
+  const segmentations = parseChannelSources(data.segmentations, "segmentation", resolvePath, reportWarning);
+  const backdrops = parseChannelSources(data.backdrops, "backdrop", resolvePath, reportWarning);
+  if (!segmentations) {
+    return undefined;
+  }
+  return {
+    segmentations,
+    backdrops,
+    totalFrames: data.totalFrames ?? 0,
+  };
+}
+
+//// 2D frames ////
+
+export function getUniqueKeyName(key: string | undefined, name: string, existingKeys: Set<string>): string {
+  key = key ?? getKeyFromName(name);
+  if (!existingKeys.has(key)) {
+    return key;
+  }
+  let attempts = 1;
+  let newKey = key;
+  while (existingKeys.has(newKey)) {
+    newKey = `${key}_${attempts}`;
+    attempts++;
+  }
+  return newKey;
+}
+
+/**
+ * Parses an array of 2D frame sources (either segmentations or backdrops) from
+ * the manifest. Resolves all paths to absolute URLs and adds defaults for
+ * required values.
+ */
+function parseFrameSources(
+  data: ManifestFrameSource[] | undefined,
+  type: "segmentation" | "backdrop",
+  resolvePath: (path: string) => string | null
+): FrameSource[] | undefined {
+  if (!data) {
+    return undefined;
+  }
+  const usedKeys = new Set<string>();
+  const frameSources: FrameSource[] = [];
+  for (let i = 0; i < data.length; i++) {
+    const { frames, name: inputName, key: inputKey, description } = data[i];
+    const defaultLabel = (type === "segmentation" ? "Segmentation" : "Backdrop") + " " + (i + 1);
+    const name = inputName ?? defaultLabel;
+    const key = getUniqueKeyName(inputKey, name, usedKeys);
+    usedKeys.add(key);
+    const source = {
+      name,
+      key,
+      description,
+      frames: frames.map((path) => resolvePath(path)),
+    };
+    frameSources.push(source);
+  }
+  return frameSources;
+}
+
+/**
+ * Resolves a 2D frames object from the manifest, resolving all paths to
+ * absolute URLs and validating that the number of frames is consistent across
+ * segmentations and backdrops.
+ * @returns A Frames2dData object with resolved paths, or undefined if no
+ * segmentations or backdrops are present.
+ */
+export function resolveFrames2d(
+  data: ManifestFile["frames2d"],
+  resolvePath: (path: string) => string | null
+): Frames2dData | undefined {
+  if (!data) {
+    return undefined;
+  }
+  const segmentations = parseFrameSources(data.segmentations, "segmentation", resolvePath);
+  const backdrops = parseFrameSources(data.backdrops, "backdrop", resolvePath);
+
+  if (!segmentations && !backdrops) {
+    return undefined;
+  }
+
+  // Validation
+  let frameCount = 0;
+  if (segmentations) {
+    // Check that all segmentations have the same length
+    for (const segData of segmentations) {
+      if (frameCount === 0) {
+        frameCount = segData.frames.length;
+      }
+      if (segData.frames.length !== frameCount) {
+        throw new Error(
+          `Segmentation '${segData.key}' has a different number of frames (${segData.frames.length}) than the default segmentation (${frameCount}).`
+        );
+      }
+    }
+  }
+  if (backdrops) {
+    for (const backdropData of backdrops) {
+      if (frameCount === 0) {
+        frameCount = backdropData.frames.length;
+      }
+      if (backdropData.frames.length !== frameCount) {
+        throw new Error(
+          `Number of frames (${frameCount}) does not match number of images (${backdropData.frames.length}) for backdrop '${backdropData.key}'. ` +
+            ` If you are a dataset author, please ensure that the number of frames in the manifest matches the number of images for each backdrop.`
+        );
+      }
+    }
+  }
+  if (frameCount === 0) {
+    console.error("Frame count is zero for the default segmentation.");
+  }
+  return {
+    segmentations,
+    backdrops,
+  };
 }
