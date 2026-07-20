@@ -1,4 +1,4 @@
-import { RGBAFormat, RGBAIntegerFormat, Vector2 } from "three";
+import { RGBAFormat, RGBAIntegerFormat, Vector2, Vector3 } from "three";
 
 import {
   type ArraySource,
@@ -130,11 +130,6 @@ export default class JsonDatasetLoader {
         this.loadToBuffer(FeatureDataType.U32, metadata.nodeEdges, { columns: ["node_start", "node_end"] })
       )
     );
-
-    if (promises.length === 0) {
-      console.warn(`Track ${index}: No data files specified for track edges.`);
-      return undefined;
-    }
     const [tracksResult, trackEdgesResult, nodeEdgesResult] = await Promise.allSettled(promises);
     if (tracksResult.status === "rejected") {
       console.warn(`Track ${index}: Failed to load track IDs: ${tracksResult.reason}`);
@@ -146,9 +141,9 @@ export default class JsonDatasetLoader {
       console.warn(`Track ${index}: Failed to load node edges: ${nodeEdgesResult.reason}`);
       return undefined;
     }
-    const tracks = tracksResult.status === "fulfilled" ? tracksResult.value : undefined;
-    const trackEdges = trackEdgesResult.status === "fulfilled" ? trackEdgesResult.value : undefined;
-    const nodeEdges = nodeEdgesResult.status === "fulfilled" ? nodeEdgesResult.value : undefined;
+    const tracks = tracksResult.value;
+    const trackEdges = trackEdgesResult.value;
+    const nodeEdges = nodeEdgesResult.value;
     const name = metadata.name ?? `Track ${index}`;
     const key = metadata.key ?? name;
     return {
@@ -313,9 +308,10 @@ export default class JsonDatasetLoader {
     const result = await Promise.allSettled([
       this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U8, outlierFile)),
       this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, timesFile)),
-      this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U16, centroidsFile)),
+      this.reportLoadProgress(this.loadToBuffer(FeatureDataType.F32, centroidsFile)),
       this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U16, boundsFile)),
       this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, segIdsFile)),
+      // TODO: Can the 3D frame dimensions also be fetched here for 3D datasets?
       this.reportLoadProgress(this.getFrameDims(frames2d)),
       allTracksPromise,
       allFeaturePromise,
@@ -411,7 +407,7 @@ export default class JsonDatasetLoader {
         // Image sources
         frames2d,
         frames3d,
-        frameResolution: frameDimensions ?? undefined,
+        frameResolution: frameDimensions ? new Vector3(frameDimensions.x, frameDimensions.y, 1) : undefined,
         // Data arrays
         features,
         segIds,

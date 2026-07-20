@@ -1,4 +1,4 @@
-import { type DataTexture, RGBAFormat, RGBAIntegerFormat, type Texture, Vector2 } from "three";
+import { type DataTexture, RGBAFormat, RGBAIntegerFormat, type Texture, Vector3 } from "three";
 
 import {
   BOOLEAN_VALUE_FALSE,
@@ -96,13 +96,13 @@ export type DatasetInputData = {
   //// Image sources ////
   frames2d: Frames2dData;
   frames3d: Frames3dData;
-  frameResolution: Vector2;
+  frameResolution: Vector3;
   //// Data arrays ////
   features: Map<string, FeatureData>;
   segIds: Uint32Array | null;
   times: Uint32Array | null;
   trackData: Map<string, TrackData> | null;
-  centroids: Uint16Array | null;
+  centroids: Float32Array | null;
   bounds: Uint16Array | null;
   outliers: Uint8Array | null;
 };
@@ -130,7 +130,7 @@ export default class Dataset {
   private frameLoader: ITextureImageLoader;
   private framesMap: Map<string, FrameSource>;
   private frameCache: DataCache<string, Texture>;
-  private frameDimensions: Vector2 | null;
+  private frameDimensions: Vector3 | null;
 
   private backdropLoader: ITextureImageLoader;
   private backdropData: Map<string, FrameSource>;
@@ -151,7 +151,7 @@ export default class Dataset {
   public segIds: Uint32Array | null;
 
   public outliers: Uint8Array | null;
-  public centroids: Uint16Array | null;
+  public centroids: Float32Array | null;
   public bounds: Uint16Array | null;
 
   //// Cached Data ////
@@ -221,6 +221,7 @@ export default class Dataset {
       this.segIds ?? new Uint32Array(),
       this.totalFrames
     );
+    this.frameDimensions = data.frameResolution ?? this.getDefaultFrameDimensionsFromCentroids();
 
     this.getSegmentationId = this.getSegmentationId.bind(this);
   }
@@ -240,6 +241,25 @@ export default class Dataset {
   public hasLineageData(key: string): boolean {
     const trackData = this.trackData?.get(key);
     return trackData?.trackEdges !== undefined || trackData?.nodeEdges !== undefined;
+  }
+
+  private getDefaultFrameDimensionsFromCentroids(): Vector3 | null {
+    if (!this.centroids || this.centroids.length === 0) {
+      return null;
+    }
+    // Note: This assumes that no centroid coordinates are negative.
+    let maxX = 0;
+    let maxY = 0;
+    let maxZ = 0;
+    for (let i = 0; i < this.centroids.length; i += 3) {
+      const x = this.centroids[i];
+      const y = this.centroids[i + 1];
+      const z = this.centroids[i + 2];
+      maxX = Math.max(maxX, x);
+      maxY = Math.max(maxY, y);
+      maxZ = Math.max(maxZ, z);
+    }
+    return new Vector3(maxX, maxY, maxZ);
   }
 
   public hasFeatureKey(key: string): boolean {
@@ -378,7 +398,7 @@ export default class Dataset {
     const cacheKey = `${key}-${index}`;
     const cachedFrame = this.frameCache?.get(cacheKey);
     if (cachedFrame) {
-      this.frameDimensions = new Vector2(cachedFrame.image.width, cachedFrame.image.height);
+      this.frameDimensions = new Vector3(cachedFrame.image.width, cachedFrame.image.height, 1);
       return cachedFrame;
     }
 
@@ -387,7 +407,7 @@ export default class Dataset {
       throw new Error(`Failed to resolve path for frame '${key}' at index ${index}: '${fullUrl}'`);
     }
     const loadedFrame = await this.frameLoader.load(fullUrl);
-    this.frameDimensions = new Vector2(loadedFrame.image.width, loadedFrame.image.height);
+    this.frameDimensions = new Vector3(loadedFrame.image.width, loadedFrame.image.height, 1);
     const frameSizeBytes = loadedFrame.image.width * loadedFrame.image.height * 4;
     // Note that, due to image compression, images may take up much less space in memory than their raw size.
     this.frameCache.insert(cacheKey, loadedFrame, frameSizeBytes);
@@ -432,10 +452,10 @@ export default class Dataset {
 
   /**
    * Gets the resolution of the last loaded frame.
-   * If no frame has been loaded yet, returns (1,1)
+   * If no frame has been loaded yet, returns (1,1,1)
    */
-  public get frameResolution(): Vector2 {
-    return this.frameDimensions || new Vector2(1, 1);
+  public get frameResolution(): Vector3 {
+    return this.frameDimensions || new Vector3(1, 1, 1);
   }
 
   /**
@@ -482,7 +502,7 @@ export default class Dataset {
       }
     }
     if (this.has3dFrames() && this.frames3d?.totalFrames) {
-      return this.frames3d!.totalFrames;
+      return this.frames3d.totalFrames;
     }
     return this.maxTime + 1;
   }
