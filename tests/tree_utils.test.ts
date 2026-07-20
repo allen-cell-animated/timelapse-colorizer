@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import { getLineageRelationships } from "src/components/Tabs/Lineage/lineage_utils";
-import { collapseTrack, expandTrack, TreeExpandedState } from "src/components/Tabs/Lineage/tree_utils";
+import {
+  collapseTrack,
+  expandTrack,
+  getInitialExpandedState,
+  TreeExpandedState,
+} from "src/components/Tabs/Lineage/tree_utils";
 import { LineageData, TrackInfo } from "src/components/Tabs/Lineage/types";
 
 describe("tree_utils", () => {
@@ -129,6 +134,37 @@ describe("tree_utils", () => {
       const result2 = expandTrack(5, result, lineageData, relationships);
       expect(result2.expandedTracks).toEqual(new Set([1, 2, 3, 4, 5, 6, 7, 8]));
       expect(result2.previouslyExpandedTracks).toEqual(new Set([1, 2, 3, 4, 5, 6, 7, 8]));
+    });
+  });
+
+  describe("getInitialExpandedState", () => {
+    it("returns empty expanded state if no tracks provided", () => {
+      const result = getInitialExpandedState(new Set(), lineageData, relationships);
+      expect(result).toEqual({
+        expandedTracks: new Set(),
+        previouslyExpandedTracks: new Set(),
+      });
+    });
+
+    it("expands from a single child node", () => {
+      const selectedTrackIds = new Set([4]);
+      const result = getInitialExpandedState(selectedTrackIds, lineageData, relationships);
+      expect(result.expandedTracks).toEqual(new Set([1, 2, 4]));
+      expect(result.previouslyExpandedTracks).toEqual(new Set([1, 2, 4]));
+    });
+
+    it("expands multiple nodes", () => {
+      const selectedTrackIds = new Set([4, 5]);
+      const result = getInitialExpandedState(selectedTrackIds, lineageData, relationships);
+      expect(result.expandedTracks).toEqual(new Set([1, 2, 4, 5]));
+      expect(result.previouslyExpandedTracks).toEqual(new Set([1, 2, 4, 5]));
+    });
+
+    it("handles expanding coparents of nodes", () => {
+      const selectedTrackIds = new Set([6]);
+      const result = getInitialExpandedState(selectedTrackIds, lineageData, relationships);
+      expect(result.expandedTracks).toEqual(new Set([1, 5, 6, 7]));
+      expect(result.previouslyExpandedTracks).toEqual(new Set([1, 5, 6, 7]));
     });
   });
 });
