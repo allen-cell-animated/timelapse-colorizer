@@ -121,11 +121,6 @@ export default class JsonDatasetLoader {
     promises.push(this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, metadata.trackIds)));
     promises.push(this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, metadata.trackEdges)));
     promises.push(this.reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, metadata.nodeEdges)));
-
-    if (promises.length === 0) {
-      console.warn(`Track ${index}: No data files specified for track edges.`);
-      return undefined;
-    }
     const [tracksResult, trackEdgesResult, nodeEdgesResult] = await Promise.allSettled(promises);
     if (tracksResult.status === "rejected") {
       console.warn(`Track ${index}: Failed to load track IDs: ${tracksResult.reason}`);
