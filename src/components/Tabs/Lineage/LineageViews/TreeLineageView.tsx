@@ -190,7 +190,9 @@ export default function TreeLineageView(props: TreeLineageViewProps): ReactEleme
       return;
     }
     const initialTransform = getDefaultZoomTransform(svgNode, groupNode);
-    zoom.current.transform(svg, initialTransform);
+    if (initialTransform) {
+      zoom.current.transform(svg, initialTransform);
+    }
   };
 
   useEffect(() => {
