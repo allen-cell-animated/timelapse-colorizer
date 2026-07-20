@@ -137,9 +137,9 @@ export default class JsonDatasetLoader {
       console.warn(`Track ${index}: Failed to load node edges: ${nodeEdgesResult.reason}`);
       return undefined;
     }
-    const tracks = tracksResult.status === "fulfilled" ? tracksResult.value : undefined;
-    const trackEdges = trackEdgesResult.status === "fulfilled" ? trackEdgesResult.value : undefined;
-    const nodeEdges = nodeEdgesResult.status === "fulfilled" ? nodeEdgesResult.value : undefined;
+    const tracks = tracksResult.value;
+    const trackEdges = trackEdgesResult.value;
+    const nodeEdges = nodeEdgesResult.value;
     const name = metadata.name ?? `Track ${index}`;
     const key = metadata.key ?? name;
     return {
