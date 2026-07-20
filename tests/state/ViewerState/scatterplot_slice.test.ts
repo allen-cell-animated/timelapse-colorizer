@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { PlotRangeType } from "src/colorizer";
 import { TIME_FEATURE_KEY } from "src/colorizer/Dataset";
 import { UrlParam } from "src/colorizer/utils/url_utils";
-import { DEPRECATED_SCATTERPLOT_TIME_KEY } from "src/constants";
+import { DEPRECATED_SCATTERPLOT_TIME_KEY, SCATTERPLOT_SYNC_AXIS_KEY } from "src/constants";
 import { useViewerStateStore } from "src/state";
 import { loadScatterPlotSliceFromParams, serializeScatterPlotSlice } from "src/state/slices";
 import { MOCK_DATASET, MockFeatureKeys } from "tests/constants";
@@ -186,6 +186,19 @@ describe("ScatterplotSlice", () => {
       });
       expect(result.current.scatterXAxis).toBe(null);
       expect(result.current.scatterYAxis).toBe(null);
+    });
+
+    it("allows setting axes to the reserved sync key", async () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      await setDatasetAsync(result, MOCK_DATASET);
+      act(() => {
+        result.current.setScatterXAxis(SCATTERPLOT_SYNC_AXIS_KEY);
+      });
+      expect(result.current.scatterXAxis).toBe(SCATTERPLOT_SYNC_AXIS_KEY);
+      act(() => {
+        result.current.setScatterYAxis(SCATTERPLOT_SYNC_AXIS_KEY);
+      });
+      expect(result.current.scatterYAxis).toBe(SCATTERPLOT_SYNC_AXIS_KEY);
     });
   });
 
