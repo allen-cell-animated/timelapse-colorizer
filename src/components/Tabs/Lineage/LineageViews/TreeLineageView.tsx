@@ -2,11 +2,10 @@ import * as d3 from "d3";
 import React, { type ReactElement, useEffect, useRef } from "react";
 import type { Color } from "three";
 
+import { DUMMY_ROOT_NODE_ID } from "src/components/Tabs/Lineage/constants";
 import { getDefaultZoomTransform } from "src/components/Tabs/Lineage/lineage_utils";
 import type { LineageData, LineageDataRelationships, TrackInfo } from "src/components/Tabs/Lineage/types";
 import { useConstructor } from "src/hooks";
-
-import { DUMMY_ROOT_NODE_ID } from "../constants";
 
 const TREE_LEAF_HEIGHT_PX = 30;
 const TREE_LAYER_DEPTH_PX = 110;
