@@ -12,15 +12,12 @@ import type { LineageData, LineageDataRelationships, TrackInfo } from "./types";
  * @param callback The callback function to call for each parent track. Return
  * true to continue traversing the parents of that track, or false to stop.
  */
-function forEachParent(
-  trackId: number | undefined,
+function forEachAncestor(
+  trackId: number,
   trackIdToData: Map<number, TrackInfo>,
   idToParents: Map<number, number[]>,
   callback: (parent: TrackInfo) => boolean
 ): void {
-  if (!trackId) {
-    return;
-  }
   const parents = idToParents.get(trackId) ?? [];
   for (const parentId of parents) {
     const parentData = trackIdToData.get(parentId);
@@ -28,7 +25,7 @@ function forEachParent(
       if (!callback(parentData)) {
         continue;
       }
-      forEachParent(parentId, trackIdToData, idToParents, callback);
+      forEachAncestor(parentId, trackIdToData, idToParents, callback);
     }
   }
 }
@@ -44,13 +41,13 @@ function forEachParent(
  * @param callback The callback function to call for each child track. Return
  * true to continue traversing the children of that track, or false to stop.
  */
-function forEachChild(
+function forEachDescendant(
   trackId: number,
   trackIdToData: Map<number, TrackInfo>,
   idToChildren: Map<number, number[]>,
   callback: (child: TrackInfo) => boolean
 ): void {
-  if (!trackId) {
+  if (trackId === undefined) {
     return;
   }
   const children = idToChildren.get(trackId) ?? [];
@@ -60,7 +57,7 @@ function forEachChild(
       if (!callback(childNode)) {
         continue;
       }
-      forEachChild(childId, trackIdToData, idToChildren, callback);
+      forEachDescendant(childId, trackIdToData, idToChildren, callback);
     }
   }
 }
@@ -87,6 +84,12 @@ export type TreeExpandedState = {
   previouslyExpandedTracks: Set<number>;
 };
 
+/**
+ * Expands the provided track ID and all of its ancestors. If the track has any
+ * coparents, they will also be expanded. Also, if the track has any children
+ * that were previously expanded, they will be re-expanded as well.
+ * @returns a new TreeExpandedState with the updated expanded tracks.
+ */
 export function expandTrack(
   trackId: number,
   expandedState: TreeExpandedState,
@@ -104,7 +107,7 @@ export function expandTrack(
     };
   }
 
-  // Add current track to expanded tracks and previously expanded tracks
+  // Mark current track as expanded.
   expandedTracks.add(trackId);
   previouslyExpandedTracks.add(trackId);
 
@@ -116,13 +119,13 @@ export function expandTrack(
     expandedTracks.add(id);
     previouslyExpandedTracks.add(id);
     // Expand all parents of the node, up to a root node.
-    forEachParent(id, data.trackIdToTrackInfo, relationships.idToParents, (parentData) => {
+    forEachAncestor(id, data.trackIdToTrackInfo, relationships.idToParents, (parentData) => {
       expandedTracks.add(parentData.id);
       previouslyExpandedTracks.add(parentData.id);
       return true;
     });
     // Traverse children, expand if previously expanded too.
-    forEachChild(id, data.trackIdToTrackInfo, relationships.idToChildren, (childData) => {
+    forEachDescendant(id, data.trackIdToTrackInfo, relationships.idToChildren, (childData) => {
       if (previouslyExpandedTracks.has(childData.id)) {
         expandedTracks.add(childData.id);
         return true;
@@ -136,6 +139,11 @@ export function expandTrack(
   };
 }
 
+/**
+ * Collapses a track and all of its descendants. If the track has any coparents,
+ * they will also be collapsed.
+ * @returns a new TreeExpandedState with the updated expanded tracks.
+ */
 export function collapseTrack(
   trackId: number,
   expandedState: TreeExpandedState,
@@ -166,7 +174,7 @@ export function collapseTrack(
   // Remove all children of the track from the expanded set.
   const traversedNodes = new Set<number>([trackId]);
   const collapseAllChildren = (trackId: number): void => {
-    forEachChild(trackId, data.trackIdToTrackInfo, relationships.idToChildren, (childData) => {
+    forEachDescendant(trackId, data.trackIdToTrackInfo, relationships.idToChildren, (childData) => {
       if (traversedNodes.has(childData.id)) {
         return false;
       }
@@ -186,7 +194,7 @@ export function collapseTrack(
           }
         }
       }
-      // Check if any of the child node's parents are still expanded.
+      // Check if any of the child node's other parents are still expanded.
       const parentIds = relationships.idToParents.get(childData.id) ?? [];
       if (parentIds.length > 1) {
         for (const parentId of parentIds) {
@@ -204,7 +212,9 @@ export function collapseTrack(
       return true;
     });
   };
-  collapseAllChildren(trackId);
+  for (const trackId of coparentIds) {
+    collapseAllChildren(trackId);
+  }
 
   return {
     expandedTracks,
