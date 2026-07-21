@@ -3,15 +3,13 @@
 **Timelapse Feature Explorer is a web tool for interacting with and visualizing features in time-series segmented data**. You can apply color maps and ranges,
 switch between features in your dataset, play through your data to observe motion, and view plots showing how feature data change over time.
 
-This project originated from the [Allen Institute for Cell Science (AICS)](https://alleninstitute.org/division/cell-science/) Nuclear Morphogenesis
+This project originated from [the cell Science accelerator at the Allen Institute](https://alleninstitute.org/division/cell-science/) Nuclear Morphogenesis
 project and is being updated to support broader use cases. View our [Issues page](https://github.com/allen-cell-animated/timelapse-colorizer/issues)
 for more details about potential future features!
 
 ## Builds
 
 **Stable build: [timelapse.allencell.org](https://timelapse.allencell.org)**
-
-**Latest (`main` branch): [https://allen-cell-animated.github.io/timelapse-colorizer/](https://allen-cell-animated.github.io/timelapse-colorizer/)**
 
 ![image](https://github.com/allen-cell-animated/timelapse-colorizer/assets/30200665/81130299-7e75-4fc2-a344-19aba7aae8a5)
 
@@ -23,7 +21,7 @@ Compatible datasets hosted in an HTTPS-accessible location (ex: AWS S3 bucket, G
 
 ![image](https://github.com/allen-cell-animated/timelapse-colorizer/assets/30200665/e2631a78-b0d6-49fc-bb93-cefc94a91a53)
 
-For local datasets, you can install and use the `tfe-open` CLI tool included in the `colorizer-data` Python package. Please check the [`colorizer-data` GitHub repository](https://github.com/allen-cell-animated/colorizer-data) for the latest version.
+For local datasets, you can install and use the `tfe-open` CLI tool included in the [`colorizer-data`](https://github.com/allen-cell-animated/colorizer-data) Python package. Please check the [`colorizer-data` GitHub repository](https://github.com/allen-cell-animated/colorizer-data) for the latest version.
 
 ```bash
 # In a Python environment:
