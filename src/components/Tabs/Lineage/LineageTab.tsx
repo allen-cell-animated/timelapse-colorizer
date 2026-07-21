@@ -123,8 +123,6 @@ export default function LineageTab(): ReactElement {
     [onClickTrack, currentFrame, tracks]
   );
 
-  const onHoverObject = useCallback((_info: TrackInfo | null) => {}, []);
-
   //// Rendering ////
 
   const tooltipVisible = hoveredTrack !== null;
@@ -187,7 +185,8 @@ export default function LineageTab(): ReactElement {
           relationships={lineageRelationships}
           time={currentFrame}
           onClick={onClickObject}
-          onHover={onHoverObject}
+          // TODO: Show hover tooltip for track detail view
+          onHover={undefined}
         ></LineageTrackDetailView>
       </div>
     </FlexColumn>
