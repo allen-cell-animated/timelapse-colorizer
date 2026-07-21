@@ -32,14 +32,14 @@ type TrackDetailLineageViewProps = {
   onHover?: (info: TrackInfo | null, time: number) => void;
 };
 
-const SVG_EXPAND_BUTTON_GROUP_CLASS = "expand-button";
-const SVG_COLLAPSE_BUTTON_GROUP_CLASS = "collapse-button";
-
-const SVG_BUTTON_CLASS = "svg-button";
-const SVG_BUTTON_TEXT_CLASS = "expand-button-text";
-const SVG_TIME_INDICATOR_CLASS = "time-indicator";
-const MAIN_NODE_CLASS = "main-node";
-const TRACK_LABEL_CLASS = "track-label";
+const enum SvgClass {
+  BUTTON = "svg-button",
+  EXPAND_BUTTON_GROUP = "expand-button",
+  COLLAPSE_BUTTON_GROUP = "collapse-button",
+  TIME_INDICATOR = "time-indicator",
+  MAIN_NODE = "main-node",
+  TRACK_LABEL = "track-label",
+}
 
 const TREE_LEAF_HEIGHT_PX = 30;
 const NODE_HEIGHT_PX = 20;
@@ -60,13 +60,13 @@ const MERGE_EDGE_COLOR = "#ff9410";
 const DEFAULT_EDGE_COLOR = "#4a5568";
 
 const StyledSVG = styled.svg`
-  .${SVG_COLLAPSE_BUTTON_GROUP_CLASS} rect {
+  .${SvgClass.COLLAPSE_BUTTON_GROUP} rect {
     // Hide the collapse button by default.
     opacity: 0;
   }
 
   // Style the expand/collapse buttons and their hover states.
-  .${SVG_COLLAPSE_BUTTON_GROUP_CLASS}, .${SVG_EXPAND_BUTTON_GROUP_CLASS} {
+  .${SvgClass.COLLAPSE_BUTTON_GROUP}, .${SvgClass.EXPAND_BUTTON_GROUP} {
     cursor: pointer;
 
     & * {
@@ -85,13 +85,13 @@ const StyledSVG = styled.svg`
   }
 
   // Add hover colors to the main node rectangle and track label
-  .${MAIN_NODE_CLASS} {
+  .${SvgClass.MAIN_NODE} {
     transition: all 0.2s ease-out;
     &:hover {
       fill: ${DEFAULT_NODE_FILL_COVER_HOVER_COLOR};
     }
   }
-  .${TRACK_LABEL_CLASS} {
+  .${SvgClass.TRACK_LABEL} {
     transition: all 0.2s ease-out;
     &:hover {
       fill: ${TRACK_LABEL_HOVER_COLOR};
@@ -176,25 +176,25 @@ function renderView(
     .attr("transform", (d) => `translate(${d.data.startTime * TREE_LAYER_DEPTH_PX},${d.x})`);
 
   // Draw rectangles for each node
-  node.append("rect").attr("class", MAIN_NODE_CLASS);
-  node.append("line").attr("class", SVG_TIME_INDICATOR_CLASS);
+  node.append("rect").attr("class", SvgClass.MAIN_NODE);
+  node.append("line").attr("class", SvgClass.TIME_INDICATOR);
 
   // Add expand/collapse button for each node
   const expandButtonNodes = node
     .filter((d) => !selectedTrackIds.has(d.data.id))
     .append("g")
-    .attr("class", SVG_EXPAND_BUTTON_GROUP_CLASS);
+    .attr("class", SvgClass.EXPAND_BUTTON_GROUP);
   const collapseButtonNodes = node
     .filter((d) => selectedTrackIds.has(d.data.id))
     .append("g")
-    .attr("class", SVG_COLLAPSE_BUTTON_GROUP_CLASS);
-  expandButtonNodes.append("rect").attr("class", `${SVG_BUTTON_CLASS}`);
-  expandButtonNodes.append("text").attr("class", `${SVG_BUTTON_TEXT_CLASS}`);
-  collapseButtonNodes.append("rect").attr("class", `${SVG_BUTTON_CLASS}`);
-  collapseButtonNodes.append("text").attr("class", `${SVG_BUTTON_TEXT_CLASS}`);
+    .attr("class", SvgClass.COLLAPSE_BUTTON_GROUP);
+  expandButtonNodes.append("rect").attr("class", `${SvgClass.BUTTON}`);
+  expandButtonNodes.append("text");
+  collapseButtonNodes.append("rect").attr("class", `${SvgClass.BUTTON}`);
+  collapseButtonNodes.append("text");
 
   // Track ID label
-  node.append("text").attr("class", TRACK_LABEL_CLASS);
+  node.append("text").attr("class", SvgClass.TRACK_LABEL);
 
   return node;
 }
@@ -237,10 +237,10 @@ function setupPointerHandlers(
     onHover?.current?.(null, 0);
   };
 
-  const mainNodeRect = node.select<SVGRectElement>(`rect.${MAIN_NODE_CLASS}`);
-  const trackLabelText = node.select<SVGTextElement>(`text.${TRACK_LABEL_CLASS}`);
+  const mainNodeRect = node.select<SVGRectElement>(`rect.${SvgClass.MAIN_NODE}`);
+  const trackLabelText = node.select<SVGTextElement>(`text.${SvgClass.TRACK_LABEL}`);
   const buttonGroups = node.selectAll<SVGGElement, d3.HierarchyNode<TrackInfo>>(
-    `g.${SVG_EXPAND_BUTTON_GROUP_CLASS}, g.${SVG_COLLAPSE_BUTTON_GROUP_CLASS}`
+    `g.${SvgClass.EXPAND_BUTTON_GROUP}, g.${SvgClass.COLLAPSE_BUTTON_GROUP}`
   );
 
   mainNodeRect.on("click", handleClickMainNode);
@@ -276,7 +276,7 @@ function updateNodeStyles(
 
   // Main node rectangle
   node
-    .select<SVGRectElement>(`rect.${MAIN_NODE_CLASS}`)
+    .select<SVGRectElement>(`rect.${SvgClass.MAIN_NODE}`)
     .attr("transform", `translate(${-TREE_LAYER_DEPTH_PX / 2},${-NODE_HEIGHT_PX / 2})`)
     .attr("width", (d) => d.data.length * TREE_LAYER_DEPTH_PX)
     .attr("height", NODE_HEIGHT_PX)
@@ -292,7 +292,7 @@ function updateNodeStyles(
 
   // Indicator for current time
   node
-    .select<SVGTextElement>(`line.${SVG_TIME_INDICATOR_CLASS}`)
+    .select<SVGTextElement>(`line.${SvgClass.TIME_INDICATOR}`)
     .attr("transform", getLineTransform)
     .attr("opacity", (d) => (isInTimeRange(d) && isExpanded(d) ? 1 : 0))
     .attr("x1", 0)
@@ -305,7 +305,7 @@ function updateNodeStyles(
 
   // Track label
   node
-    .select<SVGTextElement>(`text.${TRACK_LABEL_CLASS}`)
+    .select<SVGTextElement>(`text.${SvgClass.TRACK_LABEL}`)
     .text((d) => d.data.id)
     .attr("x", 2)
     .attr("y", -14)
@@ -320,7 +320,7 @@ function updateNodeStyles(
   // directly into the SVG, instead of using SVG text and rectangles for
   // accessibility? See
   // https://developer.mozilla.org/en-US/docs/Web/SVG/Element/foreignObjecthttps://developer.mozilla.org/en-US/docs/Web/SVG/Element/foreignObject
-  const expandButtonGroup = node.select<SVGGElement>(`g.${SVG_EXPAND_BUTTON_GROUP_CLASS}`);
+  const expandButtonGroup = node.select<SVGGElement>(`g.${SvgClass.EXPAND_BUTTON_GROUP}`);
   expandButtonGroup
     .select<SVGRectElement>("rect")
     .attr("x", -2)
@@ -345,7 +345,7 @@ function updateNodeStyles(
     .attr("font-size", 16)
     .attr("pointer-events", "none");
 
-  const collapseButtonGroup = node.select<SVGGElement>(`g.${SVG_COLLAPSE_BUTTON_GROUP_CLASS}`);
+  const collapseButtonGroup = node.select<SVGGElement>(`g.${SvgClass.COLLAPSE_BUTTON_GROUP}`);
   collapseButtonGroup
     .select<SVGRectElement>("rect")
     .attr("x", -2)
