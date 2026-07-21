@@ -51,7 +51,7 @@ const COLLAPSED_NODE_FILL_HOVER_COLOR = "#8f8f8f";
 const COLLAPSED_NODE_EDGE_COLOR = "#8f8f8f";
 
 const DEFAULT_NODE_FILL_COLOR = "#ffffff";
-const DEFAULT_NODE_FILL_COVER_HOVER_COLOR = "#f6f6f6";
+const DEFAULT_NODE_FILL_HOVER_COLOR = "#f6f6f6";
 const DEFAULT_NODE_EDGE_COLOR = "#8e8f94";
 
 const TRACK_LABEL_HOVER_COLOR = "#2c2c2c";
@@ -61,7 +61,8 @@ const DEFAULT_EDGE_COLOR = "#4a5568";
 
 const StyledSVG = styled.svg`
   .${SvgClass.COLLAPSE_BUTTON_GROUP} rect {
-    // Hide the collapse button by default.
+    // Hide the collapse button by default, so only the text (-) is visible.
+    // The button will be shown on hover.
     opacity: 0;
   }
 
@@ -88,7 +89,7 @@ const StyledSVG = styled.svg`
   .${SvgClass.MAIN_NODE} {
     transition: all 0.2s ease-out;
     &:hover {
-      fill: ${DEFAULT_NODE_FILL_COVER_HOVER_COLOR};
+      fill: ${DEFAULT_NODE_FILL_HOVER_COLOR};
     }
   }
   .${SvgClass.TRACK_LABEL} {
