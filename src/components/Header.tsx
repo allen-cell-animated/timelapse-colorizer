@@ -12,7 +12,7 @@ const AICS_LOGO_RESIZE_THRESHOLD_PX = 540;
 
 const AicsLogoLink = styled.a`
   position: relative;
-  width: 140px;
+  width: 110px;
   height: 36px;
 
   div > svg:last-child {

@@ -1,5 +1,5 @@
-import AicsLogoSVGAsset from "./AICS-logo.svg?react";
-import AicsLogoAndNameSVGAsset from "./AICS-logo-and-name.svg?react";
+import AicsLogoSVGAsset from "./AI-logo.svg?react";
+import AicsLogoAndNameSVGAsset from "./AI-logo-and-name.svg?react";
 import DropdownSVGAsset from "./dropdown-arrow.svg?react";
 import BarChartSlashIconSVGAsset from "./icon-bar-chart-slash.svg?react";
 import CentroidIconSVGAsset from "./icon-centroid.svg?react";
