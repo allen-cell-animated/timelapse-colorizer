@@ -5,9 +5,9 @@ import {
   collapseTrack,
   expandTrack,
   getInitialExpandedState,
-  TreeExpandedState,
+  type TreeExpandedState,
 } from "src/components/Tabs/Lineage/tree_utils";
-import { LineageData, TrackInfo } from "src/components/Tabs/Lineage/types";
+import type { LineageData, TrackInfo } from "src/components/Tabs/Lineage/types";
 
 describe("tree_utils", () => {
   // EXAMPLE TREE:
@@ -16,8 +16,8 @@ describe("tree_utils", () => {
   //   \    -> 4
   //    \
   //      -> 5 -> 6 -> 8
-  //          \     /
-  //           -> 7
+  //          \    /
+  //           -> 7 -> 9
 
   const trackIdToData = new Map<number, TrackInfo>([
     [1, { id: 1, length: 1, startTime: 0 }],
@@ -28,6 +28,7 @@ describe("tree_utils", () => {
     [6, { id: 6, length: 1, startTime: 0 }],
     [7, { id: 7, length: 1, startTime: 0 }],
     [8, { id: 8, length: 1, startTime: 0 }],
+    [9, { id: 9, length: 1, startTime: 0 }],
   ]);
 
   const lineageData = {
@@ -41,6 +42,7 @@ describe("tree_utils", () => {
       [5, 7],
       [6, 8],
       [7, 8],
+      [7, 9],
     ],
   } satisfies LineageData;
   const relationships = getLineageRelationships(lineageData);
@@ -89,6 +91,18 @@ describe("tree_utils", () => {
         expect(result.expandedTracks).toEqual(new Set([1, 5, 6, 7]));
         expect(result.previouslyExpandedTracks).toEqual(new Set([1, 5, 6, 7]));
       });
+
+      // TODO: Fix this and check for coparents when expanding/collapsing. This
+      // will require some work to avoid repeated traversals of the tree.
+      it("KNOWN BUG: does not check coparents when expanding ancestors", () => {
+        const startingState = getFullyCollapsedState();
+        const result = expandTrack(9, startingState, lineageData, relationships);
+        // Node 6 and 7 are coparents, so a totally correct implementation would
+        // expand both. However, the current implementation only expands the
+        // ancestor path of the selected node, so only 6 is expanded.
+        expect(result.expandedTracks).toEqual(new Set([1, 5, 7, 9]));
+        expect(result.previouslyExpandedTracks).toEqual(new Set([1, 5, 7, 9]));
+      });
     });
 
     describe("collapseTrack", () => {
@@ -101,17 +115,17 @@ describe("tree_utils", () => {
       it("collapses leaf nodes", () => {
         const startingState = getFullyExpandedState();
         const result = collapseTrack(4, startingState, lineageData, relationships);
-        expect(result.expandedTracks).toEqual(new Set([1, 2, 3, 5, 6, 7, 8]));
-        expect(result.previouslyExpandedTracks).toEqual(new Set([1, 2, 3, 5, 6, 7, 8]));
+        expect(result.expandedTracks).toEqual(new Set([1, 2, 3, 5, 6, 7, 8, 9]));
+        expect(result.previouslyExpandedTracks).toEqual(new Set([1, 2, 3, 5, 6, 7, 8, 9]));
       });
 
       it("collapses all children of a parent node", () => {
         const startingState = getFullyExpandedState();
         const result = collapseTrack(2, startingState, lineageData, relationships);
-        expect(result.expandedTracks).toEqual(new Set([1, 5, 6, 7, 8]));
+        expect(result.expandedTracks).toEqual(new Set([1, 5, 6, 7, 8, 9]));
         // Collapsed children are still marked as previously expanded, so that
         // they can be restored if the parent is expanded again.
-        expect(result.previouslyExpandedTracks).toEqual(new Set([1, 3, 4, 5, 6, 7, 8]));
+        expect(result.previouslyExpandedTracks).toEqual(new Set([1, 3, 4, 5, 6, 7, 8, 9]));
       });
 
       it("collapses coparents simultaneously", () => {
@@ -119,7 +133,7 @@ describe("tree_utils", () => {
         // Node 6 and 7 are coparents, so collapsing one should collapse the other.
         const result = collapseTrack(6, startingState, lineageData, relationships);
         expect(result.expandedTracks).toEqual(new Set([1, 2, 3, 4, 5]));
-        expect(result.previouslyExpandedTracks).toEqual(new Set([1, 2, 3, 4, 5, 8]));
+        expect(result.previouslyExpandedTracks).toEqual(new Set([1, 2, 3, 4, 5, 8, 9]));
       });
     });
 
@@ -127,13 +141,11 @@ describe("tree_utils", () => {
       const startingState = getFullyExpandedState();
       const result = collapseTrack(5, startingState, lineageData, relationships);
       expect(result.expandedTracks).toEqual(new Set([1, 2, 3, 4]));
-      // Collapsed children are still marked as previously expanded, so that
-      // they can be restored if the parent is expanded again.
-      expect(result.previouslyExpandedTracks).toEqual(new Set([1, 2, 3, 4, 6, 7, 8]));
+      expect(result.previouslyExpandedTracks).toEqual(new Set([1, 2, 3, 4, 6, 7, 8, 9]));
 
       const result2 = expandTrack(5, result, lineageData, relationships);
-      expect(result2.expandedTracks).toEqual(new Set([1, 2, 3, 4, 5, 6, 7, 8]));
-      expect(result2.previouslyExpandedTracks).toEqual(new Set([1, 2, 3, 4, 5, 6, 7, 8]));
+      expect(result2.expandedTracks).toEqual(new Set([1, 2, 3, 4, 5, 6, 7, 8, 9]));
+      expect(result2.previouslyExpandedTracks).toEqual(new Set([1, 2, 3, 4, 5, 6, 7, 8, 9]));
     });
   });
 
