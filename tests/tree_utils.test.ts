@@ -5,9 +5,9 @@ import {
   collapseTrack,
   expandTrack,
   getInitialExpandedState,
-  TreeExpandedState,
+  type TreeExpandedState,
 } from "src/components/Tabs/Lineage/tree_utils";
-import { LineageData, TrackInfo } from "src/components/Tabs/Lineage/types";
+import type { LineageData, TrackInfo } from "src/components/Tabs/Lineage/types";
 
 describe("tree_utils", () => {
   // EXAMPLE TREE:
