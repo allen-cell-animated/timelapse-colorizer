@@ -172,7 +172,7 @@ export function collapseTrack(
   }
 
   // Remove all children of the track from the expanded set.
-  const traversedNodes = new Set<number>([trackId]);
+  const traversedNodes = new Set<number>(coparentIds);
   const collapseAllChildren = (trackId: number): void => {
     forEachDescendant(trackId, data.trackIdToTrackInfo, relationships.idToChildren, (childData) => {
       if (traversedNodes.has(childData.id)) {
