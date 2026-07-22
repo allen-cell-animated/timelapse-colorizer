@@ -1,8 +1,8 @@
 # Contributing to open source projects by the Allen Institute
 
-Thank you for your interest in contributing to open source project by the cell
-science accelerator at the Allen Institute! This document is a set of guidelines
-to help you contribute to this project.
+Thank you for your interest in contributing to this open source project by the
+cell science accelerator at the Allen Institute! This document is a set of
+guidelines to help you contribute to this project.
 
 ## Code of Conduct
 
