@@ -345,21 +345,20 @@ function updateNodeStyles(
   const expandButtonGroup = node.select<SVGGElement>(`g.${SvgClass.EXPAND_BUTTON_GROUP}`);
   const collapseButtonGroup = node.select<SVGGElement>(`g.${SvgClass.COLLAPSE_BUTTON_GROUP}`);
   const buttonGroups = expandButtonGroup.merge(collapseButtonGroup);
-  const buttonWidth = COLLAPSED_NODE_WIDTH_PX * 0.75;
   buttonGroups
     .select<SVGRectElement>("rect")
-    .attr("x", 0)
-    .attr("y", -buttonWidth / 2)
-    .attr("width", buttonWidth)
-    .attr("height", buttonWidth)
+    .attr("x", -2)
+    .attr("y", -NODE_HEIGHT_PX / 2)
+    .attr("width", COLLAPSED_NODE_WIDTH_PX)
+    .attr("height", NODE_HEIGHT_PX)
     .attr("fill", COLLAPSED_NODE_FILL_COLOR)
     .attr("opacity", (d) => (d.data.id === DUMMY_ROOT_NODE_ID ? 0 : 1))
     .attr("stroke", COLLAPSED_NODE_EDGE_COLOR)
     .attr("stroke-width", 2)
-    .attr("rx", 2);
+    .attr("rx", 4);
   buttonGroups
     .select<SVGTextElement>("text")
-    .attr("x", buttonWidth / 2)
+    .attr("x", COLLAPSED_NODE_WIDTH_PX / 2 - 2)
     .attr("y", 1)
     .attr("opacity", (d) => (d.data.id === DUMMY_ROOT_NODE_ID ? 0 : 1))
     .attr("text-anchor", "middle")
