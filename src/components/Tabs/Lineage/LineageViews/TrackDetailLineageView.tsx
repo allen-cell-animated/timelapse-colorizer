@@ -1,5 +1,5 @@
 import * as d3 from "d3";
-import React, { type MouseEvent, type ReactElement, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { type MouseEvent, type ReactElement, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import type { Color } from "three";
 
@@ -215,15 +215,19 @@ function setupPointerHandlers(
   onToggleExpanded?: React.RefObject<undefined | ((info: TrackInfo) => void)>,
   onHover?: React.RefObject<undefined | ((info: TrackInfo | null, time: number) => void)>
 ): () => void {
+  const getTimeFromMouseEvent = (event: MouseEvent, d: d3.HierarchyNode<TrackInfo>): number => {
+    const boundingRect = event.currentTarget.getBoundingClientRect();
+    const relativeX = event.clientX - boundingRect.left;
+    const timeOffset = Math.min(Math.floor((relativeX / boundingRect.width) * d.data.length), d.data.length - 1);
+    return d.data.startTime + timeOffset;
+  };
+
   // Clicking the main node or the track label calls the onToggleSelection
   // callback with the track info and the time of the click.
   const handleClickMainNode = (event: MouseEvent, d: d3.HierarchyNode<TrackInfo>): void => {
     event.stopPropagation();
     // Determine current time based on the click position relative to the node rectangle.
-    const boundingRect = event.currentTarget.getBoundingClientRect();
-    const relativeX = event.clientX - boundingRect.left;
-    const timeOffset = Math.min(Math.floor((relativeX / boundingRect.width) * d.data.length), d.data.length - 1);
-    const time = d.data.startTime + timeOffset;
+    const time = getTimeFromMouseEvent(event, d);
     onToggleSelection?.current?.(d.data, time);
   };
 
@@ -238,12 +242,14 @@ function setupPointerHandlers(
     onToggleExpanded?.current?.(d.data);
   };
 
-  const handleHoverNode = (_event: MouseEvent, d: d3.HierarchyNode<TrackInfo>): void => {
-    onHover?.current?.(d.data, 0);
+  const handleHoverNode = (event: MouseEvent, d: d3.HierarchyNode<TrackInfo>): void => {
+    const time = getTimeFromMouseEvent(event, d);
+    onHover?.current?.(d.data, time);
   };
 
-  const handleUnhoverNode = (): void => {
-    onHover?.current?.(null, 0);
+  const handleUnhoverNode = (event: MouseEvent, d: d3.HierarchyNode<TrackInfo>): void => {
+    const time = getTimeFromMouseEvent(event, d);
+    onHover?.current?.(null, time);
   };
 
   const mainNodeRect = node.select<SVGRectElement>(`rect.${SvgClass.MAIN_NODE}`);
@@ -460,13 +466,6 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
 
   //// Helper methods ////
 
-  const isSelected = useCallback(
-    (d: d3.HierarchyPointNode<TrackInfo>): boolean => {
-      return trackIds.has(d.data.id);
-    },
-    [trackIds]
-  );
-
   //// Viewport ////
 
   // Render view and set up pointer handlers
@@ -493,7 +492,7 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
         d3.select(groupRef.current).selectAll("*").remove();
       }
     };
-  }, [props.data, props.relationships, props.dataset, expandedTracks, isSelected]);
+  }, [props.data, props.relationships, props.dataset, expandedTracks]);
 
   // Update node styling
   useEffect(() => {
