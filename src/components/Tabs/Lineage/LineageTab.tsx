@@ -120,7 +120,7 @@ export default function LineageTab(): ReactElement {
         setFrame(time);
       }
     },
-    [onClickTrack, currentFrame, tracks]
+    [dataset, currentFrame, toggleTrack, addTracks, setFrame]
   );
 
   //// Rendering ////

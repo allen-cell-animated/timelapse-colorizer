@@ -19,6 +19,8 @@ import {
 import type { LineageData, LineageDataRelationships, TrackInfo } from "src/components/Tabs/Lineage/types";
 import { useConstructor } from "src/hooks";
 
+import { DUMMY_ROOT_NODE_ID } from "../constants";
+
 type TrackDetailLineageViewProps = {
   container: React.RefObject<HTMLDivElement>;
   dataset: Dataset | null;
@@ -143,7 +145,7 @@ function renderView(
     .attr("stroke", (d) => (mergeNodes.has(d.target.data.id) ? MERGE_EDGE_COLOR : DEFAULT_EDGE_COLOR))
     .attr("stroke-width", 1.5)
     .attr("stroke-dasharray", (d) => (mergeNodes.has(d.target.data.id) ? "4 3" : null))
-    .attr("opacity", (d) => (d.source.data.id === -1 ? 0 : 1)) // Hide links to the dummy root node
+    .attr("opacity", (d) => (d.source.data.id === DUMMY_ROOT_NODE_ID ? 0 : 1)) // Hide links to the dummy root node
     .attr("x1", (d) => (d.source.data.startTime + d.source.data.length - 1) * TREE_LAYER_DEPTH_PX)
     .attr("y1", (d) => d.source.x)
     .attr("x2", (d) => d.target.data.startTime * TREE_LAYER_DEPTH_PX)
@@ -221,7 +223,7 @@ function setupPointerHandlers(
     // Determine current time based on the click position relative to the node rectangle.
     const boundingRect = event.currentTarget.getBoundingClientRect();
     const relativeX = event.clientX - boundingRect.left;
-    const time = d.data.startTime + Math.round((relativeX / boundingRect.width) * d.data.length);
+    const time = d.data.startTime + Math.round((relativeX / boundingRect.width) * (d.data.length - 1));
     onToggleSelection?.current?.(d.data, time);
   };
 
@@ -293,17 +295,16 @@ function updateNodeStyles(
     .attr("height", NODE_HEIGHT_PX)
     .attr("rx", 4)
     .attr("fill", DEFAULT_NODE_FILL_COLOR)
-    .attr("opacity", (d) => (isExpanded(d) ? 1 : 0)) // Hide the dummy root node
+    .attr("opacity", (d) => (isExpanded(d) && d.data.id !== DUMMY_ROOT_NODE_ID ? 1 : 0)) // Hide the dummy root node
     // Hide node when collapsed
     .attr("cursor", (d) => (isExpanded(d) ? "pointer" : "default"))
     .attr("pointer-events", (d) => (isExpanded(d) ? "auto" : "none"))
     .attr("stroke", (d) => trackColors.get(d.data.id)?.getStyle() ?? DEFAULT_NODE_EDGE_COLOR)
-    .attr("stroke-width", 2)
-    .attr("transition", "fill 0.3s, stroke 0.3s");
+    .attr("stroke-width", 2);
 
   // Indicator for current time
   node
-    .select<SVGTextElement>(`line.${SvgClass.TIME_INDICATOR}`)
+    .select<SVGLineElement>(`line.${SvgClass.TIME_INDICATOR}`)
     .attr("transform", getTimeIndicatorTransform)
     .attr("opacity", (d) => (isInTimeRange(d) && isExpanded(d) ? 1 : 0))
     .attr("x1", 0)
@@ -320,6 +321,7 @@ function updateNodeStyles(
     .text((d) => d.data.id)
     .attr("x", 2)
     .attr("y", -14)
+    .attr("opacity", (d) => (d.data.id !== DUMMY_ROOT_NODE_ID ? 1 : 0)) // Hide the dummy root node
     .attr("fill", COLLAPSED_NODE_EDGE_COLOR)
     .attr("font-size", 14)
     .attr("cursor", "pointer")
@@ -344,7 +346,7 @@ function updateNodeStyles(
     .attr("width", COLLAPSED_NODE_WIDTH_PX)
     .attr("height", NODE_HEIGHT_PX)
     .attr("fill", COLLAPSED_NODE_FILL_COLOR)
-    .attr("opacity", (d) => (d.data.id === -1 ? 0 : 1))
+    .attr("opacity", (d) => (d.data.id === DUMMY_ROOT_NODE_ID ? 0 : 1))
     .attr("stroke", COLLAPSED_NODE_EDGE_COLOR)
     .attr("stroke-width", 2)
     .attr("rx", 4);
@@ -352,6 +354,7 @@ function updateNodeStyles(
     .select<SVGTextElement>("text")
     .attr("x", COLLAPSED_NODE_WIDTH_PX / 2 - 2)
     .attr("y", 1)
+    .attr("opacity", (d) => (d.data.id === DUMMY_ROOT_NODE_ID ? 0 : 1))
     .attr("text-anchor", "middle")
     .attr("dominant-baseline", "middle")
     .attr("fill", COLLAPSED_NODE_EDGE_COLOR)
@@ -381,7 +384,11 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
 
   // Apply newly selected tracks to expanded state-- updates only on new tracks
   // to avoid expanding selected tracks that were previously collapsed.
-  const prevTracks = useRef<Map<number, Track>>(new Map());
+  const prevTracks = useRef<Set<number>>(new Set());
+  useMemo(() => {
+    prevTracks.current = new Set();
+  }, [props.dataset, props.data, props.relationships]);
+
   const newTracks = useMemo(() => {
     const newTracks = new Set<number>();
     for (const trackId of props.selectedTracks.keys()) {
@@ -391,11 +398,13 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
     }
     return newTracks;
   }, [props.selectedTracks]);
+
   useEffect(() => {
     for (const trackId of newTracks) {
       setExpandedState((prev) => expandTrack(trackId, prev, props.data, props.relationships));
     }
-  }, [newTracks]);
+    prevTracks.current = new Set(props.selectedTracks.keys());
+  }, [newTracks, props.data, props.relationships]);
 
   // Reset expanded state when the data or relationships change (e.g. when the
   // user switches to a different dataset)
@@ -493,7 +502,7 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
     }
   }, [props.data, props.time, props.trackColors, expandedTracks]);
 
-  // Fit on first render
+  // Fit on data change
   useEffect(() => {
     resetZoom();
   }, [props.data, props.relationships, props.dataset]);
