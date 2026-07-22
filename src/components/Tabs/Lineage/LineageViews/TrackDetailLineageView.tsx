@@ -160,7 +160,7 @@ function renderView(
         return { x: 0, y: 0 };
       }
       // For target nodes, draw at the start of the track, and for source nodes, draw at the end of the track.
-      let y = isTarget ? node.data.startTime : node.data.startTime + node.data.length - 1;
+      const y = isTarget ? node.data.startTime : node.data.startTime + node.data.length - 1;
       return { x: node.x, y: y * TREE_LAYER_DEPTH_PX };
     };
 
