@@ -242,3 +242,62 @@ export function getInitialExpandedState(
   }
   return state;
 }
+
+export function alignMergeNodes(
+  treeRoot: d3.HierarchyPointNode<TrackInfo>,
+  data: LineageData,
+  relationships: LineageDataRelationships
+): void {
+  // Implementation goes here
+  const idToTreeNode = new Map<number, d3.HierarchyPointNode<TrackInfo>>();
+  treeRoot.each((node) => {
+    idToTreeNode.set(node.data.id, node);
+  });
+
+  const idToXOffset = new Map<number, number>();
+
+  const traversedNodes = new Set<number>();
+  forEachDescendant(treeRoot.data.id, data.trackIdToTrackInfo, relationships.idToChildren, (nodeData) => {
+    if (traversedNodes.has(nodeData.id)) {
+      return false;
+    }
+    const parents = relationships.idToParents.get(nodeData.id) ?? [];
+    if (parents.length > 1) {
+      // Merge node, align its X position with the average of its parents' X positions.
+      const parentNodes = parents
+        .map((parentId) => idToTreeNode.get(parentId))
+        .filter((node) => node !== undefined) as d3.HierarchyPointNode<TrackInfo>[];
+      if (parentNodes.length > 0) {
+        const avgX = parentNodes.reduce((sum, parentNode) => sum + parentNode.x, 0) / parentNodes.length;
+        const treeNode = idToTreeNode.get(nodeData.id);
+        const offset = treeNode ? avgX - (treeNode?.x ?? 0) : 0;
+        console.log(`Aligning merge node ${nodeData.id} with average X of parents: ${avgX}, current X: ${treeNode?.x}`);
+
+        // Store cumulative offset for this node and all of its descendants, so that they can be shifted together.
+        idToXOffset.set(nodeData.id, offset);
+        forEachDescendant(nodeData.id, data.trackIdToTrackInfo, relationships.idToChildren, (descendantData) => {
+          if (!idToXOffset.has(descendantData.id)) {
+            idToXOffset.set(descendantData.id, offset);
+          } else {
+            const currentOffset = idToXOffset.get(descendantData.id) ?? 0;
+            idToXOffset.set(descendantData.id, currentOffset + offset);
+          }
+          return true;
+        });
+      }
+    }
+    traversedNodes.add(nodeData.id);
+    return true;
+  });
+
+  // Apply offset to all nodes.
+  console.log(`Applying X offsets to nodes: ${JSON.stringify([...idToXOffset.entries()])}`);
+  for (const [nodeId, offset] of idToXOffset.entries()) {
+    const treeNode = idToTreeNode.get(nodeId);
+    if (treeNode) {
+      treeNode.x += offset;
+    } else {
+      console.warn(`Tree node for ID ${nodeId} not found when applying X offset.`);
+    }
+  }
+}
