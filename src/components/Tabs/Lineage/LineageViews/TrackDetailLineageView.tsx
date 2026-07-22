@@ -12,6 +12,7 @@ import {
   getTreeHierarchy,
 } from "src/components/Tabs/Lineage/lineage_utils";
 import {
+  alignMergeNodes,
   collapseTrack,
   expandTrack,
   getInitialExpandedState,
@@ -133,6 +134,7 @@ function renderView(
   const treeRoot = d3.tree<TrackInfo>().size([leafCount * TREE_LEAF_HEIGHT_PX * 1.5, depth * TREE_LAYER_DEPTH_PX])(
     root
   );
+  alignMergeNodes(treeRoot, data, relationships);
 
   const mergeNodes = new Set(multiparentEdges.map((edge) => edge[1]));
 

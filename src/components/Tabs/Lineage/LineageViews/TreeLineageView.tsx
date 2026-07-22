@@ -7,6 +7,8 @@ import { getDefaultZoomTransform } from "src/components/Tabs/Lineage/lineage_uti
 import type { LineageData, LineageDataRelationships, TrackInfo } from "src/components/Tabs/Lineage/types";
 import { useConstructor } from "src/hooks";
 
+import { alignMergeNodes } from "../tree_utils";
+
 const TREE_LEAF_HEIGHT_PX = 30;
 const TREE_LAYER_DEPTH_PX = 110;
 const MERGE_EDGE_COLOR = "#ff9410";
@@ -33,6 +35,7 @@ type NodeSelection = d3.Selection<SVGGElement | d3.BaseType, d3.HierarchyPointNo
 
 function renderTree(
   g: d3.Selection<SVGGElement, TrackInfo, null, undefined>,
+  data: LineageData,
   hierarchy: d3.HierarchyNode<TrackInfo>,
   relationships: LineageDataRelationships,
   onClickTrack?: (trackId: number) => void,
@@ -46,6 +49,7 @@ function renderTree(
   const depth = root.height;
 
   const treeRoot = d3.tree<TrackInfo>().size([leafCount * TREE_LEAF_HEIGHT_PX, depth * TREE_LAYER_DEPTH_PX])(root);
+  alignMergeNodes(treeRoot, data, relationships);
 
   // Render tree edges, coloring merge edges as an orange dotted line
   g.append("g")
@@ -209,7 +213,7 @@ export default function TreeLineageView(props: TreeLineageViewProps): ReactEleme
       const g = d3.select(groupRef.current) as d3.Selection<SVGGElement, TrackInfo, null, undefined>;
       const onClickTrack = (trackId: number): void => onClickRef.current?.(trackId);
       const onHoverTrack = (trackId: number | null): void => onHoverRef.current?.(trackId);
-      nodeRef.current = renderTree(g, props.hierarchy, props.relationships, onClickTrack, onHoverTrack);
+      nodeRef.current = renderTree(g, props.data, props.hierarchy, props.relationships, onClickTrack, onHoverTrack);
     }
     // Clear on unmount
     return () => {
