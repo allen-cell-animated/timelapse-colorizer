@@ -172,10 +172,10 @@ function renderView(
       .attr("stroke", MERGE_EDGE_COLOR)
       .attr("stroke-width", 1.5)
       .attr("stroke-dasharray", "4 3")
-      .attr("x1", (d) => getPos(d[0], false)?.y ?? 0)
-      .attr("y1", (d) => getPos(d[0], false)?.x ?? 0)
-      .attr("x2", (d) => getPos(d[1], true)?.y ?? 0)
-      .attr("y2", (d) => getPos(d[1], true)?.x ?? 0);
+      .attr("x1", (d) => getPos(d[0], false).y)
+      .attr("y1", (d) => getPos(d[0], false).x)
+      .attr("x2", (d) => getPos(d[1], true).y)
+      .attr("y2", (d) => getPos(d[1], true).x);
   }
 
   // Add nodes
