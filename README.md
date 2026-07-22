@@ -11,6 +11,8 @@ for more details about potential future features!
 
 **Stable build: [timelapse.allencell.org](https://timelapse.allencell.org)**
 
+**Latest (`main` branch): [https://allen-cell-animated.github.io/timelapse-colorizer/](https://allen-cell-animated.github.io/timelapse-colorizer/)**
+
 ![image](https://github.com/allen-cell-animated/timelapse-colorizer/assets/30200665/81130299-7e75-4fc2-a344-19aba7aae8a5)
 
 ## Viewing Custom Datasets
