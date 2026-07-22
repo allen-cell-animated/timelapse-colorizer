@@ -4,6 +4,7 @@ import styled from "styled-components";
 import type { Color } from "three";
 
 import type { Dataset, Track } from "src/colorizer";
+import { DUMMY_ROOT_NODE_ID } from "src/components/Tabs/Lineage/constants";
 import {
   getDefaultZoomTransform,
   getLineageRelationships,
@@ -18,8 +19,6 @@ import {
 } from "src/components/Tabs/Lineage/tree_utils";
 import type { LineageData, LineageDataRelationships, TrackInfo } from "src/components/Tabs/Lineage/types";
 import { useConstructor } from "src/hooks";
-
-import { DUMMY_ROOT_NODE_ID } from "../constants";
 
 type TrackDetailLineageViewProps = {
   container: React.RefObject<HTMLDivElement>;
