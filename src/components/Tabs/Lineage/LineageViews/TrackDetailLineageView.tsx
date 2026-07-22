@@ -216,6 +216,7 @@ function setupPointerHandlers(
   onHover?: React.RefObject<undefined | ((info: TrackInfo | null, time: number) => void)>
 ): () => void {
   const getTimeFromMouseEvent = (event: MouseEvent, d: d3.HierarchyNode<TrackInfo>): number => {
+    // Determine current time based on the click position relative to the node rectangle.
     const boundingRect = event.currentTarget.getBoundingClientRect();
     const relativeX = event.clientX - boundingRect.left;
     const timeOffset = Math.min(Math.floor((relativeX / boundingRect.width) * d.data.length), d.data.length - 1);
@@ -226,7 +227,6 @@ function setupPointerHandlers(
   // callback with the track info and the time of the click.
   const handleClickMainNode = (event: MouseEvent, d: d3.HierarchyNode<TrackInfo>): void => {
     event.stopPropagation();
-    // Determine current time based on the click position relative to the node rectangle.
     const time = getTimeFromMouseEvent(event, d);
     onToggleSelection?.current?.(d.data, time);
   };
