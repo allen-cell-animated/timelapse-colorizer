@@ -6,12 +6,14 @@ import HoverTooltip from "src/components/Tooltips/HoverTooltip";
 import { TooltipCard } from "src/components/Tooltips/TooltipCard";
 import { SHORTCUT_KEYS } from "src/constants/shortcuts";
 import { useViewerStateStore } from "src/state";
+import { StyledHorizontalRule } from "src/styles/components";
 import { FlexColumn } from "src/styles/utils";
 import { areAnyHotkeysPressed } from "src/utils/user_input";
 
 import { getLineageData, getLineageRelationships, getTreeHierarchy } from "./lineage_utils";
+import LineageTrackDetailView from "./LineageViews/TrackDetailLineageView";
 import TreeLineageView from "./LineageViews/TreeLineageView";
-import type { LineageData } from "./types";
+import type { LineageData, TrackInfo } from "./types";
 
 function getColorAndRadiusScale(data: LineageData): {
   colorScale: d3.ScaleSequential<string>;
@@ -42,6 +44,7 @@ export default function LineageTab(): ReactElement {
   const currentFrame = useViewerStateStore((state) => state.currentFrame);
   const tracks = useViewerStateStore((state) => state.tracks);
   const trackColors = useViewerStateStore((state) => state.trackColors);
+  const addTracks = useViewerStateStore((state) => state.addTracks);
   const setTracks = useViewerStateStore((state) => state.setTracks);
   const toggleTrack = useViewerStateStore((state) => state.toggleTrack);
   const setFrame = useViewerStateStore((state) => state.setFrame);
@@ -49,8 +52,10 @@ export default function LineageTab(): ReactElement {
   const [hoveredTrack, setHoveredTrack] = useState<Track | null>(null);
   const lastHoveredTrack = useRef<Track | null>(null);
 
-  const containerRef = useRef<HTMLDivElement>(null);
+  const treeViewContainerRef = useRef<HTMLDivElement>(null);
+  const detailViewContainerRef = useRef<HTMLDivElement>(null);
 
+  // Track data and relationships
   const lineageData = useMemo(() => {
     return dataset ? getLineageData(dataset) : EMPTY_LINEAGE_DATA;
   }, [dataset]);
@@ -98,6 +103,26 @@ export default function LineageTab(): ReactElement {
     [dataset]
   );
 
+  const onClickObject = useCallback(
+    (info: TrackInfo, time: number | null) => {
+      if (!dataset) {
+        return;
+      }
+      const track = dataset.getTrack(info.id);
+      if (track) {
+        if (time === currentFrame || time === null) {
+          toggleTrack(track);
+        } else {
+          addTracks([track]);
+        }
+      }
+      if (time !== null) {
+        setFrame(time);
+      }
+    },
+    [dataset, currentFrame, toggleTrack, addTracks, setFrame]
+  );
+
   //// Rendering ////
 
   const tooltipVisible = hoveredTrack !== null;
@@ -118,7 +143,7 @@ export default function LineageTab(): ReactElement {
   const selectedTracks = useMemo(() => new Set(tracks.keys()), [tracks]);
 
   const lineageViewProps = {
-    container: containerRef,
+    container: treeViewContainerRef,
     data: lineageData,
     hierarchy: hierarchy,
     relationships: lineageRelationships,
@@ -134,10 +159,10 @@ export default function LineageTab(): ReactElement {
     <FlexColumn style={{ width: "100%", height: "100%" }}>
       <HoverTooltip
         tooltipContent={tooltipContent}
-        style={{ width: "100%", height: "100%" }}
+        style={{ width: "100%", flexGrow: 3, flexBasis: "300px" }}
         disabled={!tooltipVisible}
       >
-        <div ref={containerRef} style={{ width: "100%", height: "100%" }}>
+        <div ref={treeViewContainerRef} style={{ width: "100%", height: "100%" }}>
           <TreeLineageView {...lineageViewProps}></TreeLineageView>
 
           {lineageData?.edges.length === 0 && (
@@ -145,6 +170,25 @@ export default function LineageTab(): ReactElement {
           )}
         </div>
       </HoverTooltip>
+      <StyledHorizontalRule style={{ margin: "0", flexGrow: 0 }} />
+      <div
+        ref={detailViewContainerRef}
+        style={{ width: "100%", flexGrow: 1, flexBasis: "300px", backgroundColor: "#fafafa" }}
+      >
+        <LineageTrackDetailView
+          container={detailViewContainerRef}
+          dataset={dataset}
+          selectedTracks={tracks}
+          trackColors={trackColors}
+          hierarchy={hierarchy ?? null}
+          data={lineageData}
+          relationships={lineageRelationships}
+          time={currentFrame}
+          onClick={onClickObject}
+          // TODO: Show hover tooltip for track detail view
+          onHover={undefined}
+        ></LineageTrackDetailView>
+      </div>
     </FlexColumn>
   );
 }
