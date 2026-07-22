@@ -4,15 +4,15 @@ import React, { type PropsWithChildren, type ReactElement } from "react";
 import { Link } from "react-router-dom";
 import styled from "styled-components";
 
-import { AicsLogoAndNameSVG, AicsLogoSVG } from "src/assets";
+import { AllenInstituteCellScienceLogoSVG, AllenInstituteLogoSVG } from "src/assets";
 import { INTERNAL_BUILD } from "src/constants";
 import { FlexRowAlignCenter, VisuallyHidden } from "src/styles/utils";
 
-const AICS_LOGO_RESIZE_THRESHOLD_PX = 540;
+const ALLEN_LOGO_RESIZE_THRESHOLD_PX = 540;
 
-const AicsLogoLink = styled.a`
+const AllenLogoLink = styled.a`
   position: relative;
-  width: 140px;
+  width: 110px;
   height: 36px;
 
   div > svg:last-child {
@@ -21,7 +21,7 @@ const AicsLogoLink = styled.a`
 
   // Toggle between the two logos based on the currently available screen real estate
   // Width is determined here experimentally to prevent popping as the other buttons in the header wrap.
-  @media only screen and (max-width: ${AICS_LOGO_RESIZE_THRESHOLD_PX}px) {
+  @media only screen and (max-width: ${ALLEN_LOGO_RESIZE_THRESHOLD_PX}px) {
     & {
       max-width: 30px;
       max-height: 30px;
@@ -45,7 +45,7 @@ const VerticalDivider = styled.div`
   display: inline-block;
   margin: 0 20px;
 
-  @media only screen and (max-width: ${AICS_LOGO_RESIZE_THRESHOLD_PX}px) {
+  @media only screen and (max-width: ${ALLEN_LOGO_RESIZE_THRESHOLD_PX}px) {
     margin: 0 10px;
   }
 `;
@@ -64,12 +64,17 @@ const HeaderLink = styled(Link)`
 function HeaderLogo(props: { headerOpensInNewTab?: boolean }): ReactElement {
   return (
     <FlexRowAlignCenter>
-      <AicsLogoLink href="https://www.allencell.org/" rel="noopener noreferrer" target="_blank">
-        <div title={"https://www.allencell.org"}>
-          <AicsLogoAndNameSVG />
-          <AicsLogoSVG />
+      <AllenLogoLink
+        href="https://www.allencell.org/"
+        rel="noopener noreferrer"
+        target="_blank"
+        aria-label="Go to allencell.org"
+      >
+        <div>
+          <AllenInstituteCellScienceLogoSVG />
+          <AllenInstituteLogoSVG />
         </div>
-      </AicsLogoLink>
+      </AllenLogoLink>
       <VerticalDivider />
       <HeaderLink
         to="/"
