@@ -9,6 +9,7 @@ import { INTERNAL_BUILD } from "src/constants";
 import { FlexRowAlignCenter, VisuallyHidden } from "src/styles/utils";
 
 const AICS_LOGO_RESIZE_THRESHOLD_PX = 540;
+const AICS_LOGO_LABEL_ID = "aics-logo-label";
 
 const AicsLogoLink = styled.a`
   position: relative;
@@ -64,8 +65,14 @@ const HeaderLink = styled(Link)`
 function HeaderLogo(props: { headerOpensInNewTab?: boolean }): ReactElement {
   return (
     <FlexRowAlignCenter>
-      <AicsLogoLink href="https://www.allencell.org/" rel="noopener noreferrer" target="_blank">
-        <div title={"https://www.allencell.org"}>
+      <AicsLogoLink
+        href="https://www.allencell.org/"
+        rel="noopener noreferrer"
+        target="_blank"
+        aria-label="Go to allencell.org"
+        aria-labelledby={AICS_LOGO_LABEL_ID}
+      >
+        <div>
           <AicsLogoAndNameSVG />
           <AicsLogoSVG />
         </div>
