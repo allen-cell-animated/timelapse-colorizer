@@ -3,7 +3,7 @@
 **Timelapse Feature Explorer is a web tool for interacting with and visualizing features in time-series segmented data**. You can apply color maps and ranges,
 switch between features in your dataset, play through your data to observe motion, and view plots showing how feature data change over time.
 
-This project originated from [the cell Science accelerator at the Allen Institute](https://alleninstitute.org/division/cell-science/) Nuclear Morphogenesis
+This project originated from [the cell science accelerator at the Allen Institute](https://alleninstitute.org/division/cell-science/) Nuclear Morphogenesis
 project and is being updated to support broader use cases. View our [Issues page](https://github.com/allen-cell-animated/timelapse-colorizer/issues)
 for more details about potential future features!
 

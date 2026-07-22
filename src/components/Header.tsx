@@ -4,12 +4,11 @@ import React, { type PropsWithChildren, type ReactElement } from "react";
 import { Link } from "react-router-dom";
 import styled from "styled-components";
 
-import { AicsLogoAndNameSVG, AicsLogoSVG } from "src/assets";
+import { AllenInstituteCellScienceLogoSVG, AllenInstituteLogoSVG } from "src/assets";
 import { INTERNAL_BUILD } from "src/constants";
 import { FlexRowAlignCenter, VisuallyHidden } from "src/styles/utils";
 
 const AICS_LOGO_RESIZE_THRESHOLD_PX = 540;
-const AICS_LOGO_LABEL_ID = "aics-logo-label";
 
 const AicsLogoLink = styled.a`
   position: relative;
@@ -70,11 +69,10 @@ function HeaderLogo(props: { headerOpensInNewTab?: boolean }): ReactElement {
         rel="noopener noreferrer"
         target="_blank"
         aria-label="Go to allencell.org"
-        aria-labelledby={AICS_LOGO_LABEL_ID}
       >
         <div>
-          <AicsLogoAndNameSVG />
-          <AicsLogoSVG />
+          <AllenInstituteCellScienceLogoSVG />
+          <AllenInstituteLogoSVG />
         </div>
       </AicsLogoLink>
       <VerticalDivider />
