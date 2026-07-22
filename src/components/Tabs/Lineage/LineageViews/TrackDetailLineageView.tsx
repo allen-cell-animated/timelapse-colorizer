@@ -223,7 +223,8 @@ function setupPointerHandlers(
     // Determine current time based on the click position relative to the node rectangle.
     const boundingRect = event.currentTarget.getBoundingClientRect();
     const relativeX = event.clientX - boundingRect.left;
-    const time = d.data.startTime + Math.round((relativeX / boundingRect.width) * (d.data.length - 1));
+    const timeOffset = Math.min(Math.floor((relativeX / boundingRect.width) * d.data.length), d.data.length - 1);
+    const time = d.data.startTime + timeOffset;
     onToggleSelection?.current?.(d.data, time);
   };
 
