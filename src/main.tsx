@@ -5,6 +5,8 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { getBuildDisplayDateString } from "src/colorizer/utils/math_utils";
 import { BASE_URL, INTERNAL_BUILD, VERSION_NUMBER } from "src/constants";
 import { ErrorPage, LandingPage } from "src/routes";
+import { useViewerStateStore } from "src/state";
+import { loadInitialViewerStateFromParams } from "src/state/utils/store_io";
 import AppStyle from "src/styles/AppStyle";
 import { decodeGitHubPagesUrl, isEncodedPathUrl, tryRemoveHashRouting } from "src/utils/gh_routing";
 import Viewer from "src/Viewer";
@@ -41,6 +43,8 @@ const router = createBrowserRouter(
   ],
   { basename: import.meta.env.BASE_URL }
 );
+
+loadInitialViewerStateFromParams(useViewerStateStore, new URLSearchParams(window.location.search));
 
 // Render React component
 const container = document.getElementById("root");
