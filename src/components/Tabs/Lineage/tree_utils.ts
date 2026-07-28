@@ -255,43 +255,43 @@ export function alignMergeNodes(
   });
 
   const idToXOffset = new Map<number, number>();
+  const mergeNodes = new Set(
+    [...relationships.idToParents.entries()].filter(([, parents]) => parents.length > 1).map(([id]) => id)
+  );
 
-  const traversedNodes = new Set<number>();
-  forEachDescendant(treeRoot.data.id, data.trackIdToTrackInfo, relationships.idToChildren, (nodeData) => {
-    if (traversedNodes.has(nodeData.id)) {
-      return false;
+  for (const mergeNodeId of mergeNodes) {
+    const parents = relationships.idToParents.get(mergeNodeId) ?? [];
+    const nodeData = data.trackIdToTrackInfo.get(mergeNodeId);
+    if (!nodeData) {
+      console.warn(`Merge node with ID ${mergeNodeId} not found in trackIdToTrackInfo.`);
+      continue;
     }
-    const parents = relationships.idToParents.get(nodeData.id) ?? [];
-    if (parents.length > 1) {
-      // Merge node, align its X position with the average of its parents' X positions.
-      const parentNodes = parents
-        .map((parentId) => idToTreeNode.get(parentId))
-        .filter((node) => node !== undefined) as d3.HierarchyPointNode<TrackInfo>[];
-      if (parentNodes.length > 0) {
-        const avgX = parentNodes.reduce((sum, parentNode) => sum + parentNode.x, 0) / parentNodes.length;
-        const treeNode = idToTreeNode.get(nodeData.id);
-        const offset = treeNode ? avgX - (treeNode?.x ?? 0) : 0;
-        console.log(`Aligning merge node ${nodeData.id} with average X of parents: ${avgX}, current X: ${treeNode?.x}`);
 
-        // Store cumulative offset for this node and all of its descendants, so that they can be shifted together.
-        idToXOffset.set(nodeData.id, offset);
-        forEachDescendant(nodeData.id, data.trackIdToTrackInfo, relationships.idToChildren, (descendantData) => {
-          if (!idToXOffset.has(descendantData.id)) {
-            idToXOffset.set(descendantData.id, offset);
-          } else {
-            const currentOffset = idToXOffset.get(descendantData.id) ?? 0;
-            idToXOffset.set(descendantData.id, currentOffset + offset);
-          }
-          return true;
-        });
-      }
+    // Merge node, align its X position with the average of its parents' X positions.
+    const parentNodes = parents
+      .map((parentId) => idToTreeNode.get(parentId))
+      .filter((node) => node !== undefined) as d3.HierarchyPointNode<TrackInfo>[];
+
+    if (parentNodes.length > 0) {
+      const avgX = parentNodes.reduce((sum, parentNode) => sum + parentNode.x, 0) / parentNodes.length;
+      const treeNode = idToTreeNode.get(nodeData.id);
+      const offset = treeNode ? avgX - (treeNode?.x ?? 0) : 0;
+
+      // Store cumulative offset for this node and all of its descendants, so that they can be shifted together.
+      idToXOffset.set(nodeData.id, offset);
+      forEachDescendant(nodeData.id, data.trackIdToTrackInfo, relationships.idToChildren, (descendantData) => {
+        if (!idToXOffset.has(descendantData.id)) {
+          idToXOffset.set(descendantData.id, offset);
+        } else {
+          const currentOffset = idToXOffset.get(descendantData.id) ?? 0;
+          idToXOffset.set(descendantData.id, currentOffset + offset);
+        }
+        return true;
+      });
     }
-    traversedNodes.add(nodeData.id);
-    return true;
-  });
+  }
 
   // Apply offset to all nodes.
-  console.log(`Applying X offsets to nodes: ${JSON.stringify([...idToXOffset.entries()])}`);
   for (const [nodeId, offset] of idToXOffset.entries()) {
     const treeNode = idToTreeNode.get(nodeId);
     if (treeNode) {
