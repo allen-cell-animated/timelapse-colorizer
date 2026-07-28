@@ -1,7 +1,8 @@
-# Contributing to Allen Institute for Cell Science Open Source
+# Contributing to open source projects by the Allen Institute
 
-Thank you for your interest in contributing to this Allen Institute for Cell Science open source project! This document is
-a set of guidelines to help you contribute to this project.
+Thank you for your interest in contributing to this open source project by the
+cell science accelerator at the Allen Institute! This document is a set of
+guidelines to help you contribute to this project.
 
 ## Code of Conduct
 
@@ -51,18 +52,18 @@ you'd like to see documented.
 2. Push the new package.json version: `git push origin main`
 3. Push the new tag: `git push origin [NEW_TAG]` -- e.g. `git push origin v2.7.1`
 4. Write up [release notes](https://github.com/allen-cell-animated/timelapse-colorizer/releases).
-    - Select the tag
-    - Click "generate release notes"
-    - Use this template to summarize changes (delete any categories that aren't relevant). `## Pull requests included in this release` should be above the auto generated content:
+   - Select the tag
+   - Click "generate release notes"
+   - Use this template to summarize changes (delete any categories that aren't relevant). `## Pull requests included in this release` should be above the auto generated content:
 
 ```Markdown
 ## What's Changed
 
-### **🎉 New features**   
+### **🎉 New features**
     -
 ### **🐞 Bug Fixes**
-    - 
-### **⛏ Maintenance** 
+    -
+### **⛏ Maintenance**
     -
 ## Pull requests included in this release
 ```

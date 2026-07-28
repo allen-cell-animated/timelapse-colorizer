@@ -1,5 +1,6 @@
 {
   "name": "timelapse-colorizer",
+  "author": "Allen Institute, Cell Science",
   "private": true,
   "version": "1.21.0",
   "type": "module",
