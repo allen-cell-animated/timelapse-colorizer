@@ -219,8 +219,8 @@ describe("alignMergeNodes", () => {
     const depth = root.height;
     const treeRoot = d3.tree<TrackInfo>().size([leafCount, depth])(root);
 
-    let idToOldPos = new Map(treeRoot.descendants().map((d) => [d.data.id, { x: d.x, y: d.y }]));
-    const getOldPos = (id: number) => idToOldPos.get(id) ?? { x: 0, y: 0 };
+    const idToOldPos = new Map(treeRoot.descendants().map((d) => [d.data.id, { x: d.x, y: d.y }]));
+    const getOldPos = (id: number): { x: number; y: number } => idToOldPos.get(id) ?? { x: 0, y: 0 };
 
     // Merge node 5 and 10 not aligned with parents
     expect(getOldPos(5).x).not.toBeCloseTo((getOldPos(3).x + getOldPos(4).x) / 2);
@@ -232,7 +232,7 @@ describe("alignMergeNodes", () => {
 
     // Merge node is aligned with parents
     const idToNewPos = new Map(treeRoot.descendants().map((d) => [d.data.id, { x: d.x, y: d.y }]));
-    const getNewPos = (id: number) => idToNewPos.get(id) ?? { x: 0, y: 0 };
+    const getNewPos = (id: number): { x: number; y: number } => idToNewPos.get(id) ?? { x: 0, y: 0 };
 
     expect(getNewPos(5).x).toBeCloseTo((getNewPos(3).x + getNewPos(4).x) / 2);
     expect(getNewPos(10).x).toBeCloseTo((getNewPos(8).x + getNewPos(9).x) / 2);
