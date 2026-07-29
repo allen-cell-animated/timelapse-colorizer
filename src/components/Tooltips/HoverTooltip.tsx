@@ -9,6 +9,7 @@ type HoverTooltipProps = {
   /** Offset of the tooltip box relative to the mouse, in pixels. By default, set to 15 pixels in x and y. */
   offsetPx?: [number, number];
   maxWidthPx?: number;
+  style?: React.CSSProperties;
 };
 
 const defaultProps: Partial<HoverTooltipProps> = {
@@ -66,7 +67,7 @@ export default function HoverTooltip(props: PropsWithChildren<HoverTooltipProps>
   const visible = isHovered && !props.disabled && props.tooltipContent;
 
   return (
-    <div ref={containerRef}>
+    <div ref={containerRef} style={props.style}>
       <TooltipDiv ref={tooltipRef} style={{ opacity: visible ? 1 : 0, maxWidth: `${props.maxWidthPx}px` }}>
         {props.tooltipContent}
       </TooltipDiv>

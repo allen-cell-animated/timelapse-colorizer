@@ -230,6 +230,10 @@ export default class Dataset {
     return this.trackData ? Array.from(this.trackData.keys()) : [];
   }
 
+  public getDefaultTrackKey(): string | null {
+    return this.trackData?.keys().next().value ?? null;
+  }
+
   public getTrackData(key: string): TrackData | undefined {
     return this.trackData?.get(key);
   }

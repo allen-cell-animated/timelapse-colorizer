@@ -1,0 +1,103 @@
+import * as d3 from "d3";
+
+import type { Dataset } from "src/colorizer";
+
+import type { LineageData, LineageDataRelationships, TrackInfo } from "./types";
+
+export function getLineageData(dataset: Dataset): LineageData {
+  const tracks = dataset.trackIds;
+  const times = dataset.times;
+  // Get first track edge (TODO: handle multiple track edges in the future?)
+  const defaultTrackKey = dataset.getDefaultTrackKey();
+  const trackData = defaultTrackKey ? dataset.getTrackData(defaultTrackKey) : undefined;
+  const trackEdges = trackData?.trackEdges;
+  if (!tracks || !times || !trackEdges) {
+    return { trackIdToTrackInfo: new Map<number, TrackInfo>(), edges: [] };
+  }
+
+  const allTracks = new Set<number>();
+  const trackIdToTrackInfo = new Map<number, TrackInfo>();
+  for (let id = 0; id < tracks.length; id++) {
+    const trackId = tracks[id];
+    const time = times[id];
+
+    if (!trackIdToTrackInfo.has(trackId)) {
+      trackIdToTrackInfo.set(trackId, { id: trackId, length: 1, startTime: time });
+    } else {
+      const info = trackIdToTrackInfo.get(trackId)!;
+      info.length += 1;
+      info.startTime = Math.min(info.startTime, time);
+    }
+    allTracks.add(trackId);
+  }
+
+  const skippedEdges: [number, number][] = [];
+  const edges: [number, number][] = [];
+  if (trackEdges.length % 2 !== 0) {
+    console.warn(`Track edges array has an odd length (${trackEdges.length}), skipping the last edge.`);
+  }
+  for (let i = 0; i + 1 < trackEdges.length; i += 2) {
+    const source = trackEdges[i];
+    const target = trackEdges[i + 1];
+    // Skip edges that do not exist in the dataset
+    if (!allTracks.has(source) || !allTracks.has(target)) {
+      skippedEdges.push([source, target]);
+      continue;
+    }
+    edges.push([source, target]);
+  }
+
+  if (skippedEdges.length > 0) {
+    console.warn(`Skipped ${skippedEdges.length} edges that reference non-existent tracks:`, skippedEdges);
+  }
+  return { trackIdToTrackInfo, edges };
+}
+
+export function getLineageRelationships(data: LineageData): LineageDataRelationships {
+  const trackIds = Array.from(data.trackIdToTrackInfo.keys());
+  const idToChildren = new Map<number, number[]>(trackIds.map((id) => [id, []]));
+  const idToChildrenRenderable = new Map<number, number[]>(trackIds.map((id) => [id, []]));
+  const idToParents = new Map<number, number[]>(trackIds.map((id) => [id, []]));
+
+  /**
+   * Edges to a node where the node already has a parent (i.e. edges that would
+   * create the second/nth parent of a merge node).
+   */
+  const multiparentEdges: [number, number][] = [];
+  const idsWithParents = new Set<number>();
+
+  for (const [source, target] of data.edges) {
+    if (!idsWithParents.has(target)) {
+      idToChildrenRenderable.get(source)?.push(target);
+    } else {
+      // If the target node already has a parent, intentionally prevent adding
+      // it to the children of this source node or else it (and all its
+      // children) will be duplicated in the tree. Instead, add it to a list of
+      // edges that will be rendered separately.
+      multiparentEdges.push([source, target]);
+    }
+    idToChildren.get(source)?.push(target);
+    idToParents.get(target)?.push(source);
+    idsWithParents.add(target);
+  }
+  return { idToChildren, idToChildrenRenderable, idToParents, multiparentEdges };
+}
+
+/**
+ * Returns a d3 zoom transform that will fit the groupNode within the svgNode
+ * with some padding.
+ */
+export function getDefaultZoomTransform(
+  svgNode: SVGSVGElement,
+  groupNode: SVGGElement,
+  paddingPx: [number, number] = [10, 10]
+): d3.ZoomTransform {
+  const bbox = groupNode.getBBox();
+  const clientwidth = svgNode.clientWidth;
+  const clientHeight = svgNode.clientHeight;
+  const scale = Math.min((clientwidth - paddingPx[0]) / bbox.width, (clientHeight - paddingPx[1]) / bbox.height);
+  const panX = (clientwidth - bbox.width * scale) / 2 - bbox.x * scale;
+  const panY = (clientHeight - bbox.height * scale) / 2 - bbox.y * scale;
+  const initialTransform = d3.zoomIdentity.translate(panX, panY).scale(scale);
+  return initialTransform;
+}

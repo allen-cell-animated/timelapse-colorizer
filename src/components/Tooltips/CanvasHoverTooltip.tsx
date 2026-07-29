@@ -13,25 +13,13 @@ import { AppThemeContext } from "src/styles/AppStyle";
 import { FlexColumn, FlexRow } from "src/styles/utils";
 
 import HoverTooltip from "./HoverTooltip";
+import { TooltipCard } from "./TooltipCard";
 
 type CanvasHoverTooltipProps = {
   lastValidHoveredId: PixelIdInfo;
   showObjectHoverInfo: boolean;
   annotationState: AnnotationState;
 };
-
-const ObjectInfoCard = styled.div`
-  font-family: var(--default-font);
-
-  border-radius: var(--radius-control-small);
-  border: 1px solid var(--color-dividers);
-  background-color: var(--color-background);
-  padding: 6px 8px;
-  overflow-wrap: break-word;
-
-  transition: opacity 300ms ease-in-out;
-  width: fit-content;
-`;
 
 const DebugText = styled.p`
   font-size: var(--font-size-label-small) !important;
@@ -254,7 +242,7 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
     <FlexColumn $gap={6}>
       {annotationLabel}
       {noInteractionWarning}
-      <ObjectInfoCard style={{ opacity: props.showObjectHoverInfo ? 1 : 0 }}>{objectInfoContent}</ObjectInfoCard>
+      <TooltipCard style={{ opacity: props.showObjectHoverInfo ? 1 : 0 }}>{objectInfoContent}</TooltipCard>
     </FlexColumn>
   );
 
