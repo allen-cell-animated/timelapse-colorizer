@@ -20,7 +20,7 @@ const enum OpenState {
   DEFAULT,
 }
 
-type AccessibleDropdownProps = {
+type KeyboardNavigableDropdownProps = {
   /** Text label to include with the dropdown. If null or undefined, hides the label. */
   label?: string | null;
 
@@ -53,7 +53,7 @@ type AccessibleDropdownProps = {
    *  as props for the following events: `onMouseEnter/Leave`, `onPointerEnter/Leave`,
    * `onFocus`, or `onBlur`. See implementation of `IconButton.tsx` for an example.
    */
-  renderButton?: ((props: AccessibleDropdownProps, isOpen: boolean, onClick: () => void) => ReactElement) | null;
+  renderButton?: ((props: KeyboardNavigableDropdownProps, isOpen: boolean, onClick: () => void) => ReactElement) | null;
   onButtonClicked?: () => void;
   /** Whether the tooltip should appear when hovered. */
   showTooltip?: boolean;
@@ -62,7 +62,7 @@ type AccessibleDropdownProps = {
   /** Width of the dropdown. Overrides the default sizing behavior if set. */
 };
 
-const defaultProps: Partial<AccessibleDropdownProps> = {
+const defaultProps: Partial<KeyboardNavigableDropdownProps> = {
   label: null,
   styleDropdownContent: null,
   disabled: false,
@@ -149,10 +149,10 @@ const DropdownContentWrapper = styled.div`
 `;
 
 /**
- * A keyboard-accessible wrapper around the Antd `Dropdown` component, with support for button styling, labels, and tooltips.
+ * A keyboard-navigable wrapper around the Antd `Dropdown` component, with support for button styling, labels, and tooltips.
  */
-export default function AccessibleDropdown(inputProps: AccessibleDropdownProps): ReactElement {
-  const props = { ...defaultProps, ...inputProps } as Required<AccessibleDropdownProps>;
+export default function KeyboardNavigableDropdown(inputProps: KeyboardNavigableDropdownProps): ReactElement {
+  const props = { ...defaultProps, ...inputProps } as Required<KeyboardNavigableDropdownProps>;
 
   //// Handle clicking on the dropdowns ///////////////////////////////////
 
@@ -198,7 +198,11 @@ export default function AccessibleDropdown(inputProps: AccessibleDropdownProps):
   }, [forceOpenState]);
 
   //// Handle rendering of buttons and dropdown contents ///////////////////
-  const defaultRenderButton = (props: AccessibleDropdownProps, isOpen: boolean, onClick: () => void): ReactElement => {
+  const defaultRenderButton = (
+    props: KeyboardNavigableDropdownProps,
+    isOpen: boolean,
+    onClick: () => void
+  ): ReactElement => {
     return (
       <MainButton
         disabled={props.disabled}
@@ -266,7 +270,7 @@ export default function AccessibleDropdown(inputProps: AccessibleDropdownProps):
         disabled={props.disabled}
         open={dropdownOpenProp}
         getPopupContainer={componentContainerRef.current ? () => componentContainerRef.current! : undefined}
-        dropdownRender={(_menus: ReactNode) => {
+        popupRender={(_menus: ReactNode) => {
           return renderDropdownContent(dropdownContent);
         }}
       >

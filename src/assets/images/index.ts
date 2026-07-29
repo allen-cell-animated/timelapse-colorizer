@@ -1,5 +1,5 @@
-import AicsLogoSVGAsset from "./AICS-logo.svg?react";
-import AicsLogoAndNameSVGAsset from "./AICS-logo-and-name.svg?react";
+import AllenInstituteCellScienceLogoSVGAsset from "./allen-institute-cell-science-logo.svg?react";
+import AllenInstituteLogoSVGAsset from "./allen-institute-logo.svg?react";
 import DropdownSVGAsset from "./dropdown-arrow.svg?react";
 import BarChartSlashIconSVGAsset from "./icon-bar-chart-slash.svg?react";
 import CentroidIconSVGAsset from "./icon-centroid.svg?react";
@@ -21,8 +21,8 @@ import NoImageSVGAsset from "./no-image.svg?react";
 import SpinBoxHandleDownSVGAsset from "./spin_box-handle-down.svg?react";
 import SpinBoxHandleUpSVGAsset from "./spin_box-handle-up.svg?react";
 
-export const AicsLogoAndNameSVG = AicsLogoAndNameSVGAsset;
-export const AicsLogoSVG = AicsLogoSVGAsset;
+export const AllenInstituteCellScienceLogoSVG = AllenInstituteCellScienceLogoSVGAsset;
+export const AllenInstituteLogoSVG = AllenInstituteLogoSVGAsset;
 export const BarChartSlashIconSVG = BarChartSlashIconSVGAsset;
 export const DropdownSVG = DropdownSVGAsset;
 export const SwitchIconSVG = SwitchIconSVGAsset;
