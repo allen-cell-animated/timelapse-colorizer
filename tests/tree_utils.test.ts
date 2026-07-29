@@ -1,13 +1,20 @@
-import { describe, expect, it } from "vitest";
+import * as d3 from "d3";
+import { assert, describe, expect, it } from "vitest";
 
-import { getLineageRelationships } from "src/components/Tabs/Lineage/lineage_utils";
+import { getLineageRelationships, getTreeHierarchy } from "src/components/Tabs/Lineage/lineage_utils";
 import {
+  alignMergeNodes,
   collapseTrack,
   expandTrack,
   getInitialExpandedState,
   type TreeExpandedState,
 } from "src/components/Tabs/Lineage/tree_utils";
 import type { LineageData, TrackInfo } from "src/components/Tabs/Lineage/types";
+
+function makeTrackIdToData(numTracks: number): Map<number, TrackInfo> {
+  const trackIds = Array.from({ length: numTracks }, (_, i) => i + 1);
+  return new Map(trackIds.map((id) => [id, { id, length: 1, startTime: 0 }]));
+}
 
 describe("tree_utils", () => {
   // EXAMPLE TREE:
@@ -19,17 +26,7 @@ describe("tree_utils", () => {
   //          \    /
   //           -> 7 -> 9
 
-  const trackIdToData = new Map<number, TrackInfo>([
-    [1, { id: 1, length: 1, startTime: 0 }],
-    [2, { id: 2, length: 1, startTime: 0 }],
-    [3, { id: 3, length: 1, startTime: 0 }],
-    [4, { id: 4, length: 1, startTime: 0 }],
-    [5, { id: 5, length: 1, startTime: 0 }],
-    [6, { id: 6, length: 1, startTime: 0 }],
-    [7, { id: 7, length: 1, startTime: 0 }],
-    [8, { id: 8, length: 1, startTime: 0 }],
-    [9, { id: 9, length: 1, startTime: 0 }],
-  ]);
+  const trackIdToData = makeTrackIdToData(9);
 
   const lineageData = {
     trackIdToTrackInfo: trackIdToData,
@@ -178,5 +175,71 @@ describe("tree_utils", () => {
       expect(result.expandedTracks).toEqual(new Set([1, 5, 6, 7]));
       expect(result.previouslyExpandedTracks).toEqual(new Set([1, 5, 6, 7]));
     });
+  });
+});
+
+describe("alignMergeNodes", () => {
+  // EXAMPLE TREE:
+  //      3   6
+  //     / \ /
+  //    2   5
+  //   / \ / \   8    11
+  //  /   4   \ / \  /
+  // 1         7   10
+  //  \         \ /  \
+  //   \         9    12
+  //    13
+  const trackIdToData = makeTrackIdToData(13);
+  const lineageData = {
+    trackIdToTrackInfo: trackIdToData,
+    edges: [
+      [1, 2],
+      [2, 3],
+      [2, 4],
+      [4, 5],
+      [3, 5],
+      [5, 6],
+      [5, 7],
+      [7, 8],
+      [7, 9],
+      [8, 10],
+      [9, 10],
+      [10, 11],
+      [10, 12],
+      [1, 13],
+    ],
+  } satisfies LineageData;
+  const relationships = getLineageRelationships(lineageData);
+  const hierarchy = getTreeHierarchy(lineageData, relationships);
+
+  it("aligns merge nodes", () => {
+    assert(hierarchy !== undefined);
+    const root = hierarchy;
+    const leafCount = root.leaves().length;
+    const depth = root.height;
+    const treeRoot = d3.tree<TrackInfo>().size([leafCount, depth])(root);
+
+    let idToOldPos = new Map(treeRoot.descendants().map((d) => [d.data.id, { x: d.x, y: d.y }]));
+    const getOldPos = (id: number) => idToOldPos.get(id) ?? { x: 0, y: 0 };
+
+    // Merge node 5 and 10 not aligned with parents
+    expect(getOldPos(5).x).not.toBeCloseTo((getOldPos(3).x + getOldPos(4).x) / 2);
+    expect(getOldPos(10).x).not.toBeCloseTo((getOldPos(8).x + getOldPos(9).x) / 2);
+    expect(relationships.idToParents.get(5)).toEqual([4, 3]);
+    expect(relationships.idToParents.get(10)).toEqual([8, 9]);
+
+    alignMergeNodes(treeRoot, lineageData, relationships);
+
+    // Merge node is aligned with parents
+    const idToNewPos = new Map(treeRoot.descendants().map((d) => [d.data.id, { x: d.x, y: d.y }]));
+    const getNewPos = (id: number) => idToNewPos.get(id) ?? { x: 0, y: 0 };
+
+    expect(getNewPos(5).x).toBeCloseTo((getNewPos(3).x + getNewPos(4).x) / 2);
+    expect(getNewPos(10).x).toBeCloseTo((getNewPos(8).x + getNewPos(9).x) / 2);
+
+    // Check that descendants of the merge node are shifted by the same amount
+    const offset = getNewPos(5).x - getOldPos(5).x;
+    expect(getNewPos(6).x - getOldPos(6).x).toBeCloseTo(offset);
+    expect(getNewPos(7).x - getOldPos(7).x).toBeCloseTo(offset);
   });
 });

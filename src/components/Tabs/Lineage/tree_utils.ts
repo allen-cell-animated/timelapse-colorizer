@@ -262,15 +262,24 @@ export function alignMergeNodes(
   treeRoot.each((node) => {
     idToTreeNode.set(node.data.id, node);
   });
-  const idToXOffset = new Map<number, number>();
   const mergeNodes = new Set(
     [...relationships.idToParents.entries()].filter(([, parents]) => parents.length > 1).map(([id]) => id)
   );
+  // Sort merge nodes by depth; this way parents (and their subtrees) will be
+  // aligned before descendants.
+  const sortedMergeNodeIds = [...mergeNodes].sort((a, b) => {
+    const nodeA = idToTreeNode.get(a);
+    const nodeB = idToTreeNode.get(b);
+    if (!nodeA || !nodeB) {
+      return 0;
+    }
+    return nodeA.depth - nodeB.depth;
+  });
 
   // For each merge node, align its X position with the average of its parents.
   // Then, apply the same offset for all of its descendants (so the entire
   // subtree is shifted together).
-  for (const mergeNodeId of mergeNodes) {
+  for (const mergeNodeId of sortedMergeNodeIds) {
     const parents = relationships.idToParents.get(mergeNodeId) ?? [];
     const nodeData = data.trackIdToTrackInfo.get(mergeNodeId);
     if (!nodeData) {
@@ -281,34 +290,24 @@ export function alignMergeNodes(
     const parentNodes = parents
       .map((parentId) => idToTreeNode.get(parentId))
       .filter((node) => node !== undefined) as d3.HierarchyPointNode<TrackInfo>[];
-
     if (parentNodes.length <= 1) {
       continue;
     }
 
     const avgX = parentNodes.reduce((sum, parentNode) => sum + parentNode.x, 0) / parentNodes.length;
-    const treeNode = idToTreeNode.get(nodeData.id);
-    if (treeNode === undefined) {
+    const node = idToTreeNode.get(nodeData.id);
+    if (node === undefined) {
       continue;
     }
-    const offset = avgX - treeNode.x;
 
-    // Store cumulative offset for this node and all of its descendants, so that
-    // they can be shifted together.
-    idToXOffset.set(nodeData.id, offset + (idToXOffset.get(nodeData.id) ?? 0));
+    const offset = avgX - node.x;
+    node.x += offset;
     forEachDescendant(nodeData.id, data.trackIdToTrackInfo, relationships.idToChildren, (descendantData) => {
-      idToXOffset.set(descendantData.id, offset + (idToXOffset.get(descendantData.id) ?? 0));
+      const descendantNode = idToTreeNode.get(descendantData.id);
+      if (descendantNode) {
+        descendantNode.x += offset;
+      }
       return true;
     });
-  }
-
-  // Apply summed offset to nodes.
-  for (const [nodeId, offset] of idToXOffset.entries()) {
-    const treeNode = idToTreeNode.get(nodeId);
-    if (treeNode) {
-      treeNode.x += offset;
-    } else {
-      console.warn(`Tree node for ID ${nodeId} not found when applying X offset.`);
-    }
   }
 }
