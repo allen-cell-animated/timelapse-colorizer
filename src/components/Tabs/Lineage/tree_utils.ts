@@ -275,28 +275,20 @@ export function alignMergeNodes(
   // subtree is shifted together).
   for (const mergeNodeId of sortedMergeNodeIds) {
     const parents = relationships.idToParents.get(mergeNodeId) ?? [];
-    const nodeData = data.trackIdToTrackInfo.get(mergeNodeId);
-    if (!nodeData) {
-      console.warn(`Merge node with ID ${mergeNodeId} not found in trackIdToTrackInfo.`);
-      continue;
-    }
-
-    const parentNodes = parents
-      .map((parentId) => idToTreeNode.get(parentId))
-      .filter((node) => node !== undefined) as d3.HierarchyPointNode<TrackInfo>[];
+    const parentNodes = parents.map((parentId) => idToTreeNode.get(parentId)).filter((node) => node !== undefined);
     if (parentNodes.length <= 1) {
       continue;
     }
 
     const avgX = parentNodes.reduce((sum, parentNode) => sum + parentNode.x, 0) / parentNodes.length;
-    const node = idToTreeNode.get(nodeData.id);
+    const node = idToTreeNode.get(mergeNodeId);
     if (node === undefined) {
       continue;
     }
 
     const offset = avgX - node.x;
     node.x += offset;
-    forEachDescendant(nodeData.id, data.trackIdToTrackInfo, relationships.idToChildren, (descendantData) => {
+    forEachDescendant(mergeNodeId, data.trackIdToTrackInfo, relationships.idToChildren, (descendantData) => {
       const descendantNode = idToTreeNode.get(descendantData.id);
       if (descendantNode) {
         descendantNode.x += offset;
