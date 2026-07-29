@@ -10,14 +10,24 @@ import {
   encodeScatterPlotRangeType,
   UrlParam,
 } from "src/colorizer/utils/url_utils";
-import { DEPRECATED_SCATTERPLOT_TIME_KEY } from "src/constants";
+import { DEPRECATED_SCATTERPLOT_TIME_KEY, SCATTERPLOT_SYNC_AXIS_KEY } from "src/constants";
 import type { SerializedStoreData, SubscribableStore } from "src/state/types";
 import { addDerivedStateSubscriber } from "src/state/utils/store_utils";
 
 import type { DatasetSlice } from "./dataset_slice";
 
 export type ScatterPlotSliceState = {
+  /**
+   * Feature key of the selected X axis for the scatterplot tab. If set to
+   * `SCATTERPLOT_SYNC_AXIS_KEY`, it syncs with the feature currently selected
+   * for colorization.
+   */
   scatterXAxis: string | null;
+  /**
+   * Feature key of the selected Y axis for the scatterplot tab. If set to
+   * `SCATTERPLOT_SYNC_AXIS_KEY`, it syncs with the feature currently selected
+   * for colorization.
+   */
   scatterYAxis: string | null;
   scatterRangeType: PlotRangeType;
 
@@ -65,7 +75,12 @@ export type ScatterPlotSliceActions = {
 export type ScatterPlotSlice = ScatterPlotSliceState & ScatterPlotSliceActions;
 
 const isAxisKeyValid = (dataset: Dataset | null, featureKey: string | null): boolean => {
-  return dataset === null || featureKey === null || dataset.hasFeatureKey(featureKey);
+  return (
+    dataset === null ||
+    featureKey === null ||
+    dataset.hasFeatureKey(featureKey) ||
+    featureKey === SCATTERPLOT_SYNC_AXIS_KEY
+  );
 };
 
 export const createScatterPlotSlice: StateCreator<DatasetSlice & ScatterPlotSlice, [], [], ScatterPlotSlice> = (
