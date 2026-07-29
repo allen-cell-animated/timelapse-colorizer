@@ -2,8 +2,11 @@ import * as d3 from "d3";
 import React, { type MouseEvent, type ReactElement, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import type { Color } from "three";
+import { useShallow } from "zustand/shallow";
 
 import type { Dataset, Track } from "src/colorizer";
+import { computeColorFromId } from "src/colorizer/utils/data_utils";
+import { ColorizeStateParams } from "src/colorizer/viewport/types";
 import { DUMMY_ROOT_NODE_ID } from "src/components/Tabs/Lineage/constants";
 import {
   getDefaultZoomTransform,
@@ -20,6 +23,7 @@ import {
 } from "src/components/Tabs/Lineage/tree_utils";
 import type { LineageData, LineageDataRelationships, TrackInfo } from "src/components/Tabs/Lineage/types";
 import { useConstructor } from "src/hooks";
+import { colorizeStateSelector, useViewerStateStore } from "src/state";
 
 type TrackDetailLineageViewProps = {
   container: React.RefObject<HTMLDivElement>;
@@ -89,8 +93,9 @@ const StyledSVG = styled.svg`
   // Add hover colors to the main node rectangle and track label
   .${SvgClass.MAIN_NODE} {
     transition: all 0.2s ease-out;
+    opacity: 1f;
     &:hover {
-      fill: ${DEFAULT_NODE_FILL_HOVER_COLOR};
+      opacity: 0.9;
     }
   }
   .${SvgClass.TRACK_LABEL} {
@@ -272,6 +277,57 @@ function setupPointerHandlers(
   };
 }
 
+function getTrackGradientId(trackId: number): string {
+  return `track-gradient-${trackId}`;
+}
+
+function updateGradients(
+  svg: d3.Selection<SVGSVGElement, unknown, null, undefined>,
+  tracks: Map<number, Track>,
+  params: ColorizeStateParams
+): void {
+  const defs = svg.select<SVGDefsElement>("defs");
+  const trackData = Array.from(tracks.values());
+
+  const gradients = defs
+    .selectAll("linearGradient")
+    .data(trackData)
+    .join("linearGradient")
+    .attr("id", (d) => getTrackGradientId(d.trackId))
+    .attr("x1", "0%")
+    .attr("y1", "0%")
+    .attr("x2", "100%")
+    .attr("y2", "0%");
+
+  // Append color stops to each gradient
+  gradients.each((track, i, nodes) => {
+    const gradient = d3.select(nodes[i]);
+
+    const colors: string[] = [];
+    for (let t = track.startTime(); t <= track.endTime(); t++) {
+      const id = track.getIdAtTime(t);
+      let hexColor;
+      if (id === -1) {
+        hexColor = "#" + params.outlierDrawSettings.color.getHexString();
+      } else {
+        hexColor = "#" + computeColorFromId(id, params).getHexString();
+      }
+      // Add color stops twice for hard-stop gradient.
+      colors.push(hexColor);
+      colors.push(hexColor);
+    }
+
+    const stops = gradient.selectAll("stop").data(colors).join("stop");
+    stops
+      .attr("offset", (_d, i) => {
+        const totalStops = colors.length / 2;
+        const stopIndex = Math.floor((i + 1) / 2);
+        return `${(stopIndex / totalStops) * 100}%`;
+      })
+      .attr("stop-color", (d) => d);
+  });
+}
+
 /**
  * Updates the fill, visibility, and outline styling of nodes based on selection
  * status + time. Also positions time indicator lines based on the current time.
@@ -301,7 +357,10 @@ function updateNodeStyles(
     .attr("width", (d) => d.data.length * TREE_LAYER_DEPTH_PX)
     .attr("height", NODE_HEIGHT_PX)
     .attr("rx", 4)
-    .attr("fill", DEFAULT_NODE_FILL_COLOR)
+    .attr("fill", (d) =>
+      trackColors.has(d.data.id) ? `url(#${getTrackGradientId(d.data.id)})` : DEFAULT_NODE_FILL_COLOR
+    )
+    .attr("shape-rendering", "crispEdges")
     .attr("opacity", (d) => (isExpanded(d) && d.data.id !== DUMMY_ROOT_NODE_ID ? 1 : 0)) // Hide the dummy root node
     // Hide node when collapsed
     .attr("cursor", (d) => (isExpanded(d) ? "pointer" : "default"))
@@ -378,6 +437,8 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
   const nodeSelectionRef = useRef<NodeSelection | undefined>(undefined);
 
   const trackIds = useMemo(() => new Set(props.selectedTracks.keys()), [props.selectedTracks]);
+
+  const colorizeParams = useViewerStateStore(useShallow(colorizeStateSelector));
 
   const onClickRef = useRef(props.onClick);
   const onHoverRef = useRef(props.onHover);
@@ -495,9 +556,15 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
     };
   }, [props.data, props.relationships, props.dataset, expandedTracks]);
 
+  useEffect(() => {
+    if (svgRef.current) {
+      updateGradients(d3.select(svgRef.current), props.selectedTracks, colorizeParams);
+    }
+  }, [props.selectedTracks, colorizeParams]);
+
   // Update node styling
   useEffect(() => {
-    if (nodeSelectionRef.current) {
+    if (nodeSelectionRef.current && svgRef.current) {
       updateNodeStyles(nodeSelectionRef.current, expandedTracks, props.trackColors, props.time);
     }
   }, [props.data, props.time, props.trackColors, expandedTracks]);
@@ -513,6 +580,7 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
       style={{ width: "100%", height: "100%", display: "block" }}
       id="track-detail-lineage-view-svg"
     >
+      <defs></defs>
       <g ref={groupRef}></g>
     </StyledSVG>
   );
