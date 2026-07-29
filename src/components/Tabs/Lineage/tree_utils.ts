@@ -288,18 +288,16 @@ export function alignMergeNodes(
 
     const avgX = parentNodes.reduce((sum, parentNode) => sum + parentNode.x, 0) / parentNodes.length;
     const treeNode = idToTreeNode.get(nodeData.id);
-    const offset = treeNode ? avgX - (treeNode?.x ?? 0) : 0;
+    if (treeNode === undefined) {
+      continue;
+    }
+    const offset = avgX - treeNode.x;
 
     // Store cumulative offset for this node and all of its descendants, so that
     // they can be shifted together.
-    idToXOffset.set(nodeData.id, offset);
+    idToXOffset.set(nodeData.id, offset + (idToXOffset.get(nodeData.id) ?? 0));
     forEachDescendant(nodeData.id, data.trackIdToTrackInfo, relationships.idToChildren, (descendantData) => {
-      if (!idToXOffset.has(descendantData.id)) {
-        idToXOffset.set(descendantData.id, offset);
-      } else {
-        const currentOffset = idToXOffset.get(descendantData.id) ?? 0;
-        idToXOffset.set(descendantData.id, currentOffset + offset);
-      }
+      idToXOffset.set(descendantData.id, offset + (idToXOffset.get(descendantData.id) ?? 0));
       return true;
     });
   }
