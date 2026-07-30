@@ -7,7 +7,7 @@ import { useShallow } from "zustand/shallow";
 
 import type { Dataset, Track } from "src/colorizer";
 import { computeColorFromId } from "src/colorizer/utils/data_utils";
-import { ColorizeStateParams } from "src/colorizer/viewport/types";
+import type { ColorizeStateParams } from "src/colorizer/viewport/types";
 import { DUMMY_ROOT_NODE_ID } from "src/components/Tabs/Lineage/constants";
 import {
   getDefaultZoomTransform,
@@ -45,7 +45,6 @@ const enum SvgClass {
   COLLAPSE_BUTTON_GROUP = "collapse-button",
   TIME_INDICATOR = "time-indicator",
   CURRENT_TIME_LINE = "current-time-line",
-  HOVERED_TIME_LINE = "hovered-time-line",
   MAIN_NODE = "main-node",
   MAIN_NODE_SELECTED = "main-node-selected",
   TRACK_LABEL = "track-label",
