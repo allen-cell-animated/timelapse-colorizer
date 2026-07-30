@@ -363,7 +363,8 @@ function updateNodeStyles(
   node: NodeSelection,
   expandedTrackIds: Set<number>,
   trackColors: Map<number, Color>,
-  time: number
+  time: number,
+  useFeatureColors: boolean
 ): void {
   const isExpanded = (d: d3.HierarchyPointNode<TrackInfo>): boolean => {
     return expandedTrackIds.has(d.data.id);
@@ -388,7 +389,9 @@ function updateNodeStyles(
     .attr("width", (d) => d.data.length * TREE_LAYER_DEPTH_PX)
     .attr("height", NODE_HEIGHT_PX)
     .attr("rx", 4)
-    .attr("fill", (d) => (isSelected(d) ? `url(#${getTrackGradientId(d.data.id)})` : DEFAULT_NODE_FILL_COLOR))
+    .attr("fill", (d) =>
+      useFeatureColors && isSelected(d) ? `url(#${getTrackGradientId(d.data.id)})` : DEFAULT_NODE_FILL_COLOR
+    )
     // .attr("shape-rendering", "crispEdges")
     .attr("opacity", (d) => (isExpanded(d) && d.data.id !== DUMMY_ROOT_NODE_ID ? 1 : 0)) // Hide the dummy root node
     // Hide node when collapsed
@@ -593,17 +596,17 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
   }, [props.data, props.relationships, props.dataset, expandedTracks]);
 
   useEffect(() => {
-    if (svgRef.current) {
+    if (svgRef.current && useFeatureColors) {
       updateGradients(d3.select(svgRef.current), props.selectedTracks, colorizeParams);
     }
-  }, [props.selectedTracks, colorizeParams]);
+  }, [props.selectedTracks, colorizeParams, useFeatureColors]);
 
   // Update node styling
   useEffect(() => {
     if (nodeSelectionRef.current && svgRef.current) {
-      updateNodeStyles(nodeSelectionRef.current, expandedTracks, props.trackColors, props.time);
+      updateNodeStyles(nodeSelectionRef.current, expandedTracks, props.trackColors, props.time, useFeatureColors);
     }
-  }, [props.data, props.time, props.trackColors, expandedTracks]);
+  }, [props.data, props.time, props.trackColors, expandedTracks, useFeatureColors]);
 
   useEffect(() => {
     if (groupRef.current) {
