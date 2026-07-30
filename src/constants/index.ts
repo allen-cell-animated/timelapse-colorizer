@@ -40,3 +40,7 @@ export const MAX_SETTINGS_SLIDER_WIDTH = "250px";
  * Deprecated because Time is now automatically added as a feature to the dataset.
  */
 export const DEPRECATED_SCATTERPLOT_TIME_KEY = "scatterplot_time";
+
+// Note that due to key sanitization it is impossible for a feature key in a
+// dataset to use the `-` character, so we can safely reserve it.
+export const SCATTERPLOT_SYNC_AXIS_KEY = "sync-axis";

@@ -6,7 +6,7 @@ import { CSV_COL_ID, CSV_COL_TIME, CSV_COL_TRACK } from "src/colorizer";
 import { DEFAULT_ANNOTATION_LABEL_COLORS, type LabelOptions, LabelType } from "src/colorizer/AnnotationData";
 import WrappedColorPicker from "src/components/Inputs/WrappedColorPicker";
 import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
-import { TooltipWithSubtitle } from "src/components/Tooltips/TooltipWithSubtitle";
+import TooltipWithSubtitle from "src/components/Tooltips/TooltipWithSubtitle";
 import { AppThemeContext, Z_INDEX_POPOVER } from "src/styles/AppStyle";
 import { FlexColumn, FlexRow } from "src/styles/utils";
 import { threeToAntColor } from "src/utils/color_utils";

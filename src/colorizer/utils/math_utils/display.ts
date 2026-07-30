@@ -1,4 +1,4 @@
-import { Vector2 } from "three";
+import { Vector2, type Vector3 } from "three";
 
 /**
  * Calculates the size of a frame in pixels, fit within a canvas with known
@@ -12,7 +12,11 @@ import { Vector2 } from "three";
  * A zoom of 2x means the frame is twice as large as it would be at 1x zoom.
  * @returns A tuple of `[width, height]` in pixels.
  */
-export function getFrameSizeInScreenPx(canvasSizePx: Vector2, frameResolution: Vector2, frameZoom: number): Vector2 {
+export function getFrameSizeInScreenPx(
+  canvasSizePx: Vector2,
+  frameResolution: Vector2 | Vector3,
+  frameZoom: number
+): Vector2 {
   const frameBaseAspectRatio = frameResolution.x / frameResolution.y;
 
   // Calculate base onscreen frame size in pixels by finding largest size it can be while fitting in
