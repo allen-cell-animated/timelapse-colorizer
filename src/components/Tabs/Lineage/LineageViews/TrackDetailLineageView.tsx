@@ -43,7 +43,10 @@ const enum SvgClass {
   EXPAND_BUTTON_GROUP = "expand-button",
   COLLAPSE_BUTTON_GROUP = "collapse-button",
   TIME_INDICATOR = "time-indicator",
+  CURRENT_TIME_LINE = "current-time-line",
+  HOVERED_TIME_LINE = "hovered-time-line",
   MAIN_NODE = "main-node",
+  MAIN_NODE_SELECTED = "main-node-selected",
   TRACK_LABEL = "track-label",
 }
 
@@ -96,8 +99,9 @@ const StyledSVG = styled.svg`
   // Add hover colors to the main node rectangle and track label
   .${SvgClass.MAIN_NODE} {
     transition: all 0.2s ease-out;
-    opacity: 1f;
-    &:hover {
+    /* opacity: 1; */
+    &:not(.${SvgClass.MAIN_NODE_SELECTED}):hover {
+      fill: ${DEFAULT_NODE_FILL_HOVER_COLOR};
       opacity: 0.9;
     }
   }
@@ -136,9 +140,8 @@ function renderView(
 
   const leafCount = root.leaves().length;
   const depth = root.height;
-  const treeRoot = d3.tree<TrackInfo>().size([leafCount * TREE_LEAF_HEIGHT_PX * 1.5, depth * TREE_LAYER_DEPTH_PX])(
-    root
-  );
+  const treeHeight = leafCount * TREE_LEAF_HEIGHT_PX * 1.5;
+  const treeRoot = d3.tree<TrackInfo>().size([treeHeight, depth * TREE_LAYER_DEPTH_PX])(root);
   alignMergeNodes(treeRoot, data, relationships);
 
   const mergeNodes = new Set(multiparentEdges.map((edge) => edge[1]));
@@ -185,6 +188,16 @@ function renderView(
       .attr("x2", (d) => getPos(d[1], true).y)
       .attr("y2", (d) => getPos(d[1], true).x);
   }
+
+  // Add global time line indicator
+  g.append("line")
+    .classed(SvgClass.CURRENT_TIME_LINE, true)
+    .attr("stroke", DEFAULT_NODE_EDGE_COLOR)
+    .attr("stroke-width", 1.5)
+    .attr("stroke-dasharray", "4 3")
+    .attr("opacity", 0)
+    .attr("y1", -treeHeight * 2)
+    .attr("y2", treeHeight * 3);
 
   // Add nodes
   const node = treeSvgGroup
@@ -355,6 +368,9 @@ function updateNodeStyles(
   const isExpanded = (d: d3.HierarchyPointNode<TrackInfo>): boolean => {
     return expandedTrackIds.has(d.data.id);
   };
+  const isSelected = (d: d3.HierarchyPointNode<TrackInfo>): boolean => {
+    return trackColors.has(d.data.id);
+  };
   const getTimeIndicatorTransform = (d: d3.HierarchyPointNode<TrackInfo>): string => {
     const progress = time - d.data.startTime;
     const x = progress * TREE_LAYER_DEPTH_PX;
@@ -372,16 +388,15 @@ function updateNodeStyles(
     .attr("width", (d) => d.data.length * TREE_LAYER_DEPTH_PX)
     .attr("height", NODE_HEIGHT_PX)
     .attr("rx", 4)
-    .attr("fill", (d) =>
-      trackColors.has(d.data.id) ? `url(#${getTrackGradientId(d.data.id)})` : DEFAULT_NODE_FILL_COLOR
-    )
-    .attr("shape-rendering", "crispEdges")
+    .attr("fill", (d) => (isSelected(d) ? `url(#${getTrackGradientId(d.data.id)})` : DEFAULT_NODE_FILL_COLOR))
+    // .attr("shape-rendering", "crispEdges")
     .attr("opacity", (d) => (isExpanded(d) && d.data.id !== DUMMY_ROOT_NODE_ID ? 1 : 0)) // Hide the dummy root node
     // Hide node when collapsed
     .attr("cursor", (d) => (isExpanded(d) ? "pointer" : "default"))
     .attr("pointer-events", (d) => (isExpanded(d) ? "auto" : "none"))
     .attr("stroke", (d) => trackColors.get(d.data.id)?.getStyle() ?? DEFAULT_NODE_EDGE_COLOR)
-    .attr("stroke-width", 2);
+    .attr("stroke-width", 2)
+    .classed(SvgClass.MAIN_NODE_SELECTED, (d) => isSelected(d));
 
   // Indicator for current time
   node
@@ -441,6 +456,15 @@ function updateNodeStyles(
   collapseButtonGroup.select<SVGTextElement>("text").text("-");
 }
 
+function updateTimeIndicator(g: SVGGElement, time: number): void {
+  // Update the current time indicator line
+  d3.select(g)
+    .select<SVGLineElement>(`line.${SvgClass.CURRENT_TIME_LINE}`)
+    .attr("x1", time * TREE_LAYER_DEPTH_PX)
+    .attr("x2", time * TREE_LAYER_DEPTH_PX)
+    .attr("opacity", 1);
+}
+
 export default function LineageTrackDetailView(props: TrackDetailLineageViewProps): ReactElement {
   const svgRef = useRef<SVGSVGElement>(null);
   const groupRef = useRef<SVGGElement>(null);
@@ -448,6 +472,7 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
 
   const trackIds = useMemo(() => new Set(props.selectedTracks.keys()), [props.selectedTracks]);
 
+  const [useFeatureColors, setUseFeatureColors] = useState(true);
   const colorizeParams = useViewerStateStore(useShallow(colorizeStateSelector));
 
   const onClickRef = useRef(props.onClick);
@@ -550,6 +575,7 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
       if (node) {
         cleanupPointerHandlers = setupPointerHandlers(node, onClickRef, onToggleExpandedRef, onHoverRef);
       }
+      updateTimeIndicator(groupRef.current, props.time);
     }
 
     // Clear on unmount
@@ -579,6 +605,12 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
     }
   }, [props.data, props.time, props.trackColors, expandedTracks]);
 
+  useEffect(() => {
+    if (groupRef.current) {
+      updateTimeIndicator(groupRef.current, props.time);
+    }
+  }, [props.time]);
+
   // Fit on data change
   useEffect(() => {
     resetZoom();
@@ -587,7 +619,9 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
   return (
     <div style={{ width: "100%", height: "100%", overflow: "hidden", position: "relative" }}>
       <div style={{ position: "absolute", top: 4, left: 6, zIndex: 10, padding: "4px" }}>
-        <Checkbox>Use feature colors</Checkbox>
+        <Checkbox checked={useFeatureColors} onChange={(e) => setUseFeatureColors(e.target.checked)}>
+          Use feature colors
+        </Checkbox>
       </div>
       <StyledSVG
         ref={svgRef}
