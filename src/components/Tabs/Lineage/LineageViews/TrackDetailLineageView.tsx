@@ -63,6 +63,7 @@ const COLLAPSED_NODE_EDGE_COLOR = "#8f8f8f";
 const DEFAULT_NODE_FILL_COLOR = "#ffffff";
 const DEFAULT_NODE_FILL_HOVER_COLOR = "#f6f6f6";
 const DEFAULT_NODE_EDGE_COLOR = "#8e8f94";
+const NODE_STROKE_WIDTH_PX = 2;
 
 const TRACK_LABEL_HOVER_COLOR = "#2c2c2c";
 
@@ -100,7 +101,6 @@ const StyledSVG = styled.svg`
     transition: all 0.2s ease-out;
     &:not(.${SvgClass.MAIN_NODE_SELECTED}):hover {
       fill: ${DEFAULT_NODE_FILL_HOVER_COLOR};
-      opacity: 0.9;
     }
   }
   .${SvgClass.TRACK_LABEL} {
@@ -203,10 +203,10 @@ function renderView(
     .attr("class", SvgClass.TIME_INDICATOR)
     .attr(
       "d",
-      `M 0,0 
-      L ${TIME_INDICATOR_HEIGHT}, -${TIME_INDICATOR_HEIGHT} 
-      L -${TIME_INDICATOR_HEIGHT}, -${TIME_INDICATOR_HEIGHT} 
-      L 0,0 
+      `M 0,${TIME_INDICATOR_HEIGHT} 
+      L ${TIME_INDICATOR_HEIGHT}, 0 
+      L -${TIME_INDICATOR_HEIGHT}, 0
+      L 0,${TIME_INDICATOR_HEIGHT} 
       Z`
     );
 
@@ -300,6 +300,11 @@ function getTrackGradientId(trackId: number): string {
   return `track-gradient-${trackId}`;
 }
 
+/**
+ * Adds a linear gradient for each track to the SVG's defs. Color stops are
+ * determined by the feature value at each timepoint in the track and the
+ * track's current colorization settings.
+ */
 function updateGradients(
   svg: d3.Selection<SVGSVGElement, unknown, null, undefined>,
   tracks: Map<number, Track>,
@@ -331,19 +336,22 @@ function updateGradients(
       } else {
         hexColor = "#" + computeColorFromId(id, params).getHexString();
       }
-      // Add color stops twice for hard-stop gradient.
+      // Add colors twice for hard-stop gradient.
       colors.push(hexColor);
       colors.push(hexColor);
     }
 
-    const stops = gradient.selectAll("stop").data(colors).join("stop");
-    stops
+    // Add color stop SVG elements to each gradient
+    gradient
+      .selectAll("stop")
+      .data(colors)
+      .join("stop")
+      .attr("stop-color", (d) => d)
       .attr("offset", (_d, i) => {
         const totalStops = colors.length / 2;
         const stopIndex = Math.floor((i + 1) / 2);
         return `${(stopIndex / totalStops) * 100}%`;
-      })
-      .attr("stop-color", (d) => d);
+      });
   });
 }
 
@@ -367,7 +375,7 @@ function updateNodeStyles(
   const getTimeIndicatorTransform = (d: d3.HierarchyPointNode<TrackInfo>): string => {
     const progress = time - d.data.startTime;
     const x = progress * TREE_LAYER_DEPTH_PX;
-    const y = -TREE_LEAF_HEIGHT_PX / 2 + 9;
+    const y = -NODE_HEIGHT_PX / 2 + NODE_STROKE_WIDTH_PX / 2;
     return `translate(${x},${y})`;
   };
   const isInTimeRange = (d: d3.HierarchyPointNode<TrackInfo>): boolean => {
@@ -389,7 +397,7 @@ function updateNodeStyles(
     .attr("cursor", (d) => (isExpanded(d) ? "pointer" : "default"))
     .attr("pointer-events", (d) => (isExpanded(d) ? "auto" : "none"))
     .attr("stroke", (d) => trackColors.get(d.data.id)?.getStyle() ?? DEFAULT_NODE_EDGE_COLOR)
-    .attr("stroke-width", 2)
+    .attr("stroke-width", NODE_STROKE_WIDTH_PX)
     .classed(SvgClass.MAIN_NODE_SELECTED, (d) => isSelected(d));
 
   // Indicator for current time
@@ -433,7 +441,7 @@ function updateNodeStyles(
     .attr("fill", COLLAPSED_NODE_FILL_COLOR)
     .attr("opacity", (d) => (d.data.id === DUMMY_ROOT_NODE_ID ? 0 : 1))
     .attr("stroke", COLLAPSED_NODE_EDGE_COLOR)
-    .attr("stroke-width", 2)
+    .attr("stroke-width", NODE_STROKE_WIDTH_PX)
     .attr("rx", 4);
   buttonGroups
     .select<SVGTextElement>("text")
