@@ -79,9 +79,15 @@ export type TreeExpandedState = {
    */
   expandedTracks: Set<number>;
   /**
-   * Set of tracks that were previously expanded, but are currently collapsed
-   * due to a parent track being collapsed. This is used to restore the expanded
-   * state when a parent track is expanded again.
+   * The set of tracks that are either currently expanded, or were previously
+   * expanded but hidden when a parent was collapsed. This is used to restore
+   * the expanded state of children when a parent is collapsed and re-expanded.
+   *
+   * For example, let's say our tree is `A -> B -> C`, and the user has all
+   * three tracks expanded. If `A` is collapsed, only `A` should be removed from
+   * the `previouslyExpandedTracks` set, and `B` and `C` should remain in the
+   * set. Then, if `A` is re-expanded, `previouslyExpandedTracks` can be used to
+   * restore the expanded state of `B` and `C`.
    */
   previouslyExpandedTracks: Set<number>;
 };

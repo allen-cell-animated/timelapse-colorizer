@@ -1,4 +1,4 @@
-import { type Color, Vector2 } from "three";
+import { type Color, Vector2, type Vector3 } from "three";
 
 import type Track from "src/colorizer/Track";
 import { SelectionOutlineColorMode } from "src/colorizer/types";
@@ -8,7 +8,7 @@ import type TrackPath3D from "src/colorizer/viewport/tracks/TrackPath3D";
 import { type Canvas2DScaleInfo, CanvasType, type RenderCanvasStateParams } from "./types";
 
 export function get2DCanvasScaling(
-  frameResolution: Vector2,
+  frameResolution: Vector3,
   canvasResolution: Vector2,
   zoomMultiplier: number,
   offset: Vector2
@@ -23,9 +23,9 @@ export function get2DCanvasScaling(
   if (canvasAspect > frameAspect) {
     // Canvas has a wider aspect ratio than the frame, so proportional height is
     // 1 and we scale width accordingly.
-    unscaledFrameSizeInCanvasCoords.x = canvasAspect / frameAspect;
+    unscaledFrameSizeInCanvasCoords.x = frameAspect / canvasAspect;
   } else {
-    unscaledFrameSizeInCanvasCoords.y = frameAspect / canvasAspect;
+    unscaledFrameSizeInCanvasCoords.y = canvasAspect / frameAspect;
   }
 
   // Get final size by applying the current zoom level, where `zoomMultiplier=2`
@@ -38,7 +38,9 @@ export function get2DCanvasScaling(
   // zoom is set to 2x. Assuming that the [0, 0] position of the frame and the
   // canvas are in the same position, the position [1, 1] on the canvas should
   // map to [0.5, 0.5] on the frame.
-  const canvasToFrameCoordinates = unscaledFrameSizeInCanvasCoords.clone().divideScalar(zoomMultiplier);
+  const canvasToFrameCoordinates = new Vector2(1, 1)
+    .divide(unscaledFrameSizeInCanvasCoords)
+    .divideScalar(zoomMultiplier);
 
   // Invert to get the frame to canvas coordinates. Useful for objects (e.g.
   // line mesh vertices) that are in frame coordinates and need to be drawn on

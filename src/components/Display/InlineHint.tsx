@@ -1,7 +1,7 @@
 import { InfoCircleOutlined } from "@ant-design/icons";
 import React, { type ReactElement, type ReactNode, useRef } from "react";
 
-import { TooltipWithSubtitle } from "src/components/Tooltips/TooltipWithSubtitle";
+import TooltipWithSubtitle from "src/components/Tooltips/TooltipWithSubtitle";
 
 export type InlineHintProps = {
   title?: ReactNode;

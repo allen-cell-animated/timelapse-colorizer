@@ -1,3 +1,4 @@
+import { LockOutlined, UnlockOutlined } from "@ant-design/icons";
 import { Tooltip } from "antd";
 import Plotly, { type PlotData } from "plotly.js-dist-min";
 import React, { memo, type ReactElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
@@ -16,7 +17,7 @@ import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import type { SelectItem } from "src/components/Dropdowns/types";
 import LoadingSpinner from "src/components/LoadingSpinner";
 import ScatterplotToolbar from "src/components/Tabs/ScatterPlot/ScatterplotToolbar";
-import { SHORTCUT_KEYS } from "src/constants";
+import { SCATTERPLOT_SYNC_AXIS_KEY, SHORTCUT_KEYS } from "src/constants";
 import { useDebounce, useDebounceRecord, useIsMouseButtonDownRef } from "src/hooks";
 import { colorizeStateSelector } from "src/state";
 import { useViewerStateStore } from "src/state/ViewerState";
@@ -85,13 +86,18 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const setFrame = useViewerStateStore((state) => state.setFrame);
   const setXAxis = useViewerStateStore((state) => state.setScatterXAxis);
   const setYAxis = useViewerStateStore((state) => state.setScatterYAxis);
-  const xAxisFeatureKey = useViewerStateStore((state) => state.scatterXAxis);
-  const yAxisFeatureKey = useViewerStateStore((state) => state.scatterYAxis);
+  const _xAxisFeatureKey = useViewerStateStore((state) => state.scatterXAxis);
+  const _yAxisFeatureKey = useViewerStateStore((state) => state.scatterYAxis);
   const showHistograms = useViewerStateStore((state) => state.scatterShowHistograms);
   const histogramBins = useViewerStateStore((state) => state.scatterHistogramBins);
   const showContours = useViewerStateStore((state) => state.scatterShowContours);
   const _rawContourCount = useViewerStateStore((state) => state.scatterContourCount);
   const contourCount = useDebounce(_rawContourCount, 100);
+
+  const syncXAxisFeatureKey = _xAxisFeatureKey === SCATTERPLOT_SYNC_AXIS_KEY;
+  const syncYAxisFeatureKey = _yAxisFeatureKey === SCATTERPLOT_SYNC_AXIS_KEY;
+  const xAxisFeatureKey = syncXAxisFeatureKey ? selectedFeatureKey : _xAxisFeatureKey;
+  const yAxisFeatureKey = syncYAxisFeatureKey ? selectedFeatureKey : _yAxisFeatureKey;
 
   const showAverageLine = useViewerStateStore((state) => state.scatterShowAverageLine);
   const averageLineWindow = useDebounce(
@@ -714,18 +720,39 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
                 transform: "rotate(-90deg)",
               }}
             >
-              <SelectionDropdown
-                label={"Y axis"}
-                hideLabel={true}
-                selected={yAxisFeatureKey || ""}
-                items={menuItems}
-                onChange={setYAxis}
-                selectProps={{
-                  menuPortalTarget: props.containerRef ?? document.body,
-                }}
-                controlTooltipPlacement="left"
-                tooltipPopupContainer={props.containerRef}
-              />
+              <FlexRowAlignCenter $gap={6}>
+                <SelectionDropdown
+                  label={"Y axis"}
+                  hideLabel={true}
+                  disabled={syncYAxisFeatureKey}
+                  selected={yAxisFeatureKey || ""}
+                  items={menuItems}
+                  onChange={setYAxis}
+                  selectProps={{
+                    menuPortalTarget: props.containerRef ?? document.body,
+                  }}
+                  controlTooltipPlacement="left"
+                  tooltipPopupContainer={props.containerRef}
+                />
+                <Tooltip
+                  title={`${syncYAxisFeatureKey ? "Unlock Y axis from" : "Lock Y axis to"} colorized feature`}
+                  placement="left"
+                  trigger={["hover", "focus"]}
+                >
+                  <IconButton
+                    type={syncYAxisFeatureKey ? "primary" : "link"}
+                    onClick={() => {
+                      if (!syncYAxisFeatureKey) {
+                        setYAxis(SCATTERPLOT_SYNC_AXIS_KEY);
+                      } else {
+                        setYAxis(selectedFeatureKey);
+                      }
+                    }}
+                  >
+                    {syncYAxisFeatureKey ? <LockOutlined /> : <UnlockOutlined />}
+                  </IconButton>
+                </Tooltip>
+              </FlexRowAlignCenter>
             </AxisDropdownContainer>
           </div>
           {/* Main plot */}
@@ -739,8 +766,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
           <Tooltip title="Swap axes" trigger={["hover", "focus"]}>
             <IconButton
               onClick={() => {
-                const temp = xAxisFeatureKey;
-                setXAxis(yAxisFeatureKey);
+                const temp = _xAxisFeatureKey;
+                setXAxis(_yAxisFeatureKey);
                 setYAxis(temp);
               }}
               type="link"
@@ -749,18 +776,38 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
             </IconButton>
           </Tooltip>
           <AxisDropdownContainer style={{ paddingRight: "40px", width: "fit-content" }}>
-            <SelectionDropdown
-              label={"X axis"}
-              hideLabel={true}
-              selected={xAxisFeatureKey || ""}
-              items={menuItems}
-              onChange={setXAxis}
-              containerStyle={{ flexGrow: 1, flexBasis: "210px", flexShrink: 1 }}
-              placement="top"
-              selectProps={{
-                menuPortalTarget: props.containerRef ?? document.body,
-              }}
-            />
+            <FlexRowAlignCenter $gap={6}>
+              <SelectionDropdown
+                label={"X axis"}
+                hideLabel={true}
+                disabled={syncXAxisFeatureKey}
+                selected={xAxisFeatureKey || ""}
+                items={menuItems}
+                onChange={setXAxis}
+                containerStyle={{ flexGrow: 1, flexBasis: "210px", flexShrink: 1 }}
+                placement="top"
+                selectProps={{
+                  menuPortalTarget: props.containerRef ?? document.body,
+                }}
+              />
+              <Tooltip
+                title={`${syncXAxisFeatureKey ? "Unlock X axis from" : "Lock X axis to"} colorized feature`}
+                trigger={["hover", "focus"]}
+              >
+                <IconButton
+                  type={syncXAxisFeatureKey ? "primary" : "link"}
+                  onClick={() => {
+                    if (!syncXAxisFeatureKey) {
+                      setXAxis(SCATTERPLOT_SYNC_AXIS_KEY);
+                    } else {
+                      setXAxis(selectedFeatureKey);
+                    }
+                  }}
+                >
+                  {syncXAxisFeatureKey ? <LockOutlined /> : <UnlockOutlined />}
+                </IconButton>
+              </Tooltip>
+            </FlexRowAlignCenter>
           </AxisDropdownContainer>
         </FlexRow>
       </LoadingSpinner>

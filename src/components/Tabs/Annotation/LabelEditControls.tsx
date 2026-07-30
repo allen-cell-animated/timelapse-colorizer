@@ -7,7 +7,7 @@ import { AnnotationSelectionMode } from "src/colorizer";
 import type { LabelData, LabelOptions } from "src/colorizer/AnnotationData";
 import { getTotalLabeledIds } from "src/colorizer/utils/annotation_utils";
 import IconButton from "src/components/Buttons/IconButton";
-import { TooltipWithSubtitle } from "src/components/Tooltips/TooltipWithSubtitle";
+import TooltipWithSubtitle from "src/components/Tooltips/TooltipWithSubtitle";
 import { AppThemeContext } from "src/styles/AppStyle";
 import { StyledRadioGroup } from "src/styles/components";
 import { formatQuantityString } from "src/utils/formatting";
