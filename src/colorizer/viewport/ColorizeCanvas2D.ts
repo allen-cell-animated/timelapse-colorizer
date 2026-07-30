@@ -450,7 +450,7 @@ export default class ColorizeCanvas2D implements IInnerRenderCanvas {
     return true;
   }
 
-  private updateScaling(frameResolution: Vector2 | null, canvasResolution: Vector2 | null): void {
+  private updateScaling(frameResolution: Vector3 | null, canvasResolution: Vector2 | null): void {
     if (!frameResolution || !canvasResolution) {
       return;
     }

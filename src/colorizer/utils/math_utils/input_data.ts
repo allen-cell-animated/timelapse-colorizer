@@ -12,7 +12,7 @@ type TrackData = {
 export function constructAllTracksFromData(
   trackIds: Uint32Array,
   times: Uint32Array,
-  centroids?: Uint16Array
+  centroids?: Float32Array
 ): Track[] {
   const trackIdToTrackData = new Map<number, TrackData>();
 
@@ -43,11 +43,11 @@ export function constructAllTracksFromData(
  * @param centroidsData
  * @param numObjects
  */
-export function padCentroidsTo3d(centroidsData: Uint16Array, numObjects: number): Uint16Array {
+export function padCentroidsTo3d(centroidsData: Float32Array, numObjects: number): Float32Array {
   if (centroidsData.length === numObjects * 3) {
     return centroidsData;
   } else if (centroidsData.length === numObjects * 2) {
-    const paddedCentroids = new Uint16Array(numObjects * 3);
+    const paddedCentroids = new Float32Array(numObjects * 3);
     for (let i = 0; i < numObjects; i++) {
       paddedCentroids[i * 3] = centroidsData[i * 2];
       paddedCentroids[i * 3 + 1] = centroidsData[i * 2 + 1];

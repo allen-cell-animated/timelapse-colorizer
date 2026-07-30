@@ -1,5 +1,5 @@
 import { gte as semverGte, lt as semverLt } from "semver";
-import { Vector2 } from "three";
+import { Vector3 } from "three";
 import { describe, expect, it } from "vitest";
 
 import { FeatureDataType } from "src/colorizer";
@@ -245,7 +245,7 @@ describe("Dataset", () => {
             manifestLoader: mockFetch,
           });
           const dataset = await datasetLoader.open();
-          expect(dataset.frameResolution).to.deep.equal(new Vector2(width, height));
+          expect(dataset.frameResolution).to.deep.equal(new Vector3(width, height, 1));
         }
       });
 
@@ -357,6 +357,46 @@ describe("Dataset", () => {
     expect(frames3d?.totalFrames).to.equal(4);
   });
 
+  it("changes relative source paths for 3D data to URLs", async () => {
+    const manifestWith3dSource: ManifestFile = {
+      ...MOCK_DATASET_MANIFEST,
+      frames3d: {
+        segmentations: [
+          {
+            name: "Segmentation A",
+            source: "seg.ome.zarr",
+            channelIndex: 1,
+          },
+          {
+            name: "Segmentation B",
+            source: "seg.ome.zarr",
+            channelIndex: 2,
+          },
+        ],
+        backdrops: [
+          {
+            name: "Backdrop A",
+            source: "backdrop.ome.zarr",
+            channelIndex: 0,
+          },
+        ],
+        totalFrames: 4,
+      },
+    };
+    const dataset = await makeMockDataset(manifestWith3dSource);
+    expect(dataset.has3dFrames()).to.be.true;
+    const frames3d = dataset.frames3d;
+    expect(frames3d?.segmentations.length).to.equal(2);
+    expect(frames3d?.segmentations[0].source).to.equal(DEFAULT_DATASET_DIR + "seg.ome.zarr");
+    expect(frames3d?.segmentations[0].channelIndex).to.equal(1);
+    expect(frames3d?.segmentations[1].source).to.equal(DEFAULT_DATASET_DIR + "seg.ome.zarr");
+    expect(frames3d?.segmentations[1].channelIndex).to.equal(2);
+    expect(frames3d?.backdrops?.length).to.equal(1);
+    expect(frames3d?.backdrops?.[0].source).to.equal(DEFAULT_DATASET_DIR + "backdrop.ome.zarr");
+    expect(frames3d?.backdrops?.[0].channelIndex).to.equal(0);
+    expect(frames3d?.totalFrames).to.equal(4);
+  });
+
   it("handles < v1.1.0 tracks", async () => {
     const manifestWithTracks: AnyManifestFile = {
       ...MOCK_DATASET_MANIFEST,
@@ -420,7 +460,7 @@ describe("Dataset", () => {
       };
       const dataset = await makeMockDataset(mockDatasetManifest, mockArrayLoader);
       expect(dataset.centroids).to.deep.equal(
-        new Uint16Array([0, 0, 0, 1, 1, 0, 2, 2, 0, 3, 3, 0, 4, 4, 0, 5, 5, 0, 6, 6, 0, 7, 7, 0, 8, 8, 0])
+        new Float32Array([0, 0, 0, 1, 1, 0, 2, 2, 0, 3, 3, 0, 4, 4, 0, 5, 5, 0, 6, 6, 0, 7, 7, 0, 8, 8, 0])
       );
     });
 
@@ -428,8 +468,8 @@ describe("Dataset", () => {
       const mockArrayLoaderSource = {
         ...MOCK_DATASET_ARRAY_LOADER_DEFAULT_SOURCE,
         [DEFAULT_DATASET_DIR + "centroids.json"]: new MockArraySource(
-          FeatureDataType.U16,
-          new Uint16Array([0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8])
+          FeatureDataType.F32,
+          new Float32Array([0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8])
         ),
       };
       const mockArrayLoader = new MockArrayLoader(mockArrayLoaderSource);
@@ -439,7 +479,7 @@ describe("Dataset", () => {
       };
       const dataset = await makeMockDataset(mockDatasetManifest, mockArrayLoader);
       expect(dataset.centroids).to.deep.equal(
-        new Uint16Array([0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8])
+        new Float32Array([0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8])
       );
     });
 

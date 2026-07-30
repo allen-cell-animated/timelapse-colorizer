@@ -13,6 +13,7 @@ import {
   MOCK_DATASET_WITHOUT_BACKDROP,
   MockBackdropKeys,
   MockFeatureKeys,
+  MockSanitizedFeatureKeys,
 } from "tests/constants";
 import { ANY_ERROR } from "tests/utils";
 
@@ -218,13 +219,13 @@ describe("useViewerStateStore: DatasetSlice", () => {
     it("decodes characters in keys", async () => {
       const { result } = renderHook(() => useViewerStateStore());
       const params = new URLSearchParams(
-        `?${UrlParam.FEATURE}=${encodeURIComponent(MockFeatureKeys.FEATURE4_ILLEGAL_CHARS)}`
+        `?${UrlParam.FEATURE}=${encodeURIComponent(MockSanitizedFeatureKeys.FEATURE4_SANITIZED_CHARS)}`
       );
       await setDatasetAsync(result, MOCK_DATASET);
       act(() => {
         loadDatasetSliceFromParams(result.current, params);
       });
-      expect(result.current.featureKey).toBe(MockFeatureKeys.FEATURE4_ILLEGAL_CHARS);
+      expect(result.current.featureKey).toBe(MockSanitizedFeatureKeys.FEATURE4_SANITIZED_CHARS);
     });
 
     it("ignores param keys that are not in the dataset.", async () => {

@@ -69,7 +69,7 @@ export function addTimeFeature(features: Map<string, FeatureData>, times: Uint32
 
 export function addCentroidFeatures(
   features: Map<string, FeatureData>,
-  centroids: Uint16Array | null,
+  centroids: Float32Array | null,
   metadata?: ManifestFileMetadata,
   frameDimensions?: Vector2 | null
 ): void {
@@ -239,6 +239,7 @@ export function getUniqueKeyName(key: string | undefined, name: string, existing
  */
 function parseFrameSources(
   data: ManifestFrameSource[] | undefined,
+  type: "segmentation" | "backdrop",
   resolvePath: (path: string) => string | null
 ): FrameSource[] | undefined {
   if (!data) {
@@ -248,7 +249,8 @@ function parseFrameSources(
   const frameSources: FrameSource[] = [];
   for (let i = 0; i < data.length; i++) {
     const { frames, name: inputName, key: inputKey, description } = data[i];
-    const name = inputName ?? "Segmentation " + (i + 1);
+    const defaultLabel = (type === "segmentation" ? "Segmentation" : "Backdrop") + " " + (i + 1);
+    const name = inputName ?? defaultLabel;
     const key = getUniqueKeyName(inputKey, name, usedKeys);
     usedKeys.add(key);
     const source = {
@@ -276,8 +278,8 @@ export function resolveFrames2d(
   if (!data) {
     return undefined;
   }
-  const segmentations = parseFrameSources(data.segmentations, resolvePath);
-  const backdrops = parseFrameSources(data.backdrops, resolvePath);
+  const segmentations = parseFrameSources(data.segmentations, "segmentation", resolvePath);
+  const backdrops = parseFrameSources(data.backdrops, "backdrop", resolvePath);
 
   if (!segmentations && !backdrops) {
     return undefined;
