@@ -13,6 +13,10 @@ export enum MockFeatureKeys {
   FEATURE4_ILLEGAL_CHARS = "feature$&%20^4",
 }
 
+export enum MockSanitizedFeatureKeys {
+  FEATURE4_SANITIZED_CHARS = "feature___20_4",
+}
+
 export const MOCK_FEATURE_DATA: Record<MockFeatureKeys, ManifestFile["features"][0]> = {
   [MockFeatureKeys.FEATURE1]: {
     key: MockFeatureKeys.FEATURE1,
