@@ -4,7 +4,7 @@ import { ImagesIconSVG, ImagesSlashIconSVG } from "src/assets";
 import { TabType } from "src/colorizer";
 import { LinkStyleButton } from "src/components/Buttons/LinkStyleButton";
 import ConfigMenuWrapper from "src/components/Controls/ConfigMenuWrapper";
-import { TooltipWithSubtitle } from "src/components/Tooltips/TooltipWithSubtitle";
+import TooltipWithSubtitle from "src/components/Tooltips/TooltipWithSubtitle";
 import { useViewerStateStore } from "src/state";
 import { AppThemeContext } from "src/styles/AppStyle";
 import { FlexColumn, VisuallyHidden } from "src/styles/utils";

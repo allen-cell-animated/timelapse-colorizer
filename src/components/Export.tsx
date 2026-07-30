@@ -744,7 +744,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
                       disabled={imageDimensions === null}
                       type={isImageDimensions ? "primary" : "default"}
                       onClick={() => {
-                        imageDimensions && onSetDimensions(imageDimensions);
+                        imageDimensions && onSetDimensions([imageDimensions[0], imageDimensions[1]]);
                         setUseCurrentViewportSize(false);
                       }}
                     >

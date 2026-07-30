@@ -12,7 +12,7 @@ import BackdropToggleButton from "src/components/CanvasWrapper/BackdropToggleBut
 import CentroidsToggleButton from "src/components/CanvasWrapper/CentroidsToggleButton";
 import ChannelToggleButton from "src/components/CanvasWrapper/ChannelToggleButton";
 import SegmentationsToggleButton from "src/components/CanvasWrapper/SegmentationsToggleButton";
-import { TooltipWithSubtitle } from "src/components/Tooltips/TooltipWithSubtitle";
+import TooltipWithSubtitle from "src/components/Tooltips/TooltipWithSubtitle";
 import type { AnnotationState } from "src/hooks";
 import { useViewerStateStore } from "src/state";
 import { StyledHorizontalRule } from "src/styles/components";
