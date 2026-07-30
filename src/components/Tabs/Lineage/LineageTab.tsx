@@ -31,7 +31,7 @@ function getColorAndRadiusScale(data: LineageData): {
   return { colorScale, radiusScale };
 }
 
-const EMPTY_LINEAGE_DATA = { trackIdToTrackInfo: new Map(), edges: [] } satisfies LineageData;
+const EMPTY_LINEAGE_DATA: LineageData = { trackIdToTrackInfo: new Map(), edges: [] };
 
 /**
  * Renders lineage data in a tab. Includes a tree view of the tracks and their
@@ -120,14 +120,14 @@ export default function LineageTab(): ReactElement {
   const lineageViewProps = {
     container: containerRef,
     data: lineageData,
-    hierarchy: hierarchy,
+    hierarchy,
     relationships: lineageRelationships,
-    colorScale: colorScale,
-    radiusScale: radiusScale,
+    colorScale,
+    radiusScale,
     onClick: onClickTrack,
     onHover: onHoverTrack,
-    selectedTracks: selectedTracks,
-    trackColors: trackColors,
+    selectedTracks,
+    trackColors,
   };
 
   return (
