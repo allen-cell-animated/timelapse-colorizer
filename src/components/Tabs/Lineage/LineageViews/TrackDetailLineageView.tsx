@@ -99,7 +99,6 @@ const StyledSVG = styled.svg`
   // Add hover colors to the main node rectangle and track label
   .${SvgClass.MAIN_NODE} {
     transition: all 0.2s ease-out;
-    /* opacity: 1; */
     &:not(.${SvgClass.MAIN_NODE_SELECTED}):hover {
       fill: ${DEFAULT_NODE_FILL_HOVER_COLOR};
       opacity: 0.9;
@@ -189,16 +188,6 @@ function renderView(
       .attr("y2", (d) => getPos(d[1], true).x);
   }
 
-  // Add global time line indicator
-  g.append("line")
-    .classed(SvgClass.CURRENT_TIME_LINE, true)
-    .attr("stroke", DEFAULT_NODE_EDGE_COLOR)
-    .attr("stroke-width", 1.5)
-    .attr("stroke-dasharray", "4 3")
-    .attr("opacity", 0)
-    .attr("y1", -treeHeight * 2)
-    .attr("y2", treeHeight * 3);
-
   // Add nodes
   const node = g
     .append("g")
@@ -241,6 +230,8 @@ function renderView(
 
   return node;
 }
+
+//// Pointer Handlers ////
 
 function setupPointerHandlers(
   node: NodeSelection,
@@ -303,6 +294,8 @@ function setupPointerHandlers(
     node.on("mouseenter", null).on("mouseleave", null);
   };
 }
+
+//// SVG element styling + updates ////
 
 function getTrackGradientId(trackId: number): string {
   return `track-gradient-${trackId}`;
@@ -392,7 +385,6 @@ function updateNodeStyles(
     .attr("fill", (d) =>
       useFeatureColors && isSelected(d) ? `url(#${getTrackGradientId(d.data.id)})` : DEFAULT_NODE_FILL_COLOR
     )
-    // .attr("shape-rendering", "crispEdges")
     .attr("opacity", (d) => (isExpanded(d) && d.data.id !== DUMMY_ROOT_NODE_ID ? 1 : 0)) // Hide the dummy root node
     // Hide node when collapsed
     .attr("cursor", (d) => (isExpanded(d) ? "pointer" : "default"))
@@ -459,18 +451,27 @@ function updateNodeStyles(
   collapseButtonGroup.select<SVGTextElement>("text").text("-");
 }
 
-function updateTimeIndicator(g: SVGGElement, time: number): void {
+function updateTimeIndicator(svg: SVGSVGElement, time: number, numElements: number): void {
   // Update the current time indicator line
-  d3.select(g)
+  const treeHeight = numElements * TREE_LEAF_HEIGHT_PX * 1.5;
+  d3.select(svg)
     .select<SVGLineElement>(`line.${SvgClass.CURRENT_TIME_LINE}`)
     .attr("x1", time * TREE_LAYER_DEPTH_PX)
     .attr("x2", time * TREE_LAYER_DEPTH_PX)
-    .attr("opacity", 1);
+    .attr("y1", -treeHeight * 2)
+    .attr("y2", treeHeight * 3)
+    .attr("opacity", 1)
+    .attr("stroke", DEFAULT_NODE_EDGE_COLOR)
+    .attr("stroke-width", 1.5)
+    .attr("stroke-dasharray", "4 3");
 }
+
+//// Main Component /////
 
 export default function LineageTrackDetailView(props: TrackDetailLineageViewProps): ReactElement {
   const svgRef = useRef<SVGSVGElement>(null);
   const groupRef = useRef<SVGGElement>(null);
+  const nodeGroupRef = useRef<SVGGElement>(null);
   const nodeSelectionRef = useRef<NodeSelection | undefined>(undefined);
 
   const trackIds = useMemo(() => new Set(props.selectedTracks.keys()), [props.selectedTracks]);
@@ -549,12 +550,12 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
   }, [zoom]);
 
   const resetZoom = (): void => {
-    if (!svgRef.current || !groupRef.current) {
+    if (!svgRef.current || !nodeGroupRef.current) {
       return;
     }
     const svg = d3.select(svgRef.current);
     const svgNode = svg.node();
-    const gNode = d3.select(groupRef.current).node();
+    const gNode = d3.select(nodeGroupRef.current).node();
     if (!gNode || !svgNode || !svg) {
       return;
     }
@@ -571,14 +572,13 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
   // Render view and set up pointer handlers
   useEffect(() => {
     let cleanupPointerHandlers: (() => void) | undefined;
-    if (svgRef.current && groupRef.current && props.dataset) {
-      const g = d3.select(groupRef.current) as d3.Selection<SVGGElement, TrackInfo, null, undefined>;
+    if (svgRef.current && nodeGroupRef.current && props.dataset) {
+      const g = d3.select(nodeGroupRef.current) as d3.Selection<SVGGElement, TrackInfo, null, undefined>;
       const node = renderView(g, props.data, props.relationships, expandedTracks);
       nodeSelectionRef.current = node;
       if (node) {
         cleanupPointerHandlers = setupPointerHandlers(node, onClickRef, onToggleExpandedRef, onHoverRef);
       }
-      updateTimeIndicator(groupRef.current, props.time);
     }
 
     // Clear on unmount
@@ -586,11 +586,11 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
       if (cleanupPointerHandlers) {
         cleanupPointerHandlers();
       }
-      if (groupRef.current) {
+      if (nodeGroupRef.current) {
         // TODO: If the lineage tree is having performance issues, consider
         // using the .join() method to update the tree instead of clearing and
         // re-rendering.
-        d3.select(groupRef.current).selectAll("*").remove();
+        d3.select(nodeGroupRef.current).selectAll("*").remove();
       }
     };
   }, [props.data, props.relationships, props.dataset, expandedTracks]);
@@ -609,10 +609,10 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
   }, [props.data, props.time, props.trackColors, expandedTracks, useFeatureColors]);
 
   useEffect(() => {
-    if (groupRef.current) {
-      updateTimeIndicator(groupRef.current, props.time);
+    if (svgRef.current) {
+      updateTimeIndicator(svgRef.current, props.time, props.data.trackIdToTrackInfo.size);
     }
-  }, [props.time]);
+  }, [props.time, props.data.trackIdToTrackInfo]);
 
   // Fit on data change
   useEffect(() => {
@@ -632,7 +632,10 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
         id="track-detail-lineage-view-svg"
       >
         <defs></defs>
-        <g ref={groupRef}></g>
+        <g ref={groupRef}>
+          <line className={SvgClass.CURRENT_TIME_LINE}></line>
+          <g ref={nodeGroupRef}></g>
+        </g>
       </StyledSVG>
     </div>
   );
