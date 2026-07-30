@@ -1,11 +1,12 @@
 import * as d3 from "d3";
 import React, { type ReactElement, useCallback, useMemo, useRef, useState } from "react";
+import { useShallow } from "zustand/shallow";
 
 import type Track from "src/colorizer/Track";
 import HoverTooltip from "src/components/Tooltips/HoverTooltip";
 import { TooltipCard } from "src/components/Tooltips/TooltipCard";
 import { SHORTCUT_KEYS } from "src/constants/shortcuts";
-import { useViewerStateStore } from "src/state";
+import { colorizeStateSelector, useViewerStateStore } from "src/state";
 import { StyledHorizontalRule } from "src/styles/components";
 import { FlexColumn } from "src/styles/utils";
 import { areAnyHotkeysPressed } from "src/utils/user_input";
@@ -48,6 +49,7 @@ export default function LineageTab(): ReactElement {
   const setTracks = useViewerStateStore((state) => state.setTracks);
   const toggleTrack = useViewerStateStore((state) => state.toggleTrack);
   const setFrame = useViewerStateStore((state) => state.setFrame);
+  const colorizeParams = useViewerStateStore(useShallow(colorizeStateSelector));
 
   const [hoveredTrack, setHoveredTrack] = useState<Track | null>(null);
   const lastHoveredTrack = useRef<Track | null>(null);
@@ -184,6 +186,7 @@ export default function LineageTab(): ReactElement {
           data={lineageData}
           relationships={lineageRelationships}
           time={currentFrame}
+          colorizeParams={colorizeParams}
           onClick={onClickObject}
           // TODO: Show hover tooltip for track detail view
           onHover={undefined}

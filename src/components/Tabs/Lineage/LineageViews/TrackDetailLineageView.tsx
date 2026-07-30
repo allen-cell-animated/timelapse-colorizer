@@ -3,7 +3,6 @@ import * as d3 from "d3";
 import React, { type MouseEvent, type ReactElement, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import type { Color } from "three";
-import { useShallow } from "zustand/shallow";
 
 import type { Dataset, Track } from "src/colorizer";
 import { computeColorFromId } from "src/colorizer/utils/data_utils";
@@ -24,7 +23,6 @@ import {
 } from "src/components/Tabs/Lineage/tree_utils";
 import type { LineageData, LineageDataRelationships, TrackInfo } from "src/components/Tabs/Lineage/types";
 import { useConstructor } from "src/hooks";
-import { colorizeStateSelector, useViewerStateStore } from "src/state";
 
 type TrackDetailLineageViewProps = {
   container: React.RefObject<HTMLDivElement>;
@@ -35,6 +33,7 @@ type TrackDetailLineageViewProps = {
   relationships: LineageDataRelationships;
   hierarchy: d3.HierarchyNode<TrackInfo> | null;
   time: number;
+  colorizeParams: ColorizeStateParams;
   onClick?: (info: TrackInfo, time: number | null) => void;
   onHover?: (info: TrackInfo | null, time: number) => void;
 };
@@ -316,7 +315,7 @@ function updateGradients(
 
   const gradients = defs
     .selectAll("linearGradient")
-    .data(trackData)
+    .data(trackData, (d) => (d as Track).trackId)
     .join("linearGradient")
     .attr("id", (d) => getTrackGradientId(d.trackId))
     .attr("x1", "0%")
@@ -329,13 +328,16 @@ function updateGradients(
     const gradient = d3.select(nodes[i]);
 
     const colors: string[] = [];
+    let trackIndex = 0;
     for (let t = track.startTime(); t <= track.endTime(); t++) {
-      const id = track.getIdAtTime(t);
       let hexColor;
-      if (id === -1) {
-        hexColor = "#" + params.outlierDrawSettings.color.getHexString();
-      } else {
+      if (track.times[trackIndex] === t) {
+        const id = track.ids[trackIndex];
         hexColor = "#" + computeColorFromId(id, params).getHexString();
+        trackIndex++;
+      } else {
+        // Track has no object at this timepoint, so use the default outlier color.
+        hexColor = "#" + params.outlierDrawSettings.color.getHexString();
       }
       // Add colors twice for hard-stop gradient.
       colors.push(hexColor);
@@ -461,17 +463,20 @@ function updateNodeStyles(
 
 function updateTimeIndicator(svg: SVGSVGElement, time: number, numElements: number): void {
   // Update the current time indicator line
+  // Make the line very very tall so it is always visible when zoomed out.
   const treeHeight = numElements * TREE_LEAF_HEIGHT_PX * 1.5;
+  const lineHeight = treeHeight * 3;
   d3.select(svg)
     .select<SVGLineElement>(`line.${SvgClass.CURRENT_TIME_LINE}`)
     .attr("x1", time * TREE_LAYER_DEPTH_PX)
     .attr("x2", time * TREE_LAYER_DEPTH_PX)
-    .attr("y1", -treeHeight * 2)
-    .attr("y2", treeHeight * 3)
+    .attr("y1", -lineHeight)
+    .attr("y2", lineHeight)
     .attr("opacity", 1)
     .attr("stroke", DEFAULT_NODE_EDGE_COLOR)
     .attr("stroke-width", 1.5)
-    .attr("stroke-dasharray", "4 3");
+    .attr("stroke-dasharray", "4 3")
+    .attr("pointer-events", "none");
 }
 
 //// Main Component /////
@@ -485,7 +490,6 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
   const trackIds = useMemo(() => new Set(props.selectedTracks.keys()), [props.selectedTracks]);
 
   const [useFeatureColors, setUseFeatureColors] = useState(true);
-  const colorizeParams = useViewerStateStore(useShallow(colorizeStateSelector));
 
   const onClickRef = useRef(props.onClick);
   const onHoverRef = useRef(props.onHover);
@@ -605,9 +609,9 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
 
   useEffect(() => {
     if (svgRef.current && useFeatureColors) {
-      updateGradients(d3.select(svgRef.current), props.selectedTracks, colorizeParams);
+      updateGradients(d3.select(svgRef.current), props.selectedTracks, props.colorizeParams);
     }
-  }, [props.selectedTracks, colorizeParams, useFeatureColors]);
+  }, [props.selectedTracks, props.colorizeParams, useFeatureColors]);
 
   // Update node styling
   useEffect(() => {
