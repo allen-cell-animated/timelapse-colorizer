@@ -611,7 +611,7 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
 
   // Update node styling
   useEffect(() => {
-    if (nodeSelectionRef.current && svgRef.current) {
+    if (nodeSelectionRef.current) {
       updateNodeStyles(nodeSelectionRef.current, expandedTracks, props.trackColors, props.time, useFeatureColors);
     }
   }, [props.data, props.time, props.trackColors, expandedTracks, useFeatureColors]);
