@@ -1,3 +1,4 @@
+import { Checkbox } from "antd";
 import * as d3 from "d3";
 import React, { type MouseEvent, type ReactElement, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
@@ -51,7 +52,7 @@ const TREE_LEAF_HEIGHT_PX = 30;
 const NODE_HEIGHT_PX = 20;
 const TREE_LAYER_DEPTH_PX = 5;
 
-const TIME_INDICATOR_HEIGHT = 4;
+const TIME_INDICATOR_HEIGHT = 3;
 
 const COLLAPSED_NODE_WIDTH_PX = 20;
 const COLLAPSED_NODE_FILL_COLOR = "#e7e7e7";
@@ -358,7 +359,7 @@ function updateNodeStyles(
   const getTimeIndicatorTransform = (d: d3.HierarchyPointNode<TrackInfo>): string => {
     const progress = time - d.data.startTime;
     const x = progress * TREE_LAYER_DEPTH_PX;
-    const y = -TREE_LEAF_HEIGHT_PX / 2 + 2;
+    const y = -TREE_LEAF_HEIGHT_PX / 2 + 9;
     return `translate(${x},${y})`;
   };
   const isInTimeRange = (d: d3.HierarchyPointNode<TrackInfo>): boolean => {
@@ -388,10 +389,7 @@ function updateNodeStyles(
     .select<SVGPathElement>(`path.${SvgClass.TIME_INDICATOR}`)
     .attr("transform", getTimeIndicatorTransform)
     .attr("opacity", (d) => (isInTimeRange(d) && isExpanded(d) ? 1 : 0))
-    .attr("stroke", DEFAULT_NODE_EDGE_COLOR)
-    .attr("fill", DEFAULT_NODE_EDGE_COLOR)
-    .attr("stroke-width", 1)
-    .attr("stroke-linejoin", "round")
+    .attr("fill", DEFAULT_EDGE_COLOR)
     .attr("pointer-events", "none");
 
   // Track label
@@ -588,13 +586,18 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
   }, [props.data, props.relationships, props.dataset]);
 
   return (
-    <StyledSVG
-      ref={svgRef}
-      style={{ width: "100%", height: "100%", display: "block" }}
-      id="track-detail-lineage-view-svg"
-    >
-      <defs></defs>
-      <g ref={groupRef}></g>
-    </StyledSVG>
+    <div style={{ width: "100%", height: "100%", overflow: "hidden", position: "relative" }}>
+      <div style={{ position: "absolute", top: 4, left: 6, zIndex: 10, padding: "4px" }}>
+        <Checkbox>Use feature colors</Checkbox>
+      </div>
+      <StyledSVG
+        ref={svgRef}
+        style={{ width: "100%", height: "100%", display: "block" }}
+        id="track-detail-lineage-view-svg"
+      >
+        <defs></defs>
+        <g ref={groupRef}></g>
+      </StyledSVG>
+    </div>
   );
 }
