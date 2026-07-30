@@ -51,6 +51,8 @@ const TREE_LEAF_HEIGHT_PX = 30;
 const NODE_HEIGHT_PX = 20;
 const TREE_LAYER_DEPTH_PX = 5;
 
+const TIME_INDICATOR_HEIGHT = 4;
+
 const COLLAPSED_NODE_WIDTH_PX = 20;
 const COLLAPSED_NODE_FILL_COLOR = "#e7e7e7";
 const COLLAPSED_NODE_FILL_HOVER_COLOR = "#8f8f8f";
@@ -194,7 +196,18 @@ function renderView(
 
   // Draw rectangles for each node
   node.append("rect").attr("class", SvgClass.MAIN_NODE);
-  node.append("line").attr("class", SvgClass.TIME_INDICATOR);
+  // Draws a small triangle indicator for the current time
+  node
+    .append("path")
+    .attr("class", SvgClass.TIME_INDICATOR)
+    .attr(
+      "d",
+      `M 0,0 
+      L ${TIME_INDICATOR_HEIGHT}, -${TIME_INDICATOR_HEIGHT} 
+      L -${TIME_INDICATOR_HEIGHT}, -${TIME_INDICATOR_HEIGHT} 
+      L 0,0 
+      Z`
+    );
 
   // Add expand/collapse button for each node
   const expandButtonNodes = node
@@ -345,7 +358,8 @@ function updateNodeStyles(
   const getTimeIndicatorTransform = (d: d3.HierarchyPointNode<TrackInfo>): string => {
     const progress = time - d.data.startTime;
     const x = progress * TREE_LAYER_DEPTH_PX;
-    return `translate(${x},0)`;
+    const y = -TREE_LEAF_HEIGHT_PX / 2 + 2;
+    return `translate(${x},${y})`;
   };
   const isInTimeRange = (d: d3.HierarchyPointNode<TrackInfo>): boolean => {
     return time >= d.data.startTime && time < d.data.startTime + d.data.length;
@@ -371,15 +385,13 @@ function updateNodeStyles(
 
   // Indicator for current time
   node
-    .select<SVGLineElement>(`line.${SvgClass.TIME_INDICATOR}`)
+    .select<SVGPathElement>(`path.${SvgClass.TIME_INDICATOR}`)
     .attr("transform", getTimeIndicatorTransform)
     .attr("opacity", (d) => (isInTimeRange(d) && isExpanded(d) ? 1 : 0))
-    .attr("x1", 0)
-    .attr("y1", -NODE_HEIGHT_PX / 2)
-    .attr("x2", 0)
-    .attr("y2", NODE_HEIGHT_PX / 2)
-    .attr("stroke", (d) => trackColors.get(d.data.id)?.getStyle() ?? DEFAULT_NODE_EDGE_COLOR)
-    .attr("stroke-width", TREE_LAYER_DEPTH_PX)
+    .attr("stroke", DEFAULT_NODE_EDGE_COLOR)
+    .attr("fill", DEFAULT_NODE_EDGE_COLOR)
+    .attr("stroke-width", 1)
+    .attr("stroke-linejoin", "round")
     .attr("pointer-events", "none");
 
   // Track label
