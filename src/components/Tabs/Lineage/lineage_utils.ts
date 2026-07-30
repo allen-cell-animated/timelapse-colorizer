@@ -96,10 +96,13 @@ export function getDefaultZoomTransform(
   paddingPx: [number, number] = [10, 10]
 ): d3.ZoomTransform {
   const bbox = groupNode.getBBox();
-  const clientwidth = svgNode.clientWidth;
+  const clientWidth = svgNode.clientWidth;
   const clientHeight = svgNode.clientHeight;
-  const scale = Math.min((clientwidth - paddingPx[0]) / bbox.width, (clientHeight - paddingPx[1]) / bbox.height);
-  const panX = (clientwidth - bbox.width * scale) / 2 - bbox.x * scale;
+  if (clientWidth === 0 || clientHeight === 0 || bbox.width === 0 || bbox.height === 0) {
+    return d3.zoomIdentity;
+  }
+  const scale = Math.min((clientWidth - paddingPx[0]) / bbox.width, (clientHeight - paddingPx[1]) / bbox.height);
+  const panX = (clientWidth - bbox.width * scale) / 2 - bbox.x * scale;
   const panY = (clientHeight - bbox.height * scale) / 2 - bbox.y * scale;
   const initialTransform = d3.zoomIdentity.translate(panX, panY).scale(scale);
   return initialTransform;
@@ -116,6 +119,10 @@ export function getTreeHierarchy(
   data: LineageData,
   relationships: LineageDataRelationships
 ): d3.HierarchyNode<TrackInfo> | undefined {
+  if (data.trackIdToTrackInfo.size === 0) {
+    return undefined;
+  }
+
   const { idToChildrenRenderable, idToParents } = relationships;
   const trackIdToTrackInfo = new Map(data.trackIdToTrackInfo);
   const idToChildren = new Map(idToChildrenRenderable);
