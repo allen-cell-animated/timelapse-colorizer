@@ -489,6 +489,9 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
 
   const trackIds = useMemo(() => new Set(props.selectedTracks.keys()), [props.selectedTracks]);
 
+  // Flag that triggers a zoom reset once the tree completes an initial render.
+  const [hasRenderedTree, setHasRenderedTree] = useState(false);
+
   const [useFeatureColors, setUseFeatureColors] = useState(true);
 
   const onClickRef = useRef(props.onClick);
@@ -591,6 +594,7 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
       if (node) {
         cleanupPointerHandlers = setupPointerHandlers(node, onClickRef, onToggleExpandedRef, onHoverRef);
       }
+      setHasRenderedTree(true);
     }
 
     // Clear on unmount
@@ -626,10 +630,10 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
     }
   }, [props.time, props.data.trackIdToTrackInfo]);
 
-  // Fit on data change
+  // Fit on data change, or after SVG rendering is complete
   useEffect(() => {
     resetZoom();
-  }, [props.data, props.relationships, props.dataset]);
+  }, [props.data, props.relationships, props.dataset, hasRenderedTree]);
 
   return (
     <div style={{ width: "100%", height: "100%", overflow: "hidden", position: "relative" }}>
