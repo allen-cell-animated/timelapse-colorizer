@@ -147,18 +147,46 @@ export function getDefaultZoomTransform(
   return initialTransform;
 }
 
-export function getCenteredZoomTransform(svgNode: SVGSVGElement, node: SVGGElement): d3.ZoomTransform | null {
+function getCenteredZoomTransform(svgNode: SVGSVGElement, nodes: SVGGElement[]): d3.ZoomTransform | null {
   const currentTransform = d3.zoomTransform(svgNode);
-  const nodeRect = node.getBoundingClientRect();
   const svgRect = svgNode.getBoundingClientRect();
 
-  const nodeCenterX = (nodeRect.left + nodeRect.right) / 2 - svgRect.left;
-  const nodeCenterY = (nodeRect.top + nodeRect.bottom) / 2 - svgRect.top;
+  let left = Infinity;
+  let right = -Infinity;
+  let top = Infinity;
+  let bottom = -Infinity;
+
+  for (const node of nodes) {
+    const nodeRect = node.getBoundingClientRect();
+    left = Math.min(left, nodeRect.left);
+    right = Math.max(right, nodeRect.right);
+    top = Math.min(top, nodeRect.top);
+    bottom = Math.max(bottom, nodeRect.bottom);
+  }
+
+  const width = right - left;
+  const height = bottom - top;
+  if (width === 0 || height === 0) {
+    return null;
+  }
+  let scaleFactor = 1;
+  if (width > svgRect.width || height > svgRect.height) {
+    // If group of nodes is larger than viewport, scale down to fit within the viewport
+    scaleFactor = Math.min(svgRect.width / width, svgRect.height / height);
+  }
+
+  // Screen coordinates
+  const nodeCenterX = (left + right) / 2 - svgRect.left;
+  const nodeCenterY = (top + bottom) / 2 - svgRect.top;
+  // Local coordinates (relative to parent group)
+  const localX = (nodeCenterX - currentTransform.x) / currentTransform.k;
+  const localY = (nodeCenterY - currentTransform.y) / currentTransform.k;
+  const newScale = currentTransform.k * scaleFactor;
 
   return new d3.ZoomTransform(
-    currentTransform.k,
-    currentTransform.x + (svgNode.clientWidth / 2 - nodeCenterX),
-    currentTransform.y + (svgNode.clientHeight / 2 - nodeCenterY)
+    newScale,
+    svgNode.clientWidth / 2 - newScale * localX,
+    svgNode.clientHeight / 2 - newScale * localY
   );
 }
 
@@ -177,7 +205,7 @@ export function isNodeVisible(node: SVGGElement, svgNode: SVGSVGElement): boolea
 
 /**
  * Checks if the specified track IDs are visible in the viewport. If any track
- * is not visible, animates the zoom to center on the first non-visible track.
+ * is not visible, animates the zoom to the center of all the specified tracks.
  *
  * @param svgNode The SVG element containing the lineage graph.
  * @param nodeSelection The D3 selection of nodes in the lineage graph.
@@ -194,23 +222,14 @@ export function zoomToTracksIfNotVisible(
     return;
   }
   const svg = d3.select(svgNode);
-  // TODO: Frame all of the selected tracks instead of the first one that is not
-  // visible.
-  for (const trackId of trackIds) {
-    const node = nodeSelection.filter((d) => d.data.id === trackId);
-    if (!node) {
-      continue;
-    }
-    const nodeElement = node.node() as SVGGElement;
-    const svgElement = svg.node() as SVGSVGElement;
-    if (isNodeVisible(nodeElement, svgElement)) {
-      // Do not zoom if the node is already visible in the viewport.
-      continue;
-    }
-    const newTransform = getCenteredZoomTransform(svgElement, nodeElement);
-    svg.transition().duration(750).call(zoom.transform, newTransform);
+  const nodes = nodeSelection.filter((d) => trackIds.has(d.data.id));
+  const nodeElements = nodes.nodes() as SVGGElement[];
+  const needsZoom = nodeElements.some((nodeElement) => !isNodeVisible(nodeElement, svgNode));
+  if (!needsZoom) {
     return;
   }
+  const newTransform = getCenteredZoomTransform(svgNode, nodeElements);
+  svg.transition().duration(750).call(zoom.transform, newTransform);
 }
 
 /**

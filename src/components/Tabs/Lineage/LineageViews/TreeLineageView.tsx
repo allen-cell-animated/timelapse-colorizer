@@ -1,9 +1,9 @@
 import * as d3 from "d3";
-import React, { type ReactElement, useEffect, useRef } from "react";
+import React, { type ReactElement, useEffect, useMemo, useRef, useState } from "react";
 import type { Color } from "three";
 
 import { DUMMY_ROOT_NODE_ID } from "src/components/Tabs/Lineage/constants";
-import { getDefaultZoomTransform } from "src/components/Tabs/Lineage/lineage_utils";
+import { getDefaultZoomTransform, zoomToTracksIfNotVisible } from "src/components/Tabs/Lineage/lineage_utils";
 import { alignMergeNodes } from "src/components/Tabs/Lineage/tree_utils";
 import type {
   LineageData,
@@ -174,6 +174,25 @@ export default function TreeLineageView(props: TreeLineageViewProps): ReactEleme
   const onHoverRef = useRef(props.onHover);
   onHoverRef.current = props.onHover;
 
+  const [needsZoomCheck, setNeedsZoomCheck] = useState(false);
+
+  // Apply newly selected tracks to expanded state-- updates only on new tracks
+  // to avoid expanding selected tracks that were previously collapsed.
+  const prevTracks = useRef<Set<number>>(new Set());
+  useMemo(() => {
+    prevTracks.current = new Set();
+  }, [props.data, props.relationships]);
+
+  const newTracks = useMemo(() => {
+    const newTracks = new Set<number>();
+    for (const trackId of props.selectedTracks.keys()) {
+      if (!prevTracks.current.has(trackId)) {
+        newTracks.add(trackId);
+      }
+    }
+    return newTracks;
+  }, [props.selectedTracks]);
+
   //// SVG Elements ////
 
   const zoom = useConstructor(() =>
@@ -236,6 +255,20 @@ export default function TreeLineageView(props: TreeLineageViewProps): ReactEleme
   useEffect(() => {
     resetZoom();
   }, [props.data]);
+
+  // Update zoom if new tracks are selected and not visible. This happens in a
+  // second effect to ensure that the nodes are rendered before the zoom check
+  // is performed.
+  useEffect(() => {
+    setNeedsZoomCheck(true);
+    prevTracks.current = new Set(props.selectedTracks);
+  }, [props.selectedTracks]);
+  useEffect(() => {
+    if (needsZoomCheck) {
+      zoomToTracksIfNotVisible(svgRef.current, nodeRef.current, newTracks, zoom.current);
+      setNeedsZoomCheck(false);
+    }
+  }, [needsZoomCheck, newTracks]);
 
   return (
     <svg ref={svgRef} style={{ width: "100%", height: "100%", display: "block" }} id="tree-lineage-view-svg">
