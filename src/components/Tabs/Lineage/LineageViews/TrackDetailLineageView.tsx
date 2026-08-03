@@ -11,12 +11,11 @@ import type { ColorizeStateParams } from "src/colorizer/viewport/types";
 import IconButton from "src/components/Buttons/IconButton";
 import { DUMMY_ROOT_NODE_ID } from "src/components/Tabs/Lineage/constants";
 import {
-  getCenteredZoomTransform,
   getDefaultZoomTransform,
   getLineageRelationships,
   getLineageSubset,
   getTreeHierarchy,
-  isNodeVisible,
+  zoomToTracksIfNotVisible,
 } from "src/components/Tabs/Lineage/lineage_utils";
 import {
   alignMergeNodes,
@@ -25,7 +24,12 @@ import {
   getInitialExpandedState,
   type TreeExpandedState,
 } from "src/components/Tabs/Lineage/tree_utils";
-import type { LineageData, LineageDataRelationships, TrackInfo } from "src/components/Tabs/Lineage/types";
+import type {
+  LineageData,
+  LineageDataRelationships,
+  LineageNodeSelection,
+  TrackInfo,
+} from "src/components/Tabs/Lineage/types";
 import { useConstructor } from "src/hooks";
 import { FlexRowAlignCenter } from "src/styles/utils";
 
@@ -116,8 +120,6 @@ const StyledSVG = styled.svg`
   }
 `;
 
-type NodeSelection = d3.Selection<SVGGElement | d3.BaseType, d3.HierarchyPointNode<TrackInfo>, SVGGElement, TrackInfo>;
-
 /**
  * Renders a subset of the lineage view with the selected tracks visible and
  * expanded, and other related tracks collapsed.
@@ -131,7 +133,7 @@ function renderView(
   fullData: LineageData,
   fullRelationships: LineageDataRelationships,
   selectedTracks: Set<number>
-): NodeSelection | undefined {
+): LineageNodeSelection | undefined {
   const selectedTrackIds = new Set(selectedTracks);
 
   const data = getLineageSubset(fullData, fullRelationships, selectedTrackIds);
@@ -238,7 +240,7 @@ function renderView(
 //// Pointer Handlers ////
 
 function setupPointerHandlers(
-  node: NodeSelection,
+  node: LineageNodeSelection,
   onToggleSelection?: React.RefObject<undefined | ((info: TrackInfo, time: number | null) => void)>,
   onToggleExpanded?: React.RefObject<undefined | ((info: TrackInfo) => void)>,
   onHover?: React.RefObject<undefined | ((info: TrackInfo | null, time: number) => void)>
@@ -368,7 +370,7 @@ function updateGradients(
  * status + time. Also positions time indicator lines based on the current time.
  */
 function updateNodeStyles(
-  node: NodeSelection,
+  node: LineageNodeSelection,
   expandedTrackIds: Set<number>,
   trackColors: Map<number, Color>,
   time: number,
@@ -490,7 +492,7 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
   const svgRef = useRef<SVGSVGElement>(null);
   const groupRef = useRef<SVGGElement>(null);
   const nodeGroupRef = useRef<SVGGElement>(null);
-  const nodeSelectionRef = useRef<NodeSelection | undefined>(undefined);
+  const nodeSelectionRef = useRef<LineageNodeSelection | undefined>(undefined);
 
   const trackIds = useMemo(() => new Set(props.selectedTracks.keys()), [props.selectedTracks]);
 
@@ -602,28 +604,6 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
     }
   };
 
-  const zoomToLastSelectedTrack = (): void => {
-    if (!svgRef.current || !nodeSelectionRef.current) {
-      return;
-    }
-    const svg = d3.select(svgRef.current);
-    for (const trackId of newTracks) {
-      const node = nodeSelectionRef.current.filter((d) => d.data.id === trackId);
-      if (!node) {
-        continue;
-      }
-      const nodeElement = node.node() as SVGGElement;
-      const svgElement = svg.node() as SVGSVGElement;
-      if (isNodeVisible(nodeElement, svgElement)) {
-        // Do not zoom if the node is already visible in the viewport.
-        continue;
-      }
-      const newTransform = getCenteredZoomTransform(svgElement, nodeElement);
-      svg.transition().duration(750).call(zoom.current.transform, newTransform);
-      return;
-    }
-  };
-
   //// Viewport ////
 
   // Render view and set up pointer handlers
@@ -685,7 +665,7 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
 
   useEffect(() => {
     if (needsZoomCheck) {
-      zoomToLastSelectedTrack();
+      zoomToTracksIfNotVisible(svgRef.current, nodeSelectionRef.current, newTracks, zoom.current);
       setNeedsZoomCheck(false);
     }
   }, [newTracks, needsZoomCheck]);

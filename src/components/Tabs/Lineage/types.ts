@@ -32,3 +32,10 @@ export type LineageDataRelationships = {
    */
   idToCoparents: Map<number, Set<number>>;
 };
+
+export type LineageNodeSelection = d3.Selection<
+  SVGGElement | d3.BaseType,
+  d3.HierarchyPointNode<TrackInfo>,
+  SVGGElement,
+  TrackInfo
+>;

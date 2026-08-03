@@ -3,7 +3,7 @@ import * as d3 from "d3";
 import type { Dataset } from "src/colorizer";
 
 import { DUMMY_ROOT_NODE_ID } from "./constants";
-import type { LineageData, LineageDataRelationships, TrackInfo } from "./types";
+import type { LineageData, LineageDataRelationships, LineageNodeSelection, TrackInfo } from "./types";
 
 // TODO: Move to colorizer/utils/data_utils?
 
@@ -173,6 +173,44 @@ export function isNodeVisible(node: SVGGElement, svgNode: SVGSVGElement): boolea
     nodeRect.bottom >= svgRect.top &&
     nodeRect.top <= svgRect.bottom
   );
+}
+
+/**
+ * Checks if the specified track IDs are visible in the viewport. If any track
+ * is not visible, animates the zoom to center on the first non-visible track.
+ *
+ * @param svgNode The SVG element containing the lineage graph.
+ * @param nodeSelection The D3 selection of nodes in the lineage graph.
+ * @param trackIds The set of track IDs to zoom to if not visible.
+ * @param zoom The D3 zoom behavior.
+ */
+export function zoomToTracksIfNotVisible(
+  svgNode: SVGSVGElement | null,
+  nodeSelection: LineageNodeSelection | undefined,
+  trackIds: Set<number>,
+  zoom: d3.ZoomBehavior<SVGSVGElement, unknown>
+): void {
+  if (!svgNode || !nodeSelection) {
+    return;
+  }
+  const svg = d3.select(svgNode);
+  // TODO: Frame all of the selected tracks instead of the first one that is not
+  // visible.
+  for (const trackId of trackIds) {
+    const node = nodeSelection.filter((d) => d.data.id === trackId);
+    if (!node) {
+      continue;
+    }
+    const nodeElement = node.node() as SVGGElement;
+    const svgElement = svg.node() as SVGSVGElement;
+    if (isNodeVisible(nodeElement, svgElement)) {
+      // Do not zoom if the node is already visible in the viewport.
+      continue;
+    }
+    const newTransform = getCenteredZoomTransform(svgElement, nodeElement);
+    svg.transition().duration(750).call(zoom.transform, newTransform);
+    return;
+  }
 }
 
 /**

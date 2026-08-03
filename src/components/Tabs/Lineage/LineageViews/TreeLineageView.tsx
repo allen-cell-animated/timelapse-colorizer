@@ -5,7 +5,12 @@ import type { Color } from "three";
 import { DUMMY_ROOT_NODE_ID } from "src/components/Tabs/Lineage/constants";
 import { getDefaultZoomTransform } from "src/components/Tabs/Lineage/lineage_utils";
 import { alignMergeNodes } from "src/components/Tabs/Lineage/tree_utils";
-import type { LineageData, LineageDataRelationships, TrackInfo } from "src/components/Tabs/Lineage/types";
+import type {
+  LineageData,
+  LineageDataRelationships,
+  LineageNodeSelection,
+  TrackInfo,
+} from "src/components/Tabs/Lineage/types";
 import { useConstructor } from "src/hooks";
 
 const TREE_LEAF_HEIGHT_PX = 30;
@@ -30,8 +35,6 @@ export type TreeLineageViewProps = {
   onHover?: (trackId: number | null) => void;
 };
 
-type NodeSelection = d3.Selection<SVGGElement | d3.BaseType, d3.HierarchyPointNode<TrackInfo>, SVGGElement, TrackInfo>;
-
 function renderTree(
   g: d3.Selection<SVGGElement, TrackInfo, null, undefined>,
   data: LineageData,
@@ -39,7 +42,7 @@ function renderTree(
   relationships: LineageDataRelationships,
   onClickTrack?: (trackId: number) => void,
   onHoverTrack?: (trackId: number | null) => void
-): NodeSelection | undefined {
+): LineageNodeSelection | undefined {
   const { idToParents, multiparentEdges: multiparentEdges } = relationships;
   const mergeNodes = new Set([...idToParents.entries()].filter(([, parents]) => parents.length > 1).map(([id]) => id));
 
@@ -134,7 +137,7 @@ function renderTree(
 }
 
 function updateNodeStyles(
-  node: NodeSelection,
+  node: LineageNodeSelection,
   radiusScale: d3.ScalePower<number, number>,
   colorScale: d3.ScaleSequential<string>,
   trackColors: Map<number, Color>
@@ -164,7 +167,7 @@ function updateNodeStyles(
 export default function TreeLineageView(props: TreeLineageViewProps): ReactElement {
   const svgRef = useRef<SVGSVGElement>(null);
   const groupRef = useRef<SVGGElement>(null);
-  const nodeRef = useRef<NodeSelection | undefined>(undefined);
+  const nodeRef = useRef<LineageNodeSelection | undefined>(undefined);
 
   const onClickRef = useRef(props.onClick);
   onClickRef.current = props.onClick;
