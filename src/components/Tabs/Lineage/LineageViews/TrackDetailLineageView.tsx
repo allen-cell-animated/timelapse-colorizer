@@ -11,11 +11,11 @@ import type { ColorizeStateParams } from "src/colorizer/viewport/types";
 import IconButton from "src/components/Buttons/IconButton";
 import { DUMMY_ROOT_NODE_ID } from "src/components/Tabs/Lineage/constants";
 import {
+  frameTracksInView,
   getDefaultZoomTransform,
   getLineageRelationships,
   getLineageSubset,
   getTreeHierarchy,
-  zoomToTracksIfNotVisible,
 } from "src/components/Tabs/Lineage/lineage_utils";
 import {
   alignMergeNodes,
@@ -666,7 +666,7 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
 
   useEffect(() => {
     if (needsZoomCheck) {
-      zoomToTracksIfNotVisible(svgRef.current, nodeSelectionRef.current, newTracks, zoom.current);
+      frameTracksInView(svgRef.current, nodeSelectionRef.current, newTracks, zoom.current);
       setNeedsZoomCheck(false);
     }
   }, [newTracks, needsZoomCheck]);

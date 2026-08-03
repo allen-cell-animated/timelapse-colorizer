@@ -1,3 +1,5 @@
+import * as d3 from "d3";
+
 export type TrackInfo = {
   id: number;
   length: number;

@@ -3,7 +3,7 @@ import React, { type ReactElement, useEffect, useMemo, useRef, useState } from "
 import type { Color } from "three";
 
 import { DUMMY_ROOT_NODE_ID } from "src/components/Tabs/Lineage/constants";
-import { getDefaultZoomTransform, zoomToTracksIfNotVisible } from "src/components/Tabs/Lineage/lineage_utils";
+import { frameTracksInView, getDefaultZoomTransform } from "src/components/Tabs/Lineage/lineage_utils";
 import { alignMergeNodes } from "src/components/Tabs/Lineage/tree_utils";
 import type {
   LineageData,
@@ -266,7 +266,7 @@ export default function TreeLineageView(props: TreeLineageViewProps): ReactEleme
   }, [props.selectedTracks]);
   useEffect(() => {
     if (needsZoomCheck) {
-      zoomToTracksIfNotVisible(svgRef.current, nodeRef.current, newTracks, zoom.current);
+      frameTracksInView(svgRef.current, nodeRef.current, newTracks, zoom.current);
       setNeedsZoomCheck(false);
     }
   }, [needsZoomCheck, newTracks]);

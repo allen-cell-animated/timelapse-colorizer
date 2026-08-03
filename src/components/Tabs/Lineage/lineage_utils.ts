@@ -147,6 +147,11 @@ export function getDefaultZoomTransform(
   return initialTransform;
 }
 
+/**
+ * Returns a new SVG zoom transform that centers the specified nodes within the
+ * viewport of the svgNode. If the nodes are larger than the viewport, the scale
+ * of the transform will be adjusted to fit the nodes within the viewport.
+ */
 function getCenteredZoomTransform(svgNode: SVGSVGElement, nodes: SVGGElement[]): d3.ZoomTransform | null {
   const currentTransform = d3.zoomTransform(svgNode);
   const svgRect = svgNode.getBoundingClientRect();
@@ -190,8 +195,8 @@ function getCenteredZoomTransform(svgNode: SVGSVGElement, nodes: SVGGElement[]):
   );
 }
 
+/** Returns true if the node is visible in the SVG viewport. */
 export function isNodeVisible(node: SVGGElement, svgNode: SVGSVGElement): boolean {
-  // TODO: Use getBoundingClientRect?
   const svgRect = svgNode.getBoundingClientRect();
   const nodeRect = node.getBoundingClientRect();
   const padding = 10;
@@ -205,15 +210,18 @@ export function isNodeVisible(node: SVGGElement, svgNode: SVGSVGElement): boolea
 }
 
 /**
- * Checks if the specified track IDs are visible in the viewport. If any track
- * is not visible, animates the zoom to the center of all the specified tracks.
+ * Checks if the nodes of the specified track IDs are visible in the SVG
+ * viewport. If any track is not visible, frames the tracks in view by zooming
+ * and panning the SVG viewport, centered on the nodes.
  *
- * @param svgNode The SVG element containing the lineage graph.
- * @param nodeSelection The D3 selection of nodes in the lineage graph.
+ * @param svgNode The SVG viewport element.
+ * @param nodeSelection The D3 selection of nodes in the lineage graph, used to
+ * look up nodes by track ID.
  * @param trackIds The set of track IDs to zoom to if not visible.
- * @param zoom The D3 zoom behavior.
+ * @param zoom The D3 zoom behavior. Will be animated to the new transform if
+ * any of the specified tracks are not visible.
  */
-export function zoomToTracksIfNotVisible(
+export function frameTracksInView(
   svgNode: SVGSVGElement | null,
   nodeSelection: LineageNodeSelection | undefined,
   trackIds: Set<number>,
