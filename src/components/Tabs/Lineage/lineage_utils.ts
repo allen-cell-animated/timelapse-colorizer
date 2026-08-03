@@ -194,12 +194,13 @@ export function isNodeVisible(node: SVGGElement, svgNode: SVGSVGElement): boolea
   // TODO: Use getBoundingClientRect?
   const svgRect = svgNode.getBoundingClientRect();
   const nodeRect = node.getBoundingClientRect();
+  const padding = 10;
 
   return (
-    nodeRect.right >= svgRect.left &&
-    nodeRect.left <= svgRect.right &&
-    nodeRect.bottom >= svgRect.top &&
-    nodeRect.top <= svgRect.bottom
+    nodeRect.right >= svgRect.left + padding &&
+    nodeRect.left <= svgRect.right - padding &&
+    nodeRect.bottom >= svgRect.top + padding &&
+    nodeRect.top <= svgRect.bottom - padding
   );
 }
 

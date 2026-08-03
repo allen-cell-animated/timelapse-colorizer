@@ -198,6 +198,7 @@ export default function TreeLineageView(props: TreeLineageViewProps): ReactEleme
   const zoom = useConstructor(() =>
     d3
       .zoom<SVGSVGElement, unknown>()
+      .interpolate(d3.interpolate)
       .scaleExtent([0.1, 10])
       .on("zoom", (event) => {
         d3.select(groupRef.current).attr("transform", event.transform);

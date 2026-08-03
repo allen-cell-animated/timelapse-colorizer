@@ -559,6 +559,7 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
     d3
       .zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.1, 10])
+      .interpolate(d3.interpolate)
       .on("zoom", (event) => {
         d3.select(groupRef.current).attr("transform", event.transform);
       })
