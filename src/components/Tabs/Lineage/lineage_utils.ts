@@ -1,6 +1,7 @@
 import * as d3 from "d3";
+import { useMemo, useRef } from "react";
 
-import type { Dataset } from "src/colorizer";
+import type { Dataset, Track } from "src/colorizer";
 
 import { DUMMY_ROOT_NODE_ID } from "./constants";
 import type { LineageData, LineageDataRelationships, LineageNodeSelection, TrackInfo } from "./types";
@@ -322,4 +323,37 @@ export function getLineageSubset(
     edges: data.edges.filter(([source, target]) => relatedIds.has(source) && relatedIds.has(target)),
   };
   return filteredData;
+}
+
+/**
+ * Hook that calculates the set of new track IDs. Updates to the list of
+ * previously seen tracks are triggered via calling the returned function, to
+ * prevent repeated updates to the set of new tracks during re-renders.
+ *
+ * @returns An object containing:
+ * - `newTracks`: a set of track IDs that are new.
+ * - `updateTracks`: function used to update the set of previously seen tracks
+ *   *after* track updates have been rendered and/or animated.
+ */
+export function useNewTracks(tracks: Map<number, Track>): {
+  newTracks: Set<number>;
+  updateTracks: (tracks: Map<number, Track>) => void;
+} {
+  const prevTracks = useRef<Set<number>>(new Set());
+
+  const newTracks = useMemo(() => {
+    const newTracks = new Set<number>();
+    for (const trackId of tracks.keys()) {
+      if (!prevTracks.current.has(trackId)) {
+        newTracks.add(trackId);
+      }
+    }
+    return newTracks;
+  }, [tracks]);
+
+  const updateTracks = (newTracks: Map<number, Track>): void => {
+    prevTracks.current = new Set(newTracks.keys());
+  };
+
+  return { newTracks, updateTracks };
 }

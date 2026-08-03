@@ -16,6 +16,7 @@ import {
   getLineageRelationships,
   getLineageSubset,
   getTreeHierarchy,
+  useNewTracks,
 } from "src/components/Tabs/Lineage/lineage_utils";
 import {
   alignMergeNodes,
@@ -514,26 +515,13 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
 
   // Apply newly selected tracks to expanded state-- updates only on new tracks
   // to avoid expanding selected tracks that were previously collapsed.
-  const prevTracks = useRef<Set<number>>(new Set());
-  useMemo(() => {
-    prevTracks.current = new Set();
-  }, [props.dataset, props.data, props.relationships]);
-
-  const newTracks = useMemo(() => {
-    const newTracks = new Set<number>();
-    for (const trackId of props.selectedTracks.keys()) {
-      if (!prevTracks.current.has(trackId)) {
-        newTracks.add(trackId);
-      }
-    }
-    return newTracks;
-  }, [props.selectedTracks]);
+  const { newTracks, updateTracks } = useNewTracks(props.selectedTracks);
 
   useEffect(() => {
     for (const trackId of newTracks) {
       setExpandedState((prev) => expandTrack(trackId, prev, props.data, props.relationships));
     }
-    prevTracks.current = new Set(props.selectedTracks.keys());
+    updateTracks(props.selectedTracks);
   }, [newTracks, props.data, props.relationships]);
 
   // Reset expanded state when the data or relationships change (e.g. when the

@@ -2,8 +2,9 @@ import * as d3 from "d3";
 import React, { type ReactElement, useEffect, useMemo, useRef, useState } from "react";
 import type { Color } from "three";
 
+import type { Track } from "src/colorizer";
 import { DUMMY_ROOT_NODE_ID } from "src/components/Tabs/Lineage/constants";
-import { frameTracksInView, getDefaultZoomTransform } from "src/components/Tabs/Lineage/lineage_utils";
+import { frameTracksInView, getDefaultZoomTransform, useNewTracks } from "src/components/Tabs/Lineage/lineage_utils";
 import { alignMergeNodes } from "src/components/Tabs/Lineage/tree_utils";
 import type {
   LineageData,
@@ -27,7 +28,7 @@ export type TreeLineageViewProps = {
   data: LineageData;
   relationships: LineageDataRelationships;
   hierarchy: d3.HierarchyNode<TrackInfo> | undefined;
-  selectedTracks: Set<number>;
+  selectedTracks: Map<number, Track>;
   trackColors: Map<number, Color>;
   colorScale: d3.ScaleSequential<string>;
   radiusScale: d3.ScalePower<number, number>;
@@ -183,15 +184,7 @@ export default function TreeLineageView(props: TreeLineageViewProps): ReactEleme
     prevTracks.current = new Set();
   }, [props.data, props.relationships]);
 
-  const newTracks = useMemo(() => {
-    const newTracks = new Set<number>();
-    for (const trackId of props.selectedTracks.keys()) {
-      if (!prevTracks.current.has(trackId)) {
-        newTracks.add(trackId);
-      }
-    }
-    return newTracks;
-  }, [props.selectedTracks]);
+  const { newTracks, updateTracks } = useNewTracks(props.selectedTracks);
 
   //// SVG Elements ////
 
@@ -262,7 +255,7 @@ export default function TreeLineageView(props: TreeLineageViewProps): ReactEleme
   // is performed.
   useEffect(() => {
     setNeedsZoomCheck(true);
-    prevTracks.current = new Set(props.selectedTracks);
+    updateTracks(props.selectedTracks);
   }, [props.selectedTracks]);
   useEffect(() => {
     if (needsZoomCheck) {
