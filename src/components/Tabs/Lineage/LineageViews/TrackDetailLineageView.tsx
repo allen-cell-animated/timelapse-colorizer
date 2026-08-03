@@ -1,4 +1,4 @@
-import { Checkbox } from "antd";
+import { Button, Checkbox } from "antd";
 import * as d3 from "d3";
 import React, { type MouseEvent, type ReactElement, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
@@ -9,10 +9,12 @@ import { computeColorFromId } from "src/colorizer/utils/data_utils";
 import type { ColorizeStateParams } from "src/colorizer/viewport/types";
 import { DUMMY_ROOT_NODE_ID } from "src/components/Tabs/Lineage/constants";
 import {
+  getCenteredZoomTransform,
   getDefaultZoomTransform,
   getLineageRelationships,
   getLineageSubset,
   getTreeHierarchy,
+  isNodeVisible,
 } from "src/components/Tabs/Lineage/lineage_utils";
 import {
   alignMergeNodes,
@@ -388,7 +390,7 @@ function updateNodeStyles(
   // Main node rectangle
   node
     .select<SVGRectElement>(`rect.${SvgClass.MAIN_NODE}`)
-    .attr("transform", `translate(${-TREE_LAYER_DEPTH_PX / 2},${-NODE_HEIGHT_PX / 2})`)
+    .attr("transform", `translate(${TREE_LAYER_DEPTH_PX / 2},${-NODE_HEIGHT_PX / 2})`)
     .attr("width", (d) => d.data.length * TREE_LAYER_DEPTH_PX)
     .attr("height", NODE_HEIGHT_PX)
     .attr("rx", 4)
@@ -491,6 +493,7 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
 
   // Flag that triggers a zoom reset once the tree completes an initial render.
   const [hasRenderedTree, setHasRenderedTree] = useState(false);
+  const [needsZoomCheck, setNeedsZoomCheck] = useState(false);
 
   const [useFeatureColors, setUseFeatureColors] = useState(true);
 
@@ -580,8 +583,6 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
     }
   };
 
-  //// Helper methods ////
-
   //// Viewport ////
 
   // Render view and set up pointer handlers
@@ -595,6 +596,7 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
         cleanupPointerHandlers = setupPointerHandlers(node, onClickRef, onToggleExpandedRef, onHoverRef);
       }
       setHasRenderedTree(true);
+      setNeedsZoomCheck(true);
     }
 
     // Clear on unmount
@@ -635,12 +637,42 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
     resetZoom();
   }, [props.data, props.relationships, props.dataset, hasRenderedTree]);
 
+  //// Helper methods ////
+
+  const zoomToLastSelectedTrack = (): void => {
+    if (!svgRef.current || !nodeSelectionRef.current) {
+      return;
+    }
+    const svg = d3.select(svgRef.current);
+    if (!svg) {
+      return;
+    }
+    for (const trackId of newTracks) {
+      const node = nodeSelectionRef.current.filter((d) => d.data.id === trackId);
+      if (!node) {
+        continue;
+      }
+      console.log(
+        `Checking visibility for track ${trackId}:`,
+        isNodeVisible(node.node() as SVGGElement, svgRef.current!)
+      );
+      const nodeElement = node.node() as SVGGElement;
+      if (!isNodeVisible(nodeElement, svgRef.current)) {
+        // Get scale?
+        const currentScale = d3.zoomTransform(svg.node() as SVGSVGElement).k;
+        const newTransform = getCenteredZoomTransform(nodeElement, svg.node() as SVGSVGElement, currentScale);
+        svg.transition().duration(500).call(zoom.current.transform, newTransform);
+      }
+    }
+  };
+
   return (
     <div style={{ width: "100%", height: "100%", overflow: "hidden", position: "relative" }}>
       <div style={{ position: "absolute", top: 4, left: 6, zIndex: 10, padding: "4px" }}>
         <Checkbox checked={useFeatureColors} onChange={(e) => setUseFeatureColors(e.target.checked)}>
           Use feature colors
         </Checkbox>
+        <Button onClick={zoomToLastSelectedTrack}>Zoom to last selected track</Button>
       </div>
       <StyledSVG
         ref={svgRef}

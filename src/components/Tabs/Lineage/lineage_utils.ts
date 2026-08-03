@@ -147,6 +147,33 @@ export function getDefaultZoomTransform(
   return initialTransform;
 }
 
+export function getCenteredZoomTransform(
+  node: SVGGElement,
+  svgNode: SVGSVGElement,
+  currentScale: number
+): d3.ZoomTransform | null {
+  const bbox = node.getBBox();
+
+  return new d3.ZoomTransform(
+    currentScale, // k
+    -bbox.x * currentScale + svgNode.clientWidth / 2, // x
+    -bbox.y * currentScale + svgNode.clientHeight / 2 // y
+  );
+}
+
+export function isNodeVisible(node: SVGGElement, svgNode: SVGSVGElement): boolean {
+  // TODO: Use getBoundingClientRect?
+  const svgRect = svgNode.getBoundingClientRect();
+  const nodeRect = node.getBoundingClientRect();
+
+  return (
+    nodeRect.right >= svgRect.left &&
+    nodeRect.left <= svgRect.right &&
+    nodeRect.bottom >= svgRect.top &&
+    nodeRect.top <= svgRect.bottom
+  );
+}
+
 /**
  * Returns a d3 hierarchy of the lineage data. If there are multiple root nodes
  * (e.g. nodes with no parents), a dummy root node with a track ID of
