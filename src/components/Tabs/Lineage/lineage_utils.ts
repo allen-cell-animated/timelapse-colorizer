@@ -147,7 +147,7 @@ export function getDefaultZoomTransform(
   return initialTransform;
 }
 
-export function getCenteredZoomTransform(node: SVGGElement, svgNode: SVGSVGElement): d3.ZoomTransform | null {
+export function getCenteredZoomTransform(svgNode: SVGSVGElement, node: SVGGElement): d3.ZoomTransform | null {
   const currentTransform = d3.zoomTransform(svgNode);
   const nodeRect = node.getBoundingClientRect();
   const svgRect = svgNode.getBoundingClientRect();

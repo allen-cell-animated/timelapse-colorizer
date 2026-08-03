@@ -1,4 +1,5 @@
-import { Button, Checkbox } from "antd";
+import { HomeOutlined } from "@ant-design/icons";
+import { Checkbox } from "antd";
 import * as d3 from "d3";
 import React, { type MouseEvent, type ReactElement, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
@@ -7,6 +8,7 @@ import type { Color } from "three";
 import type { Dataset, Track } from "src/colorizer";
 import { computeColorFromId } from "src/colorizer/utils/data_utils";
 import type { ColorizeStateParams } from "src/colorizer/viewport/types";
+import IconButton from "src/components/Buttons/IconButton";
 import { DUMMY_ROOT_NODE_ID } from "src/components/Tabs/Lineage/constants";
 import {
   getCenteredZoomTransform,
@@ -25,6 +27,7 @@ import {
 } from "src/components/Tabs/Lineage/tree_utils";
 import type { LineageData, LineageDataRelationships, TrackInfo } from "src/components/Tabs/Lineage/types";
 import { useConstructor } from "src/hooks";
+import { FlexRowAlignCenter } from "src/styles/utils";
 
 type TrackDetailLineageViewProps = {
   container: React.RefObject<HTMLDivElement>;
@@ -390,7 +393,7 @@ function updateNodeStyles(
   // Main node rectangle
   node
     .select<SVGRectElement>(`rect.${SvgClass.MAIN_NODE}`)
-    .attr("transform", `translate(${TREE_LAYER_DEPTH_PX / 2},${-NODE_HEIGHT_PX / 2})`)
+    .attr("transform", `translate(${-TREE_LAYER_DEPTH_PX / 2},${-NODE_HEIGHT_PX / 2})`)
     .attr("width", (d) => d.data.length * TREE_LAYER_DEPTH_PX)
     .attr("height", NODE_HEIGHT_PX)
     .attr("rx", 4)
@@ -583,6 +586,44 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
     }
   };
 
+  const resetZoomTransition = (): void => {
+    if (!svgRef.current || !nodeGroupRef.current) {
+      return;
+    }
+    const svg = d3.select(svgRef.current);
+    const svgNode = svg.node();
+    const gNode = d3.select(nodeGroupRef.current).node();
+    if (!gNode || !svgNode || !svg) {
+      return;
+    }
+    const initialTransform = getDefaultZoomTransform(svgNode, gNode);
+    if (initialTransform) {
+      svg.transition().duration(750).call(zoom.current.transform, initialTransform);
+    }
+  };
+
+  const zoomToLastSelectedTrack = (): void => {
+    if (!svgRef.current || !nodeSelectionRef.current) {
+      return;
+    }
+    const svg = d3.select(svgRef.current);
+    for (const trackId of newTracks) {
+      const node = nodeSelectionRef.current.filter((d) => d.data.id === trackId);
+      if (!node) {
+        continue;
+      }
+      const nodeElement = node.node() as SVGGElement;
+      const svgElement = svg.node() as SVGSVGElement;
+      if (isNodeVisible(nodeElement, svgElement)) {
+        // Do not zoom if the node is already visible in the viewport.
+        continue;
+      }
+      const newTransform = getCenteredZoomTransform(svgElement, nodeElement);
+      svg.transition().duration(750).call(zoom.current.transform, newTransform);
+      return;
+    }
+  };
+
   //// Viewport ////
 
   // Render view and set up pointer handlers
@@ -596,7 +637,6 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
         cleanupPointerHandlers = setupPointerHandlers(node, onClickRef, onToggleExpandedRef, onHoverRef);
       }
       setHasRenderedTree(true);
-      setNeedsZoomCheck(true);
     }
 
     // Clear on unmount
@@ -612,6 +652,10 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
       }
     };
   }, [props.data, props.relationships, props.dataset, expandedTracks]);
+
+  useEffect(() => {
+    setNeedsZoomCheck(true);
+  }, [newTracks]);
 
   useEffect(() => {
     if (svgRef.current && useFeatureColors) {
@@ -639,31 +683,6 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
 
   //// Helper methods ////
 
-  const zoomToLastSelectedTrack = (): void => {
-    if (!svgRef.current || !nodeSelectionRef.current) {
-      return;
-    }
-    const svg = d3.select(svgRef.current);
-    if (!svg) {
-      return;
-    }
-    for (const trackId of newTracks) {
-      const node = nodeSelectionRef.current.filter((d) => d.data.id === trackId);
-      if (!node) {
-        continue;
-      }
-      const nodeElement = node.node() as SVGGElement;
-      const svgElement = svg.node() as SVGSVGElement;
-      if (isNodeVisible(nodeElement, svgElement)) {
-        // Do not zoom if the node is already visible in the viewport.
-        continue;
-      }
-      const newTransform = getCenteredZoomTransform(nodeElement, svgElement);
-      svg.transition().duration(500).call(zoom.current.transform, newTransform);
-      return;
-    }
-  };
-
   useEffect(() => {
     if (needsZoomCheck) {
       zoomToLastSelectedTrack();
@@ -674,10 +693,15 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
   return (
     <div style={{ width: "100%", height: "100%", overflow: "hidden", position: "relative" }}>
       <div style={{ position: "absolute", top: 4, left: 6, zIndex: 10, padding: "4px" }}>
-        <Checkbox checked={useFeatureColors} onChange={(e) => setUseFeatureColors(e.target.checked)}>
-          Use feature colors
-        </Checkbox>
-        <Button onClick={zoomToLastSelectedTrack}>Zoom to last selected track</Button>
+        <FlexRowAlignCenter $gap={6}>
+          <IconButton type="link" onClick={resetZoomTransition}>
+            <HomeOutlined />
+          </IconButton>
+
+          <Checkbox checked={useFeatureColors} onChange={(e) => setUseFeatureColors(e.target.checked)}>
+            Use feature colors
+          </Checkbox>
+        </FlexRowAlignCenter>
       </div>
       <StyledSVG
         ref={svgRef}
