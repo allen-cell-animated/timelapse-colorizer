@@ -1,5 +1,5 @@
 import * as d3 from "d3";
-import React, { type ReactElement, useEffect, useMemo, useRef, useState } from "react";
+import React, { type ReactElement, useEffect, useRef, useState } from "react";
 import type { Color } from "three";
 
 import type { Track } from "src/colorizer";
@@ -175,15 +175,10 @@ export default function TreeLineageView(props: TreeLineageViewProps): ReactEleme
   const onHoverRef = useRef(props.onHover);
   onHoverRef.current = props.onHover;
 
-  const [needsZoomCheck, setNeedsZoomCheck] = useState(false);
+  const [needsTrackZoomReframe, setNeedsTrackZoomReframe] = useState(false);
 
   // Apply newly selected tracks to expanded state-- updates only on new tracks
   // to avoid expanding selected tracks that were previously collapsed.
-  const prevTracks = useRef<Set<number>>(new Set());
-  useMemo(() => {
-    prevTracks.current = new Set();
-  }, [props.data, props.relationships]);
-
   const { newTracks, updateTracks } = useNewTracks(props.selectedTracks);
 
   //// SVG Elements ////
@@ -254,15 +249,15 @@ export default function TreeLineageView(props: TreeLineageViewProps): ReactEleme
   // second effect to ensure that the nodes are rendered before the zoom check
   // is performed.
   useEffect(() => {
-    setNeedsZoomCheck(true);
+    setNeedsTrackZoomReframe(true);
     updateTracks(props.selectedTracks);
   }, [props.selectedTracks]);
   useEffect(() => {
-    if (needsZoomCheck) {
+    if (needsTrackZoomReframe) {
       frameTracksInView(svgRef.current, nodeRef.current, newTracks, zoom.current);
-      setNeedsZoomCheck(false);
+      setNeedsTrackZoomReframe(false);
     }
-  }, [needsZoomCheck, newTracks]);
+  }, [needsTrackZoomReframe, newTracks]);
 
   return (
     <svg ref={svgRef} style={{ width: "100%", height: "100%", display: "block" }} id="tree-lineage-view-svg">

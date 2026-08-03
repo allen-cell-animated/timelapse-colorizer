@@ -32,7 +32,7 @@ import type {
   TrackInfo,
 } from "src/components/Tabs/Lineage/types";
 import { useConstructor } from "src/hooks";
-import { FlexRowAlignCenter } from "src/styles/utils";
+import { FlexRowAlignCenter, VisuallyHidden } from "src/styles/utils";
 
 type TrackDetailLineageViewProps = {
   container: React.RefObject<HTMLDivElement>;
@@ -498,8 +498,8 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
   const trackIds = useMemo(() => new Set(props.selectedTracks.keys()), [props.selectedTracks]);
 
   // Flag that triggers a zoom reset once the tree completes an initial render.
-  const [hasRenderedTree, setHasRenderedTree] = useState(false);
-  const [needsZoomCheck, setNeedsZoomCheck] = useState(false);
+  const [needsPostRenderZoomReset, setNeedsPostRenderZoomReset] = useState(false);
+  const [needsTrackZoomReframe, setNeedsTrackZoomReframe] = useState(false);
 
   const [useFeatureColors, setUseFeatureColors] = useState(true);
 
@@ -561,7 +561,7 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
     }
   }, [zoom]);
 
-  const resetZoom = (): void => {
+  const resetZoom = (durationMs = 0): void => {
     if (!svgRef.current || !nodeGroupRef.current) {
       return;
     }
@@ -573,23 +573,7 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
     }
     const initialTransform = getDefaultZoomTransform(svgNode, gNode);
     if (initialTransform) {
-      zoom.current.transform(svg, initialTransform);
-    }
-  };
-
-  const resetZoomTransition = (): void => {
-    if (!svgRef.current || !nodeGroupRef.current) {
-      return;
-    }
-    const svg = d3.select(svgRef.current);
-    const svgNode = svg.node();
-    const gNode = d3.select(nodeGroupRef.current).node();
-    if (!gNode || !svgNode || !svg) {
-      return;
-    }
-    const initialTransform = getDefaultZoomTransform(svgNode, gNode);
-    if (initialTransform) {
-      svg.transition().duration(750).call(zoom.current.transform, initialTransform);
+      svg.transition().duration(durationMs).call(zoom.current.transform, initialTransform);
     }
   };
 
@@ -605,7 +589,7 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
       if (node) {
         cleanupPointerHandlers = setupPointerHandlers(node, onClickRef, onToggleExpandedRef, onHoverRef);
       }
-      setHasRenderedTree(true);
+      setNeedsPostRenderZoomReset(true);
     }
 
     // Clear on unmount
@@ -623,7 +607,7 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
   }, [props.data, props.relationships, props.dataset, expandedTracks]);
 
   useEffect(() => {
-    setNeedsZoomCheck(true);
+    setNeedsTrackZoomReframe(true);
   }, [newTracks]);
 
   useEffect(() => {
@@ -648,23 +632,24 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
   // Fit on data change, or after SVG rendering is complete
   useEffect(() => {
     resetZoom();
-  }, [props.data, props.relationships, props.dataset, hasRenderedTree]);
+  }, [props.data, props.relationships, props.dataset, needsPostRenderZoomReset]);
 
   //// Helper methods ////
 
   useEffect(() => {
-    if (needsZoomCheck) {
+    if (needsTrackZoomReframe) {
       frameTracksInView(svgRef.current, nodeSelectionRef.current, newTracks, zoom.current);
-      setNeedsZoomCheck(false);
+      setNeedsTrackZoomReframe(false);
     }
-  }, [newTracks, needsZoomCheck]);
+  }, [newTracks, needsTrackZoomReframe]);
 
   return (
     <div style={{ width: "100%", height: "100%", overflow: "hidden", position: "relative" }}>
       <div style={{ position: "absolute", top: 4, left: 6, zIndex: 10, padding: "4px" }}>
         <FlexRowAlignCenter $gap={6}>
-          <IconButton type="link" onClick={resetZoomTransition}>
+          <IconButton type="link" onClick={() => resetZoom(500)}>
             <HomeOutlined />
+            <VisuallyHidden>Reset zoom</VisuallyHidden>
           </IconButton>
 
           <Checkbox checked={useFeatureColors} onChange={(e) => setUseFeatureColors(e.target.checked)}>

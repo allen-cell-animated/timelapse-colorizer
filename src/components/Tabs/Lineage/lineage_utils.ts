@@ -154,9 +154,13 @@ export function getDefaultZoomTransform(
  * of the transform will be adjusted to fit the nodes within the viewport.
  */
 function getCenteredZoomTransform(svgNode: SVGSVGElement, nodes: SVGGElement[]): d3.ZoomTransform | null {
+  if (nodes.length === 0) {
+    return null;
+  }
   const currentTransform = d3.zoomTransform(svgNode);
   const svgRect = svgNode.getBoundingClientRect();
 
+  const padding = 20;
   let left = Infinity;
   let right = -Infinity;
   let top = Infinity;
@@ -172,18 +176,20 @@ function getCenteredZoomTransform(svgNode: SVGSVGElement, nodes: SVGGElement[]):
 
   const width = right - left;
   const height = bottom - top;
+  const svgWidth = svgRect.width - 2 * padding;
+  const svgHeight = svgRect.height - 2 * padding;
   if (width === 0 || height === 0) {
     return null;
   }
   let scaleFactor = 1;
-  if (width > svgRect.width || height > svgRect.height) {
+  if (width > svgWidth || height > svgHeight) {
     // If group of nodes is larger than viewport, scale down to fit within the viewport
-    scaleFactor = Math.min(svgRect.width / width, svgRect.height / height);
+    scaleFactor = Math.min(svgWidth / width, svgHeight / height);
   }
 
   // Screen coordinates
-  const nodeCenterX = (left + right) / 2 - svgRect.left;
-  const nodeCenterY = (top + bottom) / 2 - svgRect.top;
+  const nodeCenterX = (left + right) / 2 - svgRect.left + padding;
+  const nodeCenterY = (top + bottom) / 2 - svgRect.top + padding;
   // Local coordinates (relative to parent group)
   const localX = (nodeCenterX - currentTransform.x) / currentTransform.k;
   const localY = (nodeCenterY - currentTransform.y) / currentTransform.k;
@@ -239,7 +245,7 @@ export function frameTracksInView(
     return;
   }
   const newTransform = getCenteredZoomTransform(svgNode, nodeElements);
-  svg.transition().duration(750).call(zoom.transform, newTransform);
+  svg.transition().duration(250).call(zoom.transform, newTransform);
 }
 
 /**
