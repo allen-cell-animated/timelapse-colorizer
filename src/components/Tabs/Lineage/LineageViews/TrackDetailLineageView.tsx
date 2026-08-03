@@ -652,19 +652,24 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
       if (!node) {
         continue;
       }
-      console.log(
-        `Checking visibility for track ${trackId}:`,
-        isNodeVisible(node.node() as SVGGElement, svgRef.current!)
-      );
       const nodeElement = node.node() as SVGGElement;
-      if (!isNodeVisible(nodeElement, svgRef.current)) {
-        // Get scale?
-        const currentScale = d3.zoomTransform(svg.node() as SVGSVGElement).k;
-        const newTransform = getCenteredZoomTransform(nodeElement, svg.node() as SVGSVGElement, currentScale);
-        svg.transition().duration(500).call(zoom.current.transform, newTransform);
+      const svgElement = svg.node() as SVGSVGElement;
+      if (isNodeVisible(nodeElement, svgElement)) {
+        // Do not zoom if the node is already visible in the viewport.
+        continue;
       }
+      const newTransform = getCenteredZoomTransform(nodeElement, svgElement);
+      svg.transition().duration(500).call(zoom.current.transform, newTransform);
+      return;
     }
   };
+
+  useEffect(() => {
+    if (needsZoomCheck) {
+      zoomToLastSelectedTrack();
+      setNeedsZoomCheck(false);
+    }
+  }, [newTracks, needsZoomCheck]);
 
   return (
     <div style={{ width: "100%", height: "100%", overflow: "hidden", position: "relative" }}>

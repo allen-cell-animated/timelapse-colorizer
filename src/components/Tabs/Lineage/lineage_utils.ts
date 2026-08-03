@@ -147,17 +147,18 @@ export function getDefaultZoomTransform(
   return initialTransform;
 }
 
-export function getCenteredZoomTransform(
-  node: SVGGElement,
-  svgNode: SVGSVGElement,
-  currentScale: number
-): d3.ZoomTransform | null {
-  const bbox = node.getBBox();
+export function getCenteredZoomTransform(node: SVGGElement, svgNode: SVGSVGElement): d3.ZoomTransform | null {
+  const currentTransform = d3.zoomTransform(svgNode);
+  const nodeRect = node.getBoundingClientRect();
+  const svgRect = svgNode.getBoundingClientRect();
+
+  const nodeCenterX = (nodeRect.left + nodeRect.right) / 2 - svgRect.left;
+  const nodeCenterY = (nodeRect.top + nodeRect.bottom) / 2 - svgRect.top;
 
   return new d3.ZoomTransform(
-    currentScale, // k
-    -bbox.x * currentScale + svgNode.clientWidth / 2, // x
-    -bbox.y * currentScale + svgNode.clientHeight / 2 // y
+    currentTransform.k,
+    currentTransform.x + (svgNode.clientWidth / 2 - nodeCenterX),
+    currentTransform.y + (svgNode.clientHeight / 2 - nodeCenterY)
   );
 }
 
