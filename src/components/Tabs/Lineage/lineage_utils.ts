@@ -195,11 +195,10 @@ function getCenteredZoomTransform(svgNode: SVGSVGElement, nodes: SVGGElement[]):
   const localY = (nodeCenterY - currentTransform.y) / currentTransform.k;
   const newScale = currentTransform.k * scaleFactor;
 
-  return new d3.ZoomTransform(
-    newScale,
-    svgNode.clientWidth / 2 - newScale * localX,
-    svgNode.clientHeight / 2 - newScale * localY
-  );
+  const translateX = svgNode.clientWidth / 2 - newScale * localX;
+  const translateY = svgNode.clientHeight / 2 - newScale * localY;
+
+  return d3.zoomIdentity.translate(translateX, translateY).scale(newScale);
 }
 
 /** Returns true if the node is visible in the SVG viewport. */
@@ -245,6 +244,9 @@ export function frameTracksInView(
     return;
   }
   const newTransform = getCenteredZoomTransform(svgNode, nodeElements);
+  if (!newTransform) {
+    return;
+  }
   svg.transition().duration(250).call(zoom.transform, newTransform);
 }
 
@@ -357,8 +359,8 @@ export function useNewTracks(tracks: Map<number, Track>): {
     return newTracks;
   }, [tracks]);
 
-  const updateTracks = (newTracks: Map<number, Track>): void => {
-    prevTracks.current = new Set(newTracks.keys());
+  const updateTracks = (nextTracks: Map<number, Track>): void => {
+    prevTracks.current = new Set(nextTracks.keys());
   };
 
   return { newTracks, updateTracks };

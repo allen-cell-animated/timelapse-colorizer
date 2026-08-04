@@ -573,7 +573,12 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
     }
     const initialTransform = getDefaultZoomTransform(svgNode, gNode);
     if (initialTransform) {
-      svg.transition().duration(durationMs).call(zoom.current.transform, initialTransform);
+      if (durationMs === 0) {
+        // Apply immediately
+        zoom.current.transform(svg, initialTransform);
+      } else {
+        svg.transition().duration(durationMs).call(zoom.current.transform, initialTransform);
+      }
     }
   };
 
