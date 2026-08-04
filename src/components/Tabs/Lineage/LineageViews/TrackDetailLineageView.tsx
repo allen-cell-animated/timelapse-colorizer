@@ -612,10 +612,6 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
   }, [props.data, props.relationships, props.dataset, expandedTracks]);
 
   useEffect(() => {
-    setNeedsTrackZoomReframe(true);
-  }, [newTracks]);
-
-  useEffect(() => {
     if (svgRef.current && useFeatureColors) {
       updateGradients(d3.select(svgRef.current), props.selectedTracks, props.colorizeParams);
     }
@@ -640,6 +636,13 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
   }, [props.data, props.relationships, props.dataset, needsPostRenderZoomReset]);
 
   //// Helper methods ////
+
+  // On updates to the selected tracks, attempt to fit them into the current
+  // view after one render. This ensures that the new SVG elements have been
+  // rendered before attempting to get their size/dimension information.
+  useEffect(() => {
+    setNeedsTrackZoomReframe(true);
+  }, [newTracks]);
 
   useEffect(() => {
     if (needsTrackZoomReframe) {
