@@ -212,7 +212,7 @@ export function getLineageSubset(
   const { idToParents, idToChildren } = relationships;
 
   // Get set of IDs + related parents and children.
-  const relatedIds = new Set([...trackIds]);
+  const relatedIds = new Set(trackIds);
   for (const trackId of trackIds) {
     const parents = idToParents.get(trackId) ?? [];
     const children = idToChildren.get(trackId) ?? [];
