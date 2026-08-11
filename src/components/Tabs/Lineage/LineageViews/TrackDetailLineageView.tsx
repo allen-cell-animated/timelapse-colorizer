@@ -41,7 +41,6 @@ type TrackDetailLineageViewProps = {
   selectedTracks: Map<number, Track>;
   trackColors: Map<number, Color>;
   relationships: LineageDataRelationships;
-  hierarchy: d3.HierarchyNode<TrackInfo> | null;
   time: number;
   colorizeParams: ColorizeStateParams;
   onClick?: (info: TrackInfo, time: number | null) => void;
@@ -130,14 +129,12 @@ const StyledSVG = styled.svg`
  * nodes are drawn as lines.
  */
 function renderView(
-  g: d3.Selection<SVGGElement, TrackInfo, null, undefined>,
+  treeSvgGroup: d3.Selection<SVGGElement, TrackInfo, null, undefined>,
   fullData: LineageData,
   fullRelationships: LineageDataRelationships,
-  selectedTracks: Set<number>
+  expandedTracks: Set<number>
 ): LineageNodeSelection | undefined {
-  const selectedTrackIds = new Set(selectedTracks);
-
-  const data = getLineageSubset(fullData, fullRelationships, selectedTrackIds);
+  const data = getLineageSubset(fullData, fullRelationships, expandedTracks);
   const relationships = getLineageRelationships(data);
   const { multiparentEdges } = relationships;
   const root = getTreeHierarchy(data, relationships);
@@ -155,7 +152,8 @@ function renderView(
   const mergeNodes = new Set(multiparentEdges.map((edge) => edge[1]));
 
   // Render tree edges, coloring merge edges as an orange dotted line
-  g.append("g")
+  treeSvgGroup
+    .append("g")
     .selectAll("line")
     .data(treeRoot.links())
     .join("line")
@@ -182,7 +180,8 @@ function renderView(
       return { x: node.x, y: y * TREE_LAYER_DEPTH_PX };
     };
 
-    g.append("g")
+    treeSvgGroup
+      .append("g")
       .selectAll("line")
       .data(multiparentEdges)
       .join("line")
@@ -196,7 +195,7 @@ function renderView(
   }
 
   // Add nodes
-  const node = g
+  const node = treeSvgGroup
     .append("g")
     .selectAll("g")
     .data(treeRoot.descendants())
@@ -220,11 +219,11 @@ function renderView(
 
   // Add expand/collapse button for each node
   const expandButtonNodes = node
-    .filter((d) => !selectedTrackIds.has(d.data.id))
+    .filter((d) => !expandedTracks.has(d.data.id))
     .append("g")
     .attr("class", SvgClass.EXPAND_BUTTON_GROUP);
   const collapseButtonNodes = node
-    .filter((d) => selectedTrackIds.has(d.data.id))
+    .filter((d) => expandedTracks.has(d.data.id))
     .append("g")
     .attr("class", SvgClass.COLLAPSE_BUTTON_GROUP);
   expandButtonNodes.append("rect").attr("class", `${SvgClass.BUTTON_RECT}`);
