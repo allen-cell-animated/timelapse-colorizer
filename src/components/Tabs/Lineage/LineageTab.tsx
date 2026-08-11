@@ -182,7 +182,6 @@ export default function LineageTab(): ReactElement {
           dataset={dataset}
           selectedTracks={tracks}
           trackColors={trackColors}
-          hierarchy={hierarchy ?? null}
           data={lineageData}
           relationships={lineageRelationships}
           time={currentFrame}
