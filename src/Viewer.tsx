@@ -15,6 +15,7 @@ import { Link, useLocation, useSearchParams } from "react-router-dom";
 
 import {
   type Dataset,
+  DataTabType,
   LoadTroubleshooting,
   type PixelIdInfo,
   type ReportWarningCallback,
@@ -39,16 +40,7 @@ import Header from "src/components/Header";
 import LoadDatasetButton from "src/components/LoadDatasetButton";
 import LoadZipModal from "src/components/LoadZipModal";
 import SmallScreenWarning from "src/components/Modals/SmallScreenWarning";
-import {
-  AnnotationTab,
-  CorrelationPlotTab,
-  FeatureThresholdsTab,
-  LineageTab,
-  Plot3dTab,
-  PlotTab,
-  ScatterPlotTab,
-  SettingsTab,
-} from "src/components/Tabs";
+import { AnnotationTab, DataTab, FeatureThresholdsTab, SettingsTab } from "src/components/Tabs";
 import CanvasHoverTooltip from "src/components/Tooltips/CanvasHoverTooltip";
 import { useAnnotations, useBackdropShortcuts, useConstructor, useRecentCollections } from "src/hooks";
 import { renderCanvasStateParamsSelector } from "src/state";
@@ -110,6 +102,7 @@ function Viewer(): ReactElement {
   const featureKey = useViewerStateStore((state) => state.featureKey);
   const featureThresholds = useViewerStateStore((state) => state.thresholds);
   const openTab = useViewerStateStore((state) => state.openTab);
+  const dataTab = useViewerStateStore((state) => state.dataTab);
   const setCollection = useViewerStateStore((state) => state.setCollection);
   const setDataset = useViewerStateStore((state) => state.setDataset);
   const setFrame = useViewerStateStore((state) => state.setFrame);
@@ -201,7 +194,7 @@ function Viewer(): ReactElement {
     const unsubscribe = useViewerStateStore.subscribe(
       (state) => [state.openTab, state.dataset],
       ([openTab, dataset]) => {
-        if (openTab === TabType.SCATTER_PLOT && dataset) {
+        if (openTab === TabType.DATA && dataTab === DataTabType.SCATTER_PLOT && dataset) {
           if (
             useViewerStateStore.getState().scatterXAxis === null &&
             useViewerStateStore.getState().scatterYAxis === null
@@ -251,15 +244,6 @@ function Viewer(): ReactElement {
       });
     }
   }, []);
-
-  const openScatterPlotTab = useCallback(
-    (xAxis: string, yAxis: string) => {
-      setOpenTab(TabType.SCATTER_PLOT);
-      setScatterXAxis(xAxis);
-      setScatterYAxis(yAxis);
-    },
-    [setOpenTab, setScatterXAxis, setScatterYAxis]
-  );
 
   // DATASET LOADING ///////////////////////////////////////////////////////
 
@@ -506,56 +490,15 @@ function Viewer(): ReactElement {
 
   const allTabItems: TabItem<TabType>[] = [
     {
-      label: "Track plot",
-      key: TabType.TRACK_PLOT,
+      label: "Data",
+      key: TabType.DATA,
       children: (
-        <div className={styles.tabContent}>
-          <PlotTab disabled={disableUi} />
-        </div>
-      ),
-    },
-    {
-      label: "Scatter plot",
-      key: TabType.SCATTER_PLOT,
-      children: (
-        <div className={styles.tabContent}>
-          <ScatterPlotTab
-            isVisible={openTab === TabType.SCATTER_PLOT}
-            showAlert={showAlert}
-            containerRef={tabsContainerRef.current ?? undefined}
-          />
-        </div>
-      ),
-    },
-    {
-      label: "Flow field plot",
-      key: TabType.PLOT_3D,
-      children: (
-        <div className={styles.tabContent}>
-          <Plot3dTab></Plot3dTab>
-        </div>
-      ),
-    },
-    {
-      label: "Correlation plot",
-      key: TabType.CORRELATION_PLOT,
-      children: (
-        <div className={styles.tabContent}>
-          <CorrelationPlotTab openScatterPlotTab={openScatterPlotTab} workerPool={workerPool} dataset={dataset} />
-        </div>
-      ),
-    },
-    {
-      label: "Lineage",
-      key: TabType.LINEAGE,
-      // Only show the lineage tab if the dataset has lineage data, or if the
-      // user already has the tab selected (likely via a URL parameter).
-      // TODO: Show the lineage tab in a hidden section under a dropdown?
-      visible: dataset?.hasLineageData(dataset.getDefaultTrackKey() ?? "") ?? false,
-      children: (
-        <div className={styles.tabContent}>
-          <LineageTab></LineageTab>
-        </div>
+        <DataTab
+          className={styles.tabContent}
+          showAlert={showAlert}
+          disableUi={disableUi}
+          tabsContainerRef={tabsContainerRef}
+        />
       ),
     },
     {
@@ -590,7 +533,7 @@ function Viewer(): ReactElement {
   // If non-visible tab is selected, show it
   const tabItems = allTabItems.filter((item) => item.visible !== false || item.key === openTab);
   const visibleTabKeys = new Set(tabItems.map((item) => item.key));
-  const currentTab = visibleTabKeys.has(openTab) ? openTab : TabType.TRACK_PLOT;
+  const currentTab = visibleTabKeys.has(openTab) ? openTab : TabType.DATA;
 
   let datasetHeader: ReactNode = null;
   if (collection && collection.metadata.name) {

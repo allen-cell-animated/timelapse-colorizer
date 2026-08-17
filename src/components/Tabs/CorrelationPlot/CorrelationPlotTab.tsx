@@ -5,11 +5,11 @@
 import { Button, Select } from "antd";
 import chroma from "chroma-js";
 import * as d3 from "d3";
-import React, { memo, type ReactElement, useEffect, useMemo, useRef, useState } from "react";
+import React, { memo, type ReactElement, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 
-import type { Dataset } from "src/colorizer";
-import type SharedWorkerPool from "src/colorizer/workers/SharedWorkerPool";
+import { DataTabType, TabType } from "src/colorizer";
+import { getSharedWorkerPool } from "src/colorizer/workers/SharedWorkerPool";
 import LoadingSpinner from "src/components/LoadingSpinner";
 import { useDebounce } from "src/hooks";
 import { useViewerStateStore } from "src/state";
@@ -28,11 +28,7 @@ import {
   SVG_TEXT_PADDING,
 } from "./correlation_plot_data_utils";
 
-type CorrelationPlotTabProps = {
-  dataset: Dataset | null;
-  workerPool: SharedWorkerPool;
-  openScatterPlotTab(xAxisFeatureKey: string, yAxisFeatureKey: string): void;
-};
+type CorrelationPlotTabProps = {};
 
 const TipDiv = styled.div`
   position: absolute;
@@ -63,26 +59,44 @@ const PlotDiv = styled.div`
 /**
  * A tab that displays an interactive correlation plot between selected features in the dataset.
  */
-export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps): ReactElement {
+export default memo(function CorrelationPlotTab(_props: CorrelationPlotTabProps): ReactElement {
   const [isRendering, setIsRendering] = useState(false);
 
   const plotDivRef = useRef<HTMLDivElement>(null);
   const legendRef = useRef<HTMLDivElement>(null);
   const tooltipDivRef = useRef<HTMLDivElement>(null);
 
+  const inputDataset = useViewerStateStore((state) => state.dataset);
+  const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
+  const setDataTab = useViewerStateStore((state) => state.setDataTab);
+  const setScatterXAxis = useViewerStateStore((state) => state.setScatterXAxis);
+  const setScatterYAxis = useViewerStateStore((state) => state.setScatterYAxis);
+  const workerPool = useMemo(() => getSharedWorkerPool(), []);
+
   const selectedFeatures = useViewerStateStore((state) => state.correlationFeatures) ?? [];
   const setSelectedFeatures = useViewerStateStore((state) => state.setCorrelationFeatures);
+
   const lastRenderedPlotFeatures = useRef<Set<string>>(new Set());
 
   const sortedSelectedFeatures = useMemo(() => {
     // Keep in sorted order of the dataset
     const featureSet = new Set(selectedFeatures);
-    return props.dataset?.featureKeys.filter((f) => featureSet.has(f)) || [];
-  }, [props.dataset, selectedFeatures]);
+    return inputDataset?.featureKeys.filter((f) => featureSet.has(f)) || [];
+  }, [inputDataset, selectedFeatures]);
 
   // Debounce changes to the dataset to prevent noticeably blocking the UI thread with a re-render.
   // Show the loading spinner right away, but don't initiate the state update + render until the debounce has settled.
-  const dataset = useDebounce(props.dataset, 500);
+  const dataset = useDebounce(inputDataset, 500);
+
+  const openScatterPlotTab = useCallback(
+    (xAxis: string, yAxis: string) => {
+      setOpenTab(TabType.DATA);
+      setDataTab(DataTabType.SCATTER_PLOT);
+      setScatterXAxis(xAxis);
+      setScatterYAxis(yAxis);
+    },
+    [setOpenTab, setDataTab, setScatterXAxis, setScatterYAxis]
+  );
 
   //////////////////////////////////
   // Plot Rendering
@@ -91,7 +105,7 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
   const plotDependencies = [dataset, selectedFeatures];
 
   const renderPlot = async (_forceRelayout: boolean = false): Promise<void> => {
-    if (!props.dataset || !legendRef.current || !plotDivRef.current || !tooltipDivRef.current) {
+    if (!inputDataset || !legendRef.current || !plotDivRef.current || !tooltipDivRef.current) {
       return;
     }
     setIsRendering(true);
@@ -100,7 +114,7 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
     // come in before a previous one finishes. Discard any results that are not from the most
     // recent render request.
     lastRenderedPlotFeatures.current = new Set(sortedSelectedFeatures);
-    const correlationData = await props.workerPool.getCorrelations(props.dataset!, sortedSelectedFeatures);
+    const correlationData = await workerPool.getCorrelations(inputDataset!, sortedSelectedFeatures);
     if (!areSetsEqual(lastRenderedPlotFeatures.current, new Set(sortedSelectedFeatures))) {
       // Another request happened in the meantime, discard this result.
       return;
@@ -137,7 +151,7 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
       y,
       sortedSelectedFeatures,
       dataset,
-      props.openScatterPlotTab,
+      openScatterPlotTab,
       config
     );
 
@@ -154,8 +168,8 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
   //////////////////////////////////
 
   const featureOptions =
-    props.dataset?.featureKeys.map((key) => ({
-      label: props.dataset?.getFeatureNameWithUnits(key),
+    inputDataset?.featureKeys.map((key) => ({
+      label: inputDataset?.getFeatureNameWithUnits(key),
       value: key,
     })) || [];
 
@@ -171,13 +185,13 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
           value={sortedSelectedFeatures}
           maxTagCount={"responsive"}
           onClear={() => setSelectedFeatures([])}
-          disabled={!props.dataset}
+          disabled={!inputDataset}
           onSelect={(value) => {
             setSelectedFeatures([...selectedFeatures, value as string]);
           }}
           onDeselect={(value) => setSelectedFeatures(selectedFeatures.filter((f) => f !== value))}
         ></Select>
-        <Button onClick={() => setSelectedFeatures(props.dataset?.featureKeys || [])} type="primary">
+        <Button onClick={() => setSelectedFeatures(inputDataset?.featureKeys || [])} type="primary">
           Select all
         </Button>
       </FlexRowAlignCenter>
