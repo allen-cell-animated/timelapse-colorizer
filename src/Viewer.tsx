@@ -102,7 +102,6 @@ function Viewer(): ReactElement {
   const featureKey = useViewerStateStore((state) => state.featureKey);
   const featureThresholds = useViewerStateStore((state) => state.thresholds);
   const openTab = useViewerStateStore((state) => state.openTab);
-  const dataTab = useViewerStateStore((state) => state.dataTab);
   const setCollection = useViewerStateStore((state) => state.setCollection);
   const setDataset = useViewerStateStore((state) => state.setDataset);
   const setFrame = useViewerStateStore((state) => state.setFrame);
@@ -188,12 +187,13 @@ function Viewer(): ReactElement {
     });
   }, [isRecording, updateUrlParams]);
 
+  // TODO: Move to ScatterplotTab?
   // When the scatterplot tab is opened for the first time, set the default axes
   // to the selected feature and time.
   useEffect(() => {
     const unsubscribe = useViewerStateStore.subscribe(
-      (state) => [state.openTab, state.dataset],
-      ([openTab, dataset]) => {
+      (state) => [state.openTab, state.dataTab, state.dataset],
+      ([openTab, dataTab, dataset]) => {
         if (openTab === TabType.DATA && dataTab === DataTabType.SCATTER_PLOT && dataset) {
           if (
             useViewerStateStore.getState().scatterXAxis === null &&
