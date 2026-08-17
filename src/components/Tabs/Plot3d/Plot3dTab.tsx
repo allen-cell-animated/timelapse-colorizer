@@ -5,6 +5,7 @@ import { useDebounce } from "usehooks-ts";
 import { DataTabType, SelectionOutlineColorMode, TabType, type VectorFieldData } from "src/colorizer";
 import { getSharedWorkerPool } from "src/colorizer/workers/SharedWorkerPool";
 import LoadingSpinner from "src/components/LoadingSpinner";
+import TabToolbar from "src/components/Tabs/Data/TabToolbar";
 import Plot3dToolbar from "src/components/Tabs/Plot3d/Plot3dToolbar";
 import { useInteractionListener } from "src/hooks";
 import { useViewerStateStore } from "src/state";
@@ -16,7 +17,11 @@ import { make3dConeTrace } from "./plot_3d_utils";
 const MINIMUM_BIN_COUNT = 10;
 const RESUME_PLAYBACK_TIMEOUT_MS = 500;
 
-export default function Plot3dTab(): ReactElement {
+type Plot3dTabProps = {
+  toolbar: ReactElement;
+};
+
+export default function Plot3dTab(props: Plot3dTabProps): ReactElement {
   const plotContainerRef = useRef<HTMLDivElement>(null);
   const plot3dRef = useRef<Plot3d | null>(null);
 
@@ -212,7 +217,10 @@ export default function Plot3dTab(): ReactElement {
 
   return (
     <FlexColumn style={{ height: "100%", marginBottom: 10 }} $gap={8}>
-      <Plot3dToolbar />
+      <TabToolbar>
+        <Plot3dToolbar />
+        {props.toolbar}
+      </TabToolbar>
 
       {/* Plot Container */}
       <LoadingSpinner loading={isLoading} style={{ width: "100%", height: "100%" }}>

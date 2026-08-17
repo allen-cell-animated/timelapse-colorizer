@@ -16,6 +16,7 @@ import IconButton from "src/components/Buttons/IconButton";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import type { SelectItem } from "src/components/Dropdowns/types";
 import LoadingSpinner from "src/components/LoadingSpinner";
+import TabToolbar from "src/components/Tabs/Data/TabToolbar";
 import ScatterplotToolbar from "src/components/Tabs/ScatterPlot/ScatterplotToolbar";
 import { SCATTERPLOT_SYNC_AXIS_KEY, SHORTCUT_KEYS } from "src/constants";
 import { useDebounce, useDebounceRecord, useIsMouseButtonDownRef } from "src/hooks";
@@ -55,6 +56,7 @@ type ScatterPlotTabProps = {
   isVisible: boolean;
   showAlert: ShowAlertBannerCallback;
   containerRef?: HTMLElement;
+  toolbar?: ReactElement;
 };
 
 const AxisDropdownContainer = styled.div`
@@ -701,12 +703,15 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
   return (
     <FlexColumn style={{ alignItems: "flex-start" }}>
-      <ScatterplotToolbar
-        popupContainer={props.containerRef}
-        onClickResetZoom={onResetZoom}
-        onClickClearTracks={onClearTracks}
-        onClickDownloadCsv={onDownloadScatterPlotCsv}
-      />
+      <TabToolbar>
+        <ScatterplotToolbar
+          popupContainer={props.containerRef}
+          onClickResetZoom={onResetZoom}
+          onClickClearTracks={onClearTracks}
+          onClickDownloadCsv={onDownloadScatterPlotCsv}
+        />
+        {props.toolbar}
+      </TabToolbar>
 
       <LoadingSpinner loading={isRendering || isDebouncePending} style={{ marginTop: "10px" }}>
         <FlexRowAlignCenter style={{ marginLeft: 15 }}>

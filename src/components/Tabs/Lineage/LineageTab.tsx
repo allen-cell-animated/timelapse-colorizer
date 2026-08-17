@@ -3,6 +3,7 @@ import React, { type ReactElement, useCallback, useMemo, useRef, useState } from
 import { useShallow } from "zustand/shallow";
 
 import type Track from "src/colorizer/Track";
+import TabToolbar from "src/components/Tabs/Data/TabToolbar";
 import HoverTooltip from "src/components/Tooltips/HoverTooltip";
 import { TooltipCard } from "src/components/Tooltips/TooltipCard";
 import { SHORTCUT_KEYS } from "src/constants/shortcuts";
@@ -36,11 +37,15 @@ function getColorAndRadiusScale(data: LineageData): {
 
 const EMPTY_LINEAGE_DATA: LineageData = { trackIdToTrackInfo: new Map(), edges: [] };
 
+type LineageTabProps = {
+  toolbar?: ReactElement;
+};
+
 /**
  * Renders lineage data in a tab. Includes a tree view of the tracks and their
  * relationships, and a tooltip on hover.
  */
-export default function LineageTab(): ReactElement {
+export default function LineageTab(props: LineageTabProps): ReactElement {
   const dataset = useViewerStateStore((state) => state.dataset);
   const currentFrame = useViewerStateStore((state) => state.currentFrame);
   const tracks = useViewerStateStore((state) => state.tracks);
@@ -157,6 +162,10 @@ export default function LineageTab(): ReactElement {
 
   return (
     <FlexColumn style={{ width: "100%", height: "100%" }}>
+      <TabToolbar>
+        <div></div>
+        {props.toolbar}
+      </TabToolbar>
       <HoverTooltip
         tooltipContent={tooltipContent}
         style={{ width: "100%", flexGrow: 3, flexBasis: "300px" }}
