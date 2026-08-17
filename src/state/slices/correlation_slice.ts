@@ -41,9 +41,13 @@ export const addCorrelationDerivedStateSubscribers = (
     store,
     (state) => ({ dataset: state.dataset }),
     ({ dataset }) => {
+      if (dataset === null) {
+        return {};
+      }
       // Validate that all correlation features are in the dataset.
-      const newFeatures = store.getState().correlationFeatures.filter((feature) => dataset?.hasFeatureKey(feature));
+      const newFeatures = store.getState().correlationFeatures.filter((feature) => dataset.hasFeatureKey(feature));
       if (newFeatures.length === store.getState().correlationFeatures.length) {
+        // Make no changes if all features are valid
         return {};
       }
       return {

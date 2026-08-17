@@ -70,20 +70,20 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
   const legendRef = useRef<HTMLDivElement>(null);
   const tooltipDivRef = useRef<HTMLDivElement>(null);
 
-  const correlationFeatures = useViewerStateStore((state) => state.correlationFeatures);
-  const setCorrelationFeatures = useViewerStateStore((state) => state.setCorrelationFeatures);
+  const selectedFeatures = useViewerStateStore((state) => state.correlationFeatures);
+  const setSelectedFeatures = useViewerStateStore((state) => state.setCorrelationFeatures);
   const lastRenderedPlotFeatures = useRef<Set<string>>(new Set());
 
   const sortedSelectedFeatures = useMemo(() => {
     // Keep in sorted order of the dataset
-    const featureSet = new Set(correlationFeatures);
+    const featureSet = new Set(selectedFeatures);
     return props.dataset?.featureKeys.filter((f) => featureSet.has(f)) || [];
-  }, [props.dataset, correlationFeatures]);
+  }, [props.dataset, selectedFeatures]);
 
   useEffect(() => {
     // Selects all features from the dataset on initial load.
-    if (props.dataset && correlationFeatures.length === 0) {
-      setCorrelationFeatures(props.dataset.featureKeys);
+    if (props.dataset && selectedFeatures.length === 0) {
+      setSelectedFeatures(props.dataset.featureKeys);
     }
   }, [props.dataset]);
 
@@ -95,7 +95,7 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
   // Plot Rendering
   //////////////////////////////////
 
-  const plotDependencies = [dataset, correlationFeatures];
+  const plotDependencies = [dataset, selectedFeatures];
 
   const renderPlot = async (_forceRelayout: boolean = false): Promise<void> => {
     if (!props.dataset || !legendRef.current || !plotDivRef.current || !tooltipDivRef.current) {
@@ -177,14 +177,14 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
           options={featureOptions}
           value={sortedSelectedFeatures}
           maxTagCount={"responsive"}
-          onClear={() => setCorrelationFeatures([])}
+          onClear={() => setSelectedFeatures([])}
           disabled={!props.dataset}
           onSelect={(value) => {
-            setCorrelationFeatures([...correlationFeatures, value as string]);
+            setSelectedFeatures([...selectedFeatures, value as string]);
           }}
-          onDeselect={(value) => setCorrelationFeatures(correlationFeatures.filter((f) => f !== value))}
+          onDeselect={(value) => setSelectedFeatures(selectedFeatures.filter((f) => f !== value))}
         ></Select>
-        <Button onClick={() => setCorrelationFeatures(props.dataset?.featureKeys || [])} type="primary">
+        <Button onClick={() => setSelectedFeatures(props.dataset?.featureKeys || [])} type="primary">
           Select all
         </Button>
       </FlexRowAlignCenter>

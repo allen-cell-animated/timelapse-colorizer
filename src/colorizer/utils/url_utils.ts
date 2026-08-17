@@ -332,9 +332,11 @@ export function deserializeThresholds(thresholds: string | null): FeatureThresho
 
 /**
  * Serializes a list of feature keys as a list of encoded strings separated by
- * commas. If a dataset is provided, and the list of features is the full set of
- * features in the dataset, returns the placeholder `URL_PARAM_ALL_FEATURES`
- * instead.
+ * commas. If a dataset is provided, it will be used to filter the list of
+ * feature keys to only those that are present in the dataset.
+ *
+ * Additionally, if the list of features is the full set of features in the
+ * dataset, returns the placeholder `URL_PARAM_ALL_FEATURES` instead.
  */
 export function serializeFeatureList(features: string[], dataset?: Dataset): string {
   if (dataset) {
