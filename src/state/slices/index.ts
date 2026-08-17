@@ -37,6 +37,13 @@ import {
   createConfigSlice,
 } from "./config_slice";
 import {
+  addCorrelationDerivedStateSubscribers,
+  type CorrelationSliceActions,
+  type CorrelationSliceSerializableState,
+  type CorrelationSliceState,
+  createCorrelationSlice,
+} from "./correlation_slice";
+import {
   createDatasetSlice,
   type DatasetSliceActions,
   type DatasetSliceSerializableState,
@@ -103,6 +110,7 @@ export type ViewerStoreState = BackdropSliceState &
   CollectionSliceState &
   ColorRampSliceState &
   ConfigSliceState &
+  CorrelationSliceState &
   DatasetSliceState &
   Plot3dSliceState &
   ScatterPlotSliceState &
@@ -116,6 +124,7 @@ export type ViewerStoreActions = BackdropSliceActions &
   CollectionSliceActions &
   ColorRampSliceActions &
   ConfigSliceActions &
+  CorrelationSliceActions &
   DatasetSliceActions &
   ScatterPlotSliceActions &
   Plot3dSliceActions &
@@ -133,6 +142,7 @@ export type ViewerStoreSerializableState = BackdropSliceSerializableState &
   CollectionSliceSerializableState &
   ColorRampSliceSerializableState &
   ConfigSliceSerializableState &
+  CorrelationSliceSerializableState &
   DatasetSliceSerializableState &
   Plot3dSliceSerializableState &
   ScatterPlotSliceSerializableState &
@@ -155,6 +165,7 @@ export const viewerStateStoreCreator: StateCreator<ViewerStore> = (...a) => ({
   ...createCollectionSlice(...a),
   ...createColorRampSlice(...a),
   ...createConfigSlice(...a),
+  ...createCorrelationSlice(...a),
   ...createDatasetSlice(...a),
   ...createPlot3dSlice(...a),
   ...createScatterPlotSlice(...a),
@@ -174,6 +185,7 @@ export const addStoreStateSubscribers = (store: SubscribableStore<ViewerStore>):
   addChannelDerivedStateSubscribers(store);
   addColorRampDerivedStateSubscribers(store);
   addConfigDerivedStateSubscribers(store);
+  addCorrelationDerivedStateSubscribers(store);
   addScatterPlotSliceDerivedStateSubscribers(store);
   addPlot3dDerivedStateSubscribers(store);
   addThresholdDerivedStateSubscribers(store);

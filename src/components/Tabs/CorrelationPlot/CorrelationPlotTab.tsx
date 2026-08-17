@@ -12,6 +12,7 @@ import type { Dataset } from "src/colorizer";
 import type SharedWorkerPool from "src/colorizer/workers/SharedWorkerPool";
 import LoadingSpinner from "src/components/LoadingSpinner";
 import { useDebounce } from "src/hooks";
+import { useViewerStateStore } from "src/state";
 import { FlexColumnAlignCenter, FlexRowAlignCenter } from "src/styles/utils";
 
 import {
@@ -69,19 +70,20 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
   const legendRef = useRef<HTMLDivElement>(null);
   const tooltipDivRef = useRef<HTMLDivElement>(null);
 
-  const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
+  const correlationFeatures = useViewerStateStore((state) => state.correlationFeatures);
+  const setCorrelationFeatures = useViewerStateStore((state) => state.setCorrelationFeatures);
   const lastRenderedPlotFeatures = useRef<Set<string>>(new Set());
 
   const sortedSelectedFeatures = useMemo(() => {
     // Keep in sorted order of the dataset
-    const featureSet = new Set(selectedFeatures);
+    const featureSet = new Set(correlationFeatures);
     return props.dataset?.featureKeys.filter((f) => featureSet.has(f)) || [];
-  }, [props.dataset, selectedFeatures]);
+  }, [props.dataset, correlationFeatures]);
 
   useEffect(() => {
     // Selects all features from the dataset on initial load.
-    if (props.dataset && selectedFeatures.length === 0) {
-      setSelectedFeatures(props.dataset.featureKeys);
+    if (props.dataset && correlationFeatures.length === 0) {
+      setCorrelationFeatures(props.dataset.featureKeys);
     }
   }, [props.dataset]);
 
@@ -93,7 +95,7 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
   // Plot Rendering
   //////////////////////////////////
 
-  const plotDependencies = [dataset, selectedFeatures];
+  const plotDependencies = [dataset, correlationFeatures];
 
   const renderPlot = async (_forceRelayout: boolean = false): Promise<void> => {
     if (!props.dataset || !legendRef.current || !plotDivRef.current || !tooltipDivRef.current) {
@@ -175,14 +177,14 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
           options={featureOptions}
           value={sortedSelectedFeatures}
           maxTagCount={"responsive"}
-          onClear={() => setSelectedFeatures([])}
+          onClear={() => setCorrelationFeatures([])}
           disabled={!props.dataset}
           onSelect={(value) => {
-            setSelectedFeatures([...selectedFeatures, value as string]);
+            setCorrelationFeatures([...correlationFeatures, value as string]);
           }}
-          onDeselect={(value) => setSelectedFeatures(selectedFeatures.filter((f) => f !== value))}
+          onDeselect={(value) => setCorrelationFeatures(correlationFeatures.filter((f) => f !== value))}
         ></Select>
-        <Button onClick={() => setSelectedFeatures(props.dataset?.featureKeys || [])} type="primary">
+        <Button onClick={() => setCorrelationFeatures(props.dataset?.featureKeys || [])} type="primary">
           Select all
         </Button>
       </FlexRowAlignCenter>
