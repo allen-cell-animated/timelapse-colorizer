@@ -199,18 +199,34 @@ export type FrameVectorData = {
   magnitude: Float32Array;
 };
 
-// TODO: This should live in the viewer and not in `colorizer`. Same with `url_utils`.
-// CHANGING THESE VALUES CAN POTENTIALLY BREAK URLs. See `url_utils.parseDrawSettings` for parsing logic.
-export enum TabType {
+export enum DataTabType {
   TRACK_PLOT = "track_plot",
   SCATTER_PLOT = "scatter_plot",
   CORRELATION_PLOT = "correlation_plot",
   LINEAGE = "lineage",
+  PLOT_3D = "3d_plot",
+}
+
+// TODO: This should live in the viewer and not in `colorizer`. Same with `url_utils`.
+// CHANGING THESE VALUES CAN POTENTIALLY BREAK URLs. See `url_utils.parseDrawSettings` for parsing logic.
+export enum TabType {
+  DATA = "data",
   FILTERS = "filters",
   ANNOTATION = "annotation",
-  PLOT_3D = "3d_plot",
   SETTINGS = "settings",
 }
+
+export enum DeprecatedTabTypes {
+  TRACK_PLOT = "track_plot",
+  SCATTER_PLOT = "scatter_plot",
+  CORRELATION_PLOT = "correlation_plot",
+  LINEAGE = "lineage",
+  PLOT_3D = "3d_plot",
+}
+
+export const isDataTabType = (tab: string): tab is DataTabType => {
+  return Object.values(DataTabType).includes(tab as DataTabType);
+};
 
 export const isTabType = (tab: string): tab is TabType => {
   return Object.values(TabType).includes(tab as TabType);

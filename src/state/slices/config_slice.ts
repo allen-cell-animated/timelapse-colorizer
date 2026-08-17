@@ -7,12 +7,14 @@ import {
   CentroidColorMode,
   ColorRamp,
   ColorRampType,
+  DataTabType,
   DEFAULT_DIVERGING_COLOR_RAMP_KEY,
   type DISPLAY_CATEGORICAL_PALETTE_KEYS,
   DrawMode,
   type DrawSettings,
   EDGE_COLOR_ALPHA_DEFAULT,
   EDGE_COLOR_DEFAULT,
+  isDataTabType,
   isTabType,
   KNOWN_CATEGORICAL_PALETTES,
   KNOWN_COLOR_RAMPS,
@@ -134,6 +136,9 @@ export type ConfigSliceState = {
 
   // UI state
   openTab: TabType;
+  // TODO: Could be interesting in the future to support arrays for the data
+  // tab, to show multiple plots at once.
+  dataTab: DataTabType;
 };
 
 export type ConfigSliceSerializableState = Pick<
@@ -168,6 +173,7 @@ export type ConfigSliceSerializableState = Pick<
   | "centroidColor"
   | "centroidOpacity"
   | "openTab"
+  | "dataTab"
   | "interpolate3d"
 >;
 
@@ -202,6 +208,7 @@ export type ConfigSliceActions = {
   setEdgeColor: (edgeColor: Color, alpha: number) => void;
   setEdgeMode: (edgeMode: DrawMode) => void;
   setOpenTab: (openTab: TabType) => void;
+  setDataTab: (dataTab: DataTabType) => void;
   setInterpolate3d: (interpolate3d: boolean) => void;
   setOutlineColorMode: (outlineColorMode: SelectionOutlineColorMode) => void;
 };
@@ -259,7 +266,8 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   interpolate3d: true,
 
   // UI state
-  openTab: TabType.TRACK_PLOT,
+  openTab: TabType.DATA,
+  dataTab: DataTabType.TRACK_PLOT,
 
   // Actions
   setShowSegmentations: (showSegmentations) => set({ showSegmentations }),
@@ -306,6 +314,7 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   setEdgeColor: (edgeColor, alpha) => set({ edgeColor, edgeColorAlpha: clamp(alpha, 0, 1) }),
   setEdgeMode: (edgeMode) => set({ edgeMode }),
   setOpenTab: (openTab) => set({ openTab }),
+  setDataTab: (dataTab) => set({ dataTab }),
   setInterpolate3d: (interpolate3d) => set({ interpolate3d }),
   setOutlinePaletteKey: (key) =>
     set((state) => {
@@ -363,6 +372,7 @@ export const serializeConfigSlice = (slice: Partial<ConfigSliceSerializableState
     [UrlParam.CENTROID_OPACITY]: encodeMaybeNumber(slice.centroidOpacity),
     [UrlParam.CENTROID_RADIUS]: encodeMaybeNumber(slice.centroidRadiusPx),
     [UrlParam.OPEN_TAB]: slice.openTab,
+    [UrlParam.DATA_TAB]: slice.dataTab,
     [UrlParam.INTERPOLATE_3D]: encodeMaybeBoolean(slice.interpolate3d),
   };
 };
@@ -399,8 +409,28 @@ export const selectConfigSliceSerializationDeps = (slice: ConfigSlice): ConfigSl
   centroidRadiusPx: slice.centroidRadiusPx,
   centroidOpacity: slice.centroidOpacity,
   openTab: slice.openTab,
+  dataTab: slice.dataTab,
   interpolate3d: slice.interpolate3d,
 });
+
+export function parseTabParams(
+  openTab: string | null,
+  dataTab: string | null
+): { openTab?: TabType; dataTab?: DataTabType } {
+  const result: { openTab?: TabType; dataTab?: DataTabType } = {};
+  if (openTab && isTabType(openTab)) {
+    result.openTab = openTab;
+  }
+  if (dataTab && isDataTabType(dataTab)) {
+    result.dataTab = dataTab;
+  }
+  if (openTab && isDataTabType(openTab)) {
+    // Deprecated tabs that are now nested in the data tab.
+    result.openTab = TabType.DATA;
+    result.dataTab = openTab;
+  }
+  return result;
+}
 
 export const loadConfigSliceFromParams = (slice: ConfigSlice, params: URLSearchParams): void => {
   setValueIfDefined(decodeBoolean(params.get(UrlParam.SHOW_SEGMENTATIONS)), slice.setShowSegmentations);
@@ -504,7 +534,12 @@ export const loadConfigSliceFromParams = (slice: ConfigSlice, params: URLSearchP
   }
 
   const openTabParam = params.get(UrlParam.OPEN_TAB);
-  if (openTabParam && isTabType(openTabParam)) {
-    slice.setOpenTab(openTabParam as TabType);
+  const dataTabParam = params.get(UrlParam.DATA_TAB);
+  const { openTab, dataTab } = parseTabParams(openTabParam, dataTabParam);
+  if (openTab) {
+    slice.setOpenTab(openTab);
+  }
+  if (dataTab) {
+    slice.setDataTab(dataTab);
   }
 };
