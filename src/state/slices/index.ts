@@ -97,6 +97,7 @@ export * from "./channel_slice";
 export * from "./collection_slice";
 export * from "./color_ramp_slice";
 export * from "./config_slice";
+export * from "./correlation_slice";
 export * from "./dataset_slice";
 export * from "./plot_3d_slice";
 export * from "./scatterplot_slice";

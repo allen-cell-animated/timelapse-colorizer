@@ -5,6 +5,7 @@ import {
   loadChannelSliceFromParams,
   loadColorRampSliceFromParams,
   loadConfigSliceFromParams,
+  loadCorrelationSliceFromParams,
   loadDatasetSliceFromParams,
   loadPlot3dSliceFromParams,
   loadScatterPlotSliceFromParams,
@@ -17,6 +18,7 @@ import {
   selectCollectionSliceSerializationDeps,
   selectColorRampSliceSerializationDeps,
   selectConfigSliceSerializationDeps,
+  selectCorrelationSliceSerializationDeps,
   selectDatasetSliceSerializationDeps,
   selectPlot3dSliceSerializationDeps,
   selectScatterPlotSliceSerializationDeps,
@@ -29,6 +31,7 @@ import {
   serializeCollectionSlice,
   serializeColorRampSlice,
   serializeConfigSlice,
+  serializeCorrelationSlice,
   serializeDatasetSlice,
   serializePlot3dSlice,
   serializeScatterPlotSlice,
@@ -40,12 +43,6 @@ import {
   type ViewerStoreSerializableState,
 } from "src/state/slices";
 import type { SerializedStoreData, Store } from "src/state/types";
-
-import {
-  loadCorrelationSliceFromParams,
-  selectCorrelationSliceSerializationDeps,
-  serializeCorrelationSlice,
-} from "../slices/correlation_slice";
 
 // SERIALIZATION /////////////////////////////////////////////////////////////////////////
 

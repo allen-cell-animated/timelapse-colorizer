@@ -1,10 +1,10 @@
-import { StateCreator } from "zustand";
+import type { StateCreator } from "zustand";
 
 import { deserializeFeatureList, serializeFeatureList, UrlParam } from "src/colorizer/utils/url_utils";
+import type { SerializedStoreData, SubscribableStore } from "src/state/types";
+import { addDerivedStateSubscriber } from "src/state/utils/store_utils";
 
-import { SerializedStoreData, SubscribableStore } from "../types";
-import { addDerivedStateSubscriber } from "../utils/store_utils";
-import { DatasetSlice } from "./dataset_slice";
+import type { DatasetSlice } from "./dataset_slice";
 
 export type CorrelationSliceState = {
   /** Current list of features selected for the correlation plot calculation. */

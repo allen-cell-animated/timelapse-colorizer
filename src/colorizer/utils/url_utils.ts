@@ -1,7 +1,7 @@
 import { Color } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "src/colorizer/constants";
-import Dataset from "src/colorizer/Dataset";
+import type Dataset from "src/colorizer/Dataset";
 import {
   CentroidColorMode,
   type ChannelSetting,
