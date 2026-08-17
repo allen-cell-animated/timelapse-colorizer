@@ -1,3 +1,5 @@
+import type * as d3 from "d3";
+
 import type { LineageData, LineageDataRelationships, TrackInfo } from "./types";
 
 /**
@@ -241,4 +243,63 @@ export function getInitialExpandedState(
     state = expandTrack(trackId, state, data, relationships);
   }
   return state;
+}
+
+/**
+ * Adjusts the position of merge nodes so they are aligned with the average of
+ * their parents' positions. This fixes an alignment issue with the current
+ * workaround for `d3.tree()` not handling multi-parent nodes.
+ *
+ * Note that this assumes that the parents of merge nodes are usually siblings
+ * or adjacent on the tree.
+ */
+export function alignMergeNodes(
+  treeRoot: d3.HierarchyPointNode<TrackInfo>,
+  data: LineageData,
+  relationships: LineageDataRelationships
+): void {
+  const idToTreeNode = new Map<number, d3.HierarchyPointNode<TrackInfo>>();
+  treeRoot.each((node) => {
+    idToTreeNode.set(node.data.id, node);
+  });
+  const mergeNodes = [...relationships.idToParents.entries()]
+    .filter(([, parents]) => parents.length > 1)
+    .map(([id]) => id);
+  // Sort merge nodes by depth; this way parents (and their subtrees) will be
+  // aligned before descendants.
+  const sortedMergeNodeIds = mergeNodes.sort((a, b) => {
+    const nodeA = idToTreeNode.get(a);
+    const nodeB = idToTreeNode.get(b);
+    if (!nodeA || !nodeB) {
+      return 0;
+    }
+    return nodeA.depth - nodeB.depth;
+  });
+
+  // For each merge node, align its X position with the average of its parents.
+  // Then, apply the same offset for all of its descendants (so the entire
+  // subtree is shifted together).
+  for (const mergeNodeId of sortedMergeNodeIds) {
+    const parents = relationships.idToParents.get(mergeNodeId) ?? [];
+    const parentNodes = parents.map((parentId) => idToTreeNode.get(parentId)).filter((node) => node !== undefined);
+    if (parentNodes.length <= 1) {
+      continue;
+    }
+
+    const avgX = parentNodes.reduce((sum, parentNode) => sum + parentNode.x, 0) / parentNodes.length;
+    const node = idToTreeNode.get(mergeNodeId);
+    if (node === undefined) {
+      continue;
+    }
+
+    const offset = avgX - node.x;
+    node.x += offset;
+    forEachDescendant(mergeNodeId, data.trackIdToTrackInfo, relationships.idToChildren, (descendantData) => {
+      const descendantNode = idToTreeNode.get(descendantData.id);
+      if (descendantNode) {
+        descendantNode.x += offset;
+      }
+      return true;
+    });
+  }
 }
