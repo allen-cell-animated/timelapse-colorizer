@@ -11,11 +11,11 @@ import PlotTab from "./TrackPlot/PlotTab";
 export {
   AnnotationTab,
   CorrelationPlotTab,
+  DataTab,
   FeatureThresholdsTab,
   LineageTab,
   Plot3dTab,
   PlotTab,
   ScatterPlotTab,
-  DataTab,
   SettingsTab,
 };
