@@ -262,12 +262,12 @@ export function alignMergeNodes(
   treeRoot.each((node) => {
     idToTreeNode.set(node.data.id, node);
   });
-  const mergeNodes = new Set(
-    [...relationships.idToParents.entries()].filter(([, parents]) => parents.length > 1).map(([id]) => id)
-  );
+  const mergeNodes = [...relationships.idToParents.entries()]
+    .filter(([, parents]) => parents.length > 1)
+    .map(([id]) => id);
   // Sort merge nodes by depth; this way parents (and their subtrees) will be
   // aligned before descendants.
-  const sortedMergeNodeIds = [...mergeNodes].sort((a, b) => {
+  const sortedMergeNodeIds = mergeNodes.sort((a, b) => {
     const nodeA = idToTreeNode.get(a);
     const nodeB = idToTreeNode.get(b);
     if (!nodeA || !nodeB) {
