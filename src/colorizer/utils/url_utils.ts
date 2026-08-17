@@ -1,5 +1,3 @@
-/* global RequestInit */
-// Typescript doesn't recognize RequestInit
 import { Color } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "src/colorizer/constants";
@@ -356,12 +354,14 @@ export function serializeFeatureList(features: string[], dataset?: Dataset): str
  * `URL_PARAM_ALL_FEATURES` placeholder.
  */
 export function deserializeFeatureList(features: string | null, dataset?: Dataset): string[] | undefined {
-  if (!features) {
+  if (features === null) {
     return undefined;
-  }
-  if (features === URL_PARAM_ALL_FEATURES) {
+  } else if (features === "") {
+    return [];
+  } else if (features === URL_PARAM_ALL_FEATURES) {
     return dataset ? [...dataset.featureKeys] : undefined;
   }
+
   let ret = features.split(",").map(decodeURIComponent);
   if (dataset) {
     ret = ret.filter((key) => dataset.hasFeatureKey(key));

@@ -6,15 +6,20 @@ import { type FeatureThreshold, ThresholdType } from "src/colorizer/types";
 import {
   convertAllenPathToHttps,
   decodeHexAlphaColor,
+  deserializeFeatureList,
   deserializeThresholds,
   encodeColorWithAlpha,
   isAllenPath,
   isHexColor,
   isJson,
   isUrl,
+  serializeFeatureList,
   serializeThresholds,
+  URL_PARAM_ALL_FEATURES,
   VAST_FILES_URL,
 } from "src/colorizer/utils/url_utils";
+
+import { MOCK_DATASET } from "./constants";
 
 function padCategories(categories: boolean[]): boolean[] {
   const result = [...categories];
@@ -298,6 +303,49 @@ describe("Loading + saving from URL query strings", () => {
           enabledCategories: padCategories([true, true]),
         },
       ]);
+    });
+  });
+
+  describe("serializeFeatureList / deserializeFeatureList", () => {
+    it("handles empty arrays", () => {
+      expect(serializeFeatureList([])).to.equal("");
+      expect(deserializeFeatureList("")).to.deep.equal([]);
+    });
+
+    it("can round-trip parse feature lists", async () => {
+      const features = ["feature1", "feature2", "feature3"];
+      const serialized = serializeFeatureList(features, MOCK_DATASET);
+      expect(serialized).to.equal("feature1,feature2,feature3");
+      const deserialized = deserializeFeatureList(serialized, MOCK_DATASET);
+      expect(deserialized).to.deep.equal(features);
+    });
+
+    it("does not filter features if no dataset is provided", () => {
+      const features = ["feature1", "feature2", "feature3", "nonexistent-feature"];
+      const serialized = serializeFeatureList(features);
+      expect(serialized).to.equal("feature1,feature2,feature3,nonexistent-feature");
+      const deserialized = deserializeFeatureList(serialized);
+      expect(deserialized).to.deep.equal(features);
+    });
+
+    it("removes features that are not in the dataset, if provided", () => {
+      const features = ["feature1", "feature2", "feature3", "nonexistent-feature"];
+      const serialized = serializeFeatureList(features, MOCK_DATASET);
+      expect(serialized).to.equal("feature1,feature2,feature3");
+      const deserialized = deserializeFeatureList(serialized, MOCK_DATASET);
+      expect(deserialized).to.deep.equal(["feature1", "feature2", "feature3"]);
+    });
+
+    it("parses the URL_PARAM_ALL_FEATURES placeholder", () => {
+      const serialized = URL_PARAM_ALL_FEATURES;
+      const deserialized = deserializeFeatureList(serialized, MOCK_DATASET);
+      expect(deserialized).to.deep.equal([...MOCK_DATASET.featureKeys]);
+    });
+
+    it("ignores the URL_PARAM_ALL_FEATURES placeholder if no dataset is provided", () => {
+      const serialized = URL_PARAM_ALL_FEATURES;
+      const deserialized = deserializeFeatureList(serialized);
+      expect(deserialized).to.be.undefined;
     });
   });
 });
