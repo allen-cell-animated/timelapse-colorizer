@@ -572,6 +572,9 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
         {(percentComplete !== 0 || isRecording) && (
           <StyledInlineProgress percent={percentComplete} error={!!errorText} />
         )}
+        <Button onClick={handleCancel} style={{ width: "76px" }} disabled={isPlayingCloseAnimation}>
+          {isRecording ? "Cancel" : "Close"}
+        </Button>
         <Button
           type={isRecording ? "default" : "primary"}
           onClick={isRecording ? handleStop : handleStartExport}
@@ -580,9 +583,6 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
           id={isRecording ? "export-modal-stop-button" : "export-modal-export-button"}
         >
           {isRecording ? "Stop" : "Export"}
-        </Button>
-        <Button onClick={handleCancel} style={{ width: "76px" }} disabled={isPlayingCloseAnimation}>
-          {isRecording ? "Cancel" : "Close"}
         </Button>
       </HorizontalDiv>
       {errorText && <p style={{ color: theme.color.text.error, textAlign: "left" }}>{errorText}</p>}
