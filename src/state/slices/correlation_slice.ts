@@ -81,9 +81,9 @@ export const loadCorrelationSliceFromParams = (
   params: URLSearchParams
 ): void => {
   const featuresParam = params.get(UrlParam.CORRELATION_PLOT_FEATURES);
-  if (featuresParam) {
+  if (featuresParam !== null) {
     const features = deserializeFeatureList(featuresParam, slice.dataset ?? undefined);
-    if (features) {
+    if (features !== undefined) {
       slice.setCorrelationFeatures(features);
     }
   }
