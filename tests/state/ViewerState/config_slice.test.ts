@@ -316,5 +316,45 @@ describe("ConfigSlice", () => {
       });
       expect(result.current.openTab).toBe(initialOpenTab);
     });
+
+    it("parses legacy plot tabs into data tabs", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      const tabKeys = Array.from(Object.values(DataTabType));
+      for (const tabKey of tabKeys) {
+        const params = new URLSearchParams();
+        params.set(UrlParam.OPEN_TAB, tabKey);
+        act(() => {
+          loadConfigSliceFromParams(result.current, params);
+        });
+        expect(result.current.openTab).toBe(TabType.DATA);
+        expect(result.current.dataTab).toBe(tabKey);
+      }
+    });
+
+    it("parses all data tabs", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      const tabKeys = Array.from(Object.values(DataTabType));
+      for (const tabKey of tabKeys) {
+        const params = new URLSearchParams();
+        params.set(UrlParam.DATA_TAB, tabKey);
+        act(() => {
+          loadConfigSliceFromParams(result.current, params);
+        });
+        expect(result.current.dataTab).toBe(tabKey);
+      }
+    });
+
+    it("parses all open tabs", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      const tabKeys = Array.from(Object.values(TabType));
+      for (const tabKey of tabKeys) {
+        const params = new URLSearchParams();
+        params.set(UrlParam.OPEN_TAB, tabKey);
+        act(() => {
+          loadConfigSliceFromParams(result.current, params);
+        });
+        expect(result.current.openTab).toBe(tabKey);
+      }
+    });
   });
 });
