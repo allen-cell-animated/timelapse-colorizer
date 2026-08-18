@@ -9,7 +9,7 @@ import { FlexRowAlignCenter, VisuallyHidden } from "src/styles/utils";
 import StyledSelect from "./StyledSelect";
 import type { SelectItem } from "./types";
 
-export type SelectionDropdownProps = {
+export type SelectionDropdownProps<T extends string = string> = {
   /** Text label to include with the dropdown. */
   label?: string | null;
   /**
@@ -19,7 +19,7 @@ export type SelectionDropdownProps = {
   hideLabel?: boolean;
   id?: string;
   /** The value of the item that is currently selected. */
-  selected: string | SelectItem | undefined;
+  selected: T | SelectItem<T> | undefined;
   /**
    * An array of SelectItems that describes the item properties (`{value,
    * label}`), or an array of strings. Dropdown items will be presented in the
@@ -33,7 +33,7 @@ export type SelectionDropdownProps = {
    * `items` property on every render, which can cause unexpected or unwanted
    * behavior such as flickering on hover during rapid page updates.
    */
-  items: SelectItem[] | string[];
+  items: SelectItem<T>[] | T[];
   controlTooltipPlacement?: "top" | "bottom" | "left" | "right";
   tooltipPopupContainer?: HTMLElement;
   disabled?: boolean;
@@ -49,7 +49,7 @@ export type SelectionDropdownProps = {
    * Callback that is fired whenever an item in the dropdown is selected.
    * The callback will be passed the `value` of the selected item.
    */
-  onChange: ((value: string) => Promise<void>) | ((value: string) => void);
+  onChange: ((value: T) => Promise<void>) | ((value: T) => void);
   /**
    * If true, shows the label of the currently-selected item as a tooltip
    * when hovering over the input/selection area.
@@ -135,7 +135,9 @@ function formatAsSelectItems(items: string[] | SelectItem[]): SelectItem[] {
  * the `items` property on every render, which can cause unexpected or unwanted
  * behavior such as flickering on hover during rapid page updates.
  */
-export default function SelectionDropdown(inputProps: React.PropsWithChildren<SelectionDropdownProps>): ReactElement {
+export default function SelectionDropdown<T extends string = string>(
+  inputProps: React.PropsWithChildren<SelectionDropdownProps<T>>
+): ReactElement {
   const props = { ...defaultProps, ...inputProps };
 
   const options = useMemo(() => formatAsSelectItems(props.items), [props.items]);
@@ -269,7 +271,7 @@ export default function SelectionDropdown(inputProps: React.PropsWithChildren<Se
           onChange: (value) => {
             if (value && value.value) {
               setPendingValue(value);
-              Promise.allSettled([props.onChange(value.value)]).finally(() => {
+              Promise.allSettled([props.onChange(value.value as T)]).finally(() => {
                 setPendingValue(null);
               });
             }
