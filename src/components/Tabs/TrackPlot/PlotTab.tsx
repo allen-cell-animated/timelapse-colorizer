@@ -8,6 +8,7 @@ import IconButton from "src/components/Buttons/IconButton";
 import ColorRampDropdown from "src/components/Dropdowns/ColorRampDropdown";
 import LoadingSpinner from "src/components/LoadingSpinner";
 import DataTabToolbar from "src/components/Tabs/Data/DataTabToolbar";
+import { SharedDataTabProps } from "src/components/Tabs/Data/types";
 import PlotWrapper from "src/components/Tabs/TrackPlot/PlotWrapper";
 import { useViewerStateStore } from "src/state";
 import { FlexRowAlignCenter, NoSpinnerContainer } from "src/styles/utils";
@@ -29,9 +30,8 @@ const TrackSearch = styled(FlexRowAlignCenter)`
   }
 `;
 
-type PlotTabProps = {
+type PlotTabProps = SharedDataTabProps & {
   disabled: boolean;
-  toolbar?: ReactElement;
 };
 
 export default function PlotTab(props: PlotTabProps): ReactElement {

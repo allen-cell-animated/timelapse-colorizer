@@ -6,20 +6,19 @@ import { DataTabType, SelectionOutlineColorMode, TabType, type VectorFieldData }
 import { getSharedWorkerPool } from "src/colorizer/workers/SharedWorkerPool";
 import LoadingSpinner from "src/components/LoadingSpinner";
 import DataTabToolbar from "src/components/Tabs/Data/DataTabToolbar";
+import { SharedDataTabProps } from "src/components/Tabs/Data/types";
 import Plot3dToolbar from "src/components/Tabs/Plot3d/Plot3dToolbar";
 import { useInteractionListener } from "src/hooks";
 import { useViewerStateStore } from "src/state";
 import { FlexColumn } from "src/styles/utils";
 
-import { make3dConeTrace } from "./plot_3d_utils";
 import Plot3d from "./Plot3d";
+import { make3dConeTrace } from "./plot_3d_utils";
 
 const MINIMUM_BIN_COUNT = 10;
 const RESUME_PLAYBACK_TIMEOUT_MS = 500;
 
-type Plot3dTabProps = {
-  toolbar: ReactElement;
-};
+type Plot3dTabProps = SharedDataTabProps;
 
 export default function Plot3dTab(props: Plot3dTabProps): ReactElement {
   const plotContainerRef = useRef<HTMLDivElement>(null);

@@ -12,6 +12,7 @@ import { DataTabType, TabType } from "src/colorizer";
 import { getSharedWorkerPool } from "src/colorizer/workers/SharedWorkerPool";
 import LoadingSpinner from "src/components/LoadingSpinner";
 import DataTabToolbar from "src/components/Tabs/Data/DataTabToolbar";
+import { SharedDataTabProps } from "src/components/Tabs/Data/types";
 import { useDebounce } from "src/hooks";
 import { useViewerStateStore } from "src/state";
 import { FlexColumnAlignCenter, FlexRowAlignCenter } from "src/styles/utils";
@@ -29,9 +30,7 @@ import {
   SVG_TEXT_PADDING,
 } from "./correlation_plot_data_utils";
 
-type CorrelationPlotTabProps = {
-  toolbar: ReactElement;
-};
+type CorrelationPlotTabProps = SharedDataTabProps;
 
 const TipDiv = styled.div`
   position: absolute;

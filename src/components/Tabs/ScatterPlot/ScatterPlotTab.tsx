@@ -17,6 +17,7 @@ import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import type { SelectItem } from "src/components/Dropdowns/types";
 import LoadingSpinner from "src/components/LoadingSpinner";
 import DataTabToolbar from "src/components/Tabs/Data/DataTabToolbar";
+import { SharedDataTabProps } from "src/components/Tabs/Data/types";
 import ScatterplotToolbar from "src/components/Tabs/ScatterPlot/ScatterplotToolbar";
 import { SCATTERPLOT_SYNC_AXIS_KEY, SHORTCUT_KEYS } from "src/constants";
 import { useDebounce, useDebounceRecord, useIsMouseButtonDownRef } from "src/hooks";
@@ -52,11 +53,10 @@ const DEFAULT_RANGE_TYPE = PlotRangeType.ALL_TIME;
 const TIME_LINE_TRACE_COLOR = "#aaaaaa";
 const AVERAGE_LINE_TRACE_COLOR = "#444444";
 
-type ScatterPlotTabProps = {
+type ScatterPlotTabProps = SharedDataTabProps & {
   isVisible: boolean;
   showAlert: ShowAlertBannerCallback;
   containerRef?: HTMLElement;
-  toolbar?: ReactElement;
 };
 
 const AxisDropdownContainer = styled.div`

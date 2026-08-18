@@ -1,4 +1,4 @@
-import React, { type ReactElement } from "react";
+import React, { type ReactElement, useMemo } from "react";
 
 import { DataTabType, TabType } from "src/colorizer";
 import type { ShowAlertBannerCallback } from "src/components/Banner";
@@ -10,6 +10,8 @@ import Plot3dTab from "src/components/Tabs/Plot3d/Plot3dTab";
 import ScatterPlotTab from "src/components/Tabs/ScatterPlot/ScatterPlotTab";
 import PlotTab from "src/components/Tabs/TrackPlot/PlotTab";
 import { useViewerStateStore } from "src/state/ViewerState";
+
+import { SharedDataTabProps } from "./types";
 
 type DataTabProps = {
   className: string;
@@ -48,32 +50,42 @@ export default function DataTab(props: DataTabProps): ReactElement {
       tooltip: "Calculates a 3D vector flow field for any three features.",
     },
   ];
-  const toolbar = (
-    <div>
-      <SelectionDropdown
-        selected={dataTab}
-        items={selectionItems}
-        onChange={setDataTab}
-        width="150px"
-        controlWidth="150px"
-        showSelectedItemTooltip={false}
-      />
-    </div>
+
+  const toolbar = useMemo(
+    () => (
+      <div>
+        <SelectionDropdown
+          selected={dataTab}
+          items={selectionItems}
+          onChange={setDataTab}
+          width="150px"
+          controlWidth="150px"
+          showSelectedItemTooltip={false}
+        />
+      </div>
+    ),
+    [dataTab, setDataTab, selectionItems]
+  );
+  const sharedProps: SharedDataTabProps = useMemo(
+    () => ({
+      toolbar,
+    }),
+    [toolbar]
   );
 
   const dataTabToComponent = {
-    [DataTabType.TRACK_PLOT]: <PlotTab disabled={disableUi} toolbar={toolbar} />,
+    [DataTabType.TRACK_PLOT]: <PlotTab disabled={disableUi} {...sharedProps} />,
     [DataTabType.SCATTER_PLOT]: (
       <ScatterPlotTab
         isVisible={openTab === TabType.DATA && dataTab === DataTabType.SCATTER_PLOT}
         showAlert={showAlert}
         containerRef={tabsContainerRef.current ?? undefined}
-        toolbar={toolbar}
+        {...sharedProps}
       />
     ),
-    [DataTabType.PLOT_3D]: <Plot3dTab toolbar={toolbar} />,
-    [DataTabType.CORRELATION_PLOT]: <CorrelationPlotTab toolbar={toolbar} />,
-    [DataTabType.LINEAGE]: <LineageTab toolbar={toolbar} />,
+    [DataTabType.PLOT_3D]: <Plot3dTab {...sharedProps} />,
+    [DataTabType.CORRELATION_PLOT]: <CorrelationPlotTab {...sharedProps} />,
+    [DataTabType.LINEAGE]: <LineageTab {...sharedProps} />,
   };
 
   const hasLineageData = dataset && dataset.hasLineageData(dataset.getDefaultTrackKey() ?? "");
