@@ -1,21 +1,6 @@
 import AnnotationTab from "./Annotation/AnnotationTab";
-import CorrelationPlotTab from "./CorrelationPlot/CorrelationPlotTab";
 import DataTab from "./Data/DataTab";
 import FeatureThresholdsTab from "./Filters/FeatureThresholdsTab";
-import LineageTab from "./Lineage/LineageTab";
-import Plot3dTab from "./Plot3d/Plot3dTab";
-import ScatterPlotTab from "./ScatterPlot/ScatterPlotTab";
 import SettingsTab from "./Settings/SettingsTab";
-import PlotTab from "./TrackPlot/PlotTab";
 
-export {
-  AnnotationTab,
-  CorrelationPlotTab,
-  DataTab,
-  FeatureThresholdsTab,
-  LineageTab,
-  Plot3dTab,
-  PlotTab,
-  ScatterPlotTab,
-  SettingsTab,
-};
+export { AnnotationTab, DataTab, FeatureThresholdsTab, SettingsTab };
