@@ -107,7 +107,7 @@ export default memo(function CorrelationPlotTab(_props: CorrelationPlotTabProps)
   const plotDependencies = [dataset, selectedFeatures];
 
   const renderPlot = async (_forceRelayout: boolean = false): Promise<void> => {
-    if (!inputDataset || !legendRef.current || !plotDivRef.current || !tooltipDivRef.current) {
+    if (!dataset || !legendRef.current || !plotDivRef.current || !tooltipDivRef.current) {
       return;
     }
     setIsRendering(true);
@@ -116,7 +116,7 @@ export default memo(function CorrelationPlotTab(_props: CorrelationPlotTabProps)
     // come in before a previous one finishes. Discard any results that are not from the most
     // recent render request.
     lastRenderedPlotFeatures.current = new Set(sortedSelectedFeatures);
-    const correlationData = await workerPool.getCorrelations(inputDataset!, sortedSelectedFeatures);
+    const correlationData = await workerPool.getCorrelations(dataset!, sortedSelectedFeatures);
     if (!areSetsEqual(lastRenderedPlotFeatures.current, new Set(sortedSelectedFeatures))) {
       // Another request happened in the meantime, discard this result.
       return;
