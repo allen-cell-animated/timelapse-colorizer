@@ -28,28 +28,36 @@ export default function DataTab(props: DataTabProps): ReactElement {
 
   const { className, showAlert, disableUi, tabsContainerRef } = props;
 
-  const selectionItems: SelectItem<DataTabType>[] = [
-    {
-      label: "Track plot",
-      value: DataTabType.TRACK_PLOT,
-      tooltip: "Plots feature values for selected tracks over time.",
-    },
-    {
-      label: "Scatter plot",
-      value: DataTabType.SCATTER_PLOT,
-      tooltip: "Plots all objects, with any feature as the X and Y axis.",
-    },
-    {
-      label: "Correlation plot",
-      value: DataTabType.CORRELATION_PLOT,
-      tooltip: "Calculates correlation scores between features.",
-    },
-    {
-      label: "Flow field plot",
-      value: DataTabType.PLOT_3D,
-      tooltip: "Calculates a 3D vector flow field for any three features.",
-    },
-  ];
+  const hasLineageData = dataset && dataset.hasLineageData(dataset.getDefaultTrackKey() ?? "");
+
+  const selectionItems = useMemo(() => {
+    const items: SelectItem<DataTabType>[] = [
+      {
+        label: "Track plot",
+        value: DataTabType.TRACK_PLOT,
+        tooltip: "Plots feature values for selected tracks over time.",
+      },
+      {
+        label: "Scatter plot",
+        value: DataTabType.SCATTER_PLOT,
+        tooltip: "Plots all objects, with any feature as the X and Y axis.",
+      },
+      {
+        label: "Correlation plot",
+        value: DataTabType.CORRELATION_PLOT,
+        tooltip: "Calculates correlation scores between features.",
+      },
+      {
+        label: "Flow field plot",
+        value: DataTabType.PLOT_3D,
+        tooltip: "Calculates a 3D vector flow field for any three features.",
+      },
+    ];
+    if (hasLineageData || dataTab === DataTabType.LINEAGE) {
+      items.push({ label: "Lineage", value: DataTabType.LINEAGE });
+    }
+    return items;
+  }, [hasLineageData, dataTab]);
 
   const toolbar = useMemo(
     () => (
@@ -87,12 +95,6 @@ export default function DataTab(props: DataTabProps): ReactElement {
     [DataTabType.CORRELATION_PLOT]: <CorrelationPlotTab {...sharedProps} />,
     [DataTabType.LINEAGE]: <LineageTab {...sharedProps} />,
   };
-
-  const hasLineageData = dataset && dataset.hasLineageData(dataset.getDefaultTrackKey() ?? "");
-
-  if (hasLineageData || dataTab === DataTabType.LINEAGE) {
-    selectionItems.push({ label: "Lineage", value: DataTabType.LINEAGE });
-  }
 
   return <div className={className}>{dataTabToComponent[dataTab]}</div>;
 }

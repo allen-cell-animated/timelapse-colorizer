@@ -63,7 +63,6 @@ import styles from "./Viewer.module.css";
 type TabItem<T extends string> = {
   label: string;
   key: T;
-  visible?: boolean;
   children: ReactNode;
 };
 
@@ -488,7 +487,7 @@ function Viewer(): ReactElement {
 
   const disableUi: boolean = isRecording || !datasetOpen;
 
-  const allTabItems: TabItem<TabType>[] = [
+  const tabItems: TabItem<TabType>[] = [
     {
       label: "Data",
       key: TabType.DATA,
@@ -531,9 +530,8 @@ function Viewer(): ReactElement {
     },
   ];
   // If non-visible tab is selected, show it
-  const tabItems = allTabItems.filter((item) => item.visible !== false || item.key === openTab);
-  const visibleTabKeys = new Set(tabItems.map((item) => item.key));
-  const currentTab = visibleTabKeys.has(openTab) ? openTab : TabType.DATA;
+  const tabKeys = new Set(tabItems.map((item) => item.key));
+  const currentTab = tabKeys.has(openTab) ? openTab : TabType.DATA;
 
   let datasetHeader: ReactNode = null;
   if (collection && collection.metadata.name) {

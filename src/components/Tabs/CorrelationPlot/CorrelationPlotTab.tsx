@@ -73,7 +73,7 @@ export default memo(function CorrelationPlotTab(_props: CorrelationPlotTabProps)
   const setDataTab = useViewerStateStore((state) => state.setDataTab);
   const setScatterXAxis = useViewerStateStore((state) => state.setScatterXAxis);
   const setScatterYAxis = useViewerStateStore((state) => state.setScatterYAxis);
-  const workerPool = useMemo(() => getSharedWorkerPool(), []);
+  const workerPool = getSharedWorkerPool();
 
   const selectedFeatures = useViewerStateStore((state) => state.correlationFeatures) ?? [];
   const setSelectedFeatures = useViewerStateStore((state) => state.setCorrelationFeatures);

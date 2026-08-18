@@ -136,8 +136,6 @@ export type ConfigSliceState = {
 
   // UI state
   openTab: TabType;
-  // TODO: Could be interesting in the future to support arrays for the data
-  // tab, to show multiple plots at once.
   dataTab: DataTabType;
 };
 
@@ -425,9 +423,10 @@ export function parseTabParams(
     result.dataTab = dataTab;
   }
   if (openTab && isDataTabType(openTab)) {
-    // Deprecated tabs that are now nested in the data tab.
+    // Deprecated tabs that are now nested in the data tab-- open the data tab.
+    // Use dataTab if valid, otherwise fall back to deprecated openTab value.
     result.openTab = TabType.DATA;
-    result.dataTab = openTab;
+    result.dataTab = dataTab && isDataTabType(dataTab) ? dataTab : openTab;
   }
   return result;
 }
