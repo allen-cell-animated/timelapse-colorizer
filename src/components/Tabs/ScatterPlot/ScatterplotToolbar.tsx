@@ -38,7 +38,7 @@ export default function ScatterplotToolbar(props: ScatterplotToolbarProps): Reac
           selected={scatterRangeType}
           items={PLOT_RANGE_SELECT_ITEMS}
           controlWidth={"130px"}
-          onChange={(value: string) => setRangeType(value as PlotRangeType)}
+          onChange={(value) => setRangeType(value)}
           showSelectedItemTooltip={false}
         ></SelectionDropdown>
       </div>
