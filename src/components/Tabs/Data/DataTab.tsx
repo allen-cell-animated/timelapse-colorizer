@@ -11,7 +11,7 @@ import ScatterPlotTab from "src/components/Tabs/ScatterPlot/ScatterPlotTab";
 import PlotTab from "src/components/Tabs/TrackPlot/PlotTab";
 import { useViewerStateStore } from "src/state/ViewerState";
 
-import { SharedDataTabProps } from "./types";
+import type { SharedDataTabProps } from "./types";
 
 type DataTabProps = {
   className: string;

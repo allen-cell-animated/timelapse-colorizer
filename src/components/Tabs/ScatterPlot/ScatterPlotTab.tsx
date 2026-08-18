@@ -17,7 +17,7 @@ import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import type { SelectItem } from "src/components/Dropdowns/types";
 import LoadingSpinner from "src/components/LoadingSpinner";
 import DataTabToolbar from "src/components/Tabs/Data/DataTabToolbar";
-import { SharedDataTabProps } from "src/components/Tabs/Data/types";
+import type { SharedDataTabProps } from "src/components/Tabs/Data/types";
 import ScatterplotToolbar from "src/components/Tabs/ScatterPlot/ScatterplotToolbar";
 import { SCATTERPLOT_SYNC_AXIS_KEY, SHORTCUT_KEYS } from "src/constants";
 import { useDebounce, useDebounceRecord, useIsMouseButtonDownRef } from "src/hooks";

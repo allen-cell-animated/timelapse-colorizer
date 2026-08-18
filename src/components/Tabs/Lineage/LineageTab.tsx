@@ -4,7 +4,7 @@ import { useShallow } from "zustand/shallow";
 
 import type Track from "src/colorizer/Track";
 import DataTabToolbar from "src/components/Tabs/Data/DataTabToolbar";
-import { SharedDataTabProps } from "src/components/Tabs/Data/types";
+import type { SharedDataTabProps } from "src/components/Tabs/Data/types";
 import HoverTooltip from "src/components/Tooltips/HoverTooltip";
 import { TooltipCard } from "src/components/Tooltips/TooltipCard";
 import { SHORTCUT_KEYS } from "src/constants/shortcuts";

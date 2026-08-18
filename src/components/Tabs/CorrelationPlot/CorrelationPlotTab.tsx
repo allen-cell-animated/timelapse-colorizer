@@ -12,7 +12,7 @@ import { DataTabType, TabType } from "src/colorizer";
 import { getSharedWorkerPool } from "src/colorizer/workers/SharedWorkerPool";
 import LoadingSpinner from "src/components/LoadingSpinner";
 import DataTabToolbar from "src/components/Tabs/Data/DataTabToolbar";
-import { SharedDataTabProps } from "src/components/Tabs/Data/types";
+import type { SharedDataTabProps } from "src/components/Tabs/Data/types";
 import { useDebounce } from "src/hooks";
 import { useViewerStateStore } from "src/state";
 import { FlexColumnAlignCenter, FlexRowAlignCenter } from "src/styles/utils";
