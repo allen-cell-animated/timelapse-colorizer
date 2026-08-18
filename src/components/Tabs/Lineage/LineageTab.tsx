@@ -3,7 +3,7 @@ import React, { type ReactElement, useCallback, useMemo, useRef, useState } from
 import { useShallow } from "zustand/shallow";
 
 import type Track from "src/colorizer/Track";
-import TabToolbar from "src/components/Tabs/Data/TabToolbar";
+import DataTabToolbar from "src/components/Tabs/Data/DataTabToolbar";
 import HoverTooltip from "src/components/Tooltips/HoverTooltip";
 import { TooltipCard } from "src/components/Tooltips/TooltipCard";
 import { SHORTCUT_KEYS } from "src/constants/shortcuts";
@@ -162,10 +162,10 @@ export default function LineageTab(props: LineageTabProps): ReactElement {
 
   return (
     <FlexColumn style={{ width: "100%", height: "100%" }}>
-      <TabToolbar>
+      <DataTabToolbar>
         <div></div>
         {props.toolbar}
-      </TabToolbar>
+      </DataTabToolbar>
       <HoverTooltip
         tooltipContent={tooltipContent}
         style={{ width: "100%", flexGrow: 3, flexBasis: "300px" }}

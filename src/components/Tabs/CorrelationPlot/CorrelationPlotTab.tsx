@@ -11,7 +11,7 @@ import styled from "styled-components";
 import { DataTabType, TabType } from "src/colorizer";
 import { getSharedWorkerPool } from "src/colorizer/workers/SharedWorkerPool";
 import LoadingSpinner from "src/components/LoadingSpinner";
-import TabToolbar from "src/components/Tabs/Data/TabToolbar";
+import DataTabToolbar from "src/components/Tabs/Data/DataTabToolbar";
 import { useDebounce } from "src/hooks";
 import { useViewerStateStore } from "src/state";
 import { FlexColumnAlignCenter, FlexRowAlignCenter } from "src/styles/utils";
@@ -178,7 +178,7 @@ export default memo(function CorrelationPlotTab(_props: CorrelationPlotTabProps)
 
   return (
     <FlexColumnAlignCenter $gap={10} style={{ height: "100%" }}>
-      <TabToolbar>
+      <DataTabToolbar>
         <FlexRowAlignCenter style={{ width: "100%" }} $gap={8}>
           <Select
             style={{ width: "100%" }}
@@ -200,7 +200,7 @@ export default memo(function CorrelationPlotTab(_props: CorrelationPlotTabProps)
           </Button>
         </FlexRowAlignCenter>
         {props.toolbar}
-      </TabToolbar>
+      </DataTabToolbar>
       <LoadingSpinner loading={isRendering} style={{ height: "100%" }}>
         <FlexColumnAlignCenter $gap={5}>
           <div id="legend" style={{ position: "relative" }} ref={legendRef}></div>

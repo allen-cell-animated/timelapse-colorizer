@@ -53,7 +53,7 @@ export default function Plot3dToolbar(): ReactElement {
   );
 
   return (
-    <FlexColumn $gap={10}>
+    <FlexColumn $gap={10} style={{ width: "100%" }}>
       {/* Plot Feature Controls */}
       <FlexRow $gap={8}>
         <Plot3dFeatureControls disabled={disabled} />
