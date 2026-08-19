@@ -20,6 +20,20 @@ type PlotsTabProps = {
   tabsContainerRef: React.RefObject<HTMLDivElement>;
 };
 
+export function PlotContainer(props: { children: React.ReactNode; visible: boolean }): ReactElement {
+  return (
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        display: props.visible === false ? "none" : "block",
+      }}
+    >
+      {props.children}
+    </div>
+  );
+}
+
 export default function PlotsTab(props: PlotsTabProps): ReactElement {
   const openTab = useViewerStateStore((state) => state.openTab);
   const plotTab = useViewerStateStore((state) => state.plotTab);
@@ -86,20 +100,34 @@ export default function PlotsTab(props: PlotsTabProps): ReactElement {
     [toolbar]
   );
 
-  const plotTabTypeToComponent = {
-    [PlotTabType.TRACK_PLOT]: <PlotTab disabled={disableUi} {...sharedProps} />,
-    [PlotTabType.SCATTER_PLOT]: (
-      <ScatterPlotTab
-        isVisible={openTab === TabType.PLOTS && plotTab === PlotTabType.SCATTER_PLOT}
-        showAlert={showAlert}
-        containerRef={tabsContainerRef.current ?? undefined}
-        {...sharedProps}
-      />
-    ),
-    [PlotTabType.PLOT_3D]: <Plot3dTab {...sharedProps} />,
-    [PlotTabType.CORRELATION_PLOT]: <CorrelationPlotTab {...sharedProps} />,
-    [PlotTabType.LINEAGE]: <LineageTab {...sharedProps} />,
-  };
+  // All plots are rendered, but only the selected tab is visible. This
+  // preserves the plot state when switching between them.
+  return (
+    <div className={className}>
+      <PlotContainer visible={plotTab === PlotTabType.TRACK_PLOT}>
+        <PlotTab disabled={disableUi} {...sharedProps} />
+      </PlotContainer>
 
-  return <div className={className}>{plotTabTypeToComponent[plotTab]}</div>;
+      <PlotContainer visible={plotTab === PlotTabType.SCATTER_PLOT}>
+        <ScatterPlotTab
+          isVisible={openTab === TabType.PLOTS && plotTab === PlotTabType.SCATTER_PLOT}
+          showAlert={showAlert}
+          containerRef={tabsContainerRef.current ?? undefined}
+          {...sharedProps}
+        />
+      </PlotContainer>
+
+      <PlotContainer visible={plotTab === PlotTabType.PLOT_3D}>
+        <Plot3dTab {...sharedProps} />
+      </PlotContainer>
+
+      <PlotContainer visible={plotTab === PlotTabType.CORRELATION_PLOT}>
+        <CorrelationPlotTab {...sharedProps} />
+      </PlotContainer>
+
+      <PlotContainer visible={plotTab === PlotTabType.LINEAGE}>
+        <LineageTab {...sharedProps} />
+      </PlotContainer>
+    </div>
+  );
 }
