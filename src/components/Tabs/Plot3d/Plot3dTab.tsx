@@ -12,8 +12,8 @@ import { useInteractionListener } from "src/hooks";
 import { useViewerStateStore } from "src/state";
 import { FlexColumn } from "src/styles/utils";
 
-import { make3dConeTrace } from "./plot_3d_utils";
 import Plot3d from "./Plot3d";
+import { make3dConeTrace } from "./plot_3d_utils";
 
 const MINIMUM_BIN_COUNT = 10;
 const RESUME_PLAYBACK_TIMEOUT_MS = 500;
@@ -55,7 +55,7 @@ export default function Plot3dTab(props: Plot3dTabProps): ReactElement {
   const zAxisFeatureKey = useViewerStateStore((state) => state.plot3dZAxis);
 
   const isPlotTabVisible = useViewerStateStore(
-    (state) => state.openTab === TabType.DATA && state.plotTab === PlotTabType.PLOT_3D
+    (state) => state.openTab === TabType.PLOTS && state.plotTab === PlotTabType.PLOT_3D
   );
 
   const bins = useDebounce(rawBins, 100);

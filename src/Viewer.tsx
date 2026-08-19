@@ -193,7 +193,7 @@ function Viewer(): ReactElement {
     const unsubscribe = useViewerStateStore.subscribe(
       (state) => [state.openTab, state.plotTab, state.dataset],
       ([openTab, plotTab, dataset]) => {
-        if (openTab === TabType.DATA && plotTab === PlotTabType.SCATTER_PLOT && dataset) {
+        if (openTab === TabType.PLOTS && plotTab === PlotTabType.SCATTER_PLOT && dataset) {
           if (
             useViewerStateStore.getState().scatterXAxis === null &&
             useViewerStateStore.getState().scatterYAxis === null
@@ -490,7 +490,7 @@ function Viewer(): ReactElement {
   const tabItems: TabItem<TabType>[] = [
     {
       label: "Plots",
-      key: TabType.DATA,
+      key: TabType.PLOTS,
       children: (
         <PlotsTab
           className={styles.tabContent}
@@ -531,7 +531,7 @@ function Viewer(): ReactElement {
   ];
   // If non-visible tab is selected, show it
   const tabKeys = new Set(tabItems.map((item) => item.key));
-  const currentTab = tabKeys.has(openTab) ? openTab : TabType.DATA;
+  const currentTab = tabKeys.has(openTab) ? openTab : TabType.PLOTS;
 
   let datasetHeader: ReactNode = null;
   if (collection && collection.metadata.name) {

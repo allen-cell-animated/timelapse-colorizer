@@ -90,7 +90,7 @@ export default function PlotsTab(props: PlotsTabProps): ReactElement {
     [PlotTabType.TRACK_PLOT]: <PlotTab disabled={disableUi} {...sharedProps} />,
     [PlotTabType.SCATTER_PLOT]: (
       <ScatterPlotTab
-        isVisible={openTab === TabType.DATA && plotTab === PlotTabType.SCATTER_PLOT}
+        isVisible={openTab === TabType.PLOTS && plotTab === PlotTabType.SCATTER_PLOT}
         showAlert={showAlert}
         containerRef={tabsContainerRef.current ?? undefined}
         {...sharedProps}

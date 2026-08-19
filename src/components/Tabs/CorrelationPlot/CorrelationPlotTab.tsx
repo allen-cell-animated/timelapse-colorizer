@@ -92,7 +92,7 @@ export default memo(function CorrelationPlotTab(_props: CorrelationPlotTabProps)
 
   const openScatterPlotTab = useCallback(
     (xAxis: string, yAxis: string) => {
-      setOpenTab(TabType.DATA);
+      setOpenTab(TabType.PLOTS);
       setPlotTab(PlotTabType.SCATTER_PLOT);
       setScatterXAxis(xAxis);
       setScatterYAxis(yAxis);

@@ -2,7 +2,7 @@ import styled from "styled-components";
 
 /**
  * Convenience component for consistent toolbar styling for tab contents shown
- * in the Data tab. Components should wrap their own toolbar content with this
+ * in the Plots tab. Components should wrap their own toolbar content with this
  * component, as well as the optional toolbar content passed in from the parent
  * as props.
  *

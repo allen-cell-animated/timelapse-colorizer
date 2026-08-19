@@ -264,7 +264,7 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   interpolate3d: true,
 
   // UI state
-  openTab: TabType.DATA,
+  openTab: TabType.PLOTS,
   plotTab: PlotTabType.TRACK_PLOT,
 
   // Actions
@@ -423,9 +423,9 @@ export function parseTabParams(
     result.plotTab = plotTab;
   }
   if (openTab && isPlotTabType(openTab)) {
-    // Deprecated tabs that are now nested in the data tab-- open the data tab.
+    // Deprecated tabs that are now nested in the plots tab-- open the plots tab.
     // Use plotTab if valid, otherwise fall back to deprecated openTab value.
-    result.openTab = TabType.DATA;
+    result.openTab = TabType.PLOTS;
     result.plotTab = plotTab && isPlotTabType(plotTab) ? plotTab : openTab;
   }
   return result;
