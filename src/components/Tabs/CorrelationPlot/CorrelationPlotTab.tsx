@@ -11,8 +11,8 @@ import styled from "styled-components";
 import { DataTabType, TabType } from "src/colorizer";
 import { getSharedWorkerPool } from "src/colorizer/workers/SharedWorkerPool";
 import LoadingSpinner from "src/components/LoadingSpinner";
-import DataTabToolbar from "src/components/Tabs/Data/DataTabToolbar";
-import type { SharedDataTabProps } from "src/components/Tabs/Data/types";
+import DataTabToolbar from "src/components/Tabs/Plots/PlotsTabToolbar";
+import type { SharedPlotTabProps } from "src/components/Tabs/Plots/types";
 import { useDebounce } from "src/hooks";
 import { useViewerStateStore } from "src/state";
 import { FlexColumnAlignCenter, FlexRowAlignCenter } from "src/styles/utils";
@@ -30,7 +30,7 @@ import {
   SVG_TEXT_PADDING,
 } from "./correlation_plot_data_utils";
 
-type CorrelationPlotTabProps = SharedDataTabProps;
+type CorrelationPlotTabProps = SharedPlotTabProps;
 
 const TipDiv = styled.div`
   position: absolute;
@@ -178,6 +178,7 @@ export default memo(function CorrelationPlotTab(_props: CorrelationPlotTabProps)
   return (
     <FlexColumnAlignCenter $gap={10} style={{ height: "100%" }}>
       <DataTabToolbar>
+        {props.toolbar}
         <FlexRowAlignCenter style={{ width: "100%" }} $gap={8}>
           <Select
             style={{ width: "100%" }}
@@ -198,7 +199,6 @@ export default memo(function CorrelationPlotTab(_props: CorrelationPlotTabProps)
             Select all
           </Button>
         </FlexRowAlignCenter>
-        {props.toolbar}
       </DataTabToolbar>
       <LoadingSpinner loading={isRendering} style={{ height: "100%" }}>
         <FlexColumnAlignCenter $gap={5}>

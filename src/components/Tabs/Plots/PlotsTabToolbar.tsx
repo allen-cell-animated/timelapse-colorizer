@@ -18,10 +18,12 @@ import styled from "styled-components";
  */
 const DataTabToolbar = styled.div`
   display: flex;
-  flex-direction: row;
+  /* flex-direction: row; */
+  flex-direction: column;
   flex-wrap: nowrap;
-  justify-content: space-between;
-  gap: 30px;
+  /* justify-content: space-between; */
+  /* gap: 30px; */
+  gap: 16px;
   width: 100%;
   // Fixes a bug where some focus outlines would be cut off
   position: relative;

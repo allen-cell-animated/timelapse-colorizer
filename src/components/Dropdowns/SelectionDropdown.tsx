@@ -235,7 +235,7 @@ export default function SelectionDropdown<T extends string = string>(
 
   return (
     <FlexRowAlignCenter
-      $gap={6}
+      $gap={props.hideLabel ? 0 : 6}
       style={{ width: props.width, minWidth: props.width, ...props.containerStyle }}
       ref={containerRef}
     >

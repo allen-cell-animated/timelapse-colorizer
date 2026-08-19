@@ -11,7 +11,7 @@ import ScatterPlotTab from "src/components/Tabs/ScatterPlot/ScatterPlotTab";
 import PlotTab from "src/components/Tabs/TrackPlot/PlotTab";
 import { useViewerStateStore } from "src/state/ViewerState";
 
-import type { SharedDataTabProps } from "./types";
+import type { SharedPlotTabProps } from "./types";
 
 type DataTabProps = {
   className: string;
@@ -54,19 +54,24 @@ export default function DataTab(props: DataTabProps): ReactElement {
       },
     ];
     if (hasLineageData || dataTab === DataTabType.LINEAGE) {
-      items.push({ label: "Lineage", value: DataTabType.LINEAGE });
+      items.push({
+        label: "Lineage graph",
+        value: DataTabType.LINEAGE,
+        tooltip: "Graphs parent-child relationships between tracks.",
+      });
     }
     return items;
   }, [hasLineageData, dataTab]);
 
   const toolbar = useMemo(
     () => (
-      <div>
+      <div style={{ width: "fit-content" }}>
         <SelectionDropdown
+          label="Type"
+          buttonType="primary"
           selected={dataTab}
           items={selectionItems}
           onChange={setDataTab}
-          width="150px"
           controlWidth="150px"
           showSelectedItemTooltip={false}
         />
@@ -74,7 +79,7 @@ export default function DataTab(props: DataTabProps): ReactElement {
     ),
     [dataTab, setDataTab, selectionItems]
   );
-  const sharedProps: SharedDataTabProps = useMemo(
+  const sharedProps: SharedPlotTabProps = useMemo(
     () => ({
       toolbar,
     }),

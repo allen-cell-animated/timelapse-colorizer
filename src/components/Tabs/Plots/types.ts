@@ -1,5 +1,5 @@
 import type React from "react";
 
-export type SharedDataTabProps = {
+export type SharedPlotTabProps = {
   toolbar: React.ReactNode;
 };

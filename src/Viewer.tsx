@@ -40,7 +40,7 @@ import Header from "src/components/Header";
 import LoadDatasetButton from "src/components/LoadDatasetButton";
 import LoadZipModal from "src/components/LoadZipModal";
 import SmallScreenWarning from "src/components/Modals/SmallScreenWarning";
-import { AnnotationTab, DataTab, FeatureThresholdsTab, SettingsTab } from "src/components/Tabs";
+import { AnnotationTab, FeatureThresholdsTab, PlotsTab, SettingsTab } from "src/components/Tabs";
 import CanvasHoverTooltip from "src/components/Tooltips/CanvasHoverTooltip";
 import { useAnnotations, useBackdropShortcuts, useConstructor, useRecentCollections } from "src/hooks";
 import { renderCanvasStateParamsSelector } from "src/state";
@@ -489,10 +489,10 @@ function Viewer(): ReactElement {
 
   const tabItems: TabItem<TabType>[] = [
     {
-      label: "Data",
+      label: "Plots",
       key: TabType.DATA,
       children: (
-        <DataTab
+        <PlotsTab
           className={styles.tabContent}
           showAlert={showAlert}
           disableUi={disableUi}
