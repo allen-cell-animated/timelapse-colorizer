@@ -5,10 +5,10 @@ import type { ShowAlertBannerCallback } from "src/components/Banner";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import type { SelectItem } from "src/components/Dropdowns/types";
 import CorrelationPlotTab from "src/components/Tabs/CorrelationPlot/CorrelationPlotTab";
-import LineageTab from "src/components/Tabs/Lineage/LineageTab";
-import Plot3dTab from "src/components/Tabs/Plot3d/Plot3dTab";
-import ScatterPlotTab from "src/components/Tabs/ScatterPlot/ScatterPlotTab";
-import PlotTab from "src/components/Tabs/TrackPlot/PlotTab";
+import LineageTab from "src/components/Tabs/Plots/Lineage/LineageTab";
+import Plot3dTab from "src/components/Tabs/Plots/Plot3d/Plot3dTab";
+import ScatterPlotTab from "src/components/Tabs/Plots/ScatterPlot/ScatterPlotTab";
+import PlotTab from "src/components/Tabs/Plots/TrackPlot/PlotTab";
 import { useViewerStateStore } from "src/state/ViewerState";
 
 import type { SharedPlotTabProps } from "./types";

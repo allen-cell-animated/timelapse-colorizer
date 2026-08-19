@@ -2,7 +2,8 @@ import Plotly from "plotly.js-dist-min";
 import { Color } from "three";
 
 import type { Dataset, Track } from "src/colorizer";
-import { make3dTrackPathTrace } from "src/components/Tabs/Plot3d/plot_3d_utils";
+
+import { make3dTrackPathTrace } from "./plot_3d_utils";
 
 const CONFIG: Partial<Plotly.Config> = {
   responsive: true,

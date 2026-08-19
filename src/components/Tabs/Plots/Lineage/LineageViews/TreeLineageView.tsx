@@ -2,16 +2,20 @@ import * as d3 from "d3";
 import React, { type ReactElement, useCallback, useEffect, useRef } from "react";
 import type { Color } from "three";
 
-import type { Track } from "src/colorizer";
-import { DUMMY_ROOT_NODE_ID } from "src/components/Tabs/Lineage/constants";
-import { frameTracksInView, getDefaultZoomTransform, useNewTracks } from "src/components/Tabs/Lineage/lineage_utils";
-import { alignMergeNodes } from "src/components/Tabs/Lineage/tree_utils";
+import { Track } from "src/colorizer";
+import { DUMMY_ROOT_NODE_ID } from "src/components/Tabs/Plots/Lineage/constants";
+import {
+  frameTracksInView,
+  getDefaultZoomTransform,
+  useNewTracks,
+} from "src/components/Tabs/Plots/Lineage/lineage_utils";
+import { alignMergeNodes } from "src/components/Tabs/Plots/Lineage/tree_utils";
 import type {
   LineageData,
   LineageDataRelationships,
   LineageNodeSelection,
   TrackInfo,
-} from "src/components/Tabs/Lineage/types";
+} from "src/components/Tabs/Plots/Lineage/types";
 import { useConstructor } from "src/hooks";
 
 const TREE_LEAF_HEIGHT_PX = 30;
