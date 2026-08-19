@@ -8,7 +8,7 @@ import LabeledSlider from "src/components/Inputs/LabeledSlider";
 import { SettingsContainer, SettingsItem } from "src/components/SettingsContainer";
 import { useViewerStateStore } from "src/state";
 
-type Plot3dDataControlsProps = {
+type FlowFieldDataControlsProps = {
   disabled?: boolean;
 };
 
@@ -16,14 +16,14 @@ const SLIDER_WIDTH_PX = 180;
 const LABEL_WIDTH_PX = 145;
 const SETTINGS_WIDTH_PX = SLIDER_WIDTH_PX + LABEL_WIDTH_PX;
 
-const enum Plot3dDataControlsHtmlIds {
+const enum FlowFieldDataControlsHtmlIds {
   VECTOR_BINS_DROPDOWN = "plot3d-data-vector-bins-dropdown",
   VECTOR_SUBSAMPLING_SLIDER = "plot3d-data-vector-subsampling-slider",
   GAUSSIAN_BANDWIDTH_SLIDER = "plot3d-data-gaussian-bandwidth-slider",
   GAUSSIAN_WEIGHTING_TOGGLE = "plot3d-data-gaussian-weighting-toggle",
 }
 
-export default function Plot3dDataControls(props: Plot3dDataControlsProps): ReactElement {
+export default function FlowFieldDataControls(props: FlowFieldDataControlsProps): ReactElement {
   const bins = useViewerStateStore((state) => state.plot3dVectorBins);
   const setBins = useViewerStateStore((state) => state.setPlot3dVectorBins);
   const subsampling = useViewerStateStore((state) => state.plot3dVectorSubsampling);
@@ -50,9 +50,9 @@ export default function Plot3dDataControls(props: Plot3dDataControlsProps): Reac
 
   const configMenuContents = (
     <SettingsContainer labelWidth={`${LABEL_WIDTH_PX}px`} style={{ width: `${SETTINGS_WIDTH_PX}px` }}>
-      <SettingsItem label="Vector bins" htmlFor={Plot3dDataControlsHtmlIds.VECTOR_BINS_DROPDOWN}>
+      <SettingsItem label="Vector bins" htmlFor={FlowFieldDataControlsHtmlIds.VECTOR_BINS_DROPDOWN}>
         <SelectionDropdown
-          id={Plot3dDataControlsHtmlIds.VECTOR_BINS_DROPDOWN}
+          id={FlowFieldDataControlsHtmlIds.VECTOR_BINS_DROPDOWN}
           selected={bins.toString()}
           items={[10, 20, 30, 40, 50].map((num) => ({ value: num.toString(), label: num.toString() }))}
           onChange={(value: string) => {
@@ -67,10 +67,10 @@ export default function Plot3dDataControls(props: Plot3dDataControlsProps): Reac
         ></SelectionDropdown>
       </SettingsItem>
 
-      <SettingsItem label="Vector subsampling" htmlFor={Plot3dDataControlsHtmlIds.VECTOR_SUBSAMPLING_SLIDER}>
+      <SettingsItem label="Vector subsampling" htmlFor={FlowFieldDataControlsHtmlIds.VECTOR_SUBSAMPLING_SLIDER}>
         <div style={{ width: `${SLIDER_WIDTH_PX}px` }}>
           <LabeledSlider
-            id={Plot3dDataControlsHtmlIds.VECTOR_SUBSAMPLING_SLIDER}
+            id={FlowFieldDataControlsHtmlIds.VECTOR_SUBSAMPLING_SLIDER}
             type="value"
             value={subsampling}
             onChange={setSubsampling}
@@ -86,10 +86,10 @@ export default function Plot3dDataControls(props: Plot3dDataControlsProps): Reac
         </div>
       </SettingsItem>
 
-      <SettingsItem label={gaussianLabel} htmlFor={Plot3dDataControlsHtmlIds.GAUSSIAN_WEIGHTING_TOGGLE}>
+      <SettingsItem label={gaussianLabel} htmlFor={FlowFieldDataControlsHtmlIds.GAUSSIAN_WEIGHTING_TOGGLE}>
         <div style={{ width: "fit-content" }}>
           <Checkbox
-            id={Plot3dDataControlsHtmlIds.GAUSSIAN_WEIGHTING_TOGGLE}
+            id={FlowFieldDataControlsHtmlIds.GAUSSIAN_WEIGHTING_TOGGLE}
             checked={useGaussian}
             onChange={(e) => setUseGaussian(e.target.checked)}
             disabled={props.disabled}
@@ -99,12 +99,12 @@ export default function Plot3dDataControls(props: Plot3dDataControlsProps): Reac
       {useGaussian && (
         <SettingsItem
           label={gaussianBandwidthLabel}
-          htmlFor={Plot3dDataControlsHtmlIds.GAUSSIAN_BANDWIDTH_SLIDER}
+          htmlFor={FlowFieldDataControlsHtmlIds.GAUSSIAN_BANDWIDTH_SLIDER}
           style={{ marginBottom: 6 }}
         >
           <div style={{ width: `${SLIDER_WIDTH_PX}px` }}>
             <LabeledSlider
-              id={Plot3dDataControlsHtmlIds.GAUSSIAN_BANDWIDTH_SLIDER}
+              id={FlowFieldDataControlsHtmlIds.GAUSSIAN_BANDWIDTH_SLIDER}
               type="value"
               value={gaussianBandwidthPct}
               onChange={setGaussianBandwidthPct}

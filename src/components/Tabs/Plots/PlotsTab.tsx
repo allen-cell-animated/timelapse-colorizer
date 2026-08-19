@@ -4,11 +4,11 @@ import { PlotTabType, TabType } from "src/colorizer";
 import type { ShowAlertBannerCallback } from "src/components/Banner";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import type { SelectItem } from "src/components/Dropdowns/types";
-import CorrelationPlotTab from "src/components/Tabs/CorrelationPlot/CorrelationPlotTab";
+import CorrelationPlotTab from "src/components/Tabs/Plots/CorrelationPlot/CorrelationPlotTab";
+import FlowFieldPlotTab from "src/components/Tabs/Plots/FlowFieldPlot/FlowFieldPlotTab";
 import LineageGraphTab from "src/components/Tabs/Plots/LineageGraph/LineageGraphTab";
-import Plot3dTab from "src/components/Tabs/Plots/Plot3d/Plot3dTab";
 import ScatterPlotTab from "src/components/Tabs/Plots/ScatterPlot/ScatterPlotTab";
-import TrackPlotTab from "src/components/Tabs/Plots/TrackPlot/PlotTab";
+import TrackPlotTab from "src/components/Tabs/Plots/TrackPlot/TrackPlotTab";
 import { useViewerStateStore } from "src/state/ViewerState";
 
 import type { SharedPlotTabProps } from "./types";
@@ -118,7 +118,7 @@ export default function PlotsTab(props: PlotsTabProps): ReactElement {
       </PlotContainer>
 
       <PlotContainer visible={plotTab === PlotTabType.PLOT_3D}>
-        <Plot3dTab {...sharedProps} />
+        <FlowFieldPlotTab {...sharedProps} />
       </PlotContainer>
 
       <PlotContainer visible={plotTab === PlotTabType.CORRELATION_PLOT}>

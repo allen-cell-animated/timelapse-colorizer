@@ -3,7 +3,7 @@ import { Color } from "three";
 
 import type { Dataset, Track } from "src/colorizer";
 
-import { make3dTrackPathTrace } from "./plot_3d_utils";
+import { make3dTrackPathTrace } from "./flow_field_utils";
 
 const CONFIG: Partial<Plotly.Config> = {
   responsive: true,
@@ -23,9 +23,9 @@ const LAYOUT: Partial<Plotly.Layout> = {
 };
 
 /**
- * Renders a 3D plot of tracks and vector fields using Plotly.
+ * Renders a 3D plot of tracks and vector flow fields using Plotly.
  */
-export default class Plot3d {
+export default class FlowFieldPlot {
   public parentRef: HTMLElement;
   public dataset: Dataset | null;
   public tracks: Map<number, Track> | null;

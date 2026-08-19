@@ -11,18 +11,18 @@ import { useInteractionListener } from "src/hooks";
 import { useViewerStateStore } from "src/state";
 import { FlexColumn } from "src/styles/utils";
 
-import Plot3d from "./Plot3d";
-import Plot3dToolbar from "./Plot3dToolbar";
-import { make3dConeTrace } from "./plot_3d_utils";
+import FlowFieldToolbar from "./controls/FlowFieldToolbar";
+import { make3dConeTrace } from "./flow_field_utils";
+import FlowFieldPlot from "./FlowFieldPlot";
 
 const MINIMUM_BIN_COUNT = 10;
 const RESUME_PLAYBACK_TIMEOUT_MS = 500;
 
-type Plot3dTabProps = SharedPlotTabProps;
+type FlowFieldTabProps = SharedPlotTabProps;
 
-export default function Plot3dTab(props: Plot3dTabProps): ReactElement {
+export default function FlowFieldPlotTab(props: FlowFieldTabProps): ReactElement {
   const plotContainerRef = useRef<HTMLDivElement>(null);
-  const plot3dRef = useRef<Plot3d | null>(null);
+  const plot3dRef = useRef<FlowFieldPlot | null>(null);
 
   const [isLoading, setIsLoading] = useState(false);
   const [vectorFieldData, setVectorFieldData] = useState<VectorFieldData | null>(null);
@@ -67,7 +67,7 @@ export default function Plot3dTab(props: Plot3dTabProps): ReactElement {
 
   // Mount Plotly plot on component mount
   useEffect(() => {
-    plot3dRef.current = new Plot3d(plotContainerRef.current!);
+    plot3dRef.current = new FlowFieldPlot(plotContainerRef.current!);
     return () => {
       plot3dRef.current?.dispose();
       plot3dRef.current = null;
@@ -218,7 +218,7 @@ export default function Plot3dTab(props: Plot3dTabProps): ReactElement {
     <FlexColumn style={{ height: "100%", marginBottom: 10 }} $gap={8}>
       <PlotsTabToolbar>
         {props.toolbar}
-        <Plot3dToolbar />
+        <FlowFieldToolbar />
       </PlotsTabToolbar>
 
       {/* Plot Container */}
