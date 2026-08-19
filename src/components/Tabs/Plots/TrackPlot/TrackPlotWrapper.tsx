@@ -5,7 +5,7 @@ import React, { type ReactElement, useEffect, useRef, useState } from "react";
 import { type Dataset, type Track, ViewMode } from "src/colorizer";
 import { CENTROID_Y_FEATURE_KEY } from "src/colorizer/Dataset";
 
-import TrackPlot, { type TrackPlotLayoutConfig } from "./Plotting";
+import TrackPlot, { type TrackPlotLayoutConfig } from "./TrackPlot";
 
 type PlotWrapperProps = {
   frame: number;

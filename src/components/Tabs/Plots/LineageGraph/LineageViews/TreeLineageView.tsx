@@ -3,19 +3,19 @@ import React, { type ReactElement, useCallback, useEffect, useRef } from "react"
 import type { Color } from "three";
 
 import { Track } from "src/colorizer";
-import { DUMMY_ROOT_NODE_ID } from "src/components/Tabs/Plots/Lineage/constants";
+import { DUMMY_ROOT_NODE_ID } from "src/components/Tabs/Plots/LineageGraph/constants";
 import {
   frameTracksInView,
   getDefaultZoomTransform,
   useNewTracks,
-} from "src/components/Tabs/Plots/Lineage/lineage_utils";
-import { alignMergeNodes } from "src/components/Tabs/Plots/Lineage/tree_utils";
+} from "src/components/Tabs/Plots/LineageGraph/lineage_utils";
+import { alignMergeNodes } from "src/components/Tabs/Plots/LineageGraph/tree_utils";
 import type {
   LineageData,
   LineageDataRelationships,
   LineageNodeSelection,
   TrackInfo,
-} from "src/components/Tabs/Plots/Lineage/types";
+} from "src/components/Tabs/Plots/LineageGraph/types";
 import { useConstructor } from "src/hooks";
 
 const TREE_LEAF_HEIGHT_PX = 30;
