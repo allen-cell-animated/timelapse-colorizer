@@ -17,10 +17,10 @@ const LABEL_WIDTH_PX = 145;
 const SETTINGS_WIDTH_PX = SLIDER_WIDTH_PX + LABEL_WIDTH_PX;
 
 const enum FlowFieldDataControlsHtmlIds {
-  VECTOR_BINS_DROPDOWN = "plot3d-data-vector-bins-dropdown",
-  VECTOR_SUBSAMPLING_SLIDER = "plot3d-data-vector-subsampling-slider",
-  GAUSSIAN_BANDWIDTH_SLIDER = "plot3d-data-gaussian-bandwidth-slider",
-  GAUSSIAN_WEIGHTING_TOGGLE = "plot3d-data-gaussian-weighting-toggle",
+  VECTOR_BINS_DROPDOWN = "flow-field-data-vector-bins-dropdown",
+  VECTOR_SUBSAMPLING_SLIDER = "flow-field-data-vector-subsampling-slider",
+  GAUSSIAN_BANDWIDTH_SLIDER = "flow-field-data-gaussian-bandwidth-slider",
+  GAUSSIAN_WEIGHTING_TOGGLE = "flow-field-data-gaussian-weighting-toggle",
 }
 
 export default function FlowFieldDataControls(props: FlowFieldDataControlsProps): ReactElement {

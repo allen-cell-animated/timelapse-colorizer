@@ -11,7 +11,7 @@ import { StyledVerticalRule } from "src/styles/components";
 import { FlexColumn, FlexRow, FlexRowAlignCenter } from "src/styles/utils";
 
 const enum FlowFieldToolbarHtmlIds {
-  THRESHOLD_SLIDER = "plot3d-toolbar-threshold-slider",
+  THRESHOLD_SLIDER = "flow-field-toolbar-threshold-slider",
 }
 
 export default function FlowFieldToolbar(): ReactElement {

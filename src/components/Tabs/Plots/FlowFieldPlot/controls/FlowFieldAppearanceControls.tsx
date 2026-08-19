@@ -17,10 +17,10 @@ type FlowFieldAppearanceControlsProps = {
 };
 
 const enum FlowFieldAppearanceControlsHtmlIds {
-  CONE_SIZE_SLIDER = "plot3d-cone-size-slider",
-  CONE_COLOR_RAMP_SELECTION = "plot3d-cone-color-ramp-selection",
-  LINE_WINDOW_SLIDER = "plot3d-line-moving-average-window-slider",
-  LINE_WIDTH_SLIDER = "plot3d-line-width-slider",
+  CONE_SIZE_SLIDER = "flow-field-cone-size-slider",
+  CONE_COLOR_RAMP_SELECTION = "flow-field-cone-color-ramp-selection",
+  LINE_WINDOW_SLIDER = "flow-field-line-moving-average-window-slider",
+  LINE_WIDTH_SLIDER = "flow-field-line-width-slider",
 }
 
 export default function FlowFieldAppearanceControls(props: FlowFieldAppearanceControlsProps): ReactElement {

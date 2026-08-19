@@ -22,7 +22,7 @@ type FlowFieldTabProps = SharedPlotTabProps;
 
 export default function FlowFieldPlotTab(props: FlowFieldTabProps): ReactElement {
   const plotContainerRef = useRef<HTMLDivElement>(null);
-  const plot3dRef = useRef<FlowFieldPlot | null>(null);
+  const plotRef = useRef<FlowFieldPlot | null>(null);
 
   const [isLoading, setIsLoading] = useState(false);
   const [vectorFieldData, setVectorFieldData] = useState<VectorFieldData | null>(null);
@@ -67,10 +67,10 @@ export default function FlowFieldPlotTab(props: FlowFieldTabProps): ReactElement
 
   // Mount Plotly plot on component mount
   useEffect(() => {
-    plot3dRef.current = new FlowFieldPlot(plotContainerRef.current!);
+    plotRef.current = new FlowFieldPlot(plotContainerRef.current!);
     return () => {
-      plot3dRef.current?.dispose();
-      plot3dRef.current = null;
+      plotRef.current?.dispose();
+      plotRef.current = null;
     };
   }, []);
 
@@ -126,7 +126,7 @@ export default function FlowFieldPlotTab(props: FlowFieldTabProps): ReactElement
       !dataset.hasFeatureKey(zAxisFeatureKey) ||
       !dataset.times ||
       !dataset.trackIds ||
-      !plot3dRef.current
+      !plotRef.current
     ) {
       setVectorFieldData(null);
       return;
@@ -149,13 +149,13 @@ export default function FlowFieldPlotTab(props: FlowFieldTabProps): ReactElement
       )
       .then((vectorFieldData) => {
         // Check if a newer requests supercedes this one before updating state
-        if (requestId !== currentVectorFieldRequestIdRef.current || !plot3dRef.current) {
+        if (requestId !== currentVectorFieldRequestIdRef.current || !plotRef.current) {
           return;
         }
         setVectorFieldData(vectorFieldData);
-        plot3dRef.current.xAxisFeatureKey = xAxisFeatureKey;
-        plot3dRef.current.yAxisFeatureKey = yAxisFeatureKey;
-        plot3dRef.current.zAxisFeatureKey = zAxisFeatureKey;
+        plotRef.current.xAxisFeatureKey = xAxisFeatureKey;
+        plotRef.current.yAxisFeatureKey = yAxisFeatureKey;
+        plotRef.current.zAxisFeatureKey = zAxisFeatureKey;
       })
       .finally(() => {
         if (requestId === currentVectorFieldRequestIdRef.current) {
@@ -201,14 +201,14 @@ export default function FlowFieldPlotTab(props: FlowFieldTabProps): ReactElement
 
   // Sync plot with state changes
   useEffect(() => {
-    if (plot3dRef.current && isPlotTabVisible) {
-      plot3dRef.current.dataset = dataset;
-      plot3dRef.current.tracks = tracks;
-      plot3dRef.current.trackToColor = outlineColorMode === SelectionOutlineColorMode.USE_PALETTE ? trackColors : null;
-      plot3dRef.current.coneTrace = coneTrace as Plotly.Data | null;
-      plot3dRef.current.lineAverageWindow = movingAverageWindow;
-      plot3dRef.current.lineWidth = lineWidth;
-      plot3dRef.current.plot(currentFrame);
+    if (plotRef.current && isPlotTabVisible) {
+      plotRef.current.dataset = dataset;
+      plotRef.current.tracks = tracks;
+      plotRef.current.trackToColor = outlineColorMode === SelectionOutlineColorMode.USE_PALETTE ? trackColors : null;
+      plotRef.current.coneTrace = coneTrace as Plotly.Data | null;
+      plotRef.current.lineAverageWindow = movingAverageWindow;
+      plotRef.current.lineWidth = lineWidth;
+      plotRef.current.plot(currentFrame);
     }
   }, [dataset, tracks, currentFrame, coneTrace, isPlotTabVisible, movingAverageWindow, lineWidth]);
 
