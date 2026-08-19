@@ -67,7 +67,7 @@ export type TrackPlotLayoutConfig = {
   };
 };
 
-export default class Plotting {
+export default class TrackPlot {
   private parentRef: HTMLElement;
   private dataset: Dataset | null;
 

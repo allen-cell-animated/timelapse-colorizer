@@ -8,7 +8,7 @@ import CorrelationPlotTab from "src/components/Tabs/CorrelationPlot/CorrelationP
 import LineageTab from "src/components/Tabs/Plots/Lineage/LineageTab";
 import Plot3dTab from "src/components/Tabs/Plots/Plot3d/Plot3dTab";
 import ScatterPlotTab from "src/components/Tabs/Plots/ScatterPlot/ScatterPlotTab";
-import PlotTab from "src/components/Tabs/Plots/TrackPlot/PlotTab";
+import TrackPlotTab from "src/components/Tabs/Plots/TrackPlot/PlotTab";
 import { useViewerStateStore } from "src/state/ViewerState";
 
 import type { SharedPlotTabProps } from "./types";
@@ -105,7 +105,7 @@ export default function PlotsTab(props: PlotsTabProps): ReactElement {
   return (
     <div className={className}>
       <PlotContainer visible={plotTab === PlotTabType.TRACK_PLOT}>
-        <PlotTab disabled={disableUi} {...sharedProps} />
+        <TrackPlotTab disabled={disableUi} {...sharedProps} />
       </PlotContainer>
 
       <PlotContainer visible={plotTab === PlotTabType.SCATTER_PLOT}>
