@@ -2,11 +2,11 @@ import type Plotly from "plotly.js-dist-min";
 import React, { type ReactElement, useEffect, useRef, useState } from "react";
 import { useDebounce } from "usehooks-ts";
 
-import { DataTabType, SelectionOutlineColorMode, TabType, type VectorFieldData } from "src/colorizer";
+import { PlotTabType, SelectionOutlineColorMode, TabType, type VectorFieldData } from "src/colorizer";
 import { getSharedWorkerPool } from "src/colorizer/workers/SharedWorkerPool";
 import LoadingSpinner from "src/components/LoadingSpinner";
 import Plot3dToolbar from "src/components/Tabs/Plot3d/Plot3dToolbar";
-import DataTabToolbar from "src/components/Tabs/Plots/PlotsTabToolbar";
+import PlotsTabToolbar from "src/components/Tabs/Plots/PlotsTabToolbar";
 import type { SharedPlotTabProps } from "src/components/Tabs/Plots/types";
 import { useInteractionListener } from "src/hooks";
 import { useViewerStateStore } from "src/state";
@@ -55,7 +55,7 @@ export default function Plot3dTab(props: Plot3dTabProps): ReactElement {
   const zAxisFeatureKey = useViewerStateStore((state) => state.plot3dZAxis);
 
   const isPlotTabVisible = useViewerStateStore(
-    (state) => state.openTab === TabType.DATA && state.dataTab === DataTabType.PLOT_3D
+    (state) => state.openTab === TabType.DATA && state.plotTab === PlotTabType.PLOT_3D
   );
 
   const bins = useDebounce(rawBins, 100);
@@ -216,10 +216,10 @@ export default function Plot3dTab(props: Plot3dTabProps): ReactElement {
 
   return (
     <FlexColumn style={{ height: "100%", marginBottom: 10 }} $gap={8}>
-      <DataTabToolbar>
+      <PlotsTabToolbar>
         {props.toolbar}
         <Plot3dToolbar />
-      </DataTabToolbar>
+      </PlotsTabToolbar>
 
       {/* Plot Container */}
       <LoadingSpinner loading={isLoading} style={{ width: "100%", height: "100%" }}>

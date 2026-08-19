@@ -8,15 +8,15 @@ import styled from "styled-components";
  *
  * @example
  * ```tsx
- * <DataTabToolbar>
+ * <PlotsTabToolbar>
  *   <div>
  *     {Content-specific toolbar goes here}
  *   </div>
  *   {props.toolbar} // optional toolbar content passed in from parent
- * </DataTabToolbar>
+ * </PlotsTabToolbar>
  * ```
  */
-const DataTabToolbar = styled.div`
+const PlotsTabToolbar = styled.div`
   display: flex;
   /* flex-direction: row; */
   flex-direction: column;
@@ -30,4 +30,4 @@ const DataTabToolbar = styled.div`
   z-index: 1;
 `;
 
-export default DataTabToolbar;
+export default PlotsTabToolbar;

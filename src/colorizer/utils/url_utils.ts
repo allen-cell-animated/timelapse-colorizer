@@ -41,7 +41,7 @@ export enum UrlParam {
   SHOW_SCALEBAR = "scalebar",
   SHOW_TIMESTAMP = "timestamp",
   OPEN_TAB = "tab",
-  DATA_TAB = "data-tab",
+  PLOT_TAB = "plot",
   INTERPOLATE_3D = "interpolate",
   // Track selection
   TRACK = "track",

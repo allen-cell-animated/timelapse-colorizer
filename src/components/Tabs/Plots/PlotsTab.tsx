@@ -1,6 +1,6 @@
 import React, { type ReactElement, useMemo } from "react";
 
-import { DataTabType, TabType } from "src/colorizer";
+import { PlotTabType, TabType } from "src/colorizer";
 import type { ShowAlertBannerCallback } from "src/components/Banner";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import type { SelectItem } from "src/components/Dropdowns/types";
@@ -13,17 +13,17 @@ import { useViewerStateStore } from "src/state/ViewerState";
 
 import type { SharedPlotTabProps } from "./types";
 
-type DataTabProps = {
+type PlotsTabProps = {
   className: string;
   showAlert: ShowAlertBannerCallback;
   disableUi: boolean;
   tabsContainerRef: React.RefObject<HTMLDivElement>;
 };
 
-export default function DataTab(props: DataTabProps): ReactElement {
+export default function PlotsTab(props: PlotsTabProps): ReactElement {
   const openTab = useViewerStateStore((state) => state.openTab);
-  const dataTab = useViewerStateStore((state) => state.dataTab);
-  const setDataTab = useViewerStateStore((state) => state.setDataTab);
+  const plotTab = useViewerStateStore((state) => state.plotTab);
+  const setPlotTab = useViewerStateStore((state) => state.setPlotTab);
   const dataset = useViewerStateStore((state) => state.dataset);
 
   const { className, showAlert, disableUi, tabsContainerRef } = props;
@@ -31,37 +31,37 @@ export default function DataTab(props: DataTabProps): ReactElement {
   const hasLineageData = dataset && dataset.hasLineageData(dataset.getDefaultTrackKey() ?? "");
 
   const selectionItems = useMemo(() => {
-    const items: SelectItem<DataTabType>[] = [
+    const items: SelectItem<PlotTabType>[] = [
       {
         label: "Track plot",
-        value: DataTabType.TRACK_PLOT,
+        value: PlotTabType.TRACK_PLOT,
         tooltip: "Plots feature values for selected tracks over time.",
       },
       {
         label: "Scatter plot",
-        value: DataTabType.SCATTER_PLOT,
+        value: PlotTabType.SCATTER_PLOT,
         tooltip: "Plots all objects, with any feature as the X and Y axis.",
       },
       {
         label: "Correlation plot",
-        value: DataTabType.CORRELATION_PLOT,
+        value: PlotTabType.CORRELATION_PLOT,
         tooltip: "Calculates correlation scores between features.",
       },
       {
         label: "Flow field plot",
-        value: DataTabType.PLOT_3D,
+        value: PlotTabType.PLOT_3D,
         tooltip: "Calculates a 3D vector flow field for any three features.",
       },
     ];
-    if (hasLineageData || dataTab === DataTabType.LINEAGE) {
+    if (hasLineageData || plotTab === PlotTabType.LINEAGE) {
       items.push({
         label: "Lineage graph",
-        value: DataTabType.LINEAGE,
+        value: PlotTabType.LINEAGE,
         tooltip: "Graphs parent-child relationships between tracks.",
       });
     }
     return items;
-  }, [hasLineageData, dataTab]);
+  }, [hasLineageData, plotTab]);
 
   const toolbar = useMemo(
     () => (
@@ -69,15 +69,15 @@ export default function DataTab(props: DataTabProps): ReactElement {
         <SelectionDropdown
           label="Type"
           buttonType="primary"
-          selected={dataTab}
+          selected={plotTab}
           items={selectionItems}
-          onChange={setDataTab}
+          onChange={setPlotTab}
           controlWidth="150px"
           showSelectedItemTooltip={false}
         />
       </div>
     ),
-    [dataTab, setDataTab, selectionItems]
+    [plotTab, setPlotTab, selectionItems]
   );
   const sharedProps: SharedPlotTabProps = useMemo(
     () => ({
@@ -86,20 +86,20 @@ export default function DataTab(props: DataTabProps): ReactElement {
     [toolbar]
   );
 
-  const dataTabToComponent = {
-    [DataTabType.TRACK_PLOT]: <PlotTab disabled={disableUi} {...sharedProps} />,
-    [DataTabType.SCATTER_PLOT]: (
+  const plotTabTypeToComponent = {
+    [PlotTabType.TRACK_PLOT]: <PlotTab disabled={disableUi} {...sharedProps} />,
+    [PlotTabType.SCATTER_PLOT]: (
       <ScatterPlotTab
-        isVisible={openTab === TabType.DATA && dataTab === DataTabType.SCATTER_PLOT}
+        isVisible={openTab === TabType.DATA && plotTab === PlotTabType.SCATTER_PLOT}
         showAlert={showAlert}
         containerRef={tabsContainerRef.current ?? undefined}
         {...sharedProps}
       />
     ),
-    [DataTabType.PLOT_3D]: <Plot3dTab {...sharedProps} />,
-    [DataTabType.CORRELATION_PLOT]: <CorrelationPlotTab {...sharedProps} />,
-    [DataTabType.LINEAGE]: <LineageTab {...sharedProps} />,
+    [PlotTabType.PLOT_3D]: <Plot3dTab {...sharedProps} />,
+    [PlotTabType.CORRELATION_PLOT]: <CorrelationPlotTab {...sharedProps} />,
+    [PlotTabType.LINEAGE]: <LineageTab {...sharedProps} />,
   };
 
-  return <div className={className}>{dataTabToComponent[dataTab]}</div>;
+  return <div className={className}>{plotTabTypeToComponent[plotTab]}</div>;
 }

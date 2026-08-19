@@ -15,9 +15,9 @@ import { Link, useLocation, useSearchParams } from "react-router-dom";
 
 import {
   type Dataset,
-  DataTabType,
   LoadTroubleshooting,
   type PixelIdInfo,
+  PlotTabType,
   type ReportWarningCallback,
   TabType,
 } from "src/colorizer";
@@ -191,9 +191,9 @@ function Viewer(): ReactElement {
   // to the selected feature and time.
   useEffect(() => {
     const unsubscribe = useViewerStateStore.subscribe(
-      (state) => [state.openTab, state.dataTab, state.dataset],
-      ([openTab, dataTab, dataset]) => {
-        if (openTab === TabType.DATA && dataTab === DataTabType.SCATTER_PLOT && dataset) {
+      (state) => [state.openTab, state.plotTab, state.dataset],
+      ([openTab, plotTab, dataset]) => {
+        if (openTab === TabType.DATA && plotTab === PlotTabType.SCATTER_PLOT && dataset) {
           if (
             useViewerStateStore.getState().scatterXAxis === null &&
             useViewerStateStore.getState().scatterYAxis === null

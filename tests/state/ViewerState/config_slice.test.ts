@@ -3,7 +3,7 @@ import { act } from "react-dom/test-utils";
 import { Color } from "three";
 import { describe, expect, it } from "vitest";
 
-import { CentroidColorMode, DataTabType, DrawMode, TabType, TrackPathColorMode } from "src/colorizer";
+import { CentroidColorMode, DrawMode, PlotTabType, TabType, TrackPathColorMode } from "src/colorizer";
 import { UrlParam } from "src/colorizer/utils/url_utils";
 import { useViewerStateStore } from "src/state";
 import { type ConfigSlice, loadConfigSliceFromParams, serializeConfigSlice } from "src/state/slices";
@@ -41,7 +41,7 @@ const EXAMPLE_SLICE_1: Partial<ConfigSlice> = {
   edgeColorAlpha: 128 / 255, // 0x80
   edgeMode: DrawMode.USE_COLOR,
   openTab: TabType.DATA,
-  dataTab: DataTabType.SCATTER_PLOT,
+  plotTab: PlotTabType.SCATTER_PLOT,
   interpolate3d: false,
 };
 
@@ -72,7 +72,7 @@ const EXAMPLE_SLICE_1_PARAMS: SerializedStoreData = {
   [UrlParam.EDGE_COLOR]: "80808080",
   [UrlParam.EDGE_MODE]: "1",
   [UrlParam.OPEN_TAB]: TabType.DATA,
-  [UrlParam.DATA_TAB]: DataTabType.SCATTER_PLOT,
+  [UrlParam.PLOT_TAB]: PlotTabType.SCATTER_PLOT,
   [UrlParam.INTERPOLATE_3D]: "0",
 };
 
@@ -211,7 +211,7 @@ describe("ConfigSlice", () => {
       result.current.setEdgeColor(new Color(0xa0b0c0), 208 / 255); // 0xd0
       result.current.setEdgeMode(DrawMode.HIDE);
       result.current.setOpenTab(TabType.DATA);
-      result.current.setDataTab(DataTabType.TRACK_PLOT);
+      result.current.setPlotTab(PlotTabType.TRACK_PLOT);
     });
     expect(result.current.showSegmentations).toBe(true);
     expect(result.current.showCentroids).toBe(true);
@@ -234,7 +234,7 @@ describe("ConfigSlice", () => {
     expect(result.current.edgeColor).toEqual(new Color(0xa0b0c0));
     expect(result.current.edgeColorAlpha).toBe(208 / 255);
     expect(result.current.openTab).toBe(TabType.DATA);
-    expect(result.current.dataTab).toBe(DataTabType.TRACK_PLOT);
+    expect(result.current.plotTab).toBe(PlotTabType.TRACK_PLOT);
   });
 
   it("clamps track path width", () => {
@@ -319,7 +319,7 @@ describe("ConfigSlice", () => {
 
     it("parses legacy plot tabs into data tabs", () => {
       const { result } = renderHook(() => useViewerStateStore());
-      const tabKeys = Array.from(Object.values(DataTabType));
+      const tabKeys = Array.from(Object.values(PlotTabType));
       for (const tabKey of tabKeys) {
         const params = new URLSearchParams();
         params.set(UrlParam.OPEN_TAB, tabKey);
@@ -327,20 +327,20 @@ describe("ConfigSlice", () => {
           loadConfigSliceFromParams(result.current, params);
         });
         expect(result.current.openTab).toBe(TabType.DATA);
-        expect(result.current.dataTab).toBe(tabKey);
+        expect(result.current.plotTab).toBe(tabKey);
       }
     });
 
     it("parses all data tabs", () => {
       const { result } = renderHook(() => useViewerStateStore());
-      const tabKeys = Array.from(Object.values(DataTabType));
+      const tabKeys = Array.from(Object.values(PlotTabType));
       for (const tabKey of tabKeys) {
         const params = new URLSearchParams();
-        params.set(UrlParam.DATA_TAB, tabKey);
+        params.set(UrlParam.PLOT_TAB, tabKey);
         act(() => {
           loadConfigSliceFromParams(result.current, params);
         });
-        expect(result.current.dataTab).toBe(tabKey);
+        expect(result.current.plotTab).toBe(tabKey);
       }
     });
 

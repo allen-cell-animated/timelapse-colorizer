@@ -209,7 +209,7 @@ export enum TabType {
 }
 
 /** Tabs shown inside of the Data tab. */
-export enum DataTabType {
+export enum PlotTabType {
   TRACK_PLOT = "track_plot",
   SCATTER_PLOT = "scatter_plot",
   CORRELATION_PLOT = "correlation_plot",
@@ -221,8 +221,8 @@ export const isTabType = (tab: string): tab is TabType => {
   return Object.values(TabType).includes(tab as TabType);
 };
 
-export const isDataTabType = (tab: string): tab is DataTabType => {
-  return Object.values(DataTabType).includes(tab as DataTabType);
+export const isPlotTabType = (tab: string): tab is PlotTabType => {
+  return Object.values(PlotTabType).includes(tab as PlotTabType);
 };
 
 export enum PlotRangeType {

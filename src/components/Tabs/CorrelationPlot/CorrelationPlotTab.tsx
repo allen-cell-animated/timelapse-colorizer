@@ -8,10 +8,10 @@ import * as d3 from "d3";
 import React, { memo, type ReactElement, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 
-import { DataTabType, TabType } from "src/colorizer";
+import { PlotTabType, TabType } from "src/colorizer";
 import { getSharedWorkerPool } from "src/colorizer/workers/SharedWorkerPool";
 import LoadingSpinner from "src/components/LoadingSpinner";
-import DataTabToolbar from "src/components/Tabs/Plots/PlotsTabToolbar";
+import PlotsTabToolbar from "src/components/Tabs/Plots/PlotsTabToolbar";
 import type { SharedPlotTabProps } from "src/components/Tabs/Plots/types";
 import { useDebounce } from "src/hooks";
 import { useViewerStateStore } from "src/state";
@@ -70,7 +70,7 @@ export default memo(function CorrelationPlotTab(_props: CorrelationPlotTabProps)
 
   const inputDataset = useViewerStateStore((state) => state.dataset);
   const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
-  const setDataTab = useViewerStateStore((state) => state.setDataTab);
+  const setPlotTab = useViewerStateStore((state) => state.setPlotTab);
   const setScatterXAxis = useViewerStateStore((state) => state.setScatterXAxis);
   const setScatterYAxis = useViewerStateStore((state) => state.setScatterYAxis);
   const workerPool = getSharedWorkerPool();
@@ -93,11 +93,11 @@ export default memo(function CorrelationPlotTab(_props: CorrelationPlotTabProps)
   const openScatterPlotTab = useCallback(
     (xAxis: string, yAxis: string) => {
       setOpenTab(TabType.DATA);
-      setDataTab(DataTabType.SCATTER_PLOT);
+      setPlotTab(PlotTabType.SCATTER_PLOT);
       setScatterXAxis(xAxis);
       setScatterYAxis(yAxis);
     },
-    [setOpenTab, setDataTab, setScatterXAxis, setScatterYAxis]
+    [setOpenTab, setPlotTab, setScatterXAxis, setScatterYAxis]
   );
 
   //////////////////////////////////
@@ -177,7 +177,7 @@ export default memo(function CorrelationPlotTab(_props: CorrelationPlotTabProps)
 
   return (
     <FlexColumnAlignCenter $gap={10} style={{ height: "100%" }}>
-      <DataTabToolbar>
+      <PlotsTabToolbar>
         {props.toolbar}
         <FlexRowAlignCenter style={{ width: "100%" }} $gap={8}>
           <Select
@@ -199,7 +199,7 @@ export default memo(function CorrelationPlotTab(_props: CorrelationPlotTabProps)
             Select all
           </Button>
         </FlexRowAlignCenter>
-      </DataTabToolbar>
+      </PlotsTabToolbar>
       <LoadingSpinner loading={isRendering} style={{ height: "100%" }}>
         <FlexColumnAlignCenter $gap={5}>
           <div id="legend" style={{ position: "relative" }} ref={legendRef}></div>

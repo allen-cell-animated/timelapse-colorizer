@@ -16,7 +16,7 @@ import IconButton from "src/components/Buttons/IconButton";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import type { SelectItem } from "src/components/Dropdowns/types";
 import LoadingSpinner from "src/components/LoadingSpinner";
-import DataTabToolbar from "src/components/Tabs/Plots/PlotsTabToolbar";
+import PlotsTabToolbar from "src/components/Tabs/Plots/PlotsTabToolbar";
 import type { SharedPlotTabProps } from "src/components/Tabs/Plots/types";
 import ScatterplotToolbar from "src/components/Tabs/ScatterPlot/ScatterplotToolbar";
 import { SCATTERPLOT_SYNC_AXIS_KEY, SHORTCUT_KEYS } from "src/constants";
@@ -703,7 +703,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
   return (
     <FlexColumn style={{ alignItems: "flex-start" }}>
-      <DataTabToolbar>
+      <PlotsTabToolbar>
         {props.toolbar}
         <ScatterplotToolbar
           popupContainer={props.containerRef}
@@ -711,7 +711,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
           onClickClearTracks={onClearTracks}
           onClickDownloadCsv={onDownloadScatterPlotCsv}
         />
-      </DataTabToolbar>
+      </PlotsTabToolbar>
 
       <LoadingSpinner loading={isRendering || isDebouncePending} style={{ marginTop: "10px" }}>
         <FlexRowAlignCenter style={{ marginLeft: 15 }}>

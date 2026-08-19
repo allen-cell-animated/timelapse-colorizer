@@ -7,7 +7,7 @@ import { KNOWN_CATEGORICAL_PALETTES } from "src/colorizer/colors/categorical_pal
 import IconButton from "src/components/Buttons/IconButton";
 import ColorRampDropdown from "src/components/Dropdowns/ColorRampDropdown";
 import LoadingSpinner from "src/components/LoadingSpinner";
-import DataTabToolbar from "src/components/Tabs/Plots/PlotsTabToolbar";
+import PlotsTabToolbar from "src/components/Tabs/Plots/PlotsTabToolbar";
 import type { SharedPlotTabProps } from "src/components/Tabs/Plots/types";
 import PlotWrapper from "src/components/Tabs/TrackPlot/PlotWrapper";
 import { useViewerStateStore } from "src/state";
@@ -92,7 +92,7 @@ export default function PlotTab(props: PlotTabProps): ReactElement {
 
   return (
     <>
-      <DataTabToolbar>
+      <PlotsTabToolbar>
         {props.toolbar}
         <TrackTitleBar $gap={12}>
           <ColorRampDropdown
@@ -127,7 +127,7 @@ export default function PlotTab(props: PlotTabProps): ReactElement {
             </TrackSearch>
           </NoSpinnerContainer>
         </TrackTitleBar>
-      </DataTabToolbar>
+      </PlotsTabToolbar>
       <div>
         <LoadingSpinner loading={isLoading}>
           <PlotWrapper
