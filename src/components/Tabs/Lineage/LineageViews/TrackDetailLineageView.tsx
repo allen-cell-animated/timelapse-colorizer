@@ -62,7 +62,7 @@ const TREE_LEAF_HEIGHT_PX = 30;
 const NODE_HEIGHT_PX = 20;
 const TREE_LAYER_DEPTH_PX = 5;
 
-const TIME_INDICATOR_HEIGHT = 3;
+const TIME_INDICATOR_HEIGHT_PX = 3;
 
 const COLLAPSED_NODE_WIDTH_PX = 20;
 const COLLAPSED_NODE_FILL_COLOR = "#e7e7e7";
@@ -210,10 +210,10 @@ function renderView(
     .attr("class", SvgClass.TIME_INDICATOR)
     .attr(
       "d",
-      `M 0,${TIME_INDICATOR_HEIGHT} 
-      L ${TIME_INDICATOR_HEIGHT}, 0 
-      L -${TIME_INDICATOR_HEIGHT}, 0
-      L 0,${TIME_INDICATOR_HEIGHT} 
+      `M 0,${TIME_INDICATOR_HEIGHT_PX} 
+      L ${TIME_INDICATOR_HEIGHT_PX}, 0 
+      L -${TIME_INDICATOR_HEIGHT_PX}, 0
+      L 0,${TIME_INDICATOR_HEIGHT_PX} 
       Z`
     );
 
@@ -237,7 +237,7 @@ function renderView(
   return node;
 }
 
-//// Pointer Handlers ////
+// MARK: Pointer Handlers
 
 function setupPointerHandlers(
   node: LineageNodeSelection,
@@ -301,7 +301,7 @@ function setupPointerHandlers(
   };
 }
 
-//// SVG element styling + updates ////
+// MARK: SVG element styling + updates
 
 function getTrackGradientId(trackId: number): string {
   return `track-gradient-${trackId}`;
@@ -486,7 +486,7 @@ function updateTimeIndicator(svg: SVGSVGElement, time: number, numElements: numb
     .attr("pointer-events", "none");
 }
 
-//// Main Component /////
+// MARK: Main Component
 
 export default function LineageTrackDetailView(props: TrackDetailLineageViewProps): ReactElement {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -545,7 +545,7 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
   const onToggleExpandedRef = useRef(onToggleExpanded);
   onToggleExpandedRef.current = onToggleExpanded;
 
-  //// SVG Elements ////
+  // MARK: SVG Elements
 
   const zoom = useConstructor(() =>
     d3
@@ -586,7 +586,7 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
     }
   };
 
-  //// Viewport ////
+  // MARK: Viewport
 
   // Render view and set up pointer handlers
   useEffect(() => {
