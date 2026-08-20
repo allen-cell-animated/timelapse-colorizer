@@ -1,5 +1,5 @@
 import * as d3 from "d3";
-import React, { type ReactElement, useEffect, useRef, useState } from "react";
+import React, { type ReactElement, useCallback, useEffect, useRef } from "react";
 import type { Color } from "three";
 
 import type { Track } from "src/colorizer";
@@ -166,16 +166,15 @@ function updateNodeStyles(
 
 /** Renders a tree view of the lineage data. */
 export default function TreeLineageView(props: TreeLineageViewProps): ReactElement {
-  const svgRef = useRef<SVGSVGElement>(null);
+  const svgRef = useRef<SVGSVGElement | null>(null);
   const groupRef = useRef<SVGGElement>(null);
   const nodeRef = useRef<LineageNodeSelection | undefined>(undefined);
+  const needsZoomReframeRef = useRef(false);
 
   const onClickRef = useRef(props.onClick);
   onClickRef.current = props.onClick;
   const onHoverRef = useRef(props.onHover);
   onHoverRef.current = props.onHover;
-
-  const [needsTrackZoomReframe, setNeedsTrackZoomReframe] = useState(false);
 
   // Apply newly selected tracks to expanded state-- updates only on new tracks
   // to avoid expanding selected tracks that were previously collapsed.
@@ -249,17 +248,24 @@ export default function TreeLineageView(props: TreeLineageViewProps): ReactEleme
   // second effect to ensure that the nodes are rendered before the zoom check
   // is performed.
   useEffect(() => {
-    setNeedsTrackZoomReframe(true);
+    needsZoomReframeRef.current = true;
   }, [props.selectedTracks]);
-  useEffect(() => {
-    if (needsTrackZoomReframe) {
-      frameTracksInView(svgRef.current, nodeRef.current, newTracks, zoom.current);
-      setNeedsTrackZoomReframe(false);
-    }
-  }, [needsTrackZoomReframe, newTracks]);
+
+  const onSvgRendered = useCallback(
+    (node: SVGSVGElement | null): void => {
+      if (node === null) {
+        return;
+      }
+      svgRef.current = node;
+      if (needsZoomReframeRef.current && frameTracksInView(svgRef.current, nodeRef.current, newTracks, zoom.current)) {
+        needsZoomReframeRef.current = false;
+      }
+    },
+    [newTracks]
+  );
 
   return (
-    <svg ref={svgRef} style={{ width: "100%", height: "100%", display: "block" }} id="tree-lineage-view-svg">
+    <svg ref={onSvgRendered} style={{ width: "100%", height: "100%", display: "block" }} id="tree-lineage-view-svg">
       <g ref={groupRef}></g>
     </svg>
   );

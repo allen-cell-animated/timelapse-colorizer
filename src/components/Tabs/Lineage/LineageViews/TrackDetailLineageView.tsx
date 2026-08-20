@@ -489,11 +489,11 @@ function updateTimeIndicator(svg: SVGSVGElement, time: number, numElements: numb
 // MARK: Main Component
 
 export default function LineageTrackDetailView(props: TrackDetailLineageViewProps): ReactElement {
-  const svgRef = useRef<SVGSVGElement>(null);
+  const svgRef = useRef<SVGSVGElement | null>(null);
   const groupRef = useRef<SVGGElement>(null);
   const nodeGroupRef = useRef<SVGGElement>(null);
   const nodeSelectionRef = useRef<LineageNodeSelection | undefined>(undefined);
-  const [needsZoomReframe, setNeedsZoomReframe] = useState(0);
+  const needsZoomReframeRef = useRef(false);
 
   const trackIds = useMemo(() => new Set(props.selectedTracks.keys()), [props.selectedTracks]);
 
@@ -516,12 +516,6 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
   const newTracks = useNewTracks(props.selectedTracks);
 
   useEffect(() => {
-    const areAnyTracksNotExpanded = [...newTracks].some((id) => !expandedTracks.has(id));
-    if (newTracks.size === 0 || !areAnyTracksNotExpanded) {
-      // If there are no new tracks that aren't already expanded, skip the
-      // update.
-      return;
-    }
     for (const trackId of newTracks) {
       setExpandedState((prev) => expandTrack(trackId, prev, props.data, props.relationships));
     }
@@ -640,15 +634,24 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
   //// Helper methods ////
 
   // On updates to the selected tracks, attempt to fit them into the current
-  // view on the next render. This ensures that the new SVG elements have been
-  // rendered before attempting to get their size/dimension information.
+  // view after the SVG element has re-rendered. This ensures that the new SVG
+  // elements have valid sizes/dimensions.
   useEffect(() => {
-    setNeedsZoomReframe((prev) => prev + 1);
+    needsZoomReframeRef.current = true;
   }, [newTracks]);
 
-  useEffect(() => {
-    frameTracksInView(svgRef.current, nodeSelectionRef.current, newTracks, zoom.current);
-  }, [needsZoomReframe]);
+  const onSvgRendered = (node: SVGSVGElement | null): void => {
+    if (node === null) {
+      return;
+    }
+    svgRef.current = node;
+    if (
+      needsZoomReframeRef.current &&
+      frameTracksInView(svgRef.current, nodeSelectionRef.current, newTracks, zoom.current)
+    ) {
+      needsZoomReframeRef.current = false;
+    }
+  };
 
   return (
     <div style={{ width: "100%", height: "100%", overflow: "hidden", position: "relative" }}>
@@ -665,7 +668,7 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
         </FlexRowAlignCenter>
       </div>
       <StyledSVG
-        ref={svgRef}
+        ref={onSvgRendered}
         style={{ width: "100%", height: "100%", display: "block" }}
         id="track-detail-lineage-view-svg"
       >
