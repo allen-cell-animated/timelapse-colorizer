@@ -169,7 +169,6 @@ export default function TreeLineageView(props: TreeLineageViewProps): ReactEleme
   const svgRef = useRef<SVGSVGElement | null>(null);
   const groupRef = useRef<SVGGElement>(null);
   const nodeRef = useRef<LineageNodeSelection | undefined>(undefined);
-  const needsZoomReframeRef = useRef(false);
 
   const onClickRef = useRef(props.onClick);
   onClickRef.current = props.onClick;
@@ -217,20 +216,27 @@ export default function TreeLineageView(props: TreeLineageViewProps): ReactEleme
 
   //// Viewport ////
 
-  useEffect(() => {
-    if (groupRef.current && props.hierarchy) {
-      const g = d3.select(groupRef.current) as d3.Selection<SVGGElement, TrackInfo, null, undefined>;
-      const onClickTrack = (trackId: number): void => onClickRef.current?.(trackId);
-      const onHoverTrack = (trackId: number | null): void => onHoverRef.current?.(trackId);
-      nodeRef.current = renderTree(g, props.data, props.hierarchy, props.relationships, onClickTrack, onHoverTrack);
-    }
-    // Clear on unmount
-    return () => {
-      if (groupRef.current) {
-        d3.select(groupRef.current).selectAll("*").remove();
+  const renderSvg = useCallback(
+    (node: SVGSVGElement | null) => {
+      if (node === null) {
+        return;
       }
-    };
-  }, [props.data, props.hierarchy, props.relationships]);
+      svgRef.current = node;
+      if (groupRef.current && props.hierarchy) {
+        const g = d3.select(groupRef.current) as d3.Selection<SVGGElement, TrackInfo, null, undefined>;
+        const onClickTrack = (trackId: number): void => onClickRef.current?.(trackId);
+        const onHoverTrack = (trackId: number | null): void => onHoverRef.current?.(trackId);
+        nodeRef.current = renderTree(g, props.data, props.hierarchy, props.relationships, onClickTrack, onHoverTrack);
+      }
+      // Clear on unmount
+      return () => {
+        if (groupRef.current) {
+          d3.select(groupRef.current).selectAll("*").remove();
+        }
+      };
+    },
+    [props.data, props.hierarchy, props.relationships]
+  );
 
   useEffect(() => {
     // Update node styling
@@ -248,24 +254,11 @@ export default function TreeLineageView(props: TreeLineageViewProps): ReactEleme
   // second effect to ensure that the nodes are rendered before the zoom check
   // is performed.
   useEffect(() => {
-    needsZoomReframeRef.current = true;
+    frameTracksInView(svgRef.current, nodeRef.current, newTracks, zoom.current);
   }, [props.selectedTracks]);
 
-  const onSvgRendered = useCallback(
-    (node: SVGSVGElement | null): void => {
-      if (node === null) {
-        return;
-      }
-      svgRef.current = node;
-      if (needsZoomReframeRef.current && frameTracksInView(svgRef.current, nodeRef.current, newTracks, zoom.current)) {
-        needsZoomReframeRef.current = false;
-      }
-    },
-    [newTracks]
-  );
-
   return (
-    <svg ref={onSvgRendered} style={{ width: "100%", height: "100%", display: "block" }} id="tree-lineage-view-svg">
+    <svg ref={renderSvg} style={{ width: "100%", height: "100%", display: "block" }} id="tree-lineage-view-svg">
       <g ref={groupRef}></g>
     </svg>
   );
