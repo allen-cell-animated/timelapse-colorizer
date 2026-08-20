@@ -25,6 +25,8 @@ import { AppThemeContext } from "src/styles/AppStyle";
 import { FlexColumn, FlexColumnAlignCenter } from "src/styles/utils";
 import { areAnyHotkeysPressed } from "src/utils/user_input";
 
+import RightClickContextMenu from "../Menus/RightClickContextMenu";
+
 /* Minimum distance in either X or Y that mouse should move
  * before mouse event is considered a drag
  */
@@ -604,7 +606,9 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         )
       }
       <LoadingSpinner loading={props.loading || isFrameLoading} progress={loadProgress}>
-        <div ref={canvasPlaceholderRef}></div>
+        <RightClickContextMenu>
+          <div ref={canvasPlaceholderRef}></div>
+        </RightClickContextMenu>
       </LoadingSpinner>
       <MissingFileIconContainer style={{ visibility: isMissingFile ? "visible" : "hidden" }}>
         <NoImageSVG aria-labelledby="no-image" style={{ width: "50px" }} />
