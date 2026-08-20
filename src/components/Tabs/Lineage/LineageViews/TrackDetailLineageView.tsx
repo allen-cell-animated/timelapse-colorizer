@@ -493,12 +493,11 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
   const groupRef = useRef<SVGGElement>(null);
   const nodeGroupRef = useRef<SVGGElement>(null);
   const nodeSelectionRef = useRef<LineageNodeSelection | undefined>(undefined);
+  const [needsZoomReframe, setNeedsZoomReframe] = useState(0);
 
   const trackIds = useMemo(() => new Set(props.selectedTracks.keys()), [props.selectedTracks]);
 
   // Flag that triggers a zoom reset once the tree completes an initial render.
-  const [needsPostRenderZoomReset, setNeedsPostRenderZoomReset] = useState(false);
-  const [needsTrackZoomReframe, setNeedsTrackZoomReframe] = useState(false);
 
   const [useFeatureColors, setUseFeatureColors] = useState(true);
 
@@ -517,6 +516,12 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
   const { newTracks, updateTracks } = useNewTracks(props.selectedTracks);
 
   useEffect(() => {
+    const areAnyTracksNotExpanded = [...newTracks].some((id) => !expandedTracks.has(id));
+    if (newTracks.size === 0 || !areAnyTracksNotExpanded) {
+      // If there are no new tracks that aren't already expanded, skip the
+      // update.
+      return;
+    }
     for (const trackId of newTracks) {
       setExpandedState((prev) => expandTrack(trackId, prev, props.data, props.relationships));
     }
@@ -593,7 +598,6 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
       if (node) {
         cleanupPointerHandlers = setupPointerHandlers(node, onClickRef, onToggleExpandedRef, onHoverRef);
       }
-      setNeedsPostRenderZoomReset(true);
     }
 
     // Clear on unmount
@@ -629,26 +633,23 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
     }
   }, [props.time, props.data.trackIdToTrackInfo]);
 
-  // Fit on data change, or after SVG rendering is complete
+  // Fit on data change.
   useEffect(() => {
     resetZoom();
-  }, [props.data, props.relationships, props.dataset, needsPostRenderZoomReset]);
+  }, [props.data, props.relationships, props.dataset]);
 
   //// Helper methods ////
 
   // On updates to the selected tracks, attempt to fit them into the current
-  // view after one render. This ensures that the new SVG elements have been
+  // view on the next render. This ensures that the new SVG elements have been
   // rendered before attempting to get their size/dimension information.
   useEffect(() => {
-    setNeedsTrackZoomReframe(true);
+    setNeedsZoomReframe((prev) => prev + 1);
   }, [newTracks]);
 
   useEffect(() => {
-    if (needsTrackZoomReframe) {
-      frameTracksInView(svgRef.current, nodeSelectionRef.current, newTracks, zoom.current);
-      setNeedsTrackZoomReframe(false);
-    }
-  }, [newTracks, needsTrackZoomReframe]);
+    frameTracksInView(svgRef.current, nodeSelectionRef.current, newTracks, zoom.current);
+  }, [needsZoomReframe]);
 
   return (
     <div style={{ width: "100%", height: "100%", overflow: "hidden", position: "relative" }}>
