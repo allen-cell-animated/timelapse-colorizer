@@ -658,18 +658,18 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
   useEffect(() => {
     setTimeout(() => {
       frameTracksInView(svgRef.current, nodeSelectionRef.current, newTracks, zoom.current);
-    }, 1);
+    }, 10);
   }, [newTracks]);
 
-  // Reset zoom to fit the full tree when the data or relationships change. The
-  // timeout introduces a delay because the initial tree isn't rendered until
-  // tracks are loaded, which occurs in the next render cycle after the dataset
-  // is initially loaded.
+  // Reset zoom to fit the full tree when tracks are populated for the first
+  // time, typically on initial load or when datasets/relationships changed.
+  const prevExpandedCountRef = useRef(expandedTracks.size);
   useEffect(() => {
-    setTimeout(() => {
+    if (prevExpandedCountRef.current === 0 && expandedTracks.size > 0) {
       resetZoom();
-    }, 1);
-  }, [props.data, props.relationships, props.dataset]);
+    }
+    prevExpandedCountRef.current = expandedTracks.size;
+  }, [expandedTracks.size]);
 
   // MARK: Render
 
