@@ -1,5 +1,5 @@
 import * as d3 from "d3";
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 
 import type { Dataset, Track } from "src/colorizer";
 
@@ -334,19 +334,11 @@ export function getLineageSubset(
 }
 
 /**
- * Hook that calculates the set of new track IDs. Updates to the list of
- * previously seen tracks are triggered via calling the returned function, to
- * prevent repeated updates to the set of new tracks during re-renders.
+ * Hook that calculates the set of trackIds that are new on this render.
  *
- * @returns An object containing:
- * - `newTracks`: a set of track IDs that are new.
- * - `updateTracks`: function used to update the set of previously seen tracks
- *   *after* track updates have been rendered and/or animated.
+ * @returns a set of track IDs that are new.
  */
-export function useNewTracks(tracks: Map<number, Track>): {
-  newTracks: Set<number>;
-  updateTracks: (tracks: Map<number, Track>) => void;
-} {
+export function useNewTracks(tracks: Map<number, Track>): Set<number> {
   const prevTracks = useRef<Set<number>>(new Set());
 
   const newTracks = useMemo(() => {
@@ -359,9 +351,9 @@ export function useNewTracks(tracks: Map<number, Track>): {
     return newTracks;
   }, [tracks]);
 
-  const updateTracks = (nextTracks: Map<number, Track>): void => {
-    prevTracks.current = new Set(nextTracks.keys());
-  };
+  useEffect(() => {
+    prevTracks.current = new Set(tracks.keys());
+  }, [tracks]);
 
-  return { newTracks, updateTracks };
+  return newTracks;
 }

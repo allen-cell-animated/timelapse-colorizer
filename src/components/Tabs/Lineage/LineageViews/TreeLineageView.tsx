@@ -179,7 +179,7 @@ export default function TreeLineageView(props: TreeLineageViewProps): ReactEleme
 
   // Apply newly selected tracks to expanded state-- updates only on new tracks
   // to avoid expanding selected tracks that were previously collapsed.
-  const { newTracks, updateTracks } = useNewTracks(props.selectedTracks);
+  const newTracks = useNewTracks(props.selectedTracks);
 
   //// SVG Elements ////
 
@@ -250,7 +250,6 @@ export default function TreeLineageView(props: TreeLineageViewProps): ReactEleme
   // is performed.
   useEffect(() => {
     setNeedsTrackZoomReframe(true);
-    updateTracks(props.selectedTracks);
   }, [props.selectedTracks]);
   useEffect(() => {
     if (needsTrackZoomReframe) {
