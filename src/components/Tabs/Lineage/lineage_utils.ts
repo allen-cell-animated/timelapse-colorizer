@@ -234,26 +234,25 @@ export function frameTracksInView(
   nodeSelection: LineageNodeSelection | undefined,
   trackIds: Set<number>,
   zoom: d3.ZoomBehavior<SVGSVGElement, unknown>
-): boolean {
+): void {
   if (!svgNode || !nodeSelection) {
-    return false;
+    return;
   }
   const svg = d3.select(svgNode);
   const nodes = nodeSelection.filter((d) => trackIds.has(d.data.id));
   if (nodes.empty()) {
-    return false;
+    return;
   }
   const nodeElements = nodes.nodes() as SVGGElement[];
   const needsZoom = nodeElements.some((nodeElement) => !isNodeVisible(nodeElement, svgNode));
   if (!needsZoom) {
-    return true;
+    return;
   }
   const newTransform = getCenteredZoomTransform(svgNode, nodeElements);
   if (!newTransform) {
-    return false;
+    return;
   }
   svg.transition().duration(250).call(zoom.transform, newTransform);
-  return true;
 }
 
 /**

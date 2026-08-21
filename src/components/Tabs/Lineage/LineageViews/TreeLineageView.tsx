@@ -216,7 +216,7 @@ export default function TreeLineageView(props: TreeLineageViewProps): ReactEleme
 
   //// Viewport ////
 
-  const renderSvg = useCallback(
+  const renderSvgCallbackRef = useCallback(
     (node: SVGSVGElement | null) => {
       if (node === null) {
         return;
@@ -258,7 +258,11 @@ export default function TreeLineageView(props: TreeLineageViewProps): ReactEleme
   }, [props.selectedTracks]);
 
   return (
-    <svg ref={renderSvg} style={{ width: "100%", height: "100%", display: "block" }} id="tree-lineage-view-svg">
+    <svg
+      ref={renderSvgCallbackRef}
+      style={{ width: "100%", height: "100%", display: "block" }}
+      id="tree-lineage-view-svg"
+    >
       <g ref={groupRef}></g>
     </svg>
   );

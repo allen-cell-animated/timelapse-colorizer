@@ -1,7 +1,7 @@
 import { HomeOutlined } from "@ant-design/icons";
 import { Checkbox } from "antd";
 import * as d3 from "d3";
-import React, { type MouseEvent, type ReactElement, useEffect, useMemo, useRef, useState } from "react";
+import React, { type MouseEvent, type ReactElement, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import type { Color } from "three";
 
@@ -32,6 +32,7 @@ import type {
   TrackInfo,
 } from "src/components/Tabs/Lineage/types";
 import { useConstructor } from "src/hooks";
+import { useStateWithGetter } from "src/hooks/useStateWithGetter";
 import { FlexRowAlignCenter, VisuallyHidden } from "src/styles/utils";
 
 type TrackDetailLineageViewProps = {
@@ -493,7 +494,6 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
   const groupRef = useRef<SVGGElement>(null);
   const nodeGroupRef = useRef<SVGGElement>(null);
   const nodeSelectionRef = useRef<LineageNodeSelection | undefined>(undefined);
-  const needsZoomReframeRef = useRef(false);
 
   const trackIds = useMemo(() => new Set(props.selectedTracks.keys()), [props.selectedTracks]);
 
@@ -506,26 +506,26 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
   onClickRef.current = props.onClick;
   onHoverRef.current = props.onHover;
 
-  const [expandedState, setExpandedState] = useState<TreeExpandedState>(() =>
-    getInitialExpandedState(trackIds, props.data, props.relationships)
-  );
-  const { expandedTracks } = expandedState;
-
-  // Apply newly selected tracks to expanded state-- updates only on new tracks
-  // to avoid expanding selected tracks that were previously collapsed.
+  const initialExpandedState = useMemo(() => getInitialExpandedState(trackIds, props.data, props.relationships), []);
+  const [getExpandedState, setExpandedState] = useStateWithGetter<TreeExpandedState>(initialExpandedState);
   const newTracks = useNewTracks(props.selectedTracks);
-
-  useEffect(() => {
-    for (const trackId of newTracks) {
-      setExpandedState((prev) => expandTrack(trackId, prev, props.data, props.relationships));
-    }
-  }, [newTracks, props.data, props.relationships]);
 
   // Reset expanded state when the data or relationships change (e.g. when the
   // user switches to a different dataset)
-  useEffect(() => {
+  useMemo(() => {
     setExpandedState(getInitialExpandedState(trackIds, props.data, props.relationships));
   }, [props.data, props.relationships]);
+
+  // Apply newly selected tracks to expanded state-- updates only on new tracks
+  // to avoid expanding selected tracks that were previously collapsed.
+  useMemo(() => {
+    if (newTracks.size > 0) {
+      for (const trackId of newTracks) {
+        setExpandedState((prev) => expandTrack(trackId, prev, props.data, props.relationships));
+      }
+    }
+  }, [newTracks]);
+  const { expandedTracks } = getExpandedState();
 
   // Expand/collapse the tree when clicking the expand/collapse button.
   const onToggleExpanded = (info: TrackInfo): void => {
@@ -581,31 +581,53 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
 
   // MARK: Viewport
 
-  // Render view and set up pointer handlers
-  useEffect(() => {
-    let cleanupPointerHandlers: (() => void) | undefined;
-    if (svgRef.current && nodeGroupRef.current && props.dataset) {
-      const g = d3.select(nodeGroupRef.current) as d3.Selection<SVGGElement, TrackInfo, null, undefined>;
-      const node = renderView(g, props.data, props.relationships, expandedTracks);
-      nodeSelectionRef.current = node;
-      if (node) {
-        cleanupPointerHandlers = setupPointerHandlers(node, onClickRef, onToggleExpandedRef, onHoverRef);
-      }
-    }
+  // Rendering flow:
+  // 1. React renders the component and mounts the SVG element.
+  // 2. `renderSvgRefCallback` is called after the render, passed the SVG
+  //    element, and updates the DOM with additional SVG nodes. When callback
+  //    changes (e.g. tree layout changes), it will be called again post-render.
+  //    See https://react.dev/reference/react-dom/components/common#ref-callback
+  // 3. Effects for updating gradients, node styles, and time indicator are
+  //    called after whenever dependencies change.
+  // 4. Effects for resetting the zoom or framing new tracks in view are called,
+  //    with a timeout to ensure that the SVG elements have valid dimensions.
 
-    // Clear on unmount
-    return () => {
-      if (cleanupPointerHandlers) {
-        cleanupPointerHandlers();
+  // Render view and set up pointer handlers. This is a ref callback, which will
+  // be called after DOM elements are mounted any time the callback is updated.
+  const renderSvgRefCallback = useCallback(
+    (node: SVGSVGElement | null) => {
+      if (!node) {
+        return;
       }
-      if (nodeGroupRef.current) {
-        // TODO: If the lineage tree is having performance issues, consider
-        // using the .join() method to update the tree instead of clearing and
-        // re-rendering.
-        d3.select(nodeGroupRef.current).selectAll("*").remove();
+      svgRef.current = node;
+
+      let cleanupPointerHandlers: (() => void) | undefined;
+      if (svgRef.current && nodeGroupRef.current && props.dataset) {
+        const g = d3.select(nodeGroupRef.current) as d3.Selection<SVGGElement, TrackInfo, null, undefined>;
+        const node = renderView(g, props.data, props.relationships, expandedTracks);
+        nodeSelectionRef.current = node;
+        if (node) {
+          // Update styles + pointer handlers for nodes
+          updateNodeStyles(node, expandedTracks, props.trackColors, props.time, useFeatureColors);
+          cleanupPointerHandlers = setupPointerHandlers(node, onClickRef, onToggleExpandedRef, onHoverRef);
+        }
       }
-    };
-  }, [props.data, props.relationships, props.dataset, expandedTracks]);
+
+      // Store cleanup function for later
+      return () => {
+        if (cleanupPointerHandlers) {
+          cleanupPointerHandlers();
+        }
+        if (nodeGroupRef.current) {
+          // TODO: If the lineage tree is having performance issues, consider
+          // using the .join() method to update the tree instead of clearing and
+          // re-rendering.
+          d3.select(nodeGroupRef.current).selectAll("*").remove();
+        }
+      };
+    },
+    [props.data, props.relationships, props.dataset, expandedTracks]
+  );
 
   useEffect(() => {
     if (svgRef.current && useFeatureColors) {
@@ -626,32 +648,28 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
     }
   }, [props.time, props.data.trackIdToTrackInfo]);
 
-  // Fit on data change.
+  // On updates to the selected tracks, attempt to fit + center them in the
+  // current view after the SVG element has re-rendered. The useEffect and the
+  // additional timeout ensures that the new SVG elements have valid
+  // sizes/dimensions. (Otherwise, nodes can sometimes briefly have dimensions
+  // 100x wider than they should be, likely due to unapplied transforms.)
   useEffect(() => {
-    resetZoom();
-  }, [props.data, props.relationships, props.dataset]);
-
-  //// Helper methods ////
-
-  // On updates to the selected tracks, attempt to fit them into the current
-  // view after the SVG element has re-rendered. This ensures that the new SVG
-  // elements have valid sizes/dimensions.
-  useEffect(() => {
-    needsZoomReframeRef.current = true;
+    setTimeout(() => {
+      frameTracksInView(svgRef.current, nodeSelectionRef.current, newTracks, zoom.current);
+    }, 1);
   }, [newTracks]);
 
-  const onSvgRendered = (node: SVGSVGElement | null): void => {
-    if (node === null) {
-      return;
-    }
-    svgRef.current = node;
-    if (
-      needsZoomReframeRef.current &&
-      frameTracksInView(svgRef.current, nodeSelectionRef.current, newTracks, zoom.current)
-    ) {
-      needsZoomReframeRef.current = false;
-    }
-  };
+  // Reset zoom to fit the full tree when the data or relationships change. The
+  // timeout introduces a delay because the initial tree isn't rendered until
+  // tracks are loaded, which occurs in the next render cycle after the dataset
+  // is initially loaded.
+  useEffect(() => {
+    setTimeout(() => {
+      resetZoom();
+    }, 1);
+  }, [props.data, props.relationships, props.dataset]);
+
+  // MARK: Render
 
   return (
     <div style={{ width: "100%", height: "100%", overflow: "hidden", position: "relative" }}>
@@ -668,7 +686,7 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
         </FlexRowAlignCenter>
       </div>
       <StyledSVG
-        ref={onSvgRendered}
+        ref={renderSvgRefCallback}
         style={{ width: "100%", height: "100%", display: "block" }}
         id="track-detail-lineage-view-svg"
       >
