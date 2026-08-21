@@ -10,8 +10,8 @@ type ValueOrFunction<T> = T | ((prevState: T) => T);
  * value.
  */
 export const useStateWithGetter = <T>(initialValue: T): [() => T, (value: ValueOrFunction<T>) => void] => {
-  const [state, setState] = useState(initialValue);
-  const stateRef = useRef(state);
+  const [, setState] = useState(initialValue);
+  const stateRef = useRef(initialValue);
 
   const setStateWrapped = useCallback((value: ValueOrFunction<T>) => {
     if (typeof value === "function") {
