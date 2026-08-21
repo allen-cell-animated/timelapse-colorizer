@@ -226,8 +226,6 @@ export function isNodeVisible(node: SVGGElement, svgNode: SVGSVGElement): boolea
  * @param trackIds The set of track IDs to zoom to if not visible.
  * @param zoom The D3 zoom behavior. Will be animated to the new transform if
  * any of the specified tracks are not visible.
- * @returns true if the nodes of the specified tracks could be found and are now
- * visible in the viewport.
  */
 export function frameTracksInView(
   svgNode: SVGSVGElement | null,
@@ -240,9 +238,6 @@ export function frameTracksInView(
   }
   const svg = d3.select(svgNode);
   const nodes = nodeSelection.filter((d) => trackIds.has(d.data.id));
-  if (nodes.empty()) {
-    return;
-  }
   const nodeElements = nodes.nodes() as SVGGElement[];
   const needsZoom = nodeElements.some((nodeElement) => !isNodeVisible(nodeElement, svgNode));
   if (!needsZoom) {
