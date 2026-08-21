@@ -593,9 +593,11 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
 
   // Render view and set up pointer handlers. This is a ref callback, which will
   // be called after DOM elements are mounted any time the callback is updated.
+  const cleanupRenderSvgRef = useRef<undefined | (() => void)>(undefined);
   const renderSvgRefCallback = useCallback(
     (node: SVGSVGElement | null) => {
       if (!node) {
+        cleanupRenderSvgRef.current?.();
         return;
       }
       svgRef.current = node;
@@ -612,8 +614,9 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
         }
       }
 
-      // Cleanup function
-      return () => {
+      // TODO: In React 19, we can directly return a cleanup function, but in 18
+      // we need to manage cleanup ourselves.
+      cleanupRenderSvgRef.current = () => {
         if (cleanupPointerHandlers) {
           cleanupPointerHandlers();
         }

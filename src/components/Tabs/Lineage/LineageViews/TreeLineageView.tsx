@@ -216,9 +216,11 @@ export default function TreeLineageView(props: TreeLineageViewProps): ReactEleme
 
   //// Viewport ////
 
+  const cleanupRenderSvgRef = useRef<undefined | (() => void)>(undefined);
   const renderSvgCallbackRef = useCallback(
     (node: SVGSVGElement | null) => {
       if (node === null) {
+        cleanupRenderSvgRef.current?.();
         return;
       }
       svgRef.current = node;
@@ -228,8 +230,9 @@ export default function TreeLineageView(props: TreeLineageViewProps): ReactEleme
         const onHoverTrack = (trackId: number | null): void => onHoverRef.current?.(trackId);
         nodeRef.current = renderTree(g, props.data, props.hierarchy, props.relationships, onClickTrack, onHoverTrack);
       }
-      // Clear on unmount
-      return () => {
+      // TODO: Once updated to React 19, a cleanup function can be returned
+      // directly.
+      cleanupRenderSvgRef.current = () => {
         if (groupRef.current) {
           d3.select(groupRef.current).selectAll("*").remove();
         }
