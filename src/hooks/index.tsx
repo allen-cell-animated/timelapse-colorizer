@@ -12,4 +12,5 @@ export { useJsxText } from "./useJsxText";
 export { useLongPress } from "./useLongPress";
 export type { RecentCollection } from "./useRecentCollections";
 export { useRecentCollections } from "./useRecentCollections";
+export { useStateWithGetter } from "./useStateWithGetter";
 export { ScrollShadowContainer, useScrollShadow } from "./useScrollShadow";

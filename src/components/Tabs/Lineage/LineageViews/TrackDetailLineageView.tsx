@@ -31,8 +31,7 @@ import type {
   LineageNodeSelection,
   TrackInfo,
 } from "src/components/Tabs/Lineage/types";
-import { useConstructor } from "src/hooks";
-import { useStateWithGetter } from "src/hooks/useStateWithGetter";
+import { useConstructor, useStateWithGetter } from "src/hooks";
 import { FlexRowAlignCenter, VisuallyHidden } from "src/styles/utils";
 
 type TrackDetailLineageViewProps = {
@@ -613,7 +612,7 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
         }
       }
 
-      // Store cleanup function for later
+      // Cleanup function
       return () => {
         if (cleanupPointerHandlers) {
           cleanupPointerHandlers();
