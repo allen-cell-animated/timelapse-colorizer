@@ -656,13 +656,14 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
   // sizes/dimensions. (Otherwise, nodes can sometimes briefly have dimensions
   // 100x wider than they should be, likely due to unapplied transforms.)
   useEffect(() => {
-    setTimeout(() => {
+    const id = setTimeout(() => {
       frameTracksInView(svgRef.current, nodeSelectionRef.current, newTracks, zoom.current);
     }, 10);
+    return () => clearTimeout(id);
   }, [newTracks]);
 
   // Reset zoom to fit the full tree when tracks are populated for the first
-  // time, typically on initial load or when datasets/relationships changed.
+  // time, typically on initial load.
   const prevExpandedCountRef = useRef(expandedTracks.size);
   useEffect(() => {
     if (prevExpandedCountRef.current === 0 && expandedTracks.size > 0) {
@@ -670,6 +671,11 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
     }
     prevExpandedCountRef.current = expandedTracks.size;
   }, [expandedTracks.size]);
+
+  // Reset zoom when switching datasets.
+  useEffect(() => {
+    resetZoom();
+  }, [props.data, props.relationships, props.dataset]);
 
   // MARK: Render
 

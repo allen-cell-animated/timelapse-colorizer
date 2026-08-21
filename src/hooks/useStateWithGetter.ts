@@ -14,11 +14,9 @@ export const useStateWithGetter = <T>(initialValue: T): [() => T, (value: ValueO
   const stateRef = useRef(initialValue);
 
   const setStateWrapped = useCallback((value: ValueOrFunction<T>) => {
-    if (typeof value === "function") {
-      value = (value as (prevState: T) => T)(stateRef.current);
-    }
-    stateRef.current = value;
-    setState(value);
+    const nextValue: T = typeof value === "function" ? (value as (prevState: T) => T)(stateRef.current) : value;
+    stateRef.current = nextValue;
+    setState(() => nextValue);
   }, []);
 
   const getState = useCallback(() => stateRef.current, []);
