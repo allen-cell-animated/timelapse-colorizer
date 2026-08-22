@@ -43,10 +43,19 @@ const StyledPopoverContainer = styled.div`
     /* width: max-content; */
   }
 
-  .ant-menu-item,
-  .ant-menu-submenu-title {
-    &:not(:first-child) {
-      margin: 0;
+  .ant-menu-submenu:not(:first-of-type):not(.ant-menu-item-divider + .ant-menu-submenu),
+  .ant-menu-item:not(:first-of-type):not(.ant-menu-item-divider + .ant-menu-item) {
+    margin-top: 0;
+    & > .ant-menu-submenu-title {
+      margin-top: 0;
+    }
+  }
+
+  .ant-menu-submenu:not(:last-child):not(:has(+ .ant-menu-item-divider)),
+  .ant-menu-item:not(:last-child):not(:has(+ .ant-menu-item-divider)) {
+    margin-bottom: 0;
+    & > .ant-menu-submenu-title {
+      margin-bottom: 0;
     }
   }
 `;
@@ -185,7 +194,12 @@ export default function RightClickContextMenu(inputProps: PropsWithChildren<Righ
 
   const menu = (
     <FlexColumn>
-      <Menu items={contextMenuItemsToMenuItems(props.items)} onClick={onClickMenuItem} mode="vertical"></Menu>
+      <Menu
+        items={contextMenuItemsToMenuItems(props.items)}
+        onClick={onClickMenuItem}
+        mode="vertical"
+        selectedKeys={[]}
+      ></Menu>
     </FlexColumn>
   );
 
