@@ -1,4 +1,4 @@
-import { Menu, type MenuProps, Popover } from "antd";
+import { ConfigProvider, Menu, type MenuProps, Popover } from "antd";
 import { MenuInfo } from "rc-menu/lib/interface";
 import React, { PropsWithChildren, ReactElement, useEffect, useState } from "react";
 import styled from "styled-components";
@@ -9,7 +9,7 @@ type MenuItem = Required<MenuProps>["items"][number];
 
 type ClickHandler = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => void;
 
-type ContextMenuItem = {
+export type ContextMenuItem = {
   key: string;
   label: string;
   icon?: React.ReactNode;
@@ -17,7 +17,7 @@ type ContextMenuItem = {
   visible?: boolean | (() => boolean);
   disabled?: boolean | (() => boolean);
 
-  children?: ContextMenuItem[];
+  children?: ContextMenuItem[][] | ContextMenuItem[];
 };
 
 const StyledPopoverContainer = styled.div`
@@ -28,59 +28,96 @@ const StyledPopoverContainer = styled.div`
   width: 100%;
   pointer-events: none;
 
+  & .ant-popover {
+    pointer-events: auto;
+  }
+
   & .ant-popover-inner {
     border-radius: 8px;
     overflow: hidden;
-    padding: 0px;
+    padding: 0px 0;
   }
 
   & .ant-menu.ant-menu-light.ant-menu-root.ant-menu-vertical {
     border-inline-end: none;
+    /* width: max-content; */
+  }
+
+  .ant-menu-item,
+  .ant-menu-submenu-title {
+    &:not(:first-child) {
+      margin: 0;
+    }
   }
 `;
 
-function contextMenuItemsToMenuItems(items: ContextMenuItem[]): MenuItem[] {
-  return items
-    .filter((item) => (typeof item.visible === "function" ? item.visible() : item.visible !== false))
-    .map((item) => {
-      const menuItem: MenuItem = {
-        key: item.key,
-        label: item.label,
-        icon: item.icon,
-        disabled: typeof item.disabled === "function" ? item.disabled() : item.disabled,
-        children: item.children ? contextMenuItemsToMenuItems(item.children) : undefined,
-      };
-      return menuItem;
-    });
+function groupContextMenuItems(items: ContextMenuItem[] | ContextMenuItem[][]): ContextMenuItem[][] {
+  if (Array.isArray(items) && items.length > 0 && Array.isArray(items[0])) {
+    return items as ContextMenuItem[][];
+  }
+  return [items as ContextMenuItem[]];
 }
 
-function getKeyToClickHandlerMap(items: ContextMenuItem[]): Map<string, ClickHandler> {
+function contextMenuItemsToMenuItems(itemGroups: ContextMenuItem[][] | ContextMenuItem[]): MenuItem[] {
+  const groupedMenuItems = groupContextMenuItems(itemGroups).map((items) =>
+    items
+      .filter((item) => (typeof item.visible === "function" ? item.visible() : item.visible !== false))
+      .map((item) => {
+        const menuItem: MenuItem = {
+          key: item.key,
+          label: item.label,
+          icon: item.icon,
+          disabled: typeof item.disabled === "function" ? item.disabled() : item.disabled,
+          children: item.children ? contextMenuItemsToMenuItems(item.children) : undefined,
+          popupOffset: [0, 0],
+        };
+        return menuItem;
+      })
+  );
+  // Flatten + add dividers between each group
+  return groupedMenuItems.flatMap((group, index) => {
+    if (index === 0) {
+      return group;
+    }
+    return [{ type: "divider", key: `divider-${index}` }, ...group];
+  });
+}
+
+function getKeyToClickHandlerMap(items: ContextMenuItem[] | ContextMenuItem[][]): Map<string, ClickHandler> {
   const map = new Map<string, ClickHandler>();
 
   function addItemToMap(item: ContextMenuItem) {
     map.set(item.key, item.onClick ?? (() => {}));
     if (item.children) {
-      item.children.forEach(addItemToMap);
+      item.children.flat().forEach(addItemToMap);
     }
   }
 
-  items.forEach(addItemToMap);
+  items.flat(2).forEach(addItemToMap);
   return map;
 }
 
 type RightClickContextMenuProps = {
-  items?: ContextMenuItem[];
+  /**
+   * The items to display in the context menu. Items can have labels, icons,
+   * click handlers, and can be nested to create submenus.
+   *
+   * Each sub-array represents a separate group of context menu items.
+   */
+  items?: ContextMenuItem[][];
 };
 
 const defaultProps: Partial<RightClickContextMenuProps> = {
   items: [
-    {
-      key: "default",
-      label: "Placeholder Item",
-      onClick: () => {
-        console.log("Clicked placeholder item");
+    [
+      {
+        key: "default",
+        label: "Placeholder Item",
+        onClick: () => {
+          console.log("Clicked placeholder item");
+        },
       },
-    },
+    ],
   ],
 };
 
@@ -142,12 +179,13 @@ export default function RightClickContextMenu(inputProps: PropsWithChildren<Righ
     const clickHandler = keyToClickHandlerMap.get(info.key);
     if (clickHandler) {
       clickHandler(info.domEvent as React.MouseEvent<HTMLDivElement, MouseEvent>);
+      setShowContextMenu(false);
     }
   };
 
   const menu = (
     <FlexColumn>
-      <Menu items={contextMenuItemsToMenuItems(props.items)} onClick={onClickMenuItem}></Menu>
+      <Menu items={contextMenuItemsToMenuItems(props.items)} onClick={onClickMenuItem} mode="vertical"></Menu>
     </FlexColumn>
   );
 
@@ -158,20 +196,32 @@ export default function RightClickContextMenu(inputProps: PropsWithChildren<Righ
       </div>
 
       <StyledPopoverContainer ref={popoverContainerRef} id="right-click-context-menu-popover-container">
-        <Popover
-          content={menu}
-          open={showContextMenu}
-          onOpenChange={(open) => {
-            setShowContextMenu(open);
-            showContextMenuRef.current = open;
+        <ConfigProvider
+          theme={{
+            components: {
+              Menu: {
+                fontSize: 13,
+                itemHeight: 30,
+              },
+            },
           }}
-          getPopupContainer={() => popoverContainerRef.current ?? document.body}
-          placement="right"
-          style={{ padding: 0 }}
-          trigger={["click", "contextMenu"]}
         >
-          <div ref={popoverAnchorRef} style={{ position: "absolute", height: "1px", width: "1px" }}></div>
-        </Popover>
+          <Popover
+            content={menu}
+            open={showContextMenu}
+            onOpenChange={(open) => {
+              setShowContextMenu(open);
+              showContextMenuRef.current = open;
+            }}
+            getPopupContainer={() => popoverContainerRef.current ?? document.body}
+            placement="rightTop"
+            style={{ padding: 0 }}
+            trigger={["click", "contextMenu"]}
+            arrow={false}
+          >
+            <div ref={popoverAnchorRef} style={{ position: "absolute", height: "1px", width: "1px" }}></div>
+          </Popover>
+        </ConfigProvider>
       </StyledPopoverContainer>
     </div>
   );
