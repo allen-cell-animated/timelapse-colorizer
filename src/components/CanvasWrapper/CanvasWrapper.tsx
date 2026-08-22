@@ -25,7 +25,7 @@ import { AppThemeContext } from "src/styles/AppStyle";
 import { FlexColumn, FlexColumnAlignCenter } from "src/styles/utils";
 import { areAnyHotkeysPressed } from "src/utils/user_input";
 
-import RightClickContextMenu from "../Menus/RightClickContextMenu";
+import RightClickContextMenu, { ContextMenuItem } from "../Menus/RightClickContextMenu";
 
 /* Minimum distance in either X or Y that mouse should move
  * before mouse event is considered a drag
@@ -466,7 +466,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   const onMouseMove = useCallback(
     (event: MouseEvent): void => {
-      if (isMouseLeftDown.current || isMouseMiddleDown.current || isMouseRightDown.current) {
+      if (isMouseLeftDown.current || isMouseMiddleDown.current) {
         // Add to total drag distance; if it exceeds threshold, consider the mouse interaction
         // to be a drag operation. Start panning and disable track selection.
         totalMouseDrag.current.x += Math.abs(event.movementX);
@@ -589,6 +589,84 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     annotationShortcutKeys.push(SHORTCUT_KEYS.annotation.reuseValue);
   }
 
+  const contextMenuItems: ContextMenuItem[][] = [
+    [
+      {
+        key: "annotationMode",
+        label: props.annotationState.isAnnotationModeEnabled ? "Exit annotation mode" : "Enter annotation mode",
+        onClick: () => {
+          props.annotationState.setIsAnnotationModeEnabled(!props.annotationState.isAnnotationModeEnabled);
+        },
+      },
+      {
+        key: "annotationMode2",
+        label: props.annotationState.isAnnotationModeEnabled ? "Exit annotation mode" : "Enter annotation mode",
+        onClick: () => {
+          props.annotationState.setIsAnnotationModeEnabled(!props.annotationState.isAnnotationModeEnabled);
+        },
+      },
+      {
+        key: "annotationMode3",
+        label: props.annotationState.isAnnotationModeEnabled ? "Exit annotation mode" : "Enter annotation mode",
+        // onClick: () => {
+        //   console.log("Clicked annotation mode");
+        //   props.annotationState.setIsAnnotationModeEnabled(!props.annotationState.isAnnotationModeEnabled);
+        // },
+        children: [
+          [
+            {
+              key: "annotationMode3-1",
+              label: "Submenu Item 1",
+              onClick: () => {
+                console.log("Clicked submenu item 1");
+              },
+            },
+          ],
+        ],
+      },
+    ],
+    [
+      {
+        key: "annotationMode4",
+        label: props.annotationState.isAnnotationModeEnabled ? "Exit annotation mode" : "Enter annotation mode",
+        onClick: () => {
+          props.annotationState.setIsAnnotationModeEnabled(!props.annotationState.isAnnotationModeEnabled);
+        },
+      },
+      {
+        key: "annotationMode5",
+        label: props.annotationState.isAnnotationModeEnabled ? "Exit annotation mode" : "Enter annotation mode",
+        onClick: () => {
+          props.annotationState.setIsAnnotationModeEnabled(!props.annotationState.isAnnotationModeEnabled);
+        },
+      },
+      {
+        key: "annotationMode6",
+        label: props.annotationState.isAnnotationModeEnabled ? "Exit annotation mode" : "Enter annotation mode",
+        // onClick: () => {
+        //   console.log("Clicked annotation mode");
+        //   props.annotationState.setIsAnnotationModeEnabled(!props.annotationState.isAnnotationModeEnabled);
+        // },
+        children: [
+          {
+            key: "annotationMode6-1",
+            label: "Submenu Item 1",
+            onClick: () => {
+              console.log("Clicked submenu item 1");
+            },
+          },
+          {
+            key: "annotationMode6-12",
+            label: "Submenu Item 2",
+            onClick: () => {
+              console.log("Clicked submenu item 1");
+            },
+          },
+        ],
+      },
+    ],
+  ];
+
   return (
     <CanvasContainer ref={containerRef} $annotationModeEnabled={props.annotationState.isAnnotationModeEnabled}>
       {
@@ -606,7 +684,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         )
       }
       <LoadingSpinner loading={props.loading || isFrameLoading} progress={loadProgress}>
-        <RightClickContextMenu>
+        <RightClickContextMenu items={contextMenuItems}>
           <div ref={canvasPlaceholderRef}></div>
         </RightClickContextMenu>
       </LoadingSpinner>

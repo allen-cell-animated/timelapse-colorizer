@@ -3,6 +3,7 @@ import { MenuInfo } from "rc-menu/lib/interface";
 import React, { PropsWithChildren, ReactElement, useEffect, useState } from "react";
 import styled from "styled-components";
 
+import { MenuExpandArrowSVG } from "src/assets";
 import { FlexColumn } from "src/styles/utils";
 
 type MenuItem = Required<MenuProps>["items"][number];
@@ -113,25 +114,10 @@ type RightClickContextMenuProps = {
    *
    * Each sub-array represents a separate group of context menu items.
    */
-  items?: ContextMenuItem[][];
+  items: ContextMenuItem[][];
 };
 
-const defaultProps: Partial<RightClickContextMenuProps> = {
-  items: [
-    [
-      {
-        key: "default",
-        label: "Placeholder Item",
-        onClick: () => {
-          console.log("Clicked placeholder item");
-        },
-      },
-    ],
-  ],
-};
-
-export default function RightClickContextMenu(inputProps: PropsWithChildren<RightClickContextMenuProps>): ReactElement {
-  const props = { ...defaultProps, ...inputProps } as PropsWithChildren<Required<RightClickContextMenuProps>>;
+export default function RightClickContextMenu(props: PropsWithChildren<RightClickContextMenuProps>): ReactElement {
   const contentContainerRef = React.useRef<HTMLDivElement>(null);
   const popoverContainerRef = React.useRef<HTMLDivElement>(null);
   const popoverAnchorRef = React.useRef<HTMLDivElement>(null);
@@ -199,6 +185,7 @@ export default function RightClickContextMenu(inputProps: PropsWithChildren<Righ
         onClick={onClickMenuItem}
         mode="vertical"
         selectedKeys={[]}
+        expandIcon={<MenuExpandArrowSVG />}
       ></Menu>
     </FlexColumn>
   );
