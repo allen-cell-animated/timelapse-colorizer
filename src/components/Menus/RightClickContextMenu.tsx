@@ -27,15 +27,21 @@ export type ContextMenuItem = {
   visible?: boolean | (() => boolean);
   disabled?: boolean | (() => boolean);
 
+  /**
+   * An array of context menu items that will be displayed as a submenu. If
+   * provided as a nested array, items in each sub-array will be grouped in the
+   * submenu.
+   */
   children?: ContextMenuItem[][] | ContextMenuItem[];
 };
 
 type RightClickContextMenuProps = {
   /**
    * The items to display in the context menu. Items can have labels, icons,
-   * click handlers, and can be nested to create submenus.
+   * click handlers, and children that are grouped into submenus.
    *
-   * Each sub-array represents a separate group of context menu items.
+   * When `items` is a nested array, items in each sub-array will be grouped
+   * together in the menu, with a divider drawn between each group.
    */
   items: ContextMenuItem[][] | ContextMenuItem[];
 };
@@ -149,7 +155,7 @@ function doesItemHaveIcon(item: ContextMenuItem): boolean {
 function getKeyToClickHandlerMap(items: ContextMenuItem[] | ContextMenuItem[][]): Map<string, ClickHandler> {
   const map = new Map<string, ClickHandler>();
 
-  function addItemToMap(item: ContextMenuItem) {
+  function addItemToMap(item: ContextMenuItem): void {
     map.set(item.key, item.onClick ?? (() => {}));
     if (item.children) {
       item.children.flat().forEach(addItemToMap);
