@@ -604,20 +604,22 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     ],
     [
       {
+        key: "annotationMode",
+        // TODO: If no annotations exist, label as option to create annotations
+        // and show annotation creation modal on click.
+        label: props.annotationState.isAnnotationModeEnabled ? "Exit annotation mode" : "Edit annotations",
+        onClick: () => {
+          props.annotationState.setIsAnnotationModeEnabled(!props.annotationState.isAnnotationModeEnabled);
+          setOpenTab(TabType.ANNOTATION);
+        },
+      },
+      {
         key: "hideAnnotations",
         label: props.annotationState.visible ? "Hide annotations" : "Show annotations",
         onClick: () => {
           props.annotationState.setVisibility(!props.annotationState.visible);
         },
         disabled: props.annotationState.data.getLabels().length === 0,
-      },
-      {
-        key: "annotationMode",
-        label: props.annotationState.isAnnotationModeEnabled ? "Exit annotation mode" : "Edit annotations",
-        onClick: () => {
-          props.annotationState.setIsAnnotationModeEnabled(!props.annotationState.isAnnotationModeEnabled);
-          setOpenTab(TabType.ANNOTATION);
-        },
       },
     ],
     [

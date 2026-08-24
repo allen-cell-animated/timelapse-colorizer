@@ -5,6 +5,7 @@ import React, {
   type ReactElement,
   useCallback,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -24,8 +25,8 @@ export type ContextMenuItem = {
   label: string;
   icon?: React.ReactNode;
   onClick?: ClickHandler;
-  visible?: boolean | (() => boolean);
-  disabled?: boolean | (() => boolean);
+  visible?: boolean;
+  disabled?: boolean;
 
   /**
    * An array of context menu items that will be displayed as a submenu. If
@@ -36,6 +37,7 @@ export type ContextMenuItem = {
 };
 
 type RightClickContextMenuProps = {
+  id?: string;
   /**
    * The items to display in the context menu. Items can have labels, icons,
    * click handlers, and children that are grouped into submenus.
@@ -57,8 +59,8 @@ const StyledPopoverContainer = styled.div<{ $hasIcon?: boolean }>(
     height: 100%;
     width: 100%;
 
-    // Pass pointer events through the popover container to children, except
-    // for the popover itself.
+    // Pass pointer events through the popover container to the child content
+    // container, except for the popover itself.
     pointer-events: none;
     & .ant-popover {
       pointer-events: auto;
@@ -80,7 +82,7 @@ const StyledPopoverContainer = styled.div<{ $hasIcon?: boolean }>(
     // document.body). In Ant 6, this can be edited through ConfigProvider +
     // Semantic DOM.
 
-    // Space titles consistently when icons are present
+    // When icons are used, align titles consistently for items with/without.
     --icon-padding-px: ${$hasIcon ? "8px" : "0px"};
     --icon-width-px: ${$hasIcon ? "13px" : "0px"};
     & span.ant-menu-title-content {
@@ -90,7 +92,7 @@ const StyledPopoverContainer = styled.div<{ $hasIcon?: boolean }>(
       margin-inline-start: var(--icon-padding-px) !important;
     }
 
-    // Remove spacing between sibling menu elements
+    // Remove spacing between sibling menu elements for compactness
     .ant-menu-submenu:not(:first-of-type):not(.ant-menu-item-divider + .ant-menu-submenu),
     .ant-menu-item:not(:first-of-type):not(.ant-menu-item-divider + .ant-menu-item) {
       margin-top: 0;
@@ -120,13 +122,13 @@ function groupContextMenuItems(items: ContextMenuItem[] | ContextMenuItem[][]): 
 function contextMenuItemsToMenuItems(itemGroups: ContextMenuItem[][] | ContextMenuItem[]): MenuItem[] {
   const groupedMenuItems = groupContextMenuItems(itemGroups).map((items) =>
     items
-      .filter((item) => (typeof item.visible === "function" ? item.visible() : item.visible !== false))
+      .filter((item) => item.visible !== false)
       .map((item) => {
         const menuItem: MenuItem = {
           key: item.key,
           label: item.label,
           icon: item.icon,
-          disabled: typeof item.disabled === "function" ? item.disabled() : item.disabled,
+          disabled: item.disabled,
           children: item.children ? contextMenuItemsToMenuItems(item.children) : undefined,
           popupOffset: [0, 0],
         };
@@ -154,7 +156,6 @@ function doesItemHaveIcon(item: ContextMenuItem): boolean {
 
 function getKeyToClickHandlerMap(items: ContextMenuItem[] | ContextMenuItem[][]): Map<string, ClickHandler> {
   const map = new Map<string, ClickHandler>();
-
   function addItemToMap(item: ContextMenuItem): void {
     map.set(item.key, item.onClick ?? (() => {}));
     if (item.children) {
@@ -176,6 +177,9 @@ function getKeyToClickHandlerMap(items: ContextMenuItem[] | ContextMenuItem[][])
  * opened, to prevent rapid changes to the UI.
  */
 function RightClickContextMenu(props: PropsWithChildren<RightClickContextMenuProps>): ReactElement {
+  const defaultId = useId();
+  const id = props.id ?? defaultId;
+
   const contentContainerRef = useRef<HTMLDivElement>(null);
   const popoverContainerRef = useRef<HTMLDivElement>(null);
   const popoverAnchorRef = useRef<HTMLDivElement>(null);
@@ -184,16 +188,14 @@ function RightClickContextMenu(props: PropsWithChildren<RightClickContextMenuPro
   inputItemsRef.current = props.items;
 
   // Stored as state so that the menu items remain consistent even if the input
-  // items change, and only update when the context menu is reopened.
+  // items change, and only update when the context menu is opened/reopened.
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [keyToClickHandlerMap, setKeyToClickHandlerMap] = useState<Map<string, ClickHandler>>(new Map());
 
   const [showContextMenu, _setShowContextMenu] = useState(false);
-  const showContextMenuRef = useRef(showContextMenu);
 
   const setShowContextMenu = useCallback((value: boolean) => {
     _setShowContextMenu(value);
-    showContextMenuRef.current = value;
     if (value) {
       // Update current menu items and click handlers
       setMenuItems(contextMenuItemsToMenuItems(inputItemsRef.current));
@@ -213,11 +215,9 @@ function RightClickContextMenu(props: PropsWithChildren<RightClickContextMenuPro
     }
 
     const updatePopoverPosition = (ev: MouseEvent): void => {
-      if (!showContextMenuRef.current) {
-        const rect = container.getBoundingClientRect();
-        popoverAnchor.style.left = `${ev.clientX - rect.left}px`;
-        popoverAnchor.style.top = `${ev.clientY - rect.top}px`;
-      }
+      const rect = container.getBoundingClientRect();
+      popoverAnchor.style.left = `${ev.clientX - rect.left}px`;
+      popoverAnchor.style.top = `${ev.clientY - rect.top}px`;
     };
     const onContextMenu = (ev: MouseEvent): void => {
       ev.preventDefault();
@@ -247,29 +247,28 @@ function RightClickContextMenu(props: PropsWithChildren<RightClickContextMenuPro
     [keyToClickHandlerMap]
   );
 
-  const menu = (
-    <FlexColumn>
-      <Menu
-        items={menuItems}
-        onClick={onClickMenuItem}
-        mode="vertical"
-        selectedKeys={[]}
-        expandIcon={<MenuExpandArrowSVG />}
-      ></Menu>
-    </FlexColumn>
+  const menu = useMemo(
+    () => (
+      <FlexColumn>
+        <Menu
+          items={menuItems}
+          onClick={onClickMenuItem}
+          mode="vertical"
+          selectedKeys={[]}
+          expandIcon={<MenuExpandArrowSVG />}
+        ></Menu>
+      </FlexColumn>
+    ),
+    [menuItems, onClickMenuItem]
   );
 
   return (
-    <div>
+    <div id={id}>
       <div ref={contentContainerRef} style={{ width: "100%", height: "100%" }}>
         {props.children}
       </div>
 
-      <StyledPopoverContainer
-        ref={popoverContainerRef}
-        id="right-click-context-menu-popover-container"
-        $hasIcon={hasIcons}
-      >
+      <StyledPopoverContainer ref={popoverContainerRef} $hasIcon={hasIcons}>
         <ConfigProvider
           theme={{
             components: {
@@ -286,7 +285,6 @@ function RightClickContextMenu(props: PropsWithChildren<RightClickContextMenuPro
             open={showContextMenu}
             onOpenChange={(open) => {
               setShowContextMenu(open);
-              showContextMenuRef.current = open;
             }}
             getPopupContainer={() => popoverContainerRef.current ?? document.body}
             placement="rightTop"
