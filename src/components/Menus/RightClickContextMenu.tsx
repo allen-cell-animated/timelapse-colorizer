@@ -1,7 +1,7 @@
 import { ConfigProvider, Menu, type MenuProps, Popover } from "antd";
 import type { MenuInfo } from "rc-menu/lib/interface";
-import React, { forwardRef, type PropsWithChildren, type ReactElement, useCallback, useEffect, useMemo, useState } from "react";
-import styled from "styled-components";
+import React, { type PropsWithChildren, type ReactElement, useCallback, useEffect, useMemo, useState } from "react";
+import styled, { css } from "styled-components";
 
 import { MenuExpandArrowSVG } from "src/assets";
 import { FlexColumn } from "src/styles/utils";
@@ -34,48 +34,65 @@ type RightClickContextMenuProps = {
 
 // MARK: Styling
 
-const StyledPopoverContainer = styled.div`
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 100%;
-  width: 100%;
-  pointer-events: none;
+const StyledPopoverContainer = styled.div<{ $hasIcon?: boolean }>(
+  ({ $hasIcon }) => css`
+    // Position popover container totally over the child element that it wraps
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
 
-  & .ant-popover {
-    pointer-events: auto;
-  }
+    // Pass pointer events through the popover container to children, except
+    // for the popover itself.
+    pointer-events: none;
+    & .ant-popover {
+      pointer-events: auto;
+    }
 
-  & .ant-popover-inner {
-    border-radius: 8px;
-    overflow: hidden;
-    padding: 0px 0;
-  }
+    & .ant-popover-inner {
+      border-radius: 8px;
+      overflow: hidden;
+      padding: 0px 0;
+    }
 
-  & .ant-menu.ant-menu-light.ant-menu-root.ant-menu-vertical {
-    border-inline-end: none;
-  }
+    // Remove the vertical spacing bar from the right edge of the menu
+    & .ant-menu.ant-menu-light.ant-menu-root.ant-menu-vertical {
+      border-inline-end: none;
+    }
 
-  // Remove spacing between sibling menu elements
+    // TODO: The following style adjustments do not apply to submenus, due to
+    // Ant positioning them outside of the popup container (appended to
+    // document.body). In Ant 6, this can be edited through ConfigProvider +
+    // Semantic DOM.
 
-  // TODO: this does not apply to submenus, due to Ant positioning them outside
-  // of the popup container. Once upgraded to Ant 6, this can be edited through
-  // ConfigProvider + Semantic DOM.
-  .ant-menu-submenu:not(:first-of-type):not(.ant-menu-item-divider + .ant-menu-submenu),
-  .ant-menu-item:not(:first-of-type):not(.ant-menu-item-divider + .ant-menu-item) {
-    margin-top: 0;
-    & > .ant-menu-submenu-title {
+    // Space titles consistently when icons are present
+    --icon-padding-px: ${$hasIcon ? "8px" : "0px"};
+    --icon-width-px: ${$hasIcon ? "13px" : "0px"};
+    & span.ant-menu-title-content {
+      margin-inline-start: calc(var(--icon-width-px) + var(--icon-padding-px)) !important;
+    }
+    & * + span.ant-menu-title-content {
+      margin-inline-start: var(--icon-padding-px) !important;
+    }
+
+    // Remove spacing between sibling menu elements
+    .ant-menu-submenu:not(:first-of-type):not(.ant-menu-item-divider + .ant-menu-submenu),
+    .ant-menu-item:not(:first-of-type):not(.ant-menu-item-divider + .ant-menu-item) {
       margin-top: 0;
+      & > .ant-menu-submenu-title {
+        margin-top: 0;
+      }
     }
-  }
-  .ant-menu-submenu:not(:last-child):not(:has(+ .ant-menu-item-divider)),
-  .ant-menu-item:not(:last-child):not(:has(+ .ant-menu-item-divider)) {
-    margin-bottom: 0;
-    & > .ant-menu-submenu-title {
+    .ant-menu-submenu:not(:last-child):not(:has(+ .ant-menu-item-divider)),
+    .ant-menu-item:not(:last-child):not(:has(+ .ant-menu-item-divider)) {
       margin-bottom: 0;
+      & > .ant-menu-submenu-title {
+        margin-bottom: 0;
+      }
     }
-  }
-`;
+  `
+);
 
 // MARK: Helper methods
 
@@ -109,6 +126,16 @@ function contextMenuItemsToMenuItems(itemGroups: ContextMenuItem[][] | ContextMe
     }
     return [{ type: "divider", key: `divider-${index}` }, ...group];
   });
+}
+
+function doesItemHaveIcon(item: ContextMenuItem): boolean {
+  if (item.icon) {
+    return true;
+  }
+  if (item.children) {
+    return item.children.flat().some(doesItemHaveIcon);
+  }
+  return false;
 }
 
 function getKeyToClickHandlerMap(items: ContextMenuItem[] | ContextMenuItem[][]): Map<string, ClickHandler> {
@@ -159,6 +186,8 @@ function RightClickContextMenu(props: PropsWithChildren<RightClickContextMenuPro
       setKeyToClickHandlerMap(getKeyToClickHandlerMap(inputItemsRef.current));
     }
   }, []);
+
+  const hasIcons = useMemo(() => inputItemsRef.current.flat(2).some(doesItemHaveIcon), [menuItems]);
 
   // MARK: Event listener
 
@@ -217,17 +246,22 @@ function RightClickContextMenu(props: PropsWithChildren<RightClickContextMenuPro
 
   return (
     <div>
-      <div ref={ref ?? contentContainerRef} style={{ width: "100%", height: "100%" }}>
+      <div ref={contentContainerRef} style={{ width: "100%", height: "100%" }}>
         {props.children}
       </div>
 
-      <StyledPopoverContainer ref={popoverContainerRef} id="right-click-context-menu-popover-container">
+      <StyledPopoverContainer
+        ref={popoverContainerRef}
+        id="right-click-context-menu-popover-container"
+        $hasIcon={hasIcons}
+      >
         <ConfigProvider
           theme={{
             components: {
               Menu: {
                 fontSize: 13,
                 itemHeight: 30,
+                controlPaddingHorizontal: 0,
               },
             },
           }}
