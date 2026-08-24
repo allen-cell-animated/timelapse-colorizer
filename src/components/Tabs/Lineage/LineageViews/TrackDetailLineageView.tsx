@@ -21,6 +21,7 @@ import {
 import {
   alignMergeNodes,
   collapseTrack,
+  EMPTY_EXPANDED_STATE,
   expandTrack,
   getInitialExpandedState,
   type TreeExpandedState,
@@ -505,19 +506,18 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
   onClickRef.current = props.onClick;
   onHoverRef.current = props.onHover;
 
-  const initialExpandedState = useMemo(() => getInitialExpandedState(trackIds, props.data, props.relationships), []);
-  const [getExpandedState, setExpandedState] = useStateWithGetter<TreeExpandedState>(initialExpandedState);
+  const [getExpandedState, setExpandedState] = useStateWithGetter<TreeExpandedState>(EMPTY_EXPANDED_STATE);
   const newTracks = useNewTracks(props.selectedTracks);
 
   // Reset expanded state when the data or relationships change (e.g. when the
   // user switches to a different dataset)
-  useMemo(() => {
+  useEffect(() => {
     setExpandedState(getInitialExpandedState(trackIds, props.data, props.relationships));
   }, [props.data, props.relationships]);
 
   // Apply newly selected tracks to expanded state-- updates only on new tracks
   // to avoid expanding selected tracks that were previously collapsed.
-  useMemo(() => {
+  useEffect(() => {
     if (newTracks.size > 0) {
       for (const trackId of newTracks) {
         setExpandedState((prev) => expandTrack(trackId, prev, props.data, props.relationships));
@@ -557,26 +557,29 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
     }
   }, [zoom]);
 
-  const resetZoom = (durationMs = 0): void => {
-    if (!svgRef.current || !nodeGroupRef.current) {
-      return;
-    }
-    const svg = d3.select(svgRef.current);
-    const svgNode = svg.node();
-    const gNode = d3.select(nodeGroupRef.current).node();
-    if (!gNode || !svgNode || !svg) {
-      return;
-    }
-    const initialTransform = getDefaultZoomTransform(svgNode, gNode);
-    if (initialTransform) {
-      if (durationMs === 0) {
-        // Apply immediately
-        zoom.current.transform(svg, initialTransform);
-      } else {
-        svg.transition().duration(durationMs).call(zoom.current.transform, initialTransform);
+  const resetZoom = useCallback(
+    (durationMs = 0): void => {
+      if (!svgRef.current || !nodeGroupRef.current) {
+        return;
       }
-    }
-  };
+      const svg = d3.select(svgRef.current);
+      const svgNode = svg.node();
+      const gNode = d3.select(nodeGroupRef.current).node();
+      if (!gNode || !svgNode || !svg) {
+        return;
+      }
+      const initialTransform = getDefaultZoomTransform(svgNode, gNode);
+      if (initialTransform) {
+        if (durationMs === 0) {
+          // Apply immediately
+          zoom.current.transform(svg, initialTransform);
+        } else {
+          svg.transition().duration(durationMs).call(zoom.current.transform, initialTransform);
+        }
+      }
+    },
+    [zoom]
+  );
 
   // MARK: Viewport
 
@@ -670,7 +673,7 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
       resetZoom();
     }
     prevExpandedCountRef.current = expandedTracks.size;
-  }, [expandedTracks.size]);
+  }, [expandedTracks.size, resetZoom]);
 
   // Reset zoom when switching datasets.
   useEffect(() => {

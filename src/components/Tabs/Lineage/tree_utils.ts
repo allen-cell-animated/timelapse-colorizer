@@ -92,6 +92,11 @@ export type TreeExpandedState = {
   previouslyExpandedTracks: Set<number>;
 };
 
+export const EMPTY_EXPANDED_STATE: TreeExpandedState = {
+  expandedTracks: new Set<number>(),
+  previouslyExpandedTracks: new Set<number>(),
+};
+
 /**
  * Expands the provided track ID and all of its ancestors. If the track has any
  * coparents, they will also be expanded. Also, if the track has any children
