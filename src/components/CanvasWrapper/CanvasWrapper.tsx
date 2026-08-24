@@ -131,6 +131,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const showSegmentations = useViewerStateStore((state) => state.showSegmentations);
   const showCentroids = useViewerStateStore((state) => state.showCentroids);
   const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
+  const vectorVisible = useViewerStateStore((state) => state.vectorVisible);
+  const setVectorVisible = useViewerStateStore((state) => state.setVectorVisible);
 
   const isAnnotationModeEnabled = props.annotationState.isAnnotationModeEnabled;
 
@@ -594,6 +596,23 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const contextMenuItems: ContextMenuItem[][] = [
     [
       {
+        key: "resetView",
+        label: "Reset view",
+        onClick: () => {
+          canv.resetView();
+        },
+      },
+    ],
+    [
+      {
+        key: "hideAnnotations",
+        label: props.annotationState.visible ? "Hide annotations" : "Show annotations",
+        onClick: () => {
+          props.annotationState.setVisibility(!props.annotationState.visible);
+        },
+        disabled: props.annotationState.data.getLabels().length === 0,
+      },
+      {
         key: "annotationMode",
         label: props.annotationState.isAnnotationModeEnabled ? "Exit annotation mode" : "Edit annotations",
         onClick: () => {
@@ -604,42 +623,11 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     ],
     [
       {
-        key: "annotationMode4",
-        label: props.annotationState.isAnnotationModeEnabled ? "Exit annotation mode" : "Enter annotation mode",
+        key: "show-vectors",
+        label: vectorVisible ? "Hide motion vectors" : "Show motion vectors",
         onClick: () => {
-          props.annotationState.setIsAnnotationModeEnabled(!props.annotationState.isAnnotationModeEnabled);
+          setVectorVisible(!vectorVisible);
         },
-      },
-      {
-        key: "annotationMode5",
-        label: props.annotationState.isAnnotationModeEnabled ? "Exit annotation mode" : "Enter annotation mode",
-        onClick: () => {
-          props.annotationState.setIsAnnotationModeEnabled(!props.annotationState.isAnnotationModeEnabled);
-        },
-      },
-      {
-        key: "annotationMode6",
-        label: props.annotationState.isAnnotationModeEnabled ? "Exit annotation mode" : "Enter annotation mode",
-        // onClick: () => {
-        //   console.log("Clicked annotation mode");
-        //   props.annotationState.setIsAnnotationModeEnabled(!props.annotationState.isAnnotationModeEnabled);
-        // },
-        children: [
-          {
-            key: "annotationMode6-1",
-            label: "Submenu Item 1",
-            onClick: () => {
-              console.log("Clicked submenu item 1");
-            },
-          },
-          {
-            key: "annotationMode6-12",
-            label: "Submenu Item 2",
-            onClick: () => {
-              console.log("Clicked submenu item 1");
-            },
-          },
-        ],
       },
     ],
   ];
