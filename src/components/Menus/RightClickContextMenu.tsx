@@ -1,6 +1,14 @@
 import { ConfigProvider, Menu, type MenuProps, Popover } from "antd";
 import type { MenuInfo } from "rc-menu/lib/interface";
-import React, { type PropsWithChildren, type ReactElement, useCallback, useEffect, useMemo, useState } from "react";
+import React, {
+  type PropsWithChildren,
+  type ReactElement,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import styled, { css } from "styled-components";
 
 import { MenuExpandArrowSVG } from "src/assets";
@@ -162,11 +170,11 @@ function getKeyToClickHandlerMap(items: ContextMenuItem[] | ContextMenuItem[][])
  * opened, to prevent rapid changes to the UI.
  */
 function RightClickContextMenu(props: PropsWithChildren<RightClickContextMenuProps>): ReactElement {
-  const contentContainerRef = React.useRef<HTMLDivElement>(null);
-  const popoverContainerRef = React.useRef<HTMLDivElement>(null);
-  const popoverAnchorRef = React.useRef<HTMLDivElement>(null);
+  const contentContainerRef = useRef<HTMLDivElement>(null);
+  const popoverContainerRef = useRef<HTMLDivElement>(null);
+  const popoverAnchorRef = useRef<HTMLDivElement>(null);
 
-  const inputItemsRef = React.useRef(props.items);
+  const inputItemsRef = useRef(props.items);
   inputItemsRef.current = props.items;
 
   // Stored as state so that the menu items remain consistent even if the input
@@ -175,7 +183,7 @@ function RightClickContextMenu(props: PropsWithChildren<RightClickContextMenuPro
   const [keyToClickHandlerMap, setKeyToClickHandlerMap] = useState<Map<string, ClickHandler>>(new Map());
 
   const [showContextMenu, _setShowContextMenu] = useState(false);
-  const showContextMenuRef = React.useRef(showContextMenu);
+  const showContextMenuRef = useRef(showContextMenu);
 
   const setShowContextMenu = useCallback((value: boolean) => {
     _setShowContextMenu(value);
@@ -205,13 +213,14 @@ function RightClickContextMenu(props: PropsWithChildren<RightClickContextMenuPro
         popoverAnchor.style.top = `${ev.clientY - rect.top}px`;
       }
     };
-    const onContextMenu = (ev: PointerEvent): void => {
+    const onContextMenu = (ev: MouseEvent): void => {
       ev.preventDefault();
       ev.stopPropagation();
       updatePopoverPosition(ev);
       setShowContextMenu(true);
     };
 
+    // Note: contextmenu event is not supported on Safari mobile
     container.addEventListener("contextmenu", onContextMenu);
     return () => {
       container.removeEventListener("contextmenu", onContextMenu);

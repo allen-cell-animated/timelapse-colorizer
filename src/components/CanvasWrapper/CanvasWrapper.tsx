@@ -17,6 +17,7 @@ import type { AlertBannerProps } from "src/components/Banner";
 import CanvasToolbar from "src/components/CanvasWrapper/CanvasToolbar";
 import ShortcutKeyList from "src/components/Display/ShortcutKeyList";
 import LoadingSpinner from "src/components/LoadingSpinner";
+import RightClickContextMenu, { type ContextMenuItem } from "src/components/Menus/RightClickContextMenu";
 import AnnotationInputPopover from "src/components/Tabs/Annotation/AnnotationInputPopover";
 import { CANVAS_ASPECT_RATIO, SHORTCUT_KEYS } from "src/constants";
 import type { AnnotationState } from "src/hooks";
@@ -25,8 +26,6 @@ import { useViewerStateStore } from "src/state/ViewerState";
 import { AppThemeContext } from "src/styles/AppStyle";
 import { FlexColumn, FlexColumnAlignCenter } from "src/styles/utils";
 import { areAnyHotkeysPressed } from "src/utils/user_input";
-
-import RightClickContextMenu, { type ContextMenuItem } from "../Menus/RightClickContextMenu";
 
 /* Minimum distance in either X or Y that mouse should move
  * before mouse event is considered a drag
