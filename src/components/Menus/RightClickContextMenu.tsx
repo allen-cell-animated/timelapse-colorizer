@@ -1,13 +1,14 @@
 import { ConfigProvider, Menu, type MenuProps, Popover } from "antd";
 import { MenuInfo } from "rc-menu/lib/interface";
-import React, { PropsWithChildren, ReactElement, useEffect, useState } from "react";
+import React, { PropsWithChildren, ReactElement, useEffect, useMemo, useState } from "react";
 import styled from "styled-components";
 
 import { MenuExpandArrowSVG } from "src/assets";
 import { FlexColumn } from "src/styles/utils";
 
-type MenuItem = Required<MenuProps>["items"][number];
+// MARK: Types
 
+type MenuItem = Required<MenuProps>["items"][number];
 type ClickHandler = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => void;
 
 export type ContextMenuItem = {
@@ -20,6 +21,18 @@ export type ContextMenuItem = {
 
   children?: ContextMenuItem[][] | ContextMenuItem[];
 };
+
+type RightClickContextMenuProps = {
+  /**
+   * The items to display in the context menu. Items can have labels, icons,
+   * click handlers, and can be nested to create submenus.
+   *
+   * Each sub-array represents a separate group of context menu items.
+   */
+  items: ContextMenuItem[][] | ContextMenuItem[];
+};
+
+// MARK: Styling
 
 const StyledPopoverContainer = styled.div`
   position: absolute;
@@ -41,9 +54,13 @@ const StyledPopoverContainer = styled.div`
 
   & .ant-menu.ant-menu-light.ant-menu-root.ant-menu-vertical {
     border-inline-end: none;
-    /* width: max-content; */
   }
 
+  // Remove spacing between sibling menu elements
+
+  // TODO: this does not apply to submenus, due to Ant positioning them outside
+  // of the popup container. Once upgraded to Ant 6, this can be edited through
+  // ConfigProvider + Semantic DOM.
   .ant-menu-submenu:not(:first-of-type):not(.ant-menu-item-divider + .ant-menu-submenu),
   .ant-menu-item:not(:first-of-type):not(.ant-menu-item-divider + .ant-menu-item) {
     margin-top: 0;
@@ -51,7 +68,6 @@ const StyledPopoverContainer = styled.div`
       margin-top: 0;
     }
   }
-
   .ant-menu-submenu:not(:last-child):not(:has(+ .ant-menu-item-divider)),
   .ant-menu-item:not(:last-child):not(:has(+ .ant-menu-item-divider)) {
     margin-bottom: 0;
@@ -60,6 +76,8 @@ const StyledPopoverContainer = styled.div`
     }
   }
 `;
+
+// MARK: Helper methods
 
 function groupContextMenuItems(items: ContextMenuItem[] | ContextMenuItem[][]): ContextMenuItem[][] {
   if (Array.isArray(items) && items.length > 0 && Array.isArray(items[0])) {
@@ -107,24 +125,21 @@ function getKeyToClickHandlerMap(items: ContextMenuItem[] | ContextMenuItem[][])
   return map;
 }
 
-type RightClickContextMenuProps = {
-  /**
-   * The items to display in the context menu. Items can have labels, icons,
-   * click handlers, and can be nested to create submenus.
-   *
-   * Each sub-array represents a separate group of context menu items.
-   */
-  items: ContextMenuItem[][];
-};
+// MARK: Component
 
 export default function RightClickContextMenu(props: PropsWithChildren<RightClickContextMenuProps>): ReactElement {
   const contentContainerRef = React.useRef<HTMLDivElement>(null);
   const popoverContainerRef = React.useRef<HTMLDivElement>(null);
   const popoverAnchorRef = React.useRef<HTMLDivElement>(null);
+
   const [showContextMenu, setShowContextMenu] = useState(false);
   const showContextMenuRef = React.useRef(showContextMenu);
 
-  // MARK: Event listeners
+  const keyToClickHandlerMap = useMemo(() => getKeyToClickHandlerMap(props.items), [props.items]);
+  const keyToClickHandlerMapRef = React.useRef(keyToClickHandlerMap);
+  keyToClickHandlerMapRef.current = keyToClickHandlerMap;
+
+  // MARK: Event listener
 
   useEffect(() => {
     const container = contentContainerRef.current;
@@ -132,51 +147,40 @@ export default function RightClickContextMenu(props: PropsWithChildren<RightClic
       return;
     }
 
+    const updatePopoverPosition = (ev: MouseEvent): void => {
+      if (popoverAnchorRef.current && contentContainerRef.current && !showContextMenuRef.current) {
+        const rect = contentContainerRef.current.getBoundingClientRect();
+        popoverAnchorRef.current.style.left = `${ev.clientX - rect.left}px`;
+        popoverAnchorRef.current.style.top = `${ev.clientY - rect.top}px`;
+      }
+    };
     const onContextMenu = (ev: PointerEvent): void => {
       ev.preventDefault();
       ev.stopPropagation();
+      updatePopoverPosition(ev);
       setShowContextMenu(true);
       showContextMenuRef.current = true;
     };
 
-    const onMouseMove = (ev: MouseEvent): void => {
-      if (popoverAnchorRef.current && contentContainerRef.current && !showContextMenuRef.current) {
-        popoverAnchorRef.current.style.left = `${
-          ev.clientX - contentContainerRef.current.getBoundingClientRect().left
-        }px`;
-        popoverAnchorRef.current.style.top = `${
-          ev.clientY - contentContainerRef.current.getBoundingClientRect().top
-        }px`;
-      }
-    };
-
-    const onMouseDown = (ev: MouseEvent): void => {
-      // On right click, readjust position
-      if (ev.button === 2) {
-        onMouseMove(ev);
-      }
-    };
-
     container.addEventListener("contextmenu", onContextMenu);
-    container.addEventListener("mousemove", onMouseMove);
-    container.addEventListener("mousedown", onMouseDown);
     return () => {
       container.removeEventListener("contextmenu", onContextMenu);
-      container.removeEventListener("mousemove", onMouseMove);
-      container.removeEventListener("mousedown", onMouseDown);
     };
   }, []);
 
   // MARK: Menu click handling
 
-  const keyToClickHandlerMap = getKeyToClickHandlerMap(props.items);
-  const onClickMenuItem = (info: MenuInfo): void => {
-    const clickHandler = keyToClickHandlerMap.get(info.key);
-    if (clickHandler) {
-      clickHandler(info.domEvent as React.MouseEvent<HTMLDivElement, MouseEvent>);
-      setShowContextMenu(false);
-    }
-  };
+  const onClickMenuItem = useMemo(
+    () =>
+      (info: MenuInfo): void => {
+        const clickHandler = keyToClickHandlerMapRef.current.get(info.key);
+        if (clickHandler) {
+          clickHandler(info.domEvent as React.MouseEvent<HTMLDivElement, MouseEvent>);
+          setShowContextMenu(false);
+        }
+      },
+    []
+  );
 
   const menu = (
     <FlexColumn>

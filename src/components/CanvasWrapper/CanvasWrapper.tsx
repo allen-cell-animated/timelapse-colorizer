@@ -10,6 +10,7 @@ import {
   type ChannelRangePreset,
   LoadTroubleshooting,
   type PixelIdInfo,
+  TabType,
 } from "src/colorizer/types";
 import type CanvasOverlay from "src/colorizer/viewport/CanvasOverlay";
 import type { AlertBannerProps } from "src/components/Banner";
@@ -129,6 +130,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const frameLoadResult = useViewerStateStore((state) => state.frameLoadResult);
   const showSegmentations = useViewerStateStore((state) => state.showSegmentations);
   const showCentroids = useViewerStateStore((state) => state.showCentroids);
+  const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
 
   const isAnnotationModeEnabled = props.annotationState.isAnnotationModeEnabled;
 
@@ -593,36 +595,11 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     [
       {
         key: "annotationMode",
-        label: props.annotationState.isAnnotationModeEnabled ? "Exit annotation mode" : "Enter annotation mode",
+        label: props.annotationState.isAnnotationModeEnabled ? "Exit annotation mode" : "Edit annotations",
         onClick: () => {
           props.annotationState.setIsAnnotationModeEnabled(!props.annotationState.isAnnotationModeEnabled);
+          setOpenTab(TabType.ANNOTATION);
         },
-      },
-      {
-        key: "annotationMode2",
-        label: props.annotationState.isAnnotationModeEnabled ? "Exit annotation mode" : "Enter annotation mode",
-        onClick: () => {
-          props.annotationState.setIsAnnotationModeEnabled(!props.annotationState.isAnnotationModeEnabled);
-        },
-      },
-      {
-        key: "annotationMode3",
-        label: props.annotationState.isAnnotationModeEnabled ? "Exit annotation mode" : "Enter annotation mode",
-        // onClick: () => {
-        //   console.log("Clicked annotation mode");
-        //   props.annotationState.setIsAnnotationModeEnabled(!props.annotationState.isAnnotationModeEnabled);
-        // },
-        children: [
-          [
-            {
-              key: "annotationMode3-1",
-              label: "Submenu Item 1",
-              onClick: () => {
-                console.log("Clicked submenu item 1");
-              },
-            },
-          ],
-        ],
       },
     ],
     [
