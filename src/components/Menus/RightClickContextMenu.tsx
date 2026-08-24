@@ -1,6 +1,6 @@
 import { ConfigProvider, Menu, type MenuProps, Popover } from "antd";
 import { MenuInfo } from "rc-menu/lib/interface";
-import React, { PropsWithChildren, ReactElement, useCallback, useEffect, useMemo, useState } from "react";
+import React, { forwardRef, PropsWithChildren, ReactElement, useCallback, useEffect, useMemo, useState } from "react";
 import styled from "styled-components";
 
 import { MenuExpandArrowSVG } from "src/assets";
@@ -134,7 +134,10 @@ function getKeyToClickHandlerMap(items: ContextMenuItem[] | ContextMenuItem[][])
  * Menu items + click handlers will only update when the context menu is first
  * opened, to prevent rapid changes to the UI.
  */
-export default function RightClickContextMenu(props: PropsWithChildren<RightClickContextMenuProps>): ReactElement {
+const RightClickContextMenu = forwardRef(function RightClickContextMenu(
+  props: PropsWithChildren<RightClickContextMenuProps>,
+  ref: React.Ref<HTMLDivElement>
+): ReactElement {
   const contentContainerRef = React.useRef<HTMLDivElement>(null);
   const popoverContainerRef = React.useRef<HTMLDivElement>(null);
   const popoverAnchorRef = React.useRef<HTMLDivElement>(null);
@@ -164,7 +167,8 @@ export default function RightClickContextMenu(props: PropsWithChildren<RightClic
 
   useEffect(() => {
     const popoverAnchor = popoverAnchorRef.current;
-    const container = contentContainerRef.current;
+    const isRefNullOrFunction = !ref || typeof ref === "function";
+    const container = isRefNullOrFunction ? contentContainerRef.current : ref.current;
     if (!container || !popoverAnchor) {
       return;
     }
@@ -217,7 +221,7 @@ export default function RightClickContextMenu(props: PropsWithChildren<RightClic
 
   return (
     <div>
-      <div ref={contentContainerRef} style={{ width: "100%", height: "100%" }}>
+      <div ref={ref ?? contentContainerRef} style={{ width: "100%", height: "100%" }}>
         {props.children}
       </div>
 
@@ -251,4 +255,6 @@ export default function RightClickContextMenu(props: PropsWithChildren<RightClic
       </StyledPopoverContainer>
     </div>
   );
-}
+});
+
+export default RightClickContextMenu;
