@@ -26,7 +26,7 @@ import { AppThemeContext } from "src/styles/AppStyle";
 import { FlexColumn, FlexColumnAlignCenter } from "src/styles/utils";
 import { areAnyHotkeysPressed } from "src/utils/user_input";
 
-import RightClickContextMenu, { ContextMenuItem } from "../Menus/RightClickContextMenu";
+import RightClickContextMenu, { type ContextMenuItem } from "../Menus/RightClickContextMenu";
 
 /* Minimum distance in either X or Y that mouse should move
  * before mouse event is considered a drag

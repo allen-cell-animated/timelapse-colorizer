@@ -1,6 +1,6 @@
 import { ConfigProvider, Menu, type MenuProps, Popover } from "antd";
-import { MenuInfo } from "rc-menu/lib/interface";
-import React, { forwardRef, PropsWithChildren, ReactElement, useCallback, useEffect, useMemo, useState } from "react";
+import type { MenuInfo } from "rc-menu/lib/interface";
+import React, { forwardRef, type PropsWithChildren, type ReactElement, useCallback, useEffect, useMemo, useState } from "react";
 import styled from "styled-components";
 
 import { MenuExpandArrowSVG } from "src/assets";
