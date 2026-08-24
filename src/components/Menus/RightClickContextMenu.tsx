@@ -146,12 +146,14 @@ function contextMenuItemsToMenuItems(itemGroups: ContextMenuItem[][] | ContextMe
     });
 }
 
-function doesItemHaveIcon(item: ContextMenuItem): boolean {
-  if (item.icon) {
-    return true;
-  }
-  if (item.children) {
-    return item.children.flat().some(doesItemHaveIcon);
+function doesItemHaveIcon(item: MenuItem): boolean {
+  if (item && (item.type === "item" || item.type === "submenu")) {
+    if (item.icon) {
+      return true;
+    }
+    if (item.type === "submenu" && item.children) {
+      return item.children.flat().some(doesItemHaveIcon);
+    }
   }
   return false;
 }
@@ -205,7 +207,7 @@ function RightClickContextMenu(props: PropsWithChildren<RightClickContextMenuPro
     }
   }, []);
 
-  const hasIcons = useMemo(() => inputItemsRef.current.flat(2).some(doesItemHaveIcon), [menuItems]);
+  const hasIcons = useMemo(() => menuItems.some(doesItemHaveIcon), [menuItems]);
 
   // MARK: Event listener
 
