@@ -1,6 +1,6 @@
 import { ConfigProvider, Menu, type MenuProps, Popover } from "antd";
 import { MenuInfo } from "rc-menu/lib/interface";
-import React, { PropsWithChildren, ReactElement, useEffect, useMemo, useState } from "react";
+import React, { PropsWithChildren, ReactElement, useCallback, useEffect, useMemo, useState } from "react";
 import styled from "styled-components";
 
 import { MenuExpandArrowSVG } from "src/assets";
@@ -127,31 +127,53 @@ function getKeyToClickHandlerMap(items: ContextMenuItem[] | ContextMenuItem[][])
 
 // MARK: Component
 
+/**
+ * Wraps the children to intercept and display a custom context menu on right
+ * click.
+ *
+ * Menu items + click handlers will only update when the context menu is first
+ * opened, to prevent rapid changes to the UI.
+ */
 export default function RightClickContextMenu(props: PropsWithChildren<RightClickContextMenuProps>): ReactElement {
   const contentContainerRef = React.useRef<HTMLDivElement>(null);
   const popoverContainerRef = React.useRef<HTMLDivElement>(null);
   const popoverAnchorRef = React.useRef<HTMLDivElement>(null);
 
-  const [showContextMenu, setShowContextMenu] = useState(false);
+  const inputItemsRef = React.useRef(props.items);
+  inputItemsRef.current = props.items;
+
+  // Stored as state so that the menu items remain consistent even if the input
+  // items change, and only update when the context menu is reopened.
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [keyToClickHandlerMap, setKeyToClickHandlerMap] = useState<Map<string, ClickHandler>>(new Map());
+
+  const [showContextMenu, _setShowContextMenu] = useState(false);
   const showContextMenuRef = React.useRef(showContextMenu);
 
-  const keyToClickHandlerMap = useMemo(() => getKeyToClickHandlerMap(props.items), [props.items]);
-  const keyToClickHandlerMapRef = React.useRef(keyToClickHandlerMap);
-  keyToClickHandlerMapRef.current = keyToClickHandlerMap;
+  const setShowContextMenu = useCallback((value: boolean) => {
+    _setShowContextMenu(value);
+    showContextMenuRef.current = value;
+    if (value) {
+      // Update current menu items and click handlers
+      setMenuItems(contextMenuItemsToMenuItems(inputItemsRef.current));
+      setKeyToClickHandlerMap(getKeyToClickHandlerMap(inputItemsRef.current));
+    }
+  }, []);
 
   // MARK: Event listener
 
   useEffect(() => {
+    const popoverAnchor = popoverAnchorRef.current;
     const container = contentContainerRef.current;
-    if (!container) {
+    if (!container || !popoverAnchor) {
       return;
     }
 
     const updatePopoverPosition = (ev: MouseEvent): void => {
-      if (popoverAnchorRef.current && contentContainerRef.current && !showContextMenuRef.current) {
-        const rect = contentContainerRef.current.getBoundingClientRect();
-        popoverAnchorRef.current.style.left = `${ev.clientX - rect.left}px`;
-        popoverAnchorRef.current.style.top = `${ev.clientY - rect.top}px`;
+      if (!showContextMenuRef.current) {
+        const rect = container.getBoundingClientRect();
+        popoverAnchor.style.left = `${ev.clientX - rect.left}px`;
+        popoverAnchor.style.top = `${ev.clientY - rect.top}px`;
       }
     };
     const onContextMenu = (ev: PointerEvent): void => {
@@ -159,33 +181,32 @@ export default function RightClickContextMenu(props: PropsWithChildren<RightClic
       ev.stopPropagation();
       updatePopoverPosition(ev);
       setShowContextMenu(true);
-      showContextMenuRef.current = true;
     };
 
     container.addEventListener("contextmenu", onContextMenu);
     return () => {
       container.removeEventListener("contextmenu", onContextMenu);
     };
-  }, []);
+  }, [setShowContextMenu]);
 
   // MARK: Menu click handling
 
   const onClickMenuItem = useMemo(
     () =>
       (info: MenuInfo): void => {
-        const clickHandler = keyToClickHandlerMapRef.current.get(info.key);
+        const clickHandler = keyToClickHandlerMap.get(info.key);
         if (clickHandler) {
           clickHandler(info.domEvent as React.MouseEvent<HTMLDivElement, MouseEvent>);
           setShowContextMenu(false);
         }
       },
-    []
+    [keyToClickHandlerMap]
   );
 
   const menu = (
     <FlexColumn>
       <Menu
-        items={contextMenuItemsToMenuItems(props.items)}
+        items={menuItems}
         onClick={onClickMenuItem}
         mode="vertical"
         selectedKeys={[]}
