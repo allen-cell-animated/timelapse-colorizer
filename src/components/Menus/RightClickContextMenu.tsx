@@ -18,7 +18,7 @@ import { FlexColumn } from "src/styles/utils";
 // MARK: Types
 
 type MenuItem = Required<MenuProps>["items"][number];
-type ClickHandler = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => void;
+type ClickHandler = (event: React.MouseEvent<HTMLElement, MouseEvent> | React.KeyboardEvent<HTMLElement>) => void;
 
 export type ContextMenuItem = {
   key: string;
@@ -136,12 +136,14 @@ function contextMenuItemsToMenuItems(itemGroups: ContextMenuItem[][] | ContextMe
       })
   );
   // Flatten + add dividers between each group
-  return groupedMenuItems.flatMap((group, index) => {
-    if (index === 0) {
-      return group;
-    }
-    return [{ type: "divider", key: `divider-${index}` }, ...group];
-  });
+  return groupedMenuItems
+    .filter((group) => group.length > 0)
+    .flatMap((group, index) => {
+      if (index === 0) {
+        return group;
+      }
+      return [{ type: "divider", key: `divider-${index}` }, ...group];
+    });
 }
 
 function doesItemHaveIcon(item: ContextMenuItem): boolean {
@@ -226,10 +228,18 @@ function RightClickContextMenu(props: PropsWithChildren<RightClickContextMenuPro
       setShowContextMenu(true);
     };
 
+    const onEscapePressed = (ev: KeyboardEvent): void => {
+      if (ev.key === "Escape") {
+        setShowContextMenu(false);
+      }
+    };
+
     // Note: contextmenu event is not supported on Safari mobile
     container.addEventListener("contextmenu", onContextMenu);
+    window.addEventListener("keydown", onEscapePressed);
     return () => {
       container.removeEventListener("contextmenu", onContextMenu);
+      window.removeEventListener("keydown", onEscapePressed);
     };
   }, [setShowContextMenu]);
 
@@ -240,7 +250,7 @@ function RightClickContextMenu(props: PropsWithChildren<RightClickContextMenuPro
       (info: MenuInfo): void => {
         const clickHandler = keyToClickHandlerMap.get(info.key);
         if (clickHandler) {
-          clickHandler(info.domEvent as React.MouseEvent<HTMLDivElement, MouseEvent>);
+          clickHandler(info.domEvent);
           setShowContextMenu(false);
         }
       },
@@ -263,7 +273,7 @@ function RightClickContextMenu(props: PropsWithChildren<RightClickContextMenuPro
   );
 
   return (
-    <div id={id}>
+    <div id={id} style={{ position: "relative" }}>
       <div ref={contentContainerRef} style={{ width: "100%", height: "100%" }}>
         {props.children}
       </div>
