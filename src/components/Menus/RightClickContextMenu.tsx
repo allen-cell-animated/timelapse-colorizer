@@ -134,10 +134,7 @@ function getKeyToClickHandlerMap(items: ContextMenuItem[] | ContextMenuItem[][])
  * Menu items + click handlers will only update when the context menu is first
  * opened, to prevent rapid changes to the UI.
  */
-const RightClickContextMenu = forwardRef(function RightClickContextMenu(
-  props: PropsWithChildren<RightClickContextMenuProps>,
-  ref: React.Ref<HTMLDivElement>
-): ReactElement {
+function RightClickContextMenu(props: PropsWithChildren<RightClickContextMenuProps>): ReactElement {
   const contentContainerRef = React.useRef<HTMLDivElement>(null);
   const popoverContainerRef = React.useRef<HTMLDivElement>(null);
   const popoverAnchorRef = React.useRef<HTMLDivElement>(null);
@@ -167,8 +164,7 @@ const RightClickContextMenu = forwardRef(function RightClickContextMenu(
 
   useEffect(() => {
     const popoverAnchor = popoverAnchorRef.current;
-    const isRefNullOrFunction = !ref || typeof ref === "function";
-    const container = isRefNullOrFunction ? contentContainerRef.current : ref.current;
+    const container = contentContainerRef.current;
     if (!container || !popoverAnchor) {
       return;
     }
@@ -255,6 +251,6 @@ const RightClickContextMenu = forwardRef(function RightClickContextMenu(
       </StyledPopoverContainer>
     </div>
   );
-});
+}
 
 export default RightClickContextMenu;
