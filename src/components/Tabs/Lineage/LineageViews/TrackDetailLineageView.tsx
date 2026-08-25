@@ -32,7 +32,7 @@ import type {
   LineageNodeSelection,
   TrackInfo,
 } from "src/components/Tabs/Lineage/types";
-import { useConstructor, useStateWithGetter } from "src/hooks";
+import { useConstructor } from "src/hooks";
 import { FlexRowAlignCenter, VisuallyHidden } from "src/styles/utils";
 
 type TrackDetailLineageViewProps = {
@@ -506,7 +506,7 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
   onClickRef.current = props.onClick;
   onHoverRef.current = props.onHover;
 
-  const [getExpandedState, setExpandedState] = useStateWithGetter<TreeExpandedState>(EMPTY_EXPANDED_STATE);
+  const [expandedState, setExpandedState] = useState<TreeExpandedState>(EMPTY_EXPANDED_STATE);
   const newTracks = useNewTracks(props.selectedTracks);
 
   // Reset expanded state when the data or relationships change (e.g. when the
@@ -524,7 +524,7 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
       }
     }
   }, [newTracks]);
-  const { expandedTracks } = getExpandedState();
+  const { expandedTracks } = expandedState;
 
   // Expand/collapse the tree when clicking the expand/collapse button.
   const onToggleExpanded = (info: TrackInfo): void => {
