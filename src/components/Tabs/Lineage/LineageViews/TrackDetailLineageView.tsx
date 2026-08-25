@@ -497,8 +497,6 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
 
   const trackIds = useMemo(() => new Set(props.selectedTracks.keys()), [props.selectedTracks]);
 
-  // Flag that triggers a zoom reset once the tree completes an initial render.
-
   const [useFeatureColors, setUseFeatureColors] = useState(true);
 
   const onClickRef = useRef(props.onClick);
