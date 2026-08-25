@@ -136,6 +136,11 @@ function itemsToMenuItemsRecursive(
       .filter((item) => item.visible !== false)
       .map((item) => {
         const key = item.key ?? clickHandlerMap.size.toString();
+        if (clickHandlerMap.has(key)) {
+          console.warn(
+            `Duplicate key '${key}' detected when parsing items for right click context menu. This will cause incorrect click handlers to be fired.`
+          );
+        }
         clickHandlerMap.set(key, item.onClick ?? (() => {}));
         const menuItem: MenuItem = {
           key: key,
