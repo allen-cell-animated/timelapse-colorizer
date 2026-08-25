@@ -7,8 +7,12 @@ import { addDerivedStateSubscriber } from "src/state/utils/store_utils";
 import type { DatasetSlice } from "./dataset_slice";
 
 export type CorrelationSliceState = {
-  /** Current list of features selected for the correlation plot calculation. */
-  correlationFeatures: string[];
+  /**
+   * Current list of features selected for the correlation plot calculation.
+   * Null if uninitialized; will be set to the full set of features when a
+   * dataset is loaded.
+   */
+  correlationFeatures: string[] | null;
 };
 
 export type CorrelationSliceSerializableState = Pick<CorrelationSliceState, "correlationFeatures">;
@@ -23,7 +27,7 @@ export const createCorrelationSlice: StateCreator<CorrelationSlice & DatasetSlic
   set,
   get
 ) => ({
-  correlationFeatures: [],
+  correlationFeatures: null,
 
   setCorrelationFeatures: (features: string[]) => {
     const { dataset } = get();
@@ -42,13 +46,19 @@ export const addCorrelationDerivedStateSubscribers = (
     (state) => ({ dataset: state.dataset }),
     ({ dataset }) => {
       if (dataset === null) {
-        return {};
+        return;
+      }
+      const correlationFeatures = store.getState().correlationFeatures;
+      if (correlationFeatures === null) {
+        return {
+          correlationFeatures: [...dataset.featureKeys],
+        };
       }
       // Validate that all correlation features are in the dataset.
-      const newFeatures = store.getState().correlationFeatures.filter((feature) => dataset.hasFeatureKey(feature));
-      if (newFeatures.length === store.getState().correlationFeatures.length) {
+      const newFeatures = correlationFeatures.filter((feature) => dataset.hasFeatureKey(feature));
+      if (newFeatures.length === correlationFeatures.length) {
         // Make no changes if all features are valid
-        return {};
+        return;
       }
       return {
         correlationFeatures: newFeatures,
