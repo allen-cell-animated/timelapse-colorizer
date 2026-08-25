@@ -5,7 +5,7 @@ import type { Dataset, Track } from "src/colorizer";
 import type { ContextMenuItem } from "src/components/Menus/RightClickContextMenu";
 
 import { DUMMY_ROOT_NODE_ID } from "./constants";
-import { matchesAllAncestors, matchesAllDescendants } from "./tree_utils";
+import { matchesAllAncestors, matchesAllDescendants, type TreeExpandedState } from "./tree_utils";
 import type { LineageData, LineageDataRelationships, LineageNodeSelection, TrackInfo } from "./types";
 
 // TODO: Move to colorizer/utils/data_utils?
@@ -364,6 +364,8 @@ type ContextMenuData = {
   data: LineageData;
   relationships: LineageDataRelationships;
   selectedTracks: Map<number, Track>;
+  // Optional-- expandable/collapsible views only
+  expandedState?: TreeExpandedState;
 };
 
 type ContextMenuCallbacks = {
@@ -372,6 +374,9 @@ type ContextMenuCallbacks = {
   selectNodeAndParents: (trackId: number) => void;
   deselectNodeAndChildren: (trackId: number) => void;
   deselectNodeAndParents: (trackId: number) => void;
+  // Optional-- expandable/collapsible views only
+  expandAllChildren?: (trackId: number) => void;
+  collapseAllChildren?: (trackId: number) => void;
 };
 
 /**
@@ -430,6 +435,28 @@ export function getLineageContextMenuItems(
       },
     ],
   ];
+
+  // Add options for expanding and collapsing all children, if provided
+  if (data.expandedState) {
+    const { expandedTracks } = data.expandedState;
+    const areAllChildrenExpanded =
+      hoveredId !== null &&
+      matchesAllDescendants(hoveredId, (id) => expandedTracks.has(id), data.data, data.relationships);
+    items.push([
+      {
+        label: "Expand all children",
+        disabled: hoveredId === null || !idHasChildren || !callbacks.expandAllChildren,
+        onClick: hoveredId !== null ? () => callbacks.expandAllChildren?.(hoveredId) : undefined,
+        visible: !areAllChildrenExpanded,
+      },
+      {
+        label: "Collapse all children",
+        disabled: hoveredId === null || !idHasChildren || !callbacks.collapseAllChildren,
+        onClick: hoveredId !== null ? () => callbacks.collapseAllChildren?.(hoveredId) : undefined,
+        visible: areAllChildrenExpanded,
+      },
+    ]);
+  }
 
   return items;
 }
