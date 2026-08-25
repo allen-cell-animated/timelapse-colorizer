@@ -253,12 +253,12 @@ export default function TreeLineageView(props: TreeLineageViewProps): ReactEleme
     resetZoom();
   }, [props.data]);
 
-  // Update zoom if new tracks are selected and not visible. This happens in a
+  // Update zoom if new tracks are selected. This happens in a
   // second effect to ensure that the nodes are rendered before the zoom check
   // is performed.
   useEffect(() => {
     frameTracksInView(svgRef.current, nodeRef.current, newTracks, zoom.current);
-  }, [props.selectedTracks]);
+  }, [newTracks]);
 
   return (
     <svg
