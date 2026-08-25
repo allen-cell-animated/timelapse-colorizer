@@ -307,40 +307,36 @@ describe("Loading + saving from URL query strings", () => {
   });
 
   describe("serializeFeatureList / deserializeFeatureList", () => {
-    it("handles empty arrays", () => {
-      expect(serializeFeatureList([])).to.equal("");
-      expect(deserializeFeatureList("")).to.deep.equal([]);
-    });
+    const TESTS = [
+      { name: "handles empty arrays", features: [], expected: "" },
+      {
+        name: "can round-trip parse feature lists",
+        features: ["feature1", "feature2", "feature3"],
+        expected: "feature1,feature2,feature3",
+      },
+      {
+        name: "parses the URL_PARAM_ALL_FEATURES placeholder",
+        features: [...MOCK_DATASET.featureKeys],
+        expected: URL_PARAM_ALL_FEATURES,
+        dataset: MOCK_DATASET,
+      },
+      {
+        name: "does not filter features",
+        features: ["feature1", "feature2", "feature3", "nonexistent-feature"],
+        expected: "feature1,feature2,feature3,nonexistent-feature",
+        dataset: undefined,
+      },
+    ];
 
-    it("can round-trip parse feature lists", async () => {
-      const features = ["feature1", "feature2", "feature3"];
-      const serialized = serializeFeatureList(features, MOCK_DATASET);
-      expect(serialized).to.equal("feature1,feature2,feature3");
-      const deserialized = deserializeFeatureList(serialized, MOCK_DATASET);
-      expect(deserialized).to.deep.equal(features);
-    });
-
-    it("does not filter features if no dataset is provided", () => {
-      const features = ["feature1", "feature2", "feature3", "nonexistent-feature"];
-      const serialized = serializeFeatureList(features);
-      expect(serialized).to.equal("feature1,feature2,feature3,nonexistent-feature");
-      const deserialized = deserializeFeatureList(serialized);
-      expect(deserialized).to.deep.equal(features);
-    });
-
-    it("removes features that are not in the dataset, if provided", () => {
-      const features = ["feature1", "feature2", "feature3", "nonexistent-feature"];
-      const serialized = serializeFeatureList(features, MOCK_DATASET);
-      expect(serialized).to.equal("feature1,feature2,feature3");
-      const deserialized = deserializeFeatureList(serialized, MOCK_DATASET);
-      expect(deserialized).to.deep.equal(["feature1", "feature2", "feature3"]);
-    });
-
-    it("parses the URL_PARAM_ALL_FEATURES placeholder", () => {
-      const serialized = URL_PARAM_ALL_FEATURES;
-      const deserialized = deserializeFeatureList(serialized, MOCK_DATASET);
-      expect(deserialized).to.deep.equal([...MOCK_DATASET.featureKeys]);
-    });
+    for (const test of TESTS) {
+      it(test.name, () => {
+        const dataset = test.dataset;
+        const serialized = serializeFeatureList(test.features, dataset);
+        expect(serialized).to.equal(test.expected);
+        const deserialized = deserializeFeatureList(serialized, dataset);
+        expect(deserialized).to.deep.equal(test.features);
+      });
+    }
 
     it("ignores the URL_PARAM_ALL_FEATURES placeholder if no dataset is provided", () => {
       const serialized = URL_PARAM_ALL_FEATURES;
