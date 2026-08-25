@@ -21,8 +21,8 @@ type MenuItem = Required<MenuProps>["items"][number];
 type ClickHandler = (event: React.MouseEvent<HTMLElement, MouseEvent> | React.KeyboardEvent<HTMLElement>) => void;
 
 export type ContextMenuItem = {
-  key: string;
-  label: string;
+  key?: string;
+  label: React.ReactNode;
   icon?: React.ReactNode;
   onClick?: ClickHandler;
   visible?: boolean;
@@ -119,17 +119,30 @@ function groupContextMenuItems(items: ContextMenuItem[] | ContextMenuItem[][]): 
   return [items as ContextMenuItem[]];
 }
 
-function contextMenuItemsToMenuItems(itemGroups: ContextMenuItem[][] | ContextMenuItem[]): MenuItem[] {
+/**
+ * Converts context menu items into Ant Menu items recursively.
+ * @param itemGroups The context menu items, or groups of items, to convert.
+ * Keys will be automatically assigned.
+ * @param clickHandlerMap Map to populate, mapping item keys to their
+ * corresponding click handlers.
+ * @returns An array of Ant Menu items.
+ */
+function itemsToMenuItemsRecursive(
+  itemGroups: ContextMenuItem[][] | ContextMenuItem[],
+  clickHandlerMap: Map<string, ClickHandler>
+): MenuItem[] {
   const groupedMenuItems = groupContextMenuItems(itemGroups).map((items) =>
     items
       .filter((item) => item.visible !== false)
       .map((item) => {
+        const key = item.key ?? clickHandlerMap.size.toString();
+        clickHandlerMap.set(key, item.onClick ?? (() => {}));
         const menuItem: MenuItem = {
-          key: item.key,
+          key: key,
           label: item.label,
           icon: item.icon,
           disabled: item.disabled,
-          children: item.children ? contextMenuItemsToMenuItems(item.children) : undefined,
+          children: item.children ? itemsToMenuItemsRecursive(item.children, clickHandlerMap) : undefined,
           popupOffset: [0, 0],
         };
         return menuItem;
@@ -146,6 +159,15 @@ function contextMenuItemsToMenuItems(itemGroups: ContextMenuItem[][] | ContextMe
     });
 }
 
+function getMenuItems(items: ContextMenuItem[] | ContextMenuItem[][]): {
+  items: MenuItem[];
+  keyToClickHandlerMap: Map<string, ClickHandler>;
+} {
+  const clickHandlerMap = new Map<string, ClickHandler>();
+  const menuItems = itemsToMenuItemsRecursive(items, clickHandlerMap);
+  return { items: menuItems, keyToClickHandlerMap: clickHandlerMap };
+}
+
 function doesItemHaveIcon(item: MenuItem): boolean {
   if (item && (item.type === "item" || item.type === "submenu")) {
     if (item.icon) {
@@ -156,19 +178,6 @@ function doesItemHaveIcon(item: MenuItem): boolean {
     }
   }
   return false;
-}
-
-function getKeyToClickHandlerMap(items: ContextMenuItem[] | ContextMenuItem[][]): Map<string, ClickHandler> {
-  const map = new Map<string, ClickHandler>();
-  function addItemToMap(item: ContextMenuItem): void {
-    map.set(item.key, item.onClick ?? (() => {}));
-    if (item.children) {
-      item.children.flat().forEach(addItemToMap);
-    }
-  }
-
-  items.flat(2).forEach(addItemToMap);
-  return map;
 }
 
 // MARK: Component
@@ -202,8 +211,9 @@ function RightClickContextMenu(props: PropsWithChildren<RightClickContextMenuPro
     _setShowContextMenu(value);
     if (value) {
       // Update current menu items and click handlers
-      setMenuItems(contextMenuItemsToMenuItems(inputItemsRef.current));
-      setKeyToClickHandlerMap(getKeyToClickHandlerMap(inputItemsRef.current));
+      const { items, keyToClickHandlerMap } = getMenuItems(inputItemsRef.current);
+      setMenuItems(items);
+      setKeyToClickHandlerMap(keyToClickHandlerMap);
     }
   }, []);
 

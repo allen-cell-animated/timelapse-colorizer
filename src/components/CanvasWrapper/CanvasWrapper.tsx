@@ -596,7 +596,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     () => [
       [
         {
-          key: "resetView",
           label: "Reset view",
           onClick: () => {
             canv.resetView();
@@ -605,7 +604,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       ],
       [
         {
-          key: "annotationMode",
           // TODO: If no annotations exist, label as option to create annotations
           // and show annotation creation modal on click.
           label: props.annotationState.isAnnotationModeEnabled ? "Exit annotation mode" : "Edit annotations",
@@ -617,7 +615,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
           },
         },
         {
-          key: "hideAnnotations",
           label: props.annotationState.visible ? "Hide annotations" : "Show annotations",
           onClick: () => {
             props.annotationState.setVisibility(!props.annotationState.visible);
@@ -627,7 +624,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       ],
       [
         {
-          key: "show-vectors",
           label: vectorVisible ? "Hide motion vectors" : "Show motion vectors",
           onClick: () => {
             setVectorVisible(!vectorVisible);
