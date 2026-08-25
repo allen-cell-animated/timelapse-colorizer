@@ -5,6 +5,7 @@ import {
   loadChannelSliceFromParams,
   loadColorRampSliceFromParams,
   loadConfigSliceFromParams,
+  loadCorrelationSliceFromParams,
   loadDatasetSliceFromParams,
   loadPlot3dSliceFromParams,
   loadScatterPlotSliceFromParams,
@@ -17,6 +18,7 @@ import {
   selectCollectionSliceSerializationDeps,
   selectColorRampSliceSerializationDeps,
   selectConfigSliceSerializationDeps,
+  selectCorrelationSliceSerializationDeps,
   selectDatasetSliceSerializationDeps,
   selectPlot3dSliceSerializationDeps,
   selectScatterPlotSliceSerializationDeps,
@@ -29,6 +31,7 @@ import {
   serializeCollectionSlice,
   serializeColorRampSlice,
   serializeConfigSlice,
+  serializeCorrelationSlice,
   serializeDatasetSlice,
   serializePlot3dSlice,
   serializeScatterPlotSlice,
@@ -56,6 +59,7 @@ export const selectSerializationDependencies = (state: ViewerStore): Partial<Vie
   ...selectChannelSliceSerializationDeps(state),
   ...selectVectorSliceSerializationDeps(state),
   ...selectPlot3dSliceSerializationDeps(state),
+  ...selectCorrelationSliceSerializationDeps(state),
 });
 
 /**
@@ -79,6 +83,7 @@ export const serializeViewerState = (state: Partial<ViewerStoreSerializableState
     ...serializeVectorSlice(state),
     ...serializeChannelSlice(state),
     ...serializePlot3dSlice(state),
+    ...serializeCorrelationSlice(state),
   });
 };
 
@@ -159,6 +164,7 @@ export const loadViewerStateFromParams = (store: Store<ViewerStore>, params: URL
   loadVectorSliceFromParams(store.getState(), params);
   loadChannelSliceFromParams(store.getState(), params);
   loadPlot3dSliceFromParams(store.getState(), params);
+  loadCorrelationSliceFromParams(store.getState(), params);
 
   // 3. Dependent on dataset + track slices:
   loadTimeSliceFromParams(store.getState(), params);
