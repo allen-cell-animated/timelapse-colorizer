@@ -1,9 +1,10 @@
 import * as d3 from "d3";
+import { useEffect, useMemo, useRef } from "react";
 
-import type { Dataset } from "src/colorizer";
+import type { Dataset, Track } from "src/colorizer";
 
 import { DUMMY_ROOT_NODE_ID } from "./constants";
-import type { LineageData, LineageDataRelationships, TrackInfo } from "./types";
+import type { LineageData, LineageDataRelationships, LineageNodeSelection, TrackInfo } from "./types";
 
 // TODO: Move to colorizer/utils/data_utils?
 
@@ -148,6 +149,108 @@ export function getDefaultZoomTransform(
 }
 
 /**
+ * Returns a new SVG zoom transform that centers the specified nodes within the
+ * viewport of the svgNode. If the nodes are larger than the viewport, the scale
+ * of the transform will be adjusted to fit the nodes within the viewport.
+ */
+function getCenteredZoomTransform(svgNode: SVGSVGElement, nodes: SVGGElement[]): d3.ZoomTransform | null {
+  if (nodes.length === 0) {
+    return null;
+  }
+  const currentTransform = d3.zoomTransform(svgNode);
+  const svgRect = svgNode.getBoundingClientRect();
+
+  const padding = 20;
+  let left = Infinity;
+  let right = -Infinity;
+  let top = Infinity;
+  let bottom = -Infinity;
+
+  for (const node of nodes) {
+    const nodeRect = node.getBoundingClientRect();
+    left = Math.min(left, nodeRect.left);
+    right = Math.max(right, nodeRect.right);
+    top = Math.min(top, nodeRect.top);
+    bottom = Math.max(bottom, nodeRect.bottom);
+  }
+
+  const width = right - left;
+  const height = bottom - top;
+  const svgWidth = svgRect.width - 2 * padding;
+  const svgHeight = svgRect.height - 2 * padding;
+  if (width === 0 || height === 0) {
+    return null;
+  }
+  let scaleFactor = 1;
+  if (width > svgWidth || height > svgHeight) {
+    // If group of nodes is larger than viewport, scale down to fit within the viewport
+    scaleFactor = Math.min(svgWidth / width, svgHeight / height);
+  }
+
+  // Screen coordinates
+  const nodeCenterX = (left + right) / 2 - svgRect.left + padding;
+  const nodeCenterY = (top + bottom) / 2 - svgRect.top + padding;
+  // Local coordinates (relative to parent group)
+  const localX = (nodeCenterX - currentTransform.x) / currentTransform.k;
+  const localY = (nodeCenterY - currentTransform.y) / currentTransform.k;
+  const newScale = currentTransform.k * scaleFactor;
+
+  const translateX = svgNode.clientWidth / 2 - newScale * localX;
+  const translateY = svgNode.clientHeight / 2 - newScale * localY;
+
+  return d3.zoomIdentity.translate(translateX, translateY).scale(newScale);
+}
+
+/** Returns true if the node is visible in the SVG viewport. */
+export function isNodeVisible(node: SVGGElement, svgNode: SVGSVGElement): boolean {
+  const svgRect = svgNode.getBoundingClientRect();
+  const nodeRect = node.getBoundingClientRect();
+  const padding = 10;
+
+  return (
+    nodeRect.right >= svgRect.left + padding &&
+    nodeRect.left <= svgRect.right - padding &&
+    nodeRect.bottom >= svgRect.top + padding &&
+    nodeRect.top <= svgRect.bottom - padding
+  );
+}
+
+/**
+ * Checks if the nodes of the specified track IDs are visible in the SVG
+ * viewport. If any track is not visible, frames the tracks in view by zooming
+ * and panning the SVG viewport, centered on the nodes.
+ *
+ * @param svgNode The SVG viewport element.
+ * @param nodeSelection The D3 selection of nodes in the lineage graph, used to
+ * look up nodes by track ID.
+ * @param trackIds The set of track IDs to zoom to if not visible.
+ * @param zoom The D3 zoom behavior. Will be animated to the new transform if
+ * any of the specified tracks are not visible.
+ */
+export function frameTracksInView(
+  svgNode: SVGSVGElement | null,
+  nodeSelection: LineageNodeSelection | undefined,
+  trackIds: Set<number>,
+  zoom: d3.ZoomBehavior<SVGSVGElement, unknown>
+): void {
+  if (!svgNode || !nodeSelection) {
+    return;
+  }
+  const svg = d3.select(svgNode);
+  const nodes = nodeSelection.filter((d) => trackIds.has(d.data.id));
+  const nodeElements = nodes.nodes() as SVGGElement[];
+  const needsZoom = nodeElements.some((nodeElement) => !isNodeVisible(nodeElement, svgNode));
+  if (!needsZoom) {
+    return;
+  }
+  const newTransform = getCenteredZoomTransform(svgNode, nodeElements);
+  if (!newTransform) {
+    return;
+  }
+  svg.transition().duration(250).call(zoom.transform, newTransform);
+}
+
+/**
  * Returns a d3 hierarchy of the lineage data. If there are multiple root nodes
  * (e.g. nodes with no parents), a dummy root node with a track ID of
  * DUMMY_ROOT_NODE_ID will be created as the parent of all root nodes.
@@ -228,4 +331,29 @@ export function getLineageSubset(
     edges: data.edges.filter(([source, target]) => relatedIds.has(source) && relatedIds.has(target)),
   };
   return filteredData;
+}
+
+/**
+ * Hook that calculates the set of trackIds that are new on this render.
+ *
+ * @returns a set of track IDs that are new.
+ */
+export function useNewTracks(tracks: Map<number, Track>): Set<number> {
+  const prevTracks = useRef<Set<number>>(new Set());
+
+  const newTracks = useMemo(() => {
+    const newTracks = new Set<number>();
+    for (const trackId of tracks.keys()) {
+      if (!prevTracks.current.has(trackId)) {
+        newTracks.add(trackId);
+      }
+    }
+    return newTracks;
+  }, [tracks]);
+
+  useEffect(() => {
+    prevTracks.current = new Set(tracks.keys());
+  }, [tracks]);
+
+  return newTracks;
 }

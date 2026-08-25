@@ -1,3 +1,4 @@
+import { HomeOutlined } from "@ant-design/icons";
 import { Checkbox } from "antd";
 import * as d3 from "d3";
 import React, { type MouseEvent, type ReactElement, useEffect, useMemo, useRef, useState } from "react";
@@ -7,12 +8,15 @@ import type { Color } from "three";
 import type { Dataset, Track } from "src/colorizer";
 import { computeColorFromId } from "src/colorizer/utils/data_utils";
 import type { ColorizeStateParams } from "src/colorizer/viewport/types";
+import IconButton from "src/components/Buttons/IconButton";
 import { DUMMY_ROOT_NODE_ID } from "src/components/Tabs/Lineage/constants";
 import {
+  frameTracksInView,
   getDefaultZoomTransform,
   getLineageRelationships,
   getLineageSubset,
   getTreeHierarchy,
+  useNewTracks,
 } from "src/components/Tabs/Lineage/lineage_utils";
 import {
   alignMergeNodes,
@@ -21,8 +25,14 @@ import {
   getInitialExpandedState,
   type TreeExpandedState,
 } from "src/components/Tabs/Lineage/tree_utils";
-import type { LineageData, LineageDataRelationships, TrackInfo } from "src/components/Tabs/Lineage/types";
+import type {
+  LineageData,
+  LineageDataRelationships,
+  LineageNodeSelection,
+  TrackInfo,
+} from "src/components/Tabs/Lineage/types";
 import { useConstructor } from "src/hooks";
+import { FlexRowAlignCenter, VisuallyHidden } from "src/styles/utils";
 
 type TrackDetailLineageViewProps = {
   container: React.RefObject<HTMLDivElement>;
@@ -110,8 +120,6 @@ const StyledSVG = styled.svg`
   }
 `;
 
-type NodeSelection = d3.Selection<SVGGElement | d3.BaseType, d3.HierarchyPointNode<TrackInfo>, SVGGElement, TrackInfo>;
-
 /**
  * Renders a subset of the lineage view with the selected tracks visible and
  * expanded, and other related tracks collapsed.
@@ -125,7 +133,7 @@ function renderView(
   fullData: LineageData,
   fullRelationships: LineageDataRelationships,
   expandedTracks: Set<number>
-): NodeSelection | undefined {
+): LineageNodeSelection | undefined {
   const data = getLineageSubset(fullData, fullRelationships, expandedTracks);
   const relationships = getLineageRelationships(data);
   const { multiparentEdges } = relationships;
@@ -232,7 +240,7 @@ function renderView(
 // MARK: Pointer Handlers
 
 function setupPointerHandlers(
-  node: NodeSelection,
+  node: LineageNodeSelection,
   onToggleSelection?: React.RefObject<undefined | ((info: TrackInfo, time: number | null) => void)>,
   onToggleExpanded?: React.RefObject<undefined | ((info: TrackInfo) => void)>,
   onHover?: React.RefObject<undefined | ((info: TrackInfo | null, time: number) => void)>
@@ -362,7 +370,7 @@ function updateGradients(
  * status + time. Also positions time indicator lines based on the current time.
  */
 function updateNodeStyles(
-  node: NodeSelection,
+  node: LineageNodeSelection,
   expandedTrackIds: Set<number>,
   trackColors: Map<number, Color>,
   time: number,
@@ -484,7 +492,8 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
   const svgRef = useRef<SVGSVGElement>(null);
   const groupRef = useRef<SVGGElement>(null);
   const nodeGroupRef = useRef<SVGGElement>(null);
-  const nodeSelectionRef = useRef<NodeSelection | undefined>(undefined);
+  const nodeSelectionRef = useRef<LineageNodeSelection | undefined>(undefined);
+  const [needsZoomReframe, setNeedsZoomReframe] = useState(0);
 
   const trackIds = useMemo(() => new Set(props.selectedTracks.keys()), [props.selectedTracks]);
 
@@ -502,26 +511,18 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
 
   // Apply newly selected tracks to expanded state-- updates only on new tracks
   // to avoid expanding selected tracks that were previously collapsed.
-  const prevTracks = useRef<Set<number>>(new Set());
-  useMemo(() => {
-    prevTracks.current = new Set();
-  }, [props.dataset, props.data, props.relationships]);
-
-  const newTracks = useMemo(() => {
-    const newTracks = new Set<number>();
-    for (const trackId of props.selectedTracks.keys()) {
-      if (!prevTracks.current.has(trackId)) {
-        newTracks.add(trackId);
-      }
-    }
-    return newTracks;
-  }, [props.selectedTracks]);
+  const newTracks = useNewTracks(props.selectedTracks);
 
   useEffect(() => {
+    const areAnyTracksNotExpanded = [...newTracks].some((id) => !expandedTracks.has(id));
+    if (newTracks.size === 0 || !areAnyTracksNotExpanded) {
+      // If there are no new tracks that aren't already expanded, skip the
+      // update.
+      return;
+    }
     for (const trackId of newTracks) {
       setExpandedState((prev) => expandTrack(trackId, prev, props.data, props.relationships));
     }
-    prevTracks.current = new Set(props.selectedTracks.keys());
   }, [newTracks, props.data, props.relationships]);
 
   // Reset expanded state when the data or relationships change (e.g. when the
@@ -547,6 +548,7 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
     d3
       .zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.1, 10])
+      .interpolate(d3.interpolate)
       .on("zoom", (event) => {
         d3.select(groupRef.current).attr("transform", event.transform);
       })
@@ -560,7 +562,7 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
     }
   }, [zoom]);
 
-  const resetZoom = (): void => {
+  const resetZoom = (durationMs = 0): void => {
     if (!svgRef.current || !nodeGroupRef.current) {
       return;
     }
@@ -572,7 +574,12 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
     }
     const initialTransform = getDefaultZoomTransform(svgNode, gNode);
     if (initialTransform) {
-      zoom.current.transform(svg, initialTransform);
+      if (durationMs === 0) {
+        // Apply immediately
+        zoom.current.transform(svg, initialTransform);
+      } else {
+        svg.transition().duration(durationMs).call(zoom.current.transform, initialTransform);
+      }
     }
   };
 
@@ -623,17 +630,37 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
     }
   }, [props.time, props.data.trackIdToTrackInfo]);
 
-  // Fit on data change
+  // Fit on data change.
   useEffect(() => {
     resetZoom();
   }, [props.data, props.relationships, props.dataset]);
 
+  //// Helper methods ////
+
+  // On updates to the selected tracks, attempt to fit them into the current
+  // view on the next render. This ensures that the new SVG elements have been
+  // rendered before attempting to get their size/dimension information.
+  useEffect(() => {
+    setNeedsZoomReframe((prev) => prev + 1);
+  }, [newTracks]);
+
+  useEffect(() => {
+    frameTracksInView(svgRef.current, nodeSelectionRef.current, newTracks, zoom.current);
+  }, [needsZoomReframe]);
+
   return (
     <div style={{ width: "100%", height: "100%", overflow: "hidden", position: "relative" }}>
       <div style={{ position: "absolute", top: 4, left: 6, zIndex: 10, padding: "4px" }}>
-        <Checkbox checked={useFeatureColors} onChange={(e) => setUseFeatureColors(e.target.checked)}>
-          Use feature colors
-        </Checkbox>
+        <FlexRowAlignCenter $gap={6}>
+          <IconButton type="link" onClick={() => resetZoom(500)}>
+            <HomeOutlined />
+            <VisuallyHidden>Reset zoom</VisuallyHidden>
+          </IconButton>
+
+          <Checkbox checked={useFeatureColors} onChange={(e) => setUseFeatureColors(e.target.checked)}>
+            Use feature colors
+          </Checkbox>
+        </FlexRowAlignCenter>
       </div>
       <StyledSVG
         ref={svgRef}

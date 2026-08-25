@@ -1,3 +1,5 @@
+import type * as d3 from "d3";
+
 export type TrackInfo = {
   id: number;
   length: number;
@@ -32,3 +34,10 @@ export type LineageDataRelationships = {
    */
   idToCoparents: Map<number, Set<number>>;
 };
+
+export type LineageNodeSelection = d3.Selection<
+  SVGGElement | d3.BaseType,
+  d3.HierarchyPointNode<TrackInfo>,
+  SVGGElement,
+  TrackInfo
+>;

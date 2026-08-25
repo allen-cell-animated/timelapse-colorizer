@@ -142,8 +142,6 @@ export default function LineageTab(): ReactElement {
     );
   }, [hoveredTrack]);
 
-  const selectedTracks = useMemo(() => new Set(tracks.keys()), [tracks]);
-
   const lineageViewProps = {
     container: treeViewContainerRef,
     data: lineageData,
@@ -153,7 +151,7 @@ export default function LineageTab(): ReactElement {
     radiusScale,
     onClick: onClickTrack,
     onHover: onHoverTrack,
-    selectedTracks,
+    selectedTracks: tracks,
     trackColors,
   };
 

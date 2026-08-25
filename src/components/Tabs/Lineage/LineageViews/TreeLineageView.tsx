@@ -1,11 +1,17 @@
 import * as d3 from "d3";
-import React, { type ReactElement, useEffect, useRef } from "react";
+import React, { type ReactElement, useEffect, useRef, useState } from "react";
 import type { Color } from "three";
 
+import type { Track } from "src/colorizer";
 import { DUMMY_ROOT_NODE_ID } from "src/components/Tabs/Lineage/constants";
-import { getDefaultZoomTransform } from "src/components/Tabs/Lineage/lineage_utils";
+import { frameTracksInView, getDefaultZoomTransform, useNewTracks } from "src/components/Tabs/Lineage/lineage_utils";
 import { alignMergeNodes } from "src/components/Tabs/Lineage/tree_utils";
-import type { LineageData, LineageDataRelationships, TrackInfo } from "src/components/Tabs/Lineage/types";
+import type {
+  LineageData,
+  LineageDataRelationships,
+  LineageNodeSelection,
+  TrackInfo,
+} from "src/components/Tabs/Lineage/types";
 import { useConstructor } from "src/hooks";
 
 const TREE_LEAF_HEIGHT_PX = 30;
@@ -22,15 +28,13 @@ export type TreeLineageViewProps = {
   data: LineageData;
   relationships: LineageDataRelationships;
   hierarchy: d3.HierarchyNode<TrackInfo> | undefined;
-  selectedTracks: Set<number>;
+  selectedTracks: Map<number, Track>;
   trackColors: Map<number, Color>;
   colorScale: d3.ScaleSequential<string>;
   radiusScale: d3.ScalePower<number, number>;
   onClick?: (trackId: number) => void;
   onHover?: (trackId: number | null) => void;
 };
-
-type NodeSelection = d3.Selection<SVGGElement | d3.BaseType, d3.HierarchyPointNode<TrackInfo>, SVGGElement, TrackInfo>;
 
 function renderTree(
   g: d3.Selection<SVGGElement, TrackInfo, null, undefined>,
@@ -39,7 +43,7 @@ function renderTree(
   relationships: LineageDataRelationships,
   onClickTrack?: (trackId: number) => void,
   onHoverTrack?: (trackId: number | null) => void
-): NodeSelection | undefined {
+): LineageNodeSelection | undefined {
   const { idToParents, multiparentEdges: multiparentEdges } = relationships;
   const mergeNodes = new Set([...idToParents.entries()].filter(([, parents]) => parents.length > 1).map(([id]) => id));
 
@@ -134,7 +138,7 @@ function renderTree(
 }
 
 function updateNodeStyles(
-  node: NodeSelection,
+  node: LineageNodeSelection,
   radiusScale: d3.ScalePower<number, number>,
   colorScale: d3.ScaleSequential<string>,
   trackColors: Map<number, Color>
@@ -164,18 +168,25 @@ function updateNodeStyles(
 export default function TreeLineageView(props: TreeLineageViewProps): ReactElement {
   const svgRef = useRef<SVGSVGElement>(null);
   const groupRef = useRef<SVGGElement>(null);
-  const nodeRef = useRef<NodeSelection | undefined>(undefined);
+  const nodeRef = useRef<LineageNodeSelection | undefined>(undefined);
 
   const onClickRef = useRef(props.onClick);
   onClickRef.current = props.onClick;
   const onHoverRef = useRef(props.onHover);
   onHoverRef.current = props.onHover;
 
+  const [needsTrackZoomReframe, setNeedsTrackZoomReframe] = useState(false);
+
+  // Apply newly selected tracks to expanded state-- updates only on new tracks
+  // to avoid expanding selected tracks that were previously collapsed.
+  const newTracks = useNewTracks(props.selectedTracks);
+
   //// SVG Elements ////
 
   const zoom = useConstructor(() =>
     d3
       .zoom<SVGSVGElement, unknown>()
+      .interpolate(d3.interpolate)
       .scaleExtent([0.1, 10])
       .on("zoom", (event) => {
         d3.select(groupRef.current).attr("transform", event.transform);
@@ -233,6 +244,19 @@ export default function TreeLineageView(props: TreeLineageViewProps): ReactEleme
   useEffect(() => {
     resetZoom();
   }, [props.data]);
+
+  // Update zoom if new tracks are selected and not visible. This happens in a
+  // second effect to ensure that the nodes are rendered before the zoom check
+  // is performed.
+  useEffect(() => {
+    setNeedsTrackZoomReframe(true);
+  }, [props.selectedTracks]);
+  useEffect(() => {
+    if (needsTrackZoomReframe) {
+      frameTracksInView(svgRef.current, nodeRef.current, newTracks, zoom.current);
+      setNeedsTrackZoomReframe(false);
+    }
+  }, [needsTrackZoomReframe, newTracks]);
 
   return (
     <svg ref={svgRef} style={{ width: "100%", height: "100%", display: "block" }} id="tree-lineage-view-svg">
