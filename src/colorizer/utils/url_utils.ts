@@ -351,8 +351,7 @@ export function serializeFeatureList(features: string[], dataset?: Dataset): str
 }
 
 /**
- * Deserializes a list of feature keys. If `dataset` is provided, includes only
- * keys that are present in the dataset and also handles the
+ * Deserializes a list of feature keys. If `dataset` is provided, handles the
  * `URL_PARAM_ALL_FEATURES` placeholder.
  */
 export function deserializeFeatureList(features: string | null, dataset?: Dataset): string[] | undefined {
@@ -363,12 +362,7 @@ export function deserializeFeatureList(features: string | null, dataset?: Datase
   } else if (features === URL_PARAM_ALL_FEATURES) {
     return dataset ? [...dataset.featureKeys] : undefined;
   }
-
-  let ret = features.split(",").map(decodeURIComponent);
-  if (dataset) {
-    ret = ret.filter((key) => dataset.hasFeatureKey(key));
-  }
-  return ret;
+  return features.split(",").map(decodeURIComponent);
 }
 
 export function serializeTrackPathSteps(
