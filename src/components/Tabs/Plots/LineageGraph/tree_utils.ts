@@ -201,13 +201,16 @@ export function expandTrack(
     previouslyExpandedTracks.add(id);
     // Expand all parents of the node, up to a root node.
     forEachAncestor(id, data.trackIdToTrackInfo, relationships.idToParents, (parentData) => {
+      if (expandedTracks.has(parentData.id)) {
+        return false;
+      }
       expandedTracks.add(parentData.id);
       previouslyExpandedTracks.add(parentData.id);
       return true;
     });
     // Traverse children, expand if previously expanded too.
     forEachDescendant(id, data.trackIdToTrackInfo, relationships.idToChildren, (childData) => {
-      if (previouslyExpandedTracks.has(childData.id)) {
+      if (previouslyExpandedTracks.has(childData.id) && !expandedTracks.has(childData.id)) {
         expandedTracks.add(childData.id);
         return true;
       }
@@ -220,6 +223,19 @@ export function expandTrack(
   };
 }
 
+export function expandTracks(
+  trackIds: number[],
+  expandedState: TreeExpandedState,
+  data: LineageData,
+  relationships: LineageDataRelationships
+): TreeExpandedState {
+  let newState = expandedState;
+  for (const trackId of trackIds) {
+    newState = expandTrack(trackId, newState, data, relationships);
+  }
+  return newState;
+}
+
 /**
  * Collapses a track and all of its descendants. If the track has any coparents,
  * they will also be collapsed.
@@ -229,7 +245,9 @@ export function collapseTrack(
   trackId: number,
   expandedState: TreeExpandedState,
   data: LineageData,
-  relationships: LineageDataRelationships
+  relationships: LineageDataRelationships,
+  /** Reset expanded state for collapsed tracks, so they do not re-expand. */
+  reset?: boolean
 ): TreeExpandedState {
   const { expandedTracks: _expandedTracks, previouslyExpandedTracks: _previouslyExpandedTracks } = expandedState;
   const expandedTracks = new Set<number>(_expandedTracks);
@@ -260,6 +278,9 @@ export function collapseTrack(
         return false;
       }
       expandedTracks.delete(childData.id);
+      if (reset) {
+        previouslyExpandedTracks.delete(childData.id);
+      }
       traversedNodes.add(childData.id);
 
       // Check coparents
@@ -270,6 +291,9 @@ export function collapseTrack(
         } else {
           if (expandedTracks.has(coparentId)) {
             expandedTracks.delete(coparentId);
+            if (reset) {
+              previouslyExpandedTracks.delete(coparentId);
+            }
             traversedNodes.add(coparentId);
             collapseAllChildren(coparentId);
           }
@@ -285,6 +309,9 @@ export function collapseTrack(
             // Collapse the parent if currently expanded (and all of its
             // children)
             expandedTracks.delete(parentId);
+            if (reset) {
+              previouslyExpandedTracks.delete(parentId);
+            }
             traversedNodes.add(parentId);
             collapseAllChildren(parentId);
           }
