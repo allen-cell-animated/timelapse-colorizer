@@ -19,7 +19,7 @@ type PlotWrapperProps = {
 const defaultProps: Partial<PlotWrapperProps> = {};
 
 /**
- * A wrapper around the Plotting class, allowing it to be updated via a React
+ * A wrapper around the TrackPlot class, allowing it to be updated via a React
  * component interface.
  */
 export default function TrackPlotWrapper(inputProps: PlotWrapperProps): ReactElement {
