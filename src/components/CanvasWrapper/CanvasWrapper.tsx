@@ -10,12 +10,14 @@ import {
   type ChannelRangePreset,
   LoadTroubleshooting,
   type PixelIdInfo,
+  TabType,
 } from "src/colorizer/types";
 import type CanvasOverlay from "src/colorizer/viewport/CanvasOverlay";
 import type { AlertBannerProps } from "src/components/Banner";
 import CanvasToolbar from "src/components/CanvasWrapper/CanvasToolbar";
 import ShortcutKeyList from "src/components/Display/ShortcutKeyList";
 import LoadingSpinner from "src/components/LoadingSpinner";
+import RightClickContextMenu, { type ContextMenuItem } from "src/components/Menus/RightClickContextMenu";
 import AnnotationInputPopover from "src/components/Tabs/Annotation/AnnotationInputPopover";
 import { CANVAS_ASPECT_RATIO, SHORTCUT_KEYS } from "src/constants";
 import type { AnnotationState } from "src/hooks";
@@ -127,6 +129,9 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const frameLoadResult = useViewerStateStore((state) => state.frameLoadResult);
   const showSegmentations = useViewerStateStore((state) => state.showSegmentations);
   const showCentroids = useViewerStateStore((state) => state.showCentroids);
+  const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
+  const vectorVisible = useViewerStateStore((state) => state.vectorVisible);
+  const setVectorVisible = useViewerStateStore((state) => state.setVectorVisible);
 
   const isAnnotationModeEnabled = props.annotationState.isAnnotationModeEnabled;
 
@@ -464,7 +469,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   const onMouseMove = useCallback(
     (event: MouseEvent): void => {
-      if (isMouseLeftDown.current || isMouseMiddleDown.current || isMouseRightDown.current) {
+      if (isMouseLeftDown.current || isMouseMiddleDown.current) {
         // Add to total drag distance; if it exceeds threshold, consider the mouse interaction
         // to be a drag operation. Start panning and disable track selection.
         totalMouseDrag.current.x += Math.abs(event.movementX);
@@ -587,6 +592,48 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     annotationShortcutKeys.push(SHORTCUT_KEYS.annotation.reuseValue);
   }
 
+  const contextMenuItems: ContextMenuItem[][] = useMemo(
+    () => [
+      [
+        {
+          label: "Reset view",
+          onClick: () => {
+            canv.resetView();
+          },
+        },
+      ],
+      [
+        {
+          // TODO: If no annotations exist, label as option to create annotations
+          // and show annotation creation modal on click.
+          label: props.annotationState.isAnnotationModeEnabled ? "Exit annotation mode" : "Edit annotations",
+          onClick: () => {
+            props.annotationState.setIsAnnotationModeEnabled(!props.annotationState.isAnnotationModeEnabled);
+            if (!props.annotationState.isAnnotationModeEnabled) {
+              setOpenTab(TabType.ANNOTATION);
+            }
+          },
+        },
+        {
+          label: props.annotationState.visible ? "Hide annotations" : "Show annotations",
+          onClick: () => {
+            props.annotationState.setVisibility(!props.annotationState.visible);
+          },
+          disabled: props.annotationState.data.getLabels().length === 0,
+        },
+      ],
+      [
+        {
+          label: vectorVisible ? "Hide motion vectors" : "Show motion vectors",
+          onClick: () => {
+            setVectorVisible(!vectorVisible);
+          },
+        },
+      ],
+    ],
+    [props.annotationState, vectorVisible]
+  );
+
   return (
     <CanvasContainer ref={containerRef} $annotationModeEnabled={props.annotationState.isAnnotationModeEnabled}>
       {
@@ -604,7 +651,9 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         )
       }
       <LoadingSpinner loading={props.loading || isFrameLoading} progress={loadProgress}>
-        <div ref={canvasPlaceholderRef}></div>
+        <RightClickContextMenu items={contextMenuItems}>
+          <div ref={canvasPlaceholderRef}></div>
+        </RightClickContextMenu>
       </LoadingSpinner>
       <MissingFileIconContainer style={{ visibility: isMissingFile ? "visible" : "hidden" }}>
         <NoImageSVG aria-labelledby="no-image" style={{ width: "50px" }} />

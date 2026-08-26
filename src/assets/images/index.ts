@@ -17,6 +17,7 @@ import SwitchIconSVGAsset from "./icon-switch-arrows.svg?react";
 import TagIconSVGAsset from "./icon-tag.svg?react";
 import TagAddIconSVGAsset from "./icon-tag-add.svg?react";
 import TagSlashIconSVGAsset from "./icon-tag-slash.svg?react";
+import MenuExpandArrowSVGAsset from "./menu-expand-arrow.svg?react";
 import NoImageSVGAsset from "./no-image.svg?react";
 import SpinBoxHandleDownSVGAsset from "./spin_box-handle-down.svg?react";
 import SpinBoxHandleUpSVGAsset from "./spin_box-handle-up.svg?react";
@@ -25,6 +26,7 @@ export const AllenInstituteCellScienceLogoSVG = AllenInstituteCellScienceLogoSVG
 export const AllenInstituteLogoSVG = AllenInstituteLogoSVGAsset;
 export const BarChartSlashIconSVG = BarChartSlashIconSVGAsset;
 export const DropdownSVG = DropdownSVGAsset;
+export const MenuExpandArrowSVG = MenuExpandArrowSVGAsset;
 export const SwitchIconSVG = SwitchIconSVGAsset;
 export const NoImageSVG = NoImageSVGAsset;
 export const ContourIconSVG = ContourIconSVGAsset;
