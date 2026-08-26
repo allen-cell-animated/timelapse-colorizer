@@ -38,6 +38,7 @@ export type ContextMenuItem = {
 
 type RightClickContextMenuProps = {
   id?: string;
+
   /**
    * The items to display in the context menu. Items can have labels, icons,
    * click handlers, and children that are grouped into submenus.
@@ -45,7 +46,17 @@ type RightClickContextMenuProps = {
    * When `items` is a nested array, items in each sub-array will be grouped
    * together in the menu, with a divider drawn between each group.
    */
-  items: ContextMenuItem[][] | ContextMenuItem[];
+  items?: ContextMenuItem[][] | ContextMenuItem[];
+
+  /**
+   * A function that returns items to display in the context menu; overridden by
+   * `items` if provided. Items can have labels, icons, click handlers, and
+   * children that are grouped into submenus.
+   *
+   * When `items` is a nested array, items in each sub-array will be grouped
+   * together in the menu, with a divider drawn between each group.
+   */
+  getItems?: () => ContextMenuItem[][] | ContextMenuItem[];
 };
 
 // MARK: Styling
@@ -202,8 +213,12 @@ function RightClickContextMenu(props: PropsWithChildren<RightClickContextMenuPro
   const popoverContainerRef = useRef<HTMLDivElement>(null);
   const popoverAnchorRef = useRef<HTMLDivElement>(null);
 
+  // Store props as refs to prevent needing remount event listeners on every
+  // update
   const inputItemsRef = useRef(props.items);
   inputItemsRef.current = props.items;
+  const getItemsRef = useRef(props.getItems);
+  getItemsRef.current = props.getItems;
 
   // Stored as state so that the menu items remain consistent even if the input
   // items change, and only update when the context menu is opened/reopened.
@@ -216,7 +231,8 @@ function RightClickContextMenu(props: PropsWithChildren<RightClickContextMenuPro
     _setShowContextMenu(value);
     if (value) {
       // Update current menu items and click handlers
-      const { items, keyToClickHandlerMap } = getMenuItems(inputItemsRef.current);
+      const inputItems = inputItemsRef.current ?? getItemsRef.current?.() ?? [];
+      const { items, keyToClickHandlerMap } = getMenuItems(inputItems);
       setMenuItems(items);
       setKeyToClickHandlerMap(keyToClickHandlerMap);
     }
@@ -290,7 +306,7 @@ function RightClickContextMenu(props: PropsWithChildren<RightClickContextMenuPro
   );
 
   return (
-    <div id={id} style={{ position: "relative" }}>
+    <div id={id} style={{ position: "relative", width: "100%", height: "100%" }}>
       <div ref={contentContainerRef} style={{ width: "100%", height: "100%" }}>
         {props.children}
       </div>
