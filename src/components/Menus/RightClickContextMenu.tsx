@@ -209,8 +209,7 @@ function RightClickContextMenu(props: PropsWithChildren<RightClickContextMenuPro
   const popoverContainerRef = useRef<HTMLDivElement>(null);
   const popoverAnchorRef = useRef<HTMLDivElement>(null);
 
-  // Store props as ref to prevent needing remount event listeners on every
-  // update
+  // Store props as ref so event listeners don't need to be remounted on update
   const propsRef = useRef(props);
   propsRef.current = props;
 
