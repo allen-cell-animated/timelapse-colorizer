@@ -1,15 +1,6 @@
 import { ConfigProvider, Menu, type MenuProps, Popover } from "antd";
 import type { MenuInfo } from "rc-menu/lib/interface";
-import React, {
-  type PropsWithChildren,
-  type ReactElement,
-  useCallback,
-  useEffect,
-  useId,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { type PropsWithChildren, type ReactElement, useEffect, useId, useMemo, useRef, useState } from "react";
 import styled, { css } from "styled-components";
 
 import { MenuExpandArrowSVG } from "src/assets";
@@ -56,7 +47,7 @@ type RightClickContextMenuProps = {
    * When `items` is a nested array, items in each sub-array will be grouped
    * together in the menu, with a divider drawn between each group.
    */
-  getItems?: () => ContextMenuItem[][] | ContextMenuItem[];
+  getItems?: (event: MouseEvent) => ContextMenuItem[][] | ContextMenuItem[];
   /**
    * If disabled, does not show context menu and allows the default browser
    * context menu to appear.
@@ -228,18 +219,7 @@ function RightClickContextMenu(props: PropsWithChildren<RightClickContextMenuPro
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [keyToClickHandlerMap, setKeyToClickHandlerMap] = useState<Map<string, ClickHandler>>(new Map());
 
-  const [showContextMenu, _setShowContextMenu] = useState(false);
-
-  const setShowContextMenu = useCallback((value: boolean) => {
-    _setShowContextMenu(value);
-    if (value) {
-      // Update current menu items and click handlers
-      const inputItems = propsRef.current.items ?? propsRef.current.getItems?.() ?? [];
-      const { items, keyToClickHandlerMap } = getMenuItems(inputItems);
-      setMenuItems(items);
-      setKeyToClickHandlerMap(keyToClickHandlerMap);
-    }
-  }, []);
+  const [showContextMenu, setShowContextMenu] = useState(false);
 
   const hasIcons = useMemo(() => menuItems.some(doesItemHaveIcon), [menuItems]);
 
@@ -264,6 +244,11 @@ function RightClickContextMenu(props: PropsWithChildren<RightClickContextMenuPro
       ev.preventDefault();
       ev.stopPropagation();
       updatePopoverPosition(ev);
+      // Update current menu items and click handlers, then show the menu
+      const inputItems = propsRef.current.items ?? propsRef.current.getItems?.(ev) ?? [];
+      const { items, keyToClickHandlerMap } = getMenuItems(inputItems);
+      setMenuItems(items);
+      setKeyToClickHandlerMap(keyToClickHandlerMap);
       setShowContextMenu(true);
     };
 
