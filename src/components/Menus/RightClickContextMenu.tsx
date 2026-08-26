@@ -57,6 +57,11 @@ type RightClickContextMenuProps = {
    * together in the menu, with a divider drawn between each group.
    */
   getItems?: () => ContextMenuItem[][] | ContextMenuItem[];
+  /**
+   * If disabled, does not show context menu and allows the default browser
+   * context menu to appear.
+   */
+  disabled?: boolean;
 };
 
 // MARK: Styling
@@ -213,12 +218,10 @@ function RightClickContextMenu(props: PropsWithChildren<RightClickContextMenuPro
   const popoverContainerRef = useRef<HTMLDivElement>(null);
   const popoverAnchorRef = useRef<HTMLDivElement>(null);
 
-  // Store props as refs to prevent needing remount event listeners on every
+  // Store props as ref to prevent needing remount event listeners on every
   // update
-  const inputItemsRef = useRef(props.items);
-  inputItemsRef.current = props.items;
-  const getItemsRef = useRef(props.getItems);
-  getItemsRef.current = props.getItems;
+  const propsRef = useRef(props);
+  propsRef.current = props;
 
   // Stored as state so that the menu items remain consistent even if the input
   // items change, and only update when the context menu is opened/reopened.
@@ -231,7 +234,7 @@ function RightClickContextMenu(props: PropsWithChildren<RightClickContextMenuPro
     _setShowContextMenu(value);
     if (value) {
       // Update current menu items and click handlers
-      const inputItems = inputItemsRef.current ?? getItemsRef.current?.() ?? [];
+      const inputItems = propsRef.current.items ?? propsRef.current.getItems?.() ?? [];
       const { items, keyToClickHandlerMap } = getMenuItems(inputItems);
       setMenuItems(items);
       setKeyToClickHandlerMap(keyToClickHandlerMap);
@@ -255,6 +258,9 @@ function RightClickContextMenu(props: PropsWithChildren<RightClickContextMenuPro
       popoverAnchor.style.top = `${ev.clientY - rect.top}px`;
     };
     const onContextMenu = (ev: MouseEvent): void => {
+      if (propsRef.current.disabled) {
+        return;
+      }
       ev.preventDefault();
       ev.stopPropagation();
       updatePopoverPosition(ev);
