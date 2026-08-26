@@ -57,8 +57,8 @@ type RightClickContextMenuProps = {
 
 // MARK: Styling
 
-const StyledPopoverContainer = styled.div<{ $hasIcon?: boolean }>(
-  ({ $hasIcon }) => css`
+const StyledPopoverContainer = styled.div<{ $hasIcon?: boolean; $disabled?: boolean }>(
+  ({ $hasIcon, $disabled }) => css`
     // Position popover container totally over the child element that it wraps
     position: absolute;
     top: 0;
@@ -68,7 +68,7 @@ const StyledPopoverContainer = styled.div<{ $hasIcon?: boolean }>(
 
     // Pass pointer events through the popover container to the child content
     // container, except for the popover itself.
-    pointer-events: none;
+    pointer-events: ${$disabled ? "auto" : "none"};
     & .ant-popover {
       pointer-events: auto;
     }
@@ -301,7 +301,7 @@ function RightClickContextMenu(props: PropsWithChildren<RightClickContextMenuPro
         {props.children}
       </div>
 
-      <StyledPopoverContainer ref={popoverContainerRef} $hasIcon={hasIcons}>
+      <StyledPopoverContainer ref={popoverContainerRef} $hasIcon={hasIcons} $disabled={props.disabled}>
         <ConfigProvider
           theme={{
             components: {
