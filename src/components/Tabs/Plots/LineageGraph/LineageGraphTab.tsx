@@ -153,11 +153,12 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
         const trackObjects = trackIds
           .map((id) => dataset?.getTrack(id))
           .filter((track): track is Track => track !== undefined);
-        // Get base track color
-        const { tracks, trackToColorId, applyTrackColorToRelatives } = useViewerStateStore.getState();
-        const baseTrackColorId = trackToColorId.get(trackId) ?? getNextColorId(tracks, trackToColorId);
-        const colorId = applyTrackColorToRelatives ? baseTrackColorId : undefined;
+        let colorId: number | undefined;
         if (applyTrackColorToRelatives) {
+          // Get base track color
+          const { tracks, trackToColorId, applyTrackColorToRelatives } = useViewerStateStore.getState();
+          const baseTrackColorId = trackToColorId.get(trackId) ?? getNextColorId(tracks, trackToColorId);
+          colorId = applyTrackColorToRelatives ? baseTrackColorId : undefined;
           // Remove any existing track colors if all relatives should have the
           // same color
           removeTracks(trackIds);
