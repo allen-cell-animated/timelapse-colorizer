@@ -155,8 +155,8 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
           .filter((track): track is Track => track !== undefined);
         let colorId: number | undefined;
         if (applyTrackColorToRelatives) {
+          const { tracks, trackToColorId } = useViewerStateStore.getState();
           // Get base track color
-          const { tracks, trackToColorId, applyTrackColorToRelatives } = useViewerStateStore.getState();
           const baseTrackColorId = trackToColorId.get(trackId) ?? getNextColorId(tracks, trackToColorId);
           colorId = applyTrackColorToRelatives ? baseTrackColorId : undefined;
           // Remove any existing track colors if all relatives should have the
@@ -168,7 +168,7 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
         removeTracks(trackIds);
       }
     },
-    [dataset, lineageData, lineageRelationships, addTracks, removeTracks]
+    [dataset, lineageData, lineageRelationships, applyTrackColorToRelatives, addTracks, removeTracks]
   );
   const selectNodeAndChildren = useCallback(
     (id: number) => setRelativesSelected(id, TreeTraversalDirection.DESCENDANTS, true),
