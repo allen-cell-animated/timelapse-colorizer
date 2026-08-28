@@ -61,7 +61,7 @@ const PlotDiv = styled.div`
 /**
  * A tab that displays an interactive correlation plot between selected features in the dataset.
  */
-export default memo(function CorrelationPlotTab(_props: CorrelationPlotTabProps): ReactElement {
+export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps): ReactElement {
   const [isRendering, setIsRendering] = useState(false);
 
   const plotDivRef = useRef<HTMLDivElement>(null);
