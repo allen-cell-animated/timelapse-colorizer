@@ -1,15 +1,6 @@
 import { ConfigProvider, Menu, type MenuProps, Popover } from "antd";
 import type { MenuInfo } from "rc-menu/lib/interface";
-import React, {
-  type PropsWithChildren,
-  type ReactElement,
-  useCallback,
-  useEffect,
-  useId,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { type PropsWithChildren, type ReactElement, useEffect, useId, useMemo, useRef, useState } from "react";
 import styled, { css } from "styled-components";
 
 import { MenuExpandArrowSVG } from "src/assets";
@@ -38,6 +29,7 @@ export type ContextMenuItem = {
 
 type RightClickContextMenuProps = {
   id?: string;
+
   /**
    * The items to display in the context menu. Items can have labels, icons,
    * click handlers, and children that are grouped into submenus.
@@ -45,13 +37,28 @@ type RightClickContextMenuProps = {
    * When `items` is a nested array, items in each sub-array will be grouped
    * together in the menu, with a divider drawn between each group.
    */
-  items: ContextMenuItem[][] | ContextMenuItem[];
+  items?: ContextMenuItem[][] | ContextMenuItem[];
+
+  /**
+   * A function that returns items to display in the context menu; overridden by
+   * `items` if provided. Items can have labels, icons, click handlers, and
+   * children that are grouped into submenus.
+   *
+   * When `items` is a nested array, items in each sub-array will be grouped
+   * together in the menu, with a divider drawn between each group.
+   */
+  getItems?: (event: MouseEvent) => ContextMenuItem[][] | ContextMenuItem[];
+  /**
+   * If disabled, does not show context menu and allows the default browser
+   * context menu to appear.
+   */
+  disabled?: boolean;
 };
 
 // MARK: Styling
 
-const StyledPopoverContainer = styled.div<{ $hasIcon?: boolean }>(
-  ({ $hasIcon }) => css`
+const StyledPopoverContainer = styled.div<{ $hasIcon?: boolean; $disabled?: boolean }>(
+  ({ $hasIcon, $disabled }) => css`
     // Position popover container totally over the child element that it wraps
     position: absolute;
     top: 0;
@@ -61,7 +68,7 @@ const StyledPopoverContainer = styled.div<{ $hasIcon?: boolean }>(
 
     // Pass pointer events through the popover container to the child content
     // container, except for the popover itself.
-    pointer-events: none;
+    pointer-events: ${$disabled ? "auto" : "none"};
     & .ant-popover {
       pointer-events: auto;
     }
@@ -202,25 +209,16 @@ function RightClickContextMenu(props: PropsWithChildren<RightClickContextMenuPro
   const popoverContainerRef = useRef<HTMLDivElement>(null);
   const popoverAnchorRef = useRef<HTMLDivElement>(null);
 
-  const inputItemsRef = useRef(props.items);
-  inputItemsRef.current = props.items;
+  // Store props as ref so event listeners don't need to be remounted on update
+  const propsRef = useRef(props);
+  propsRef.current = props;
 
   // Stored as state so that the menu items remain consistent even if the input
   // items change, and only update when the context menu is opened/reopened.
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [keyToClickHandlerMap, setKeyToClickHandlerMap] = useState<Map<string, ClickHandler>>(new Map());
 
-  const [showContextMenu, _setShowContextMenu] = useState(false);
-
-  const setShowContextMenu = useCallback((value: boolean) => {
-    _setShowContextMenu(value);
-    if (value) {
-      // Update current menu items and click handlers
-      const { items, keyToClickHandlerMap } = getMenuItems(inputItemsRef.current);
-      setMenuItems(items);
-      setKeyToClickHandlerMap(keyToClickHandlerMap);
-    }
-  }, []);
+  const [showContextMenu, setShowContextMenu] = useState(false);
 
   const hasIcons = useMemo(() => menuItems.some(doesItemHaveIcon), [menuItems]);
 
@@ -239,9 +237,17 @@ function RightClickContextMenu(props: PropsWithChildren<RightClickContextMenuPro
       popoverAnchor.style.top = `${ev.clientY - rect.top}px`;
     };
     const onContextMenu = (ev: MouseEvent): void => {
+      if (propsRef.current.disabled) {
+        return;
+      }
       ev.preventDefault();
       ev.stopPropagation();
       updatePopoverPosition(ev);
+      // Update current menu items and click handlers, then show the menu
+      const inputItems = propsRef.current.items ?? propsRef.current.getItems?.(ev) ?? [];
+      const { items, keyToClickHandlerMap } = getMenuItems(inputItems);
+      setMenuItems(items);
+      setKeyToClickHandlerMap(keyToClickHandlerMap);
       setShowContextMenu(true);
     };
 
@@ -290,12 +296,12 @@ function RightClickContextMenu(props: PropsWithChildren<RightClickContextMenuPro
   );
 
   return (
-    <div id={id} style={{ position: "relative" }}>
+    <div id={id} style={{ position: "relative", width: "100%", height: "100%" }}>
       <div ref={contentContainerRef} style={{ width: "100%", height: "100%" }}>
         {props.children}
       </div>
 
-      <StyledPopoverContainer ref={popoverContainerRef} $hasIcon={hasIcons}>
+      <StyledPopoverContainer ref={popoverContainerRef} $hasIcon={hasIcons} $disabled={props.disabled}>
         <ConfigProvider
           theme={{
             components: {
