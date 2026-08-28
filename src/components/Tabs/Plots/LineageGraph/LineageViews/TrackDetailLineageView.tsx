@@ -45,6 +45,8 @@ type TrackDetailLineageViewProps = {
   onClick?: (info: TrackInfo, time: number | null) => void;
   onHover?: (info: TrackInfo | null, time: number) => void;
   setRelativesSelected: (trackId: number, direction: TreeTraversalDirection, selected: boolean) => void;
+  applyTrackColorToRelatives: boolean;
+  setApplyTrackColorToRelatives: (value: boolean) => void;
 };
 
 const enum SvgClass {
@@ -753,15 +755,27 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
         relationships: props.relationships,
         selectedTracks: props.selectedTracks,
         expandedState,
+        applyTrackColorToRelatives: props.applyTrackColorToRelatives,
       },
       {
         resetView: () => resetZoom(),
         setRelativesSelected: setRelativesSelectedWrapped,
         expandAllChildren: expandAllChildren,
         collapseAllChildren: collapseAllChildren,
+        setApplyTrackColorToRelatives: props.setApplyTrackColorToRelatives,
       }
     );
-  }, [props.data, props.relationships, props.selectedTracks, expandedState, expandAllChildren, collapseAllChildren]);
+  }, [
+    props.data,
+    props.relationships,
+    props.selectedTracks,
+    expandedState,
+    expandAllChildren,
+    collapseAllChildren,
+    props.setRelativesSelected,
+    props.applyTrackColorToRelatives,
+    props.setApplyTrackColorToRelatives,
+  ]);
 
   return (
     <RightClickContextMenu getItems={getMenuItems}>

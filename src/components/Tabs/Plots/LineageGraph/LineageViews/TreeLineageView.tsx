@@ -37,6 +37,8 @@ export type TreeLineageViewProps = {
   onClick: (trackId: number) => void;
   onHover: (trackId: number | null) => void;
   setRelativesSelected: (trackId: number, direction: TreeTraversalDirection, selected: boolean) => void;
+  applyTrackColorToRelatives: boolean;
+  setApplyTrackColorToRelatives: (applyTrackColorToRelatives: boolean) => void;
 };
 
 function renderTree(
@@ -294,13 +296,23 @@ export default function TreeLineageView(props: TreeLineageViewProps): ReactEleme
         data: props.data,
         relationships: props.relationships,
         selectedTracks: props.selectedTracks,
+        applyTrackColorToRelatives: props.applyTrackColorToRelatives,
       },
       {
         resetView: resetZoom,
         setRelativesSelected: setRelativesSelectedWrapped,
+        setApplyTrackColorToRelatives: props.setApplyTrackColorToRelatives,
       }
     );
-  }, [props.data, props.selectedTracks, props.relationships, resetZoom, props.setRelativesSelected]);
+  }, [
+    props.data,
+    props.selectedTracks,
+    props.applyTrackColorToRelatives,
+    props.setApplyTrackColorToRelatives,
+    props.relationships,
+    resetZoom,
+    props.setRelativesSelected,
+  ]);
 
   return (
     <RightClickContextMenu getItems={getMenuItems}>

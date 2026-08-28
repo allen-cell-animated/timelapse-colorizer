@@ -225,6 +225,7 @@ type ContextMenuData = {
   selectedTracks: Map<number, Track>;
   // Optional-- expandable/collapsible views only
   expandedState?: TreeExpandedState;
+  applyTrackColorToRelatives: boolean;
 };
 
 type ContextMenuCallbacks = {
@@ -233,6 +234,7 @@ type ContextMenuCallbacks = {
   // Optional-- expandable/collapsible views only
   expandAllChildren?: (trackId: number) => void;
   collapseAllChildren?: (trackId: number) => void;
+  setApplyTrackColorToRelatives: (apply: boolean) => void;
 };
 
 /**
@@ -300,6 +302,11 @@ export function getLineageContextMenuItems(
             ? () => callbacks.setRelativesSelected(hoveredId, TreeTraversalDirection.DESCENDANTS, false)
             : undefined,
         visible: areTrackAndAllChildrenSelected,
+      },
+      {
+        label: (data.applyTrackColorToRelatives ? "☑ " : "☐ ") + "Use one color for track relatives",
+        onClick: () => callbacks.setApplyTrackColorToRelatives?.(!data.applyTrackColorToRelatives),
+        visible: true,
       },
     ],
   ];

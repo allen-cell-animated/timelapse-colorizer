@@ -17,6 +17,7 @@ import HoverTooltip from "src/components/Tooltips/HoverTooltip";
 import { TooltipCard } from "src/components/Tooltips/TooltipCard";
 import { SHORTCUT_KEYS } from "src/constants/shortcuts";
 import { colorizeStateSelector, useViewerStateStore } from "src/state";
+import { getNextColorId } from "src/state/slices";
 import { StyledHorizontalRule } from "src/styles/components";
 import { FlexColumn } from "src/styles/utils";
 import { areAnyHotkeysPressed } from "src/utils/user_input";
@@ -61,6 +62,8 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
   const setTracks = useViewerStateStore((state) => state.setTracks);
   const toggleTrack = useViewerStateStore((state) => state.toggleTrack);
   const setFrame = useViewerStateStore((state) => state.setFrame);
+  const applyTrackColorToRelatives = useViewerStateStore((state) => state.applyTrackColorToRelatives);
+  const setApplyTrackColorToRelatives = useViewerStateStore((state) => state.setApplyTrackColorToRelatives);
   const colorizeParams = useViewerStateStore(useShallow(colorizeStateSelector));
 
   const [hoveredTrack, setHoveredTrack] = useState<Track | null>(null);
@@ -148,10 +151,19 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
       const trackIds = Array.from(trackIdSet);
 
       if (selected) {
-        const tracks = trackIds
+        const trackObjects = trackIds
           .map((id) => dataset?.getTrack(id))
           .filter((track): track is Track => track !== undefined);
-        addTracks(tracks);
+        // Get base track color
+        const { tracks, trackToColorId, applyTrackColorToRelatives } = useViewerStateStore.getState();
+        const baseTrackColorId = trackToColorId.get(trackId) ?? getNextColorId(tracks, trackToColorId);
+        const colorId = applyTrackColorToRelatives ? baseTrackColorId : undefined;
+        if (applyTrackColorToRelatives) {
+          // Remove any existing track colors if all relatives should have the
+          // same color
+          removeTracks(trackIds);
+        }
+        addTracks(trackObjects, colorId);
       } else {
         removeTracks(trackIds);
       }
@@ -188,6 +200,8 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
     selectedTracks: tracks,
     trackColors,
     setRelativesSelected,
+    applyTrackColorToRelatives,
+    setApplyTrackColorToRelatives,
   };
 
   return (
@@ -227,6 +241,8 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
           // TODO: Show hover tooltip for track detail view
           onHover={undefined}
           setRelativesSelected={setRelativesSelected}
+          applyTrackColorToRelatives={applyTrackColorToRelatives}
+          setApplyTrackColorToRelatives={setApplyTrackColorToRelatives}
         ></LineageTrackDetailView>
       </div>
     </FlexColumn>
