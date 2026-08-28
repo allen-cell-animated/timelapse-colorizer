@@ -436,9 +436,14 @@ export function getLineageContextMenuItems(
         visible: areTrackAndAllChildrenSelected,
       },
       {
-        label: (data.applyTrackColorToRelatives ? "☑ " : "☐ ") + "Use one color for track relatives",
-        onClick: () => callbacks.setApplyTrackColorToRelatives?.(!data.applyTrackColorToRelatives),
-        visible: true,
+        label: "Options...",
+        children: [
+          {
+            label: (!data.applyTrackColorToRelatives ? "☑ " : "☐ ") + "Use random outline colors",
+            onClick: () => callbacks.setApplyTrackColorToRelatives?.(!data.applyTrackColorToRelatives),
+            visible: true,
+          },
+        ],
       },
     ],
   ];
