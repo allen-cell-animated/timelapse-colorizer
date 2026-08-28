@@ -304,7 +304,7 @@ export function getLineageContextMenuItems(
         visible: areTrackAndAllChildrenSelected,
       },
       {
-        label: "Options...",
+        label: "Selection options...",
         children: [
           {
             label: (!data.applyTrackColorToRelatives ? "☑ " : "☐ ") + "Use random outline colors",
