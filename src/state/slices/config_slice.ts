@@ -135,6 +135,10 @@ export type ConfigSliceState = {
   edgeMode: DrawMode;
 
   // Lineage
+  /**
+   * If true, track colors will be applied to relatives (parents/children) when selected
+   * via context menu actions.
+   */
   applyTrackColorToRelatives: boolean;
 
   // UI state
