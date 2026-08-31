@@ -1,5 +1,5 @@
 import * as d3 from "d3";
-import React, { type ReactElement, useEffect, useRef, useState } from "react";
+import React, { type ReactElement, useCallback, useEffect, useRef } from "react";
 import type { Color } from "three";
 
 import type { Track } from "src/colorizer";
@@ -166,7 +166,7 @@ function updateNodeStyles(
 
 /** Renders a tree view of the lineage data. */
 export default function TreeLineageView(props: TreeLineageViewProps): ReactElement {
-  const svgRef = useRef<SVGSVGElement>(null);
+  const svgRef = useRef<SVGSVGElement | null>(null);
   const groupRef = useRef<SVGGElement>(null);
   const nodeRef = useRef<LineageNodeSelection | undefined>(undefined);
 
@@ -174,8 +174,6 @@ export default function TreeLineageView(props: TreeLineageViewProps): ReactEleme
   onClickRef.current = props.onClick;
   const onHoverRef = useRef(props.onHover);
   onHoverRef.current = props.onHover;
-
-  const [needsTrackZoomReframe, setNeedsTrackZoomReframe] = useState(false);
 
   // Apply newly selected tracks to expanded state-- updates only on new tracks
   // to avoid expanding selected tracks that were previously collapsed.
@@ -218,20 +216,30 @@ export default function TreeLineageView(props: TreeLineageViewProps): ReactEleme
 
   //// Viewport ////
 
-  useEffect(() => {
-    if (groupRef.current && props.hierarchy) {
-      const g = d3.select(groupRef.current) as d3.Selection<SVGGElement, TrackInfo, null, undefined>;
-      const onClickTrack = (trackId: number): void => onClickRef.current?.(trackId);
-      const onHoverTrack = (trackId: number | null): void => onHoverRef.current?.(trackId);
-      nodeRef.current = renderTree(g, props.data, props.hierarchy, props.relationships, onClickTrack, onHoverTrack);
-    }
-    // Clear on unmount
-    return () => {
-      if (groupRef.current) {
-        d3.select(groupRef.current).selectAll("*").remove();
+  const cleanupRenderSvgRef = useRef<undefined | (() => void)>(undefined);
+  const renderSvgCallbackRef = useCallback(
+    (node: SVGSVGElement | null) => {
+      if (node === null) {
+        cleanupRenderSvgRef.current?.();
+        return;
       }
-    };
-  }, [props.data, props.hierarchy, props.relationships]);
+      svgRef.current = node;
+      if (groupRef.current && props.hierarchy) {
+        const g = d3.select(groupRef.current) as d3.Selection<SVGGElement, TrackInfo, null, undefined>;
+        const onClickTrack = (trackId: number): void => onClickRef.current?.(trackId);
+        const onHoverTrack = (trackId: number | null): void => onHoverRef.current?.(trackId);
+        nodeRef.current = renderTree(g, props.data, props.hierarchy, props.relationships, onClickTrack, onHoverTrack);
+      }
+      // TODO: Once updated to React 19, a cleanup function can be returned
+      // directly.
+      cleanupRenderSvgRef.current = () => {
+        if (groupRef.current) {
+          d3.select(groupRef.current).selectAll("*").remove();
+        }
+      };
+    },
+    [props.data, props.hierarchy, props.relationships]
+  );
 
   useEffect(() => {
     // Update node styling
@@ -245,21 +253,17 @@ export default function TreeLineageView(props: TreeLineageViewProps): ReactEleme
     resetZoom();
   }, [props.data]);
 
-  // Update zoom if new tracks are selected and not visible. This happens in a
-  // second effect to ensure that the nodes are rendered before the zoom check
-  // is performed.
+  // Update zoom if new tracks are selected.
   useEffect(() => {
-    setNeedsTrackZoomReframe(true);
-  }, [props.selectedTracks]);
-  useEffect(() => {
-    if (needsTrackZoomReframe) {
-      frameTracksInView(svgRef.current, nodeRef.current, newTracks, zoom.current);
-      setNeedsTrackZoomReframe(false);
-    }
-  }, [needsTrackZoomReframe, newTracks]);
+    frameTracksInView(svgRef.current, nodeRef.current, newTracks, zoom.current);
+  }, [newTracks]);
 
   return (
-    <svg ref={svgRef} style={{ width: "100%", height: "100%", display: "block" }} id="tree-lineage-view-svg">
+    <svg
+      ref={renderSvgCallbackRef}
+      style={{ width: "100%", height: "100%", display: "block" }}
+      id="tree-lineage-view-svg"
+    >
       <g ref={groupRef}></g>
     </svg>
   );
