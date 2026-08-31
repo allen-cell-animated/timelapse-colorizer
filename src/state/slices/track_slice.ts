@@ -109,7 +109,9 @@ export const createTrackSlice: StateCreator<TrackSlice & ConfigSlice, [], [], Tr
 
       // If color override is provided, clamp the value
       colorOverride =
-        colorOverride !== undefined ? colorOverride % state.outlinePaletteRamp.colorStops.length : undefined;
+        colorOverride !== undefined && Number.isFinite(colorOverride) && colorOverride >= 0
+          ? colorOverride % state.outlinePaletteRamp.colorStops.length
+          : undefined;
       let nextColorId = getNextColorId(state.tracks, state.trackToColorId);
       for (const track of tracks) {
         if (newTracks.has(track.trackId)) {
