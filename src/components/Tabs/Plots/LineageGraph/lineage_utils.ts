@@ -2,8 +2,10 @@ import * as d3 from "d3";
 import { useEffect, useMemo, useRef } from "react";
 
 import type { Dataset, Track } from "src/colorizer";
+import type { ContextMenuItem } from "src/components/Menus/RightClickContextMenu";
 
 import { DUMMY_ROOT_NODE_ID } from "./constants";
+import { matchesAllAncestors, matchesAllDescendants } from "./tree_utils";
 import type { LineageData, LineageDataRelationships, LineageNodeSelection, TrackInfo } from "./types";
 
 // TODO: Move to colorizer/utils/data_utils?
@@ -356,4 +358,78 @@ export function useNewTracks(tracks: Map<number, Track>): Set<number> {
   }, [tracks]);
 
   return newTracks;
+}
+
+type ContextMenuData = {
+  data: LineageData;
+  relationships: LineageDataRelationships;
+  selectedTracks: Map<number, Track>;
+};
+
+type ContextMenuCallbacks = {
+  resetView: () => void;
+  selectNodeAndChildren: (trackId: number) => void;
+  selectNodeAndParents: (trackId: number) => void;
+  deselectNodeAndChildren: (trackId: number) => void;
+  deselectNodeAndParents: (trackId: number) => void;
+};
+
+/**
+ * Returns context menu action items for lineage views, based on the
+ * track being interacted with and the current selection state.
+ */
+export function getLineageContextMenuItems(
+  hoveredId: number | null,
+  data: ContextMenuData,
+  callbacks: ContextMenuCallbacks
+): ContextMenuItem[][] {
+  const selectedTracks = new Set<number>(data.selectedTracks.keys());
+
+  const areTrackAndAllChildrenSelected =
+    hoveredId !== null &&
+    selectedTracks.has(hoveredId) &&
+    matchesAllDescendants(hoveredId, (id) => selectedTracks.has(id), data.data, data.relationships);
+  const areTrackAndAllParentsSelected =
+    hoveredId !== null &&
+    selectedTracks.has(hoveredId) &&
+    matchesAllAncestors(hoveredId, (id) => selectedTracks.has(id), data.data, data.relationships);
+  const idHasParents = hoveredId !== null && (data.relationships.idToParents.get(hoveredId)?.length ?? 0) > 0;
+  const idHasChildren = hoveredId !== null && (data.relationships.idToChildren.get(hoveredId)?.length ?? 0) > 0;
+
+  const items: ContextMenuItem[][] = [
+    [
+      {
+        label: "Reset view",
+        onClick: callbacks.resetView,
+      },
+    ],
+    [
+      {
+        label: "Select track + all parents",
+        disabled: hoveredId === null || !idHasParents,
+        onClick: hoveredId !== null ? () => callbacks.selectNodeAndParents(hoveredId) : undefined,
+        visible: !areTrackAndAllParentsSelected,
+      },
+      {
+        label: "Deselect track + all parents",
+        disabled: hoveredId === null || !idHasParents,
+        onClick: hoveredId !== null ? () => callbacks.deselectNodeAndParents(hoveredId) : undefined,
+        visible: areTrackAndAllParentsSelected,
+      },
+      {
+        label: "Select track + all children",
+        disabled: hoveredId === null || !idHasChildren,
+        onClick: hoveredId !== null ? () => callbacks.selectNodeAndChildren(hoveredId) : undefined,
+        visible: !areTrackAndAllChildrenSelected,
+      },
+      {
+        label: "Deselect track + all children",
+        disabled: hoveredId === null || !idHasChildren,
+        onClick: hoveredId !== null ? () => callbacks.deselectNodeAndChildren(hoveredId) : undefined,
+        visible: areTrackAndAllChildrenSelected,
+      },
+    ],
+  ];
+
+  return items;
 }
