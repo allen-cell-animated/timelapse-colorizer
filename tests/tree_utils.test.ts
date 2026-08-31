@@ -225,7 +225,7 @@ describe("tree_utils", () => {
     for (const [description, trackId, selectedAncestors, expectedResult] of tests) {
       it(description, () => {
         const selectedAncestorsSet = new Set(selectedAncestors);
-        const validator = (id: number) => selectedAncestorsSet.has(id);
+        const validator = (id: number): boolean => selectedAncestorsSet.has(id);
         const result = matchesAllAncestors(trackId, validator, lineageData, relationships);
         expect(result).toBe(expectedResult);
       });
@@ -244,7 +244,7 @@ describe("tree_utils", () => {
     for (const [description, trackId, selectedDescendants, expectedResult] of tests) {
       it(description, () => {
         const selectedDescendantsSet = new Set(selectedDescendants);
-        const validator = (id: number) => selectedDescendantsSet.has(id);
+        const validator = (id: number): boolean => selectedDescendantsSet.has(id);
         const result = matchesAllDescendants(trackId, validator, lineageData, relationships);
         expect(result).toBe(expectedResult);
       });
