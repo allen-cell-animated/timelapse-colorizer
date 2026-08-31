@@ -112,8 +112,25 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
 
   const onClickTrack = useCallback(
     (trackId: number | null, time?: number) => {
-      const track = handleTrackClicked(trackId);
+      const isMultiTrackSelectHotkeyPressed = areAnyHotkeysPressed(SHORTCUT_KEYS.viewport.multiTrackSelect.keycode);
+
+      // Clicked BG; clear tracks if not multi-selecting
+      if (trackId === null) {
+        if (!isMultiTrackSelectHotkeyPressed) {
+          clearTracks();
+        }
+        return;
+      }
+
+      const track = dataset?.getTrack(trackId) ?? undefined;
       if (track) {
+        if (isMultiTrackSelectHotkeyPressed) {
+          toggleTrack(track);
+        } else {
+          setTracks([track]);
+        }
+
+        // Apply time if defined; otherwise jump to the first frame of the track
         if (time !== undefined) {
           setFrame(time);
         } else if (currentFrame < track.times[0] || currentFrame > track.times[track.times.length - 1]) {
@@ -121,7 +138,7 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
         }
       }
     },
-    [handleTrackClicked, currentFrame, setFrame]
+    [dataset, clearTracks, toggleTrack, setTracks, handleTrackClicked, currentFrame, setFrame]
   );
 
   const onHoverTrack = useCallback(
@@ -245,7 +262,7 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
       <StyledHorizontalRule style={{ margin: "0", flexGrow: 0 }} />
       <div
         ref={detailViewContainerRef}
-        style={{ width: "100%", flexGrow: 1, flexBasis: "300px", backgroundColor: "#fafafa", position: "relative" }}
+        style={{ width: "100%", flexGrow: 1, flexBasis: "300px", backgroundColor: "#fafafa" }}
       >
         <LineageTrackDetailView
           container={detailViewContainerRef}

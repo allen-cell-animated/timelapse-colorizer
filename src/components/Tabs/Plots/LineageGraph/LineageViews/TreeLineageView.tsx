@@ -125,6 +125,7 @@ function renderTree(
     event: React.MouseEvent<SVGCircleElement, MouseEvent>,
     d: d3.HierarchyPointNode<TrackInfo>
   ): void => {
+    // Prevent BG from receiving click events and clearing tracks
     event.stopPropagation();
     onClickTrack?.(d.data.id);
   };
