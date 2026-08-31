@@ -58,6 +58,7 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
   const trackColors = useViewerStateStore((state) => state.trackColors);
   const addTracks = useViewerStateStore((state) => state.addTracks);
   const removeTracks = useViewerStateStore((state) => state.removeTracks);
+  const clearTracks = useViewerStateStore((state) => state.clearTracks);
   const setTracks = useViewerStateStore((state) => state.setTracks);
   const toggleTrack = useViewerStateStore((state) => state.toggleTrack);
   const setFrame = useViewerStateStore((state) => state.setFrame);
@@ -86,22 +87,40 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
 
   //// Callbacks ////
 
-  const onClickTrack = useCallback(
-    (trackId: number) => {
+  const handleTrackClicked = useCallback(
+    (trackId: number | null): Track | undefined => {
       const isMultiTrackSelectHotkeyPressed = areAnyHotkeysPressed(SHORTCUT_KEYS.viewport.multiTrackSelect.keycode);
-      const track = dataset?.getTrack(trackId);
+      if (trackId === null) {
+        if (!isMultiTrackSelectHotkeyPressed) {
+          clearTracks();
+        }
+        return;
+      }
+      const track = dataset?.getTrack(trackId) ?? undefined;
       if (track) {
         if (isMultiTrackSelectHotkeyPressed) {
           toggleTrack(track);
         } else {
           setTracks([track]);
         }
-        if (currentFrame < track.times[0] || currentFrame > track.times[track.times.length - 1]) {
+      }
+      return track;
+    },
+    [dataset, setTracks, toggleTrack, clearTracks]
+  );
+
+  const onClickTrack = useCallback(
+    (trackId: number | null, time?: number) => {
+      const track = handleTrackClicked(trackId);
+      if (track) {
+        if (time !== undefined) {
+          setFrame(time);
+        } else if (currentFrame < track.times[0] || currentFrame > track.times[track.times.length - 1]) {
           setFrame(track.times[0]);
         }
       }
     },
-    [dataset, setTracks, toggleTrack, currentFrame, setFrame]
+    [handleTrackClicked, currentFrame, setFrame]
   );
 
   const onHoverTrack = useCallback(
@@ -117,26 +136,6 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
       }
     },
     [dataset]
-  );
-
-  const onClickObject = useCallback(
-    (info: TrackInfo, time: number | null) => {
-      if (!dataset) {
-        return;
-      }
-      const track = dataset.getTrack(info.id);
-      if (track) {
-        if (time === currentFrame || time === null) {
-          toggleTrack(track);
-        } else {
-          addTracks([track]);
-        }
-      }
-      if (time !== null) {
-        setFrame(time);
-      }
-    },
-    [dataset, currentFrame, toggleTrack, addTracks, setFrame]
   );
 
   /** Select and deselect the node and its relatives (parents or children). */
@@ -211,7 +210,7 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
     relationships: lineageRelationships,
     colorScale,
     radiusScale,
-    onClick: onClickTrack,
+    onClick: (trackId: number) => onClickTrack(trackId),
     onHover: onHoverTrack,
     selectedTracks: tracks,
     trackColors,
@@ -256,7 +255,7 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
           relationships={lineageRelationships}
           time={currentFrame}
           colorizeParams={colorizeParams}
-          onClick={onClickObject}
+          onClick={(trackInfo, time) => onClickTrack(trackInfo.id, time)}
           // TODO: Show hover tooltip for track detail view
           onHover={undefined}
           selectNodeAndChildren={selectNodeAndChildren}

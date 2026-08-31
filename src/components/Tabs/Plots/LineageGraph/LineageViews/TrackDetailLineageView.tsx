@@ -48,7 +48,7 @@ type TrackDetailLineageViewProps = {
   relationships: LineageDataRelationships;
   time: number;
   colorizeParams: ColorizeStateParams;
-  onClick?: (info: TrackInfo, time: number | null) => void;
+  onClick?: (info: TrackInfo, time?: number) => void;
   onHover?: (info: TrackInfo | null, time: number) => void;
   selectNodeAndChildren: (trackId: number) => void;
   selectNodeAndParents: (trackId: number) => void;
@@ -631,7 +631,7 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
           onHoverRef.current?.(info, time);
         };
         const handleClick = (info: TrackInfo, time: number | null): void => {
-          onClickRef.current?.(info, time ?? null);
+          onClickRef.current?.(info, time ?? undefined);
         };
         const handleToggleExpanded = (info: TrackInfo): void => {
           onToggleExpandedRef.current?.(info);
