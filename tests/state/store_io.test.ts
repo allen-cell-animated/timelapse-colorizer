@@ -36,6 +36,7 @@ import {
   MOCK_DATASET_KEY,
   MockBackdropKeys,
   MockFeatureKeys,
+  MockSanitizedFeatureKeys,
 } from "tests/constants";
 import { sleep } from "tests/utils";
 
@@ -157,6 +158,11 @@ const EXAMPLE_STORE: ViewerStoreSerializableState = {
   plot3dLineMovingAverageWindow: 7,
   plot3dUseGaussian: true,
   plot3dGaussianBandwidthPct: 15,
+  correlationFeatures: [
+    MockFeatureKeys.FEATURE1,
+    MockFeatureKeys.FEATURE2,
+    MockSanitizedFeatureKeys.FEATURE4_SANITIZED_CHARS,
+  ],
 };
 
 // Omit key "palette" because it is overridden by key "palette-key"
@@ -238,6 +244,7 @@ const EXAMPLE_STORE_EXPECTED_PARAMS: ExpectedParamType = {
   "p3d-avg-w": "2",
   "p3d-gauss": "1",
   "p3d-gauss-bw": "15",
+  corr: "feature1,feature2,feature___20_4",
 };
 
 const EXAMPLE_STORE_EXPECTED_QUERY_STRING =
@@ -253,7 +260,7 @@ const EXAMPLE_STORE_EXPECTED_QUERY_STRING =
   "&c0=ven%3A1%2Ccol%3Aff0000ff%2Crmp%3A0%3A1%2Crng%3A-5%3A5" +
   "&c1=ven%3A0%2Ccol%3A00ff0000%2Crmp%3A0.300%3A4.200%2Crng%3A0%3A1" +
   "&c2=ven%3A1%2Ccol%3A0000ff04%2Crmp%3A3500%3A64231%2Crng%3A0%3A65535" +
-  "&p3d-x=feature1&p3d-y=feature2&p3d-z=feature3&p3d-vc-bins=20&p3d-vc-subs=3&p3d-vc-scale=1.500&p3d-vc-ramp=matplotlib-inferno&p3d-vc-thresh=10&p3d-avg-w=2&p3d-avg-n=7&p3d-gauss=1&p3d-gauss-bw=15";
+  "&p3d-x=feature1&p3d-y=feature2&p3d-z=feature3&p3d-vc-bins=20&p3d-vc-subs=3&p3d-vc-scale=1.500&p3d-vc-ramp=matplotlib-inferno&p3d-vc-thresh=10&p3d-avg-w=2&p3d-avg-n=7&p3d-gauss=1&p3d-gauss-bw=15&corr=feature1%2Cfeature2%2Cfeature___20_4";
 
 describe("serializeViewerState", () => {
   it("handles empty state", () => {

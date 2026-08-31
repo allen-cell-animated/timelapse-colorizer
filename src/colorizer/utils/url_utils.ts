@@ -1,8 +1,7 @@
-/* global RequestInit */
-// Typescript doesn't recognize RequestInit
 import { Color } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "src/colorizer/constants";
+import type Dataset from "src/colorizer/Dataset";
 import {
   CentroidColorMode,
   type ChannelSetting,
@@ -29,23 +28,29 @@ import { formatNumber } from "./math_utils";
 
 export const URL_COLOR_RAMP_REVERSED_SUFFIX = "!";
 export const URL_PATH_SHOW_ALL_SUFFIX = "!";
+export const URL_PARAM_ALL_FEATURES = "!";
+
 export enum UrlParam {
+  // Data sources
   COLLECTION = "collection",
   DATASET = "dataset",
   SOURCE_ZIP = "zip",
-  TRACK = "track",
-  FEATURE = "feature",
+  // View settings
   TIME = "t",
   THRESHOLDS = "filters",
+  SHOW_SCALEBAR = "scalebar",
+  SHOW_TIMESTAMP = "timestamp",
+  OPEN_TAB = "tab",
+  INTERPOLATE_3D = "interpolate",
+  // Track selection
+  TRACK = "track",
+  // Colorization
+  FEATURE = "feature",
   RANGE = "range",
+  KEEP_RANGE = "keep-range",
   COLOR_RAMP = "color",
   PALETTE = "palette",
   PALETTE_KEY = "palette-key",
-  SHOW_BACKDROP = "bg",
-  BACKDROP_KEY = "bg-key",
-  BACKDROP_BRIGHTNESS = "bg-brightness",
-  BACKDROP_SATURATION = "bg-sat",
-  OBJECT_OPACITY = "fg-alpha",
   OUTLIER_MODE = "outlier-mode",
   OUTLIER_COLOR = "outlier-color",
   FILTERED_MODE = "filter-mode",
@@ -56,11 +61,19 @@ export enum UrlParam {
   EDGE_COLOR = "edge-color",
   EDGE_MODE = "edge",
   SHOW_SEGMENTATIONS = "seg",
+  // Backdrops
+  SHOW_BACKDROP = "bg",
+  BACKDROP_KEY = "bg-key",
+  BACKDROP_BRIGHTNESS = "bg-brightness",
+  BACKDROP_SATURATION = "bg-sat",
+  OBJECT_OPACITY = "fg-alpha",
+  // Centroid viz
   SHOW_CENTROIDS = "centroids",
   CENTROID_COLOR_MODE = "centroid-mode",
   CENTROID_COLOR = "centroid-color",
   CENTROID_RADIUS = "centroid-radius",
   CENTROID_OPACITY = "ct-alpha",
+  // Path viz
   SHOW_PATH = "path",
   PATH_COLOR = "path-color",
   PATH_COLOR_RAMP = "path-ramp",
@@ -70,9 +83,7 @@ export enum UrlParam {
   PATH_STEPS = "path-steps",
   PATH_PERSIST_OUT_OF_RANGE = "path-persist",
   PATH_OVERLAY_OPACITY = "path-overlay",
-  SHOW_SCALEBAR = "scalebar",
-  SHOW_TIMESTAMP = "timestamp",
-  KEEP_RANGE = "keep-range",
+  // Scatter plot
   SCATTERPLOT_X_AXIS = "scatter-x",
   SCATTERPLOT_Y_AXIS = "scatter-y",
   SCATTERPLOT_BINS = "scatter-bins",
@@ -83,9 +94,8 @@ export enum UrlParam {
   SCATTERPLOT_SHOW_AVERAGE_LINE = "sc-avg",
   SCATTERPLOT_AVERAGE_LINE_WINDOW = "sc-avg-n",
   SCATTERPLOT_AVERAGE_LINE_WIDTH = "sc-avg-w",
-  OPEN_TAB = "tab",
+  // Vector viz
   SHOW_VECTOR = "vc",
-  INTERPOLATE_3D = "interpolate",
   VECTOR_KEY = "vc-key",
   VECTOR_COLOR = "vc-color",
   VECTOR_SCALE = "vc-scale",
@@ -93,7 +103,7 @@ export enum UrlParam {
   VECTOR_THICKNESS = "vc-thickness",
   VECTOR_TOOLTIP_MODE = "vc-tooltip",
   VECTOR_TIME_INTERVALS = "vc-time-int",
-  // Plot 3D
+  // 3D flow field plot
   PLOT3D_X_AXIS = "p3d-x",
   PLOT3D_Y_AXIS = "p3d-y",
   PLOT3D_Z_AXIS = "p3d-z",
@@ -106,6 +116,8 @@ export enum UrlParam {
   PLOT3D_AVERAGE_LINE_WINDOW = "p3d-avg-n",
   PLOT3D_USE_GAUSSIAN = "p3d-gauss",
   PLOT3D_GAUSSIAN_BANDWIDTH = "p3d-gauss-bw",
+  // Correlation Plot
+  CORRELATION_PLOT_FEATURES = "corr",
 }
 
 export enum ChannelSettingUrlParam {
@@ -316,6 +328,41 @@ export function deserializeThresholds(thresholds: string | null): FeatureThresho
     }
     return acc;
   }, [] as FeatureThreshold[]);
+}
+
+/**
+ * Serializes a list of feature keys as a list of encoded strings separated by
+ * commas. If a dataset is provided, it will be used to filter the list of
+ * feature keys to only those that are present in the dataset.
+ *
+ * Additionally, if the list of features is the full set of features in the
+ * dataset, returns the placeholder `URL_PARAM_ALL_FEATURES` instead.
+ */
+export function serializeFeatureList(features: string[], dataset?: Dataset): string {
+  if (dataset) {
+    features = features.filter((key) => dataset.hasFeatureKey(key));
+    const featureSet = new Set(features);
+    if (featureSet.size === dataset.featureKeys.length) {
+      return URL_PARAM_ALL_FEATURES;
+    }
+  }
+
+  return features.map(encodeURIComponent).join(",");
+}
+
+/**
+ * Deserializes a list of feature keys. If `dataset` is provided, handles the
+ * `URL_PARAM_ALL_FEATURES` placeholder.
+ */
+export function deserializeFeatureList(features: string | null, dataset?: Dataset): string[] | undefined {
+  if (features === null) {
+    return undefined;
+  } else if (features === "") {
+    return [];
+  } else if (features === URL_PARAM_ALL_FEATURES) {
+    return dataset ? [...dataset.featureKeys] : undefined;
+  }
+  return features.split(",").map(decodeURIComponent);
 }
 
 export function serializeTrackPathSteps(

@@ -6,15 +6,20 @@ import { type FeatureThreshold, ThresholdType } from "src/colorizer/types";
 import {
   convertAllenPathToHttps,
   decodeHexAlphaColor,
+  deserializeFeatureList,
   deserializeThresholds,
   encodeColorWithAlpha,
   isAllenPath,
   isHexColor,
   isJson,
   isUrl,
+  serializeFeatureList,
   serializeThresholds,
+  URL_PARAM_ALL_FEATURES,
   VAST_FILES_URL,
 } from "src/colorizer/utils/url_utils";
+
+import { MOCK_DATASET } from "./constants";
 
 function padCategories(categories: boolean[]): boolean[] {
   const result = [...categories];
@@ -298,6 +303,45 @@ describe("Loading + saving from URL query strings", () => {
           enabledCategories: padCategories([true, true]),
         },
       ]);
+    });
+  });
+
+  describe("serializeFeatureList / deserializeFeatureList", () => {
+    const TESTS = [
+      { name: "handles empty arrays", features: [], expected: "" },
+      {
+        name: "can round-trip parse feature lists",
+        features: ["feature1", "feature2", "feature3"],
+        expected: "feature1,feature2,feature3",
+      },
+      {
+        name: "parses the URL_PARAM_ALL_FEATURES placeholder",
+        features: [...MOCK_DATASET.featureKeys],
+        expected: URL_PARAM_ALL_FEATURES,
+        dataset: MOCK_DATASET,
+      },
+      {
+        name: "does not filter features",
+        features: ["feature1", "feature2", "feature3", "nonexistent-feature"],
+        expected: "feature1,feature2,feature3,nonexistent-feature",
+        dataset: undefined,
+      },
+    ];
+
+    for (const test of TESTS) {
+      it(test.name, () => {
+        const dataset = test.dataset;
+        const serialized = serializeFeatureList(test.features, dataset);
+        expect(serialized).to.equal(test.expected);
+        const deserialized = deserializeFeatureList(serialized, dataset);
+        expect(deserialized).to.deep.equal(test.features);
+      });
+    }
+
+    it("ignores the URL_PARAM_ALL_FEATURES placeholder if no dataset is provided", () => {
+      const serialized = URL_PARAM_ALL_FEATURES;
+      const deserialized = deserializeFeatureList(serialized);
+      expect(deserialized).to.be.undefined;
     });
   });
 });

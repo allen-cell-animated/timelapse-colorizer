@@ -12,6 +12,7 @@ import type { Dataset } from "src/colorizer";
 import type SharedWorkerPool from "src/colorizer/workers/SharedWorkerPool";
 import LoadingSpinner from "src/components/LoadingSpinner";
 import { useDebounce } from "src/hooks";
+import { useViewerStateStore } from "src/state";
 import { FlexColumnAlignCenter, FlexRowAlignCenter } from "src/styles/utils";
 
 import {
@@ -69,7 +70,8 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
   const legendRef = useRef<HTMLDivElement>(null);
   const tooltipDivRef = useRef<HTMLDivElement>(null);
 
-  const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
+  const selectedFeatures = useViewerStateStore((state) => state.correlationFeatures) ?? [];
+  const setSelectedFeatures = useViewerStateStore((state) => state.setCorrelationFeatures);
   const lastRenderedPlotFeatures = useRef<Set<string>>(new Set());
 
   const sortedSelectedFeatures = useMemo(() => {
@@ -77,13 +79,6 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
     const featureSet = new Set(selectedFeatures);
     return props.dataset?.featureKeys.filter((f) => featureSet.has(f)) || [];
   }, [props.dataset, selectedFeatures]);
-
-  useEffect(() => {
-    // Selects all features from the dataset on initial load.
-    if (props.dataset && selectedFeatures.length === 0) {
-      setSelectedFeatures(props.dataset.featureKeys);
-    }
-  }, [props.dataset]);
 
   // Debounce changes to the dataset to prevent noticeably blocking the UI thread with a re-render.
   // Show the loading spinner right away, but don't initiate the state update + render until the debounce has settled.
