@@ -4,7 +4,7 @@ import React, { type ReactElement, useCallback, useMemo, useRef, useState } from
 import { useShallow } from "zustand/shallow";
 
 import type Track from "src/colorizer/Track";
-import type { LineageData, TrackInfo } from "src/colorizer/types";
+import type { LineageData } from "src/colorizer/types";
 import { TreeTraversalDirection } from "src/colorizer/types";
 import { getAncestors, getDescendants } from "src/colorizer/utils/lineage_utils";
 import LabelWithHint from "src/components/Display/LabelWithHint";
@@ -81,6 +81,7 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
     (trackId: number | null): Track | undefined => {
       const isMultiTrackSelectHotkeyPressed = areAnyHotkeysPressed(SHORTCUT_KEYS.viewport.multiTrackSelect.keycode);
       if (trackId === null) {
+        // Clicked BG
         if (!isMultiTrackSelectHotkeyPressed) {
           clearTracks();
         }
@@ -174,7 +175,7 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
     relationships: lineageRelationships,
     colorScale,
     radiusScale,
-    onClick: (trackId: number) => onClickTrack(trackId),
+    onClick: onClickTrack,
     onHover: onHoverTrack,
     selectedTracks: tracks,
     trackColors,
@@ -213,7 +214,7 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
       <StyledHorizontalRule style={{ margin: "0", flexGrow: 0 }} />
       <div
         ref={detailViewContainerRef}
-        style={{ width: "100%", flexGrow: 1, flexBasis: "300px", backgroundColor: "#fafafa" }}
+        style={{ width: "100%", flexGrow: 1, flexBasis: "300px", backgroundColor: "#fafafa", position: "relative" }}
       >
         <LineageTrackDetailView
           container={detailViewContainerRef}
@@ -224,7 +225,7 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
           relationships={lineageRelationships}
           time={currentFrame}
           colorizeParams={colorizeParams}
-          onClick={(trackInfo, time) => onClickTrack(trackInfo.id, time)}
+          onClick={onClickTrack}
           // TODO: Show hover tooltip for track detail view
           onHover={undefined}
           setRelativesSelected={setRelativesSelected}

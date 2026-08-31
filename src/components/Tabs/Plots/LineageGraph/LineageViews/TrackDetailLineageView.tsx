@@ -42,7 +42,7 @@ type TrackDetailLineageViewProps = {
   relationships: LineageDataRelationships;
   time: number;
   colorizeParams: ColorizeStateParams;
-  onClick?: (info: TrackInfo, time?: number) => void;
+  onClick?: (trackId: number | null, time?: number) => void;
   onHover?: (info: TrackInfo | null, time: number) => void;
   setRelativesSelected: (trackId: number, direction: TreeTraversalDirection, selected: boolean) => void;
 };
@@ -561,6 +561,7 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
     if (svgRef.current) {
       const svg = d3.select(svgRef.current);
       svg.call(zoom.current);
+      svg.on("click.bgclick", () => onClickRef.current?.(null));
     }
   }, [zoom]);
 
@@ -624,7 +625,7 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
           onHoverRef.current?.(info, time);
         };
         const handleClick = (info: TrackInfo, time: number | null): void => {
-          onClickRef.current?.(info, time ?? undefined);
+          onClickRef.current?.(info.id, time ?? undefined);
         };
         const handleToggleExpanded = (info: TrackInfo): void => {
           onToggleExpandedRef.current?.(info);
