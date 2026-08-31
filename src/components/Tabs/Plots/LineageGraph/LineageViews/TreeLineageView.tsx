@@ -34,7 +34,7 @@ export type TreeLineageViewProps = {
   trackColors: Map<number, Color>;
   colorScale: d3.ScaleSequential<string>;
   radiusScale: d3.ScalePower<number, number>;
-  onClick: (trackId: number) => void;
+  onClick: (trackId: number | null) => void;
   onHover: (trackId: number | null) => void;
   setRelativesSelected: (trackId: number, direction: TreeTraversalDirection, selected: boolean) => void;
 };
@@ -113,9 +113,10 @@ function renderTree(
 
   // Setup pointer events
   const handleClickTrack = (
-    _event: React.MouseEvent<SVGCircleElement, MouseEvent>,
+    event: React.MouseEvent<SVGCircleElement, MouseEvent>,
     d: d3.HierarchyPointNode<TrackInfo>
   ): void => {
+    event.stopPropagation();
     onClickTrack?.(d.data.id);
   };
   const handleHoverTrack = (
@@ -221,6 +222,7 @@ export default function TreeLineageView(props: TreeLineageViewProps): ReactEleme
     if (svgRef.current) {
       const svg = d3.select(svgRef.current);
       svg.call(zoom.current);
+      svg.on("click.bgclick", () => onClickRef.current?.(null));
     }
   }, [zoom]);
 
