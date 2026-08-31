@@ -87,29 +87,6 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
 
   //// Callbacks ////
 
-  const handleTrackClicked = useCallback(
-    (trackId: number | null): Track | undefined => {
-      const isMultiTrackSelectHotkeyPressed = areAnyHotkeysPressed(SHORTCUT_KEYS.viewport.multiTrackSelect.keycode);
-      if (trackId === null) {
-        // Clicked BG
-        if (!isMultiTrackSelectHotkeyPressed) {
-          clearTracks();
-        }
-        return;
-      }
-      const track = dataset?.getTrack(trackId) ?? undefined;
-      if (track) {
-        if (isMultiTrackSelectHotkeyPressed) {
-          toggleTrack(track);
-        } else {
-          setTracks([track]);
-        }
-      }
-      return track;
-    },
-    [dataset, setTracks, toggleTrack, clearTracks]
-  );
-
   const onClickTrack = useCallback(
     (trackId: number | null, time?: number) => {
       const isMultiTrackSelectHotkeyPressed = areAnyHotkeysPressed(SHORTCUT_KEYS.viewport.multiTrackSelect.keycode);
@@ -138,7 +115,7 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
         }
       }
     },
-    [dataset, clearTracks, toggleTrack, setTracks, handleTrackClicked, currentFrame, setFrame]
+    [dataset, clearTracks, toggleTrack, setTracks, currentFrame, setFrame]
   );
 
   const onHoverTrack = useCallback(
