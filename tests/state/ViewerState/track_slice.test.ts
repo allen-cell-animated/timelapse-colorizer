@@ -198,6 +198,33 @@ describe("useViewerStateStore: TrackSlice", () => {
       expect(result.current.isSelectedLut).deep.equals(new Uint8Array([1, 2, 0, 1, 2, 0, 1, 2, 0]));
     });
 
+    it("applies override colors to track coloring", async () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      await setDatasetAsync(result, MOCK_DATASET);
+      act(() => {
+        result.current.addTracks([MOCK_DATASET_DEFAULT_TRACK, MOCK_DATASET_TRACK_1], 8);
+      });
+      expect(result.current.trackToColorId.get(MOCK_DATASET_DEFAULT_TRACK.trackId)).toBe(8);
+      expect(result.current.trackToColorId.get(MOCK_DATASET_TRACK_1.trackId)).toBe(8);
+    });
+
+    it("ignores override color if index is invalid", async () => {
+      const invalidValues = [-4, -1000, NaN, Infinity, -Infinity];
+
+      const { result } = renderHook(() => useViewerStateStore());
+      await setDatasetAsync(result, MOCK_DATASET);
+      for (const value of invalidValues) {
+        act(() => {
+          result.current.addTracks([MOCK_DATASET_DEFAULT_TRACK, MOCK_DATASET_TRACK_1], value);
+        });
+        expect(result.current.trackToColorId.get(MOCK_DATASET_DEFAULT_TRACK.trackId)).toBe(0);
+        expect(result.current.trackToColorId.get(MOCK_DATASET_TRACK_1.trackId)).toBe(1);
+        act(() => {
+          result.current.clearTracks();
+        });
+      }
+    });
+
     it("can add and remove track", async () => {
       const { result } = renderHook(() => useViewerStateStore());
       await setDatasetAsync(result, MOCK_DATASET);
