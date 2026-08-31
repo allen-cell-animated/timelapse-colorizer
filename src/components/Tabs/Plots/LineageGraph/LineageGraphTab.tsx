@@ -115,7 +115,7 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
         }
       }
     },
-    [dataset, clearTracks, toggleTrack, setTracks, currentFrame, setFrame]
+    [dataset, setTracks, toggleTrack, clearTracks, currentFrame, setFrame]
   );
 
   const onHoverTrack = useCallback(
