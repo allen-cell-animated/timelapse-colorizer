@@ -7,7 +7,7 @@ import type { Color } from "three";
 
 import type { Dataset, Track } from "src/colorizer";
 import { computeColorFromId } from "src/colorizer/utils/data_utils";
-import { ColorizeStateParams } from "src/colorizer/viewport/types";
+import type { ColorizeStateParams } from "src/colorizer/viewport/types";
 import IconButton from "src/components/Buttons/IconButton";
 import RightClickContextMenu from "src/components/Menus/RightClickContextMenu";
 import { DUMMY_ROOT_NODE_ID } from "src/components/Tabs/Plots/LineageGraph/constants";
