@@ -175,11 +175,12 @@ export function expandTrack(
   trackId: number,
   expandedState: TreeExpandedState,
   data: LineageData,
-  relationships: LineageDataRelationships
+  relationships: LineageDataRelationships,
+  copyState = true
 ): TreeExpandedState {
   const { expandedTracks: _expandedTracks, previouslyExpandedTracks: _previouslyExpandedTracks } = expandedState;
-  const expandedTracks = new Set<number>(_expandedTracks);
-  const previouslyExpandedTracks = new Set<number>(_previouslyExpandedTracks);
+  const expandedTracks = copyState ? new Set<number>(_expandedTracks) : _expandedTracks;
+  const previouslyExpandedTracks = copyState ? new Set<number>(_previouslyExpandedTracks) : _previouslyExpandedTracks;
 
   if (!data.trackIdToTrackInfo.has(trackId)) {
     return {
@@ -229,9 +230,12 @@ export function expandTracks(
   data: LineageData,
   relationships: LineageDataRelationships
 ): TreeExpandedState {
-  let newState = expandedState;
+  let newState = {
+    expandedTracks: new Set(expandedState.expandedTracks),
+    previouslyExpandedTracks: new Set(expandedState.previouslyExpandedTracks),
+  };
   for (const trackId of trackIds) {
-    newState = expandTrack(trackId, newState, data, relationships);
+    newState = expandTrack(trackId, newState, data, relationships, false);
   }
   return newState;
 }
