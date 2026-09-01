@@ -183,7 +183,9 @@ describe("tree_utils", () => {
 
   describe("getAncestors", () => {
     const tests = [
-      ["handles invalid nodes", 1200, []],
+      ["handles nonexistent nodes", 1200, []],
+      ["handles bad input nodes", NaN, []],
+      ["handles bad input nodes", Infinity, []],
       ["returns set of ancestors", 4, [1, 2]],
       ["returns empty set for nodes with no parents", 1, []],
       ["returns coparents", 8, [1, 5, 6, 7]],
@@ -199,7 +201,9 @@ describe("tree_utils", () => {
 
   describe("getDescendants", () => {
     const tests = [
-      ["handles invalid nodes", 1200, []],
+      ["handles nonexistent nodes", 1200, []],
+      ["handles bad input nodes", NaN, []],
+      ["handles bad input nodes", Infinity, []],
       ["returns set of descendants", 2, [3, 4]],
       ["returns empty set for nodes with no children", 9, []],
       ["returns descendants of merge nodes", 5, [6, 7, 8, 9]],
