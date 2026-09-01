@@ -7,9 +7,9 @@ import type { Color } from "three";
 
 import type { Dataset, Track } from "src/colorizer";
 import { computeColorFromId } from "src/colorizer/utils/data_utils";
-import type { ColorizeStateParams } from "src/colorizer/viewport/types";
+import { ColorizeStateParams } from "src/colorizer/viewport/types";
 import IconButton from "src/components/Buttons/IconButton";
-import { DUMMY_ROOT_NODE_ID } from "src/components/Tabs/Lineage/constants";
+import { DUMMY_ROOT_NODE_ID } from "src/components/Tabs/Plots/LineageGraph/constants";
 import {
   frameTracksInView,
   getDefaultZoomTransform,
@@ -17,7 +17,7 @@ import {
   getLineageSubset,
   getTreeHierarchy,
   useNewTracks,
-} from "src/components/Tabs/Lineage/lineage_utils";
+} from "src/components/Tabs/Plots/LineageGraph/lineage_utils";
 import {
   alignMergeNodes,
   collapseTrack,
@@ -25,13 +25,13 @@ import {
   expandTrack,
   getInitialExpandedState,
   type TreeExpandedState,
-} from "src/components/Tabs/Lineage/tree_utils";
+} from "src/components/Tabs/Plots/LineageGraph/tree_utils";
 import type {
   LineageData,
   LineageDataRelationships,
   LineageNodeSelection,
   TrackInfo,
-} from "src/components/Tabs/Lineage/types";
+} from "src/components/Tabs/Plots/LineageGraph/types";
 import { useConstructor } from "src/hooks";
 import { FlexRowAlignCenter, VisuallyHidden } from "src/styles/utils";
 

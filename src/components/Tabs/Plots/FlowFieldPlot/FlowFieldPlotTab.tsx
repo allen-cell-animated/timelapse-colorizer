@@ -5,24 +5,24 @@ import { useDebounce } from "usehooks-ts";
 import { PlotTabType, SelectionOutlineColorMode, TabType, type VectorFieldData } from "src/colorizer";
 import { getSharedWorkerPool } from "src/colorizer/workers/SharedWorkerPool";
 import LoadingSpinner from "src/components/LoadingSpinner";
-import Plot3dToolbar from "src/components/Tabs/Plot3d/Plot3dToolbar";
 import PlotsTabToolbar from "src/components/Tabs/Plots/PlotsTabToolbar";
 import type { SharedPlotTabProps } from "src/components/Tabs/Plots/types";
 import { useInteractionListener } from "src/hooks";
 import { useViewerStateStore } from "src/state";
 import { FlexColumn } from "src/styles/utils";
 
-import { make3dConeTrace } from "./plot_3d_utils";
-import Plot3d from "./Plot3d";
+import FlowFieldToolbar from "./controls/FlowFieldToolbar";
+import { make3dConeTrace } from "./flow_field_utils";
+import FlowFieldPlot from "./FlowFieldPlot";
 
 const MINIMUM_BIN_COUNT = 10;
 const RESUME_PLAYBACK_TIMEOUT_MS = 500;
 
-type Plot3dTabProps = SharedPlotTabProps;
+type FlowFieldTabProps = SharedPlotTabProps;
 
-export default function Plot3dTab(props: Plot3dTabProps): ReactElement {
+export default function FlowFieldPlotTab(props: FlowFieldTabProps): ReactElement {
   const plotContainerRef = useRef<HTMLDivElement>(null);
-  const plot3dRef = useRef<Plot3d | null>(null);
+  const plotRef = useRef<FlowFieldPlot | null>(null);
 
   const [isLoading, setIsLoading] = useState(false);
   const [vectorFieldData, setVectorFieldData] = useState<VectorFieldData | null>(null);
@@ -67,10 +67,10 @@ export default function Plot3dTab(props: Plot3dTabProps): ReactElement {
 
   // Mount Plotly plot on component mount
   useEffect(() => {
-    plot3dRef.current = new Plot3d(plotContainerRef.current!);
+    plotRef.current = new FlowFieldPlot(plotContainerRef.current!);
     return () => {
-      plot3dRef.current?.dispose();
-      plot3dRef.current = null;
+      plotRef.current?.dispose();
+      plotRef.current = null;
     };
   }, []);
 
@@ -126,7 +126,7 @@ export default function Plot3dTab(props: Plot3dTabProps): ReactElement {
       !dataset.hasFeatureKey(zAxisFeatureKey) ||
       !dataset.times ||
       !dataset.trackIds ||
-      !plot3dRef.current
+      !plotRef.current
     ) {
       setVectorFieldData(null);
       return;
@@ -149,13 +149,13 @@ export default function Plot3dTab(props: Plot3dTabProps): ReactElement {
       )
       .then((vectorFieldData) => {
         // Check if a newer requests supercedes this one before updating state
-        if (requestId !== currentVectorFieldRequestIdRef.current || !plot3dRef.current) {
+        if (requestId !== currentVectorFieldRequestIdRef.current || !plotRef.current) {
           return;
         }
         setVectorFieldData(vectorFieldData);
-        plot3dRef.current.xAxisFeatureKey = xAxisFeatureKey;
-        plot3dRef.current.yAxisFeatureKey = yAxisFeatureKey;
-        plot3dRef.current.zAxisFeatureKey = zAxisFeatureKey;
+        plotRef.current.xAxisFeatureKey = xAxisFeatureKey;
+        plotRef.current.yAxisFeatureKey = yAxisFeatureKey;
+        plotRef.current.zAxisFeatureKey = zAxisFeatureKey;
       })
       .finally(() => {
         if (requestId === currentVectorFieldRequestIdRef.current) {
@@ -201,14 +201,14 @@ export default function Plot3dTab(props: Plot3dTabProps): ReactElement {
 
   // Sync plot with state changes
   useEffect(() => {
-    if (plot3dRef.current && isPlotTabVisible) {
-      plot3dRef.current.dataset = dataset;
-      plot3dRef.current.tracks = tracks;
-      plot3dRef.current.trackToColor = outlineColorMode === SelectionOutlineColorMode.USE_PALETTE ? trackColors : null;
-      plot3dRef.current.coneTrace = coneTrace as Plotly.Data | null;
-      plot3dRef.current.lineAverageWindow = movingAverageWindow;
-      plot3dRef.current.lineWidth = lineWidth;
-      plot3dRef.current.plot(currentFrame);
+    if (plotRef.current && isPlotTabVisible) {
+      plotRef.current.dataset = dataset;
+      plotRef.current.tracks = tracks;
+      plotRef.current.trackToColor = outlineColorMode === SelectionOutlineColorMode.USE_PALETTE ? trackColors : null;
+      plotRef.current.coneTrace = coneTrace as Plotly.Data | null;
+      plotRef.current.lineAverageWindow = movingAverageWindow;
+      plotRef.current.lineWidth = lineWidth;
+      plotRef.current.plot(currentFrame);
     }
   }, [dataset, tracks, currentFrame, coneTrace, isPlotTabVisible, movingAverageWindow, lineWidth]);
 
@@ -218,7 +218,7 @@ export default function Plot3dTab(props: Plot3dTabProps): ReactElement {
     <FlexColumn style={{ height: "100%", marginBottom: 10 }} $gap={8}>
       <PlotsTabToolbar>
         {props.toolbar}
-        <Plot3dToolbar />
+        <FlowFieldToolbar />
       </PlotsTabToolbar>
 
       {/* Plot Container */}

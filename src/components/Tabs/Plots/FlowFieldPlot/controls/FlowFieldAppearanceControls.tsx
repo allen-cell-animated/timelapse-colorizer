@@ -12,18 +12,18 @@ import { StyledHorizontalRule } from "src/styles/components";
 
 const SLIDER_WIDTH = "180px";
 
-type Plot3dAppearanceControlsProps = {
+type FlowFieldAppearanceControlsProps = {
   disabled?: boolean;
 };
 
-const enum Plot3dAppearanceControlsHtmlIds {
-  CONE_SIZE_SLIDER = "plot3d-cone-size-slider",
-  CONE_COLOR_RAMP_SELECTION = "plot3d-cone-color-ramp-selection",
-  LINE_WINDOW_SLIDER = "plot3d-line-moving-average-window-slider",
-  LINE_WIDTH_SLIDER = "plot3d-line-width-slider",
+const enum FlowFieldAppearanceControlsHtmlIds {
+  CONE_SIZE_SLIDER = "flow-field-cone-size-slider",
+  CONE_COLOR_RAMP_SELECTION = "flow-field-cone-color-ramp-selection",
+  LINE_WINDOW_SLIDER = "flow-field-line-moving-average-window-slider",
+  LINE_WIDTH_SLIDER = "flow-field-line-width-slider",
 }
 
-export default function Plot3dAppearanceControls(props: Plot3dAppearanceControlsProps): ReactElement {
+export default function FlowFieldAppearanceControls(props: FlowFieldAppearanceControlsProps): ReactElement {
   const movingAverageWindow = useViewerStateStore((state) => state.plot3dLineMovingAverageWindow);
   const setMovingAverageWindow = useViewerStateStore((state) => state.setPlot3dLineMovingAverageWindow);
   const lineWidth = useViewerStateStore((state) => state.plot3dLineWidth);
@@ -46,12 +46,12 @@ export default function Plot3dAppearanceControls(props: Plot3dAppearanceControls
     <SettingsContainer labelWidth="140px">
       <SettingsItem
         label={"Cone size"}
-        htmlFor={Plot3dAppearanceControlsHtmlIds.CONE_SIZE_SLIDER}
+        htmlFor={FlowFieldAppearanceControlsHtmlIds.CONE_SIZE_SLIDER}
         style={{ marginBottom: 6 }}
       >
         <div style={{ width: SLIDER_WIDTH }}>
           <LabeledSlider
-            id={Plot3dAppearanceControlsHtmlIds.CONE_SIZE_SLIDER}
+            id={FlowFieldAppearanceControlsHtmlIds.CONE_SIZE_SLIDER}
             type="value"
             value={coneSize}
             onChange={setConeSize}
@@ -66,9 +66,9 @@ export default function Plot3dAppearanceControls(props: Plot3dAppearanceControls
           ></LabeledSlider>
         </div>
       </SettingsItem>
-      <SettingsItem label="Color ramp" htmlFor={Plot3dAppearanceControlsHtmlIds.CONE_COLOR_RAMP_SELECTION}>
+      <SettingsItem label="Color ramp" htmlFor={FlowFieldAppearanceControlsHtmlIds.CONE_COLOR_RAMP_SELECTION}>
         <ColorRampSelection
-          id={Plot3dAppearanceControlsHtmlIds.CONE_COLOR_RAMP_SELECTION}
+          id={FlowFieldAppearanceControlsHtmlIds.CONE_COLOR_RAMP_SELECTION}
           selectedRamp={coneColorRampKey}
           onChangeRamp={function (colorRampKey: string, reversed: boolean): void {
             setConeColorRampKey(colorRampKey);
@@ -86,12 +86,12 @@ export default function Plot3dAppearanceControls(props: Plot3dAppearanceControls
 
       <SettingsItem
         label={windowSizeLabel}
-        htmlFor={Plot3dAppearanceControlsHtmlIds.LINE_WINDOW_SLIDER}
+        htmlFor={FlowFieldAppearanceControlsHtmlIds.LINE_WINDOW_SLIDER}
         style={{ marginBottom: "6px" }}
       >
         <div style={{ width: SLIDER_WIDTH }}>
           <LabeledSlider
-            id={Plot3dAppearanceControlsHtmlIds.LINE_WINDOW_SLIDER}
+            id={FlowFieldAppearanceControlsHtmlIds.LINE_WINDOW_SLIDER}
             type="value"
             value={movingAverageWindow}
             onChange={setMovingAverageWindow}
@@ -106,9 +106,9 @@ export default function Plot3dAppearanceControls(props: Plot3dAppearanceControls
         </div>
       </SettingsItem>
 
-      <SettingsItem label="Line width" htmlFor={Plot3dAppearanceControlsHtmlIds.LINE_WIDTH_SLIDER}>
+      <SettingsItem label="Line width" htmlFor={FlowFieldAppearanceControlsHtmlIds.LINE_WIDTH_SLIDER}>
         <LabeledSlider
-          id={Plot3dAppearanceControlsHtmlIds.LINE_WIDTH_SLIDER}
+          id={FlowFieldAppearanceControlsHtmlIds.LINE_WIDTH_SLIDER}
           type="value"
           value={lineWidth}
           onChange={setLineWidth}

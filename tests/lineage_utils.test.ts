@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { getCoparents } from "src/components/Tabs/Lineage/lineage_utils";
+import { getCoparents } from "src/components/Tabs/Plots/LineageGraph/lineage_utils";
 
 describe("getCoparents", () => {
   it("returns empty array for empty inputs", () => {

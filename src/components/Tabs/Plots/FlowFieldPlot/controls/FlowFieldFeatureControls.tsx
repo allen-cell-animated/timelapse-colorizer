@@ -5,11 +5,11 @@ import type { SelectItem } from "src/components/Dropdowns/types";
 import { useViewerStateStore } from "src/state";
 import { FlexRow } from "src/styles/utils";
 
-type Plot3dFeatureControlsProps = {
+type FlowFieldFeatureControlsProps = {
   disabled?: boolean;
 };
 
-export default function Plot3dFeatureControls(props: Plot3dFeatureControlsProps): ReactElement {
+export default function FlowFieldFeatureControls(props: FlowFieldFeatureControlsProps): ReactElement {
   const xAxisFeatureKey = useViewerStateStore((state) => state.plot3dXAxis);
   const setXAxisFeatureKey = useViewerStateStore((state) => state.setPlot3dXAxis);
   const yAxisFeatureKey = useViewerStateStore((state) => state.plot3dYAxis);

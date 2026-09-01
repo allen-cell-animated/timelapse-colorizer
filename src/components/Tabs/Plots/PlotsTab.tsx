@@ -4,11 +4,11 @@ import { PlotTabType, TabType } from "src/colorizer";
 import type { ShowAlertBannerCallback } from "src/components/Banner";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import type { SelectItem } from "src/components/Dropdowns/types";
-import CorrelationPlotTab from "src/components/Tabs/CorrelationPlot/CorrelationPlotTab";
-import LineageTab from "src/components/Tabs/Lineage/LineageTab";
-import Plot3dTab from "src/components/Tabs/Plot3d/Plot3dTab";
-import ScatterPlotTab from "src/components/Tabs/ScatterPlot/ScatterPlotTab";
-import PlotTab from "src/components/Tabs/TrackPlot/PlotTab";
+import CorrelationPlotTab from "src/components/Tabs/Plots/CorrelationPlot/CorrelationPlotTab";
+import FlowFieldPlotTab from "src/components/Tabs/Plots/FlowFieldPlot/FlowFieldPlotTab";
+import LineageGraphTab from "src/components/Tabs/Plots/LineageGraph/LineageGraphTab";
+import ScatterPlotTab from "src/components/Tabs/Plots/ScatterPlot/ScatterPlotTab";
+import TrackPlotTab from "src/components/Tabs/Plots/TrackPlot/TrackPlotTab";
 import { useViewerStateStore } from "src/state/ViewerState";
 
 import type { SharedPlotTabProps } from "./types";
@@ -105,7 +105,7 @@ export default function PlotsTab(props: PlotsTabProps): ReactElement {
   return (
     <div className={className}>
       <PlotContainer visible={plotTab === PlotTabType.TRACK_PLOT}>
-        <PlotTab disabled={disableUi} {...sharedProps} />
+        <TrackPlotTab disabled={disableUi} {...sharedProps} />
       </PlotContainer>
 
       <PlotContainer visible={plotTab === PlotTabType.SCATTER_PLOT}>
@@ -118,7 +118,7 @@ export default function PlotsTab(props: PlotsTabProps): ReactElement {
       </PlotContainer>
 
       <PlotContainer visible={plotTab === PlotTabType.PLOT_3D}>
-        <Plot3dTab {...sharedProps} />
+        <FlowFieldPlotTab {...sharedProps} />
       </PlotContainer>
 
       <PlotContainer visible={plotTab === PlotTabType.CORRELATION_PLOT}>
@@ -126,7 +126,7 @@ export default function PlotsTab(props: PlotsTabProps): ReactElement {
       </PlotContainer>
 
       <PlotContainer visible={plotTab === PlotTabType.LINEAGE}>
-        <LineageTab {...sharedProps} />
+        <LineageGraphTab {...sharedProps} />
       </PlotContainer>
     </div>
   );

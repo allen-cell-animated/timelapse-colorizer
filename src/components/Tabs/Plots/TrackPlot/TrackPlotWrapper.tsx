@@ -5,7 +5,7 @@ import React, { type ReactElement, useEffect, useRef, useState } from "react";
 import { type Dataset, type Track, ViewMode } from "src/colorizer";
 import { CENTROID_Y_FEATURE_KEY } from "src/colorizer/Dataset";
 
-import Plotting, { type TrackPlotLayoutConfig } from "./Plotting";
+import TrackPlot, { type TrackPlotLayoutConfig } from "./TrackPlot";
 
 type PlotWrapperProps = {
   frame: number;
@@ -19,19 +19,19 @@ type PlotWrapperProps = {
 const defaultProps: Partial<PlotWrapperProps> = {};
 
 /**
- * A wrapper around the Plotting class, allowing it to be updated via a React
+ * A wrapper around the TrackPlot class, allowing it to be updated via a React
  * component interface.
  */
-export default function PlotWrapper(inputProps: PlotWrapperProps): ReactElement {
+export default function TrackPlotWrapper(inputProps: PlotWrapperProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<PlotWrapperProps>;
 
   const plotDivRef = useRef<HTMLDivElement>(null);
-  const [plot, setPlot] = useState<Plotting | null>(null);
+  const [plot, setPlot] = useState<TrackPlot | null>(null);
   const [hoveredObjectId, setHoveredObjectId] = useState<number | null>(null);
 
   // Setup for plot after initial render, since it replaces a DOM element.
   useEffect(() => {
-    const plot = new Plotting(plotDivRef.current!);
+    const plot = new TrackPlot(plotDivRef.current!);
     setPlot(plot);
     plot.removePlot(); // Clear initial plot for consistency
   }, []);

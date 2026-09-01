@@ -1,15 +1,15 @@
 import * as d3 from "d3";
 import { assert, describe, expect, it } from "vitest";
 
-import { getLineageRelationships, getTreeHierarchy } from "src/components/Tabs/Lineage/lineage_utils";
+import { getLineageRelationships, getTreeHierarchy } from "src/components/Tabs/Plots/LineageGraph/lineage_utils";
 import {
   alignMergeNodes,
   collapseTrack,
   expandTrack,
   getInitialExpandedState,
   type TreeExpandedState,
-} from "src/components/Tabs/Lineage/tree_utils";
-import type { LineageData, TrackInfo } from "src/components/Tabs/Lineage/types";
+} from "src/components/Tabs/Plots/LineageGraph/tree_utils";
+import type { LineageData, TrackInfo } from "src/components/Tabs/Plots/LineageGraph/types";
 
 function makeTrackIdToData(numTracks: number): Map<number, TrackInfo> {
   const trackIds = Array.from({ length: numTracks }, (_, i) => i + 1);

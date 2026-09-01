@@ -38,13 +38,13 @@ function getColorAndRadiusScale(data: LineageData): {
 
 const EMPTY_LINEAGE_DATA: LineageData = { trackIdToTrackInfo: new Map(), edges: [] };
 
-type LineageTabProps = SharedPlotTabProps;
+type LineageGraphTabProps = SharedPlotTabProps;
 
 /**
  * Renders lineage data in a tab. Includes a tree view of the tracks and their
  * relationships, and a tooltip on hover.
  */
-export default function LineageTab(props: LineageTabProps): ReactElement {
+export default function LineageGraphTab(props: LineageGraphTabProps): ReactElement {
   const dataset = useViewerStateStore((state) => state.dataset);
   const currentFrame = useViewerStateStore((state) => state.currentFrame);
   const tracks = useViewerStateStore((state) => state.tracks);

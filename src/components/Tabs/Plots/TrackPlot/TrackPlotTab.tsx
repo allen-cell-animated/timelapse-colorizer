@@ -8,8 +8,8 @@ import IconButton from "src/components/Buttons/IconButton";
 import ColorRampDropdown from "src/components/Dropdowns/ColorRampDropdown";
 import LoadingSpinner from "src/components/LoadingSpinner";
 import PlotsTabToolbar from "src/components/Tabs/Plots/PlotsTabToolbar";
+import TrackPlotWrapper from "src/components/Tabs/Plots/TrackPlot/TrackPlotWrapper";
 import type { SharedPlotTabProps } from "src/components/Tabs/Plots/types";
-import PlotWrapper from "src/components/Tabs/TrackPlot/PlotWrapper";
 import { useViewerStateStore } from "src/state";
 import { FlexRowAlignCenter, NoSpinnerContainer } from "src/styles/utils";
 
@@ -34,7 +34,7 @@ type PlotTabProps = SharedPlotTabProps & {
   disabled: boolean;
 };
 
-export default function PlotTab(props: PlotTabProps): ReactElement {
+export default function TrackPlotTab(props: PlotTabProps): ReactElement {
   const currentFrame = useViewerStateStore((state) => state.currentFrame);
   const dataset = useViewerStateStore((state) => state.dataset);
   const featureKey = useViewerStateStore((state) => state.featureKey);
@@ -130,7 +130,7 @@ export default function PlotTab(props: PlotTabProps): ReactElement {
       </PlotsTabToolbar>
       <div>
         <LoadingSpinner loading={isLoading}>
-          <PlotWrapper
+          <TrackPlotWrapper
             setFrame={setFrame}
             frame={currentFrame}
             dataset={dataset}

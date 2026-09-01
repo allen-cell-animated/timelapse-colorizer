@@ -2,19 +2,19 @@ import React, { type ReactElement, useContext } from "react";
 
 import LabelWithHint from "src/components/Display/LabelWithHint";
 import LabeledSlider from "src/components/Inputs/LabeledSlider";
-import Plot3dAppearanceControls from "src/components/Tabs/Plot3d/Plot3dAppearanceControls";
-import Plot3dDataControls from "src/components/Tabs/Plot3d/Plot3dDataControls";
-import Plot3dFeatureControls from "src/components/Tabs/Plot3d/Plot3dFeatureControls";
+import FlowFieldAppearanceControls from "src/components/Tabs/Plots/FlowFieldPlot/controls/FlowFieldAppearanceControls";
+import FlowFieldDataControls from "src/components/Tabs/Plots/FlowFieldPlot/controls/FlowFieldDataControls";
+import FlowFieldFeatureControls from "src/components/Tabs/Plots/FlowFieldPlot/controls/FlowFieldFeatureControls";
 import { useViewerStateStore } from "src/state/ViewerState";
 import { AppThemeContext } from "src/styles/AppStyle";
 import { StyledVerticalRule } from "src/styles/components";
 import { FlexColumn, FlexRow, FlexRowAlignCenter } from "src/styles/utils";
 
-const enum Plot3dToolbarHtmlIds {
-  THRESHOLD_SLIDER = "plot3d-toolbar-threshold-slider",
+const enum FlowFieldToolbarHtmlIds {
+  THRESHOLD_SLIDER = "flow-field-toolbar-threshold-slider",
 }
 
-export default function Plot3dToolbar(): ReactElement {
+export default function FlowFieldToolbar(): ReactElement {
   const theme = useContext(AppThemeContext);
 
   const dataset = useViewerStateStore((state) => state.dataset);
@@ -30,12 +30,12 @@ export default function Plot3dToolbar(): ReactElement {
   );
   const densitySlider = (
     <FlexRow $gap={6}>
-      <label htmlFor={Plot3dToolbarHtmlIds.THRESHOLD_SLIDER} style={{ fontSize: theme.font.size.label }}>
+      <label htmlFor={FlowFieldToolbarHtmlIds.THRESHOLD_SLIDER} style={{ fontSize: theme.font.size.label }}>
         {densityThresholdLabel}
       </label>
       <div style={{ width: "250px" }}>
         <LabeledSlider
-          id={Plot3dToolbarHtmlIds.THRESHOLD_SLIDER}
+          id={FlowFieldToolbarHtmlIds.THRESHOLD_SLIDER}
           type="value"
           value={threshold}
           onChange={setThreshold}
@@ -56,11 +56,11 @@ export default function Plot3dToolbar(): ReactElement {
     <FlexColumn $gap={10} style={{ width: "100%" }}>
       {/* Plot Feature Controls */}
       <FlexRow $gap={8}>
-        <Plot3dFeatureControls disabled={disabled} />
+        <FlowFieldFeatureControls disabled={disabled} />
       </FlexRow>
       <FlexRowAlignCenter $gap={8}>
-        <Plot3dDataControls disabled={disabled} />
-        <Plot3dAppearanceControls disabled={disabled} />
+        <FlowFieldDataControls disabled={disabled} />
+        <FlowFieldAppearanceControls disabled={disabled} />
 
         <StyledVerticalRule style={{ margin: "0 2px" }} />
 
