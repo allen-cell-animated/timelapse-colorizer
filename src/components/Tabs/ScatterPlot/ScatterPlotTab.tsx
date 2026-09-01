@@ -16,6 +16,8 @@ import IconButton from "src/components/Buttons/IconButton";
 import SelectionDropdown from "src/components/Dropdowns/SelectionDropdown";
 import type { SelectItem } from "src/components/Dropdowns/types";
 import LoadingSpinner from "src/components/LoadingSpinner";
+import PlotsTabToolbar from "src/components/Tabs/Plots/PlotsTabToolbar";
+import type { SharedPlotTabProps } from "src/components/Tabs/Plots/types";
 import ScatterplotToolbar from "src/components/Tabs/ScatterPlot/ScatterplotToolbar";
 import { SCATTERPLOT_SYNC_AXIS_KEY, SHORTCUT_KEYS } from "src/constants";
 import { useDebounce, useDebounceRecord, useIsMouseButtonDownRef } from "src/hooks";
@@ -51,7 +53,7 @@ const DEFAULT_RANGE_TYPE = PlotRangeType.ALL_TIME;
 const TIME_LINE_TRACE_COLOR = "#aaaaaa";
 const AVERAGE_LINE_TRACE_COLOR = "#444444";
 
-type ScatterPlotTabProps = {
+type ScatterPlotTabProps = SharedPlotTabProps & {
   isVisible: boolean;
   showAlert: ShowAlertBannerCallback;
   containerRef?: HTMLElement;
@@ -701,12 +703,15 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
   return (
     <FlexColumn style={{ alignItems: "flex-start" }}>
-      <ScatterplotToolbar
-        popupContainer={props.containerRef}
-        onClickResetZoom={onResetZoom}
-        onClickClearTracks={onClearTracks}
-        onClickDownloadCsv={onDownloadScatterPlotCsv}
-      />
+      <PlotsTabToolbar>
+        {props.toolbar}
+        <ScatterplotToolbar
+          popupContainer={props.containerRef}
+          onClickResetZoom={onResetZoom}
+          onClickClearTracks={onClearTracks}
+          onClickDownloadCsv={onDownloadScatterPlotCsv}
+        />
+      </PlotsTabToolbar>
 
       <LoadingSpinner loading={isRendering || isDebouncePending} style={{ marginTop: "10px" }}>
         <FlexRowAlignCenter style={{ marginLeft: 15 }}>

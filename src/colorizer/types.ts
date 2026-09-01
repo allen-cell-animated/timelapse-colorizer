@@ -202,18 +202,27 @@ export type FrameVectorData = {
 // TODO: This should live in the viewer and not in `colorizer`. Same with `url_utils`.
 // CHANGING THESE VALUES CAN POTENTIALLY BREAK URLs. See `url_utils.parseDrawSettings` for parsing logic.
 export enum TabType {
+  PLOTS = "plots",
+  FILTERS = "filters",
+  ANNOTATION = "annotation",
+  SETTINGS = "settings",
+}
+
+/** Tabs shown inside of the Plots tab. */
+export enum PlotTabType {
   TRACK_PLOT = "track_plot",
   SCATTER_PLOT = "scatter_plot",
   CORRELATION_PLOT = "correlation_plot",
   LINEAGE = "lineage",
-  FILTERS = "filters",
-  ANNOTATION = "annotation",
   PLOT_3D = "3d_plot",
-  SETTINGS = "settings",
 }
 
 export const isTabType = (tab: string): tab is TabType => {
   return Object.values(TabType).includes(tab as TabType);
+};
+
+export const isPlotTabType = (tab: string): tab is PlotTabType => {
+  return Object.values(PlotTabType).includes(tab as PlotTabType);
 };
 
 export enum PlotRangeType {

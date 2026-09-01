@@ -7,6 +7,8 @@ import { KNOWN_CATEGORICAL_PALETTES } from "src/colorizer/colors/categorical_pal
 import IconButton from "src/components/Buttons/IconButton";
 import ColorRampDropdown from "src/components/Dropdowns/ColorRampDropdown";
 import LoadingSpinner from "src/components/LoadingSpinner";
+import PlotsTabToolbar from "src/components/Tabs/Plots/PlotsTabToolbar";
+import type { SharedPlotTabProps } from "src/components/Tabs/Plots/types";
 import PlotWrapper from "src/components/Tabs/TrackPlot/PlotWrapper";
 import { useViewerStateStore } from "src/state";
 import { FlexRowAlignCenter, NoSpinnerContainer } from "src/styles/utils";
@@ -28,7 +30,7 @@ const TrackSearch = styled(FlexRowAlignCenter)`
   }
 `;
 
-type PlotTabProps = {
+type PlotTabProps = SharedPlotTabProps & {
   disabled: boolean;
 };
 
@@ -90,39 +92,42 @@ export default function PlotTab(props: PlotTabProps): ReactElement {
 
   return (
     <>
-      <TrackTitleBar $gap={12}>
-        <ColorRampDropdown
-          label={"Palette"}
-          useCategoricalPalettes={true}
-          selectedPaletteKey={outlinePaletteKey}
-          selectedPalette={KNOWN_CATEGORICAL_PALETTES.get(outlinePaletteKey)?.colors}
-          onChangePalette={(_colors, key) => setOutlinePaletteKey(key)}
-          numCategories={12}
-          showReverseButton={false}
-        ></ColorRampDropdown>
-        <NoSpinnerContainer>
-          <TrackSearch $gap={6}>
-            <label htmlFor={TRACK_SEARCH_ID}>
-              <h3>Add track</h3>
-            </label>
-            <Input
-              id={TRACK_SEARCH_ID}
-              type="number"
-              value={findTrackInput}
-              size="small"
-              placeholder="Track ID"
-              disabled={props.disabled}
-              onChange={(event) => {
-                setFindTrackInput(event.target.value);
-              }}
-              onPressEnter={searchForTrack}
-            />
-            <IconButton disabled={props.disabled} onClick={searchForTrack}>
-              <PlusOutlined />
-            </IconButton>
-          </TrackSearch>
-        </NoSpinnerContainer>
-      </TrackTitleBar>
+      <PlotsTabToolbar>
+        {props.toolbar}
+        <TrackTitleBar $gap={12}>
+          <ColorRampDropdown
+            label={"Palette"}
+            useCategoricalPalettes={true}
+            selectedPaletteKey={outlinePaletteKey}
+            selectedPalette={KNOWN_CATEGORICAL_PALETTES.get(outlinePaletteKey)?.colors}
+            onChangePalette={(_colors, key) => setOutlinePaletteKey(key)}
+            numCategories={12}
+            showReverseButton={false}
+          ></ColorRampDropdown>
+          <NoSpinnerContainer>
+            <TrackSearch $gap={6}>
+              <label htmlFor={TRACK_SEARCH_ID}>
+                <h3>Add track</h3>
+              </label>
+              <Input
+                id={TRACK_SEARCH_ID}
+                type="number"
+                value={findTrackInput}
+                size="small"
+                placeholder="Track ID"
+                disabled={props.disabled}
+                onChange={(event) => {
+                  setFindTrackInput(event.target.value);
+                }}
+                onPressEnter={searchForTrack}
+              />
+              <IconButton disabled={props.disabled} onClick={searchForTrack}>
+                <PlusOutlined />
+              </IconButton>
+            </TrackSearch>
+          </NoSpinnerContainer>
+        </TrackTitleBar>
+      </PlotsTabToolbar>
       <div>
         <LoadingSpinner loading={isLoading}>
           <PlotWrapper

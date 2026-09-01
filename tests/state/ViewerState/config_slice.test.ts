@@ -3,7 +3,7 @@ import { act } from "react-dom/test-utils";
 import { Color } from "three";
 import { describe, expect, it } from "vitest";
 
-import { CentroidColorMode, DrawMode, TabType, TrackPathColorMode } from "src/colorizer";
+import { CentroidColorMode, DrawMode, PlotTabType, TabType, TrackPathColorMode } from "src/colorizer";
 import { UrlParam } from "src/colorizer/utils/url_utils";
 import { useViewerStateStore } from "src/state";
 import { type ConfigSlice, loadConfigSliceFromParams, serializeConfigSlice } from "src/state/slices";
@@ -40,7 +40,8 @@ const EXAMPLE_SLICE_1: Partial<ConfigSlice> = {
   edgeColor: new Color(0x808080),
   edgeColorAlpha: 128 / 255, // 0x80
   edgeMode: DrawMode.USE_COLOR,
-  openTab: TabType.SCATTER_PLOT,
+  openTab: TabType.PLOTS,
+  plotTab: PlotTabType.SCATTER_PLOT,
   interpolate3d: false,
 };
 
@@ -70,7 +71,8 @@ const EXAMPLE_SLICE_1_PARAMS: SerializedStoreData = {
   [UrlParam.OUTLINE_PALETTE_KEY]: "neon",
   [UrlParam.EDGE_COLOR]: "80808080",
   [UrlParam.EDGE_MODE]: "1",
-  [UrlParam.OPEN_TAB]: TabType.SCATTER_PLOT,
+  [UrlParam.OPEN_TAB]: TabType.PLOTS,
+  [UrlParam.PLOT_TAB]: PlotTabType.SCATTER_PLOT,
   [UrlParam.INTERPOLATE_3D]: "0",
 };
 
@@ -208,7 +210,8 @@ describe("ConfigSlice", () => {
       result.current.setOutlinePaletteKey("adobe");
       result.current.setEdgeColor(new Color(0xa0b0c0), 208 / 255); // 0xd0
       result.current.setEdgeMode(DrawMode.HIDE);
-      result.current.setOpenTab(TabType.TRACK_PLOT);
+      result.current.setOpenTab(TabType.PLOTS);
+      result.current.setPlotTab(PlotTabType.TRACK_PLOT);
     });
     expect(result.current.showSegmentations).toBe(true);
     expect(result.current.showCentroids).toBe(true);
@@ -230,7 +233,8 @@ describe("ConfigSlice", () => {
     expect(result.current.outlinePaletteKey).toBe("adobe");
     expect(result.current.edgeColor).toEqual(new Color(0xa0b0c0));
     expect(result.current.edgeColorAlpha).toBe(208 / 255);
-    expect(result.current.openTab).toBe(TabType.TRACK_PLOT);
+    expect(result.current.openTab).toBe(TabType.PLOTS);
+    expect(result.current.plotTab).toBe(PlotTabType.TRACK_PLOT);
   });
 
   it("clamps track path width", () => {
@@ -311,6 +315,46 @@ describe("ConfigSlice", () => {
         loadConfigSliceFromParams(result.current, params);
       });
       expect(result.current.openTab).toBe(initialOpenTab);
+    });
+
+    it("parses legacy tabs into plots tab", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      const tabKeys = Array.from(Object.values(PlotTabType));
+      for (const tabKey of tabKeys) {
+        const params = new URLSearchParams();
+        params.set(UrlParam.OPEN_TAB, tabKey);
+        act(() => {
+          loadConfigSliceFromParams(result.current, params);
+        });
+        expect(result.current.openTab).toBe(TabType.PLOTS);
+        expect(result.current.plotTab).toBe(tabKey);
+      }
+    });
+
+    it("parses all plot tab types", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      const tabKeys = Array.from(Object.values(PlotTabType));
+      for (const tabKey of tabKeys) {
+        const params = new URLSearchParams();
+        params.set(UrlParam.PLOT_TAB, tabKey);
+        act(() => {
+          loadConfigSliceFromParams(result.current, params);
+        });
+        expect(result.current.plotTab).toBe(tabKey);
+      }
+    });
+
+    it("parses all open tabs", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      const tabKeys = Array.from(Object.values(TabType));
+      for (const tabKey of tabKeys) {
+        const params = new URLSearchParams();
+        params.set(UrlParam.OPEN_TAB, tabKey);
+        act(() => {
+          loadConfigSliceFromParams(result.current, params);
+        });
+        expect(result.current.openTab).toBe(tabKey);
+      }
     });
   });
 });

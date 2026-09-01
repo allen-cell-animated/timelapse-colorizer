@@ -41,6 +41,7 @@ export enum UrlParam {
   SHOW_SCALEBAR = "scalebar",
   SHOW_TIMESTAMP = "timestamp",
   OPEN_TAB = "tab",
+  PLOT_TAB = "plot",
   INTERPOLATE_3D = "interpolate",
   // Track selection
   TRACK = "track",
@@ -154,6 +155,8 @@ const ALLEN_PREFIX_TO_HTTPS: Record<string, string> = {
 
 export const PUBLIC_TFE_URL = "https://timelapse.allencell.org/";
 
+// MARK: Fetching
+
 export const DEFAULT_FETCH_TIMEOUT_MS = 2000;
 
 /**
@@ -212,6 +215,8 @@ export function getPromiseValue<T>(
   }
   return promise.value;
 }
+
+// MARK: Serialization / deserialization
 
 /**
  * Serializes the threshold into a string that can be used as a URL parameter.
@@ -667,6 +672,15 @@ export function decodeMaybeChannelSetting(settingString: string | null): Partial
 }
 
 /**
+ * Decodes strings using `decodeURIComponent`, handling null inputs.
+ */
+export function decodeString(input: string | null): string | undefined {
+  return input === null ? undefined : decodeURIComponent(input);
+}
+
+// MARK: URL formatting and resolution
+
+/**
  * Returns if a string is a URL where resources can be fetched from, rather than just a
  * string name.
  * @param input String to be checked.
@@ -716,13 +730,6 @@ export function convertAllenPathToHttps(input: string): string | null {
     }
   }
   return null;
-}
-
-/**
- * Decodes strings using `decodeURIComponent`, handling null inputs.
- */
-export function decodeString(input: string | null): string | undefined {
-  return input === null ? undefined : decodeURIComponent(input);
 }
 
 /**
