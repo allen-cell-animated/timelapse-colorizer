@@ -176,7 +176,7 @@ export function expandTrack(
   expandedState: TreeExpandedState,
   data: LineageData,
   relationships: LineageDataRelationships,
-  copyState = true
+  copyState: boolean = true
 ): TreeExpandedState {
   const { expandedTracks: _expandedTracks, previouslyExpandedTracks: _previouslyExpandedTracks } = expandedState;
   const expandedTracks = copyState ? new Set<number>(_expandedTracks) : _expandedTracks;
