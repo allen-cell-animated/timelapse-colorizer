@@ -366,6 +366,7 @@ type ContextMenuData = {
   selectedTracks: Map<number, Track>;
   // Optional-- expandable/collapsible views only
   expandedState?: TreeExpandedState;
+  applyTrackColorToRelatives: boolean;
 };
 
 type ContextMenuCallbacks = {
@@ -377,6 +378,7 @@ type ContextMenuCallbacks = {
   // Optional-- expandable/collapsible views only
   expandAllChildren?: (trackId: number) => void;
   collapseAllChildren?: (trackId: number) => void;
+  setApplyTrackColorToRelatives: (apply: boolean) => void;
 };
 
 /**
@@ -432,6 +434,16 @@ export function getLineageContextMenuItems(
         disabled: hoveredId === null || !idHasChildren,
         onClick: hoveredId !== null ? () => callbacks.deselectNodeAndChildren(hoveredId) : undefined,
         visible: areTrackAndAllChildrenSelected,
+      },
+      {
+        label: "Selection options...",
+        children: [
+          {
+            label: (!data.applyTrackColorToRelatives ? "☑ " : "☐ ") + "Use random outline colors",
+            onClick: () => callbacks.setApplyTrackColorToRelatives(!data.applyTrackColorToRelatives),
+            visible: true,
+          },
+        ],
       },
     ],
   ];

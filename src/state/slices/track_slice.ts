@@ -33,8 +33,9 @@ export type TrackSliceActions = {
   /**
    * Adds one or more tracks to the current track selection.
    * @param tracks The track or array of tracks to add.
+   * @param colorIdx Optional color index to assign to the added tracks.
    */
-  addTracks: (tracks: Track | Track[]) => void;
+  addTracks: (tracks: Track | Track[], colorIdx?: number) => void;
   /** Removes one or more tracks from the current track selection. */
   removeTracks: (trackIds: number | number[]) => void;
   /** Toggles the selection state of a track. */
@@ -69,7 +70,7 @@ export type TrackSlice = TrackSliceState & TrackSliceActions;
  * makes a new selection, they will get the same color sequence as the user who
  * created the URL.
  */
-function getNextColorId(tracks: Map<number, Track>, trackToColorId: Map<number, number>): number {
+export function getNextColorId(tracks: Map<number, Track>, trackToColorId: Map<number, number>): number {
   const trackValues = Array.from(tracks.values());
   const lastTrack = trackValues[trackValues.length - 1];
   const lastColorId = lastTrack ? trackToColorId.get(lastTrack.trackId) ?? -1 : -1;
@@ -93,7 +94,7 @@ export const createTrackSlice: StateCreator<TrackSlice & ConfigSlice, [], [], Tr
   trackColors: new Map<number, Color>(),
   isSelectedLut: new Uint8Array(0),
 
-  addTracks: (tracks: Track | Track[]) => {
+  addTracks: (tracks: Track | Track[], colorOverride?: number) => {
     set((state) => {
       // Note: Object references must be changed here to trigger state updates,
       // so the Map and LUT are copied.
@@ -105,14 +106,21 @@ export const createTrackSlice: StateCreator<TrackSlice & ConfigSlice, [], [], Tr
       const newTracks = new Map(state.tracks);
       const newSelectedLut = state.isSelectedLut.slice();
       const newTrackToColorId = new Map(state.trackToColorId);
+
+      // If color override is provided, clamp the value
+      colorOverride =
+        colorOverride !== undefined && Number.isFinite(colorOverride) && colorOverride >= 0
+          ? colorOverride % state.outlinePaletteRamp.colorStops.length
+          : undefined;
       let nextColorId = getNextColorId(state.tracks, state.trackToColorId);
       for (const track of tracks) {
         if (newTracks.has(track.trackId)) {
           continue;
         }
         newTracks.set(track.trackId, track);
-        applyTrackToSelectionLut(newSelectedLut, track, nextColorId + LUT_OFFSET);
-        newTrackToColorId.set(track.trackId, nextColorId);
+        const colorId = colorOverride ?? nextColorId;
+        applyTrackToSelectionLut(newSelectedLut, track, colorId + LUT_OFFSET);
+        newTrackToColorId.set(track.trackId, colorId);
         nextColorId = (nextColorId + 1) % state.outlinePaletteRamp.colorStops.length;
       }
       return {

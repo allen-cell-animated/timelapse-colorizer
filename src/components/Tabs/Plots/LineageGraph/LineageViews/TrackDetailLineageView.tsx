@@ -54,6 +54,8 @@ type TrackDetailLineageViewProps = {
   selectNodeAndParents: (trackId: number) => void;
   deselectNodeAndChildren: (trackId: number) => void;
   deselectNodeAndParents: (trackId: number) => void;
+  applyTrackColorToRelatives: boolean;
+  setApplyTrackColorToRelatives: (value: boolean) => void;
 };
 
 const enum SvgClass {
@@ -755,6 +757,7 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
         relationships: props.relationships,
         selectedTracks: props.selectedTracks,
         expandedState,
+        applyTrackColorToRelatives: props.applyTrackColorToRelatives,
       },
       {
         resetView: () => resetZoom(),
@@ -764,6 +767,7 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
         deselectNodeAndParents: props.deselectNodeAndParents,
         expandAllChildren: expandAllChildren,
         collapseAllChildren: collapseAllChildren,
+        setApplyTrackColorToRelatives: props.setApplyTrackColorToRelatives,
       }
     );
   }, [
@@ -777,6 +781,8 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
     props.selectNodeAndParents,
     props.deselectNodeAndChildren,
     props.deselectNodeAndParents,
+    props.applyTrackColorToRelatives,
+    props.setApplyTrackColorToRelatives,
   ]);
 
   return (

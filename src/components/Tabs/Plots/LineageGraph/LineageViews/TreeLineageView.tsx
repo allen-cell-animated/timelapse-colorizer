@@ -44,6 +44,8 @@ export type TreeLineageViewProps = {
   selectNodeAndParents: (trackId: number) => void;
   deselectNodeAndChildren: (trackId: number) => void;
   deselectNodeAndParents: (trackId: number) => void;
+  applyTrackColorToRelatives: boolean;
+  setApplyTrackColorToRelatives: (applyTrackColorToRelatives: boolean) => void;
 };
 
 function renderTree(
@@ -296,6 +298,7 @@ export default function TreeLineageView(props: TreeLineageViewProps): ReactEleme
         data: props.data,
         relationships: props.relationships,
         selectedTracks: props.selectedTracks,
+        applyTrackColorToRelatives: props.applyTrackColorToRelatives,
       },
       {
         resetView: resetZoom,
@@ -303,11 +306,14 @@ export default function TreeLineageView(props: TreeLineageViewProps): ReactEleme
         selectNodeAndParents: wrapDisableReframe(props.selectNodeAndParents),
         deselectNodeAndChildren: props.deselectNodeAndChildren,
         deselectNodeAndParents: props.deselectNodeAndParents,
+        setApplyTrackColorToRelatives: props.setApplyTrackColorToRelatives,
       }
     );
   }, [
     props.data,
     props.selectedTracks,
+    props.applyTrackColorToRelatives,
+    props.setApplyTrackColorToRelatives,
     props.relationships,
     resetZoom,
     props.selectNodeAndChildren,
