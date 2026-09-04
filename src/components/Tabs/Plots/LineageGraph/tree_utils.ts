@@ -3,6 +3,33 @@ import type * as d3 from "d3";
 import type { LineageData, LineageDataRelationships, TrackInfo } from "./types";
 
 /**
+ * Calls a callback function for each relative (ancestor or descendant) of a
+ * track ID, recursively.
+ */
+function forEachRelative(
+  trackId: number,
+  trackIdToData: Map<number, TrackInfo>,
+  idToRelatives: Map<number, number[]>,
+  callback: (parent: TrackInfo) => boolean | void,
+  seenIds: Set<number>
+): void {
+  const relatives = idToRelatives.get(trackId) ?? [];
+  for (const relativeId of relatives) {
+    if (seenIds.has(relativeId)) {
+      continue;
+    }
+    seenIds.add(relativeId);
+    const parentData = trackIdToData.get(relativeId);
+    if (parentData) {
+      if (callback(parentData) === false) {
+        continue;
+      }
+      forEachRelative(relativeId, trackIdToData, idToRelatives, callback, seenIds);
+    }
+  }
+}
+
+/**
  * Recursively calls the provided callback function for all ancestors (parents,
  * grandparents, etc.) of the provided track ID. If the callback returns false,
  * the recursion will not continue for that parent.
@@ -12,24 +39,16 @@ import type { LineageData, LineageDataRelationships, TrackInfo } from "./types";
  * @param idToParents Map from track ID to its parent track IDs. (May be
  * multiple parents in the case of a merge node.)
  * @param callback The callback function to call for each parent track. Return
- * true to continue traversing the parents of that track, or false to stop.
+ * false to stop traversing the parents of the track.
  */
-function forEachAncestor(
+export function forEachAncestor(
   trackId: number,
   trackIdToData: Map<number, TrackInfo>,
   idToParents: Map<number, number[]>,
-  callback: (parent: TrackInfo) => boolean
+  callback: (parent: TrackInfo) => boolean | void
 ): void {
-  const parents = idToParents.get(trackId) ?? [];
-  for (const parentId of parents) {
-    const parentData = trackIdToData.get(parentId);
-    if (parentData) {
-      if (!callback(parentData)) {
-        continue;
-      }
-      forEachAncestor(parentId, trackIdToData, idToParents, callback);
-    }
-  }
+  const seenIds = new Set<number>();
+  forEachRelative(trackId, trackIdToData, idToParents, callback, seenIds);
 }
 
 /**
@@ -41,27 +60,76 @@ function forEachAncestor(
  * @param trackIdToData Map from track ID to its TrackInfo data.
  * @param idToChildren Map from track ID to its children track IDs.
  * @param callback The callback function to call for each child track. Return
- * true to continue traversing the children of that track, or false to stop.
+ * false to stop traversing the children of the track.
  */
-function forEachDescendant(
+export function forEachDescendant(
   trackId: number,
   trackIdToData: Map<number, TrackInfo>,
   idToChildren: Map<number, number[]>,
-  callback: (child: TrackInfo) => boolean
+  callback: (child: TrackInfo) => boolean | void
 ): void {
-  if (trackId === undefined) {
-    return;
-  }
-  const children = idToChildren.get(trackId) ?? [];
-  for (const childId of children) {
-    const childNode = trackIdToData.get(childId);
-    if (childNode) {
-      if (!callback(childNode)) {
-        continue;
-      }
-      forEachDescendant(childId, trackIdToData, idToChildren, callback);
+  const seen = new Set<number>();
+  forEachRelative(trackId, trackIdToData, idToChildren, callback, seen);
+}
+
+/** Returns true if all descendants match the provided validator function. */
+export function matchesAllDescendants(
+  trackId: number,
+  validator: (trackId: number) => boolean,
+  data: LineageData,
+  relationships: LineageDataRelationships
+): boolean {
+  let allMatch = true;
+  forEachDescendant(trackId, data.trackIdToTrackInfo, relationships.idToChildren, (child) => {
+    if (!allMatch || !validator(child.id)) {
+      allMatch = false;
+      return false;
     }
-  }
+    return true;
+  });
+  return allMatch;
+}
+
+/** Returns true if all ancestors match the provided validator function. */
+export function matchesAllAncestors(
+  trackId: number,
+  validator: (trackId: number) => boolean,
+  data: LineageData,
+  relationships: LineageDataRelationships
+): boolean {
+  let allMatch = true;
+  forEachAncestor(trackId, data.trackIdToTrackInfo, relationships.idToParents, (parent) => {
+    if (!allMatch || !validator(parent.id)) {
+      allMatch = false;
+      return false;
+    }
+    return true;
+  });
+  return allMatch;
+}
+
+/** Returns the set of ancestor track IDs for the given track. */
+export function getAncestors(trackId: number, data: LineageData, relationships: LineageDataRelationships): Set<number> {
+  const ancestors: Set<number> = new Set();
+  forEachAncestor(trackId, data.trackIdToTrackInfo, relationships.idToParents, (parent) => {
+    ancestors.add(parent.id);
+    return true;
+  });
+  return ancestors;
+}
+
+/** Returns the set of descendant track IDs for the given track. */
+export function getDescendants(
+  trackId: number,
+  data: LineageData,
+  relationships: LineageDataRelationships
+): Set<number> {
+  const descendants: Set<number> = new Set();
+  forEachDescendant(trackId, data.trackIdToTrackInfo, relationships.idToChildren, (child) => {
+    descendants.add(child.id);
+    return true;
+  });
+  return descendants;
 }
 
 export type TreeExpandedState = {
