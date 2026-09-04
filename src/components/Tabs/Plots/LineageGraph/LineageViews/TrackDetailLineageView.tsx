@@ -25,6 +25,8 @@ import {
   collapseTrack,
   EMPTY_EXPANDED_STATE,
   expandTrack,
+  expandTracks,
+  forEachDescendant,
   getInitialExpandedState,
   type TreeExpandedState,
 } from "src/components/Tabs/Plots/LineageGraph/tree_utils";
@@ -707,6 +709,35 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
     resetZoom();
   }, [props.data, props.relationships, props.dataset]);
 
+  // MARK: Callbacks
+
+  const expandAllChildren = useCallback(
+    (trackId: number): void => {
+      // Expand from leaf nodes; this prevents recursive methods from being
+      // called on all intermediate ancestors too.
+      const leafNodes = new Set<number>();
+      forEachDescendant(trackId, props.data.trackIdToTrackInfo, props.relationships.idToChildren, (info) => {
+        const isLeafNode = (props.relationships.idToChildren.get(info.id) ?? []).length === 0;
+        if (isLeafNode) {
+          leafNodes.add(info.id);
+        }
+      });
+      setExpandedState((prev) => expandTracks(Array.from(leafNodes), prev, props.data, props.relationships));
+    },
+    [props.data, props.relationships]
+  );
+
+  const collapseAllChildren = useCallback(
+    (trackId: number): void => {
+      // Call collapseTrack on each direct child.
+      const children = props.relationships.idToChildren.get(trackId) ?? [];
+      for (const childId of children) {
+        setExpandedState((prev) => collapseTrack(childId, prev, props.data, props.relationships, true));
+      }
+    },
+    [props.data, props.relationships]
+  );
+
   // MARK: Rendering
 
   function wrapDisableReframe<T extends (...args: any[]) => any>(callback: T): T {
@@ -723,6 +754,7 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
         data: props.data,
         relationships: props.relationships,
         selectedTracks: props.selectedTracks,
+        expandedState,
       },
       {
         resetView: () => resetZoom(),
@@ -730,6 +762,8 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
         selectNodeAndParents: wrapDisableReframe(props.selectNodeAndParents),
         deselectNodeAndChildren: props.deselectNodeAndChildren,
         deselectNodeAndParents: props.deselectNodeAndParents,
+        expandAllChildren: expandAllChildren,
+        collapseAllChildren: collapseAllChildren,
       }
     );
   }, [
@@ -737,6 +771,8 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
     props.relationships,
     props.selectedTracks,
     expandedState,
+    expandAllChildren,
+    collapseAllChildren,
     props.selectNodeAndChildren,
     props.selectNodeAndParents,
     props.deselectNodeAndChildren,
