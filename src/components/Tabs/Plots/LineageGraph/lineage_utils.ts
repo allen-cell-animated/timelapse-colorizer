@@ -5,7 +5,7 @@ import type { Dataset, Track } from "src/colorizer";
 import type { ContextMenuItem } from "src/components/Menus/RightClickContextMenu";
 
 import { DUMMY_ROOT_NODE_ID } from "./constants";
-import { matchesAllAncestors, matchesAllDescendants, TreeExpandedState } from "./tree_utils";
+import { matchesAllAncestors, matchesAllDescendants, type TreeExpandedState } from "./tree_utils";
 import {
   type LineageData,
   type LineageDataRelationships,
