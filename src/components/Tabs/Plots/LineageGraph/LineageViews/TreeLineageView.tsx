@@ -17,6 +17,7 @@ import type {
   LineageDataRelationships,
   LineageNodeSelection,
   TrackInfo,
+  TreeTraversalDirection,
 } from "src/components/Tabs/Plots/LineageGraph/types";
 import { useConstructor } from "src/hooks";
 
@@ -40,10 +41,7 @@ export type TreeLineageViewProps = {
   radiusScale: d3.ScalePower<number, number>;
   onClick: (trackId: number) => void;
   onHover: (trackId: number | null) => void;
-  selectNodeAndChildren: (trackId: number) => void;
-  selectNodeAndParents: (trackId: number) => void;
-  deselectNodeAndChildren: (trackId: number) => void;
-  deselectNodeAndParents: (trackId: number) => void;
+  setRelativesSelected: (trackId: number, direction: TreeTraversalDirection, selected: boolean) => void;
 };
 
 function renderTree(
@@ -282,14 +280,13 @@ export default function TreeLineageView(props: TreeLineageViewProps): ReactEleme
 
   // MARK: Rendering
 
-  function wrapDisableReframe<T extends (...args: any[]) => any>(callback: T): T {
-    return ((...args: Parameters<T>): ReturnType<T> => {
-      setDisableReframe(true);
-      return callback(...args);
-    }) as T;
-  }
-
   const getMenuItems = useCallback(() => {
+    const setRelativesSelectedWrapped = (trackId: number, direction: TreeTraversalDirection, selected: boolean) => {
+      if (selected) {
+        setDisableReframe(true);
+      }
+      props.setRelativesSelected(trackId, direction, selected);
+    };
     return getLineageContextMenuItems(
       hoveredIdRef.current,
       {
@@ -299,22 +296,10 @@ export default function TreeLineageView(props: TreeLineageViewProps): ReactEleme
       },
       {
         resetView: resetZoom,
-        selectNodeAndChildren: wrapDisableReframe(props.selectNodeAndChildren),
-        selectNodeAndParents: wrapDisableReframe(props.selectNodeAndParents),
-        deselectNodeAndChildren: props.deselectNodeAndChildren,
-        deselectNodeAndParents: props.deselectNodeAndParents,
+        setRelativesSelected: setRelativesSelectedWrapped,
       }
     );
-  }, [
-    props.data,
-    props.selectedTracks,
-    props.relationships,
-    resetZoom,
-    props.selectNodeAndChildren,
-    props.selectNodeAndParents,
-    props.deselectNodeAndChildren,
-    props.deselectNodeAndParents,
-  ]);
+  }, [props.data, props.selectedTracks, props.relationships, resetZoom, props.setRelativesSelected]);
 
   return (
     <RightClickContextMenu getItems={getMenuItems}>

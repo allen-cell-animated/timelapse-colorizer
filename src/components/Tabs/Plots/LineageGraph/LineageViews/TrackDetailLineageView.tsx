@@ -28,6 +28,7 @@ import {
   getInitialExpandedState,
   type TreeExpandedState,
 } from "src/components/Tabs/Plots/LineageGraph/tree_utils";
+import type { TreeTraversalDirection } from "src/components/Tabs/Plots/LineageGraph/types";
 import type {
   LineageData,
   LineageDataRelationships,
@@ -48,10 +49,7 @@ type TrackDetailLineageViewProps = {
   colorizeParams: ColorizeStateParams;
   onClick?: (info: TrackInfo, time: number | null) => void;
   onHover?: (info: TrackInfo | null, time: number) => void;
-  selectNodeAndChildren: (trackId: number) => void;
-  selectNodeAndParents: (trackId: number) => void;
-  deselectNodeAndChildren: (trackId: number) => void;
-  deselectNodeAndParents: (trackId: number) => void;
+  setRelativesSelected: (trackId: number, direction: TreeTraversalDirection, selected: boolean) => void;
 };
 
 const enum SvgClass {
@@ -709,14 +707,13 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
 
   // MARK: Rendering
 
-  function wrapDisableReframe<T extends (...args: any[]) => any>(callback: T): T {
-    return ((...args: Parameters<T>): ReturnType<T> => {
-      setDisableReframe(true);
-      return callback(...args);
-    }) as T;
-  }
-
   const getMenuItems = useCallback(() => {
+    const setRelativesSelectedWrapped = (trackId: number, direction: TreeTraversalDirection, selected: boolean) => {
+      if (selected) {
+        setDisableReframe(true);
+      }
+      props.setRelativesSelected(trackId, direction, selected);
+    };
     return getLineageContextMenuItems(
       hoveredIdRef.current,
       {
@@ -726,22 +723,10 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
       },
       {
         resetView: () => resetZoom(),
-        selectNodeAndChildren: wrapDisableReframe(props.selectNodeAndChildren),
-        selectNodeAndParents: wrapDisableReframe(props.selectNodeAndParents),
-        deselectNodeAndChildren: props.deselectNodeAndChildren,
-        deselectNodeAndParents: props.deselectNodeAndParents,
+        setRelativesSelected: setRelativesSelectedWrapped,
       }
     );
-  }, [
-    props.data,
-    props.relationships,
-    props.selectedTracks,
-    expandedState,
-    props.selectNodeAndChildren,
-    props.selectNodeAndParents,
-    props.deselectNodeAndChildren,
-    props.deselectNodeAndParents,
-  ]);
+  }, [props.data, props.relationships, props.selectedTracks, expandedState, props.setRelativesSelected]);
 
   return (
     <RightClickContextMenu getItems={getMenuItems}>
