@@ -7,10 +7,10 @@ import type { ContextMenuItem } from "src/components/Menus/RightClickContextMenu
 import { DUMMY_ROOT_NODE_ID } from "./constants";
 import { matchesAllAncestors, matchesAllDescendants } from "./tree_utils";
 import {
-  LineageData,
-  LineageDataRelationships,
-  LineageNodeSelection,
-  TrackInfo,
+  type LineageData,
+  type LineageDataRelationships,
+  type LineageNodeSelection,
+  type TrackInfo,
   TreeTraversalDirection,
 } from "./types";
 

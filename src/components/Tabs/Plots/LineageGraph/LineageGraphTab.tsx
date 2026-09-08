@@ -17,7 +17,7 @@ import { getLineageData, getLineageRelationships, getTreeHierarchy } from "./lin
 import LineageTrackDetailView from "./LineageViews/TrackDetailLineageView";
 import TreeLineageView, { type TreeLineageViewProps } from "./LineageViews/TreeLineageView";
 import { getAncestors, getDescendants } from "./tree_utils";
-import { LineageData, TrackInfo, TreeTraversalDirection } from "./types";
+import { type LineageData, type TrackInfo, TreeTraversalDirection } from "./types";
 
 function getColorAndRadiusScale(data: LineageData): {
   colorScale: d3.ScaleSequential<string>;
