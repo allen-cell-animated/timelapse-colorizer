@@ -28,12 +28,12 @@ import {
   getInitialExpandedState,
   type TreeExpandedState,
 } from "src/components/Tabs/Plots/LineageGraph/tree_utils";
-import type { TreeTraversalDirection } from "src/components/Tabs/Plots/LineageGraph/types";
 import type {
   LineageData,
   LineageDataRelationships,
   LineageNodeSelection,
   TrackInfo,
+  TreeTraversalDirection,
 } from "src/components/Tabs/Plots/LineageGraph/types";
 import { useConstructor } from "src/hooks";
 import { FlexRowAlignCenter, VisuallyHidden } from "src/styles/utils";
@@ -712,7 +712,11 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
   // MARK: Rendering
 
   const getMenuItems = useCallback(() => {
-    const setRelativesSelectedWrapped = (trackId: number, direction: TreeTraversalDirection, selected: boolean) => {
+    const setRelativesSelectedWrapped = (
+      trackId: number,
+      direction: TreeTraversalDirection,
+      selected: boolean
+    ): void => {
       if (selected) {
         disableReframeRef.current = true;
       }

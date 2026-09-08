@@ -283,7 +283,11 @@ export default function TreeLineageView(props: TreeLineageViewProps): ReactEleme
   // MARK: Rendering
 
   const getMenuItems = useCallback(() => {
-    const setRelativesSelectedWrapped = (trackId: number, direction: TreeTraversalDirection, selected: boolean) => {
+    const setRelativesSelectedWrapped = (
+      trackId: number,
+      direction: TreeTraversalDirection,
+      selected: boolean
+    ): void => {
       if (selected) {
         disableReframeRef.current = true;
       }
