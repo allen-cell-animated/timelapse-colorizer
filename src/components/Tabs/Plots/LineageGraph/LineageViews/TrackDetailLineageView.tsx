@@ -502,7 +502,11 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
   const trackIds = useMemo(() => new Set(props.selectedTracks.keys()), [props.selectedTracks]);
 
   const [useFeatureColors, setUseFeatureColors] = useState(true);
-  const [disableReframe, setDisableReframe] = useState(false);
+
+  const disableReframeRef = useRef(false);
+  // Store as non-ref value so that the ref value isn't reset by effects
+  // triggering multiple times.
+  const disableReframe = disableReframeRef.current;
 
   const hoveredIdRef = useRef<number | null>(null);
 
@@ -681,7 +685,7 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
   // 100x wider than they should be, likely due to unapplied transforms.)
   useEffect(() => {
     if (disableReframe) {
-      setDisableReframe(false);
+      disableReframeRef.current = false;
       return;
     }
     const id = setTimeout(() => {
@@ -710,7 +714,7 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
   const getMenuItems = useCallback(() => {
     const setRelativesSelectedWrapped = (trackId: number, direction: TreeTraversalDirection, selected: boolean) => {
       if (selected) {
-        setDisableReframe(true);
+        disableReframeRef.current = true;
       }
       props.setRelativesSelected(trackId, direction, selected);
     };

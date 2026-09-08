@@ -1,5 +1,5 @@
 import * as d3 from "d3";
-import React, { type ReactElement, useCallback, useEffect, useRef, useState } from "react";
+import React, { type ReactElement, useCallback, useEffect, useRef } from "react";
 import type { Color } from "three";
 
 import type { Track } from "src/colorizer";
@@ -186,7 +186,9 @@ export default function TreeLineageView(props: TreeLineageViewProps): ReactEleme
   onHoverRef.current = props.onHover;
 
   const hoveredIdRef = useRef<number | null>(null);
-  const [disableReframe, setDisableReframe] = useState(false);
+
+  const disableReframeRef = useRef(false);
+  const disableReframe = disableReframeRef.current;
 
   // Apply newly selected tracks to expanded state-- updates only on new tracks
   // to avoid expanding selected tracks that were previously collapsed.
@@ -272,7 +274,7 @@ export default function TreeLineageView(props: TreeLineageViewProps): ReactEleme
   // Update zoom if new tracks are selected.
   useEffect(() => {
     if (disableReframe) {
-      setDisableReframe(false);
+      disableReframeRef.current = false;
       return;
     }
     frameTracksInView(svgRef.current, nodeRef.current, newTracks, zoom.current);
@@ -283,7 +285,7 @@ export default function TreeLineageView(props: TreeLineageViewProps): ReactEleme
   const getMenuItems = useCallback(() => {
     const setRelativesSelectedWrapped = (trackId: number, direction: TreeTraversalDirection, selected: boolean) => {
       if (selected) {
-        setDisableReframe(true);
+        disableReframeRef.current = true;
       }
       props.setRelativesSelected(trackId, direction, selected);
     };
