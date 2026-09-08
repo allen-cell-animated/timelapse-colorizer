@@ -17,12 +17,7 @@ import { getLineageData, getLineageRelationships, getTreeHierarchy } from "./lin
 import LineageTrackDetailView from "./LineageViews/TrackDetailLineageView";
 import TreeLineageView, { type TreeLineageViewProps } from "./LineageViews/TreeLineageView";
 import { getAncestors, getDescendants } from "./tree_utils";
-import type { LineageData, TrackInfo } from "./types";
-
-const enum TreeTraversalDirection {
-  ANCESTORS,
-  DESCENDANTS,
-}
+import { LineageData, TrackInfo, TreeTraversalDirection } from "./types";
 
 function getColorAndRadiusScale(data: LineageData): {
   colorScale: d3.ScaleSequential<string>;
@@ -138,7 +133,7 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
 
   /** Select and deselect the node and its relatives (parents or children). */
   const setRelativesSelected = useCallback(
-    (trackId: number, direction: TreeTraversalDirection, select: boolean) => {
+    (trackId: number, direction: TreeTraversalDirection, selected: boolean) => {
       const trackIdSet =
         direction === TreeTraversalDirection.DESCENDANTS
           ? getDescendants(trackId, lineageData, lineageRelationships)
@@ -146,7 +141,7 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
       trackIdSet.add(trackId);
       const trackIds = Array.from(trackIdSet);
 
-      if (select) {
+      if (selected) {
         const tracks = trackIds
           .map((id) => dataset?.getTrack(id))
           .filter((track): track is Track => track !== undefined);
@@ -156,22 +151,6 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
       }
     },
     [dataset, lineageData, lineageRelationships, addTracks, removeTracks]
-  );
-  const selectNodeAndChildren = useCallback(
-    (id: number) => setRelativesSelected(id, TreeTraversalDirection.DESCENDANTS, true),
-    [setRelativesSelected]
-  );
-  const selectNodeAndParents = useCallback(
-    (id: number) => setRelativesSelected(id, TreeTraversalDirection.ANCESTORS, true),
-    [setRelativesSelected]
-  );
-  const deselectNodeAndChildren = useCallback(
-    (id: number) => setRelativesSelected(id, TreeTraversalDirection.DESCENDANTS, false),
-    [setRelativesSelected]
-  );
-  const deselectNodeAndParents = useCallback(
-    (id: number) => setRelativesSelected(id, TreeTraversalDirection.ANCESTORS, false),
-    [setRelativesSelected]
   );
 
   //// Rendering ////
@@ -202,10 +181,7 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
     onHover: onHoverTrack,
     selectedTracks: tracks,
     trackColors,
-    selectNodeAndChildren,
-    selectNodeAndParents,
-    deselectNodeAndChildren,
-    deselectNodeAndParents,
+    setRelativesSelected,
   };
 
   return (
@@ -244,10 +220,7 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
           onClick={onClickObject}
           // TODO: Show hover tooltip for track detail view
           onHover={undefined}
-          selectNodeAndChildren={selectNodeAndChildren}
-          selectNodeAndParents={selectNodeAndParents}
-          deselectNodeAndChildren={deselectNodeAndChildren}
-          deselectNodeAndParents={deselectNodeAndParents}
+          setRelativesSelected={setRelativesSelected}
         ></LineageTrackDetailView>
       </div>
     </FlexColumn>

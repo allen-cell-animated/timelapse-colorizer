@@ -6,7 +6,13 @@ import type { ContextMenuItem } from "src/components/Menus/RightClickContextMenu
 
 import { DUMMY_ROOT_NODE_ID } from "./constants";
 import { matchesAllAncestors, matchesAllDescendants } from "./tree_utils";
-import type { LineageData, LineageDataRelationships, LineageNodeSelection, TrackInfo } from "./types";
+import {
+  LineageData,
+  LineageDataRelationships,
+  LineageNodeSelection,
+  TrackInfo,
+  TreeTraversalDirection,
+} from "./types";
 
 // TODO: Move to colorizer/utils/data_utils?
 
@@ -368,10 +374,7 @@ type ContextMenuData = {
 
 type ContextMenuCallbacks = {
   resetView: () => void;
-  selectNodeAndChildren: (trackId: number) => void;
-  selectNodeAndParents: (trackId: number) => void;
-  deselectNodeAndChildren: (trackId: number) => void;
-  deselectNodeAndParents: (trackId: number) => void;
+  setRelativesSelected: (trackId: number, direction: TreeTraversalDirection, selected: boolean) => void;
 };
 
 /**
@@ -407,25 +410,37 @@ export function getLineageContextMenuItems(
       {
         label: "Select track + all parents",
         disabled: hoveredId === null || !idHasParents,
-        onClick: hoveredId !== null ? () => callbacks.selectNodeAndParents(hoveredId) : undefined,
+        onClick:
+          hoveredId !== null
+            ? () => callbacks.setRelativesSelected(hoveredId, TreeTraversalDirection.ANCESTORS, true)
+            : undefined,
         visible: !areTrackAndAllParentsSelected,
       },
       {
         label: "Deselect track + all parents",
         disabled: hoveredId === null || !idHasParents,
-        onClick: hoveredId !== null ? () => callbacks.deselectNodeAndParents(hoveredId) : undefined,
+        onClick:
+          hoveredId !== null
+            ? () => callbacks.setRelativesSelected(hoveredId, TreeTraversalDirection.ANCESTORS, false)
+            : undefined,
         visible: areTrackAndAllParentsSelected,
       },
       {
         label: "Select track + all children",
         disabled: hoveredId === null || !idHasChildren,
-        onClick: hoveredId !== null ? () => callbacks.selectNodeAndChildren(hoveredId) : undefined,
+        onClick:
+          hoveredId !== null
+            ? () => callbacks.setRelativesSelected(hoveredId, TreeTraversalDirection.DESCENDANTS, true)
+            : undefined,
         visible: !areTrackAndAllChildrenSelected,
       },
       {
         label: "Deselect track + all children",
         disabled: hoveredId === null || !idHasChildren,
-        onClick: hoveredId !== null ? () => callbacks.deselectNodeAndChildren(hoveredId) : undefined,
+        onClick:
+          hoveredId !== null
+            ? () => callbacks.setRelativesSelected(hoveredId, TreeTraversalDirection.DESCENDANTS, false)
+            : undefined,
         visible: areTrackAndAllChildrenSelected,
       },
     ],

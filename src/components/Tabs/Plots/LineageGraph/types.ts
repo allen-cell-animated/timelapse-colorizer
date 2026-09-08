@@ -41,3 +41,8 @@ export type LineageNodeSelection = d3.Selection<
   SVGGElement,
   TrackInfo
 >;
+
+export const enum TreeTraversalDirection {
+  ANCESTORS,
+  DESCENDANTS,
+}
