@@ -341,6 +341,8 @@ export function getLineageSubset(
   return filteredData;
 }
 
+// MARK: Hooks
+
 /**
  * Hook that calculates the set of trackIds that are new on this render.
  *
@@ -365,6 +367,8 @@ export function useNewTracks(tracks: Map<number, Track>): Set<number> {
 
   return newTracks;
 }
+
+// MARK: Context menu
 
 type ContextMenuData = {
   data: LineageData;
