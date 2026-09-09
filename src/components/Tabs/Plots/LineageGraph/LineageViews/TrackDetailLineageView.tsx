@@ -7,12 +7,14 @@ import type { Color } from "three";
 
 import type { Dataset, Track } from "src/colorizer";
 import { computeColorFromId } from "src/colorizer/utils/data_utils";
-import { ColorizeStateParams } from "src/colorizer/viewport/types";
+import type { ColorizeStateParams } from "src/colorizer/viewport/types";
 import IconButton from "src/components/Buttons/IconButton";
+import RightClickContextMenu from "src/components/Menus/RightClickContextMenu";
 import { DUMMY_ROOT_NODE_ID } from "src/components/Tabs/Plots/LineageGraph/constants";
 import {
   frameTracksInView,
   getDefaultZoomTransform,
+  getLineageContextMenuItems,
   getLineageRelationships,
   getLineageSubset,
   getTreeHierarchy,
@@ -31,6 +33,7 @@ import type {
   LineageDataRelationships,
   LineageNodeSelection,
   TrackInfo,
+  TreeTraversalDirection,
 } from "src/components/Tabs/Plots/LineageGraph/types";
 import { useConstructor } from "src/hooks";
 import { FlexRowAlignCenter, VisuallyHidden } from "src/styles/utils";
@@ -46,6 +49,7 @@ type TrackDetailLineageViewProps = {
   colorizeParams: ColorizeStateParams;
   onClick?: (info: TrackInfo, time: number | null) => void;
   onHover?: (info: TrackInfo | null, time: number) => void;
+  setRelativesSelected: (trackId: number, direction: TreeTraversalDirection, selected: boolean) => void;
 };
 
 const enum SvgClass {
@@ -242,9 +246,9 @@ function renderView(
 
 function setupPointerHandlers(
   node: LineageNodeSelection,
-  onToggleSelection?: React.RefObject<undefined | ((info: TrackInfo, time: number | null) => void)>,
-  onToggleExpanded?: React.RefObject<undefined | ((info: TrackInfo) => void)>,
-  onHover?: React.RefObject<undefined | ((info: TrackInfo | null, time: number) => void)>
+  onToggleSelection: (info: TrackInfo, time: number | null) => void,
+  onToggleExpanded: (info: TrackInfo) => void,
+  onHover: (info: TrackInfo | null, time: number) => void
 ): () => void {
   const getTimeFromMouseEvent = (event: MouseEvent, d: d3.HierarchyNode<TrackInfo>): number => {
     // Determine current time based on the click position relative to the node rectangle.
@@ -259,28 +263,28 @@ function setupPointerHandlers(
   const handleClickMainNode = (event: MouseEvent, d: d3.HierarchyNode<TrackInfo>): void => {
     event.stopPropagation();
     const time = getTimeFromMouseEvent(event, d);
-    onToggleSelection?.current?.(d.data, time);
+    onToggleSelection(d.data, time);
   };
 
   const handleClickTrackLabel = (event: MouseEvent, d: d3.HierarchyNode<TrackInfo>): void => {
     event.stopPropagation();
-    onToggleSelection?.current?.(d.data, null);
+    onToggleSelection(d.data, null);
   };
 
   // Clicking an expand/collapse button toggles whether the tree is expanded.
   const handleClickExpandCollapseButton = (event: MouseEvent, d: d3.HierarchyNode<TrackInfo>): void => {
     event.stopPropagation();
-    onToggleExpanded?.current?.(d.data);
+    onToggleExpanded(d.data);
   };
 
   const handleHoverNode = (event: MouseEvent, d: d3.HierarchyNode<TrackInfo>): void => {
     const time = getTimeFromMouseEvent(event, d);
-    onHover?.current?.(d.data, time);
+    onHover(d.data, time);
   };
 
   const handleUnhoverNode = (event: MouseEvent, d: d3.HierarchyNode<TrackInfo>): void => {
     const time = getTimeFromMouseEvent(event, d);
-    onHover?.current?.(null, time);
+    onHover(null, time);
   };
 
   const mainNodeRect = node.select<SVGRectElement>(`rect.${SvgClass.MAIN_NODE}`);
@@ -487,7 +491,7 @@ function updateTimeIndicator(svg: SVGSVGElement, time: number, numElements: numb
     .attr("pointer-events", "none");
 }
 
-// MARK: Main Component
+// MARK: Component
 
 export default function LineageTrackDetailView(props: TrackDetailLineageViewProps): ReactElement {
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -499,12 +503,22 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
 
   const [useFeatureColors, setUseFeatureColors] = useState(true);
 
+  const disableReframeRef = useRef(false);
+  // Store as non-ref value so that the ref value isn't reset by effects
+  // triggering multiple times.
+  const disableReframe = disableReframeRef.current;
+
+  const hoveredIdRef = useRef<number | null>(null);
+
   const onClickRef = useRef(props.onClick);
   const onHoverRef = useRef(props.onHover);
   onClickRef.current = props.onClick;
   onHoverRef.current = props.onHover;
 
   const [expandedState, setExpandedState] = useState<TreeExpandedState>(EMPTY_EXPANDED_STATE);
+
+  // Apply newly selected tracks to expanded state-- updates only on new tracks
+  // to avoid expanding selected tracks that were previously collapsed.
   const newTracks = useNewTracks(props.selectedTracks);
 
   // Reset expanded state when the data or relationships change (e.g. when the
@@ -604,14 +618,27 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
       svgRef.current = node;
 
       let cleanupPointerHandlers: (() => void) | undefined;
+
       if (svgRef.current && nodeGroupRef.current && props.dataset) {
         const g = d3.select(nodeGroupRef.current) as d3.Selection<SVGGElement, TrackInfo, null, undefined>;
         const node = renderView(g, props.data, props.relationships, expandedTracks);
         nodeSelectionRef.current = node;
+
+        const handleHover = (info: TrackInfo | null, time: number): void => {
+          hoveredIdRef.current = info ? info.id : null;
+          onHoverRef.current?.(info, time);
+        };
+        const handleClick = (info: TrackInfo, time: number | null): void => {
+          onClickRef.current?.(info, time ?? null);
+        };
+        const handleToggleExpanded = (info: TrackInfo): void => {
+          onToggleExpandedRef.current?.(info);
+        };
+
         if (node) {
           // Update styles + pointer handlers for nodes
           updateNodeStyles(node, expandedTracks, props.trackColors, props.time, useFeatureColors);
-          cleanupPointerHandlers = setupPointerHandlers(node, onClickRef, onToggleExpandedRef, onHoverRef);
+          cleanupPointerHandlers = setupPointerHandlers(node, handleClick, handleToggleExpanded, handleHover);
         }
       }
 
@@ -657,6 +684,10 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
   // sizes/dimensions. (Otherwise, nodes can sometimes briefly have dimensions
   // 100x wider than they should be, likely due to unapplied transforms.)
   useEffect(() => {
+    if (disableReframe) {
+      disableReframeRef.current = false;
+      return;
+    }
     const id = setTimeout(() => {
       frameTracksInView(svgRef.current, nodeSelectionRef.current, newTracks, zoom.current);
     }, 10);
@@ -678,33 +709,60 @@ export default function LineageTrackDetailView(props: TrackDetailLineageViewProp
     resetZoom();
   }, [props.data, props.relationships, props.dataset]);
 
-  // MARK: Render
+  // MARK: Rendering
+
+  const getMenuItems = useCallback(() => {
+    const setRelativesSelectedWrapped = (
+      trackId: number,
+      direction: TreeTraversalDirection,
+      selected: boolean
+    ): void => {
+      if (selected) {
+        disableReframeRef.current = true;
+      }
+      props.setRelativesSelected(trackId, direction, selected);
+    };
+    return getLineageContextMenuItems(
+      hoveredIdRef.current,
+      {
+        data: props.data,
+        relationships: props.relationships,
+        selectedTracks: props.selectedTracks,
+      },
+      {
+        resetView: () => resetZoom(),
+        setRelativesSelected: setRelativesSelectedWrapped,
+      }
+    );
+  }, [props.data, props.relationships, props.selectedTracks, expandedState, props.setRelativesSelected]);
 
   return (
-    <div style={{ width: "100%", height: "100%", overflow: "hidden", position: "relative" }}>
-      <div style={{ position: "absolute", top: 4, left: 6, zIndex: 10, padding: "4px" }}>
-        <FlexRowAlignCenter $gap={6}>
-          <IconButton type="link" onClick={() => resetZoom(500)}>
-            <HomeOutlined />
-            <VisuallyHidden>Reset zoom</VisuallyHidden>
-          </IconButton>
+    <RightClickContextMenu getItems={getMenuItems}>
+      <div style={{ width: "100%", height: "100%", overflow: "hidden", position: "relative" }}>
+        <div style={{ position: "absolute", top: 4, left: 6, zIndex: 10, padding: "4px" }}>
+          <FlexRowAlignCenter $gap={6}>
+            <IconButton type="link" onClick={() => resetZoom(500)}>
+              <HomeOutlined />
+              <VisuallyHidden>Reset zoom</VisuallyHidden>
+            </IconButton>
 
-          <Checkbox checked={useFeatureColors} onChange={(e) => setUseFeatureColors(e.target.checked)}>
-            Use feature colors
-          </Checkbox>
-        </FlexRowAlignCenter>
+            <Checkbox checked={useFeatureColors} onChange={(e) => setUseFeatureColors(e.target.checked)}>
+              Use feature colors
+            </Checkbox>
+          </FlexRowAlignCenter>
+        </div>
+        <StyledSVG
+          ref={renderSvgRefCallback}
+          style={{ width: "100%", height: "100%", display: "block" }}
+          id="track-detail-lineage-view-svg"
+        >
+          <defs></defs>
+          <g ref={groupRef}>
+            <line className={SvgClass.CURRENT_TIME_LINE}></line>
+            <g ref={nodeGroupRef}></g>
+          </g>
+        </StyledSVG>
       </div>
-      <StyledSVG
-        ref={renderSvgRefCallback}
-        style={{ width: "100%", height: "100%", display: "block" }}
-        id="track-detail-lineage-view-svg"
-      >
-        <defs></defs>
-        <g ref={groupRef}>
-          <line className={SvgClass.CURRENT_TIME_LINE}></line>
-          <g ref={nodeGroupRef}></g>
-        </g>
-      </StyledSVG>
-    </div>
+    </RightClickContextMenu>
   );
 }
