@@ -3,6 +3,7 @@ import React, { type ReactElement, useCallback, useMemo, useRef, useState } from
 import { useShallow } from "zustand/shallow";
 
 import type Track from "src/colorizer/Track";
+import { getLineageData, getLineageRelationships, getTreeHierarchy } from "src/colorizer/utils/lineage_utils";
 import PlotsTabToolbar from "src/components/Tabs/Plots/PlotsTabToolbar";
 import type { SharedPlotTabProps } from "src/components/Tabs/Plots/types";
 import HoverTooltip from "src/components/Tooltips/HoverTooltip";
@@ -13,7 +14,6 @@ import { StyledHorizontalRule } from "src/styles/components";
 import { FlexColumn } from "src/styles/utils";
 import { areAnyHotkeysPressed } from "src/utils/user_input";
 
-import { getLineageData, getLineageRelationships, getTreeHierarchy } from "./lineage_utils";
 import LineageTrackDetailView from "./LineageViews/TrackDetailLineageView";
 import TreeLineageView, { type TreeLineageViewProps } from "./LineageViews/TreeLineageView";
 import { getAncestors, getDescendants } from "./tree_utils";

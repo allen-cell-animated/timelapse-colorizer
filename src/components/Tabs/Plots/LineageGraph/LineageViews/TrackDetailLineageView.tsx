@@ -7,19 +7,18 @@ import type { Color } from "three";
 
 import type { Dataset, Track } from "src/colorizer";
 import { computeColorFromId } from "src/colorizer/utils/data_utils";
+import {
+  frameTracksInView,
+  getDefaultZoomTransform,
+  getLineageRelationships,
+  getLineageSubset,
+  getTreeHierarchy,
+} from "src/colorizer/utils/lineage_utils";
 import type { ColorizeStateParams } from "src/colorizer/viewport/types";
 import IconButton from "src/components/Buttons/IconButton";
 import RightClickContextMenu from "src/components/Menus/RightClickContextMenu";
 import { DUMMY_ROOT_NODE_ID } from "src/components/Tabs/Plots/LineageGraph/constants";
-import {
-  frameTracksInView,
-  getDefaultZoomTransform,
-  getLineageContextMenuItems,
-  getLineageRelationships,
-  getLineageSubset,
-  getTreeHierarchy,
-  useNewTracks,
-} from "src/components/Tabs/Plots/LineageGraph/lineage_utils";
+import { getLineageContextMenuItems, useNewTracks } from "src/components/Tabs/Plots/LineageGraph/lineage_utils";
 import {
   alignMergeNodes,
   collapseTrack,

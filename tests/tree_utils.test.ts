@@ -1,7 +1,7 @@
 import * as d3 from "d3";
 import { assert, describe, expect, it } from "vitest";
 
-import { getLineageRelationships, getTreeHierarchy } from "src/components/Tabs/Plots/LineageGraph/lineage_utils";
+import { getLineageRelationships, getTreeHierarchy } from "src/colorizer/utils/lineage_utils";
 import {
   alignMergeNodes,
   collapseTrack,
