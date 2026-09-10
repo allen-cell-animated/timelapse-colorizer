@@ -214,7 +214,7 @@ export type ConfigSliceActions = {
   setEdgeMode: (edgeMode: DrawMode) => void;
   setOpenTab: (openTab: TabType) => void;
   setPlotTab: (plotTab: PlotTabType) => void;
-  setApplyTrackColorToRelatives: (applyTrackColorToLineageSelection: boolean) => void;
+  setApplyTrackColorToRelatives: (applyTrackColorToRelatives: boolean) => void;
   setInterpolate3d: (interpolate3d: boolean) => void;
   setOutlineColorMode: (outlineColorMode: SelectionOutlineColorMode) => void;
 };
@@ -342,8 +342,7 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
         outlinePaletteKey: key,
       };
     }),
-  setApplyTrackColorToRelatives: (applyTrackColorToLineageSelection) =>
-    set({ applyTrackColorToRelatives: applyTrackColorToLineageSelection }),
+  setApplyTrackColorToRelatives: (applyTrackColorToRelatives) => set({ applyTrackColorToRelatives }),
 });
 
 export const serializeConfigSlice = (slice: Partial<ConfigSliceSerializableState>): SerializedStoreData => {

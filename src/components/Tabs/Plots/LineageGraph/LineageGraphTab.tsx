@@ -62,7 +62,7 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
   const setTracks = useViewerStateStore((state) => state.setTracks);
   const toggleTrack = useViewerStateStore((state) => state.toggleTrack);
   const setFrame = useViewerStateStore((state) => state.setFrame);
-  const applyTrackColorToRelatives = useViewerStateStore((state) => state.applyTrackColorToRelatives);
+  const useTrackColorForRelatives = useViewerStateStore((state) => state.applyTrackColorToRelatives);
   const setApplyTrackColorToRelatives = useViewerStateStore((state) => state.setApplyTrackColorToRelatives);
   const colorizeParams = useViewerStateStore(useShallow(colorizeStateSelector));
 
@@ -154,22 +154,22 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
         const trackObjects = trackIds
           .map((id) => dataset?.getTrack(id))
           .filter((track): track is Track => track !== undefined);
-        let colorId: number | undefined;
-        if (applyTrackColorToRelatives) {
+        if (useTrackColorForRelatives) {
           const { tracks, trackToColorId } = useViewerStateStore.getState();
           // Get base track color
           const baseTrackColorId = trackToColorId.get(trackId) ?? getNextColorId(tracks, trackToColorId);
-          colorId = applyTrackColorToRelatives ? baseTrackColorId : undefined;
           // Remove any existing track colors if all relatives should have the
           // same color
           removeTracks(trackIds);
+          addTracks(trackObjects, baseTrackColorId);
+        } else {
+          addTracks(trackObjects);
         }
-        addTracks(trackObjects, colorId);
       } else {
         removeTracks(trackIds);
       }
     },
-    [dataset, lineageData, lineageRelationships, applyTrackColorToRelatives, addTracks, removeTracks]
+    [dataset, lineageData, lineageRelationships, useTrackColorForRelatives, addTracks, removeTracks]
   );
 
   //// Rendering ////
@@ -201,7 +201,7 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
     selectedTracks: tracks,
     trackColors,
     setRelativesSelected,
-    applyTrackColorToRelatives,
+    applyTrackColorToRelatives: useTrackColorForRelatives,
     setApplyTrackColorToRelatives,
   };
 
@@ -242,7 +242,7 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
           // TODO: Show hover tooltip for track detail view
           onHover={undefined}
           setRelativesSelected={setRelativesSelected}
-          applyTrackColorToRelatives={applyTrackColorToRelatives}
+          applyTrackColorToRelatives={useTrackColorForRelatives}
           setApplyTrackColorToRelatives={setApplyTrackColorToRelatives}
         ></LineageTrackDetailView>
       </div>
