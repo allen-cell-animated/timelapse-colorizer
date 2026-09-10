@@ -33,7 +33,8 @@ export type TrackSliceActions = {
   /**
    * Adds one or more tracks to the current track selection.
    * @param tracks The track or array of tracks to add.
-   * @param colorIdx Optional color index to assign to the added tracks.
+   * @param colorIdx Optional index of a color in the track palette to assign to
+   * the added tracks.
    */
   addTracks: (tracks: Track | Track[], colorIdx?: number) => void;
   /** Removes one or more tracks from the current track selection. */
@@ -94,7 +95,7 @@ export const createTrackSlice: StateCreator<TrackSlice & ConfigSlice, [], [], Tr
   trackColors: new Map<number, Color>(),
   isSelectedLut: new Uint8Array(0),
 
-  addTracks: (tracks: Track | Track[], colorOverride?: number) => {
+  addTracks: (tracks: Track | Track[], colorIdx?: number) => {
     set((state) => {
       // Note: Object references must be changed here to trigger state updates,
       // so the Map and LUT are copied.
@@ -108,9 +109,9 @@ export const createTrackSlice: StateCreator<TrackSlice & ConfigSlice, [], [], Tr
       const newTrackToColorId = new Map(state.trackToColorId);
 
       // If color override is provided, clamp the value
-      colorOverride =
-        colorOverride !== undefined && Number.isFinite(colorOverride) && colorOverride >= 0
-          ? colorOverride % state.outlinePaletteRamp.colorStops.length
+      colorIdx =
+        colorIdx !== undefined && Number.isFinite(colorIdx) && colorIdx >= 0
+          ? colorIdx % state.outlinePaletteRamp.colorStops.length
           : undefined;
       let nextColorId = getNextColorId(state.tracks, state.trackToColorId);
       for (const track of tracks) {
@@ -118,7 +119,7 @@ export const createTrackSlice: StateCreator<TrackSlice & ConfigSlice, [], [], Tr
           continue;
         }
         newTracks.set(track.trackId, track);
-        const colorId = colorOverride ?? nextColorId;
+        const colorId = colorIdx ?? nextColorId;
         applyTrackToSelectionLut(newSelectedLut, track, colorId + LUT_OFFSET);
         newTrackToColorId.set(track.trackId, colorId);
         nextColorId = (nextColorId + 1) % state.outlinePaletteRamp.colorStops.length;
