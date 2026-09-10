@@ -10,8 +10,6 @@ import type {
 
 import type Dataset from "../Dataset";
 
-// TODO: Move to colorizer/utils/data_utils?
-
 export function getLineageData(dataset: Dataset): LineageData {
   const tracks = dataset.trackIds;
   const times = dataset.times;
