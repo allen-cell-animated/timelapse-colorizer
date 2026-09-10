@@ -120,11 +120,11 @@ export function getLineageRelationships(data: LineageData): LineageDataRelations
 
   return { idToChildren, idToChildrenRenderable, idToParents, idToCoparents, multiparentEdges };
 }
+
 /**
  * Returns only the subset of lineage data that includes the specified track
  * IDs and their related parents and children.
  */
-
 export function getLineageSubset(
   data: LineageData,
   relationships: LineageDataRelationships,
@@ -179,6 +179,7 @@ function forEachRelative(
     }
   }
 }
+
 /**
  * Recursively calls the provided callback function for all ancestors (parents,
  * grandparents, etc.) of the provided track ID. If the callback returns false,
@@ -191,7 +192,6 @@ function forEachRelative(
  * @param callback The callback function to call for each parent track. Return
  * false to stop traversing the parents of the track.
  */
-
 export function forEachAncestor(
   trackId: number,
   trackIdToData: Map<number, TrackInfo>,
@@ -201,6 +201,7 @@ export function forEachAncestor(
   const seenIds = new Set<number>();
   forEachRelative(trackId, trackIdToData, idToParents, callback, seenIds);
 }
+
 /**
  * Calls the provided callback function for each descendant (children,
  * grandchildren, etc.) of the provided track ID. If the callback returns false,
@@ -222,8 +223,8 @@ export function forEachDescendant(
   const seen = new Set<number>();
   forEachRelative(trackId, trackIdToData, idToChildren, callback, seen);
 }
-/** Returns true if all descendants match the provided validator function. */
 
+/** Returns true if all descendants match the provided validator function. */
 export function matchesAllDescendants(
   trackId: number,
   validator: (trackId: number) => boolean,
@@ -240,8 +241,8 @@ export function matchesAllDescendants(
   });
   return allMatch;
 }
-/** Returns true if all ancestors match the provided validator function. */
 
+/** Returns true if all ancestors match the provided validator function. */
 export function matchesAllAncestors(
   trackId: number,
   validator: (trackId: number) => boolean,
@@ -258,8 +259,8 @@ export function matchesAllAncestors(
   });
   return allMatch;
 }
-/** Returns the set of ancestor track IDs for the given track. */
 
+/** Returns the set of ancestor track IDs for the given track. */
 export function getAncestors(trackId: number, data: LineageData, relationships: LineageDataRelationships): Set<number> {
   const ancestors: Set<number> = new Set();
   forEachAncestor(trackId, data.trackIdToTrackInfo, relationships.idToParents, (parent) => {
@@ -268,8 +269,8 @@ export function getAncestors(trackId: number, data: LineageData, relationships: 
   });
   return ancestors;
 }
-/** Returns the set of descendant track IDs for the given track. */
 
+/** Returns the set of descendant track IDs for the given track. */
 export function getDescendants(
   trackId: number,
   data: LineageData,
