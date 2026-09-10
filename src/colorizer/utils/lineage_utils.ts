@@ -120,11 +120,11 @@ export function getLineageRelationships(data: LineageData): LineageDataRelations
 
   return { idToChildren, idToChildrenRenderable, idToParents, idToCoparents, multiparentEdges };
 }
+
 /**
  * Returns only the subset of lineage data that includes the specified track
  * IDs and their related parents and children.
  */
-
 export function getLineageSubset(
   data: LineageData,
   relationships: LineageDataRelationships,
