@@ -77,7 +77,7 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
 
   //// Callbacks ////
 
-  const onClickTrack = useCallback(
+  const onClick = useCallback(
     (trackId: number | null, time?: number) => {
       const isMultiTrackSelectHotkeyPressed = areAnyHotkeysPressed(SHORTCUT_KEYS.viewport.multiTrackSelect.keycode);
 
@@ -89,7 +89,7 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
         return;
       }
 
-      const track = dataset?.getTrack(trackId) ?? undefined;
+      const track = dataset?.getTrack(trackId);
       if (track) {
         if (isMultiTrackSelectHotkeyPressed) {
           toggleTrack(track);
@@ -108,7 +108,7 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
     [dataset, setTracks, toggleTrack, clearTracks, currentFrame, setFrame]
   );
 
-  const onHoverTrack = useCallback(
+  const onHover = useCallback(
     (trackId: number | null) => {
       if (trackId === null) {
         setHoveredTrack(null);
@@ -169,8 +169,8 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
     relationships: lineageRelationships,
     colorScale,
     radiusScale,
-    onClick: onClickTrack,
-    onHover: onHoverTrack,
+    onClick,
+    onHover,
     selectedTracks: tracks,
     trackColors,
     setRelativesSelected,
@@ -219,7 +219,7 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
           relationships={lineageRelationships}
           time={currentFrame}
           colorizeParams={colorizeParams}
-          onClick={onClickTrack}
+          onClick={onClick}
           // TODO: Show hover tooltip for track detail view
           onHover={undefined}
           setRelativesSelected={setRelativesSelected}
