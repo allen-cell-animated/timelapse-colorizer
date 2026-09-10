@@ -1,19 +1,22 @@
 import * as d3 from "d3";
 import { assert, describe, expect, it } from "vitest";
 
-import { getLineageRelationships, getTreeHierarchy } from "src/colorizer/utils/lineage_utils";
+import type { LineageData, TrackInfo } from "src/colorizer/types";
+import { getLineageRelationships } from "src/colorizer/utils/lineage_utils";
+import {
+  getAncestors,
+  getDescendants,
+  matchesAllAncestors,
+  matchesAllDescendants,
+} from "src/colorizer/utils/lineage_utils";
+import { getTreeHierarchy } from "src/components/Tabs/Plots/LineageGraph/lineage_utils";
 import {
   alignMergeNodes,
   collapseTrack,
   expandTrack,
-  getAncestors,
-  getDescendants,
   getInitialExpandedState,
-  matchesAllAncestors,
-  matchesAllDescendants,
   type TreeExpandedState,
 } from "src/components/Tabs/Plots/LineageGraph/tree_utils";
-import type { LineageData, TrackInfo } from "src/components/Tabs/Plots/LineageGraph/types";
 
 function makeTrackIdToData(numTracks: number): Map<number, TrackInfo> {
   const trackIds = Array.from({ length: numTracks }, (_, i) => i + 1);

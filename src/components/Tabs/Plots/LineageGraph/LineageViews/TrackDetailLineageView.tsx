@@ -6,14 +6,11 @@ import styled from "styled-components";
 import type { Color } from "three";
 
 import type { Dataset, Track } from "src/colorizer";
+import type { LineageData, LineageDataRelationships, TrackInfo } from "src/colorizer/types";
+import type { TreeTraversalDirection } from "src/colorizer/types";
 import { computeColorFromId } from "src/colorizer/utils/data_utils";
-import {
-  frameTracksInView,
-  getDefaultZoomTransform,
-  getLineageRelationships,
-  getLineageSubset,
-  getTreeHierarchy,
-} from "src/colorizer/utils/lineage_utils";
+import { getLineageRelationships, getLineageSubset } from "src/colorizer/utils/lineage_utils";
+import { forEachDescendant } from "src/colorizer/utils/lineage_utils";
 import type { ColorizeStateParams } from "src/colorizer/viewport/types";
 import IconButton from "src/components/Buttons/IconButton";
 import RightClickContextMenu from "src/components/Menus/RightClickContextMenu";
@@ -25,19 +22,14 @@ import {
   EMPTY_EXPANDED_STATE,
   expandTrack,
   expandTracks,
-  forEachDescendant,
   getInitialExpandedState,
   type TreeExpandedState,
 } from "src/components/Tabs/Plots/LineageGraph/tree_utils";
-import type {
-  LineageData,
-  LineageDataRelationships,
-  LineageNodeSelection,
-  TrackInfo,
-  TreeTraversalDirection,
-} from "src/components/Tabs/Plots/LineageGraph/types";
+import type { LineageNodeSelection } from "src/components/Tabs/Plots/LineageGraph/types";
 import { useConstructor } from "src/hooks";
 import { FlexRowAlignCenter, VisuallyHidden } from "src/styles/utils";
+
+import { frameTracksInView, getDefaultZoomTransform, getTreeHierarchy } from "../lineage_utils";
 
 type TrackDetailLineageViewProps = {
   container: React.RefObject<HTMLDivElement>;
