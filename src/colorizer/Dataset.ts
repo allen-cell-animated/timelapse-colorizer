@@ -27,6 +27,8 @@ export const CENTROID_X_FEATURE_KEY = "_centroid_x_";
 export const CENTROID_Y_FEATURE_KEY = "_centroid_y_";
 export const CENTROID_Z_FEATURE_KEY = "_centroid_z_";
 
+// MARK: Types
+
 export enum FeatureType {
   CONTINUOUS = "continuous",
   DISCRETE = "discrete",
@@ -122,6 +124,7 @@ const defaultMetadata: ManifestFileMetadata = {
  * a dataset. Provides caching and convenience methods for data access.
  */
 export default class Dataset {
+  // MARK: Fields
   //// Metadata ////
   public readonly manifestUrl: string | null;
   public readonly metadata: ManifestFileMetadata;
@@ -178,6 +181,7 @@ export default class Dataset {
    */
   public readonly frameToGlobalIdLookup: Map<number, GlobalIdLookupInfo>;
 
+  // MARK: Constructor
   constructor(
     data: Partial<DatasetInputData>,
     options: { frameLoader?: ITextureImageLoader; backdropLoader?: ITextureImageLoader } = {}
@@ -225,6 +229,8 @@ export default class Dataset {
 
     this.getSegmentationId = this.getSegmentationId.bind(this);
   }
+
+  // MARK: Getters
 
   public getTrackKeys(): string[] {
     return this.trackData ? Array.from(this.trackData.keys()) : [];
@@ -389,31 +395,6 @@ export default class Dataset {
     return new Map(this.framesMap);
   }
 
-  /** Loads a single frame from the dataset */
-  public async loadFrame(key: string, index: number): Promise<Texture | undefined> {
-    if (index < 0 || index >= this.totalFrames || !this.framesMap.has(key)) {
-      return undefined;
-    }
-
-    const cacheKey = `${key}-${index}`;
-    const cachedFrame = this.frameCache?.get(cacheKey);
-    if (cachedFrame) {
-      this.frameDimensions = new Vector3(cachedFrame.image.width, cachedFrame.image.height, 1);
-      return cachedFrame;
-    }
-
-    const fullUrl = this.framesMap.get(key)?.frames[index];
-    if (!fullUrl) {
-      throw new Error(`Failed to resolve path for frame '${key}' at index ${index}: '${fullUrl}'`);
-    }
-    const loadedFrame = await this.frameLoader.load(fullUrl);
-    this.frameDimensions = new Vector3(loadedFrame.image.width, loadedFrame.image.height, 1);
-    const frameSizeBytes = loadedFrame.image.width * loadedFrame.image.height * 4;
-    // Note that, due to image compression, images may take up much less space in memory than their raw size.
-    this.frameCache.insert(cacheKey, loadedFrame, frameSizeBytes);
-    return loadedFrame;
-  }
-
   public getDefaultBackdropKey(): string | null {
     return this.backdropData.keys().next().value ?? null;
   }
@@ -429,61 +410,12 @@ export default class Dataset {
     return new Map(this.backdropData);
   }
 
-  public async loadBackdrop(key: string, index: number): Promise<Texture | undefined> {
-    const cacheKey = `${key}-${index}`;
-    const cachedFrame = this.backdropCache.get(cacheKey);
-    if (cachedFrame) {
-      return cachedFrame;
-    }
-
-    const backdropFrames = this.backdropData.get(key)?.frames;
-    if (!backdropFrames || index < 0 || index >= backdropFrames.length) {
-      return undefined;
-    }
-
-    const fullUrl = backdropFrames[index];
-    if (!fullUrl) {
-      throw new Error(`Failed to resolve path for backdrop '${key}' at index ${index}: '${backdropFrames[index]}'`);
-    }
-    const loadedBackdrop = await this.backdropLoader.load(fullUrl);
-    this.backdropCache.insert(cacheKey, loadedBackdrop);
-    return loadedBackdrop;
-  }
-
   /**
    * Gets the resolution of the last loaded frame.
    * If no frame has been loaded yet, returns (1,1,1)
    */
   public get frameResolution(): Vector3 {
     return this.frameDimensions || new Vector3(1, 1, 1);
-  }
-
-  /**
-   * Frees the GPU resources held by this dataset, and marks internal data
-   * structures for garbage collection.
-   */
-  public dispose(): void {
-    // Image sources
-    this.frameCache.dispose();
-    this.backdropCache.dispose();
-    this.backdropData.clear();
-    this.framesMap.clear();
-    this.frames3d = null;
-    // Data arrays
-    this.features.forEach((feature) => {
-      feature.data = new Float32Array(0);
-      feature.tex.dispose();
-    });
-    this.features.clear();
-    this.bounds = null;
-    this.centroids = null;
-    this.outliers = null;
-    this.segIds = null;
-    this.times = null;
-    this.trackIds = null;
-    // Cached data
-    this.cachedTracks.clear();
-    this.frameToGlobalIdLookup?.clear();
   }
 
   /** get frame index of a given cell id */
@@ -546,6 +478,114 @@ export default class Dataset {
     return this.frameToGlobalIdLookup?.get(frame)?.globalIds;
   }
 
+  // MARK: Loading
+
+  /** Loads a single frame from the dataset */
+  public async loadFrame(key: string, index: number): Promise<Texture | undefined> {
+    if (index < 0 || index >= this.totalFrames || !this.framesMap.has(key)) {
+      return undefined;
+    }
+
+    const cacheKey = `${key}-${index}`;
+    const cachedFrame = this.frameCache?.get(cacheKey);
+    if (cachedFrame) {
+      this.frameDimensions = new Vector3(cachedFrame.image.width, cachedFrame.image.height, 1);
+      return cachedFrame;
+    }
+
+    const fullUrl = this.framesMap.get(key)?.frames[index];
+    if (!fullUrl) {
+      throw new Error(`Failed to resolve path for frame '${key}' at index ${index}: '${fullUrl}'`);
+    }
+    const loadedFrame = await this.frameLoader.load(fullUrl);
+    this.frameDimensions = new Vector3(loadedFrame.image.width, loadedFrame.image.height, 1);
+    const frameSizeBytes = loadedFrame.image.width * loadedFrame.image.height * 4;
+    // Note that, due to image compression, images may take up much less space in memory than their raw size.
+    this.frameCache.insert(cacheKey, loadedFrame, frameSizeBytes);
+    return loadedFrame;
+  }
+
+  public async loadBackdrop(key: string, index: number): Promise<Texture | undefined> {
+    const cacheKey = `${key}-${index}`;
+    const cachedFrame = this.backdropCache.get(cacheKey);
+    if (cachedFrame) {
+      return cachedFrame;
+    }
+
+    const backdropFrames = this.backdropData.get(key)?.frames;
+    if (!backdropFrames || index < 0 || index >= backdropFrames.length) {
+      return undefined;
+    }
+
+    const fullUrl = backdropFrames[index];
+    if (!fullUrl) {
+      throw new Error(`Failed to resolve path for backdrop '${key}' at index ${index}: '${backdropFrames[index]}'`);
+    }
+    const loadedBackdrop = await this.backdropLoader.load(fullUrl);
+    this.backdropCache.insert(cacheKey, loadedBackdrop);
+    return loadedBackdrop;
+  }
+
+  // MARK: Disposal
+
+  /**
+   * Frees the GPU resources held by this dataset, and marks internal data
+   * structures for garbage collection.
+   */
+  public dispose(): void {
+    // Image sources
+    this.frameCache.dispose();
+    this.backdropCache.dispose();
+    this.backdropData.clear();
+    this.framesMap.clear();
+    this.frames3d = null;
+    // Data arrays
+    this.features.forEach((feature) => {
+      feature.data = new Float32Array(0);
+      feature.tex.dispose();
+    });
+    this.features.clear();
+    this.bounds = null;
+    this.centroids = null;
+    this.outliers = null;
+    this.segIds = null;
+    this.times = null;
+    this.trackIds = null;
+    // Cached data
+    this.cachedTracks.clear();
+    this.frameToGlobalIdLookup?.clear();
+  }
+
+  // MARK: Calculations
+
+  /**
+   * Gets the maximum duration of any track in the dataset.
+   */
+  public getMaxTrackLength(): number {
+    if (this.maxTrackLength !== null) {
+      return this.maxTrackLength;
+    }
+    const trackToMinMaxTime: Map<number, [number, number]> = new Map();
+    if (this.trackIds && this.times) {
+      for (let i = 0; i < this.trackIds.length; i++) {
+        const time = this.times[i];
+        const trackId = this.trackIds[i];
+        if (!trackToMinMaxTime.has(trackId)) {
+          trackToMinMaxTime.set(trackId, [time, time]);
+        } else {
+          const [minTime, maxTime] = trackToMinMaxTime.get(trackId)!;
+          trackToMinMaxTime.set(trackId, [Math.min(minTime, time), Math.max(maxTime, time)]);
+        }
+      }
+    }
+    let maxLength = 0;
+    for (const [minTime, maxTime] of trackToMinMaxTime.values()) {
+      maxLength = Math.max(maxLength, maxTime - minTime + 1);
+    }
+    this.maxTrackLength = maxLength;
+    return maxLength;
+  }
+
   public getTrack(trackId: number): Track | null {
     const cachedTrack = this.cachedTracks.get(trackId);
     if (cachedTrack !== undefined) {
@@ -582,34 +622,6 @@ export default class Dataset {
     }
     this.cachedTracks.set(trackId, track);
     return track;
-  }
-
-  /**
-   * Gets the maximum duration of any track in the dataset.
-   */
-  public getMaxTrackLength(): number {
-    if (this.maxTrackLength !== null) {
-      return this.maxTrackLength;
-    }
-    const trackToMinMaxTime: Map<number, [number, number]> = new Map();
-    if (this.trackIds && this.times) {
-      for (let i = 0; i < this.trackIds.length; i++) {
-        const time = this.times[i];
-        const trackId = this.trackIds[i];
-        if (!trackToMinMaxTime.has(trackId)) {
-          trackToMinMaxTime.set(trackId, [time, time]);
-        } else {
-          const [minTime, maxTime] = trackToMinMaxTime.get(trackId)!;
-          trackToMinMaxTime.set(trackId, [Math.min(minTime, time), Math.max(maxTime, time)]);
-        }
-      }
-    }
-    let maxLength = 0;
-    for (const [minTime, maxTime] of trackToMinMaxTime.values()) {
-      maxLength = Math.max(maxLength, maxTime - minTime + 1);
-    }
-    this.maxTrackLength = maxLength;
-    return maxLength;
   }
 
   /*
