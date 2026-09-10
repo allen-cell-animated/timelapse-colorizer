@@ -283,3 +283,35 @@ export function getDescendants(
   });
   return descendants;
 }
+
+export function groupSelectedTracks(selectedTracks: number[], relationships: LineageDataRelationships): Set<number>[] {
+  const groups: Set<Set<number>> = new Set();
+  const idToGroup = new Map<number, Set<number>>();
+  for (const trackId of selectedTracks) {
+    const parents = relationships.idToParents.get(trackId) ?? [];
+    const children = relationships.idToChildren.get(trackId) ?? [];
+    const parentGroups = parents.map((parentId) => idToGroup.get(parentId)).filter((group) => group !== undefined);
+    const childGroups = children.map((childId) => idToGroup.get(childId)).filter((group) => group !== undefined);
+    const allGroups = [...parentGroups, ...childGroups];
+
+    if (allGroups.length === 0) {
+      // Create new group
+      const newGroup: Set<number> = new Set([trackId]);
+      groups.add(newGroup);
+      idToGroup.set(trackId, newGroup);
+    } else {
+      // Merge all existing groups into a single group
+      const mergeGroup = allGroups.shift()!;
+      mergeGroup.add(trackId);
+      idToGroup.set(trackId, mergeGroup);
+      for (const group of allGroups) {
+        for (const id of group) {
+          mergeGroup.add(id);
+          idToGroup.set(id, mergeGroup);
+        }
+        groups.delete(group);
+      }
+    }
+  }
+  return Array.from(groups);
+}

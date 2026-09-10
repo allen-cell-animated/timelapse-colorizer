@@ -5,12 +5,7 @@ import { useShallow } from "zustand/shallow";
 import type Track from "src/colorizer/Track";
 import type { LineageData, TrackInfo } from "src/colorizer/types";
 import { TreeTraversalDirection } from "src/colorizer/types";
-import {
-  getAncestors,
-  getDescendants,
-  getLineageData,
-  getLineageRelationships,
-} from "src/colorizer/utils/lineage_utils";
+import { getAncestors, getDescendants } from "src/colorizer/utils/lineage_utils";
 import PlotsTabToolbar from "src/components/Tabs/Plots/PlotsTabToolbar";
 import type { SharedPlotTabProps } from "src/components/Tabs/Plots/types";
 import HoverTooltip from "src/components/Tooltips/HoverTooltip";
@@ -44,8 +39,6 @@ function getColorAndRadiusScale(data: LineageData): {
   return { colorScale, radiusScale };
 }
 
-const EMPTY_LINEAGE_DATA: LineageData = { trackIdToTrackInfo: new Map(), edges: [] };
-
 type LineageGraphTabProps = SharedPlotTabProps;
 
 /**
@@ -57,6 +50,8 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
   const currentFrame = useViewerStateStore((state) => state.currentFrame);
   const tracks = useViewerStateStore((state) => state.tracks);
   const trackColors = useViewerStateStore((state) => state.trackColors);
+  const lineageData = useViewerStateStore((state) => state.lineageData);
+  const lineageRelationships = useViewerStateStore((state) => state.lineageRelationships);
   const addTracks = useViewerStateStore((state) => state.addTracks);
   const removeTracks = useViewerStateStore((state) => state.removeTracks);
   const setTracks = useViewerStateStore((state) => state.setTracks);
@@ -72,13 +67,6 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
   const treeViewContainerRef = useRef<HTMLDivElement>(null);
   const detailViewContainerRef = useRef<HTMLDivElement>(null);
 
-  // Track data and relationships
-  const lineageData = useMemo(() => {
-    return dataset ? getLineageData(dataset) : EMPTY_LINEAGE_DATA;
-  }, [dataset]);
-  const lineageRelationships = useMemo(() => {
-    return getLineageRelationships(lineageData);
-  }, [lineageData]);
   const hierarchy = useMemo(() => {
     return getTreeHierarchy(lineageData, lineageRelationships);
   }, [lineageData, lineageRelationships]);
