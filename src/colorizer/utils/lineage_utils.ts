@@ -1,5 +1,5 @@
-import type Dataset from "../Dataset";
-import type { LineageData, LineageDataRelationships, TrackInfo } from "../types";
+import type Dataset from "src/colorizer/Dataset";
+import type { LineageData, LineageDataRelationships, TrackInfo } from "src/colorizer/types";
 
 // MARK: Lineage Relationships
 

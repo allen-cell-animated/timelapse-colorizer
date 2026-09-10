@@ -2,14 +2,14 @@ import * as d3 from "d3";
 import { useEffect, useMemo, useRef } from "react";
 
 import type { Track } from "src/colorizer";
-import { type LineageData, type LineageDataRelationships, type TrackInfo } from "src/colorizer/types";
+import type { LineageData, LineageDataRelationships, TrackInfo } from "src/colorizer/types";
 import { TreeTraversalDirection } from "src/colorizer/types";
 import { matchesAllAncestors, matchesAllDescendants } from "src/colorizer/utils/lineage_utils";
 import type { ContextMenuItem } from "src/components/Menus/RightClickContextMenu";
 
 import { DUMMY_ROOT_NODE_ID } from "./constants";
-import { type TreeExpandedState } from "./tree_utils";
-import { type LineageNodeSelection } from "./types";
+import type { TreeExpandedState } from "./tree_utils";
+import type { LineageNodeSelection } from "./types";
 
 // MARK: D3 Logic
 

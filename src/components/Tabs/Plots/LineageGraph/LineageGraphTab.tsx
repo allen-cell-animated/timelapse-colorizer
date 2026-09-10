@@ -3,10 +3,9 @@ import React, { type ReactElement, useCallback, useMemo, useRef, useState } from
 import { useShallow } from "zustand/shallow";
 
 import type Track from "src/colorizer/Track";
-import { type LineageData, type TrackInfo } from "src/colorizer/types";
+import type { LineageData, TrackInfo } from "src/colorizer/types";
 import { TreeTraversalDirection } from "src/colorizer/types";
-import { getLineageData, getLineageRelationships } from "src/colorizer/utils/lineage_utils";
-import { getAncestors, getDescendants } from "src/colorizer/utils/lineage_utils";
+import { getAncestors, getDescendants,getLineageData, getLineageRelationships  } from "src/colorizer/utils/lineage_utils";
 import PlotsTabToolbar from "src/components/Tabs/Plots/PlotsTabToolbar";
 import type { SharedPlotTabProps } from "src/components/Tabs/Plots/types";
 import HoverTooltip from "src/components/Tooltips/HoverTooltip";

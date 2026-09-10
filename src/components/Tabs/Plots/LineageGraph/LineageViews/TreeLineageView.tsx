@@ -3,16 +3,15 @@ import React, { type ReactElement, useCallback, useEffect, useRef } from "react"
 import type { Color } from "three";
 
 import type { Track } from "src/colorizer";
-import type { LineageData, LineageDataRelationships, TrackInfo } from "src/colorizer/types";
-import type { TreeTraversalDirection } from "src/colorizer/types";
+import type { LineageData, LineageDataRelationships, TrackInfo , TreeTraversalDirection } from "src/colorizer/types";
 import RightClickContextMenu from "src/components/Menus/RightClickContextMenu";
 import { DUMMY_ROOT_NODE_ID } from "src/components/Tabs/Plots/LineageGraph/constants";
-import { getLineageContextMenuItems, useNewTracks } from "src/components/Tabs/Plots/LineageGraph/lineage_utils";
+import { frameTracksInView, getDefaultZoomTransform,getLineageContextMenuItems, useNewTracks  } from "src/components/Tabs/Plots/LineageGraph/lineage_utils";
 import { alignMergeNodes } from "src/components/Tabs/Plots/LineageGraph/tree_utils";
 import type { LineageNodeSelection } from "src/components/Tabs/Plots/LineageGraph/types";
 import { useConstructor } from "src/hooks";
 
-import { frameTracksInView, getDefaultZoomTransform } from "../lineage_utils";
+
 
 const TREE_LEAF_HEIGHT_PX = 30;
 const TREE_LAYER_DEPTH_PX = 110;

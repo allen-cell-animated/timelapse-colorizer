@@ -2,10 +2,9 @@ import * as d3 from "d3";
 import { assert, describe, expect, it } from "vitest";
 
 import type { LineageData, TrackInfo } from "src/colorizer/types";
-import { getLineageRelationships } from "src/colorizer/utils/lineage_utils";
-import {
-  getAncestors,
+import {   getAncestors,
   getDescendants,
+getLineageRelationships ,
   matchesAllAncestors,
   matchesAllDescendants,
 } from "src/colorizer/utils/lineage_utils";

@@ -1,6 +1,6 @@
 import type * as d3 from "d3";
 
-import { TrackInfo } from "src/colorizer/types";
+import type { TrackInfo } from "src/colorizer/types";
 
 export type LineageNodeSelection = d3.Selection<
   SVGGElement | d3.BaseType,
