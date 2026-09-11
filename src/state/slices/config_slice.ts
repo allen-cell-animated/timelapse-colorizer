@@ -134,13 +134,6 @@ export type ConfigSliceState = {
   edgeColorAlpha: number;
   edgeMode: DrawMode;
 
-  // Lineage
-  /**
-   * If true, track colors will be applied to relatives (parents/children) when selected
-   * via context menu actions.
-   */
-  applyTrackColorToRelatives: boolean;
-
   // UI state
   openTab: TabType;
   plotTab: PlotTabType;
@@ -214,7 +207,6 @@ export type ConfigSliceActions = {
   setEdgeMode: (edgeMode: DrawMode) => void;
   setOpenTab: (openTab: TabType) => void;
   setPlotTab: (plotTab: PlotTabType) => void;
-  setApplyTrackColorToRelatives: (applyTrackColorToRelatives: boolean) => void;
   setInterpolate3d: (interpolate3d: boolean) => void;
   setOutlineColorMode: (outlineColorMode: SelectionOutlineColorMode) => void;
 };
@@ -267,9 +259,6 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   edgeColor: new Color(EDGE_COLOR_DEFAULT),
   edgeColorAlpha: EDGE_COLOR_ALPHA_DEFAULT,
   edgeMode: DrawMode.USE_COLOR,
-
-  // Lineage
-  applyTrackColorToRelatives: false,
 
   // 3D mode
   interpolate3d: true,
@@ -342,7 +331,6 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
         outlinePaletteKey: key,
       };
     }),
-  setApplyTrackColorToRelatives: (applyTrackColorToRelatives) => set({ applyTrackColorToRelatives }),
 });
 
 export const serializeConfigSlice = (slice: Partial<ConfigSliceSerializableState>): SerializedStoreData => {
