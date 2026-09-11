@@ -51,10 +51,8 @@ export type TrackSliceActions = {
   /**
    * Adds one or more tracks to the current track selection.
    * @param tracks The track or array of tracks to add.
-   * @param colorIdx Optional index of a color in the track palette to assign to
-   * the added tracks.
    */
-  addTracks: (tracks: Track | Track[], colorIdx?: number) => void;
+  addTracks: (tracks: Track | Track[]) => void;
   /** Removes one or more tracks from the current track selection. */
   removeTracks: (trackIds: number | number[]) => void;
   /** Toggles the selection state of a track. */
@@ -91,7 +89,7 @@ export type TrackSlice = TrackSliceState & TrackSliceActions;
  * makes a new selection, they will get the same color sequence as the user who
  * created the URL.
  */
-export function getNextColorId(tracks: Map<number, Track>, trackToColorId: Map<number, number>): number {
+function getNextColorId(tracks: Map<number, Track>, trackToColorId: Map<number, number>): number {
   const trackValues = Array.from(tracks.values());
   const lastTrack = trackValues[trackValues.length - 1];
   const lastColorId = lastTrack ? trackToColorId.get(lastTrack.trackId) ?? -1 : -1;
