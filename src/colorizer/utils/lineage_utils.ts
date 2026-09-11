@@ -1,6 +1,8 @@
 import type Dataset from "src/colorizer/Dataset";
 import type { LineageData, LineageDataRelationships, TrackInfo } from "src/colorizer/types";
 
+export const EMPTY_LINEAGE_DATA: LineageData = { trackIdToTrackInfo: new Map(), edges: [] };
+
 // MARK: Lineage Relationships
 
 export function getLineageData(dataset: Dataset): LineageData {
@@ -299,7 +301,8 @@ export function groupSelectedTracks(selectedTracks: number[], relationships: Lin
     const children = relationships.idToChildren.get(trackId) ?? [];
     const parentGroups = parents.map((parentId) => idToGroup.get(parentId)).filter((group) => group !== undefined);
     const childGroups = children.map((childId) => idToGroup.get(childId)).filter((group) => group !== undefined);
-    const allGroups = [...parentGroups, ...childGroups];
+    // Combine and deduplicate groups
+    const allGroups = Array.from(new Set([...parentGroups, ...childGroups]));
 
     if (allGroups.length === 0) {
       // Not in contact with an existing group, so create a new one

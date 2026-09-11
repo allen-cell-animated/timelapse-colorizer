@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { getCoparents } from "src/colorizer/utils/lineage_utils";
+import {
+  EMPTY_LINEAGE_DATA,
+  getCoparents,
+  getLineageRelationships,
+  groupSelectedTracks,
+} from "src/colorizer/utils/lineage_utils";
+import { EXAMPLE_TREE } from "tests/constants";
 
 describe("getCoparents", () => {
   it("returns empty array for empty inputs", () => {
@@ -83,5 +89,49 @@ describe("getCoparents", () => {
     expect(result.get(1)).toEqual(new Set([1, 2]));
     expect(result.get(2)).toEqual(new Set([1, 2, 3]));
     expect(result.get(3)).toEqual(new Set([2, 3]));
+  });
+});
+
+describe("groupSelectedTracks", () => {
+  // Default tree:
+  // 1 -> 2 -> 3
+  //  \    \
+  //   \    -> 4
+  //    \
+  //      -> 5 -> 6 -> 8
+  //          \    /
+  //           -> 7 -> 9
+
+  const { relationships } = EXAMPLE_TREE;
+
+  it("handles empty lineage data", () => {
+    const emptyRelationships = getLineageRelationships(EMPTY_LINEAGE_DATA);
+    const result = groupSelectedTracks([], emptyRelationships);
+    expect(result).toEqual([]);
+  });
+
+  it("handles track IDs not in the tree", () => {
+    const result = groupSelectedTracks([10, 45, 60], relationships);
+    expect(result).toEqual([new Set([10]), new Set([45]), new Set([60])]);
+  });
+
+  it("separates isolated nodes", () => {
+    const result = groupSelectedTracks([1, 3, 4, 6, 9], relationships);
+    expect(result).toEqual([new Set([1]), new Set([3]), new Set([4]), new Set([6]), new Set([9])]);
+  });
+
+  it("groups separate sub-branches", () => {
+    const result = groupSelectedTracks([1, 2, 3, 4, 6, 7, 8, 9], relationships);
+    expect(result).toEqual([new Set([1, 2, 3, 4]), new Set([6, 7, 8, 9])]);
+  });
+
+  it("makes one group when whole tree is selected", () => {
+    const result = groupSelectedTracks([1, 2, 3, 4, 5, 6, 7, 8, 9], relationships);
+    expect(result).toEqual([new Set([1, 2, 3, 4, 5, 6, 7, 8, 9])]);
+  });
+
+  it("handles varying selection order", () => {
+    const result = groupSelectedTracks([3, 6, 4, 5, 9, 1, 2, 7, 8], relationships);
+    expect(result).toEqual([new Set([1, 2, 3, 4, 5, 6, 7, 8, 9])]);
   });
 });
