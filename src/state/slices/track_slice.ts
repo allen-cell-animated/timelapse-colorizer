@@ -10,7 +10,12 @@ import {
   type Track,
 } from "src/colorizer";
 import { arrayElementsAreEqual } from "src/colorizer/utils/data_utils";
-import { getLineageData, getLineageRelationships, groupSelectedTracks } from "src/colorizer/utils/lineage_utils";
+import {
+  EMPTY_LINEAGE_DATA,
+  getLineageData,
+  getLineageRelationships,
+  groupSelectedTracks,
+} from "src/colorizer/utils/lineage_utils";
 import { decodeBoolean, decodeTracks, encodeBoolean, encodeTracks, UrlParam } from "src/colorizer/utils/url_utils";
 import type { ConfigSlice } from "src/state/slices/config_slice";
 import type { DatasetSlice } from "src/state/slices/dataset_slice";
@@ -19,8 +24,6 @@ import { addDerivedStateSubscriber } from "src/state/utils/store_utils";
 
 const LUT_UNSELECTED = 0;
 const LUT_OFFSET = 1;
-
-const EMPTY_LINEAGE_DATA: LineageData = { trackIdToTrackInfo: new Map(), edges: [] };
 
 export type TrackSliceState = {
   tracks: Map<number, Track>;
