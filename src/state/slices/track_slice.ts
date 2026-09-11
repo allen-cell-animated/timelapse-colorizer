@@ -3,8 +3,8 @@ import type { StateCreator } from "zustand";
 
 import {
   type ColorRamp,
-  LineageData,
-  LineageDataRelationships,
+  type LineageData,
+  type LineageDataRelationships,
   MAX_FEATURE_CATEGORIES,
   SelectionOutlineColorMode,
   type Track,
@@ -28,7 +28,7 @@ export type TrackSliceState = {
 
   /**
    * If true, any groups of selected tracks that are related (parents/children)
-   * will have the same color assignment in `trackColors`.
+   * will have the same color assignment in `trackColors` and `isSelectedLut`.
    */
   colorTracksByGroup: boolean;
   lineageData: LineageData;
@@ -82,7 +82,7 @@ export type TrackSliceActions = {
    */
   clearTracks: (newLut?: Uint8Array) => void;
 
-  setColorTracksByGroup: (colorByGroup: boolean) => void;
+  setColorTracksByGroup: (colorTracksByGroup: boolean) => void;
 };
 
 export type TrackSlice = TrackSliceState & TrackSliceActions;
@@ -140,15 +140,15 @@ function applyTrackToSelectionLut(lut: Uint8Array, track: Track, colorIdx: numbe
  * Reuses values where possible to avoid unnecessary recomputation.
  * @param state The current state containing tracks and configuration.
  * @param trackToColorId A map from track IDs to color IDs.
- * @param lut The selection LUT to be updated; the same instance will be returned.
+ * @param isSelectedLut The selection LUT to be updated; the same instance will be returned.
  * @returns An object containing the updated trackColors map and selection LUT.
  */
 function getDerivedValues(
   state: TrackSlice & ConfigSlice,
   tracks: Map<number, Track>,
   trackToColorId: Map<number, number>,
-  lut: Uint8Array
-) {
+  isSelectedLut: Uint8Array
+): { trackColors: Map<number, Color>; isSelectedLut: Uint8Array } {
   // Replace trackToColorId mapping if coloring by related groups is enabled.
   if (state.colorTracksByGroup) {
     trackToColorId = getColorIdsByGroup(Array.from(tracks.keys()), state.lineageRelationships);
@@ -159,7 +159,7 @@ function getDerivedValues(
     for (const [trackId, colorId] of trackToColorId) {
       const track = tracks.get(trackId);
       if (track) {
-        applyTrackToSelectionLut(lut, track, colorId + LUT_OFFSET);
+        applyTrackToSelectionLut(isSelectedLut, track, colorId + LUT_OFFSET);
       }
     }
   }
@@ -168,7 +168,7 @@ function getDerivedValues(
 
   return {
     trackColors,
-    lut,
+    isSelectedLut,
   };
 }
 
@@ -182,7 +182,7 @@ export const createTrackSlice: StateCreator<TrackSlice & ConfigSlice, [], [], Tr
   lineageData: EMPTY_LINEAGE_DATA,
   lineageRelationships: getLineageRelationships(EMPTY_LINEAGE_DATA),
 
-  addTracks: (tracks: Track | Track[], colorIdx?: number) => {
+  addTracks: (tracks: Track | Track[]) => {
     set((state) => {
       // Note: Object references must be changed here to trigger state updates,
       // so the Map and LUT are copied.
@@ -192,33 +192,26 @@ export const createTrackSlice: StateCreator<TrackSlice & ConfigSlice, [], [], Tr
         return {};
       }
       const newTracks = new Map(state.tracks);
+      const newSelectedLut = state.isSelectedLut.slice();
       const newTrackToColorId = new Map(state.trackToColorId);
-      const selectedLut = state.isSelectedLut.slice();
 
-      // If color override is provided, clamp the value
-      colorIdx =
-        colorIdx !== undefined && Number.isFinite(colorIdx) && colorIdx >= 0
-          ? colorIdx % state.outlinePaletteRamp.colorStops.length
-          : undefined;
       let nextColorId = getNextColorId(state.tracks, state.trackToColorId);
       for (const track of tracks) {
         if (newTracks.has(track.trackId)) {
           continue;
         }
         newTracks.set(track.trackId, track);
-        const colorId = colorIdx ?? nextColorId;
-        applyTrackToSelectionLut(selectedLut, track, colorId + LUT_OFFSET);
-        newTrackToColorId.set(track.trackId, colorId);
+        applyTrackToSelectionLut(newSelectedLut, track, nextColorId + LUT_OFFSET);
+        newTrackToColorId.set(track.trackId, nextColorId);
         nextColorId = (nextColorId + 1) % state.outlinePaletteRamp.colorStops.length;
       }
 
-      const { trackColors, lut } = getDerivedValues(state, newTracks, newTrackToColorId, selectedLut);
-
+      const { trackColors, isSelectedLut } = getDerivedValues(state, newTracks, newTrackToColorId, newSelectedLut);
       return {
         tracks: newTracks,
-        isSelectedLut: lut,
         trackToColorId: newTrackToColorId,
-        trackColors: trackColors,
+        trackColors,
+        isSelectedLut,
       };
     });
   },
@@ -242,13 +235,12 @@ export const createTrackSlice: StateCreator<TrackSlice & ConfigSlice, [], [], Tr
         applyTrackToSelectionLut(newSelectedLut, track, LUT_UNSELECTED);
       }
 
-      const { trackColors, lut } = getDerivedValues(get(), newTracks, newTrackToColorId, newSelectedLut);
-
+      const { trackColors, isSelectedLut } = getDerivedValues(get(), newTracks, newTrackToColorId, newSelectedLut);
       return {
         tracks: newTracks,
-        isSelectedLut: lut,
         trackToColorId: newTrackToColorId,
-        trackColors: trackColors,
+        trackColors,
+        isSelectedLut,
       };
     });
   },
@@ -300,16 +292,15 @@ export const createTrackSlice: StateCreator<TrackSlice & ConfigSlice, [], [], Tr
         newTrackToColorId.set(track.trackId, colorIdx);
       }
 
-      const { trackColors, lut } = getDerivedValues(state, newTracks, newTrackToColorId, newSelectedLut);
-
+      const { trackColors, isSelectedLut } = getDerivedValues(state, newTracks, newTrackToColorId, newSelectedLut);
       return {
         tracks: newTracks,
         trackToColorId: newTrackToColorId,
-        trackColors: trackColors,
-        isSelectedLut: lut,
+        trackColors,
+        isSelectedLut,
       };
     }),
-  setColorTracksByGroup: (colorByGroup: boolean) => set({ colorTracksByGroup: colorByGroup }),
+  setColorTracksByGroup: (colorTracksByGroup: boolean) => set({ colorTracksByGroup }),
 });
 
 export const addTrackDerivedStateSubscribers = (
@@ -366,14 +357,14 @@ export const addTrackDerivedStateSubscribers = (
     }
   );
 
-  // Recalculate isSelectedLut when colorTracksByRelatedGroups setting changes.
+  // Recalculate isSelectedLut when coloring by groups is enabled.
   addDerivedStateSubscriber(
     store,
     (state) => [state.colorTracksByGroup, state.lineageRelationships],
-    ([colorTracksByRelatedGroups, lineageRelationships]) => {
+    ([colorTracksByGroup, lineageRelationships]) => {
       const { isSelectedLut, tracks } = store.getState();
       let { trackToColorId } = store.getState();
-      if (colorTracksByRelatedGroups) {
+      if (colorTracksByGroup) {
         trackToColorId = getColorIdsByGroup(Array.from(tracks.keys()), lineageRelationships);
       }
 
@@ -392,7 +383,8 @@ export const addTrackDerivedStateSubscribers = (
     }
   );
 
-  // Update track colors when the track palette ramp (in config slice) changes.
+  // Update track colors when config (coloring by groups and/or outline palette)
+  // changes.
   addDerivedStateSubscriber(
     store,
     (state) => ({
