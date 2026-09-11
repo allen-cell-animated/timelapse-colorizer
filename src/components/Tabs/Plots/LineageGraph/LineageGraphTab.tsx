@@ -7,6 +7,7 @@ import type Track from "src/colorizer/Track";
 import type { LineageData, TrackInfo } from "src/colorizer/types";
 import { TreeTraversalDirection } from "src/colorizer/types";
 import { getAncestors, getDescendants } from "src/colorizer/utils/lineage_utils";
+import LabelWithHint from "src/components/Display/LabelWithHint";
 import PlotsTabToolbar from "src/components/Tabs/Plots/PlotsTabToolbar";
 import type { SharedPlotTabProps } from "src/components/Tabs/Plots/types";
 import HoverTooltip from "src/components/Tooltips/HoverTooltip";
@@ -187,7 +188,13 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
         <FlexRowAlignCenter $gap={12}>
           {props.toolbar}
           <Checkbox checked={colorTracksByGroup} onChange={(e) => setColorTracksByGroup(e.target.checked)}>
-            Color selections by group
+            <LabelWithHint
+              hintProps={{
+                title: "Groups of related tracks will use the same color when selected in the graph and viewport.",
+              }}
+            >
+              Color by track groups
+            </LabelWithHint>
           </Checkbox>
         </FlexRowAlignCenter>
       </PlotsTabToolbar>
