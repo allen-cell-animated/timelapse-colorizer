@@ -1,3 +1,4 @@
+import { Checkbox } from "antd";
 import * as d3 from "d3";
 import React, { type ReactElement, useCallback, useMemo, useRef, useState } from "react";
 import { useShallow } from "zustand/shallow";
@@ -14,7 +15,7 @@ import { SHORTCUT_KEYS } from "src/constants/shortcuts";
 import { colorizeStateSelector, useViewerStateStore } from "src/state";
 import { getNextColorId } from "src/state/slices";
 import { StyledHorizontalRule } from "src/styles/components";
-import { FlexColumn } from "src/styles/utils";
+import { FlexColumn, FlexRowAlignCenter } from "src/styles/utils";
 import { areAnyHotkeysPressed } from "src/utils/user_input";
 
 import { getTreeHierarchy } from "./lineage_utils";
@@ -57,8 +58,8 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
   const setTracks = useViewerStateStore((state) => state.setTracks);
   const toggleTrack = useViewerStateStore((state) => state.toggleTrack);
   const setFrame = useViewerStateStore((state) => state.setFrame);
-  const useTrackColorForRelatives = useViewerStateStore((state) => state.applyTrackColorToRelatives);
-  const setApplyTrackColorToRelatives = useViewerStateStore((state) => state.setApplyTrackColorToRelatives);
+  const colorTracksByGroup = useViewerStateStore((state) => state.colorTracksByGroup);
+  const setColorTracksByGroup = useViewerStateStore((state) => state.setColorTracksByGroup);
   const colorizeParams = useViewerStateStore(useShallow(colorizeStateSelector));
 
   const [hoveredTrack, setHoveredTrack] = useState<Track | null>(null);
@@ -142,7 +143,7 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
         const trackObjects = trackIds
           .map((id) => dataset?.getTrack(id))
           .filter((track): track is Track => track !== undefined);
-        if (useTrackColorForRelatives) {
+        if (false) {
           const { tracks, trackToColorId } = useViewerStateStore.getState();
           // Get base track color
           const baseTrackColorId = trackToColorId.get(trackId) ?? getNextColorId(tracks, trackToColorId);
@@ -157,7 +158,7 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
         removeTracks(trackIds);
       }
     },
-    [dataset, lineageData, lineageRelationships, useTrackColorForRelatives, addTracks, removeTracks]
+    [dataset, lineageData, lineageRelationships, addTracks, removeTracks]
   );
 
   //// Rendering ////
@@ -189,15 +190,17 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
     selectedTracks: tracks,
     trackColors,
     setRelativesSelected,
-    applyTrackColorToRelatives: useTrackColorForRelatives,
-    setApplyTrackColorToRelatives,
   };
 
   return (
     <FlexColumn style={{ width: "100%", height: "100%" }}>
       <PlotsTabToolbar>
-        {props.toolbar}
-        <div></div>
+        <FlexRowAlignCenter $gap={12}>
+          {props.toolbar}
+          <Checkbox checked={colorTracksByGroup} onChange={(e) => setColorTracksByGroup(e.target.checked)}>
+            Color selections by group
+          </Checkbox>
+        </FlexRowAlignCenter>
       </PlotsTabToolbar>
       <HoverTooltip
         tooltipContent={tooltipContent}
@@ -230,8 +233,6 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
           // TODO: Show hover tooltip for track detail view
           onHover={undefined}
           setRelativesSelected={setRelativesSelected}
-          applyTrackColorToRelatives={useTrackColorForRelatives}
-          setApplyTrackColorToRelatives={setApplyTrackColorToRelatives}
         ></LineageTrackDetailView>
       </div>
     </FlexColumn>
