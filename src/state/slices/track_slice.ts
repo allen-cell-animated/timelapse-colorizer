@@ -27,7 +27,7 @@ export type TrackSliceState = {
   trackToColorId: Map<number, number>;
 
   /**
-   * If true, all selected tracks that are related (either parents/children)
+   * If true, any groups of selected tracks that are related (parents/children)
    * will have the same color assignment in `trackColors`.
    */
   colorTracksByGroup: boolean;
@@ -35,12 +35,19 @@ export type TrackSliceState = {
   lineageRelationships: LineageDataRelationships;
 
   // Derived values
+  /**
+   * Map from track ID to its assigned color. When `colorTracksByGroup` is true
+   * and lineage data is available, related tracks will share the same color.
+   */
   trackColors: Map<number, Color>;
   /**
    * LUT that maps from an object ID to whether it is selected (>=1) or not (0).
    * Non-zero values represent the index of the track's color in the track path
    * palette ramp + 1 because zero is reserved to represent unselected objects.
    * Updated when tracks are added/removed from the selection.
+   *
+   * When `colorTracksByGroup` is true, related tracks will share the same color
+   * index.
    */
   isSelectedLut: Uint8Array;
 };
@@ -171,7 +178,7 @@ export const createTrackSlice: StateCreator<TrackSlice & ConfigSlice, [], [], Tr
   trackColors: new Map<number, Color>(),
   isSelectedLut: new Uint8Array(0),
 
-  colorTracksByGroup: true,
+  colorTracksByGroup: false,
   lineageData: EMPTY_LINEAGE_DATA,
   lineageRelationships: getLineageRelationships(EMPTY_LINEAGE_DATA),
 

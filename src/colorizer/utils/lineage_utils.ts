@@ -284,6 +284,13 @@ export function getDescendants(
   return descendants;
 }
 
+/**
+ * Groups the selected tracks into sets, where each set is the set of selected
+ * tracks that are connected through parent-child relationships.
+ * @param selectedTracks Array of selected track ids.
+ * @param relationships Lineage data relationships.
+ * @returns Array of sets of connected track ids.
+ */
 export function groupSelectedTracks(selectedTracks: number[], relationships: LineageDataRelationships): Set<number>[] {
   const groups: Set<Set<number>> = new Set();
   const idToGroup = new Map<number, Set<number>>();
@@ -295,16 +302,18 @@ export function groupSelectedTracks(selectedTracks: number[], relationships: Lin
     const allGroups = [...parentGroups, ...childGroups];
 
     if (allGroups.length === 0) {
-      // Create new group
+      // Not in contact with an existing group, so create a new one
       const newGroup: Set<number> = new Set([trackId]);
       groups.add(newGroup);
       idToGroup.set(trackId, newGroup);
     } else {
-      // Merge all existing groups into a single group
-      const mergeGroup = allGroups.shift()!;
+      // Merge all groups into an existing one. Existing parent groups take
+      // priority.
+      const mergeGroup = allGroups[0];
+      const remainingGroups = allGroups.slice(1);
       mergeGroup.add(trackId);
       idToGroup.set(trackId, mergeGroup);
-      for (const group of allGroups) {
+      for (const group of remainingGroups) {
         for (const id of group) {
           mergeGroup.add(id);
           idToGroup.set(id, mergeGroup);
