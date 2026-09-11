@@ -11,7 +11,7 @@ import {
 } from "src/colorizer";
 import { arrayElementsAreEqual } from "src/colorizer/utils/data_utils";
 import { getLineageData, getLineageRelationships, groupSelectedTracks } from "src/colorizer/utils/lineage_utils";
-import { decodeTracks, encodeTracks, UrlParam } from "src/colorizer/utils/url_utils";
+import { decodeBoolean, decodeTracks, encodeBoolean, encodeTracks, UrlParam } from "src/colorizer/utils/url_utils";
 import type { ConfigSlice } from "src/state/slices/config_slice";
 import type { DatasetSlice } from "src/state/slices/dataset_slice";
 import type { SerializedStoreData, SubscribableStore } from "src/state/types";
@@ -52,7 +52,7 @@ export type TrackSliceState = {
   isSelectedLut: Uint8Array;
 };
 
-export type TrackSliceSerializableState = Pick<TrackSliceState, "tracks" | "trackToColorId">;
+export type TrackSliceSerializableState = Pick<TrackSliceState, "tracks" | "trackToColorId" | "colorTracksByGroup">;
 
 export type TrackSliceActions = {
   /**
@@ -411,12 +411,17 @@ export const serializeTrackSlice = (slice: Partial<TrackSliceSerializableState>)
     const trackIds = Array.from(slice.tracks.keys());
     ret[UrlParam.TRACK] = encodeTracks(trackIds, slice.trackToColorId);
   }
+  // Only serialize coloring track groups setting if enabled.
+  if (slice.colorTracksByGroup) {
+    ret[UrlParam.GROUP_TRACK_COLORS] = encodeBoolean(slice.colorTracksByGroup);
+  }
   return ret;
 };
 
 export const selectTrackSliceSerializationDeps = (slice: TrackSlice): TrackSliceSerializableState => ({
   tracks: slice.tracks,
   trackToColorId: slice.trackToColorId,
+  colorTracksByGroup: slice.colorTracksByGroup,
 });
 
 export const loadTrackSliceFromParams = (
@@ -452,5 +457,10 @@ export const loadTrackSliceFromParams = (
       slice.setOutlineColorMode(SelectionOutlineColorMode.USE_CUSTOM_COLOR);
     }
     slice.setTracks(tracks, colors);
+
+    const colorTracksByGroup = decodeBoolean(params.get(UrlParam.GROUP_TRACK_COLORS));
+    if (colorTracksByGroup !== undefined) {
+      slice.setColorTracksByGroup(colorTracksByGroup);
+    }
   }
 };
