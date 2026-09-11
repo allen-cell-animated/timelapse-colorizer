@@ -30,7 +30,7 @@ export type TrackSliceState = {
    * If true, all selected tracks that are related (either parents/children)
    * will have the same color assignment in `trackColors`.
    */
-  colorTracksByRelatedGroups: boolean;
+  colorTracksByGroup: boolean;
   lineageData: LineageData;
   lineageRelationships: LineageDataRelationships;
 
@@ -77,7 +77,7 @@ export type TrackSliceActions = {
    */
   clearTracks: (newLut?: Uint8Array) => void;
 
-  setColorTracksByRelatedGroups: (colorByGroup: boolean) => void;
+  setColorTracksByGroup: (colorByGroup: boolean) => void;
 };
 
 export type TrackSlice = TrackSliceState & TrackSliceActions;
@@ -145,11 +145,11 @@ function getDerivedValues(
   lut: Uint8Array
 ) {
   // Replace trackToColorId mapping if coloring by related groups is enabled.
-  if (state.colorTracksByRelatedGroups) {
+  if (state.colorTracksByGroup) {
     trackToColorId = getColorIdsByGroup(Array.from(tracks.keys()), state.lineageRelationships);
   }
 
-  if (state.colorTracksByRelatedGroups) {
+  if (state.colorTracksByGroup) {
     // Override the selection LUT color assignment.
     for (const [trackId, colorId] of trackToColorId) {
       const track = tracks.get(trackId);
@@ -173,7 +173,7 @@ export const createTrackSlice: StateCreator<TrackSlice & ConfigSlice, [], [], Tr
   trackColors: new Map<number, Color>(),
   isSelectedLut: new Uint8Array(0),
 
-  colorTracksByRelatedGroups: true,
+  colorTracksByGroup: true,
   lineageData: EMPTY_LINEAGE_DATA,
   lineageRelationships: getLineageRelationships(EMPTY_LINEAGE_DATA),
 
@@ -304,9 +304,7 @@ export const createTrackSlice: StateCreator<TrackSlice & ConfigSlice, [], [], Tr
         isSelectedLut: lut,
       };
     }),
-  setColorTracksByRelatedGroups: (colorTracksByRelatedGroups: boolean) => ({
-    colorTracksByRelatedGroups,
-  }),
+  setColorTracksByGroup: (colorByGroup: boolean) => set({ colorTracksByGroup: colorByGroup }),
 });
 
 export const addTrackDerivedStateSubscribers = (
@@ -366,7 +364,7 @@ export const addTrackDerivedStateSubscribers = (
   // Recalculate isSelectedLut when colorTracksByRelatedGroups setting changes.
   addDerivedStateSubscriber(
     store,
-    (state) => [state.colorTracksByRelatedGroups, state.lineageRelationships],
+    (state) => [state.colorTracksByGroup, state.lineageRelationships],
     ([colorTracksByRelatedGroups, lineageRelationships]) => {
       const { isSelectedLut, tracks } = store.getState();
       let { trackToColorId } = store.getState();
@@ -395,11 +393,11 @@ export const addTrackDerivedStateSubscribers = (
     (state) => ({
       outlinePaletteRamp: state.outlinePaletteRamp,
       lineageRelationships: state.lineageRelationships,
+      colorTracksByGroup: state.colorTracksByGroup,
     }),
-    ({ outlinePaletteRamp, lineageRelationships }) => {
-      const { colorTracksByRelatedGroups } = store.getState();
+    ({ outlinePaletteRamp, lineageRelationships, colorTracksByGroup }) => {
       let trackToColorId = store.getState().trackToColorId;
-      if (colorTracksByRelatedGroups) {
+      if (colorTracksByGroup) {
         trackToColorId = getColorIdsByGroup(Array.from(store.getState().tracks.keys()), lineageRelationships);
       }
 
