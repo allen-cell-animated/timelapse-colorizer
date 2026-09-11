@@ -4,7 +4,7 @@ import type { CollectionFile } from "src/colorizer/utils/collection_utils";
 import type { ManifestFile } from "src/colorizer/utils/dataset_utils";
 import { DEFAULT_DATASET_DIR, makeMockDataset, MockArrayLoader, MockArraySource } from "tests/utils";
 
-// TODO: Move to /tests/constants.ts so other tests can use these constants
+export * from "./trees";
 
 export enum MockFeatureKeys {
   FEATURE1 = "feature1",
