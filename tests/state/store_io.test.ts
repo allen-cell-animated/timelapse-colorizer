@@ -54,6 +54,7 @@ const EXAMPLE_STORE: ViewerStoreSerializableState = {
   featureKey: MockFeatureKeys.FEATURE1,
   tracks: new Map([[0, MOCK_DATASET_DEFAULT_TRACK]]),
   trackToColorId: new Map([[0, 3]]),
+  colorTracksByGroup: true,
   currentFrame: 2,
   thresholds: [
     { featureKey: "f1", unit: "m", type: ThresholdType.NUMERIC, min: 0, max: 0 },
@@ -174,6 +175,7 @@ const EXAMPLE_STORE_EXPECTED_PARAMS: ExpectedParamType = {
   dataset: MOCK_DATASET_KEY,
   feature: MockFeatureKeys.FEATURE1,
   track: MOCK_DATASET_DEFAULT_TRACK.trackId.toString() + ":3",
+  "group-tracks": "1",
   t: "2",
   filters: "f1:m:0:0,f2:um:NaN:NaN,f3:km:0:1,f4:mm:0.501:1000.485,f5::fff,f6::11",
   range: "21.433,89.400",
@@ -252,7 +254,7 @@ const EXAMPLE_STORE_EXPECTED_PARAMS: ExpectedParamType = {
 
 const EXAMPLE_STORE_EXPECTED_QUERY_STRING =
   "collection=https%3A%2F%2Fsome-url.com%2Fcollection.json&dataset=some-dataset" +
-  "&feature=feature1&bg-key=backdrop2&track=0%3A3&t=2&color=matplotlib-inferno%21&keep-range=1&range=21.433%2C89.400" +
+  "&feature=feature1&bg-key=backdrop2&track=0%3A3&group-tracks=1&t=2&color=matplotlib-inferno%21&keep-range=1&range=21.433%2C89.400" +
   "&palette-key=matplotlib_paired&filters=f1%3Am%3A0%3A0%2Cf2%3Aum%3ANaN%3ANaN%2Cf3%3Akm%3A0%3A1%2Cf4%3Amm%3A0.501%3A1000.485%2Cf5%3A%3Afff%2Cf6%3A%3A11" +
   "&seg=0&path=1&path-color=ff0000&path-width=1.500&path-ramp=esri-blue_red_8%21&path-mode=1&path-breaks=1&path-steps=10%2C25%21&path-persist=0&path-overlay=35&scalebar=1&timestamp=0&filter-color=ff0000&filter-mode=0&outlier-color=00ff00" +
   "&outlier-mode=1&outline-color=0000ff&outline-mode=0&outline-palette-key=matplotlib_paired" +

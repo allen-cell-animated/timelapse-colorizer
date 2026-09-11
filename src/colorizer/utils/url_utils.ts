@@ -45,6 +45,7 @@ export enum UrlParam {
   INTERPOLATE_3D = "interpolate",
   // Track selection
   TRACK = "track",
+  GROUP_TRACK_COLORS = "group-tracks",
   // Colorization
   FEATURE = "feature",
   RANGE = "range",
