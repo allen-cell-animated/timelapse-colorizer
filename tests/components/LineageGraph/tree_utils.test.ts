@@ -1,14 +1,7 @@
 import * as d3 from "d3";
 import { assert, describe, expect, it } from "vitest";
 
-import type { LineageData, TrackInfo } from "src/colorizer/types";
-import {
-  getAncestors,
-  getDescendants,
-  getLineageRelationships,
-  matchesAllAncestors,
-  matchesAllDescendants,
-} from "src/colorizer/utils/lineage_utils";
+import type { TrackInfo } from "src/colorizer/types";
 import { getTreeHierarchy } from "src/components/Tabs/Plots/LineageGraph/lineage_utils";
 import {
   alignMergeNodes,
@@ -17,39 +10,10 @@ import {
   getInitialExpandedState,
   type TreeExpandedState,
 } from "src/components/Tabs/Plots/LineageGraph/tree_utils";
-
-function makeTrackIdToData(numTracks: number): Map<number, TrackInfo> {
-  const trackIds = Array.from({ length: numTracks }, (_, i) => i + 1);
-  return new Map(trackIds.map((id) => [id, { id, length: 1, startTime: 0 }]));
-}
+import { EXAMPLE_MERGE_TREE, EXAMPLE_TREE } from "tests/constants";
 
 describe("tree_utils", () => {
-  // EXAMPLE TREE:
-  // 1 -> 2 -> 3
-  //  \    \
-  //   \    -> 4
-  //    \
-  //      -> 5 -> 6 -> 8
-  //          \    /
-  //           -> 7 -> 9
-
-  const trackIdToData = makeTrackIdToData(9);
-
-  const lineageData = {
-    trackIdToTrackInfo: trackIdToData,
-    edges: [
-      [1, 2],
-      [2, 3],
-      [2, 4],
-      [1, 5],
-      [5, 6],
-      [5, 7],
-      [6, 8],
-      [7, 8],
-      [7, 9],
-    ],
-  } satisfies LineageData;
-  const relationships = getLineageRelationships(lineageData);
+  const { lineageData, relationships } = EXAMPLE_TREE;
 
   function getFullyCollapsedState(): TreeExpandedState {
     return {
@@ -59,7 +23,7 @@ describe("tree_utils", () => {
   }
 
   function getFullyExpandedState(): TreeExpandedState {
-    const trackIds = Array.from(trackIdToData.keys());
+    const trackIds = Array.from(lineageData.trackIdToTrackInfo.keys());
     return {
       expandedTracks: new Set<number>(trackIds),
       previouslyExpandedTracks: new Set<number>(trackIds),
@@ -183,114 +147,10 @@ describe("tree_utils", () => {
       expect(result.previouslyExpandedTracks).toEqual(new Set([1, 5, 6, 7]));
     });
   });
-
-  describe("getAncestors", () => {
-    const tests = [
-      ["handles nonexistent nodes", 1200, []],
-      ["handles bad input nodes", NaN, []],
-      ["handles bad input nodes", Infinity, []],
-      ["returns set of ancestors", 4, [1, 2]],
-      ["returns empty set for nodes with no parents", 1, []],
-      ["returns coparents", 8, [1, 5, 6, 7]],
-    ] as const;
-
-    for (const [description, trackId, expectedAncestors] of tests) {
-      it(description, () => {
-        const ancestors = getAncestors(trackId, lineageData, relationships);
-        expect(ancestors).toEqual(new Set(expectedAncestors));
-      });
-    }
-  });
-
-  describe("getDescendants", () => {
-    const tests = [
-      ["handles nonexistent nodes", 1200, []],
-      ["handles bad input nodes", NaN, []],
-      ["handles bad input nodes", Infinity, []],
-      ["returns set of descendants", 2, [3, 4]],
-      ["returns empty set for nodes with no children", 9, []],
-      ["returns descendants of merge nodes", 5, [6, 7, 8, 9]],
-    ] as const;
-
-    for (const [description, trackId, expectedDescendants] of tests) {
-      it(description, () => {
-        const descendants = getDescendants(trackId, lineageData, relationships);
-        expect(descendants).toEqual(new Set(expectedDescendants));
-      });
-    }
-  });
-
-  describe("matchesAllAncestors", () => {
-    const tests = [
-      ["returns true for nodes with all ancestors selected", 4, [1, 2], true],
-      ["returns false if any ancestor fails validator", 4, [2], false],
-      ["handles coparents", 9, [1, 5, 6, 7], true],
-      ["handles coparent failing validator", 9, [1, 5, 6], false], // 7 failed
-      ["returns true for nodes with no parents", 1, [], true],
-    ] as [string, number, number[], boolean][];
-
-    for (const [description, trackId, selectedAncestors, expectedResult] of tests) {
-      it(description, () => {
-        const selectedAncestorsSet = new Set(selectedAncestors);
-        const validator = (id: number): boolean => selectedAncestorsSet.has(id);
-        const result = matchesAllAncestors(trackId, validator, lineageData, relationships);
-        expect(result).toBe(expectedResult);
-      });
-    }
-  });
-
-  describe("matchesAllDescendants", () => {
-    const tests = [
-      ["returns true for nodes with all descendants selected", 2, [3, 4], true],
-      ["returns false if any descendant fails validator", 2, [3], false],
-      ["handles merge nodes", 5, [6, 7, 8, 9], true],
-      ["handles merge nodes failing validator", 5, [6, 7, 8], false], // 9 failed
-      ["returns true for nodes with no children", 9, [], true],
-    ] as [string, number, number[], boolean][];
-
-    for (const [description, trackId, selectedDescendants, expectedResult] of tests) {
-      it(description, () => {
-        const selectedDescendantsSet = new Set(selectedDescendants);
-        const validator = (id: number): boolean => selectedDescendantsSet.has(id);
-        const result = matchesAllDescendants(trackId, validator, lineageData, relationships);
-        expect(result).toBe(expectedResult);
-      });
-    }
-  });
 });
 
 describe("alignMergeNodes", () => {
-  // EXAMPLE TREE:
-  //      3   6
-  //     / \ /
-  //    2   5
-  //   / \ / \   8    11
-  //  /   4   \ / \  /
-  // 1         7   10
-  //  \         \ /  \
-  //   \         9    12
-  //    13
-  const trackIdToData = makeTrackIdToData(13);
-  const lineageData = {
-    trackIdToTrackInfo: trackIdToData,
-    edges: [
-      [1, 2],
-      [2, 3],
-      [2, 4],
-      [4, 5],
-      [3, 5],
-      [5, 6],
-      [5, 7],
-      [7, 8],
-      [7, 9],
-      [8, 10],
-      [9, 10],
-      [10, 11],
-      [10, 12],
-      [1, 13],
-    ],
-  } satisfies LineageData;
-  const relationships = getLineageRelationships(lineageData);
+  const { lineageData, relationships } = EXAMPLE_MERGE_TREE;
   const hierarchy = getTreeHierarchy(lineageData, relationships);
 
   it("aligns merge nodes", () => {
