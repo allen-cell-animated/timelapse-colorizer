@@ -13,7 +13,6 @@ import HoverTooltip from "src/components/Tooltips/HoverTooltip";
 import { TooltipCard } from "src/components/Tooltips/TooltipCard";
 import { SHORTCUT_KEYS } from "src/constants/shortcuts";
 import { colorizeStateSelector, useViewerStateStore } from "src/state";
-import { getNextColorId } from "src/state/slices";
 import { StyledHorizontalRule } from "src/styles/components";
 import { FlexColumn, FlexRowAlignCenter } from "src/styles/utils";
 import { areAnyHotkeysPressed } from "src/utils/user_input";
@@ -140,20 +139,10 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
       const trackIds = Array.from(trackIdSet);
 
       if (selected) {
-        const trackObjects = trackIds
+        const tracks = trackIds
           .map((id) => dataset?.getTrack(id))
           .filter((track): track is Track => track !== undefined);
-        if (false) {
-          const { tracks, trackToColorId } = useViewerStateStore.getState();
-          // Get base track color
-          const baseTrackColorId = trackToColorId.get(trackId) ?? getNextColorId(tracks, trackToColorId);
-          // Remove any existing track colors if all relatives should have the
-          // same color
-          removeTracks(trackIds);
-          addTracks(trackObjects, baseTrackColorId);
-        } else {
-          addTracks(trackObjects);
-        }
+        addTracks(tracks);
       } else {
         removeTracks(trackIds);
       }
