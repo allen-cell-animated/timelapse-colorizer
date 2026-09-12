@@ -34,10 +34,10 @@ export type TrackSliceState = {
    * will have the same color assignment in `trackColors` and `isSelectedLut`.
    */
   colorTracksByGroup: boolean;
-  lineageData: LineageData;
-  lineageRelationships: LineageDataRelationships;
 
   // Derived values
+  lineageData: LineageData;
+  lineageRelationships: LineageDataRelationships;
   /**
    * Map from track ID to its assigned color. When `colorTracksByGroup` is true
    * and lineage data is available, related tracks will share the same color.
@@ -107,28 +107,22 @@ function getNextColorId(tracks: Map<number, Track>, trackToColorId: Map<number, 
 }
 
 /**
- * Gets a map from track IDs to color IDs, where selected, related tracks share
- * the same color.
+ * Gets a map similar to `trackToColorId`, but groups have the same color ID.
+ * Groups are defined as selected tracks that are connected on the lineage tree.
  */
-function getColorIdsByGroup(selectedTracks: number[], relationships: LineageDataRelationships): Map<number, number> {
+function getGroupedTrackToColorId(
+  selectedTracks: number[],
+  relationships: LineageDataRelationships
+): Map<number, number> {
   const groups = groupSelectedTracks(selectedTracks, relationships);
-  const idToColorId = new Map<number, number>();
+  const trackIdToColorId = new Map<number, number>();
   for (let i = 0; i < groups.length; i++) {
     const colorId = i % MAX_FEATURE_CATEGORIES;
     for (const id of groups[i]) {
-      idToColorId.set(id, colorId);
+      trackIdToColorId.set(id, colorId);
     }
   }
-  return idToColorId;
-}
-
-function getTrackColors(trackToColorId: Map<number, number>, palette: ColorRamp): Map<number, Color> {
-  return new Map(
-    Array.from(trackToColorId.entries()).map(([key, value]) => [
-      key,
-      palette.colorStops[value % palette.colorStops.length],
-    ])
-  );
+  return trackIdToColorId;
 }
 
 /** Marks a track as selected/deselected in the provided LUT. */
@@ -136,6 +130,10 @@ function applyTrackToSelectionLut(lut: Uint8Array, track: Track, colorIdx: numbe
   for (const id of track.ids) {
     lut[id] = colorIdx;
   }
+}
+
+function getTrackColors(trackToColorId: Map<number, number>, palette: ColorRamp): Map<number, Color> {
+  return new Map(Array.from(trackToColorId.entries()).map(([key, value]) => [key, palette.colorStops[value]]));
 }
 
 /**
@@ -154,7 +152,7 @@ function getDerivedValues(
 ): { trackColors: Map<number, Color>; isSelectedLut: Uint8Array } {
   // Replace trackToColorId mapping if coloring by related groups is enabled.
   if (state.colorTracksByGroup) {
-    trackToColorId = getColorIdsByGroup(Array.from(tracks.keys()), state.lineageRelationships);
+    trackToColorId = getGroupedTrackToColorId(Array.from(tracks.keys()), state.lineageRelationships);
   }
 
   if (state.colorTracksByGroup) {
@@ -368,7 +366,7 @@ export const addTrackDerivedStateSubscribers = (
       const { isSelectedLut, tracks } = store.getState();
       let { trackToColorId } = store.getState();
       if (colorTracksByGroup) {
-        trackToColorId = getColorIdsByGroup(Array.from(tracks.keys()), lineageRelationships);
+        trackToColorId = getGroupedTrackToColorId(Array.from(tracks.keys()), lineageRelationships);
       }
 
       const lut = isSelectedLut.slice();
@@ -398,7 +396,7 @@ export const addTrackDerivedStateSubscribers = (
     ({ outlinePaletteRamp, lineageRelationships, colorTracksByGroup }) => {
       let trackToColorId = store.getState().trackToColorId;
       if (colorTracksByGroup) {
-        trackToColorId = getColorIdsByGroup(Array.from(store.getState().tracks.keys()), lineageRelationships);
+        trackToColorId = getGroupedTrackToColorId(Array.from(store.getState().tracks.keys()), lineageRelationships);
       }
 
       return {
