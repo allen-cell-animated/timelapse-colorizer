@@ -429,6 +429,12 @@ export const loadTrackSliceFromParams = (
   slice: TrackSlice & DatasetSlice & ConfigSlice,
   params: URLSearchParams
 ): void => {
+  const colorTracksByGroup = decodeBoolean(params.get(UrlParam.GROUP_TRACK_COLORS));
+  if (colorTracksByGroup !== undefined) {
+    slice.setColorTracksByGroup(colorTracksByGroup);
+  }
+
+  // Decode dataset-dependent track data
   const dataset = slice.dataset;
   if (!dataset) {
     return;
@@ -458,10 +464,5 @@ export const loadTrackSliceFromParams = (
       slice.setOutlineColorMode(SelectionOutlineColorMode.USE_CUSTOM_COLOR);
     }
     slice.setTracks(tracks, colors);
-
-    const colorTracksByGroup = decodeBoolean(params.get(UrlParam.GROUP_TRACK_COLORS));
-    if (colorTracksByGroup !== undefined) {
-      slice.setColorTracksByGroup(colorTracksByGroup);
-    }
   }
 };
