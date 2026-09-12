@@ -1,6 +1,8 @@
 import type Dataset from "src/colorizer/Dataset";
 import type { LineageData, LineageDataRelationships, TrackInfo } from "src/colorizer/types";
 
+export const EMPTY_LINEAGE_DATA: LineageData = { trackIdToTrackInfo: new Map(), edges: [] };
+
 // MARK: Lineage Relationships
 
 export function getLineageData(dataset: Dataset): LineageData {
@@ -282,4 +284,46 @@ export function getDescendants(
     return true;
   });
   return descendants;
+}
+
+/**
+ * Groups the selected tracks into sets, where each set is the set of selected
+ * tracks that are connected through parent-child relationships.
+ * @param selectedTracks Array of selected track ids.
+ * @param relationships Lineage data relationships.
+ * @returns Array of sets of connected track ids.
+ */
+export function groupSelectedTracks(selectedTracks: number[], relationships: LineageDataRelationships): Set<number>[] {
+  const groups: Set<Set<number>> = new Set();
+  const idToGroup = new Map<number, Set<number>>();
+  for (const trackId of selectedTracks) {
+    const parents = relationships.idToParents.get(trackId) ?? [];
+    const children = relationships.idToChildren.get(trackId) ?? [];
+    const parentGroups = parents.map((parentId) => idToGroup.get(parentId)).filter((group) => group !== undefined);
+    const childGroups = children.map((childId) => idToGroup.get(childId)).filter((group) => group !== undefined);
+    // Combine and deduplicate groups
+    const allGroups = Array.from(new Set([...parentGroups, ...childGroups]));
+
+    if (allGroups.length === 0) {
+      // Not in contact with an existing group, so create a new one
+      const newGroup: Set<number> = new Set([trackId]);
+      groups.add(newGroup);
+      idToGroup.set(trackId, newGroup);
+    } else {
+      // Merge all groups into an existing one. Existing parent groups take
+      // priority.
+      const mergeGroup = allGroups[0];
+      const remainingGroups = allGroups.slice(1);
+      mergeGroup.add(trackId);
+      idToGroup.set(trackId, mergeGroup);
+      for (const group of remainingGroups) {
+        for (const id of group) {
+          mergeGroup.add(id);
+          idToGroup.set(id, mergeGroup);
+        }
+        groups.delete(group);
+      }
+    }
+  }
+  return Array.from(groups);
 }
