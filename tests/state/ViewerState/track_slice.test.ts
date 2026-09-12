@@ -58,6 +58,39 @@ describe("useViewerStateStore: TrackSlice", () => {
       await setDatasetAsync(result, MOCK_DATASET);
       expect(result.current.isSelectedLut.length).toBe(MOCK_DATASET.numObjects);
     });
+
+    it("groups selected nodes in trackColors and isSelectedLut when colorTracksByGroup is true", async () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      await setDatasetAsync(result, MOCK_DATASET);
+      act(() => {
+        // Tracks 1 and 2 are connected in the lineage tree
+        result.current.addTracks(MOCK_DATASET_DEFAULT_TRACK);
+        result.current.addTracks(MOCK_DATASET_TRACK_1);
+        result.current.addTracks(MOCK_DATASET_TRACK_2);
+      });
+      // Originally have different colors
+      let trackColor0 = result.current.trackColors.get(0)!?.getHexString();
+      let trackColor1 = result.current.trackColors.get(1)!?.getHexString();
+      let trackColor2 = result.current.trackColors.get(2)!?.getHexString();
+      // All colors are different
+      expect(trackColor0).to.not.equal(trackColor1);
+      expect(trackColor0).to.not.equal(trackColor2);
+      expect(trackColor1).to.not.equal(trackColor2);
+
+      expect(result.current.isSelectedLut).to.deep.equals(new Uint8Array([1, 2, 3, 1, 2, 3, 1, 2, 3]));
+
+      act(() => {
+        result.current.setColorTracksByGroup(true);
+      });
+      trackColor0 = result.current.trackColors.get(0)!?.getHexString();
+      trackColor1 = result.current.trackColors.get(1)!?.getHexString();
+      trackColor2 = result.current.trackColors.get(2)!?.getHexString();
+      // 0 + 1 are in one group, 2 is in another
+      expect(trackColor0).to.equal(trackColor1);
+      expect(trackColor0).to.not.equal(trackColor2);
+
+      expect(result.current.isSelectedLut).to.deep.equals(new Uint8Array([1, 1, 2, 1, 1, 2, 1, 1, 2]));
+    });
   });
 
   describe("setTracks", () => {
