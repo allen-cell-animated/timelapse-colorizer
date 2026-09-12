@@ -429,16 +429,19 @@ export const loadTrackSliceFromParams = (
   slice: TrackSlice & DatasetSlice & ConfigSlice,
   params: URLSearchParams
 ): void => {
-  const colorTracksByGroup = decodeBoolean(params.get(UrlParam.GROUP_TRACK_COLORS));
-  if (colorTracksByGroup !== undefined) {
-    slice.setColorTracksByGroup(colorTracksByGroup);
-  }
-
   // Decode dataset-dependent track data
   const dataset = slice.dataset;
   if (!dataset) {
     return;
   }
+
+  const defaultTrackKey = dataset.getDefaultTrackKey();
+  const colorTracksByGroup = decodeBoolean(params.get(UrlParam.GROUP_TRACK_COLORS));
+  // Only enable if dataset has lineage data
+  if (colorTracksByGroup !== undefined && defaultTrackKey !== null && dataset.hasLineageData(defaultTrackKey)) {
+    slice.setColorTracksByGroup(colorTracksByGroup);
+  }
+
   const trackInfo = decodeTracks(params.get(UrlParam.TRACK));
   if (trackInfo !== undefined) {
     const tracks: Track[] = [];
