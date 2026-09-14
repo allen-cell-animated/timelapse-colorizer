@@ -2,11 +2,13 @@ import * as d3 from "d3";
 import React, { type ReactElement, useCallback, useEffect, useRef } from "react";
 import type { Color } from "three";
 
-import { Track } from "src/colorizer";
+import type { Track } from "src/colorizer";
+import RightClickContextMenu from "src/components/Menus/RightClickContextMenu";
 import { DUMMY_ROOT_NODE_ID } from "src/components/Tabs/Plots/LineageGraph/constants";
 import {
   frameTracksInView,
   getDefaultZoomTransform,
+  getLineageContextMenuItems,
   useNewTracks,
 } from "src/components/Tabs/Plots/LineageGraph/lineage_utils";
 import { alignMergeNodes } from "src/components/Tabs/Plots/LineageGraph/tree_utils";
@@ -15,6 +17,7 @@ import type {
   LineageDataRelationships,
   LineageNodeSelection,
   TrackInfo,
+  TreeTraversalDirection,
 } from "src/components/Tabs/Plots/LineageGraph/types";
 import { useConstructor } from "src/hooks";
 
@@ -36,8 +39,9 @@ export type TreeLineageViewProps = {
   trackColors: Map<number, Color>;
   colorScale: d3.ScaleSequential<string>;
   radiusScale: d3.ScalePower<number, number>;
-  onClick?: (trackId: number) => void;
-  onHover?: (trackId: number | null) => void;
+  onClick: (trackId: number) => void;
+  onHover: (trackId: number | null) => void;
+  setRelativesSelected: (trackId: number, direction: TreeTraversalDirection, selected: boolean) => void;
 };
 
 function renderTree(
@@ -155,7 +159,7 @@ function updateNodeStyles(
     .attr("fill", (d) => colorScale(d.data.startTime))
     .attr("opacity", (d) => (d.data.id === DUMMY_ROOT_NODE_ID ? 0 : 1)) // Hide the dummy root node
     .attr("stroke", (d) => trackColors.get(d.data.id)?.getStyle() ?? DEFAULT_NODE_EDGE_COLOR)
-    .attr("stroke-width", 1.5)
+    .attr("stroke-width", (d) => (trackColors.has(d.data.id) ? strokeWidth * 3 : strokeWidth))
     .style("cursor", "default");
 
   // Show inner highlight circle for selected tracks.
@@ -163,10 +167,12 @@ function updateNodeStyles(
     .select<SVGCircleElement>(`circle.${INNER_HIGHLIGHT_CLASS}`)
     .attr("r", (d) => radiusScale(d.data.length) - strokeWidth)
     .attr("stroke", "#ffffff")
-    .attr("stroke-width", strokeWidth)
+    .attr("stroke-width", strokeWidth * 1.5)
     .attr("fill", "none")
     .attr("opacity", (d) => (trackColors.get(d.data.id) !== undefined ? 1 : 0));
 }
+
+// MARK: Component
 
 /** Renders a tree view of the lineage data. */
 export default function TreeLineageView(props: TreeLineageViewProps): ReactElement {
@@ -179,11 +185,16 @@ export default function TreeLineageView(props: TreeLineageViewProps): ReactEleme
   const onHoverRef = useRef(props.onHover);
   onHoverRef.current = props.onHover;
 
+  const hoveredIdRef = useRef<number | null>(null);
+
+  const disableReframeRef = useRef(false);
+  const disableReframe = disableReframeRef.current;
+
   // Apply newly selected tracks to expanded state-- updates only on new tracks
   // to avoid expanding selected tracks that were previously collapsed.
   const newTracks = useNewTracks(props.selectedTracks);
 
-  //// SVG Elements ////
+  // MARK: SVG Elements
 
   const zoom = useConstructor(() =>
     d3
@@ -218,7 +229,7 @@ export default function TreeLineageView(props: TreeLineageViewProps): ReactEleme
     }
   }, [zoom]);
 
-  //// Viewport ////
+  // MARK: Viewport
 
   const cleanupRenderSvgRef = useRef<undefined | (() => void)>(undefined);
   const renderSvgCallbackRef = useCallback(
@@ -231,7 +242,10 @@ export default function TreeLineageView(props: TreeLineageViewProps): ReactEleme
       if (groupRef.current && props.hierarchy) {
         const g = d3.select(groupRef.current) as d3.Selection<SVGGElement, TrackInfo, null, undefined>;
         const onClickTrack = (trackId: number): void => onClickRef.current?.(trackId);
-        const onHoverTrack = (trackId: number | null): void => onHoverRef.current?.(trackId);
+        const onHoverTrack = (trackId: number | null): void => {
+          hoveredIdRef.current = trackId;
+          onHoverRef.current?.(trackId);
+        };
         nodeRef.current = renderTree(g, props.data, props.hierarchy, props.relationships, onClickTrack, onHoverTrack);
       }
       // TODO: Once updated to React 19, a cleanup function can be returned
@@ -259,16 +273,50 @@ export default function TreeLineageView(props: TreeLineageViewProps): ReactEleme
 
   // Update zoom if new tracks are selected.
   useEffect(() => {
+    if (disableReframe) {
+      disableReframeRef.current = false;
+      return;
+    }
     frameTracksInView(svgRef.current, nodeRef.current, newTracks, zoom.current);
   }, [newTracks]);
 
+  // MARK: Rendering
+
+  const getMenuItems = useCallback(() => {
+    const setRelativesSelectedWrapped = (
+      trackId: number,
+      direction: TreeTraversalDirection,
+      selected: boolean
+    ): void => {
+      if (selected) {
+        disableReframeRef.current = true;
+      }
+      props.setRelativesSelected(trackId, direction, selected);
+    };
+    return getLineageContextMenuItems(
+      hoveredIdRef.current,
+      {
+        data: props.data,
+        relationships: props.relationships,
+        selectedTracks: props.selectedTracks,
+      },
+      {
+        resetView: resetZoom,
+        setRelativesSelected: setRelativesSelectedWrapped,
+      }
+    );
+  }, [props.data, props.selectedTracks, props.relationships, resetZoom, props.setRelativesSelected]);
+
   return (
-    <svg
-      ref={renderSvgCallbackRef}
-      style={{ width: "100%", height: "100%", display: "block" }}
-      id="tree-lineage-view-svg"
-    >
-      <g ref={groupRef}></g>
-    </svg>
+    <RightClickContextMenu getItems={getMenuItems}>
+      <svg
+        ref={renderSvgCallbackRef}
+        style={{ width: "100%", height: "100%", display: "block" }}
+        id="tree-lineage-view-svg"
+      >
+        {" "}
+        <g ref={groupRef}></g>
+      </svg>
+    </RightClickContextMenu>
   );
 }
