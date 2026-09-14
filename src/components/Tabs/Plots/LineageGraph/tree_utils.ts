@@ -4,30 +4,38 @@ import type { LineageData, LineageDataRelationships, TrackInfo } from "./types";
 
 /**
  * Calls a callback function for each relative (ancestor or descendant) of a
- * track ID, recursively.
+ * track ID, in a depth-first manner. If the callback returns false for a
+ * an ID, that ID's relatives will not be traversed.
  */
 function forEachRelative(
   trackId: number,
   trackIdToData: Map<number, TrackInfo>,
   idToRelatives: Map<number, number[]>,
-  callback: (parent: TrackInfo) => boolean | void,
-  seenIds: Set<number>
+  callback: (parent: TrackInfo) => boolean | void
 ): void {
-  const relatives = idToRelatives.get(trackId) ?? [];
-  for (const relativeId of relatives) {
-    if (seenIds.has(relativeId)) {
+  const seenIds = new Set<number>();
+  const initialIdRelatives = idToRelatives.get(trackId) ?? [];
+  const queue = [...initialIdRelatives];
+
+  while (queue.length > 0) {
+    const id = queue.shift();
+    if (id === undefined || seenIds.has(id)) {
       continue;
     }
-    seenIds.add(relativeId);
-    const parentData = trackIdToData.get(relativeId);
+    seenIds.add(id);
+    const parentData = trackIdToData.get(id);
     if (parentData) {
       if (callback(parentData) === false) {
         continue;
       }
-      forEachRelative(relativeId, trackIdToData, idToRelatives, callback, seenIds);
+      const relatives = idToRelatives.get(id) ?? [];
+      queue.unshift(...relatives);
     }
   }
 }
+
+// TODO: Refactor usage for forEachAncestor and forEachDescendant to use a
+// single function (forEachRelative + some directional indicator?)
 
 /**
  * Recursively calls the provided callback function for all ancestors (parents,
@@ -47,8 +55,7 @@ export function forEachAncestor(
   idToParents: Map<number, number[]>,
   callback: (parent: TrackInfo) => boolean | void
 ): void {
-  const seenIds = new Set<number>();
-  forEachRelative(trackId, trackIdToData, idToParents, callback, seenIds);
+  forEachRelative(trackId, trackIdToData, idToParents, callback);
 }
 
 /**
@@ -68,8 +75,7 @@ export function forEachDescendant(
   idToChildren: Map<number, number[]>,
   callback: (child: TrackInfo) => boolean | void
 ): void {
-  const seen = new Set<number>();
-  forEachRelative(trackId, trackIdToData, idToChildren, callback, seen);
+  forEachRelative(trackId, trackIdToData, idToChildren, callback);
 }
 
 /** Returns true if all descendants match the provided validator function. */
