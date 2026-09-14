@@ -7,6 +7,12 @@ export type InlineHintProps = {
   title?: ReactNode;
   subtitle?: ReactNode;
   subtitleList?: ReactNode[];
+  style?: React.CSSProperties;
+};
+
+const defaultStyle: React.CSSProperties = {
+  display: "inline-block",
+  color: "var(--color-text-secondary)",
 };
 
 /** An icon that can be hovered or focused to show an informational tooltip. */
@@ -14,7 +20,7 @@ export default function InlineHint(props: InlineHintProps): ReactElement {
   const popupContainerRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div ref={popupContainerRef}>
+    <div ref={popupContainerRef} style={{ ...defaultStyle, ...props.style }}>
       <TooltipWithSubtitle
         trigger={["focus", "hover"]}
         title={props.title}
