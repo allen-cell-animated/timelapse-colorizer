@@ -3,6 +3,7 @@ import type { StateCreator } from "zustand";
 
 import {
   type ColorRamp,
+  Dataset,
   type LineageData,
   type LineageDataRelationships,
   MAX_FEATURE_CATEGORIES,
@@ -136,22 +137,27 @@ function getTrackColors(trackToColorId: Map<number, number>, palette: ColorRamp)
   return new Map(Array.from(trackToColorId.entries()).map(([key, value]) => [key, palette.colorStops[value]]));
 }
 
+function datasetHasAnyLineageData(dataset: Dataset | null): boolean {
+  const defaultTrackKey = dataset?.getDefaultTrackKey() ?? null;
+  return dataset !== null && defaultTrackKey !== null && dataset.hasLineageData(defaultTrackKey);
+}
+
 /**
  * Computes derived values for the trackColors map and the selection LUT. Reuses
  * values where possible to avoid unnecessary recomputation.
- * @param state The current state containing tracks and configuration.
+ * @param state The current state.
  * @param trackToColorId A map from track IDs to color IDs.
  * @param isSelectedLut The selection LUT to be updated; the same instance will
  * be returned.
  * @returns An object containing the updated trackColors map and selection LUT.
  */
 function getDerivedValues(
-  state: TrackSlice & ConfigSlice,
+  state: TrackSlice & ConfigSlice & DatasetSlice,
   tracks: Map<number, Track>,
   trackToColorId: Map<number, number>,
   isSelectedLut: Uint8Array
 ): { trackColors: Map<number, Color>; isSelectedLut: Uint8Array } {
-  if (state.colorTracksByGroup) {
+  if (state.colorTracksByGroup && datasetHasAnyLineageData(state.dataset)) {
     // Replace trackToColorId mapping if coloring by related groups is enabled.
     const trackIds = Array.from(tracks.keys());
     trackToColorId = getGroupedTrackToColorId(trackIds, state.lineageRelationships);
@@ -173,7 +179,10 @@ function getDerivedValues(
   };
 }
 
-export const createTrackSlice: StateCreator<TrackSlice & ConfigSlice, [], [], TrackSlice> = (set, get) => ({
+export const createTrackSlice: StateCreator<TrackSlice & ConfigSlice & DatasetSlice, [], [], TrackSlice> = (
+  set,
+  get
+) => ({
   tracks: new Map<number, Track>(),
   trackToColorId: new Map<number, number>(),
   colorTracksByGroup: false,
@@ -366,9 +375,9 @@ export const addTrackDerivedStateSubscribers = (
     store,
     (state) => [state.colorTracksByGroup, state.lineageRelationships],
     ([colorTracksByGroup, lineageRelationships]) => {
-      const { isSelectedLut, tracks } = store.getState();
+      const { isSelectedLut, tracks, dataset } = store.getState();
       let { trackToColorId } = store.getState();
-      if (colorTracksByGroup) {
+      if (colorTracksByGroup && datasetHasAnyLineageData(dataset)) {
         trackToColorId = getGroupedTrackToColorId(Array.from(tracks.keys()), lineageRelationships);
       }
       const lut = isSelectedLut.slice();
@@ -396,7 +405,7 @@ export const addTrackDerivedStateSubscribers = (
     }),
     ({ outlinePaletteRamp, lineageRelationships, colorTracksByGroup }) => {
       let trackToColorId = store.getState().trackToColorId;
-      if (colorTracksByGroup) {
+      if (colorTracksByGroup && datasetHasAnyLineageData(store.getState().dataset)) {
         trackToColorId = getGroupedTrackToColorId(Array.from(store.getState().tracks.keys()), lineageRelationships);
       }
       return {
@@ -435,10 +444,9 @@ export const loadTrackSliceFromParams = (
     return;
   }
 
-  const defaultTrackKey = dataset.getDefaultTrackKey();
   const colorTracksByGroup = decodeBoolean(params.get(UrlParam.GROUP_TRACK_COLORS));
   // Only enable if dataset has lineage data
-  if (colorTracksByGroup !== undefined && defaultTrackKey !== null && dataset.hasLineageData(defaultTrackKey)) {
+  if (colorTracksByGroup !== undefined && datasetHasAnyLineageData(dataset)) {
     slice.setColorTracksByGroup(colorTracksByGroup);
   }
 
