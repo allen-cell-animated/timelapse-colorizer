@@ -208,6 +208,7 @@ export function expandTrack(
     previouslyExpandedTracks.add(id);
     // Expand all parents of the node, up to a root node.
     forEachAncestor(id, data.trackIdToTrackInfo, relationships.idToParents, (parentData) => {
+      // Skip redundant checks if parents are already expanded.
       if (expandedTracks.has(parentData.id)) {
         return false;
       }
