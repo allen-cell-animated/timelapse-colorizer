@@ -1,8 +1,11 @@
+import { Tooltip } from "antd";
+import Checkbox from "antd/es/checkbox/Checkbox";
 import type { PresetsItem } from "antd/es/color-picker/interface";
 import React, { type ReactElement } from "react";
 import type { Color } from "three";
 
 import { DrawMode, KNOWN_CATEGORICAL_PALETTES, SelectionOutlineColorMode } from "src/colorizer";
+import InlineHint from "src/components/Display/InlineHint";
 import DropdownWithColorPicker from "src/components/Dropdowns/DropdownWithColorPicker";
 import type { SelectItem } from "src/components/Dropdowns/types";
 import OpacitySlider from "src/components/Inputs/OpacitySlider";
@@ -14,6 +17,7 @@ import { DEFAULT_OUTLINE_COLOR_PRESETS, SETTINGS_GAP_PX } from "./constants";
 
 const enum ObjectSettingsHtmlIds {
   OUTLINE_COLOR_SELECT = "outline-color-select",
+  GROUP_TRACK_COLORS_CHECKBOX = "group-track-colors-checkbox",
   EDGE_COLOR_SELECT = "edge-color-select",
   OUTLIER_OBJECT_COLOR_SELECT = "outlier-object-color-select",
   OUT_OF_RANGE_OBJECT_COLOR_SELECT = "out-of-range-object-color-select",
@@ -56,6 +60,7 @@ const OUTLINE_COLOR_MODE_ITEMS = [
 ] as const satisfies SelectItem[];
 
 export default function ObjectSettings(): ReactElement {
+  const dataset = useViewerStateStore((state) => state.dataset);
   const edgeColor = useViewerStateStore((state) => state.edgeColor);
   const edgeColorAlpha = useViewerStateStore((state) => state.edgeColorAlpha);
   const edgeMode = useViewerStateStore((state) => state.edgeMode);
@@ -65,6 +70,7 @@ export default function ObjectSettings(): ReactElement {
   const outlineColorMode = useViewerStateStore((state) => state.outlineColorMode);
   const outlinePaletteKey = useViewerStateStore((state) => state.outlinePaletteKey);
   const outOfRangeDrawSettings = useViewerStateStore((state) => state.outOfRangeDrawSettings);
+  const colorTracksByGroup = useViewerStateStore((state) => state.colorTracksByGroup);
   const setEdgeColor = useViewerStateStore((state) => state.setEdgeColor);
   const setEdgeMode = useViewerStateStore((state) => state.setEdgeMode);
   const setObjectOpacity = useViewerStateStore((state) => state.setObjectOpacity);
@@ -74,7 +80,20 @@ export default function ObjectSettings(): ReactElement {
   const setOutlinePaletteKey = useViewerStateStore((state) => state.setOutlinePaletteKey);
   const setOutOfRangeDrawSettings = useViewerStateStore((state) => state.setOutOfRangeDrawSettings);
   const setShowSegmentations = useViewerStateStore((state) => state.setShowSegmentations);
+  const setColorTracksByGroup = useViewerStateStore((state) => state.setColorTracksByGroup);
   const showSegmentations = useViewerStateStore((state) => state.showSegmentations);
+
+  const defaultTrackKey = dataset?.getDefaultTrackKey();
+  const disableColorTracksByGroup = !defaultTrackKey || !dataset?.hasLineageData(defaultTrackKey);
+  const colorTracksByGroupLabel = (
+    <span>
+      Color by track groups
+      <InlineHint
+        title="When lineage data is provided, groups of related tracks will all use the same color when selected."
+        style={{ marginLeft: "6px" }}
+      />
+    </span>
+  );
 
   return (
     <ToggleCollapse
@@ -113,6 +132,24 @@ export default function ObjectSettings(): ReactElement {
             }}
           ></DropdownWithColorPicker>
         </SettingsItem>
+        {/* TODO: Remove gating once lineage data is supported by colorizer-data */}
+        {!disableColorTracksByGroup && (
+          <SettingsItem label={colorTracksByGroupLabel} htmlFor={ObjectSettingsHtmlIds.GROUP_TRACK_COLORS_CHECKBOX}>
+            <Tooltip
+              title={"No lineage data was provided in the dataset."}
+              open={disableColorTracksByGroup ? undefined : false}
+            >
+              <div style={{ width: "fit-content", height: "fit-content", paddingTop: 2 }}>
+                <Checkbox
+                  id={ObjectSettingsHtmlIds.GROUP_TRACK_COLORS_CHECKBOX}
+                  checked={colorTracksByGroup}
+                  onChange={(e) => setColorTracksByGroup(e.target.checked)}
+                  disabled={disableColorTracksByGroup}
+                ></Checkbox>
+              </div>
+            </Tooltip>
+          </SettingsItem>
+        )}
         <SettingsItem label="Edge" htmlFor={ObjectSettingsHtmlIds.EDGE_COLOR_SELECT}>
           <DropdownWithColorPicker
             id={ObjectSettingsHtmlIds.EDGE_COLOR_SELECT}
