@@ -4,7 +4,7 @@
 
 ### Q: How do I share local datasets?
 
-A: Datasets are usually opened locally when using the `tfe-open` CLI command from [`colorizer_data`](https://github.com/allen-cell-animated/colorizer-data), which allows you to view local data. However, local datasets can't be accessed by other users.
+A: Datasets are usually opened locally when using the `tfe-open` CLI command from [`tfe-data`](https://github.com/AllenCell/tfe-data), which allows you to view local data. However, local datasets can't be accessed by other users.
 
 To share your dataset, you will need to move it and any files it may need (e.g. segmentation or image files) to a location that other computers can access over HTTPS. This is often done with a hosting server or a cloud storage service.
 
