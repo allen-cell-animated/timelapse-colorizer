@@ -4,7 +4,7 @@ import React, { type ReactElement, useCallback, useMemo, useRef, useState } from
 import { useShallow } from "zustand/shallow";
 
 import type Track from "src/colorizer/Track";
-import type { LineageData, TrackInfo } from "src/colorizer/types";
+import type { LineageData } from "src/colorizer/types";
 import { TreeTraversalDirection } from "src/colorizer/types";
 import { getAncestors, getDescendants } from "src/colorizer/utils/lineage_utils";
 import LabelWithHint from "src/components/Display/LabelWithHint";
@@ -55,6 +55,7 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
   const lineageRelationships = useViewerStateStore((state) => state.lineageRelationships);
   const addTracks = useViewerStateStore((state) => state.addTracks);
   const removeTracks = useViewerStateStore((state) => state.removeTracks);
+  const clearTracks = useViewerStateStore((state) => state.clearTracks);
   const setTracks = useViewerStateStore((state) => state.setTracks);
   const toggleTrack = useViewerStateStore((state) => state.toggleTrack);
   const setFrame = useViewerStateStore((state) => state.setFrame);
@@ -76,9 +77,18 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
 
   //// Callbacks ////
 
-  const onClickTrack = useCallback(
-    (trackId: number) => {
+  const onClick = useCallback(
+    (trackId: number | null, time?: number) => {
       const isMultiTrackSelectHotkeyPressed = areAnyHotkeysPressed(SHORTCUT_KEYS.viewport.multiTrackSelect.keycode);
+
+      // Clicked BG; clear tracks if not multi-selecting
+      if (trackId === null) {
+        if (!isMultiTrackSelectHotkeyPressed) {
+          clearTracks();
+        }
+        return;
+      }
+
       const track = dataset?.getTrack(trackId);
       if (track) {
         if (isMultiTrackSelectHotkeyPressed) {
@@ -86,15 +96,19 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
         } else {
           setTracks([track]);
         }
-        if (currentFrame < track.times[0] || currentFrame > track.times[track.times.length - 1]) {
+
+        // Apply time if defined; otherwise jump to the first frame of the track
+        if (time !== undefined) {
+          setFrame(time);
+        } else if (currentFrame < track.times[0] || currentFrame > track.times[track.times.length - 1]) {
           setFrame(track.times[0]);
         }
       }
     },
-    [dataset, setTracks, toggleTrack, currentFrame, setFrame]
+    [dataset, setTracks, toggleTrack, clearTracks, currentFrame, setFrame]
   );
 
-  const onHoverTrack = useCallback(
+  const onHover = useCallback(
     (trackId: number | null) => {
       if (trackId === null) {
         setHoveredTrack(null);
@@ -107,26 +121,6 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
       }
     },
     [dataset]
-  );
-
-  const onClickObject = useCallback(
-    (info: TrackInfo, time: number | null) => {
-      if (!dataset) {
-        return;
-      }
-      const track = dataset.getTrack(info.id);
-      if (track) {
-        if (time === currentFrame || time === null) {
-          toggleTrack(track);
-        } else {
-          addTracks([track]);
-        }
-      }
-      if (time !== null) {
-        setFrame(time);
-      }
-    },
-    [dataset, currentFrame, toggleTrack, addTracks, setFrame]
   );
 
   /** Select and deselect the node and its relatives (parents or children). */
@@ -175,8 +169,8 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
     relationships: lineageRelationships,
     colorScale,
     radiusScale,
-    onClick: onClickTrack,
-    onHover: onHoverTrack,
+    onClick,
+    onHover,
     selectedTracks: tracks,
     trackColors,
     setRelativesSelected,
@@ -225,7 +219,7 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
           relationships={lineageRelationships}
           time={currentFrame}
           colorizeParams={colorizeParams}
-          onClick={onClickObject}
+          onClick={onClick}
           // TODO: Show hover tooltip for track detail view
           onHover={undefined}
           setRelativesSelected={setRelativesSelected}
