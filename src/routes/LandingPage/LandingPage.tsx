@@ -196,7 +196,7 @@ export default function LandingPage(): ReactElement {
               Follow{" "}
               <ExternalLink
                 href={
-                  "https://github.com/allen-cell-animated/colorizer-data/blob/main/documentation/getting_started_guide/GETTING_STARTED.ipynb"
+                  "https://github.com/AllenCell/tfe-data/blob/main/documentation/getting_started_guide/GETTING_STARTED.ipynb"
                 }
               >
                 our data conversion tutorial on GitHub
