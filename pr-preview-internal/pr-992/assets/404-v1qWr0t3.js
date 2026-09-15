@@ -1,0 +1,1 @@
+import{e as i}from"./gh_routing-DSAAfHln.js";const n=window.location,t=new URL(n.toString()),o=i(t);o.toString()!==t.toString()&&(document.body.innerHTML="",n.replace(o),console.log("Redirecting to "+o.toString()));
