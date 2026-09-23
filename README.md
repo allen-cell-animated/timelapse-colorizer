@@ -17,17 +17,17 @@ for more details about potential future features!
 
 ## Viewing Custom Datasets
 
-Datasets must be preprocessed for viewing in Timelapse Feature Explorer. We provide the [`colorizer-data` Python package](https://github.com/allen-cell-animated/colorizer-data), which includes tutorials and documentation about the data specification. See our [getting started guide](https://github.com/allen-cell-animated/colorizer-data/blob/main/documentation/getting_started_guide/GETTING_STARTED.ipynb) for more details.
+Datasets must be preprocessed for viewing in Timelapse Feature Explorer. We provide the [`tfe-data` Python package](https://github.com/AllenCell/tfe-data), which includes tutorials and documentation about the data specification. See our [getting started guide](https://github.com/AllenCell/tfe-data/blob/main/documentation/getting_started_guide/GETTING_STARTED.ipynb) for more details.
 
 Compatible datasets hosted in an HTTPS-accessible location (ex: AWS S3 bucket, Google Cloud storage, etc.) can be loaded directly from the interface with just a URL. Click the **Load** button in the top right to open a URL.
 
 ![image](https://github.com/allen-cell-animated/timelapse-colorizer/assets/30200665/e2631a78-b0d6-49fc-bb93-cefc94a91a53)
 
-For local datasets, you can install and use the `tfe-open` CLI tool included in the [`colorizer-data`](https://github.com/allen-cell-animated/colorizer-data) Python package. Please check the [`colorizer-data` GitHub repository](https://github.com/allen-cell-animated/colorizer-data) for the latest version.
+For local datasets, you can install and use the `tfe-open` CLI tool included in the [`tfe-data`](https://github.com/AllenCell/tfe-data) Python package. Please check the [`tfe-data` GitHub repository](https://github.com/AllenCell/tfe-data) for the latest version.
 
 ```bash
 # In a Python environment:
-python -m pip install git+https://github.com/allen-cell-animated/colorizer-data.git@v1.7.0
+python -m pip install git+https://github.com/AllenCell/tfe-data.git@v2.0.0
 tfe-open "/path/to/your/dataset"
 ```
 
