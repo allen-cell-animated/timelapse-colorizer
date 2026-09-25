@@ -1,6 +1,6 @@
 import type * as d3 from "d3";
 
-import { LineageData, LineageDataRelationships, TrackInfo } from "src/colorizer";
+import type { LineageData, LineageDataRelationships, TrackInfo } from "src/colorizer";
 import { forEachAncestor, forEachDescendant } from "src/colorizer/utils/lineage_utils";
 
 export type TreeExpandedState = {

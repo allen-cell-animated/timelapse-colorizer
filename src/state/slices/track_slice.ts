@@ -3,7 +3,7 @@ import type { StateCreator } from "zustand";
 
 import {
   type ColorRamp,
-  Dataset,
+  type Dataset,
   type LineageData,
   type LineageDataRelationships,
   MAX_FEATURE_CATEGORIES,
