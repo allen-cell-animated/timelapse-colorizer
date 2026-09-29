@@ -296,14 +296,19 @@ export function getDescendants(
  * tracks that are connected through parent-child relationships.
  * @param selectedTracks Array of selected track ids.
  * @param relationships Lineage data relationships.
- * @returns Array of sets of connected track ids.
+ * @returns Array of sets of connected track IDs. IDs that are not in the tree
+ * (e.g. have no entries in the relationship maps) are skipped.
  */
 export function groupSelectedTracks(selectedTracks: number[], relationships: LineageDataRelationships): Set<number>[] {
   const groups: Set<Set<number>> = new Set();
   const idToGroup = new Map<number, Set<number>>();
   for (const trackId of selectedTracks) {
-    const parents = relationships.idToParents.get(trackId) ?? [];
-    const children = relationships.idToChildren.get(trackId) ?? [];
+    const parents = relationships.idToParents.get(trackId);
+    const children = relationships.idToChildren.get(trackId);
+    if (parents === undefined || children === undefined) {
+      // Track is not present in the tree, and should be skipped.
+      continue;
+    }
     const parentGroups = parents.map((parentId) => idToGroup.get(parentId)).filter((group) => group !== undefined);
     const childGroups = children.map((childId) => idToGroup.get(childId)).filter((group) => group !== undefined);
     // Combine and deduplicate groups

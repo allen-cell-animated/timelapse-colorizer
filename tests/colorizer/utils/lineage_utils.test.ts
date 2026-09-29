@@ -110,9 +110,9 @@ describe("groupSelectedTracks", () => {
     expect(result).toEqual([]);
   });
 
-  it("handles track IDs not in the tree", () => {
+  it("removes track IDs that are not in the tree", () => {
     const result = groupSelectedTracks([10, 45, 60], relationships);
-    expect(result).toEqual([new Set([10]), new Set([45]), new Set([60])]);
+    expect(result).toEqual([]);
   });
 
   it("separates isolated nodes", () => {
