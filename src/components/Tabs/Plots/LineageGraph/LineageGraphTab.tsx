@@ -1,3 +1,4 @@
+import { Checkbox } from "antd";
 import * as d3 from "d3";
 import React, { type ReactElement, useCallback, useMemo, useRef, useState } from "react";
 import { useShallow } from "zustand/shallow";
@@ -5,12 +6,8 @@ import { useShallow } from "zustand/shallow";
 import type Track from "src/colorizer/Track";
 import type { LineageData, TrackInfo } from "src/colorizer/types";
 import { TreeTraversalDirection } from "src/colorizer/types";
-import {
-  getAncestors,
-  getDescendants,
-  getLineageData,
-  getLineageRelationships,
-} from "src/colorizer/utils/lineage_utils";
+import { getAncestors, getDescendants } from "src/colorizer/utils/lineage_utils";
+import LabelWithHint from "src/components/Display/LabelWithHint";
 import PlotsTabToolbar from "src/components/Tabs/Plots/PlotsTabToolbar";
 import type { SharedPlotTabProps } from "src/components/Tabs/Plots/types";
 import HoverTooltip from "src/components/Tooltips/HoverTooltip";
@@ -18,7 +15,7 @@ import { TooltipCard } from "src/components/Tooltips/TooltipCard";
 import { SHORTCUT_KEYS } from "src/constants/shortcuts";
 import { colorizeStateSelector, useViewerStateStore } from "src/state";
 import { StyledHorizontalRule } from "src/styles/components";
-import { FlexColumn } from "src/styles/utils";
+import { FlexColumn, FlexRowAlignCenter } from "src/styles/utils";
 import { areAnyHotkeysPressed } from "src/utils/user_input";
 
 import { getTreeHierarchy } from "./lineage_utils";
@@ -43,8 +40,6 @@ function getColorAndRadiusScale(data: LineageData): {
   return { colorScale, radiusScale };
 }
 
-const EMPTY_LINEAGE_DATA: LineageData = { trackIdToTrackInfo: new Map(), edges: [] };
-
 type LineageGraphTabProps = SharedPlotTabProps;
 
 /**
@@ -56,11 +51,15 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
   const currentFrame = useViewerStateStore((state) => state.currentFrame);
   const tracks = useViewerStateStore((state) => state.tracks);
   const trackColors = useViewerStateStore((state) => state.trackColors);
+  const lineageData = useViewerStateStore((state) => state.lineageData);
+  const lineageRelationships = useViewerStateStore((state) => state.lineageRelationships);
   const addTracks = useViewerStateStore((state) => state.addTracks);
   const removeTracks = useViewerStateStore((state) => state.removeTracks);
   const setTracks = useViewerStateStore((state) => state.setTracks);
   const toggleTrack = useViewerStateStore((state) => state.toggleTrack);
   const setFrame = useViewerStateStore((state) => state.setFrame);
+  const colorTracksByGroup = useViewerStateStore((state) => state.colorTracksByGroup);
+  const setColorTracksByGroup = useViewerStateStore((state) => state.setColorTracksByGroup);
   const colorizeParams = useViewerStateStore(useShallow(colorizeStateSelector));
 
   const [hoveredTrack, setHoveredTrack] = useState<Track | null>(null);
@@ -69,13 +68,6 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
   const treeViewContainerRef = useRef<HTMLDivElement>(null);
   const detailViewContainerRef = useRef<HTMLDivElement>(null);
 
-  // Track data and relationships
-  const lineageData = useMemo(() => {
-    return dataset ? getLineageData(dataset) : EMPTY_LINEAGE_DATA;
-  }, [dataset]);
-  const lineageRelationships = useMemo(() => {
-    return getLineageRelationships(lineageData);
-  }, [lineageData]);
   const hierarchy = useMemo(() => {
     return getTreeHierarchy(lineageData, lineageRelationships);
   }, [lineageData, lineageRelationships]);
@@ -193,8 +185,18 @@ export default function LineageGraphTab(props: LineageGraphTabProps): ReactEleme
   return (
     <FlexColumn style={{ width: "100%", height: "100%" }}>
       <PlotsTabToolbar>
-        {props.toolbar}
-        <div></div>
+        <FlexRowAlignCenter $gap={12}>
+          {props.toolbar}
+          <Checkbox checked={colorTracksByGroup} onChange={(e) => setColorTracksByGroup(e.target.checked)}>
+            <LabelWithHint
+              hintProps={{
+                title: "Groups of related tracks will use the same color when selected in the graph and viewport.",
+              }}
+            >
+              Color by track groups
+            </LabelWithHint>
+          </Checkbox>
+        </FlexRowAlignCenter>
       </PlotsTabToolbar>
       <HoverTooltip
         tooltipContent={tooltipContent}

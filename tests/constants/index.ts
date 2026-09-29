@@ -155,7 +155,7 @@ export const MOCK_DATASET_FEATURE_4 = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0
 export const MOCK_DATASET_CENTROIDS = [
   10, 20, 30, 11, 21, 31, 12, 22, 32, 13, 23, 33, 14, 24, 34, 15, 25, 35, 16, 26, 36, 17, 27, 37, 18, 28, 38,
 ];
-export const MOCK_DATASET_TRACK_EDGES = [1, 3, 2, 4, 2, 5];
+export const MOCK_DATASET_TRACK_EDGES = [0, 1, 1, 3, 2, 4, 2, 5];
 export const MOCK_DATASET_NODE_EDGES = [0, 3, 1, 4, 2, 5, 3, 6, 4, 7, 5, 8];
 
 export const makeMockDatasetArrayLoader = (basePath: string): Record<string, MockArraySource<FeatureDataType>> => ({
