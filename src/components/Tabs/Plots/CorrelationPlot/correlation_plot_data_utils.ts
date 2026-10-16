@@ -5,6 +5,9 @@ export const SVG_TEXT_PADDING = 0.1;
 export const NAN_COLOR = "#aaaaaa";
 export const HIGHLIGHT_COLOR = "#555555";
 
+const CORRELATION_LEGEND_GRADIENT_ID = "correlation-legend-gradient";
+const LEGEND_STOP_LABEL_CLASSNAME = "legend-stop-label";
+const PLOT_TITLE_CLASSNAME = "plot-title";
 const GRID_SQUARE_CLASSNAME = "grid-square";
 const GRID_ROW_CLASSNAME = "grid-row-highlight";
 const GRID_COLUMN_CLASSNAME = "grid-col-highlight";
@@ -231,7 +234,7 @@ export function drawLegend(legendDiv: HTMLDivElement, extent: [number, number], 
 
   const defs = legendSvg.append("defs");
 
-  const gradient = defs.append("linearGradient").attr("id", "linear-gradient");
+  const gradient = defs.append("linearGradient").attr("id", CORRELATION_LEGEND_GRADIENT_ID);
   const stops: GradientStop[] = [
     { offset: 0, color: "steelblue", value: extent[0] },
     { offset: 0.5, color: "white", value: 0 },
@@ -253,12 +256,13 @@ export function drawLegend(legendDiv: HTMLDivElement, extent: [number, number], 
     .append("rect")
     .attr("width", config.plotWidth)
     .attr("height", config.legendHeight)
-    .style("fill", "url(#linear-gradient)");
+    .style("fill", `url(#${CORRELATION_LEGEND_GRADIENT_ID})`);
   legendSvg
-    .selectAll("text")
+    .selectAll("text." + LEGEND_STOP_LABEL_CLASSNAME)
     .data(stops)
     .enter()
     .append("text")
+    .attr("class", LEGEND_STOP_LABEL_CLASSNAME)
     .attr("x", function (d: GradientStop) {
       return config.plotWidth * d.offset;
     })
@@ -272,6 +276,17 @@ export function drawLegend(legendDiv: HTMLDivElement, extent: [number, number], 
       }
       return d.value?.toFixed(1);
     });
+  legendSvg
+    .selectAll("text." + PLOT_TITLE_CLASSNAME)
+    .data([""])
+    .enter()
+    .append("text")
+    .attr("class", PLOT_TITLE_CLASSNAME)
+    .attr("x", config.plotWidth / 2)
+    .attr("y", -config.legendTop / 2)
+    .style("text-anchor", "middle")
+    .style("font-size", "16px")
+    .text("Pearson correlation coefficient");
 }
 
 export function setupMouseInteraction(
