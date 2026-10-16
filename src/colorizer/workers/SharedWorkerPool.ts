@@ -53,13 +53,14 @@ export default class SharedWorkerPool {
   /**
    * Computes a matrix of Pearson correlation coefficients between the provided feature keys.
    * @param d The Dataset to retrieve feature data from.
+   * @param inRangeLUT A lookup table indicating which data points are in range.
    * @param featureKeys An optional array of feature keys to compute correlations for.
    * If not provided, correlations will be computed for all features in the dataset.
    * @returns a 2D matrix of correlation values between each pair of features. For
    * any indices `i` and `j`, the value at `[i][j]` (or `[j][i]`) is the
    * correlation coefficient between the `i`th and `j`th features.
    */
-  async getCorrelations(d: Dataset, featureKeys?: string[]): Promise<number[][]> {
+  async getCorrelations(d: Dataset, inRangeLUT: Uint8Array, featureKeys?: string[]): Promise<number[][]> {
     const featureData: (Float32Array | Uint32Array)[] = [];
     featureKeys = featureKeys ?? d.featureKeys;
     for (const key of featureKeys) {
@@ -67,7 +68,7 @@ export default class SharedWorkerPool {
         featureData.push(d.getFeatureData(key)!.data);
       }
     }
-    return await this.workerPool.exec("getCorrelations", [featureData]);
+    return await this.workerPool.exec("getCorrelations", [featureData, inRangeLUT]);
   }
 
   /**

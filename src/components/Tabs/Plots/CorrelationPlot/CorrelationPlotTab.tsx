@@ -69,15 +69,17 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
   const tooltipDivRef = useRef<HTMLDivElement>(null);
 
   const inputDataset = useViewerStateStore((state) => state.dataset);
+  const inRangeLUT = useViewerStateStore((state) => state.inRangeLUT);
   const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
   const setPlotTab = useViewerStateStore((state) => state.setPlotTab);
   const setScatterXAxis = useViewerStateStore((state) => state.setScatterXAxis);
   const setScatterYAxis = useViewerStateStore((state) => state.setScatterYAxis);
   const workerPool = getSharedWorkerPool();
-
+  
   const selectedFeatures = useViewerStateStore((state) => state.correlationFeatures) ?? [];
   const setSelectedFeatures = useViewerStateStore((state) => state.setCorrelationFeatures);
-
+  
+  const debouncedInRangeLUT = useDebounce(inRangeLUT, 500);
   const lastRenderedPlotFeatures = useRef<Set<string>>(new Set());
 
   const sortedSelectedFeatures = useMemo(() => {
@@ -104,7 +106,7 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
   // Plot Rendering
   //////////////////////////////////
 
-  const plotDependencies = [dataset, selectedFeatures];
+  const plotDependencies = [dataset, selectedFeatures, debouncedInRangeLUT];
 
   const renderPlot = async (_forceRelayout: boolean = false): Promise<void> => {
     if (!dataset || !legendRef.current || !plotDivRef.current || !tooltipDivRef.current) {
@@ -116,7 +118,7 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
     // come in before a previous one finishes. Discard any results that are not from the most
     // recent render request.
     lastRenderedPlotFeatures.current = new Set(sortedSelectedFeatures);
-    const correlationData = await workerPool.getCorrelations(dataset!, sortedSelectedFeatures);
+    const correlationData = await workerPool.getCorrelations(dataset!, debouncedInRangeLUT, sortedSelectedFeatures);
     if (!areSetsEqual(lastRenderedPlotFeatures.current, new Set(sortedSelectedFeatures))) {
       // Another request happened in the meantime, discard this result.
       return;

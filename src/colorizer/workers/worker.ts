@@ -52,8 +52,8 @@ async function loadUrlData(url: string, type: FeatureDataType, options?: Parquet
   return new Transfer({ min, max, data, textureInfo }, [data.buffer, textureInfo.data.buffer]);
 }
 
-async function getCorrelations(features: (Float32Array | Uint32Array)[]): Promise<number[][]> {
-  return computeCorrelations(features);
+async function getCorrelations(features: (Float32Array | Uint32Array)[], inRangeLUT?: Uint8Array): Promise<number[][]> {
+  return computeCorrelations(features, inRangeLUT);
 }
 
 async function getMotionDeltas(
