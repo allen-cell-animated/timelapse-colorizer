@@ -51,17 +51,8 @@ export function correlationDataToCellDatum(correlationData: number[][]): {
       gridData.push({ x: i, y: j, value: correlationData[i][j] });
     }
   }
-  // Get min/max values that aren't along the diagonal (which always has a
-  // correlation score of 1)
-  const extent = d3.extent(
-    gridData
-      .filter(function (d: CellDatum) {
-        return d.x !== d.y;
-      })
-      .map(function (d: CellDatum) {
-        return d.value;
-      })
-  ) as [number, number];
+  // Force extent to always be [-1, 1].
+  const extent = [-1, 1] as [number, number];
   const numRows = correlationData.length;
 
   return {
@@ -121,20 +112,9 @@ export function drawAxesLabels(
   y: d3.ScaleBand<number>,
   config: CorrelationPlotConfig
 ): void {
-  // Space is limited for the X-axis, so turn feature names into an acronym
-  // with the first letter of each word. Articles and other common words will
-  // not be capitalized. (For example, "Volume at Start of Growth" -> "VaSoG")
-  const lowercaseWords = ["the", "and", "of", "in", "a", "an", "to", "for", "with", "on", "by", "as", "at", "from"];
   const xAxis = d3.axisTop(y).tickFormat(function (_domain: number, i: number) {
-    return featureNames[i]
-      ? featureNames[i]
-          .trim()
-          .split(" ")
-          .map((s) => (lowercaseWords.includes(s) ? s[0].toLowerCase() : s[0].toUpperCase()))
-          .join("")
-      : "";
+    return featureNames[i];
   });
-
   const yAxis = d3.axisLeft(x).tickFormat(function (_domain: number, i: number) {
     return featureNames[i];
   });
@@ -192,6 +172,7 @@ export function drawGrid(
       }
       return config.colorMap(d.value).hex();
     })
+    .style("cursor", "pointer")
     // Add fade-in transition
     .style("opacity", 1e-6)
     .transition()
@@ -246,11 +227,11 @@ export function drawLegend(legendDiv: HTMLDivElement, extent: [number, number], 
     .style("text-anchor", function (_d: GradientStop, i: number) {
       return i === 0 ? "start" : i === 1 ? "middle" : "end";
     })
-    .text(function (d: GradientStop, i: number) {
+    .text(function (d: GradientStop) {
       if (d.value === undefined) {
         return "--";
       }
-      return d.value?.toFixed(2) + (i === 2 ? ">" : "");
+      return d.value?.toFixed(1);
     });
 }
 
