@@ -3,6 +3,11 @@ import * as d3 from "d3";
 
 export const SVG_TEXT_PADDING = 0.1;
 export const NAN_COLOR = "#aaaaaa";
+export const HIGHLIGHT_COLOR = "#555555";
+
+const GRID_SQUARE_CLASSNAME = "grid-square";
+const GRID_ROW_CLASSNAME = "grid-row-highlight";
+const GRID_COLUMN_CLASSNAME = "grid-col-highlight";
 
 export type CellDatum = {
   x: number;
@@ -146,6 +151,37 @@ export function drawAxesLabels(
     });
 }
 
+function addRowColumnHighlight(
+  svg: SelectedSvg<SVGGElement>,
+  x: d3.ScaleBand<number>,
+  y: d3.ScaleBand<number>,
+  config: CorrelationPlotConfig
+): void {
+  svg.select("rect." + GRID_ROW_CLASSNAME).remove();
+  svg.select("rect." + GRID_COLUMN_CLASSNAME).remove();
+
+  const rowRect = svg
+    .append("rect")
+    .attr("class", GRID_ROW_CLASSNAME)
+    .attr("width", config.plotWidth)
+    .attr("height", y.bandwidth());
+  const colRect = svg
+    .append("rect")
+    .attr("class", GRID_COLUMN_CLASSNAME)
+    .attr("width", x.bandwidth())
+    .attr("height", config.plotHeight);
+
+  [rowRect, colRect].forEach((rect) => {
+    // Apply same style to both
+    rect
+      .style("fill", "white")
+      .style("stroke", HIGHLIGHT_COLOR)
+      .style("stroke-width", "2px")
+      .style("opacity", 0)
+      .style("paint-order", "stroke fill");
+  });
+}
+
 export function drawGrid(
   svg: SelectedSvg<SVGGElement>,
   gridData: CellDatum[],
@@ -153,11 +189,14 @@ export function drawGrid(
   y: d3.ScaleBand<number>,
   config: CorrelationPlotConfig
 ): void {
+  addRowColumnHighlight(svg, x, y, config);
+
   svg
-    .selectAll("rect")
+    .selectAll("rect." + GRID_SQUARE_CLASSNAME)
     .data(gridData)
     .enter()
     .append("rect")
+    .attr("class", GRID_SQUARE_CLASSNAME)
     .attr("x", function (d: CellDatum) {
       return x(d.x)!;
     })
@@ -284,12 +323,25 @@ export function setupMouseInteraction(
       d3.select(".y.axis .tick:nth-of-type(" + (d.y + 1) + ") text").classed("selected", true);
       d3.select(".x.axis .tick:nth-of-type(" + (d.x + 1) + ") line").classed("selected", true);
       d3.select(".y.axis .tick:nth-of-type(" + (d.y + 1) + ") line").classed("selected", true);
+
+      // Position row + column highlights
+      const highlightLeft = gridLeft + colPos;
+      const highlightTop = gridTop + rowPos;
+      console.log("Highlight position:", highlightLeft, highlightTop);
+      d3.select("." + GRID_COLUMN_CLASSNAME)
+        .attr("x", highlightLeft)
+        .style("opacity", 1);
+      d3.select("." + GRID_ROW_CLASSNAME)
+        .attr("y", highlightTop)
+        .style("opacity", 1);
     })
     .on("mouseout", function () {
       d3.selectAll("rect").classed("selected", false);
       d3.select(tooltipDiv).style("display", "none");
       d3.selectAll(".axis .tick text").classed("selected", false);
       d3.selectAll(".axis .tick line").classed("selected", false);
+      d3.select("." + GRID_COLUMN_CLASSNAME).style("opacity", 0);
+      d3.select("." + GRID_ROW_CLASSNAME).style("opacity", 0);
     })
     .on("click", function (_event: any, datum: unknown) {
       const d = datum as CellDatum | undefined;
