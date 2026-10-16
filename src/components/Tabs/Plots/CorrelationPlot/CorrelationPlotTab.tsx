@@ -69,18 +69,17 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
   const tooltipDivRef = useRef<HTMLDivElement>(null);
 
   const inputDataset = useViewerStateStore((state) => state.dataset);
-  const inRangeLUT = useViewerStateStore((state) => state.inRangeLUT);
   const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
   const setPlotTab = useViewerStateStore((state) => state.setPlotTab);
   const setScatterXAxis = useViewerStateStore((state) => state.setScatterXAxis);
   const setScatterYAxis = useViewerStateStore((state) => state.setScatterYAxis);
   const workerPool = getSharedWorkerPool();
-  
+
   const selectedFeatures = useViewerStateStore((state) => state.correlationFeatures) ?? [];
   const setSelectedFeatures = useViewerStateStore((state) => state.setCorrelationFeatures);
-  
-  const debouncedInRangeLUT = useDebounce(inRangeLUT, 500);
+
   const lastRenderedPlotFeatures = useRef<Set<string>>(new Set());
+  const lastRenderedInRangeLUT = useRef<Uint8Array | null>(null);
 
   const sortedSelectedFeatures = useMemo(() => {
     // Keep in sorted order of the dataset
@@ -91,6 +90,11 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
   // Debounce changes to the dataset to prevent noticeably blocking the UI thread with a re-render.
   // Show the loading spinner right away, but don't initiate the state update + render until the debounce has settled.
   const dataset = useDebounce(inputDataset, 500);
+  // Debounce in case of rapid filter changes
+  const debouncedInRangeLUT = useDebounce(
+    useViewerStateStore((state) => state.inRangeLUT),
+    500
+  );
 
   const openScatterPlotTab = useCallback(
     (xAxis: string, yAxis: string) => {
@@ -114,12 +118,19 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
     }
     setIsRendering(true);
 
-    // Calculating correlations is async-- it's possible that another render request will
-    // come in before a previous one finishes. Discard any results that are not from the most
-    // recent render request.
+    // Calculating correlations is async-- it's possible that another render
+    // request will come in before a previous one finishes. Discard any results
+    // that are not from the most recent render request.
     lastRenderedPlotFeatures.current = new Set(sortedSelectedFeatures);
-    const correlationData = await workerPool.getCorrelations(dataset!, debouncedInRangeLUT, sortedSelectedFeatures);
-    if (!areSetsEqual(lastRenderedPlotFeatures.current, new Set(sortedSelectedFeatures))) {
+    // Use the most recent inRangeLUT, in case other dependencies triggered the
+    // change
+    const currentInRangeLUT = useViewerStateStore.getState().inRangeLUT;
+    lastRenderedInRangeLUT.current = currentInRangeLUT;
+    const correlationData = await workerPool.getCorrelations(dataset!, currentInRangeLUT, sortedSelectedFeatures);
+    if (
+      !areSetsEqual(lastRenderedPlotFeatures.current, new Set(sortedSelectedFeatures)) ||
+      lastRenderedInRangeLUT.current !== currentInRangeLUT
+    ) {
       // Another request happened in the meantime, discard this result.
       return;
     }
@@ -160,6 +171,8 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
     );
 
     setIsRendering(false);
+    // Drop old reference for GC
+    lastRenderedInRangeLUT.current = null;
   };
 
   // Re-render plot when the dataset or selected features change.
