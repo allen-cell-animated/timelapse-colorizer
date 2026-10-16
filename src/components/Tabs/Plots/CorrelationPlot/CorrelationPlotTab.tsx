@@ -136,7 +136,7 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
       margin: { top: 50, bottom: 1, left: 150, right: 150 },
       plotWidth: plotDim,
       plotHeight: plotDim,
-      legendTop: 15,
+      legendTop: 50,
       legendHeight: 15,
       padding: SVG_TEXT_PADDING,
       // TODO: Make color ramp swappable
