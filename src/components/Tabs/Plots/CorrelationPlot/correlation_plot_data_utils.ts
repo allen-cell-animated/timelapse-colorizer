@@ -175,7 +175,6 @@ function addRowColumnHighlight(
     .attr("height", config.plotHeight);
 
   [rowRect, colRect].forEach((rect) => {
-    // Apply same style to both
     rect
       .style("fill", "white")
       .style("stroke", HIGHLIGHT_COLOR)
@@ -276,6 +275,7 @@ export function drawLegend(legendDiv: HTMLDivElement, extent: [number, number], 
       }
       return d.value?.toFixed(1);
     });
+  // Add plot title
   legendSvg
     .selectAll("text." + PLOT_TITLE_CLASSNAME)
     .data([""])
@@ -342,7 +342,6 @@ export function setupMouseInteraction(
       // Position row + column highlights
       const highlightLeft = gridLeft + colPos;
       const highlightTop = gridTop + rowPos;
-      console.log("Highlight position:", highlightLeft, highlightTop);
       d3.select("." + GRID_COLUMN_CLASSNAME)
         .attr("x", highlightLeft)
         .style("opacity", 1);
