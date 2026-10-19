@@ -18,7 +18,6 @@ import { useViewerStateStore } from "src/state";
 import { FlexColumnAlignCenter, FlexRowAlignCenter } from "src/styles/utils";
 
 import {
-  areSetsEqual,
   correlationDataToCellDatum,
   type CorrelationPlotConfig,
   createScales,
@@ -78,7 +77,7 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
   const selectedFeatures = useViewerStateStore((state) => state.correlationFeatures) ?? [];
   const setSelectedFeatures = useViewerStateStore((state) => state.setCorrelationFeatures);
 
-  const lastRenderedPlotFeatures = useRef<Set<string>>(new Set());
+  const lastRenderRequestId = useRef<number>(0);
 
   const sortedSelectedFeatures = useMemo(() => {
     // Keep in sorted order of the dataset
@@ -89,6 +88,11 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
   // Debounce changes to the dataset to prevent noticeably blocking the UI thread with a re-render.
   // Show the loading spinner right away, but don't initiate the state update + render until the debounce has settled.
   const dataset = useDebounce(inputDataset, 500);
+  // Debounce in case of rapid filter changes
+  const debouncedInRangeLUT = useDebounce(
+    useViewerStateStore((state) => state.inRangeLUT),
+    500
+  );
 
   const openScatterPlotTab = useCallback(
     (xAxis: string, yAxis: string) => {
@@ -104,7 +108,7 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
   // Plot Rendering
   //////////////////////////////////
 
-  const plotDependencies = [dataset, selectedFeatures];
+  const plotDependencies = [dataset, selectedFeatures, debouncedInRangeLUT];
 
   const renderPlot = async (_forceRelayout: boolean = false): Promise<void> => {
     if (!dataset || !legendRef.current || !plotDivRef.current || !tooltipDivRef.current) {
@@ -112,12 +116,14 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
     }
     setIsRendering(true);
 
-    // Calculating correlations is async-- it's possible that another render request will
-    // come in before a previous one finishes. Discard any results that are not from the most
-    // recent render request.
-    lastRenderedPlotFeatures.current = new Set(sortedSelectedFeatures);
-    const correlationData = await workerPool.getCorrelations(dataset!, sortedSelectedFeatures);
-    if (!areSetsEqual(lastRenderedPlotFeatures.current, new Set(sortedSelectedFeatures))) {
+    // Store current ID; discard results if another render request comes in
+    // before this one completes.
+    lastRenderRequestId.current += 1;
+    const renderRequestId = lastRenderRequestId.current;
+    // Uses current inRangeLUT in case dataset updates and invalidates it.
+    const inRangeLut = useViewerStateStore.getState().inRangeLUT;
+    const correlationData = await workerPool.getCorrelations(dataset!, inRangeLut, sortedSelectedFeatures);
+    if (renderRequestId !== lastRenderRequestId.current) {
       // Another request happened in the meantime, discard this result.
       return;
     }

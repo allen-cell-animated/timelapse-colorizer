@@ -40,6 +40,20 @@ describe("pearson", () => {
     expect(pearson(data1, data2)).toBeCloseTo(0);
   });
 
+  it("filters values by inRangeLUT when provided", () => {
+    const data1 = new Float32Array([1, 2, 3, 6000, 5]);
+    const data2 = new Float32Array([1, -1000, 3, -5000, 5]);
+    const inRangeLut = new Uint8Array([1, 0, 1, 0, 1]);
+    expect(pearson(data1, data2, inRangeLut)).toBeCloseTo(1);
+  });
+
+  it("handles all values being filtered by inRangeLUT", () => {
+    const data1 = new Float32Array([1, 2, 3, 4, 5]);
+    const data2 = new Float32Array([1, 2, 3, 4, 5]);
+    const inRangeLut = new Uint8Array([0, 0, 0, 0, 0]);
+    expect(pearson(data1, data2, inRangeLut)).toBeCloseTo(0);
+  });
+
   it("returns zero if one or both arrays has zero variance", () => {
     const data1 = new Float32Array([5, 5, 5, 5, 5]);
     const data2 = new Float32Array([1, 2, 3, 4, 5]);

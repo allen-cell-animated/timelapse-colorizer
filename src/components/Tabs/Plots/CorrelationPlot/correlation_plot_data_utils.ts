@@ -71,10 +71,6 @@ export function correlationDataToCellDatum(correlationData: number[][]): {
   };
 }
 
-export function areSetsEqual(a: Set<any>, b: Set<any>): boolean {
-  return a.size === b.size && [...a].every((value) => b.has(value));
-}
-
 /** Truncates an SVG text element to a target pixel width. */
 export function truncateText(textEl: SVGTextElement, widthPx: number): void {
   const d3Node = d3.select(textEl);
