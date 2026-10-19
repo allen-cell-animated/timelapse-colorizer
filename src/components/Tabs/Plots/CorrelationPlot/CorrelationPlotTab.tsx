@@ -18,7 +18,6 @@ import { useViewerStateStore } from "src/state";
 import { FlexColumnAlignCenter, FlexRowAlignCenter } from "src/styles/utils";
 
 import {
-  areSetsEqual,
   correlationDataToCellDatum,
   type CorrelationPlotConfig,
   createScales,
@@ -78,8 +77,7 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
   const selectedFeatures = useViewerStateStore((state) => state.correlationFeatures) ?? [];
   const setSelectedFeatures = useViewerStateStore((state) => state.setCorrelationFeatures);
 
-  const lastRenderedPlotFeatures = useRef<Set<string>>(new Set());
-  const lastRenderedInRangeLUT = useRef<Uint8Array | null>(null);
+  const lastRenderRequestId = useRef<number>(0);
 
   const sortedSelectedFeatures = useMemo(() => {
     // Keep in sorted order of the dataset
@@ -118,19 +116,14 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
     }
     setIsRendering(true);
 
-    // Calculating correlations is async-- it's possible that another render
-    // request will come in before a previous one finishes. Discard any results
-    // that are not from the most recent render request.
-    lastRenderedPlotFeatures.current = new Set(sortedSelectedFeatures);
-    // Use the most recent inRangeLUT, in case other dependencies triggered the
-    // change
-    const currentInRangeLUT = useViewerStateStore.getState().inRangeLUT;
-    lastRenderedInRangeLUT.current = currentInRangeLUT;
-    const correlationData = await workerPool.getCorrelations(dataset!, currentInRangeLUT, sortedSelectedFeatures);
-    if (
-      !areSetsEqual(lastRenderedPlotFeatures.current, new Set(sortedSelectedFeatures)) ||
-      lastRenderedInRangeLUT.current !== currentInRangeLUT
-    ) {
+    // Store current ID; discard results if another render request comes in
+    // before this one completes.
+    lastRenderRequestId.current += 1;
+    const renderRequestId = lastRenderRequestId.current;
+    // Uses current inRangeLUT in case dataset updates and invalidates it.
+    const inRangeLut = useViewerStateStore.getState().inRangeLUT;
+    const correlationData = await workerPool.getCorrelations(dataset!, inRangeLut, sortedSelectedFeatures);
+    if (renderRequestId !== lastRenderRequestId.current) {
       // Another request happened in the meantime, discard this result.
       return;
     }
@@ -171,8 +164,6 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
     );
 
     setIsRendering(false);
-    // Drop old reference for GC
-    lastRenderedInRangeLUT.current = null;
   };
 
   // Re-render plot when the dataset or selected features change.
