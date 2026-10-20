@@ -3,6 +3,14 @@ import * as d3 from "d3";
 
 export const SVG_TEXT_PADDING = 0.1;
 export const NAN_COLOR = "#aaaaaa";
+export const HIGHLIGHT_COLOR = "#555555";
+
+const CORRELATION_LEGEND_GRADIENT_ID = "correlation-legend-gradient";
+const LEGEND_STOP_LABEL_CLASSNAME = "legend-stop-label";
+const PLOT_TITLE_CLASSNAME = "plot-title";
+const GRID_SQUARE_CLASSNAME = "grid-square";
+const GRID_ROW_CLASSNAME = "grid-row-highlight";
+const GRID_COLUMN_CLASSNAME = "grid-col-highlight";
 
 export type CellDatum = {
   x: number;
@@ -51,17 +59,8 @@ export function correlationDataToCellDatum(correlationData: number[][]): {
       gridData.push({ x: i, y: j, value: correlationData[i][j] });
     }
   }
-  // Get min/max values that aren't along the diagonal (which always has a
-  // correlation score of 1)
-  const extent = d3.extent(
-    gridData
-      .filter(function (d: CellDatum) {
-        return d.x !== d.y;
-      })
-      .map(function (d: CellDatum) {
-        return d.value;
-      })
-  ) as [number, number];
+  // Force extent to always be [-1, 1].
+  const extent = [-1, 1] as [number, number];
   const numRows = correlationData.length;
 
   return {
@@ -121,20 +120,9 @@ export function drawAxesLabels(
   y: d3.ScaleBand<number>,
   config: CorrelationPlotConfig
 ): void {
-  // Space is limited for the X-axis, so turn feature names into an acronym
-  // with the first letter of each word. Articles and other common words will
-  // not be capitalized. (For example, "Volume at Start of Growth" -> "VaSoG")
-  const lowercaseWords = ["the", "and", "of", "in", "a", "an", "to", "for", "with", "on", "by", "as", "at", "from"];
   const xAxis = d3.axisTop(y).tickFormat(function (_domain: number, i: number) {
-    return featureNames[i]
-      ? featureNames[i]
-          .trim()
-          .split(" ")
-          .map((s) => (lowercaseWords.includes(s) ? s[0].toLowerCase() : s[0].toUpperCase()))
-          .join("")
-      : "";
+    return featureNames[i];
   });
-
   const yAxis = d3.axisLeft(x).tickFormat(function (_domain: number, i: number) {
     return featureNames[i];
   });
@@ -166,6 +154,36 @@ export function drawAxesLabels(
     });
 }
 
+function addRowColumnHighlight(
+  svg: SelectedSvg<SVGGElement>,
+  x: d3.ScaleBand<number>,
+  y: d3.ScaleBand<number>,
+  config: CorrelationPlotConfig
+): void {
+  svg.select("rect." + GRID_ROW_CLASSNAME).remove();
+  svg.select("rect." + GRID_COLUMN_CLASSNAME).remove();
+
+  const rowRect = svg
+    .append("rect")
+    .attr("class", GRID_ROW_CLASSNAME)
+    .attr("width", config.plotWidth)
+    .attr("height", y.bandwidth());
+  const colRect = svg
+    .append("rect")
+    .attr("class", GRID_COLUMN_CLASSNAME)
+    .attr("width", x.bandwidth())
+    .attr("height", config.plotHeight);
+
+  [rowRect, colRect].forEach((rect) => {
+    rect
+      .style("fill", "white")
+      .style("stroke", HIGHLIGHT_COLOR)
+      .style("stroke-width", "2px")
+      .style("opacity", 0)
+      .style("paint-order", "stroke fill");
+  });
+}
+
 export function drawGrid(
   svg: SelectedSvg<SVGGElement>,
   gridData: CellDatum[],
@@ -173,11 +191,14 @@ export function drawGrid(
   y: d3.ScaleBand<number>,
   config: CorrelationPlotConfig
 ): void {
+  addRowColumnHighlight(svg, x, y, config);
+
   svg
-    .selectAll("rect")
+    .selectAll("rect." + GRID_SQUARE_CLASSNAME)
     .data(gridData)
     .enter()
     .append("rect")
+    .attr("class", GRID_SQUARE_CLASSNAME)
     .attr("x", function (d: CellDatum) {
       return x(d.x)!;
     })
@@ -192,6 +213,7 @@ export function drawGrid(
       }
       return config.colorMap(d.value).hex();
     })
+    .style("cursor", "pointer")
     // Add fade-in transition
     .style("opacity", 1e-6)
     .transition()
@@ -211,7 +233,7 @@ export function drawLegend(legendDiv: HTMLDivElement, extent: [number, number], 
 
   const defs = legendSvg.append("defs");
 
-  const gradient = defs.append("linearGradient").attr("id", "linear-gradient");
+  const gradient = defs.append("linearGradient").attr("id", CORRELATION_LEGEND_GRADIENT_ID);
   const stops: GradientStop[] = [
     { offset: 0, color: "steelblue", value: extent[0] },
     { offset: 0.5, color: "white", value: 0 },
@@ -233,12 +255,13 @@ export function drawLegend(legendDiv: HTMLDivElement, extent: [number, number], 
     .append("rect")
     .attr("width", config.plotWidth)
     .attr("height", config.legendHeight)
-    .style("fill", "url(#linear-gradient)");
+    .style("fill", `url(#${CORRELATION_LEGEND_GRADIENT_ID})`);
   legendSvg
-    .selectAll("text")
+    .selectAll("text." + LEGEND_STOP_LABEL_CLASSNAME)
     .data(stops)
     .enter()
     .append("text")
+    .attr("class", LEGEND_STOP_LABEL_CLASSNAME)
     .attr("x", function (d: GradientStop) {
       return config.plotWidth * d.offset;
     })
@@ -246,12 +269,24 @@ export function drawLegend(legendDiv: HTMLDivElement, extent: [number, number], 
     .style("text-anchor", function (_d: GradientStop, i: number) {
       return i === 0 ? "start" : i === 1 ? "middle" : "end";
     })
-    .text(function (d: GradientStop, i: number) {
+    .text(function (d: GradientStop) {
       if (d.value === undefined) {
         return "--";
       }
-      return d.value?.toFixed(2) + (i === 2 ? ">" : "");
+      return d.value?.toFixed(1);
     });
+  // Add plot title
+  legendSvg
+    .selectAll("text." + PLOT_TITLE_CLASSNAME)
+    .data([""])
+    .enter()
+    .append("text")
+    .attr("class", PLOT_TITLE_CLASSNAME)
+    .attr("x", config.plotWidth / 2)
+    .attr("y", -config.legendTop / 2)
+    .style("text-anchor", "middle")
+    .style("font-size", "16px")
+    .text("Pearson correlation coefficient");
 }
 
 export function setupMouseInteraction(
@@ -303,12 +338,32 @@ export function setupMouseInteraction(
       d3.select(".y.axis .tick:nth-of-type(" + (d.y + 1) + ") text").classed("selected", true);
       d3.select(".x.axis .tick:nth-of-type(" + (d.x + 1) + ") line").classed("selected", true);
       d3.select(".y.axis .tick:nth-of-type(" + (d.y + 1) + ") line").classed("selected", true);
+
+      // Position row + column highlights
+      const highlightLeft = gridLeft + colPos;
+      const highlightTop = gridTop + rowPos;
+      d3.select("." + GRID_COLUMN_CLASSNAME)
+        .attr("x", highlightLeft)
+        .style("opacity", 1)
+        .style("transition", "opacity 0s 0s");
+      d3.select("." + GRID_ROW_CLASSNAME)
+        .attr("y", highlightTop)
+        .style("opacity", 1)
+        .style("transition", "opacity 0s 0s");
     })
     .on("mouseout", function () {
       d3.selectAll("rect").classed("selected", false);
       d3.select(tooltipDiv).style("display", "none");
       d3.selectAll(".axis .tick text").classed("selected", false);
       d3.selectAll(".axis .tick line").classed("selected", false);
+      // Hide row and column with slight delay to avoid visual flashing when
+      // mousing over gaps in grid.
+      d3.select("." + GRID_COLUMN_CLASSNAME)
+        .style("opacity", 0)
+        .style("transition", "opacity 0s 0.05s");
+      d3.select("." + GRID_ROW_CLASSNAME)
+        .style("opacity", 0)
+        .style("transition", "opacity 0s 0.05s");
     })
     .on("click", function (_event: any, datum: unknown) {
       const d = datum as CellDatum | undefined;
