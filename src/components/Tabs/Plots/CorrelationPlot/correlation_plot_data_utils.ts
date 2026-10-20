@@ -344,18 +344,26 @@ export function setupMouseInteraction(
       const highlightTop = gridTop + rowPos;
       d3.select("." + GRID_COLUMN_CLASSNAME)
         .attr("x", highlightLeft)
-        .style("opacity", 1);
+        .style("opacity", 1)
+        .style("transition", "opacity 0s 0s");
       d3.select("." + GRID_ROW_CLASSNAME)
         .attr("y", highlightTop)
-        .style("opacity", 1);
+        .style("opacity", 1)
+        .style("transition", "opacity 0s 0s");
     })
     .on("mouseout", function () {
       d3.selectAll("rect").classed("selected", false);
       d3.select(tooltipDiv).style("display", "none");
       d3.selectAll(".axis .tick text").classed("selected", false);
       d3.selectAll(".axis .tick line").classed("selected", false);
-      d3.select("." + GRID_COLUMN_CLASSNAME).style("opacity", 0);
-      d3.select("." + GRID_ROW_CLASSNAME).style("opacity", 0);
+      // Hide row and column with slight delay to avoid visual flashing when
+      // mousing over gaps in grid.
+      d3.select("." + GRID_COLUMN_CLASSNAME)
+        .style("opacity", 0)
+        .style("transition", "opacity 0s 0.05s");
+      d3.select("." + GRID_ROW_CLASSNAME)
+        .style("opacity", 0)
+        .style("transition", "opacity 0s 0.05s");
     })
     .on("click", function (_event: any, datum: unknown) {
       const d = datum as CellDatum | undefined;
