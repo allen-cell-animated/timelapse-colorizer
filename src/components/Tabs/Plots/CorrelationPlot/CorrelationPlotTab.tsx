@@ -131,7 +131,7 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
     const { gridData, extent, numRows } = correlationDataToCellDatum(correlationData);
     const featureNames: string[] = sortedSelectedFeatures.map((key) => dataset?.getFeatureName(key) || key);
     // TODO: Resize dynamically with container size
-    const plotDim = 415;
+    const plotDim = 405;
     const config: CorrelationPlotConfig = {
       margin: { top: 50, bottom: 1, left: 150, right: 150 },
       plotWidth: plotDim,
@@ -213,6 +213,7 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
             <PlotDiv id="grid" style={{ position: "relative" }} ref={plotDivRef}></PlotDiv>
             <TipDiv style={{ display: "none" }} id="tip" ref={tooltipDivRef}></TipDiv>
           </div>
+          <div style={{ color: "gray" }}>Click grid cells to view in scatter plot</div>
         </FlexColumnAlignCenter>
       </LoadingSpinner>
     </FlexColumnAlignCenter>
