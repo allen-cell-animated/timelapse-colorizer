@@ -6,7 +6,7 @@
  * A number between -1 and 1 representing the correlation. Returns 0 if there
  * are no finite values in the input arrays.
  */
-export function pearson(x: Float32Array | Uint32Array, y: Float32Array | Uint32Array): number {
+export function pearson(x: Float32Array | Uint32Array, y: Float32Array | Uint32Array, inRangeLUT?: Uint8Array): number {
   // Adapted from: https://memory.psych.mun.ca/tech/js/correlation.shtml
   if (x.length !== y.length) {
     throw new Error(
@@ -23,7 +23,7 @@ export function pearson(x: Float32Array | Uint32Array, y: Float32Array | Uint32A
 
   let totalFiniteElements = 0;
   for (let i = 0; i < arrayLength; i++) {
-    if (!Number.isFinite(x[i]) || !Number.isFinite(y[i])) {
+    if (!Number.isFinite(x[i]) || !Number.isFinite(y[i]) || (inRangeLUT?.[i] === 0)) {
       continue;
     }
     xy[i] = x[i] * y[i];
@@ -43,7 +43,7 @@ export function pearson(x: Float32Array | Uint32Array, y: Float32Array | Uint32A
   let sumy2 = 0;
 
   for (let i = 0; i < arrayLength; i++) {
-    if (!Number.isFinite(x[i]) || !Number.isFinite(y[i])) {
+    if (!Number.isFinite(x[i]) || !Number.isFinite(y[i]) || (inRangeLUT?.[i] === 0)) {
       continue;
     }
     sumx += x[i];
@@ -71,12 +71,15 @@ export function pearson(x: Float32Array | Uint32Array, y: Float32Array | Uint32A
 /**
  * Computes a matrix of Pearson correlation coefficients between the provided
  * arrays of feature data.
- * @param featureData An array of Float32Arrays of feature data.
+ * @param featureData An array of Float32Arrays of feature data. 
+ * @param inRangeLUT Optional lookup table indicating which data points are in
+ *   range. If provided, only data points marked as in range (`=1`) will be
+ *   considered when calculating correlations.
  * @returns a 2D matrix of correlation values between each pair of features. For
  * any indices `i` and `j`, the value at `[i][j]` (or `[j][i]`) is the
  * correlation coefficient between the `i`th and `j`th features.
  */
-export function computeCorrelations(featureData: (Float32Array | Uint32Array)[]): number[][] {
+export function computeCorrelations(featureData: (Float32Array | Uint32Array)[], inRangeLUT?: Uint8Array): number[][] {
   const out: number[][] = [];
   // Optimization: Only calculate coefficients for [x][y] where y < x. [x][x] is
   // always 1, and [x][y] == [y][x], so we only need to calculate it once for
@@ -88,7 +91,7 @@ export function computeCorrelations(featureData: (Float32Array | Uint32Array)[])
       // get list of values for colx and coly
       const xvals = featureData[colx];
       const yvals = featureData[coly];
-      const val = pearson(xvals, yvals);
+      const val = pearson(xvals, yvals, inRangeLUT);
       row.push(val);
     }
     out.push(row);
